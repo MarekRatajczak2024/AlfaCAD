@@ -7226,8 +7226,8 @@ void Static_analysis(void) {
                                     Dy_min = fd[inx].Dy_min;
                                     Dy_max = fd[inx].Dy_max;
 
-                                    Nxm = combi_element[rep_element_no - 1].Nxm;
-                                    NxM = combi_element[rep_element_no - 1].NxM;
+                                    Nxm = combi_element[rep_element_no - 1].Nxm / unit_factors->F_f;
+                                    NxM = combi_element[rep_element_no - 1].NxM / unit_factors->F_f;
 
                                     if (copysign(1.0, Nx_min) == copysign(1.0, Nx_max)) {
                                         if (fabs(Nx_min) < fabs(Nx_max)) Nx_min = 0;
@@ -7341,7 +7341,7 @@ void Static_analysis(void) {
                                             if (Nx >= 0)
                                                 Ldsp1.kolor = static_colors.tension_color;
                                             else Ldsp1.kolor = static_colors.compression_color;   // positive are tension, red 1, negative are compression, blue 5,
-                                            Ldsp_.kolor = Ldsp.kolor;
+                                            Ldsp_.kolor = Ldsp1.kolor;
                                             x11 = Le.x1 + jednostkiOb(x) * koc;
                                             y11 = Le.y1 + jednostkiOb(x) * kos;
 
@@ -7658,8 +7658,8 @@ void Static_analysis(void) {
                                     Dy_min = fd[inx].Dy_min;
                                     Dy_max = fd[inx].Dy_max;
 
-                                    Vym = combi_element[rep_element_no - 1].Vym;
-                                    VyM = combi_element[rep_element_no - 1].VyM;
+                                    Vym = combi_element[rep_element_no - 1].Vym / unit_factors->F_f;
+                                    VyM = combi_element[rep_element_no - 1].VyM / unit_factors->F_f;
 
                                     if (copysign(1.0, Vy_min) == copysign(1.0, Vy_max)) {
                                         if (fabs(Vy_min) < fabs(Vy_max)) Vy_min = 0;
@@ -8101,8 +8101,8 @@ void Static_analysis(void) {
                                     Dy_min = fd[inx].Dy_min;
                                     Dy_max = fd[inx].Dy_max;
 
-                                    Mzm = combi_element[rep_element_no - 1].Mzm;
-                                    MzM = combi_element[rep_element_no - 1].MzM;
+                                    Mzm = combi_element[rep_element_no - 1].Mzm / unit_factors->M_f;
+                                    MzM = combi_element[rep_element_no - 1].MzM / unit_factors->M_f;
 
                                     if (copysign(1.0, Mz_min) == copysign(1.0, Mz_max)) {
                                         if (fabs(Mz_min) < fabs(Mz_max)) Mz_min = 0;
