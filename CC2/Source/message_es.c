@@ -486,6 +486,7 @@ static char* komunikaty_kom[] =
 /*219*/u8"Ingrese el factor de reescalado para las tensiones resultantes: ",
 /*220*/u8"Ingrese la precisión de la tensión: ",
 /*221*/u8"Ingrese el factor exagerado de la deformación de los modos de vibración modal: ",
+/*222*/u8"Ingrese el factor de reescalado para el porcentaje de refuerzo resultante: ",
 "",
 "",
 };

@@ -1275,6 +1275,8 @@ extern char *icon_menustyle_p;
 extern char *icon_cursorstyle_p;
 extern char *icon_barstyle_p;
 
+extern char *icon_perc_mag_p;
+
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
 extern TMENU mInfoAboutA;
@@ -3181,7 +3183,7 @@ static char *get_icons_p(int number)
         /*800*/   icon_stress_mag_p, icon_stress_plus_mag_p, icon_stress_minus_mag_p, icon_shear_stress_mag_p, icon_no_d_12_p,
         /*805*/   icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p, icon_mark_d_12_p,
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
-        /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p,
+        /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p,
     };
    
 	if (number>999)

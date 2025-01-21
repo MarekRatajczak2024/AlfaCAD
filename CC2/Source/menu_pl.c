@@ -3242,7 +3242,7 @@ static POLE pmPrecision[] = {
         {u8"dokładność naprężeń\0 \0",L'N',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Głębokość przekroju\0 \0",L'G',764,NULL},
@@ -3265,7 +3265,7 @@ static POLE pmStaticColors[] = {
        {u8"֎Wibracje\0inny\0",                          L'W',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"przeskalowanie Siły\0 \0",                   L'S',727,NULL},
@@ -3281,12 +3281,13 @@ static POLE pmMagnitude[] = {
        {u8"przeskalowanie sił reakcji\0 \0",            L'X',762,NULL},
        {u8"przeskalowanie momentów reakcji\0 \0",       L'Z',763,NULL},
        {u8"przeskalowanie naprężeń\0 \0",               L'A',800,NULL},
+       {u8"przeskalowanie % zbrojenia\0 \0",            L'%',823,NULL},
        {u8"przeskalowanie Wibracji\0 \0",               L'W',814,NULL},
        {u8"Dokładność\0 \0",                            L'D',184,NULL}, //&mPrecision},
        {u8"Kolory\0 \0",                                L'K',495,NULL}, //&mStaticColors},
 };
 
-static TMENU mMagnitude = { 16,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Format rysunku\0 A4\0    ",'F',96,&mFormat_r},

@@ -487,7 +487,10 @@ static char* komunikaty_kom[] =
 /*218*/u8"Wprowadź współczynnik przeskalowania głębokości przekroju: ",
 /*219*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń: ",
 /*220*/u8"Wprowadź precyzję naprężeń: ",
-/*221*/u8"Wprowadź współczynnik przeskalowania odkształcenia modalnych postaci drgań:"
+/*221*/u8"Wprowadź współczynnik przeskalowania odkształcenia modalnych postaci drgań: ",
+/*222*/u8"Wprowadź współczynnik przeskalowania dla wynikowego procentu zbrojenia: ",
+"",
+"",
 };
 
 static char* komunikaty0[] =

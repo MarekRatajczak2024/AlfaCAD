@@ -2156,6 +2156,9 @@ extern char *icon_cursorstyle_p;
 extern BITMAP *icon_barstyle;
 extern char *icon_barstyle_p;
 
+extern BITMAP *icon_perc_mag;
+extern char *icon_perc_mag_p;
+
 extern BITMAP *icon_yes_dmem;
 extern BITMAP *icon_no_dmem;
 extern char *icon_yes_d_pmem;
@@ -5022,6 +5025,7 @@ if (child==0)
       {&icon_menustyle,"menustyle",&icon_menustyle_p },
       {&icon_cursorstyle,"cursorstyle",&icon_cursorstyle_p },
       {&icon_barstyle,"barstyle",&icon_barstyle_p },
+      {&icon_perc_mag,"perc_mag",&icon_perc_mag_p },
   };
 
     int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);

@@ -3237,7 +3237,7 @@ static POLE pmPrecision[] = {
         {u8"точність наПруги\0 \0",     L'П',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Глибина розрізу\0 \0",L'Г',764,NULL},
@@ -3260,7 +3260,7 @@ static POLE pmStaticColors[] = {
        {u8"֎Вібрації\0інше\0",                      L'В',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"масштаб Сили\0\0",           L'С',727,NULL},
@@ -3276,12 +3276,13 @@ static POLE pmMagnitude[] = {
        {u8"масштаб сил Реакції\0\0",    L'Р',762,NULL},
        {u8"масштаб моментів опор\0\0",  L'У',763,NULL},
        {u8"масштаб наПружень\0 \0",     L'П',800,NULL},
+       {u8"масштаб % армування\0 \0",   L'%',823,NULL},
        {u8"перебільшення Вібрацій\0 \0",L'В',814,NULL},
        {u8"точність Чисел\0\0",         L'Ч',184,NULL}, //&mPrecision},
        {u8"Кольори\0\0",                L'К',495,NULL}, //&mStaticColors},
 };
 
-static TMENU mMagnitude = { 16,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Формат\0 A4\0     ",L'Ф',96,&mFormat_r},

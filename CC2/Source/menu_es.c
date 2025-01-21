@@ -3239,7 +3239,7 @@ static POLE pmPrecision[] = {
         {u8"precisión de tensiones\0 \0",       L'S',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Profundidad de la sección\0 \0",L'P',764,NULL},
@@ -3262,7 +3262,7 @@ static POLE pmStaticColors[] = {
        {u8"֎Vibraciones\0otro\0",               L'V',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"reescalado de Forzar\0 \0",              L'F',727,NULL},
@@ -3277,13 +3277,14 @@ static POLE pmMagnitude[] = {
        {u8"reescalado de deformación\0 \0",         L'U',761,NULL},
        {u8"reescalado de fuerzas de reacción\0 \0", L'X',762,NULL},
        {u8"momentos de reacción reescalado\0 \0",   L'Z',763,NULL},
-       {u8"reescalado tensión \0 \0",               L'S',800,NULL},
+       {u8"reescalado de tensión \0 \0",            L'S',800,NULL},
+       {u8"reescalado % de refuerzo\0 \0",          L'%',823,NULL},
        {u8"Exageración de las vibraciónes\0 \0",    L'E',814,NULL},
        {u8"Precisión\0 \0",                         L'P',184,NULL}, //&mPrecision},
        {u8"Coloros de Graficas\0 \0",               L'G',495,NULL}, //&mStaticColors},
        };
 
-static TMENU mMagnitude = { 16,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Formato\0 A4\0     ",'F',96,&mFormat_r},

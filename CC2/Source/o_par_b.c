@@ -131,10 +131,13 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double p_magnitude;
 extern double q_magnitude;
 
 extern TMENU mTTF_OTF;
 extern void Resize_Vector (void);
+
+extern void Restore_Pointer(void);
 
 static TMENU mSektory_Arkusza = { 15,0,0,31,1,3,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmSektory_Arkusza,NULL,NULL };
 
@@ -175,22 +178,22 @@ void formatX (void)
   double buf_ret [2] ;
 
   sprintf (sk, "%5ld; %5ld", l__x, l__y) ;
-  if (!get_string (sk, "", MaxTextLen, 0, 4)) return ;
+  if (!get_string (sk, "", MaxTextLen, 0, 4)) goto restore ;
   if (FALSE == calculator (sk, &retval_no, buf_ret) || retval_no < 2)
   {
-    return ;
+      goto restore ;
   }
   xd = buf_ret [0] ;
   yd = buf_ret [1] ;
   if (xd <= 0 || yd <= 0)
    { ErrList (3) ;
-	 return ;
+       goto restore ;
    }
   if (xd >= MAXINT || yd >= MAXINT)
    { ErrList (5) ;
-	 return ;
+       goto restore ;
    }
-  if (FormatX == xd && FormatY == yd) return ;
+  if (FormatX == xd && FormatY == yd) goto restore ;
   l__x = FormatX = xd ;
   l__y = FormatY = yd ;
   X_max = jednostkiplt (FormatX) ;
@@ -203,6 +206,10 @@ void formatX (void)
   menu_par_new ((*mFormat_r.pola)[0/*5*/].txt, sk) ;
   menu_par_new((*mParametry.pola)[0].txt, sk);
   drawp (&mParametry) ;
+
+restore:
+  Restore_Pointer();
+
 }
 
 void  kursorS(void)
@@ -773,15 +780,15 @@ void skalaFX (void)
   krok_g0=milimetryob(krok_g);
   sk [0] = '\0' ;
   sprintf(sk,"%lg",SkalaF);
-  if (!get_string (sk, "", MaxTextLen, 0, 6)) return ;
+  if (!get_string (sk, "", MaxTextLen, 0, 6)) goto restore ;
   if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
   {
-    return ;
+      goto restore ;
   }
   if ( buf_ret [0] <= 0 )
   {
     ErrList (30) ;
-    return ;
+    goto restore ;
   }
   SkalaF = (double)buf_ret [0] ;
   sprintf(sk,"%lg",SkalaF); 
@@ -793,6 +800,9 @@ void skalaFX (void)
   else krok_s = jednostkiOb(krok_s0);
   krok_g=jednostkiOb (krok_g0) ;
   drawp(&mParametry);
+
+restore:
+  Restore_Pointer();
 }
 
 
@@ -825,16 +835,16 @@ void DokladX(void)
 
   sk [0] = '\0' ;
   DF_to_String (sk, "%-6.4f", 1 / DokladnoscF, 0) ;
-  if (!get_string (sk, "", MaxTextLen, 0, 39)) return ;
+  if (!get_string (sk, "", MaxTextLen, 0, 39)) goto restore ;
   if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
   {
-    return ;
+      goto restore ;
   }
   d = buf_ret [0] ;
   if ( d <= 0 )
   {
     ErrList (16) ;
-    return ;
+    goto restore ;
   }
   DokladnoscF = 1 / d ;
   X_max = jednostkiplt (FormatX) ;
@@ -848,6 +858,9 @@ void DokladX(void)
   menu_par_new ((*mParametry.pola)[3].txt, sk) ;
   menu_par_new ((*mDokladnosc.pola)[5].txt, sk) ;
   drawp (&mParametry) ;
+
+restore:
+  Restore_Pointer();
 }
 
 
@@ -860,16 +873,16 @@ void Change_Precision(int kom_no, double *parameter, int menu_number)
 
     sk [0] = '\0' ;
     DF_to_String (sk, "%-6.4f", *parameter, 0) ;
-    if (!get_string (sk, "", MaxTextLen, 0, kom_no)) return ;
+    if (!get_string (sk, "", MaxTextLen, 0, kom_no)) goto restore ;
     if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
     {
-        return ;
+        goto restore ;
     }
     d = buf_ret [0] ;
     if ( d <= 0 )
     {
         ErrList (16) ;
-        return ;
+        goto restore ;
     }
 
     *parameter=d;
@@ -878,6 +891,10 @@ void Change_Precision(int kom_no, double *parameter, int menu_number)
     drawp (&mParametry) ;
     go_refresh=TRUE;
     vector_refresh=TRUE;
+
+restore:
+    Restore_Pointer();
+
     return;
 }
 
@@ -890,16 +907,16 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
 
     sk [0] = '\0' ;
     DF_to_String (sk, "%-6.4f", *parameter, 0) ;
-    if (!get_string (sk, "", MaxTextLen, 0, kom_no)) return ;
+    if (!get_string (sk, "", MaxTextLen, 0, kom_no)) goto restore ;
     if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
     {
-        return ;
+        goto restore ;
     }
     d = buf_ret [0] ;
     if ( d <= 0 )
     {
         ErrList (16) ;
-        return ;
+        goto restore ;
     }
 
     *parameter=d;
@@ -908,6 +925,9 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
     drawp (&mParametry) ;
     go_refresh=TRUE;
     vector_refresh=TRUE;
+
+restore:
+    Restore_Pointer();
     return;
 }
 
@@ -1006,9 +1026,14 @@ void S_Magnitude(void)
     Change_Magnitude(219, &s_magnitude, 12);
 }
 
+void P_Magnitude(void)
+{
+    Change_Magnitude(222, &p_magnitude, 13);
+}
+
 void Q_Magnitude(void)
 {
-    Change_Magnitude(221, &q_magnitude, 13);
+    Change_Magnitude(221, &q_magnitude, 14);
 }
 
 void Jednost(void)
@@ -1217,8 +1242,10 @@ int ret;
     menu_par_new((*mMagnitude.pola)[11].txt, sk);
     sprintf(sk, "%lg", s_magnitude);
     menu_par_new((*mMagnitude.pola)[12].txt, sk);
-    sprintf(sk, "%lg", q_magnitude);  //exaggerate modal modes of vibrations
+    sprintf(sk, "%lg", p_magnitude);   //% of reinforcement
     menu_par_new((*mMagnitude.pola)[13].txt, sk);
+    sprintf(sk, "%lg", q_magnitude);  //exaggerate modal modes of vibrations
+    menu_par_new((*mMagnitude.pola)[14].txt, sk);
 
     sprintf(sk, "%lg", force_precision);
     menu_par_new((*mPrecision.pola)[0].txt, sk);
@@ -1732,15 +1759,11 @@ void SektoryArkusza(void)
             if ((memcmp(&sektory_arkusza, &sektory_arkusza0, sizeof(SEKTORY)) != 0) ||
                 (memcmp(&sektory_arkusza_ext, &sektory_arkusza_ext0, sizeof(SEKTORY_EXT)) != 0))
             {
-                closew(&mSektory_Arkusza);
                 closew(&mParametry);
-
                 //usuwanie starego bloku sektorow
                 l_kr = usuwanie_ramki_sektorow();
                 //generowanie nowego bloku sektorow
                 l_kr = generowanie_ramki_sektorow();
-
-                //closew(&mSektory_Arkusza);
                 BOOL dynamic_menu_=dynamic_menu;
                 dynamic_menu=FALSE;
                 Error=0;
@@ -1748,18 +1771,20 @@ void SektoryArkusza(void)
                 openw(&mParametry);
                 dynamic_menu=dynamic_menu_;
                 go_refresh=TRUE;
-                return;
+                break;
             }
             break;
         }
         else
         {
             (*COMND1[n])();
+            Restore_Pointer();
         }
     }
 
     activate_menu(&mParametry);
     frame_on(&mParametry);
+    Restore_Pointer();
 }
 
 
@@ -1784,8 +1809,8 @@ static void (* COMND[])(void)={
 /*99 kursorB */	     kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB,
 /*109 uklad */       Uklad_kartezjanski, Uklad_geodezyjny,
                      Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, Load_Magnitude, Thermal_Magnitude,
-                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, S_Magnitude, Q_Magnitude,
-                     nooop,
+                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, S_Magnitude, P_Magnitude, Q_Magnitude,
+                     nooop,nooop,
                      Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
@@ -1813,7 +1838,7 @@ void Magnitudes(void)
             closew(&mMagnitude);
             break;
         }
-        else if (n == 126)  //Precision
+        else if (n == 127)  //Precision
         {
             frame_off(&mMagnitude);
             deactiv_menu(&mMagnitude);
@@ -1822,8 +1847,8 @@ void Magnitudes(void)
                 n = getwsp1(&mPrecision);
                 if (n == 0)
                 {
-                    closew(&mPrecision);
-                    inc_menu_level(&mPrecision);
+                    //closew(&mPrecision);
+                    //inc_menu_level(&mPrecision);
                     activate_menu(&mMagnitude);
                     break;
                 }
@@ -1834,7 +1859,7 @@ void Magnitudes(void)
             }
             frame_on(&mMagnitude);
         }
-        else if (n == 127)  //Colors
+        else if (n == 128)  //Colors
         {
             frame_off(&mMagnitude);
             deactiv_menu(&mMagnitude);
@@ -1844,14 +1869,15 @@ void Magnitudes(void)
                 n = getwsp1(&mStaticColors);
                 if (n == 0)
                 {
-                    closew(&mStaticColors);
-                    inc_menu_level(&mMagnitude);
+                    //closew(&mStaticColors);
+                    //inc_menu_level(&mMagnitude);
                     activate_menu(&mMagnitude);
                     break;
                 }
                 else
                 {
                     (*COMND[n - 1 + n0])();
+                    Restore_Pointer();
                 }
             }
             frame_on(&mMagnitude);
@@ -1972,6 +1998,8 @@ void Parametry(void)
    else if (n==8)
    {       //vectors
        (*COMND[n])();
+
+       Restore_Pointer();
    }
 
     else if (n==6)  //temporary
@@ -1997,7 +2025,10 @@ void Parametry(void)
            Error=0;
            Info=0;
            openw(&mParametry);
+           activate_menu(&mParametry);
            dynamic_menu=dynamic_menu_;
+
+           Restore_Pointer();
 	   }
   }
  CUR_ON(X, Y);

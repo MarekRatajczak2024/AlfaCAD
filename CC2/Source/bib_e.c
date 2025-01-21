@@ -158,6 +158,7 @@ extern char* punits[];
 extern char *upunits[];
 extern int(*SW2[13])(void);
 extern char readmouse(void);
+extern void _free_mouse(void);
 
 //extern int get_cursor_info(void);
 
@@ -2028,7 +2029,6 @@ void Reset_Pointer(void)
 
 	reset_pointer = TRUE;
 }
-
 
 void DoneCursorimage(void)
 {
@@ -12717,6 +12717,15 @@ void set_cursor_edit__(void)
     enable_hardware_cursor();
     select_mouse_cursor(MOUSE_CURSOR_EDIT);
     unscare_mouse();
+}
+
+void Restore_Pointer(void)
+{
+    if (BAR_POINTER)
+    {
+        _free_mouse();
+        set_cursor_pointer();
+    }
 }
 
 void ini_cursors(void)

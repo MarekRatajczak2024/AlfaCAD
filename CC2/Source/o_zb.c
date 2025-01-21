@@ -220,6 +220,7 @@ extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
 extern double q_magnitude;
+extern double p_magnitude;
 
 extern double n_magnitude0;
 extern double v_magnitude0;
@@ -229,7 +230,7 @@ extern double r_magnitude0;
 extern double rm_magnitude0;
 extern double s_magnitude0;
 extern double q_magnitude0;
-
+extern double p_magnitude0;
 
 BOOL SAVE_ALL_FONTS = FALSE;
 
@@ -1946,7 +1947,9 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
     if (Check_if_LE(rotation_magnitude, 0.0)) rotation_magnitude=rotation_magnitude0;
 
     if (proc_io(f, &zmwym_fraction, sizeof(int)) != sizeof(int)) return FALSE;
-    if (proc_io(f, &zmwym_reserve, sizeof(int)) != sizeof(int)) return FALSE;
+    //if (proc_io(f, &zmwym_reserve, sizeof(int)) != sizeof(int)) return FALSE;  //ignored
+      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+      if (Check_if_LE(magnitude, 0.0)) p_magnitude=p_magnitude0; else p_magnitude=(double)magnitude;
 
     if (zmwym_fraction<1) zmwym_fraction=64;   //initiation if not set
 
@@ -2409,7 +2412,9 @@ static BOOL write_param (int f, int *error_code1)
   if (write(f, &rotation_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
 
   if (write(f, &zmwym_fraction, sizeof(int)) != sizeof(int)) return FALSE;
-  if (write(f, &zmwym_reserve, sizeof(int)) != sizeof(int)) return FALSE;
+  // if (write(f, &zmwym_reserve, sizeof(int)) != sizeof(int)) return FALSE;  //ignored
+    magnitude=(float)p_magnitude;
+    if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
 
   if (write (f, &sektory_arkusza_ext, sizeof(SEKTORY_EXT)) != sizeof(SEKTORY_EXT)) return FALSE ;
   if (write (f, &sektory_arkusza, sizeof(SEKTORY)) != sizeof(SEKTORY)) return FALSE ;

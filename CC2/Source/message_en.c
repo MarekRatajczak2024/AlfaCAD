@@ -486,6 +486,9 @@ static char* komunikaty_kom[] =
 /*219*/u8"Enter the rescaling factor for the resulting stresses: ",
 /*220*/u8"Enter axial & shear stress precision: ",
 /*221*/u8"Enter the exaggerating factor of modal vibration modes deformation: ",
+/*222*/u8"Enter the rescaling factor for the resulting reinforcement percentage: ",
+"",
+"",
 };
 
 

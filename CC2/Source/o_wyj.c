@@ -2282,6 +2282,9 @@ char *icon_cursorstyle_p;
 BITMAP *icon_barstyle;
 char *icon_barstyle_p;
 
+BITMAP *icon_perc_mag;
+char *icon_perc_mag_p;
+
 
 
         BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
