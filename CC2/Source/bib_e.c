@@ -12728,6 +12728,12 @@ void Restore_Pointer(void)
     }
 }
 
+void Set_Pointer(void)
+{
+        _free_mouse();
+        set_cursor_pointer();
+}
+
 void ini_cursors(void)
 {
     

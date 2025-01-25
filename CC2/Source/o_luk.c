@@ -34,6 +34,9 @@
 #include "message.h"
 #include "menu.h"
 
+#define YES _YES_
+#define NO _NO_
+
 extern void setwritemode( int mode );
 extern int linestyle_xor(int typ);
 extern void setfillstyle_(int pattern, int color);
@@ -78,8 +81,8 @@ enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
 	PL_MODE_UNDO_CONT, PL_MODE_ARC_CONTINUE, PL_MODE_BREAK, PL_MODE_LINE_CONTINUE, PL_MODE_LINE_BAK} ;
 
 enum DRAW_ARC_TYPE
-{ ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con,
-	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE } ;
+{ ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
+	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE, ARC_rev_Y, ARC_rev_N } ;
 
 extern int last_pline_delete (void) ;
 static int last_parc_delete (void) ;
@@ -93,6 +96,8 @@ static double df__xbeg, df__ybeg ;
 
 static void (*cursor_on)(double ,double)=out_cur_on;
 static void (*cursor_off)(double ,double)=out_cur_off;
+
+static BOOL arc_reversed=FALSE;
 
 
 typedef struct SA_BREAK {
@@ -142,11 +147,21 @@ static BOOL set_arc_continue_param (void) ;
 
 /*-----------------------------------------------------------------------*/
 
-static TMENU mLukm={8, 0, 0, 30, 56, 4, ICONS, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLukm,NULL,NULL};
+static TMENU mLukm={9, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLukm,NULL,NULL};
 
-static TMENU mPLukm={11, 0, 0, 30, 56, 4, ICONS, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
+static TMENU mPLukm={12, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
 
-static TMENU mPLukmObrys={13, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
+static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
+
+BOOL Get_reversed(void)
+{
+    return arc_reversed;
+}
+
+void Set_reversed(BOOL reversed)
+{
+    arc_reversed=reversed;
+}
 
 void set_pl(double x, double y)
 {
@@ -228,7 +243,19 @@ void kom (char *str, int ch, int d, int i)
 void type_arc_pl (int ev_nr)
 /*-------------------------------*/
 {
-  if (ns_arc == ARC_Con)
+    if (ev_nr == ARC_rev_Y) {
+        Set_reversed(TRUE);
+        menu_par_new ((*mLukm.pola)[8].txt, YES);
+        menu_par_new ((*mPLukm.pola)[8].txt, YES);
+        menu_par_new ((*mPLukmObrys.pola)[8].txt, YES);
+    }
+    else if (ev_nr == ARC_rev_N) {
+        Set_reversed(FALSE);
+        menu_par_new ((*mLukm.pola)[8].txt, NO);
+        menu_par_new ((*mPLukm.pola)[8].txt, NO);
+        menu_par_new ((*mPLukmObrys.pola)[8].txt, NO);
+    }
+    else if (ns_arc == ARC_Con)
   {
     redcr (1) ;
   }
@@ -252,7 +279,19 @@ static int type_arc (int ev_nr)
 {
   int ret ;
 
-  if (ev_nr != ARC_Con  ||
+  if (ev_nr == ARC_rev_Y) {
+      Set_reversed(TRUE);
+      menu_par_new ((*mLukm.pola)[8].txt, YES);
+      menu_par_new ((*mPLukm.pola)[8].txt, YES);
+      menu_par_new ((*mPLukmObrys.pola)[8].txt, YES);
+  }
+  else if (ev_nr == ARC_rev_N) {
+      Set_reversed(FALSE);
+      menu_par_new ((*mLukm.pola)[8].txt, NO);
+      menu_par_new ((*mPLukm.pola)[8].txt, NO);
+      menu_par_new ((*mPLukmObrys.pola)[8].txt, NO);
+  }
+  else if (ev_nr != ARC_Con  ||
       (ev_nr == ARC_Con && TRUE == set_arc_continue_param ()))
   {
     ns_arc = ev_nr ;
@@ -289,11 +328,13 @@ static const void near out_parametry_luku1(int ns)
 	      break;
      case 4 : xx=milimetryob(LukG.r);
 	      break;
-     case 6 : xx=Atan2(Y-pl.ys,X-pl.xs)*180/Pi;
+     case 6 :
+         if (Get_reversed()) xx=Atan2(Y-pl.ye,X-pl.xe)*180/Pi;
+         else xx=Atan2(Y-pl.ys,X-pl.xs)*180/Pi;
 	      angle_l=get_angle_l();
 	      if (angle_l!=0)
 	       {
-		xx -= angle_l;
+		     xx -= angle_l;
 	       }
 	      if(xx<0) xx+=360;
 	      break;
@@ -322,9 +363,10 @@ static void  cur_off(double x,double y)
   cursor_off(x,y);
 }
 */
+
 static void  cur_on(double x,double y)
 {
-    BOOL reversed=FALSE;
+    BOOL reversed=Get_reversed();
     (*parl[ns_arc])(&pl,&LukG,x,y,0, FALSE, &reversed);
     if (ns_arc != ARC_Con)
     {
@@ -342,7 +384,7 @@ static void  cur_on(double x,double y)
 /*
 static void  cur_on__(double x,double y)
 {
-    BOOL reversed=FALSE;
+    BOOL reversed=Get_reversed();
   cursor_on(x,y);
   (*parl[ns_arc])(&pl,&LukG,x,y,0, FALSE, &reversed);
   if (ns_arc != ARC_Con)
@@ -422,7 +464,7 @@ int getwsp_pl (double *X0, double *Y0)
 }
 
 
-int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, IDM_LINE};
+int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_rev, IDM_LINE};
 
 int getwsp_tr (double *X0, double *Y0, int d_line)
 /*----------------------------------------------*/
@@ -523,7 +565,9 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
 /*---------------------------------------------------*/
 {
   BOOL b_ret ;
-  BOOL reversed=FALSE;
+
+
+  BOOL reversed=Get_reversed();
 
   b_ret = FALSE ;
   if(!strwyj)
@@ -556,7 +600,7 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
 /*--------------------------------------------------------------------*/
 {
     BOOL b_ret ;
-    BOOL reversed=FALSE;
+    BOOL reversed=Get_reversed();
 
     b_ret = FALSE ;
     if(!strwyj)
@@ -718,7 +762,7 @@ int tGetwsp1(void)
 static int el_r (BOOL b_graph_value)
 {
   double r;
-  BOOL reversed=FALSE;
+  BOOL reversed=Get_reversed();
 
   b_graph_value = b_graph_value ;
   if (el.val_no < 1)
@@ -813,6 +857,14 @@ static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   ys=pl->ys-l->y;  ye=pl->ye-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
+
+    if (*reversed)
+    {
+        double a22=a2;
+        a2=Angle_Normal(a1);
+        a1= Angle_Normal(a22);
+    }
+
   l->kat1=a1;
   l->kat2=a2;
   *reversed = FALSE;
@@ -824,7 +876,7 @@ static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 static int el_a(BOOL b_graph_value)
 {
   double a;
-  BOOL reversed=FALSE;
+  BOOL reversed=Get_reversed();
 
   b_graph_value = b_graph_value ;
   if (el.val_no < 1)
@@ -884,7 +936,7 @@ static const void near pSEA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 { double x0,y0,xr,yr,xe,ye,xs,ys,dl,t;
   double a1,a2,si,co;
   double dkat;
-  int znak_kata=0;
+  int znak_kata=-1;
   
   L.x2=X; L.y2=Y;
   if(b_edit)
@@ -892,8 +944,11 @@ static const void near pSEA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
     dkat = Grid_to_Rad (ws) ;
     if (dkat<0) znak_kata=1;
     dkat = Angle_Normal (dkat) ;
+      if (*reversed) dkat*=-1;
   }
   else dkat=Atan2(Y-pl->ys,X-pl->xs);
+
+  //if (*reversed) znak_kata*=-1;
   
   x0=(pl->xe+pl->xs)/2;
   y0=(pl->ye+pl->ys)/2;
@@ -913,7 +968,15 @@ static const void near pSEA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   ys=pl->ys-l->y;  ye=pl->ye-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
-  if (znak_kata==0)
+
+    if (*reversed)
+    {
+        double a22=a2;
+        a2=Angle_Normal(a1);
+        a1= Angle_Normal(a22);
+    }
+
+  if (znak_kata==-1)
    {
     l->kat1=a1;
     l->kat2=a2;
@@ -1025,7 +1088,7 @@ void POLYARC(double x_s, double y_s, double x_e, double y_e, double wpsc, LUK *l
 static int el_d(BOOL b_graph_value)
 {
   double a;
-  BOOL reversed=FALSE;
+  BOOL reversed=Get_reversed();
 
   b_graph_value = b_graph_value ;
   if (el.val_no < 1)
@@ -1042,12 +1105,22 @@ static int el_d(BOOL b_graph_value)
 static const void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
 {
   int np;
+  BOOL reversed=Get_reversed();
 
   pl.xe = X0; pl.ye = Y0;
   out_krz(pl.xe,pl.ye);
   if(fabs(pl.xe-pl.xs)<OZero && fabs(pl.ye-pl.ys)<OZero) return;
-  L.x1=pl.xs;
-  L.y1=pl.ys;
+  if (reversed)
+  {
+      L.x1 = pl.xe;
+      L.y1 = pl.ye;
+  }
+  else
+  {
+      L.x1 = pl.xs;
+      L.y1 = pl.ys;
+  }
+
   L.x2=X;
   L.y2=Y;
   el.ESTRF=el_d;
@@ -1089,7 +1162,21 @@ static const void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   L.x2=X; L.y2=Y;
   x0=(pl->xe+pl->xs)/2;
   y0=(pl->ye+pl->ys)/2;
-  xs=pl->xs-x0; ys=pl->ys-y0;
+
+  if (*reversed)
+  {
+      xs=pl->xe-x0;
+      ys=pl->ye-y0;
+
+      //xs=x0-pl->xe;
+      //ys=y0-pl->ye;
+  }
+  else
+  {
+      xs = pl->xs - x0;
+      ys = pl->ys - y0;
+  }
+
   dl=sqrt(xs*xs+ys*ys);
   si=ys/dl;
   co=xs/dl;
@@ -1108,8 +1195,16 @@ static const void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
     if(ws<0) ws+=360;
 
     ws = ws * Pi / 180 ;
-    x_temp = pl->xs + DL * cos (ws) ;
-    y_temp = pl->ys + DL * sin (ws) ;
+    if (*reversed)
+    {
+        x_temp = pl->xe + DL * cos(ws);
+        y_temp = pl->ye + DL * sin(ws);
+    }
+    else
+    {
+        x_temp = pl->xs + DL * cos(ws);
+        y_temp = pl->ys + DL * sin(ws);
+    }
     obru (si, co, x_temp - x0, y_temp - y0, &x_temp, &y_temp) ;
     ws = Atan2 (y_temp - ys, x_temp - xs) ;
     ws = Angle_Normal (ws) ;
@@ -1151,14 +1246,28 @@ static const void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   a2=Atan2(ye,xe);
   if (b_edit == TRUE)
   {
-    l->kat1 = (ws < Pi ? a1 : a2);
-    l->kat2 = (ws < Pi ? a2 : a1);
+      if (*reversed)
+      {
+          l->kat2 = (ws < Pi ? a1 : a2);
+          l->kat1 = (ws < Pi ? a2 : a1);
+      }
+      else {
+          l->kat1 = (ws < Pi ? a1 : a2);
+          l->kat2 = (ws < Pi ? a2 : a1);
+      }
     *reversed = (ws < Pi ? FALSE : TRUE);
   }
   else
   {
-    l->kat1=(y>0 ? a1 : a2);
-    l->kat2=(y>0 ? a2 : a1);
+      if (*reversed)
+      {
+          l->kat2 = (y > 0 ? a1 : a2);
+          l->kat1 = (y > 0 ? a2 : a1);
+      }
+      else {
+          l->kat1 = (y > 0 ? a1 : a2);
+          l->kat2 = (y > 0 ? a2 : a1);
+      }
    *reversed = (y>0 ? FALSE : TRUE);
   }
 
@@ -1233,7 +1342,7 @@ static const void near pP3(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_
 int get_3p_arc(LUK *l, POINTD *p1, POINTD *p2, POINTD *p3)
 {
     PLUK pl;
-    BOOL reversed=FALSE;
+    BOOL reversed=Get_reversed();
 
     pl.xs=p1->x; pl.ys=p1->y;
     pl.x2=p2->x; pl.y2=p2->y;
@@ -1377,8 +1486,15 @@ static const void near pSCE(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   ys=pl->ys-l->y;  ye=pl->ye-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
-  l->kat1=a1;
-  l->kat2=a2;
+  if (*reversed)
+  {
+      l->kat2 = a1;
+      l->kat1 = a2;
+  }
+  else {
+      l->kat1 = a1;
+      l->kat2 = a2;
+  }
   if(fabs(l->kat1-l->kat2)<OZero) { l->kat1=0; l->kat2=Pi2;}
   *reversed = FALSE;
 }
@@ -1388,7 +1504,7 @@ static const void near pSCE(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 static int el_ac(BOOL b_graph_value)
 {
   double a;
-  BOOL reversed=FALSE;
+  BOOL reversed=Get_reversed();
 
   b_graph_value = b_graph_value ;
   if (el.val_no < 1)
@@ -1451,22 +1567,46 @@ static const void near pSCA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 { double xs, ys;
   double a1,a2;
   double dkat;
+
   L.x2=X; L.y2=Y;
+
+    xs=pl->xs-l->x;
+    ys=pl->ys-l->y;
+
   if(b_edit)
    {
-     dkat = Grid_to_Rad (ws) ;
-  //   dkat = Angle_Normal (dkat) ;
+      if (*reversed)
+      {
+          a2=Angle_Normal(Atan2(ys,xs));
+          dkat = Angle_Normal(a2-Grid_to_Rad(ws));
+      }
+      else
+      {
+          a1=Angle_Normal(Atan2(ys,xs));
+          dkat = Angle_Normal(Grid_to_Rad(ws) + a1);
+      }
    }
   else
    { if(fabs(Y-l->y)<OZero && fabs(X-l->x)<OZero) return;
      dkat=Atan2(Y-l->y,X-l->x);
    }
-  xs=pl->xs-l->x;  
-  ys=pl->ys-l->y;
-  a1=Atan2(ys,xs);
-  a2=a1+dkat;  
-  l->kat1=a1;
-  l->kat2=a2;
+
+  if (*reversed)
+  {
+      a2=Angle_Normal(Atan2(ys,xs));
+      a1=Angle_Normal(dkat);
+
+      l->kat1 = a1;
+      l->kat2 = a2;
+  }
+  else
+  {
+    a1=Angle_Normal(Atan2(ys,xs));
+    a2=Angle_Normal(dkat);
+
+    l->kat1 = a1;
+    l->kat2 = a2;
+  }
 
   *reversed=FALSE;
 }
@@ -1477,7 +1617,7 @@ static const void near pSCA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 static int el_lc(BOOL b_graph_value)
 {
   double a;
-  BOOL reversed=FALSE;
+  BOOL reversed=Get_reversed();
 
   b_graph_value = b_graph_value ;
   if (el.val_no < 1)
@@ -1552,8 +1692,14 @@ static const void near pSCL(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   if(fabs(dlc)>2*l->r) dlc=2*l->r;
   xs=pl->xs-l->x;   ys=pl->ys-l->y;
   dl0=sqrt(xs*xs+ys*ys);
-  si=ys/dl0;
-  co=xs/dl0;
+
+  si = ys / dl0;
+  co = xs / dl0;
+
+  //if (*reversed) si*=-1;  //sin(-a) = -sin(a);  cos(-a) = coa(a)
+
+  if ((L.x2<L.x1) && (dlc>0)) dlc*=-1;
+
   obru(si,co,xs,ys,&xs,&ys);
   xe=(-dlc*dlc+(l->r)*(l->r)+xs*xs)/(2*xs);
   ye=sqrt(fabs(l->r*l->r-xe*xe));
@@ -1562,8 +1708,17 @@ static const void near pSCL(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   ys=pl->ys-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
-  l->kat1=(dlc<0 ? a2 : a1);
-  l->kat2=(dlc<0 ? a1 : a2);
+
+    if (*reversed)
+    {
+        if (a2<a1) a2+=Pi2;
+        double dkat=a2 - a1;
+        a2=a1;
+        a1= Angle_Normal(a2-dkat);
+    }
+
+  l->kat1 = (dlc < 0 ? a2 : a1);
+  l->kat2 = (dlc < 0 ? a1 : a2);
 
   *reversed=(dlc<0 ? TRUE : FALSE);
 }
@@ -2004,12 +2159,17 @@ void Luk (void)
 {
   double X0, Y0 ;
   int ret_command ;
+  char st[6];
+  static char stY [2]=YES, stN [2]=NO;
 
   b__pline = FALSE ;
   redcr0 (0) ;
   while (1)
   {
+      if (Get_reversed()) strcpy(st,stY);
+      else strcpy(st,stN);
      menupini (&mLukm, _ARC_, _ARC_C_, 15) ;
+     menu_par_new ((*mLukm.pola)[8].txt, st);
      komunikat0_str (ns_arc, u8"") ;
      kom (komunikaty_arc [ns_arc], '-', r6, 0) ;
      if (ns_arc == ARC_Con)
@@ -2063,7 +2223,19 @@ int PLine_Arc_Command_Proc (int ev_nr)
   void *ptr_temp, *ptr_ob ;
   BOOL b_first_end ;
 
-  if (ev_nr < IDM_CLOSE)
+    if (ev_nr == ARC_rev_Y) {
+        Set_reversed(TRUE);
+        menu_par_new ((*mLukm.pola)[8].txt, YES);
+        menu_par_new ((*mPLukm.pola)[8].txt, YES);
+        menu_par_new ((*mPLukmObrys.pola)[8].txt, YES);
+    }
+    else if (ev_nr == ARC_rev_N) {
+        Set_reversed(FALSE);
+        menu_par_new ((*mLukm.pola)[8].txt, NO);
+        menu_par_new ((*mPLukm.pola)[8].txt, NO);
+        menu_par_new ((*mPLukmObrys.pola)[8].txt, NO);
+    }
+  else if (ev_nr < IDM_CLOSE)
   {
     type_arc_pl (ev_nr) ;
     ret_val = PL_MODE_CONTINUE ;
@@ -2143,6 +2315,8 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
   BOOL b_first_end, b_second_pl_seg ;
   void *ptr_ob ;
   int ret_command ;
+  char st[6];
+  static char stY [2]=YES, stN [2]=NO;
   
   b__pline = TRUE ;
   redcr0 (0) ;
@@ -2150,9 +2324,18 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
   df__ybeg = df_ybeg ;
   while (1)
   {
-
-	 if (OBRYS==TRUE) menupini (&mPLukmObrys, _ARC_, _ARC_C_, 15) ;
-       else menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
+      if (Get_reversed()) strcpy(st,stY);
+      else strcpy(st,stN);
+	 if (OBRYS==TRUE)
+     {
+         menupini (&mPLukmObrys, _ARC_, _ARC_C_, 15) ;
+         menu_par_new ((*mPLukmObrys.pola)[8].txt, st);
+     }
+       else
+     {
+           menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
+           menu_par_new ((*mPLukm.pola)[8].txt, st);
+     }
      komunikat0_str (ns_arc, u8"") ;
      kom (komunikaty_arc [ns_arc], '-', r6, 0) ;
      b_second_pl_seg = Get_End_Pline ((void*)dane, &ptr_ob, &b_first_end,

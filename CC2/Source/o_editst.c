@@ -1551,12 +1551,10 @@ int  read_esc(char  *tekst,int lmax,int kom)
    k=Komunikat_R;
    komunikat (kom) ;
    Get_Current_Pos (&x, &y) ;
-   moveto (x, y + 2 ) ;
+   moveto (x, y + 3 ) ; //2
    CUR=MVCUR; MVCUR=noop;
-  
    width = (float)lmax;
-   
-   zn = editstring(tekst, "", lmax, width, FALSE,1, TRUE, 4, 3);
+   zn = editstring(tekst, "", lmax, width, FALSE,1, TRUE, 2, 4); //4, 3);
    komunikat(k);
    MVCUR=CUR;
    if (zn==324) return 2;
@@ -1575,12 +1573,12 @@ int  read_esc_legal (char *tekst, char *legal, int lmax,int kom)
    k=Komunikat_R;
    komunikat (kom);
    Get_Current_Pos (&x, &y) ;
-   moveto (x, y) ;
+   moveto (x, y + 3) ;
    CUR=MVCUR; MVCUR=noop;
 
    width = (float)lmax;
 
-   zn = editstring(tekst, legal, lmax, width, FALSE,1, TRUE, 4, 3);
+   zn = editstring(tekst, legal, lmax, width, FALSE,1, TRUE, 2, 4); //4, 3);
    komunikat(k);
    MVCUR=CUR;
    return zn==27 ? 0 : 1;

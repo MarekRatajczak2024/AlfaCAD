@@ -168,6 +168,8 @@ QUAD quad0, quad1;
 
 BOOL enforce_vector_scale=FALSE;
 
+char last_buf[sizeof(LINIA)+2];
+
 typedef struct
 {
     char *ad;
@@ -1144,9 +1146,17 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
     }
 
     //expanding angles
+    /*
     if (ptrs_arc->kat2<ptrs_arc->kat1) l1=(ptrs_arc->kat2-(PI*2.0-ptrs_arc->kat1))*ptrs_arc->r;
     else l1=(ptrs_arc->kat2-ptrs_arc->kat1)*ptrs_arc->r;
     if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
+    ptrs_arc->kat1-=k0;
+    ptrs_arc->kat2+=k0;
+     */
+
+    l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
+    if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
+
     ptrs_arc->kat1-=k0;
     ptrs_arc->kat2+=k0;
 
@@ -1166,10 +1176,16 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
         {
             Points_To_Arc (ptrs_arc, x2, y2, x1, y1) ;
         }
-        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*ptrs_arc->r;
-        if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
+        //l1=(ptrs_arc->kat2-ptrs_arc->kat1)*ptrs_arc->r;
+        //if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
+
+
+        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
+        if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
+
         ptrs_arc->kat1+=k0;
         ptrs_arc->kat2-=k0;
+
     }
     else
     {
@@ -5405,8 +5421,8 @@ int get_quad(char *ad, int ad_buf_no, AD_BUF *ad_buf, QUAD *quad, BOOL *convex)
 }
 
 void out_blok2 (double x,double y,double k1,double k2,
-	     double xa, double ya, double ka1, double ka2, int trans, double z, BOOL update_par)
-/*-----------------------------------------------------------------------------------------*/
+	     double xa, double ya, double ka1, double ka2, int trans, double z, BOOL update_par, int no_object)
+/*-------------------------------------------------------------------------------------------------------*/
 { NAGLOWEK *ad, *adl;
   WIELOKAT *w;
   BLOK *b=NULL;
@@ -5433,7 +5449,7 @@ void out_blok2 (double x,double y,double k1,double k2,
  obiekt_tok((char*)ADP,ADK,(char **) &ad,ONieOkreslony);
  
  while (ad!=NULL)
-  { if(ad->atrybut==Ablok)
+  { if((ad->atrybut==Ablok) && (ad->obiekt != no_object))
      {
 
 #ifdef LINUX
@@ -5511,10 +5527,17 @@ void out_blok2 (double x,double y,double k1,double k2,
                  }
              }
 
-             if ((update_par) && (((NAGLOWEK*)buf)->obiekt==Olinia))
+             if (((NAGLOWEK*)buf)->obiekt==Olinia)
              {
-                 ((LINIA*)buf)->kolor=LiniaG.kolor;
-                 ((LINIA*)buf)->typ=LiniaG.typ;
+                 if (update_par)
+                 {
+                     ((LINIA *) buf)->kolor = LiniaG.kolor;
+                     ((LINIA *) buf)->typ = LiniaG.typ;
+                 }
+                 if (((((LINIA *) buf)->obiektt1)==2) && ((((LINIA *) buf)->obiektt2)==1) && ((((LINIA *) buf)->obiektt3)==1))
+                 {
+                     memmove(last_buf, buf, sizeof(NAGLOWEK) + (((LINIA *) buf)->n));
+                 }
              }
 
              rysuj_obiekt_(buf,COPY_PUT,1);
@@ -5550,6 +5573,6 @@ e: okno_all();
 void out_blok1(double x,double y,double k1,double k2,int trans,double z)
 /*-----------------------------------------------------------------------------*/
 {
-  out_blok2 (x, y, k1, k2, 0, 0, 0, 0, trans,z, FALSE) ;
+  out_blok2 (x, y, k1, k2, 0, 0, 0, 0, trans,z, FALSE, -1) ;
 }
 

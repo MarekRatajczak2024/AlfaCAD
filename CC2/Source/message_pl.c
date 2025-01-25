@@ -662,6 +662,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Wskaż schemat ramy lyb kratownicy do analizy statycznej/dynamicznej",
+/*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii)",
 };
 
 static char* messages_str[] =

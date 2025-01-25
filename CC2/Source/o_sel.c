@@ -1606,6 +1606,71 @@ void  *select_variable(unsigned *typ)
 }
 /*--------select_variable  ->end------------------------------------------*/
 
+int GetObjectColor(char *PTR__Sel_Adr, int *layer)
+{   int type;
+    int kolor;
+    type=((NAGLOWEK *)PTR__Sel_Adr)->obiekt;
+    switch (type)
+    {
+
+        //Olinia = 1, Otekst = 2, Oluk = 3,Ookrag = 4,Okolo = 5, Owwielokat = 6, Opoint = 7, OdBLOK = 8, Osolidarc=9,
+        //Oellipticalarc = 10, Oellipse = 11, Ofilledellipse = 12, Ospline = 13, Ovector = 14, Opcx = 0,
+        case Olinia:
+            kolor=((LINIA *)PTR__Sel_Adr)->kolor;
+            *layer=((LINIA *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Otekst:
+            kolor=((TEXT *)PTR__Sel_Adr)->kolor;
+            *layer=((TEXT *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Oluk:
+            kolor=((LUK *)PTR__Sel_Adr)->kolor;
+            *layer=((LUK *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Ookrag:
+        case Okolo:
+            kolor=((OKRAG *)PTR__Sel_Adr)->kolor;
+            *layer=((OKRAG *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Owwielokat:
+            kolor=((WIELOKAT *)PTR__Sel_Adr)->kolor;
+            *layer=((WIELOKAT *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Opoint:
+            kolor=((T_Point *)PTR__Sel_Adr)->kolor;
+            *layer=((T_Point *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case OdBLOK:
+            kolor=15;
+            *layer=0;
+            break;
+        case Osolidarc:
+            kolor=((SOLIDARC *)PTR__Sel_Adr)->kolor;
+            *layer=((SOLIDARC *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Oellipticalarc:
+            kolor=((ELLIPTICALARC *)PTR__Sel_Adr)->kolor;
+            *layer=((ELLIPTICALARC *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Oellipse:
+        case Ofilledellipse:
+            kolor=((ELLIPSE *)PTR__Sel_Adr)->kolor;
+            *layer=((ELLIPSE *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Ospline:
+            kolor=((SPLINE *)PTR__Sel_Adr)->kolor;
+            *layer=((SPLINE *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        case Ovector:
+            kolor=((AVECTOR *)PTR__Sel_Adr)->kolor;
+            *layer=((AVECTOR *)PTR__Sel_Adr)->warstwa+1;
+            break;
+        default:
+            kolor=15;
+            break;
+    }
+    return kolor;
+}
 
 #define MAX_TYPE_ADDRESS_NO 32
 
@@ -1618,6 +1683,7 @@ void wskaz(int info)
   int info1;
   TYPE_ADDRESS type_address[MAX_TYPE_ADDRESS_NO];
   int type_address_no=0;
+  int o_layer;
 
   adh=dane;
   adh+=dane_size;
@@ -1679,6 +1745,8 @@ void wskaz(int info)
             if (type_address_no<MAX_TYPE_ADDRESS_NO)
             {
                 type_address[type_address_no].type=((NAGLOWEK *)PTR__Sel_Adr)->obiekt;
+                type_address[type_address_no].color=GetObjectColor(PTR__Sel_Adr, &o_layer);
+                type_address[type_address_no].layer=o_layer;
                 if (type_address[type_address_no].type==Ovector)
                     type_address[type_address_no].style=((AVECTOR *)PTR__Sel_Adr)->style;
                 else if (type_address[type_address_no].type==Opoint)

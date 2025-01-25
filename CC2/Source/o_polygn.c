@@ -29,7 +29,7 @@
 #include "menu.h"
 
 extern int Get_Current_Color (void) ;
-extern void out_blok2 (double, double, double, double, double, double, double, double, int, double, BOOL) ;
+extern void out_blok2 (double, double, double, double, double, double, double, double, int, double, BOOL, int) ;
 void transformacja_blok2 (char  *, char  *, double, double, double, double,
 		double, double, double, double, int) ;
 extern double Dist_PP (double x1,double y1, double x2, double y2) ;
@@ -326,7 +326,7 @@ static void  cur_on (double x,double y)
         koc = 1 ;
         kos = 0 ;
     }
-    out_blok2 (Px, Py, kos, koc, Px, Py, skala1, skala1, Tobrot | Tskala, 0, TRUE) ;
+    out_blok2 (Px, Py, kos, koc, Px, Py, skala1, skala1, Tobrot | Tskala, 0, TRUE, -1) ;
 }
 
 static void set_poly_mode (int mode)

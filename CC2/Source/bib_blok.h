@@ -14,7 +14,7 @@ extern void rysuj_obiekt (char *ad, int mode, int kolor);
 extern void mvcurbp(unsigned i);
 extern void blokzap(char  *,char  *,int ,int , int);
 extern void out_blok(void);
-extern void out_blok2 (double ,double,double,double,double,double,double,double,int,double,BOOL);
+extern void out_blok2 (double ,double,double,double,double,double,double,double,int,double,BOOL, int no_object);
 extern void out_blok1(double,double,double,double,int,double);
 #ifdef __cplusplus
 }

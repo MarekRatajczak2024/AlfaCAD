@@ -129,6 +129,7 @@ typedef struct DRAWING_PARAMS
     double rm_magnitude;
     double s_magnitude;
     double q_magnitude;
+    double p_magnitude;
 
     STATIC_COLORS static_colors;
     STATIC_STRESS_COLORS static_stress_colors;

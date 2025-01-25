@@ -1809,6 +1809,12 @@ static POLE pmLoad_style[] = {
 
 #ifdef __O_LUK__
 
+#define _YES_ "T"
+#define _NO_ "N"
+
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
+
 static POLE pmLukm[] = {
 		  {u8"[1] trzy punkty",'1',221,NULL},
 		  {u8"[2] początek-środek-koniec",'2',222,NULL},
@@ -1817,7 +1823,8 @@ static POLE pmLukm[] = {
 		  {u8"[5] początek-koniec-promień",'5',225,NULL},
 		  {u8"[6] początek-koniec-kąt",'6',226,NULL},
 		  {u8"[7] początek-koniec-kierunek",'7',227,NULL},
-		  {u8"[8] kontynuacja",'8',228,NULL} };
+		  {u8"[8] kontynuacja",'8',228,NULL},
+          {u8"odwrócony kierunek łuku",L'0',729,&mArcReversed}};
 
 static POLE pmPLukm[] = {
 		  {u8"[1] trzy punkty",'1',221,NULL},
@@ -1828,6 +1835,7 @@ static POLE pmPLukm[] = {
 		  {u8"[6] początek-koniec-kąt",'6',226,NULL},
 		  {u8"[7] początek-koniec-kierunek",'7',227,NULL},
 		  {u8"[8] kontynuacja",'8',228,NULL},
+          {u8"odwrócony kierunek łuku",L'0',729,&mArcReversed},
 		  {u8"Zamknij",'Z',247,NULL},
 		  {u8"Usuń: Del",'U',248,NULL},
 		  {u8"Linia", 'L',13,NULL} };
@@ -1841,6 +1849,7 @@ static POLE pmPLukmObrys[] = {
 		  {u8"[6] początek-koniec-kąt\0\0",'6',226,NULL},
 		  {u8"[7] początek-koniec-kierunek\0",'7',227,NULL},
 		  {u8"[8] kontynuacja\0",'8',228,NULL},
+          {u8"odwrócony kierunek łuku",L'0',729,&mArcReversed},
 		  {u8"Zamknij\0",'Z',247,NULL},
 		  {u8"Usuń\0Del\0",'U',248,NULL},
 		  {u8"Linia\0", 'L', 13,NULL},
@@ -2154,6 +2163,11 @@ static POLE pmFillTyp[] = {
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
 
+#define _YES_ "T"
+#define _NO_ "N"
+
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
 static POLE pmPTLukm[] = {
           {u8"[0] kontynuacja łukiem",'0',714,NULL},
 		  {u8"[1] trzy punkty",'1',221,NULL},
@@ -2164,13 +2178,14 @@ static POLE pmPTLukm[] = {
 		  {u8"[6] początek-koniec-kąt",'6',226,NULL},
 		  {u8"[7] początek-koniec-kierunek",'7',227,NULL},
 		  //{u8"[8] kontynuacja",'8',228,NULL},
+          {u8"odwrócony kierunek łuku",L'0',729,&mTraceArcReversed},
 		  //{u8"Zamknij",'Z',247,NULL},
 		  //{u8"Usuń: Del",'U',248,NULL},
 		  {u8"Linia", 'L',13,NULL},
           {u8"Kontynuacja linią", L'K',715,NULL},
 };
 
-static TMENU mPTLukm={10, 0, 0, 30, 56, 4, ICONS, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
+static TMENU mPTLukm={11, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
 
 static POLE pmFTrace[] = {
 	{u8"Szerokość\0 1\0        ",L'S',249,NULL},

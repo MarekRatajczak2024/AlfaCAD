@@ -672,6 +672,11 @@ void  wymiarowanie(void)
 {
   EVENT *ev;
   double X0, Y0;
+    WIELOKAT *wSt;
+    LINIA *wL;
+    PLINIA PL;
+    double kat1,n;
+    double wL_x1, wL_y1, r2;
 
   CUR_OFF(X, Y);
 
@@ -681,74 +686,101 @@ void  wymiarowanie(void)
   while(1)
   {
       reset_strwyj();
-      ev = Get_Event_Point (NULL, &X0, &Y0) ;
-      CUR_OFF_ON();
-     switch (ev->What)
-    {
-      case evKeyDown :
-	 if(ev->Number == 0)
-	 {
-	   if (b|| bl || t|| r || p)
-	   {
-	     edwym () ;
-         CUR_OFF_ON();
-	     break ;
-	   }
-	   else
-	   {
-	     redcr (1) ;
-	     return ;
-	   }
-	 }
-	 if ((ev->Number == ENTER)   || (get_strwyj() == TRUE))
-	 {
-	   if ((b|| bl || t|| r || p)) // && (do_not_dim_DIM==1)) //&& (sel.akt==1) && (sel.gor==1))
-	   {
-	     edwym () ;
-         CUR_OFF_ON();
-	     break ;
-	   }
-	   else
-	   {
-               if (typ_wymiar != Olinia) {
-                   typ_wymiar = Olinia;
-                   WymNowy();
-               }
-               if (sel.wyj || sel.gor) {
-                   new_dim_info(FALSE);
-                   if (wym_kata==2)
-                   {
-                       //Dim_Leader();
-                       dim_leader_second_point(X0, Y0);
-                   }
-                   else punktsel(X0, Y0);
-               } else {
-                   punkt();
+      if (wym_kata==1) Komunikat_R0=168;
+      else Komunikat_R0=6;
+      komunikat0(Komunikat_R0);
 
-                   if ((!b && !bl && !t && !r && !p))
-                       if (wym_kata==2)
-                       {
-                           dim_leader_second_point(X0, Y0);
-                       }
-               }
-	   }
-	 }
-     CUR_OFF_ON();
-	 break ;
-      case evCommandP :
-          return_back==0;
-	 (*COMNDmw[ev->Number])();
-	 if (return_back != 0) redraw();
-	 break ;
-      default :
-	 if (b|| bl || t|| r)
-	 {
-	   edwym () ;
-       CUR_OFF_ON();
-	   break ;
-	 }
-	 break ;
-    }
+      ev = Get_Event_Point(NULL, &X0, &Y0);
+      CUR_OFF_ON();
+      switch (ev->What) {
+          case evKeyDown :
+              if (ev->Number == 0) {
+                  if (b || bl || t || r || p) {
+                      //transformacja_blok(ADP, ADK, x01, y01, k01, k02, f0, 0);
+                      edwym();
+                      CUR_OFF_ON();
+                      break;
+                  } else {
+                      redcr(1);
+                      return;
+                  }
+              }
+              if ((ev->Number == ENTER) || (get_strwyj() == TRUE))
+              {
+                  if ((b || bl || t || r || p)) // && (do_not_dim_DIM==1)) //&& (sel.akt==1) && (sel.gor==1))
+                  {
+                      transformacja_blok(ADP, ADK, x01, y01, k01, k02, f0, 0);
+
+                      wL = (LINIA *) PTR__GTMP6;
+                      //wSt = (WIELOKAT *) (PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
+                      if (PTR__GTMP7 != NULL) {
+                          wSt = (WIELOKAT *) (PTR__GTMP7);
+
+                          parametry_lini(wL, &PL);
+                          kat1 = PL.kat;
+                          n = -1;
+
+                          katkat(PL.kat);
+
+                          r2 = -2.5; //-1.5;
+
+                          if (wL->x2 < wL->x1) {
+                              r2 *= -1;
+                          } else if (wL->x2 == wL->x1) {
+                              if (wL->y2 < wL->y1) r2 *= -1;
+                          }
+
+                          wL_x1 = wL->x1 + r2 * kat.cos;
+                          wL_y1 = wL->y1 + r2 * kat.sin;;
+
+                          wSt->xy[2] = wL_x1;
+                          wSt->xy[3] = wL_y1;
+                          wSt->xy[0] = wL_x1 - n * Kp2s * cos(Pi * (kat1 - kat0) / 180);
+                          wSt->xy[1] = wL_y1 - n * Kp2s * sin(Pi * (kat1 - kat0) / 180);
+                          wSt->xy[4] = wL_x1 - n * Kp2s * cos(Pi * (kat1 + kat0) / 180);
+                          wSt->xy[5] = wL_y1 - n * Kp2s * sin(Pi * (kat1 + kat0) / 180);
+                      }
+
+                      edwym();
+                      //zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+                      CUR_OFF_ON();
+                      break;
+                  } else {
+                      if (typ_wymiar != Olinia) {
+                          typ_wymiar = Olinia;
+                          WymNowy();
+                      }
+                      if (sel.wyj || sel.gor) {
+                          new_dim_info(FALSE);
+                          if (wym_kata == 2) {
+                              //Dim_Leader();
+                              dim_leader_second_point(X0, Y0);
+                          } else punktsel(X0, Y0);
+                      } else {
+                          punkt();
+
+                          if ((!b && !bl && !t && !r && !p))
+                              if (wym_kata == 2) {
+                                  dim_leader_second_point(X0, Y0);
+                              }
+                      }
+                  }
+              }
+              CUR_OFF_ON();
+              break;
+          case evCommandP :
+              return_back == 0;
+              (*COMNDmw[ev->Number])();
+              if (return_back != 0) redraw();
+              break;
+          default :
+              if (b || bl || t || r) {
+                  edwym();
+                  CUR_OFF_ON();
+                  break;
+              }
+              break;
+      }
  }
 }
 

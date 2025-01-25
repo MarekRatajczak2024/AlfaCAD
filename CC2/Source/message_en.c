@@ -661,6 +661,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Indicate the frame or truss diagram for static/dynamic analysis",
+/*168*/u8"Dimensioning (to start dimensioning an angle, touch any line)",
 };
 
 static char* messages_str[] =

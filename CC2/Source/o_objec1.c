@@ -781,14 +781,14 @@ void SolidArc_To_Points (SOLIDARC *sa, double *x1, double *y1, double *x2, doubl
 
 void Points_To_Arc (LUK *l, double x1, double y1, double x2, double y2)
 /*---------------------------------------------------------------------*/
-{
-   x1 = x1 - l->x ;
-   y1 = y1 - l->y ;
-   y2 = y2 - l->y ;
-   x2 = x2 - l->x ;
-   l->kat1 = Angle_Normal(Atan2 (y1, x1)) ;
-   l->kat2 = Angle_Normal(Atan2 (y2 ,x2)) ;
-   l->r = sqrt (x1 * x1 + y1 * y1);
+{  double x11, y11, x22, y22;
+   x11 = x1 - l->x ;
+   y11 = y1 - l->y ;
+   y22 = y2 - l->y ;
+   x22 = x2 - l->x ;
+   l->kat1 = Angle_Normal(Atan2 (y11, x11)) ;
+   l->kat2 = Angle_Normal(Atan2 (y22 ,x22)) ;
+   l->r = sqrt (x11 * x11 + y11 * y11);
 }
 
 void Points_To_Arc_Vector (AVECTOR *v, double x1, double y1, double x2, double y2)

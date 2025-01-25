@@ -19,7 +19,11 @@
 static BLOK * lps_edit_block = NULL ;
 static BOOL b__edit_current_block ;
 static float xr, yr, rad;
+static double X00,Y00;
 static double sxy_;
+
+static float x01=0, y01=0, k01=0, k02=0;
+int f0=0;
 
 extern BOOL TTF_redraw;
 extern BOOL text_edit_dialog;
@@ -27,6 +31,11 @@ extern int ttf_digits27_len;
 extern void outlinetext(TEXT *t, QUAD *outline, double margin);
 extern void select_color_type(char *ad);
 extern void select_color_paper_type(char *ad);
+
+extern char last_buf[MaxSizeObiekt];
+
+extern void out_blok2 (double x,double y,double k1,double k2,
+                double xa, double ya, double ka1, double ka2, int trans, double z, BOOL update_par, int no_object);
 
 static void near Katp(LINIA *llead)
 {
@@ -295,6 +304,7 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok)
 static void near ruchblokw(void)
 {
     PTR__GTMP6=ADP;
+    PTR__GTMP7=NULL;
     break_dim_line(ADP, Ablok, 0, 0);
     blokzap(ADP,ADK,Ablok,COPY_PUT,0);
     CUR_OFF_ON();
@@ -304,15 +314,16 @@ static void near ruchblokw(void)
 static void near noruchblokw(void)
 { NAGLOWEK *nag;
 
-    Cur_offd(X,Y);
-    if (PTR__GTMP6 !=NULL) nag=(NAGLOWEK*)PTR__GTMP6;
-    else nag=(NAGLOWEK*)ADP;
+    ////Cur_offd(X,Y);
+    blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+    ////if (PTR__GTMP6 !=NULL) nag=(NAGLOWEK*)PTR__GTMP6;
+    ////else nag=(NAGLOWEK*)ADP;
 
-    break_dim_line(nag, Ablok, 1, 0);
+    ////break_dim_line(nag, Ablok, 1, 0);
 
     blokzap(ADP,ADK,Ablok,COPY_PUT,1);
 
-    CUR_OFF_ON();
+    //CUR_OFF_ON();
 
   BlokM=0;
 }
@@ -405,6 +416,9 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
            //checking if second point is in the scope
            if (punkt_w_prostokacie(((LINIA*)adr)->x2, ((LINIA*)adr)->y2)) typ=Bpoint;
            else typ=Bblok;
+
+           X00=X;
+           Y00=Y;
        }
        else if (typ == Bkolo || typ == Bwwielokat )
        {
@@ -425,6 +439,10 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
       { case Blinia : ADP = ADK = (char  *)adr ;
 		      ADLr = (char*)ADP ;
 		      parlr();
+
+              X00=X;
+              Y00=Y;
+
 		      zmien_atrybut(ADP,ADK,Anormalny,Ablok);
 		      r=1; //ruchblokw();
 		      ((LINIA *)adr)->obiektt1=Utwierdzony2;
@@ -460,6 +478,12 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 			  yr = ((LUK *)adr)->y;
 			  rad = ((LUK *)adr)->r;
 
+              //X0=X;
+              //Y0=Y;
+
+              X00=0;
+              Y00=0;
+
 			  zmien_atrybut(ADP, ADK, Anormalny, Ablok);
 			  b__edit_current_block = FALSE;
 			  if (ADP == dane)
@@ -471,6 +495,10 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 			  sxy_ = 1.0;
 			  break;
 	case Btekst : ADP=ADK=adr;
+
+              X00=X;
+              Y00=Y;
+
 		      zmien_atrybut(ADP,ADK,Anormalny,Ablok);
 		      t=1; ruchblokw();
 		      if (-1 != (np=dodajstr(&eT)))
@@ -537,7 +565,9 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 static void edwym (void)  /* funkcja obslugi edycji wymiarowania */
 /*-------------------*/
 {
+  //okno_r_second();
   Edit_Wym (0, NULL);  /* funkcja obslugi edycji wymiarowania */
+  //okno_all_second();
 }
 
 
@@ -556,22 +586,30 @@ static void cur_off__(double x, double y)
 */
 static void cur_on(double x, double y)
 { double Dx,Dy,xs,ys;
-  static double X0,Y0;
+  //static double X0,Y0;
   double sxy, rad1;
-  WIELOKAT *wSt;
+  WIELOKAT *wSt_p;
+  WIELOKAT wSt;
   LINIA *wL;
+  NAGLOWEK *nag;
   double kat1,n;
   PLINIA PL;
   double wL_x1, wL_y1, r2;
+  BOOL arrowhead;
 
   if(t|| b || bl || r || p)
-   { Dx=x-X0;
-     Dy=y-Y0;
+   {
+     Dx=x-X00;
+     Dy=y-Y00;
+
+     //Dx=x;
+     //Dy=y;
+
      if(b || r || p)
       { if ((lps_edit_block->kod_obiektu != B_DIM3) || (p) || (orto))//it's not a leader block
           {
               Dx = Dx * katr.sin * katr.sin - Dy * katr.sin * katr.cos;
-              Dy = -(x - X0) * katr.sin * katr.cos + Dy * katr.cos * katr.cos;
+              Dy = -(x - X00) * katr.sin * katr.cos + Dy * katr.cos * katr.cos;
           }
         if(b && b__edit_current_block == TRUE)
          { zwl(&Ls,Dx,Dy);
@@ -584,50 +622,93 @@ static void cur_on(double x, double y)
 	 {
 		
 		 Dx = Dx * katr.sin*katr.sin - Dy * katr.sin*katr.cos;
-		 Dy = -(x - X0)*katr.sin*katr.cos + Dy * katr.cos*katr.cos;
+		 Dy = -(x - X00)*katr.sin*katr.cos + Dy * katr.cos*katr.cos;
 
-		 rad1 = sqrt((X0 - xr)*(X0 - xr) + (Y0 - yr)*(Y0 - yr));
+		 rad1 = sqrt((X00 - xr)*(X00 - xr) + (Y00 - yr)*(Y00 - yr));
 		 
 		 sxy =  rad1 / rad;
-
-		 rad = rad1;
+		 ////rad = rad1;
 	
 	 }
-	 if (bl) transformacja_blok(ADP, ADK, xr, yr, sxy, sxy, Tskala, 0);
+	 if (bl)
+     {
+         ////transformacja_blok(ADP, ADK, xr, yr, sxy, sxy, Tskala, 0);
+         x01 = xr; y01 = yr; k01 = sxy; k02 =sxy; f0=Tskala;
+         out_blok1(xr, yr, sxy, sxy, Tskala, 0);
+
+         X00=x; Y00=y;
+     }
 	 else
      {
-         transformacja_blok(ADP,ADK,Dx,Dy,0,0,Tprzesuw,0);
+         ////transformacja_blok(ADP,ADK,Dx,Dy,0,0,Tprzesuw,0);
+         x01 = Dx; y01 = Dy; k01= 0; k02=0; f0=Tprzesuw;
 
-         if ((lps_edit_block->kod_obiektu == B_DIM3) && ((((LINIA *) PTR__GTMP6)->obiekt)==Olinia) && ((((LINIA *) PTR__GTMP6)->obiektt2)==1) && ((((LINIA *) PTR__GTMP6)->obiektt3)==1))  // PTR__GTMP6 instead of ADP
+         //out_blok1(Dx,Dy,0,0,Tprzesuw,0);
+
+         out_blok2(Dx,Dy,0,0,0,0,0,0,Tprzesuw, 0, FALSE, 6);
+
+         if ((lps_edit_block->kod_obiektu == B_DIM3) && ((((LINIA *) PTR__GTMP6)->obiektt1)==2) && ((((LINIA *) PTR__GTMP6)->obiekt)==Olinia) && ((((LINIA *) PTR__GTMP6)->obiektt2)==1) && ((((LINIA *) PTR__GTMP6)->obiektt3)==1))  // PTR__GTMP6 instead of ADP
+         ////if ((lps_edit_block->kod_obiektu == B_DIM3) && ((((LINIA *) last_buf)->obiekt)==Olinia) && ((((LINIA *) last_buf)->obiektt1)==2) && ((((LINIA *) last_buf)->obiektt2)==1) && ((((LINIA *) last_buf)->obiektt3)==1))  // last_buf instead of PTR__GTMP6
          {
-             wL=(LINIA *) PTR__GTMP6;
-             wSt=(WIELOKAT *)(PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
-
-             parametry_lini(wL, &PL);
-             kat1=PL.kat;
-             n=-1;
-
-             katkat(PL.kat);
-
-             r2 = -2.5; //-1.5;
-
-             if (wL->x2<wL->x1) {
-                 r2 *= -1;
-             }
-             else if (wL->x2==wL->x1) {
-                 if (wL->y2 < wL->y1) r2 *= -1;
-             }
-
-             wL_x1=wL->x1 + r2 * kat.cos;
-             wL_y1=wL->y1 + r2 * kat.sin;;
-
-             wSt->xy[2]=wL_x1;
-             wSt->xy[3]=wL_y1;
-             wSt->xy[0]=wL_x1-n*Kp2s*cos(Pi*(kat1-kat0)/180);
-             wSt->xy[1]=wL_y1-n*Kp2s*sin(Pi*(kat1-kat0)/180);
-             wSt->xy[4]=wL_x1-n*Kp2s*cos(Pi*(kat1+kat0)/180);
-             wSt->xy[5]=wL_y1-n*Kp2s*sin(Pi*(kat1+kat0)/180);
+             out_blok2(Dx,Dy,0,0,0,0,0,0,Tprzesuw, 0, FALSE, 6);
+             arrowhead=TRUE;
          }
+         else
+         {
+             out_blok2(Dx,Dy,0,0,0,0,0,0,Tprzesuw, 0, FALSE, -1);
+             arrowhead=FALSE;
+         }
+         if (arrowhead)
+         {
+             ////wL=(LINIA *) PTR__GTMP6;
+             wL=(LINIA *) last_buf;
+
+             //wSt_p=(WIELOKAT *)(PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
+
+             //nag=(NAGLOWEK *)(ADP + wL->n + sizeof(NAGLOWEK));
+             nag=(NAGLOWEK *)(PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
+             if (nag->obiekt==Owwielokat)
+             //if (!bl)
+             {
+
+                 wSt_p = (WIELOKAT *) (PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
+                 memmove(&wSt, wSt_p, sizeof(NAGLOWEK) + wSt_p->n);
+
+                 PTR__GTMP7=wSt_p;
+
+                 parametry_lini(wL, &PL);
+                 kat1 = PL.kat;
+                 n = -1;
+
+                 katkat(PL.kat);
+
+                 r2 = -2.5; //-1.5;
+
+                 if (wL->x2 < wL->x1) {
+                     r2 *= -1;
+                 } else if (wL->x2 == wL->x1) {
+                     if (wL->y2 < wL->y1) r2 *= -1;
+                 }
+
+                 wL_x1 = wL->x1 + r2 * kat.cos;
+                 wL_y1 = wL->y1 + r2 * kat.sin;;
+
+                 wSt.xy[2] = wL_x1;
+                 wSt.xy[3] = wL_y1;
+                 wSt.xy[0] = wL_x1 - n * Kp2s * cos(Pi * (kat1 - kat0) / 180);
+                 wSt.xy[1] = wL_y1 - n * Kp2s * sin(Pi * (kat1 - kat0) / 180);
+                 wSt.xy[4] = wL_x1 - n * Kp2s * cos(Pi * (kat1 + kat0) / 180);
+                 wSt.xy[5] = wL_y1 - n * Kp2s * sin(Pi * (kat1 + kat0) / 180);
+
+                 okno_r();
+                 setwritemode(COPY_PUT);
+                 rysuj_obiekt_(&wSt, COPY_PUT, 1);
+                 okno_all();
+             }
+
+         }
+
+         //out_blok1(Dx,Dy,0,0,Tprzesuw,0);
 
      }
      if ((lps_edit_block->kod_obiektu != B_DIM3) && (r)) korektalr();
@@ -635,7 +716,7 @@ static void cur_on(double x, double y)
    }
   out_sel_on(x,y);
   if (wym_kata==2) out_cur_on(x, y);
-  X0=x; Y0=y;
+  //X00=x; Y00=y;
 }
 
 static int kls10(void)

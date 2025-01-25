@@ -172,6 +172,8 @@ extern BITMAP *Get_Screenplay(void);
 extern double view_vector_scale;
 extern void set_global_hidden_blocks_visibility(BOOL block_visibility);
 
+extern void Set_Pointer(void);
+
 #define XpGrSpecification 10
 #define XpGrName 10
 #define XpGrValue 115
@@ -2630,15 +2632,19 @@ static BOOL read_spec (void)
 /*----------------------*/
 {
  char sk[MAXPATH] = "";
- if (Load_File_A(sk, EDIT_TABLE, FALSE) == FALSE)
+ //if (Load_File_A(sk, EDIT_TABLE, FALSE) == FALSE)
+ if (Load_File(sk, EDIT_TABLE, FALSE) == FALSE)
 	{
 		//    if (((bitmap_exist) && (bitmap_view)) || (dane_size > HIGH_SIZE))
 		//     {
 		//       cursor_on();
 		//     }
 		/*     cursor_on();  */
+        Set_Pointer();
 		return FALSE;
 	}
+
+  Set_Pointer();
 
  strcpy(ptrsz__sheet_name, sk);
 
@@ -2762,6 +2768,7 @@ BOOL Load_File_A (char * f_name, int type, BOOL cur)
         case ODCZYT_PXYZ:
         case INI_TTF_FONT:
         case INI_OTF_FONT:
+        case EDIT_TABLE:
             IN_OUT = 0;  //in
         break;
         default:

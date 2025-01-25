@@ -2400,10 +2400,15 @@ void show_hide_tip(TMENU * menu, BOOL show)
 	len = (int)strlen(ptrsz_temp_);
 	if (ptr != NULL) ptrsz_temp += 2;
 
+    ptr = strstr(ptrsz_temp, u8"֊");
+    len = (int)strlen(ptrsz_temp_);
+    if (ptr != NULL) ptrsz_temp += 5;
+
 	//֍ - color  ->  ֍
 	//֎ - color  ->  ֎
 	// Ú - line type -> ֏
 	//Ů- line thickness -> ҂
+    //֊005  object color xxx
 
 	if (menu->flags&TADD)
 	{
@@ -2418,6 +2423,10 @@ void show_hide_tip(TMENU * menu, BOOL show)
 			if (ptr != NULL) ptrsz_temp_tadd += 2;
 			ptr = strstr(ptrsz_temp_tadd, u8"֏");  //former Ú
 			if (ptr != NULL) ptrsz_temp_tadd += 2;
+
+            ptr = strstr(ptrsz_temp_tadd, u8"֊");
+            len = (int)strlen(ptrsz_temp_);
+            if (ptr != NULL) ptrsz_temp_tadd += 5;
 
 			strcat(ptrsz_temp, ": ");
 			strcat(ptrsz_temp, ptrsz_temp_tadd);
@@ -2993,10 +3002,10 @@ void baronoff_(TMENU  * menu)
         if(menu->flags&NVERT) a-=WIDTH /*8*/ * SKALA;
         b=(BAR_G/*+1*/) * SKALA;
     }
+
     ptr=strstr(ptrsz_temp,u8"֎");
     if ((ptr!=NULL) || (menu==&mRegion))
     {
-
         setcolor(15);
         color_bar=TRUE;
     }
@@ -3009,7 +3018,18 @@ void baronoff_(TMENU  * menu)
             setcolor(15);
             color_bar=TRUE;
         }
-        else setcolor(15);
+        else
+        {
+            ptr = strstr(ptrsz_temp, u8"֊");
+            if ((ptr != NULL))
+            {
+
+                setcolor(15);
+                color_bar = TRUE;
+            }
+
+            else setcolor(15);
+        }
     }
 
     ////setwritemode(XOR_PUT);
@@ -3280,12 +3300,12 @@ void pdraww(PTMENU  *menu)
     unsigned short ptrsz_tcod;
     int ptrsz_iconno;
     int i_len ;
-    char *ptr;
+    char *ptr, *ptr1;
     int kolor_m, kolor_rgb;
     int offset_st;
     BITMAP *bmp, *buffer;
     BITMAP *bmp_aux;
-    int typ_l, ret;
+    int typ_l, ret, ret1;
     int b;
     int x, y, ys, b2;
     int typ_f;
@@ -3294,6 +3314,7 @@ void pdraww(PTMENU  *menu)
     COLOR_ kolor;
     int color_bak;
     BITMAP *menu_screen;
+    int kolor1;
 
     if (menu == &mBlok_Imp)
         menu->flags |= (ICONS | TADD);
@@ -3411,6 +3432,7 @@ void pdraww(PTMENU  *menu)
         else
         {
             ptr=strstr(ptrsz_temp,u8"֎");
+            ptr1=strstr(ptrsz_temp,u8"֊");
             if (ptr!=NULL)
             {
                 ptrsz_temp+=2;
@@ -3453,6 +3475,13 @@ void pdraww(PTMENU  *menu)
                 else if (kolor_m == 0) setcolor(15);
                 else setcolor(0);
 
+            }
+            else if (ptr1!=NULL)
+            {
+                ptrsz_temp+=2;
+                ret1=sscanf(ptrsz_temp, "%03d", &kolor1);
+                kolor_m = GetColorAC1(kolor1);
+                ptrsz_temp+=3;
             }
             else
             {
@@ -3671,9 +3700,20 @@ void pdraww(PTMENU  *menu)
             char * st = (*(menu->pola))[menu->foff+i].txt;
             int a;
             ptr = strstr(ptrsz_temp, u8"֎");
+            ptr1=strstr(ptrsz_temp,u8"֊");
             if (ptr == NULL)
             {
                 ptrsz_temp+=2;
+                st += strlen(st) + 1;
+                a = (menu->xdl) * WIDTH * SKALA;
+                a -= (text_width(st) + offset_st);
+                if (menu->flags&NVERT) a -= WIDTH /*8*/ * SKALA;
+                moveto(xt + a, yt - YP0);
+                outtext_r_(menu_screen, st);
+            }
+            else if (ptr1 == NULL)
+            {
+                ptrsz_temp+=5;
                 st += strlen(st) + 1;
                 a = (menu->xdl) * WIDTH * SKALA;
                 a -= (text_width(st) + offset_st);
@@ -3728,12 +3768,12 @@ void draww(TMENU  *menu)
  unsigned short ptrsz_tcod;
  int ptrsz_iconno;
  int i_len ;
- char *ptr; 
+ char *ptr, *ptr1;
  int kolor_m, kolor_rgb;
  int offset_st;
  BITMAP *bmp, *buffer;
  BITMAP *bmp_aux;
- int typ_l, ret;
+ int typ_l, ret, ret1;
  int b;
  int x, y, ys, b2;
  int typ_f;
@@ -3742,6 +3782,7 @@ void draww(TMENU  *menu)
  COLOR_ kolor;
  int color_bak;
  BITMAP *menu_screen;
+ int kolor1;
 
  if (menu->flags & FIXED)
  {
@@ -3873,7 +3914,8 @@ void draww(TMENU  *menu)
       }       
        else
          {
-           ptr=strstr(ptrsz_temp,u8"֎");
+            ptr=strstr(ptrsz_temp,u8"֎");
+            ptr1=strstr(ptrsz_temp,u8"֊");
             if (ptr!=NULL)
             {
 			   ptrsz_temp+=2;
@@ -3916,6 +3958,31 @@ void draww(TMENU  *menu)
                 else if (kolor_m == 0) setcolor(15);
                  else setcolor(0); 
 			  
+            }
+            else if (ptr1!=NULL)
+            {
+                ptrsz_temp+=2;
+                ret1=sscanf(ptrsz_temp, "%03d", &kolor1);
+                kolor_m = GetColorAC1(kolor1);
+                ptrsz_temp+=3;
+
+                setfillstyle_(SOLID_FILL,kolor_m);
+
+                if (menu->flags&ICONS)
+                {
+                    bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+                }
+                else
+                {
+                    bar(xt,yt - 2,w-(GR+2),yt + HEIGHT * SKALA - 2);
+                }
+                if (kolor_m > 16)
+                {
+                    kolor_rgb = _dac_normal[kolor_m][0] + _dac_normal[kolor_m][1] + _dac_normal[kolor_m][2];
+                    if (kolor_rgb < 96) setcolor(15); else setcolor(0);
+                }
+                else if (kolor_m == 0) setcolor(15);
+                else setcolor(0);
             }
            else 
 		   {
@@ -4135,6 +4202,7 @@ void draww(TMENU  *menu)
 	    char * st = (*(menu->pola))[menu->foff+i].txt;
 	    int a;
 		ptr = strstr(ptrsz_temp, u8"֎");
+        ptr1=strstr(ptrsz_temp,u8"֊");
 		if (ptr == NULL)
 		{
 			ptrsz_temp+=2;
@@ -4145,6 +4213,16 @@ void draww(TMENU  *menu)
 			moveto(xt + a, yt - YP0);
 			outtext_r_(menu_screen, st);
 		}
+        else if (ptr == NULL)
+          {
+              ptrsz_temp+=5;
+              st += strlen(st) + 1;
+              a = (menu->xdl) * WIDTH * SKALA;
+              a -= (text_width(st) + offset_st);
+              if (menu->flags&NVERT) a -= WIDTH /*8*/ * SKALA;
+              moveto(xt + a, yt - YP0);
+              outtext_r_(menu_screen, st);
+          }
 	  }
 	 if (menu->flags&NVERT)
 	 {
@@ -4187,11 +4265,13 @@ void drawp(TMENU *menu)
    char *ptrsz_temp=NULL;
    int ptrsz_iconno;
    char sz_temp[8];
-   char *ptr;
+   char *ptr, *ptr1;
    int kolor_m, kolor_rgb;
    char *ptrsz_tmn=NULL;
    int d = 0;
+   int ret1;
    BITMAP *menu_screen;
+   int kolor1;
 
    paper=kolory.paperm;
    ink=kolory.inkm;
@@ -4235,6 +4315,7 @@ void drawp(TMENU *menu)
 	   sz_temp[1] = '\0';
 
 	   ptr = strstr(ptrsz_temp, u8"֎");
+       ptr1=strstr(ptrsz_temp,u8"֊");
 	   if (ptr != NULL)
 	   {
 		   ptrsz_temp+=2;
@@ -4257,6 +4338,7 @@ void drawp(TMENU *menu)
            else if (ptrsz_iconno == 814) kolor_m = GetColorAC1(static_colors.dynamic_color);
            else if (ptrsz_iconno > 1000) kolor_m = GetColorAC1(ptrsz_iconno-1000);
 
+
            else kolor_m = GetColorAC1(LiniaG.kolor); //temporary
 
 
@@ -4273,6 +4355,25 @@ void drawp(TMENU *menu)
 		   else setcolor(0);
 		 
 	   }
+       else if (ptr1!=NULL)
+       {
+           ptrsz_temp+=2;
+           ret1=sscanf(ptrsz_temp, "%03d", &kolor1);
+           kolor_m = GetColorAC1(kolor1);
+           ptrsz_temp+=3;
+
+           setfillstyle_(SOLID_FILL, kolor_m);
+
+           bar(x1+32+d, y1+d, x1 + a-d, y1 + b-d);
+
+           if (kolor_m > 16)
+           {
+               kolor_rgb = _dac_normal[kolor_m][0] + _dac_normal[kolor_m][1] + _dac_normal[kolor_m][2];
+               if (kolor_rgb < 96) setcolor(15); else setcolor(0);
+           }
+           else if (kolor_m == 0) setcolor(15);
+           else setcolor(0);
+       }
 
 	   moveto(x1 + 37, y1 + 8);
 	   outtext_r_(menu_screen, sz_temp);
@@ -4328,6 +4429,7 @@ void drawp(TMENU *menu)
 	  int a;
 
 	  ptr = strstr(ptrsz_temp, u8"֎");
+      ptr1=strstr(ptrsz_temp,u8"֊");
 	  if (ptr == NULL)
 	  {
 		  ptrsz_temp+=2;
@@ -4338,6 +4440,16 @@ void drawp(TMENU *menu)
 		  moveto(x1 + a, y1 - YP0);
 		  outtext_r_(menu_screen, st);
 	  }
+       else if (ptr == NULL)
+        {
+            ptrsz_temp+=5;
+            st += strlen(st) + 1;
+            a = (menu->xdl) * WIDTH * SKALA;
+            a -= text_width(st);
+            if (menu->flags&NVERT) a -= WIDTH /*8*/ * SKALA;
+            moveto(x1 + a, y1 - YP0);
+            outtext_r_(menu_screen, st);
+        }
 	}
 
     blit(menu_screen, screen, 0,0,x01,y01,w,h);
@@ -4888,8 +5000,9 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
     int i_len ;
     int xp, yp, x_reg, y_reg ;
     char *sz_ptr ;
-    char *ptr;
+    char *ptr, *ptr1;
     int kolor_m, kolor_rgb;
+    int ret1, kolor1;
 
     BITMAP *bitmap_ptr, *buffer;
 
@@ -5030,6 +5143,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
         else
         {
             ptr = strstr(ptrsz_temp, u8"֎");
+            ptr1=strstr(ptrsz_temp,u8"֊");
             if (ptr != NULL)
             {
                 ptrsz_temp+=2;
@@ -5054,6 +5168,31 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
                 else if (ptrsz_iconno > 1000) kolor_m = GetColorAC1(ptrsz_iconno-1000);
 
                 else kolor_m = GetColorAC1(LiniaG.kolor); //temporary
+
+                setfillstyle_(SOLID_FILL, kolor_m);
+
+                if (menu->flags&ICONS)
+                {
+                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+                }
+                else
+                {
+                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + HEIGHT * SKALA - 2);
+                }
+                if (kolor_m > 16)
+                {
+                    kolor_rgb = _dac_normal[kolor_m][0] + _dac_normal[kolor_m][1] + _dac_normal[kolor_m][2];
+                    if (kolor_rgb < 96) setcolor(15); else setcolor(0);
+                }
+                else if (kolor_m == 0) setcolor(15);
+                else setcolor(0);
+            }
+            else if (ptr1!=NULL)
+            {
+                ptrsz_temp += 2;
+                ret1 = sscanf(ptrsz_temp, "%03d", &kolor1);
+                kolor_m = GetColorAC1(kolor1);
+                ptrsz_temp += 3;
 
                 setfillstyle_(SOLID_FILL, kolor_m);
 
@@ -5312,8 +5451,9 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
   int i_len ;
   int xp, yp, x_reg, y_reg ;
   char *sz_ptr ;
-  char *ptr;
+  char *ptr, *ptr1;
   int kolor_m, kolor_rgb;
+  int ret1, kolor1;
 
   BITMAP *bitmap_ptr, *buffer;
 
@@ -5461,6 +5601,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 	   else
 	   {
 		   ptr = strstr(ptrsz_temp, u8"֎");
+           ptr1=strstr(ptrsz_temp,u8"֊");
 		   if (ptr != NULL)
 		   {
 			   ptrsz_temp+=2;
@@ -5504,6 +5645,31 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 			   else if (kolor_m == 0) setcolor(15);
 			   else setcolor(0);
 		   }
+           else if (ptr1!=NULL)
+           {
+               ptrsz_temp += 2;
+               ret1 = sscanf(ptrsz_temp, "%03d", &kolor1);
+               kolor_m = GetColorAC1(kolor1);
+               ptrsz_temp += 3;
+
+               setfillstyle_(SOLID_FILL, kolor_m);
+
+               if (menu->flags&ICONS)
+               {
+                   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+               }
+               else
+               {
+                   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + HEIGHT * SKALA - 2);
+               }
+               if (kolor_m > 16)
+               {
+                   kolor_rgb = _dac_normal[kolor_m][0] + _dac_normal[kolor_m][1] + _dac_normal[kolor_m][2];
+                   if (kolor_rgb < 96) setcolor(15); else setcolor(0);
+               }
+               else if (kolor_m == 0) setcolor(15);
+               else setcolor(0);
+           }
 		   else
 		   {
 			   setcolor(ink);
@@ -9284,8 +9450,9 @@ int choose_object(int type_address_no, TYPE_ADDRESS *type_address)
     int menu_size=0;
     int iconno;
     unsigned short wcod;
-    char *txt;
+    char txt[MaxTextLen];
     void *adr;
+    char o_layer_s[12];
 
     menu_level++;
     menu_address[menu_level-1]=&mObjectSelected;
@@ -9300,28 +9467,35 @@ int choose_object(int type_address_no, TYPE_ADDRESS *type_address)
 
     for (i=0; i<type_address_no; i++)
     {
+        sprintf(txt,"֊%03d",type_address[i].color);
+
         if (type_address[i].type==Ovector)
         {
             iconno=vector_icon[type_address[i].style];
             wcod=vector_wcod[type_address[i].style];
-            txt=vector_txt[type_address[i].style];
+            strcat(txt,vector_txt[type_address[i].style]);
 
         }
         else if (type_address[i].type==Opoint)
         {
             iconno=point_icon[type_address[i].style];
             wcod=point_wcod[type_address[i].style];
-            txt=typ_punktu_inf[type_address[i].style];
+            strcat(txt,typ_punktu_inf[type_address[i].style]);
 
         }
         else {
             iconno = object_icon[type_address[i].type];
             wcod=object_wcod[type_address[i].type];
-            txt=object_txt[type_address[i].type];
+            strcat(txt,object_txt[type_address[i].type]);
         }
 
         (*mObjectSelected.pola)[i].iconno=iconno;
         (*mObjectSelected.pola)[i].wcod=wcod;
+
+        if (type_address[i].layer>0) {
+            sprintf(o_layer_s, " (%d)", type_address[i].layer);
+            strcat(txt, o_layer_s);
+        }
         strcpy(&(*mObjectSelected.pola)[i].txt, txt);
         mObjectSelected.max++;
     }

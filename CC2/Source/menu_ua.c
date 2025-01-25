@@ -1806,6 +1806,11 @@ static POLE pmLoad_style[] = {
 
 #ifdef __O_LUK__
 
+#define _YES_ u8"Т"
+#define _NO_ u8"Н"
+
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
 static POLE pmLukm[] = {
 		{u8"[1] три точки",'1',221,NULL},
 		{u8"[2] початок-центр-кінець",'2',222,NULL},
@@ -1814,7 +1819,8 @@ static POLE pmLukm[] = {
 		{u8"[5] початок-кінець-радіус",'5',225,NULL},
 		{u8"[6] початок-кінець-кут",'6',226,NULL},
 		{u8"[7] початок-кінець-напрямок",'7',227,NULL},
-		{u8"[8] продовження",'8',228,NULL} };
+		{u8"[8] продовження",'8',228,NULL},
+        {u8"зворотний напрямок дуги",L'0',729,&mArcReversed}};
 
 static POLE pmPLukm[] = {
 		{u8"[1] три точки",'1',221,NULL},
@@ -1825,6 +1831,7 @@ static POLE pmPLukm[] = {
 		{u8"[6] початок-кінець-кут",'6',226,NULL},
 		{u8"[7] початок-кінець-напрямок",'7',227,NULL},
 		{u8"[8] продовження",'8',228,NULL},
+        {u8"зворотний напрямок дуги",L'0',729,&mArcReversed},
 		{u8"Закрити", L'З', 247, NULL},
 		{u8"Видалити: Del", L'В', 248, NULL},
 		{u8"Лінія", L'Л', 13, NULL}};
@@ -1839,6 +1846,7 @@ static POLE pmPLukmObrys[] = {
 		{u8"[6] початок-кінець-кут",'6',226,NULL},
 		{u8"[7] початок-кінець-напрямок",'7',227,NULL},
 		{u8"[8] продовження",'8',228,NULL},
+        {u8"зворотний напрямок дуги",L'0',729,&mArcReversed},
 		{u8"Закрити", L'З', 247, NULL},
         {u8"Видалити: Del", L'В', 248, NULL},
         {u8"Лінія", L'Л', 13, NULL},
@@ -2152,6 +2160,11 @@ static POLE pmFillTyp[] = {
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
 
+#define _YES_ u8"Т"
+#define _NO_ u8"Н"
+
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
 static POLE pmPTLukm[] = {
         {u8"[0] продовження дугою",'0',714,NULL},
         {u8"[1] три точки",'1',221,NULL},
@@ -2162,13 +2175,14 @@ static POLE pmPTLukm[] = {
 		{u8"[6] початок-кінець-кут",'6',226,NULL},
 		{u8"[7] початок-кінець-напрямок",'7',227,NULL},
 		//{u8"[8] продовження",'8',228,NULL},
+        {u8"зворотний напрямок дуги",L'0',729,&mTraceArcReversed},
 		//{u8"Закрити", L'З', 247, NULL},
 		//{u8"Видалити: Del", L'В', 248, NULL},
 		{u8"Лінія", L'Л', 13, NULL},
         {u8"Продовження з лінією", L'П',715,NULL},
 };
 
-static TMENU mPTLukm={10, 0, 0, 30, 56, 4, ICONS, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
+static TMENU mPTLukm={11, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
 
 static POLE pmFTrace[] = {
 	{u8"Ширина\0 1\0", L'Ш', 249, NULL},

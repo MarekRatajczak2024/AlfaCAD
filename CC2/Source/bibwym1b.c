@@ -20,6 +20,7 @@ extern void draww(TMENU *menu);
 extern void baronoff(TMENU  * menu);
 extern int colors1(int old_color);
 extern TMENU mTTF_OTF;
+extern void Restore_Pointer(void);
 
 #define MaxMenuWinFont 32
 
@@ -195,6 +196,7 @@ static void wysokosc_t (void)
   strcat(sk,"mm");
   menu_par_new((*mZmienne.pola)[2].txt,sk);
   drawwZmienne();
+  Restore_Pointer();
 }
 
 
@@ -225,8 +227,8 @@ static void width_factor (void)
   zmwym.width_factor= T.width_factor= d ;
   DF_to_String (sk, "%-6.4f", zmwym.width_factor, 6) ;
   menu_par_new((*mZmienne.pola)[3].txt,sk);
-  
   drawwZmienne();
+  Restore_Pointer();
   
 }
 
@@ -317,6 +319,7 @@ static void dokladnosc (void)
   DF_to_String (sk, "%.12f", zmwym.dokladnosc, 16) ;
   menu_par_new((*mZmienne.pola)[8].txt,sk);
   drawwZmienne();
+  Restore_Pointer();
 }
 
 
@@ -344,6 +347,7 @@ static void linia_ob (void)
   zmwym.linia_ob = -d ;
   menu_par_new((*mZmienne.pola)[10].txt,sk);
   drawwZmienne();
+  Restore_Pointer();
 }
 
 
@@ -373,6 +377,7 @@ static void  kierunek_t (void)
   }
   menu_par_new((*mZmienne.pola)[11].txt, sk);
   drawwZmienne();
+  Restore_Pointer();
 }
 
 static void  add_line (void)

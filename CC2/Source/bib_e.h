@@ -2995,6 +2995,8 @@ typedef struct{
     unsigned int TYP;
     int type;
     int style;
+    int color;
+    int layer;
     char *address;
 }TYPE_ADDRESS;
 

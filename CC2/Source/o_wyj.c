@@ -345,6 +345,7 @@ extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
 extern double q_magnitude;
+extern double p_magnitude;
 
 void unredcr_menu(void);
 void Koniec(void);
@@ -4157,6 +4158,7 @@ int Restore_params(void)
     rm_magnitude=Drawing_Params[DRAWING_NUMBER].rm_magnitude;
     s_magnitude=Drawing_Params[DRAWING_NUMBER].s_magnitude;
     q_magnitude=Drawing_Params[DRAWING_NUMBER].q_magnitude;
+    p_magnitude=Drawing_Params[DRAWING_NUMBER].p_magnitude;
 
     memmove(&static_colors, &Drawing_Params[DRAWING_NUMBER].static_colors, sizeof(STATIC_COLORS));
     memmove(&static_stress_colors, &Drawing_Params[DRAWING_NUMBER].static_stress_colors, sizeof(STATIC_STRESS_COLORS));
@@ -4314,6 +4316,7 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].rm_magnitude=rm_magnitude;
     Drawing_Params[DRAWING_NUMBER].s_magnitude=s_magnitude;
     Drawing_Params[DRAWING_NUMBER].q_magnitude=q_magnitude;
+    Drawing_Params[DRAWING_NUMBER].p_magnitude=p_magnitude;
 
     memmove(&Drawing_Params[DRAWING_NUMBER].static_colors, &static_colors, sizeof(STATIC_COLORS));
     memmove(&Drawing_Params[DRAWING_NUMBER].static_stress_colors, &static_stress_colors, sizeof(STATIC_STRESS_COLORS));

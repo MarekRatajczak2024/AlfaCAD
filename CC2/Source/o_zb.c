@@ -1805,6 +1805,9 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   if (proc_io (f, &b__Point_View, sizeof(int)) != sizeof(int)) return FALSE ;
   if (proc_io (f, &df__Trace_Width, sizeof(double)) != sizeof(double)) return FALSE ;
   if (proc_io (f, &df__Sketch_Dist_Max, sizeof(double)) != sizeof(double)) return FALSE ;
+
+    long l_off_ = lseek (f, 0, SEEK_CUR);
+
   if (proc_io (f, &w__spec_no, sizeof(int)) != sizeof(int)) return FALSE ;
   if (proc_io (f, &l__dane_size, 4) != 4) return FALSE ;
   skala_p_x_f=(float)get_skala_profilu_x();
@@ -1867,6 +1870,8 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
       float magnitude;
 
       int marker;
+
+      long l_off___ = lseek (f, 0, SEEK_CUR);
       if (proc_io(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
       if (proc_io(f, &null_var_float, sizeof(float)) != sizeof(float)) return FALSE;
 
@@ -2035,6 +2040,8 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   
   normalize_text=options1.normalize_text;
   if (proc_io (f, &options1, sizeof(char)) != sizeof(char)) return FALSE ;
+
+  long l_off__ = lseek (f, 0, SEEK_CUR);
 
   if (proc_io (f, &dl_z_b_2, sizeof(double)) != sizeof(double)) return FALSE ;
   if (dl_z_b_2>=1)

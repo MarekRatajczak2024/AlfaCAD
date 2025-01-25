@@ -143,6 +143,11 @@ static BOOL get_spec_off (int f,
   int l_add_file1;
   char block_header [VERB_LEN] ;
   int destLenInt;
+  float v_float;
+  int v_int;
+  double v_double;
+  int zn_b1, zn_b2 ;
+  int marker;
 
   b_ret = FALSE ;
   l_off=0;
@@ -169,12 +174,23 @@ static BOOL get_spec_off (int f,
   *ptrl_spec_no_off = l_off ;
   if (l_off != lseek (f, l_off, SEEK_SET)) return b_ret ;
   if (read (f, ptri_spec_no, sizeof(int)) != sizeof(int)) return b_ret ;
-  if (read (f, &l_date_size, sizeof(long)) != sizeof(long)) return b_ret ;
+  if (read (f, &l_date_size, sizeof(int)) != sizeof(int)) return b_ret ;
   if (*ptri_spec_no > Max_No_Spec||
       *ptri_spec_no < 0 ||
       l_date_size < 0) return b_ret ;
-  l_off1 = l_off + sizeof(int) * 3 + sizeof(long) + sizeof(float) * 2 + sizeof(double) * 31 ;    
-  if (l_off1 != lseek (f, l_off1, SEEK_SET)) return b_ret ;
+
+  long  l_off1_ = l_off + sizeof(int) * 4 + sizeof(float) * 2 + sizeof(double) * 7; //31 ;
+
+  if (l_off1_ != lseek (f, l_off1_, SEEK_SET)) return b_ret ;
+
+  if (read(f, &marker, sizeof(int)) != sizeof(int)) return b_ret;
+
+    if (marker==1234567)
+        l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 3 + sizeof(double) * 32 ;
+    else
+        l_off1 = l_off + sizeof(int) * 4 + sizeof(float) * 2 + sizeof(double) * 31 ;
+
+    if (l_off1 != lseek (f, l_off1, SEEK_SET)) return b_ret ;
   if (read (f, &l_add_file, sizeof(double)) != sizeof(double)) return b_ret ;
   if (l_add_file>=1)
   {    

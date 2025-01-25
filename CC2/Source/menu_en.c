@@ -1806,6 +1806,11 @@ static POLE pmLoad_style[] = {
 
 #ifdef __O_LUK__
 
+#define _YES_ "Y"
+#define _NO_ "N"
+
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
 static POLE pmLukm[] = {
 		  {u8"[1] three points",L'1',221,NULL},
 		  {u8"[2] beginning-center-end",L'2',222,NULL},
@@ -1814,7 +1819,8 @@ static POLE pmLukm[] = {
 		  {u8"[5] beginning-end-radius",L'5',225,NULL},
 		  {u8"[6] beginning-end-angle",L'6',226,NULL},
 		  {u8"[7] beginning-end-direction",L'7',227,NULL},
-		  {u8"[8] continuation",L'8',228,NULL} };
+		  {u8"[8] continuation",L'8',228,NULL},
+          {u8"reversed arc direction",L'0',729,&mArcReversed}};
 
 static POLE pmPLukm[] = {
 		  {u8"[1] three points",L'1',221,NULL},
@@ -1825,6 +1831,7 @@ static POLE pmPLukm[] = {
 		  {u8"[6] beginning-end-angle",L'6',226,NULL},
 		  {u8"[7] beginning-end-direction",L'7',227,NULL},
 		  {u8"[8] continuation",L'8',228,NULL},
+          {u8"reversed arc direction",L'0',729,&mArcReversed},
 		  {u8"Close",L'C',247,NULL},
 		  {u8"Remove: Del",L'R',248,NULL},
 		  {u8"Line", L'L',13,NULL} };
@@ -1839,6 +1846,7 @@ static POLE pmPLukmObrys[] = {
 		  {u8"[6] beginning-end-angle\0",L'6',226,NULL},
 		  {u8"[7] beginning-end-direction\0",L'7',227,NULL},
 		  {u8"[8] continuation\0",L'8',228,NULL},
+          {u8"reversed arc direction",L'0',729,&mArcReversed},
 		  {u8"Close\0",L'C',247,NULL},
 		  {u8"Remove\0Del\0",L'R',248,NULL},
 		  {u8"Line\0", L'L',13,NULL},
@@ -2151,6 +2159,11 @@ static POLE pmFillTyp[] = {
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,10,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
 
+#define _YES_ "Y"
+#define _NO_ "N"
+
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+
 static POLE pmPTLukm[] = {
           {u8"[0] continuation with arc",L'0',714,NULL},
 		  {u8"[1] three points",L'1',221,NULL},
@@ -2161,13 +2174,14 @@ static POLE pmPTLukm[] = {
 		  {u8"[6] beginning-end-angle",L'6',226,NULL},
 		  {u8"[7] beginning-end-direction",L'7',227,NULL},
 		  //{u8"[8] continuation",L'8',228,NULL},
+          {u8"reversed arc direction",L'0',729,&mTraceArcReversed},
 		  //{u8"Close",L'C',247,NULL},
 		  //{u8"Remove: Del",L'R',248,NULL},
 		  {u8"Line", L'L',13,NULL},
           {u8"Continue with line", L'C',715,NULL},
 };
 
-static TMENU mPTLukm={10, 0, 0, 30, 56, 4, ICONS, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
+static TMENU mPTLukm={11, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,75,0,0,0,&pmPTLukm,NULL,NULL};
 
 static POLE pmFTrace[] = {
 	{u8"Width\0 1\0        ",L'W',249,NULL},

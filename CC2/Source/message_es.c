@@ -499,7 +499,7 @@ static char* komunikaty0[] =
 /*3*/u8"Estirar - desde el punto",
 /*4*/u8"Mover - desde el punto",
 /*5*/u8"Mover - al punto",
-/*6*/u8"Dimensiones",
+/*6*/u8"Dimensionamiento",
 /*7*/u8"Línea desde el punto",
 /*8*/u8"Línea a punto",
 /*9*/u8"Círculo - centro",
@@ -661,6 +661,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Indique un diagrama de marco o armadura para análisis estático/dinámico",
+/*168*/u8"Dimensionamiento (para comenzar a dimensionar un ángulo, toque cualquier línea)",
 };
 
 static char* messages_str[] =

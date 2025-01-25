@@ -4382,7 +4382,11 @@ static void	redcrS(char	typ)
 	  } 
 	  else
 		 zmien_atrybut(ADP,ADK,Ablok,Anormalny);
-	  Cur_ond(X,Y);
+
+      //Cur_ond(X,Y);
+	  //Cur_ond(X,Y);
+        CUR_OFF(X,Y);
+        CUR_ON(X,Y);
 	  komunikat	(0) ;
 	  komunikat0 (0) ;
 	}

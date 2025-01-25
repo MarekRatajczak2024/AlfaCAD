@@ -41,6 +41,9 @@
 
 #include "menu.h"
 
+#define YES _YES_
+#define NO _NO_
+
 extern double Grid_to_Rad (double angle) ;
 extern void Out_Edited_Draw_Param (ESTR *lps_et, BOOL out) ;
 extern int Get_Current_Color (void) ;
@@ -68,6 +71,8 @@ extern int pline_trace;
 extern void set_pl(double x, double y);
 
 extern void change_angle_l(double angle);
+extern BOOL Get_reversed(void);
+extern void Set_reversed(BOOL reversed);
 
 static BOOL check_head_trace(BLOK* ptrs_block);
 
@@ -78,8 +83,8 @@ double trace_angle_orig=0.0;
 BOOL trace_angle_changed=FALSE;
 BOOL trace_orto_orig=FALSE;
 
-enum DRAW_ARC_TYPE { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con,
-IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE } ;
+enum DRAW_ARC_TYPE { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
+IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE, ARC_rev_Y, ARC_rev_N } ;
 
 #define ID_WIDTH 0
 #define ID_AXIS 1
@@ -116,8 +121,10 @@ IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE } ;
 #define ID_ARC_SER 80
 #define ID_ARC_SEA 81
 #define ID_ARC_SED  82
-#define ID_LINE_MODE 83
-#define ID_LINE_CONTINUE 84
+#define ID_ARC_REV_Y  86
+#define ID_ARC_REV_N  87
+#define ID_LINE_MODE 84
+#define ID_LINE_CONTINUE 85
 
 enum PLINE_MODE {PL_MODE_CONTINUE = 1 , PL_MODE_LINE , PL_MODE_ARC,
     PL_MODE_END, PL_MODE_UNDO, PL_MODE_ARC_ESC, PL_MODE_ARC_CR,
@@ -195,7 +202,7 @@ unsigned char s_l_type = 34;
 
 /*-----------------------------------------------------------------------*/
 
-int com_no[3][7]={{0,1,2,3,4,5,6},{0,1,2,4,5,6, 7},{0,1,2,4,5,6, 7}};
+int com_no[3][8]={{0,1,2,3,4,5,6,7},{0,1,2,4,5,6,7,0},{0,1,2,4,5,6,7,0}};
 
 int get_pline_mode(void)
 {
@@ -1537,7 +1544,7 @@ static void redraw_trace (void)
 {
    if (s_trace.b_line == TRUE)
    {
-     rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 1) ;
+     rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 1) ;  //TUTAJ
    }
 }
 
@@ -2832,6 +2839,8 @@ int start_trace (double X0, double Y0, BOOL delete_last, BOOL join_last, BOOL co
 		 add_2line_end (1) ;
          Tbreak = 0;
 		 }
+
+       s_trace.b_line = FALSE;
 	   redcr (1) ;
 	   return 0;
 	 }
@@ -2873,7 +2882,9 @@ aaa:	 if (ev->Number == ENTER || strwyj)
 
               if (pline_mode_bak != pline_mode)
                   if (ret) {
-                      if (pline_mode_bak != pline_mode) return ret;
+                      s_trace.b_line = FALSE;
+                      //if (pline_mode_bak != pline_mode)
+                      return ret;
                   }
           }
 	 break ;
@@ -2947,6 +2958,11 @@ static void redcr0(char typ)
      sprintf (sz_temp, "%lg", milimetryob (s_trace.axis)) ;
      if (strlen (sz_temp) > 7) sz_temp [7] = '\0' ;
      menu_par_new ((*mTrace.pola)[1].txt, sz_temp) ;
+
+
+     if (Get_reversed()) strcpy(st,YES);
+     else strcpy(st,NO);
+     menu_par_new ((*mPTLukm.pola)[8].txt, YES);
 
      e_trace_width.x = maxX - PL366;
      e_trace_width.y= ESTR_Y;
@@ -3088,34 +3104,30 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
 
     switch (ev_Number)
     {
-        case ID_WIDTH :
+        case ID_WIDTH : //0
             width_trace () ;
             break ;
-        case ID_AXIS :
+        case ID_AXIS :  //1
             axis_trace () ;
             break ;
-        case ID_D_T_PLINE_ON :
+        case ID_D_T_PLINE_ON :  //8
             d_t_pline_on ();
             break;
-        case ID_D_T_PLINE_OFF :
+        case ID_D_T_PLINE_OFF :  //9
             d_t_pline_off ();
             break;
-        case ID_ERASE :
-
+        case ID_ERASE : //4
              ret = last_trace_delete();
-
-
              if (pline_mode!=PL_MODE_LINE)
              {
                  pline_mode = PL_MODE_UNDO;
                  return pline_mode;
              }
-
             break ;
         case -83:
             return 1;
             break;
-        case ID_CLOSE:
+        case ID_CLOSE:  //6
             CUR_OFF(X, Y);
             if (add_trace_line_close())
             {
@@ -3124,63 +3136,73 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             }
             CUR_ON(X, Y);
             break;
-        case ID_LINE_MODE:
+        case ID_LINE_MODE:  //85
             pline_mode = PL_MODE_LINE ;
             return pline_mode;
             break;
-        case ID_LINE_CONTINUE:
+        case ID_LINE_CONTINUE:  //86
             pline_mode = PL_MODE_LINE_CONTINUE ;
             return pline_mode;
             break;
-        case ID_ARC_CONT:
+        case ID_ARC_CONT:  //75
             add_trace_line_end();
             type_arc_pl (ARC_Con);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_P3:
+        case ID_ARC_REV_Y:  //83
+            Set_reversed(TRUE);
+            menu_par_new ((*mPTLukm.pola)[8].txt, YES);
+            return pline_mode;
+            break;
+        case ID_ARC_REV_N:  //84
+            Set_reversed(FALSE);
+            menu_par_new ((*mPTLukm.pola)[8].txt, NO);
+            return pline_mode;
+            break;
+        case ID_ARC_P3:  //76
             add_trace_line_end();
             type_arc_pl (ARC_P3);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SCE:
+        case ID_ARC_SCE:  //77
             add_trace_line_end();
             type_arc_pl (ARC_SCE);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SCA:
+        case ID_ARC_SCA:  //78
             add_trace_line_end();
             type_arc_pl (ARC_SCA);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SCL:
+        case ID_ARC_SCL:  //79
             add_trace_line_end();
             type_arc_pl (ARC_SCL);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SER:
+        case ID_ARC_SER:  //80
             add_trace_line_end();
             type_arc_pl (ARC_SER);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SEA:
+        case ID_ARC_SEA:  //81
             add_trace_line_end();
             type_arc_pl (ARC_SEA);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_ARC_SED:
+        case ID_ARC_SED:  //82
             add_trace_line_end();
             type_arc_pl (ARC_SED);
             pline_mode = PL_MODE_ARC ;
             return pline_mode;
             break;
-        case ID_BREAK:
+        case ID_BREAK:  //5
             Tbreak = 1;
             if (pline_mode==PL_MODE_LINE) {
                 if (d_line == 0) {
@@ -3198,19 +3220,19 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             CUR_OFF(X, Y);
             CUR_ON(X, Y);
             break;
-        case ID_FILLEMPTY:
-        case ID_FILL_BC:
-        case ID_FILL_C:
-        case ID_FILL_G:
-        case ID_FILL_BG:
-        case ID_FILL_NG:
+        case ID_FILLEMPTY:  //10
+        case ID_FILL_BC:  //11
+        case ID_FILL_C:  //12
+        case ID_FILL_G:  //13
+        case ID_FILL_BG:  //14
+        case ID_FILL_NG:  //15
             set_tracefilltype(ev_Number);
             break;
-        case ID_PATTERN:
+        case ID_PATTERN:  //16
             set_tracepattern();
             komunikat0(Komunikat_R0);
             break;
-        case ID_GRAB_PATTERN:
+        case ID_GRAB_PATTERN:  //21
             komunikat0(0);
             set_grab_tracepattern();
             komunikat0(Komunikat_R0);
@@ -3258,6 +3280,7 @@ void Trace_Dline_Tline (void)
   BOOL join_last=FALSE;
   BOOL continue_last=FALSE;
   double angle;
+  BOOL beginning;
 
     void *ptr_ob ;
     BOOL b_first_end, b_second_pl_seg ;
@@ -3290,7 +3313,9 @@ void Trace_Dline_Tline (void)
   mTrace.max=mTrace_min;
   while (1)
    {
+      beginning=TRUE;
        redcr0 (0) ;
+   beg0:
       ev = Get_Event_Point (NULL, &X0, &Y0) ;
 
        df_xbeg = X0 ;
@@ -3307,6 +3332,7 @@ void Trace_Dline_Tline (void)
 	   }
 	   if(ev->Number == ENTER)
 	   {
+           beginning=FALSE;
            //changing size of menu to enagle solidarc
            mTrace.max=mTrace_max;
 
@@ -3385,7 +3411,8 @@ void Trace_Dline_Tline (void)
 
         ret=trace_command(ev_Number, X0, Y0, strwyj);
 
-        goto  beg;
+        if (beginning) goto  beg0;
+        else goto  beg;
 
 	   break ;
 	default :
