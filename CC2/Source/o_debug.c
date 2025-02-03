@@ -157,8 +157,12 @@ BOOL Check_Object (NAGLOWEK *adr_nag, BOOL b_correct)
   switch(nag->obiekt)
     { case Olinia :
 	L = (LINIA*)nag;
-	if (L->n + sizeof(NAGLOWEK) !=  sizeof (LINIA) )
-	{  
+	if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
+	{
+        //check if not extended data for Graph
+        unsigned char *flags;
+        flags=(char*)L + sizeof (LINIA);
+        if ((*flags==71) || (*flags==45)) break;  //it's extended data
 	  ErrList (40);
 	  return FALSE;
 	}  
@@ -261,6 +265,7 @@ BOOL Check_Object (NAGLOWEK *adr_nag, BOOL b_correct)
 	     B_DIM1 != ptr_b->kod_obiektu &&
          B_DIM3 != ptr_b->kod_obiektu &&
 	     B_EXPORT != ptr_b->kod_obiektu &&
+         B_GRAPH != ptr_b->kod_obiektu &&
 	     B_PLINE  != ptr_b->kod_obiektu &&
 		 B_SHADOW != ptr_b->kod_obiektu &&
 	     B_HATCH  != ptr_b->kod_obiektu &&

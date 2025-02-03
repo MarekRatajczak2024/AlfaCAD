@@ -58,16 +58,17 @@ POLE pmRegion[] = {
         {u8"UK", 'B',774, NULL}, //&mSteelUK
 };
 
-TMENU mRegion = { 3, 0, 0, 8, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 1, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 3, 0, 0, 8, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 
 POLE pmApplications[] = {
         {u8"Statyka i dynamika",L'S',733, NULL},
+        {u8"siły wynikowe w Przekrojach poprzecznych",L'P',824, NULL},
         {u8"Animuj dynamikę",L'A',817, NULL},
         {u8"Wybór przekrojów elementów",L'W',775, &mRegion},
 };
 
-TMENU mApplications = { 3, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+TMENU mApplications = { 4, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
 
 
 POLE pmenug[] = {

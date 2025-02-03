@@ -181,7 +181,8 @@ void utf82win(char *utf8text, char *wintext);
 extern void get_strings_list(int *string_no, long_long *ptrsz_long);
 extern int circle_and_rectangle_proc0(int untrap_mouse);
 char *GetStringFromClipboard(void);
-void PutStringToClipboard(char *ptrsz_buf);
+//void PutStringToClipboard(char *ptrsz_buf);
+void PutStringToClipboard(LPCWSTR ptrsz_buf);
 void mouseMove(int dx, int dy);
 
 void get_tens_value(char* st, double tens);
@@ -1884,11 +1885,41 @@ void unicode2utf8(char *unicodetext, unsigned char *utf8text)
 	*utf8ptr = '\0';
 }
 
-void utf82win(char *utf8text, char *wintext)
+//void utf82win(char *utf8text, char *wintext)
+void utf82win(char* utf8text, LPCWSTR wintext)
 {
 	int result;
-	result = MultiByteToWideChar(CP_UTF8, 0, (LPSTR)utf8text, -1, (LPWSTR)wintext, 255);
+	result = MultiByteToWideChar(CP_UTF8, 0, (LPSTR)utf8text, -1, (LPWSTR)wintext, 2048);  //255
 }
+
+//void encodewin(char* utf8text, char* wintext)
+void encodewin(char* utf8text, LPCWSTR wintext)
+{
+	int ret;
+	int count;
+	char unicodetext[2048]; //MaxTextLen
+
+	//count = utf82unicode(utf8text, &unicodetext);
+	//unicode2win(unicodetext, wintext, count);
+
+	utf82win(utf8text, wintext);
+}
+
+void Put_Str_To_Clip(char* ptrsz_buf)
+{
+	//char ptrsz_sz_tmp[2048];  //MaxTextLen
+	LPCWSTR ptrsz_sz_tmp = new WCHAR[2048] ;
+
+	//utf82win(ptrsz_buf, &ptrsz_sz_tmp);
+	//PutStringToClipboard(&ptrsz_sz_tmp);
+
+	encodewin(ptrsz_buf, ptrsz_sz_tmp);  //UTF-8 original
+	PutStringToClipboard(ptrsz_sz_tmp);
+
+	////PutStringToClipboard(ptrsz_buf);
+}
+
+
 
 
 void unicode2windxf(char *unicodetext, char *wintext, int count)
@@ -2295,7 +2326,7 @@ char *GetStringFromClipboard(void)
 	return (char*)clip;
 }
 
-void PutStringToClipboard(char *ptrsz_buf)
+void PutStringToClipboard(LPCWSTR ptrsz_buf)
 {
 	
 
@@ -2304,15 +2335,17 @@ void PutStringToClipboard(char *ptrsz_buf)
 		
 		EmptyClipboard();
 		HGLOBAL hClipboardData;
-		hClipboardData = GlobalAlloc(GMEM_DDESHARE, strlen(ptrsz_buf)*2);
+		
+		hClipboardData = GlobalAlloc(GMEM_DDESHARE, wcslen(ptrsz_buf)*2+2);
 
         char * pchData;
 		pchData = (char*)GlobalLock(hClipboardData);
-		strcpy(pchData, ptrsz_buf);
 
+		memmove(pchData, ptrsz_buf, wcslen(ptrsz_buf)*2+2);
+		
 		GlobalUnlock(hClipboardData);
 
-		SetClipboardData(CF_TEXT, hClipboardData);
+		SetClipboardData(CF_UNICODETEXT, hClipboardData);  //CF_TEXT
 		
 		CloseClipboard();
 	}

@@ -11692,6 +11692,7 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
 	 else if (strstr(typ_bloku, "*D") != NULL) kod_obiektu = B_DIM;
 	 else if (strstr(typ_bloku, "B_PLINE") != NULL) kod_obiektu = B_PLINE;
 	 else if (strstr(typ_bloku, "B_EXPORT") != NULL) kod_obiektu = B_EXPORT;
+     else if (strstr(typ_bloku, "B_GRAPH") != NULL) kod_obiektu = B_GRAPH;
 	 else  kod_obiektu = B_EXPORT;
 
 	 if (strstr(typ_bloku, "*Model_Space") != NULL)

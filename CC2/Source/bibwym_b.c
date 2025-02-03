@@ -677,6 +677,7 @@ void  wymiarowanie(void)
     PLINIA PL;
     double kat1,n;
     double wL_x1, wL_y1, r2;
+    int ret;
 
   CUR_OFF(X, Y);
 

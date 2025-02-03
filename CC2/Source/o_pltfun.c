@@ -43,7 +43,7 @@ extern BOOL Check_if_Equal (double x, double y);
 extern BOOL rr_go ( long dx, long dy);
 extern BOOL Draw_Pcx_To_Drive(B_PCX *adr_pcx,int t_drive);
 extern void ObiektTok_No_Superblock (long_long *off, long_long offk, long_long *ad, int obiekt);
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 
 /*
    SP;       returns a pen
@@ -642,7 +642,7 @@ void show_plot_progress(int pen, double plot_progress)
 {
 	char progress[32];
 	sprintf(progress, "[%3d] %3.0f %%", pen+1, plot_progress*100.0);
-	komunikat_str_short(progress, FALSE);
+	komunikat_str_short(progress, FALSE, FALSE);
 	return;
 }
 

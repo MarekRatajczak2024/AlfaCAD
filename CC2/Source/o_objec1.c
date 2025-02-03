@@ -2341,6 +2341,9 @@ void delete_all_from_layer_atrybut (int layer_no, int atrybut)
             {
                 b=(BLOK *)adp;
                 adp+=sizeof(NAGLOWEK)+B3+b->dlugosc_opisu_obiektu;
+
+                //if block is empty
+                if ((B3+b->dlugosc_opisu_obiektu)==b->n) b->atrybut = Ausuniety;
             }
             else
             {

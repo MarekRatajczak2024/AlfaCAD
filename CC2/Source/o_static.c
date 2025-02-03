@@ -84,7 +84,24 @@ extern void get_display_window(void);
 extern void focus_display_window(void);
 extern int Expand_flex();
 
+extern char *Get_Object (unsigned int typ, char *kom);
+extern void set_vector_filter(int vf);
+
 extern BOOL preview_blocked;
+extern int prostopadleL_from_point(double *x,double *y,double *l,void *adr);
+extern void set_global_hidden_blocks_visibility(BOOL block_visibility);
+extern void outtext_r_(BITMAP *ui_screen, char *textstring);
+extern int TTF_text_len(char *text);
+extern long pXp,pYp,pXk,pYk;
+extern void tip_frame(int x1, int y1, int x2, int y2);
+extern int get_MPMAX(void);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
+extern void remove_short_notice(void);
+extern void Set_Screenplay(BITMAP *ctx_bitmap);
+extern void Put_Str_To_Clip(char *ptrsz_buf);
+
+extern void set_cursor_pointer(void);
+extern void set_cursor_busy(void);
 
 extern double thermal_precision;
 extern double force_precision;
@@ -219,6 +236,7 @@ ST_THERMAL_LOAD *st_thermal_load;
 ST_DISPLACEMENT *st_displacement;
 ST_LOAD *st_load;
 ST_LOAD_FACTORS *st_load_factors;
+BOOL *failed_elements=NULL;
 
 ST_MASS_NODE *st_mass_node=NULL;
 ST_MASS_ELEMENT *st_mass_element=NULL;
@@ -243,6 +261,15 @@ double gY=0;
 double gZ=0;
 
 double Rn=0;
+
+static double cskos=0, cskoc=0;
+//static float ex1, ey1, ex2, ey2;
+static ALL_SECTION_GRAPH_DATA *all_section_graph_data_p=NULL;
+
+static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
+static char section_params_st[128];
+static double last_l=0;
+static double last_l1=0;
 
 STATIC_COLORS static_colors={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_COLORS static_colors0={8, 1, 5, 3, 6, 2, 4, 156};
@@ -663,6 +690,17 @@ int load_flag_ALL[11]={0,1,2,4,8,16,32,64,128,256,512};
 
 int *load_flag;
 
+//static char *global_block=NULL;
+
+POLE pmSelect_State[] = {
+        {u8"ULS",L'U',825,NULL},
+        {u8"SLS",L'S',826,NULL},
+        {u8"QPSLS",L'Q',827,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,5,20,7, ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+
+
 int copy(const char* in_path, const char* out_path){
     size_t n;
     FILE* in=NULL, * out=NULL;
@@ -673,6 +711,32 @@ int copy(const char* in_path, const char* out_path){
     if(in) fclose(in);
     if(out) fclose(out);
     return EXIT_SUCCESS;
+}
+
+static BOOL add_block_in_block (char kod_obiektu, char c_pltype0)
+/*--------------------------------------------------------------*/
+{
+#ifndef LINUX
+    BLOKD s_blockd = BDdef ;
+#else
+    BLOK s_blockd = Bdef ;
+#endif
+    BLOK *ptrs_block ;
+    char c_pltype ;
+
+    s_blockd.n = B3 + sizeof (c_pltype) ;
+    s_blockd.kod_obiektu = kod_obiektu ;
+    s_blockd.dlugosc_opisu_obiektu = sizeof(c_pltype) ;
+    s_blockd.blok=1;
+
+    if( (ptrs_block = (BLOK*)dodaj_obiekt ((BLOK*)dane, &s_blockd)) == NULL)
+    {
+        return FALSE ;
+    }
+    c_pltype = c_pltype0;
+    memmove ( &(ptrs_block->opis_obiektu [0]), &c_pltype, sizeof(c_pltype)) ;
+    PTR__GTMPBLOCK=(char *) ptrs_block;
+    return TRUE ;
 }
 
 static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BOOL hiding)
@@ -719,6 +783,45 @@ static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BO
 
     free(buf_block);
     return (char*)ptrs_block ;
+}
+
+
+char *dodaj_obiekt_(BLOK * adb,void  *ad)
+{
+    BLOK *blok;
+    char *ad1;
+    int n, n1;
+
+    //return dodaj_obiekt(adb, ad);  //instead of adb ////
+
+    blok=(BLOK*)dane;
+    n=blok->n;
+    //ad1=dodaj_obiekt(adb, ad);
+    if (PTR__GTMPBLOCK!=NULL)
+        ad1=dodaj_obiekt(PTR__GTMPBLOCK, ad);  //instead of adb
+    else ad1=dodaj_obiekt(adb, ad);
+    blok=(BLOK*)dane;
+    n1=blok->n;
+    return ad1;
+}
+
+char *dodaj_obiekt_reversed_(BLOK * adb,void  *ad)
+{
+    BLOK *blok;
+    char *ad1;
+    int n, n1;
+
+    //return dodaj_obiekt(adb, ad);  //instead of adb ////
+
+    blok=(BLOK*)dane;
+    n=blok->n;
+    //ad1=dodaj_obiekt(adb, ad);
+    if (PTR__GTMPBLOCK!=NULL)
+        ad1=dodaj_obiekt_reversed(PTR__GTMPBLOCK, ad);  //instead of adb
+    else ad1=dodaj_obiekt_reversed(adb, ad);
+    blok=(BLOK*)dane;
+    n1=blok->n;
+    return ad1;
 }
 
 void add_node_pre(void)
@@ -1015,7 +1118,7 @@ int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
         normalize_txt(&T);
-        ptr_t = dodaj_obiekt((BLOK *) dane, (void *) &T);
+        ptr_t = dodaj_obiekt_((BLOK *) dane, (void *) &T);
         strcpy(T_text, T.text);
 
         return 1;
@@ -1074,7 +1177,7 @@ int draw_disp_label(LINIA *L, LINIA *Le, double dx, double vpar1, double vpar2, 
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
         normalize_txt(&T);
-        ptr_t = dodaj_obiekt((BLOK *) dane, (void *) &T);
+        ptr_t = dodaj_obiekt_((BLOK *) dane, (void *) &T);
         strcpy(T_text, T.text);
 
         return 1;
@@ -1381,6 +1484,196 @@ void draw_reaction_m(LINIA *L, ST_NODE *node, double Mzz)
     ptr = dodaj_obiekt((BLOK *) dane, (void *) &Rtxt);
 }
 
+
+BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA *Le, int dt, double extra_value)
+{
+    char *graph_buffer = NULL;
+    //creating graph data line with data segment
+    LINIA *GL;
+    GRAPH_DATA *gl_data;
+    float *gl_fvalue;
+    unsigned char gl_width=1;
+    unsigned char gl_type=6; //centre
+    COMBI_ELEMENT *combi_element;
+    float Vmin, Vmax, Xx;
+    char *p_gl_fvalue;
+    float D_min, D_max;
+    double Asy;
+
+    graph_buffer = (char *) malloc(sizeof(LINIA)+sizeof(GRAPH_DATA)+nx*(3 * sizeof(float)) + 10);
+
+    if (combi_total_numbers[i].combi == 2) combi_element = combi_element_uls;
+    else if (combi_total_numbers[i].combi == 3) combi_element = combi_element_sls;
+    else combi_element = combi_element_qpsls;
+
+    COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
+
+    GL=graph_buffer;
+
+    memmove(GL, Ldsp, sizeof(LINIA));
+    GL->typ=gl_width*32+gl_type;
+    GL->x1 = Le->x1;
+    GL->y1 = Le->y1;
+    GL->x2 = Le->x2;
+    GL->y2 = Le->y2;
+
+    GL->n=20;  //simple line
+    //line extension
+    gl_data=graph_buffer+sizeof(LINIA);
+    gl_data->flags=71;  //'G' 71 for Graph
+    gl_data->dt=dt; //Dy=0, Dx=1, Nx=2, Vy=3, Mz=4, S=5, Ss=6
+    gl_data->st=combi_total_numbers[i].combi;
+    gl_data->reserve=0;
+    gl_data->dlf=0;
+    gl_data->dlb=0;
+    gl_data->enr=rep_element_no;  //starting from 1
+    gl_data->nx=nx;
+    //gl_ivalue=(char*)GL+sizeof(LINIA)+sizeof(GRAPH_DATA);
+    p_gl_fvalue=graph_buffer+sizeof(LINIA)+sizeof(GRAPH_DATA);
+
+    gl_fvalue = (float*)p_gl_fvalue;
+
+    GRAPH_VALUES *gl_values;
+    //float *gl_values[64];
+    gl_values=p_gl_fvalue;
+
+    for (int gi=0; gi<nx; gi++)
+    {
+        Vmin=0;
+        Vmax=0;
+        switch (dt)
+        {
+            case 0:  //Dy
+                //D_min=(float)sqrt((fd[gi].Dx_min*fd[gi].Dx_min)+(fd[gi].Dy_min*fd[gi].Dy_min));
+                //D_max=(float)sqrt((fd[gi].Dx_max*fd[gi].Dx_max)+(fd[gi].Dy_max*fd[gi].Dy_max));
+                D_min=fd[gi].Dy_min;
+                D_max=fd[gi].Dy_max;
+                Vmin = D_min;
+                Vmax = D_max;
+                break;
+            case 1:  //Dx
+                //D_min=(float)sqrt((fd[gi].Dx_min*fd[gi].Dx_min)+(fd[gi].Dy_min*fd[gi].Dy_min));
+                //D_max=(float)sqrt((fd[gi].Dx_max*fd[gi].Dx_max)+(fd[gi].Dy_max*fd[gi].Dy_max));
+                D_min=fd[gi].Dx_min;
+                D_max=fd[gi].Dx_max;
+                Vmin = D_min;
+                Vmax = D_max;
+                break;
+            case 2:  //Nx
+                Vmin = fd[gi].Nx_min / unit_factors->F_f;
+                Vmax = fd[gi].Nx_max / unit_factors->F_f;
+                break;
+            case 3:  //Vy
+                Vmin = fd[gi].Vy_min / unit_factors->F_f;
+                Vmax = fd[gi].Vy_max / unit_factors->F_f;
+                break;
+            case 4:  //Mz
+                Vmin = fd[gi].Mz_min / unit_factors->M_f;
+                Vmax = fd[gi].Mz_max / unit_factors->M_f;
+                break;
+            case 5:  //S
+                Vmin = fd[gi].Sm_min; // / unit_factors->S_f;
+                Vmax = fd[gi].Sp_max; // / unit_factors->S_f;
+                break;
+            case 6:  //Ss
+                Asy=extra_value;
+                if (!Check_if_Equal(Asy, 0)) {
+                    Vmin = ((fd[gi].Vy_min / unit_factors->F_f) / Asy) / unit_factors->S_f;
+                    Vmax = ((fd[gi].Vy_max / unit_factors->F_f) / Asy) / unit_factors->S_f;
+                }
+                break;
+        }
+        Xx=(float)jednostkiOb(fd[gi].x / units_factor);  //in mm on drawings
+        memmove(gl_fvalue,&Xx,sizeof(float));
+        gl_fvalue++;
+        memmove(gl_fvalue,&Vmin,sizeof(float));
+        gl_fvalue++;
+        memmove(gl_fvalue,&Vmax,sizeof(float));
+        gl_fvalue++;
+    }
+
+    //for (int gi=0; gi<nx; gi++)  //for tests only
+    //{
+    //    printf("%f %f %f\n", (gl_values + gi)->x, (gl_values + gi)->vmax, (gl_values + gi)->vmax);
+    //}
+
+    GL->n=20+sizeof(GRAPH_DATA)+(nx*(3*sizeof(float)));
+
+    if (dodaj_obiekt_reversed_((BLOK *) dane, (void *) graph_buffer) == NULL) {
+        free(graph_buffer);
+        return FALSE;
+    }
+
+    free(graph_buffer);
+    return TRUE;
+}
+
+BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, float rdf, float rdb, int property_no, int property_record)  //Element number
+{
+    LINIA *EL;
+    GRAPH_DATA *el_data;
+    char *element_buffer = NULL;
+    unsigned char gl_width=1;
+    unsigned char gl_type=6; //centre
+    //float H,B,A,Asy,Asz,Jx,Iy,Iz,Wy,Wz;
+    char *p_section_data;
+    SECTION_DATA section_data={0,0,0,0,0,0,0,0,0,0};
+
+    element_buffer = (char *) malloc(sizeof(LINIA)+sizeof(GRAPH_DATA)+sizeof(SECTION_DATA)+10);
+    EL=element_buffer;
+
+    memmove(EL, Le, sizeof(LINIA));
+    EL->blok=ElemBlok;
+    EL->widoczny=1;
+    EL->typ=gl_width*32+gl_type;
+    EL->x1 = Le->x1;
+    EL->y1 = Le->y1;
+    EL->x2 = Le->x2;
+    EL->y2 = Le->y2;
+
+    EL->n=sizeof(LINIA)-sizeof(NAGLOWEK); //20;  //simple line
+
+    el_data=(GRAPH_DATA *)(element_buffer+sizeof(LINIA));
+    el_data->flags=45;  //'E' 45 for Graph
+    el_data->dt=7;
+    el_data->reserve=0;
+    el_data->dlf=ldf;
+    el_data->dlb=ldb;
+    el_data->rdf=rdf;
+    el_data->rdb=rdb;
+    el_data->enr=element_no;
+    el_data->nx=0;
+
+    if (property_record>-1)
+    {
+        section_data.H=(float)st_property[property_record].h;  //in mm or in
+        section_data.B=(float)st_property[property_record].b;  //in mm or in
+        section_data.A=(float)(st_property[property_record].A / unit_factors->A_f);  //in cm or in
+        section_data.Asy=(float)(st_property[property_record].Asy / unit_factors->A_f); //in cm^2 or in^
+        section_data.Asz=(float)(st_property[property_record].Asz / unit_factors->A_f); //in cm^2 or in^
+        section_data.Iy=(float)(st_property[property_record].Iy / unit_factors->I_f); //in cm^4 or in^4
+        section_data.Iz=(float)(st_property[property_record].Iz / unit_factors->I_f); //in cm^4 or in^4
+        section_data.Jx=(float)(st_property[property_record].Jx / unit_factors->I_f); //in cm^4 or in^4
+        //section_data.Wy=(float)(st_property[property_record].Wy / unit_factors->Wmm_f * unit_factors->Wm_f);  //in cm^3 or in^3
+        //section_data.Wz=(float)(st_property[property_record].Wz / unit_factors->Wmm_f * unit_factors->Wm_f);  //in cm^3 or in^3
+        section_data.Wy=(float)(st_property[property_record].Wy / unit_factors->Wm_f);  //in cm^3 or in^3
+        section_data.Wz=(float)(st_property[property_record].Wz / unit_factors->Wm_f);  //in cm^3 or in^3
+    }
+
+    p_section_data=element_buffer+sizeof(LINIA)+sizeof(GRAPH_DATA);
+    memmove(p_section_data, &section_data, sizeof(SECTION_DATA));
+
+    EL->n=sizeof(LINIA)-sizeof(NAGLOWEK)+sizeof(GRAPH_DATA)+sizeof(SECTION_DATA);  //20+ ....
+
+    if (dodaj_obiekt_reversed((BLOK *) dane, (void *) element_buffer) == NULL) {
+        free(element_buffer);
+        return FALSE;
+    }
+
+    free(element_buffer);
+    return TRUE;
+}
+
 int qsort_by_number(unsigned char *e1, unsigned char *e2)
 { int delta;
     delta=(*e1) - (*e2);
@@ -1515,6 +1808,11 @@ void Static_analysis(void) {
     char prop[MAXEXT];
     char report[MaxMultitextLen] = "";
     char report_row[MaxTextLen];
+#ifdef LINUX
+    char rn[3] = "\n";
+#else
+    char rn[3] = "\r\n";
+#endif
     double q1x, q1y, q2x, q2y, fx, fy, dx, dy, dlx1, dlx2;
     double partial_length;
     double n1, nm;
@@ -2452,8 +2750,8 @@ void Static_analysis(void) {
     for (i = 0; i < st_node_pre_no; i++)  //node1
     {
         if (st_node_pre[i].flag == 0) {
-            sprintf(report_row, "<%f;%f> %s\n", milimetryobx(st_node_pre[i].x), milimetryoby(st_node_pre[i].y),
-                    _node_size_not_associated_);
+            sprintf(report_row, "<%f;%f> %s%s", milimetryobx(st_node_pre[i].x), milimetryoby(st_node_pre[i].y),
+                    _node_size_not_associated_,rn);
             strcat(report, report_row);
         }
     }
@@ -2462,18 +2760,19 @@ void Static_analysis(void) {
     //checking properties
     for (j = 0; j < st_property_no; j++) {
         if (st_property[j].ok == 0) {
-            sprintf(report_row, "#%d %s\n", st_property[j].n, _incorrectly_defined_);
+            sprintf(report_row, "#%d %s%s", st_property[j].n, _incorrectly_defined_,rn);
             strcat(report, report_row);
         }
     }
     //checking elements
-    for (i = 0; i < st_element_no; i++) {
+    for (i = 0; i < st_element_no; i++)
+    {
         for (j = 0; j < st_property_no; j++) {
             if (abs(st_element[i].property_no) == st_property[j].n)
                 break;
         }
         if (j == st_property_no) {
-            sprintf(report_row, "#%d %s\n", st_element[i].property_no, _property_not_defined_);
+            sprintf(report_row, "#%d %s%s", st_element[i].property_no, _property_not_defined_,rn);
             strcat(report, report_row);
         }
     }
@@ -2580,8 +2879,8 @@ void Static_analysis(void) {
                     }
                 }
                 if (i == st_node_no) {
-                    sprintf(report_row, "<%f;%f> %s\n", milimetryobx(p->x), milimetryoby(p->y),
-                            _reaction_not_associated_);
+                    sprintf(report_row, "<%f;%f> %s%s", milimetryobx(p->x), milimetryoby(p->y),
+                            _reaction_not_associated_,rn);
                     strcat(report, report_row);
                 }
             }
@@ -2662,6 +2961,8 @@ void Static_analysis(void) {
         if (__file_exists(params)) unlink(params);
     }
 
+    if (strlen(report) > 0) goto error;
+
     //creating data file
     f = fopen("alfacad.3dd", "wt");
     fprintf(f, "%s\n", st_title);
@@ -2706,7 +3007,7 @@ void Static_analysis(void) {
         }
 
         if (j == st_property_no) {
-            sprintf(report_row, "#%d %s\n", st_element[i].property_no, _property_not_defined_);
+            sprintf(report_row, "#%d %s%s", st_element[i].property_no, _property_not_defined_,rn);
             strcat(report, report_row);
             break;
         }
@@ -2849,8 +3150,8 @@ void Static_analysis(void) {
 
                 }
                 if ((i == st_node_no) && ((v->style == 7) || (v->style == 8) || (v->style == 9))) {
-                    sprintf(report_row, "<%f;%f> [%s] %s\n", milimetryobx(v->x1), milimetryoby(v->y1),
-                            (*mVector.pola)[v->style + 1].txt, _force_not_associated_);
+                    sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
+                            (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
                     strcat(report, report_row);
                 }
             }
@@ -2917,8 +3218,8 @@ void Static_analysis(void) {
                             }
                         }
                         if (i == st_element_no) {
-                            sprintf(report_row, "<%f;%f> [%s] %s\n", milimetryobx(v->x1), milimetryoby(v->y1),
-                                    (*mVector.pola)[v->style + 1].txt, _load_not_associated_);
+                            sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
+                                    (*mVector.pola)[v->style + 1].txt, _load_not_associated_,rn);
                             strcat(report, report_row);
                         }
                     } else if (v->style == 5) //moment +
@@ -3499,10 +3800,8 @@ void Static_analysis(void) {
                                 }
                             }
                         } else {
-                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s\n", milimetryobx(v->x1),
-                                    milimetryoby(v->y1),
-                                    milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
-                                    _load_not_associated_);
+                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(v->x1),
+                                    milimetryoby(v->y1),milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,_load_not_associated_,rn);
                             strcat(report, report_row);
                         }
                         break;
@@ -3587,14 +3886,14 @@ void Static_analysis(void) {
                                                             st_node[st_element[i].node2].x,
                                                             st_node[st_element[i].node2].y, 0.0001))) {
                             //it's bad
-                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>\n", milimetryobx(v->x1),
+                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
                                     milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
                                     milimetryobx(st_node[st_element[i].node2].x),
-                                    milimetryoby(st_node[st_element[i].node2].y));
+                                    milimetryoby(st_node[st_element[i].node2].y),rn);
                             strcat(report, report_row);
                             th_load_el++;
                             break;
@@ -3609,14 +3908,14 @@ void Static_analysis(void) {
                                                              st_node[st_element[i].node2].y,
                                                              v->x1, v->y1, v->x2, v->y2, 0.0001))) {
                             //it's bad
-                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>\n", milimetryobx(v->x1),
+                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
                                     milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
                                     milimetryobx(st_node[st_element[i].node2].x),
-                                    milimetryoby(st_node[st_element[i].node2].y));
+                                    milimetryoby(st_node[st_element[i].node2].y),rn);
                             strcat(report, report_row);
                             th_load_el++;
                             break;
@@ -3629,14 +3928,14 @@ void Static_analysis(void) {
                                                                st_node[st_element[i].node1].y,
                                                                v->x1, v->y1, v->x2, v->y2, 0.0001))) {
                             //it's bad
-                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>\n", milimetryobx(v->x1),
+                            sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
                                     milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
                                     milimetryobx(st_node[st_element[i].node2].x),
-                                    milimetryoby(st_node[st_element[i].node2].y));
+                                    milimetryoby(st_node[st_element[i].node2].y),rn);
                             strcat(report, report_row);
                             th_load_el++;
                             break;
@@ -3673,9 +3972,9 @@ void Static_analysis(void) {
                     }
 
                     if (th_load_el == 0) {
-                        sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s\n", milimetryobx(v->x1), milimetryoby(v->y1),
+                        sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
                                 milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
-                                _load_not_associated_);
+                                _load_not_associated_,rn);
                         strcat(report, report_row);
                     }
                 }
@@ -3750,7 +4049,7 @@ void Static_analysis(void) {
 
         load_flag = load_flag_ICC;
     } else {
-        sprintf(report_row, "%s\n", _unknown_standard_);
+        sprintf(report_row, "%s%s", _unknown_standard_,rn);
         strcat(report, report_row);
     }
 
@@ -4093,8 +4392,8 @@ void Static_analysis(void) {
             }
 
             if (j == st_property_no) {
-                sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                        _property_not_defined_);
+                sprintf(report_row, "#%d %s%s", st_element[st_thermal_load[i].element].property_no,
+                        _property_not_defined_,rn);
                 strcat(report, report_row);
                 break;
             }
@@ -4303,8 +4602,8 @@ void Static_analysis(void) {
             }
 
             if (j == st_property_no) {
-                sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                        _property_not_defined_);
+                sprintf(report_row, "#%d %s%s", st_element[st_thermal_load[i].element].property_no,
+                        _property_not_defined_,rn);
                 strcat(report, report_row);
                 break;
             }
@@ -4707,8 +5006,8 @@ void Static_analysis(void) {
                     }
 
                     if (j == st_property_no) {
-                        sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                _property_not_defined_);
+                        sprintf(report_row, "#%d %s%s", st_element[st_thermal_load[i].element].property_no,
+                                _property_not_defined_,rn);
                         strcat(report, report_row);
                         break;
                     }
@@ -5116,8 +5415,8 @@ void Static_analysis(void) {
                     }
 
                     if (j == st_property_no) {
-                        sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                _property_not_defined_);
+                        sprintf(report_row, "#%d %s%s", st_element[st_thermal_load[i].element].property_no,
+                                _property_not_defined_,rn);
                         strcat(report, report_row);
                         break;
                     }
@@ -5524,8 +5823,8 @@ void Static_analysis(void) {
                     }
 
                     if (j == st_property_no) {
-                        sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                _property_not_defined_);
+                        sprintf(report_row, "#%d %s%s", st_element[st_thermal_load[i].element].property_no,
+                                _property_not_defined_,rn);
                         strcat(report, report_row);
                         break;
                     }
@@ -5596,7 +5895,7 @@ void Static_analysis(void) {
     double m_mass;
     double m_qx, m_qy;
     int mi;
-    BOOL no_error;
+    BOOL no_error = TRUE;
 
     st_mass_node = NULL;
     st_mass_element = NULL;
@@ -5766,23 +6065,37 @@ void Static_analysis(void) {
         int edit_params = 0;
         int tab;
         int single = 0;
-        int mynCmdShow = 0;
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
+        report[0]='\0';
+        no_error = FALSE;
     } else {
-        sprintf(params, "-i %s -o %s > frame3dd.ret", "alfacad.3dd", "alfacad.out");
+        show_mouse(screen);
+        set_cursor_busy();
+        //_free_mouse();
+
+        sprintf(params, "-i %s -o %s > frame3dd.ret", "alfacad.3dd", "alfacad.out");   //-s Off
         runcode = RunSilent("frame3dd.exe", params);
 
         printf("\nframe3dd runcode:%d\n", runcode);
+
+#ifdef LINUX
         runcode_short = runcode >> 8;
-        //runcode_short = runcode & 0xFF;
+#else
+        runcode_short = runcode;
+#endif
+        if ((runcode_short < 0) || (runcode_short > 206)) runcode_short = 1;
+
+        
         printf("\nframe3dd runcode_shoort:%d\n", runcode_short);
+
+        //show_mouse(NULL);
+        set_cursor_pointer();
+      
 
         if (runcode_short > 0) {
             ret = ask_question(1, "", "OK", "", __FRAME3DD__, 12, frame3dd[runcode_short], 11, 1, 0);
         }
 
-
-        no_error=TRUE;
         ////CREATING RESULT BLOCKS
 
         if ((runcode_short == 0) || ((runcode_short > 180) && (runcode_short < 200)) ||
@@ -5794,12 +6107,13 @@ void Static_analysis(void) {
             double X1, Y1, Z1, X2, Y2, Z2;
             double xdsp, ydsp, zdsp, xdsp1, ydsp1;
             BOOL new_line = TRUE, new_line1 = TRUE;
-            LINIA Ldsp = Ldef, Ldsp1, Ldsp01, Ldsp11;
+            LINIA Ldsp = Ldef, Ldsp1, Ldsp01, Ldsp11, Lr;
             char desired_layer[maxlen_w];
             char desired_layer_bak[maxlen_w];
             int desired_layer_no;
             int ii, il;
             BOOL hiding;
+            float ldf, ldb, rdf, rdb;  //virtual elements length, node radii
 
             Ldsp.blok = 1;
             Ldsp.kolor = static_colors.deformation_color;
@@ -5831,6 +6145,7 @@ void Static_analysis(void) {
                 delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
             } else {
                 if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+                    
                     ret = ask_question(1, "", (char *) confirm, "",
                                        (char *) _CANNOT_CREATE_NEW_LAYER_, 12, "", 11,
                                        1, 62);
@@ -5838,6 +6153,7 @@ void Static_analysis(void) {
                     goto error;
                 }
                 if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+                    
                     ret = ask_question(1, "", (char *) confirm, "",
                                        (char *) _CANNOT_CREATE_NEW_LAYER_, 12, "", 11,
                                        1, 62);
@@ -5872,19 +6188,70 @@ void Static_analysis(void) {
                 draw_geo_label(&L, i + 1, TRUE, FALSE, st_node[i].real);
             }
             for (i = 0; i < st_element_no; i++) {
+
                 if ((st_element[i].node1r > -1) && (st_element[i].node2r > -1)) {
                     L.x1 = st_node[st_element[i].node1r].x;
                     L.y1 = st_node[st_element[i].node1r].y;
                     L.x2 = st_node[st_element[i].node2r].x;
                     L.y2 = st_node[st_element[i].node2r].y;
+
+                    Lr.x1 = st_node[st_element[i].node1].x;
+                    Lr.y1 = st_node[st_element[i].node1].y;
+                    Lr.x2 = st_node[st_element[i].node2].x;
+                    Lr.y2 = st_node[st_element[i].node2].y;
+
+                    ldf=(float)sqrt((L.x1-Lr.x1)*(L.x1-Lr.x1)+(L.y1-Lr.y1)*(L.y1-Lr.y1));
+                    ldb=(float)sqrt((L.x2-Lr.x2)*(L.x2-Lr.x2)+(L.y2-Lr.y2)*(L.y2-Lr.y2));
+
+                    rdf=jednostkiOb(st_node[st_element[i].node1].radius);
+                    rdb=jednostkiOb(st_node[st_element[i].node2].radius);
+
                     draw_geo_label(&L, i + 1, FALSE, TRUE, 1);
                 } else {
                     L.x1 = st_node[st_element[i].node1].x;
                     L.y1 = st_node[st_element[i].node1].y;
                     L.x2 = st_node[st_element[i].node2].x;
                     L.y2 = st_node[st_element[i].node2].y;
+
+                    ldf=0;
+                    ldb=0;
+
+                    rdf=0;
+                    rdb=0;
+
                     draw_geo_label(&L, i + 1, FALSE, TRUE, 0);
                 }
+
+                int property_no = abs(st_element[i].property_no);  ////negative is for virtual element
+                int ip, eip=-1;
+                //search for properties
+                for (ip = 0; ip < st_property_no; ip++)
+                {
+                    if (st_property[ip].n == property_no) {
+                        eip=ip;
+                        break;
+                    }
+                }
+
+                if (ip == st_property_no)
+                {
+                    sprintf(report_row, "#%d %s%s", property_no, _property_not_defined_,rn);
+                    strcat(report, report_row);
+                }
+
+                //adding element axis with number
+                if (!draw_line_element_number(i+1, &L, ldf, ldb, rdf, rdb, st_element[i].property_no, eip))  //Element number
+                {
+                    fclose(f);
+                    ret = ask_question(1, "", (char *) confirm, "",
+                                       (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, "",
+                                       11, 1,
+                                       62);
+
+                    no_error=FALSE;
+                    goto error;
+                }
+
             }
             /////////////////////
             char SLS_ULS[12];
@@ -6261,9 +6628,9 @@ void Static_analysis(void) {
             DATA_ROW *dr;
             int *cfp, *cfm;
             BOOL not_ignored = TRUE;  //TEMPORARY
-            double S, Sp, Sm, Ss;  //sigma, sigma plus, sigma minus
-            double NxM, VyM, VzM, TxM, MyM, MzM, DxM, DyM, DzM, RxM, SpM, SmM, SsM; //sigma plus max, sigma minus max
-            double Nxm, Vym, Vzm, Txm, Mym, Mzm, Dxm, Dym, Dzm, Rxm, Spm, Smm, Ssm; //sigma plus min, sigma minus min
+            double S, Sp, Sm, Ss;  // sigma, sigma plus, sigma minus
+            double NxM, VyM, VzM, TxM, MyM, MzM, DxM, DyM, DzM, RxM, SpM, SmM, SsM; // sigma plus max, sigma minus max
+            double Nxm, Vym, Vzm, Txm, Mym, Mzm, Dxm, Dym, Dzm, Rxm, Spm, Smm, Ssm; // sigma plus min, sigma minus min
             double Dxy, Dxy0, Nx0, Vy0, Mz0, Dxy01, Nx01, Vy01, Mz01, Sp0, Sm0, Ss0, Sp01, Sm01, Ss01, Ax, Wy;
             double x11, y11, x11_, y11_;
             LINIA Le = Ldef;
@@ -6275,8 +6642,13 @@ void Static_analysis(void) {
             double xd, xdmin;
             int RC_flag;
             double B, H, C, Zeta, Fyd;
+            GRAPH_DATA graph_data;
 
             LINIA Ldsp_, Ldsp1_;
+
+            failed_elements = (BOOL*) malloc(sizeof(BOOL*)*st_element_no);
+            for (int fei=0; fei<st_element_no; fei++) failed_elements[fei]=FALSE;
+            //BOOL new_element_block=FALSE;
 
             //Dx, Dy
 
@@ -6408,7 +6780,23 @@ void Static_analysis(void) {
                     if (ptr) {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
-
+                        
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
+                        //for combi_total_numbers[i].combi == 2 or ==3
+                        //noname block is inserted within outer deformation block
+                        //after generating entire graph Dxy(x) with nx sections
+                        //the final centre (axis) line will be generated as thin centre line extended with data segment
+                        //data segment will include number of element .enr, type of data .dt (Nx=1, Vy=2, Mz=3, sigma=4, tau=5),
+                        // state number .st (2 for ULS or 3 for SLS), number of data .nx
+                        // then the array of dr[inxi].x followed by respectively:
+                        // fd[inx].Nx_min, fd[inx].Nx_max
+                        // fd[inx].Vy_min, fd[inx].Vy_max
+                        // fd[inx].Mz_min, fd[inx].Mz_max
+                        // fd[inx].Sp_min, fd[inx].Sp_max
+                        // fd[inx].Sm_min, fd[inx].Sm_max
+                        // fd[inx].Ss_min, fd[inx].Ss_max
+                        
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
                         cfp = (int *) malloc(nx * sizeof(int));
                         cfm = (int *) malloc(nx * sizeof(int));
@@ -6426,21 +6814,23 @@ void Static_analysis(void) {
                         kos1 = sin(Angle_Normal((PL.kat + 90) * Pi / 180));
                         koc1 = cos(Angle_Normal((PL.kat + 90) * Pi / 180));
 
-                        int property_no = st_element[rep_element_no - 1].property_no;
+                        int property_no = abs(st_element[rep_element_no - 1].property_no); ////negative is for virtual element
                         //search for properties
-                        for (int ip = 0; ip < st_property_no; ip++) {
+                        int ip;
+                        for (ip = 0; ip < st_property_no; ip++)
+                        {
                             if (st_property[ip].n == property_no) {
                                 Ax = st_property[ip].A * unit_factors->Am_f;
                                 Asy = st_property[ip].Asy * unit_factors->Am_f;
                                 Wy = st_property[ip].Wy;
                                 break;
                             }
-                            if (ip == st_property_no) {
-                                sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                        _property_not_defined_);
-                                strcat(report, report_row);
-                                break;
-                            }
+                        }
+
+                        if (ip == st_property_no)
+                        {
+                            sprintf(report_row, "#%d %s%s", property_no, _property_not_defined_,rn);
+                            strcat(report, report_row);
                         }
 
                         Dxy0 = 0;
@@ -6458,8 +6848,7 @@ void Static_analysis(void) {
 
                         if (combi_total_numbers[i].combi > 1)  //combi
                         {
-                            if (combi_total_numbers[i].first ==
-                                1)  //creating min max values data for element and initializing values, keep them until stress are generated in next steps
+                            if (combi_total_numbers[i].first == 1)  //creating min max values data for element and initializing values, keep them until stress are generated in next steps
                             {
                                 if (combi_total_numbers[i].combi == 2)   //initiation on first state, so ULSLC
                                 {
@@ -6675,10 +7064,14 @@ void Static_analysis(void) {
                             if (copysign(1.0, DyM) == copysign(1.0, Dym)) DyM = 0.0;
                         }
 
-                    } else if (ptr_row) {
-                        if (not_ignored) {
+                    }
+                    else if (ptr_row)
+                    {
+                        if (not_ignored)
+                        {
                             int inxi = 0;
-                            while (inxi < nx) {
+                            while (inxi < nx)
+                            {
                                 fgets(report_row, MaxTextLen, f);
                                 if ((strlen(report_row) > 0) && (strchr(report_row, '#') == NULL)) {
                                     if (sscanf(report_row, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &dr[inxi].x,
@@ -6688,7 +7081,8 @@ void Static_analysis(void) {
                                         inxi++;
                                 }
                             }
-                            for (int inx = 0; inx < inxi; inx++) {
+                            for (int inx = 0; inx < inxi; inx++)
+                            {
                                 double Nx_min, Nx_max, Vy_min, Vy_max, Mz_min, Mz_max, Dx_min, Dx_max, Dy_min, Dy_max, Sp_min, Sp, Sm, Ss, Sp_max, Sm_min, Sm_max, Ss_min, Ss_max;
                                 double Dl, DlM, Dlm;
 
@@ -6703,6 +7097,7 @@ void Static_analysis(void) {
                                         1)  //creating min max values data for element and initializing values
                                     {
                                         COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
+                                        fd[inx].x = dr[inx].x;
                                         fd[inx].Nx_min = dr[inx].Nx;
                                         fd[inx].Nx_max = dr[inx].Nx;
                                         fd[inx].Vy_min = dr[inx].Vy;
@@ -6875,7 +7270,8 @@ void Static_analysis(void) {
                                     }
 
                                 }
-                                if ((combi_total_numbers[i].combi < 2) || (combi_total_numbers[i].last == 1)) {
+                                if ((combi_total_numbers[i].combi < 2) || (combi_total_numbers[i].last == 1))
+                                {
 
                                     if (combi_total_numbers[i].combi > 1) {
 
@@ -6918,7 +7314,7 @@ void Static_analysis(void) {
                                             if (!Check_if_Equal2(Dxy, Dxy0)) {
                                                 if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "")) {
                                                     Ldsp_.typ = 68;
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     Ldsp_.typ = 64;
                                                 }
                                             }
@@ -6945,14 +7341,14 @@ void Static_analysis(void) {
                                             if (!Check_if_Equal2(Dxy, Dxy0)) {
                                                 if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) /*Dxy*/, def_precision, FALSE, "")) {
                                                     Ldsp_.typ = 68;
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     Ldsp_.typ = 64;
                                                 }
                                             }
                                             Dxy0 = Dxy;
                                         }
 
-                                        if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                        if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
                                             fclose(f);
                                             ret = ask_question(1, "", (char *) confirm, "",
                                                                (char *) _CANNOT_CREATE_DEFORMATION_BLOCK_, 12,
@@ -7005,7 +7401,7 @@ void Static_analysis(void) {
                                                 if (!Check_if_Equal2(Dxy, Dxy01)) {
                                                     if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "")) {
                                                         Ldsp_.typ = 68;
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         Ldsp_.typ = 64;
                                                     }
                                                 }
@@ -7032,14 +7428,14 @@ void Static_analysis(void) {
                                                 if (!Check_if_Equal2(Dxy, Dxy01)) {
                                                     if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) , def_precision, FALSE, "")) {
                                                         Ldsp_.typ = 68;
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         Ldsp_.typ = 64;
                                                     }
                                                 }
                                                 Dxy01 = Dxy;
                                             }
 
-                                            if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1) == NULL) {
+                                            if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1) == NULL) {
                                                 fclose(f);
                                                 ret = ask_question(1, "", (char *) confirm, "",
                                                                    (char *) _CANNOT_CREATE_DEFORMATION_BLOCK_, 12,
@@ -7056,6 +7452,27 @@ void Static_analysis(void) {
                                         }
                                     }
 
+                                }
+                            }
+                            if ((combi_total_numbers[i].combi > 1) && (combi_total_numbers[i].last == 1)) //combi
+                            {
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 0, 0))  //Dy
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (Dy)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
+                                }
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 1, 0))  //Dx
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (Dx)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
                                 }
                             }
                         }
@@ -7195,6 +7612,9 @@ void Static_analysis(void) {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
 
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
+
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
 
                         n1 = st_element[rep_element_no - 1].node1;
@@ -7253,7 +7673,8 @@ void Static_analysis(void) {
                                 }
                             }
 
-                            for (int inx = 0; inx < inxi; inx++) {
+                            for (int inx = 0; inx < inxi; inx++)
+                            {
                                 double Nx_min, Nx_max, Vy_min, Vy_max, Mz_min, Mz_max, Dx_min, Dx_max, Dy_min, Dy_max;
 
                                 if (combi_total_numbers[i].combi > 1)  //combi
@@ -7320,7 +7741,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                 if (!Check_if_Equal(Nx, 0.0) &&
                                                     ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
@@ -7345,7 +7766,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                 if (!Check_if_Equal(Nx, 0.0) &&
                                                     ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
@@ -7360,7 +7781,7 @@ void Static_analysis(void) {
                                                 }
                                             }
 
-                                            if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                            if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
                                                 fclose(f);
                                                 ret = ask_question(1, "", (char *) confirm, "",
                                                                    (char *) _CANNOT_CREATE_FORCE_BLOCK_, 12, "", 11, 1,
@@ -7404,7 +7825,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                     if (!Check_if_Equal(Nx, 0.0) &&
                                                         ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
@@ -7429,7 +7850,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                     if (!Check_if_Equal(Nx, 0.0) &&
                                                         ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
@@ -7444,7 +7865,7 @@ void Static_analysis(void) {
                                                     }
                                                 }
 
-                                                if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1) == NULL) {
+                                                if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1) == NULL) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
                                                                        (char *) _CANNOT_CREATE_FORCE_BLOCK_, 12, "", 11,
@@ -7459,6 +7880,18 @@ void Static_analysis(void) {
                                                 Ldsp1.y1 = Ldsp1.y2;
                                             }
                                         }
+                                    }
+                                }
+                            }
+                            if (combi_total_numbers[i].combi > 1)  //combi
+                            {
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 2, 0))  //Nx
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (Nx)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
                                     }
                                 }
                             }
@@ -7594,6 +8027,9 @@ void Static_analysis(void) {
                     if (ptr) {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
+
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
 
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
                         cfp = (int *) malloc(nx * sizeof(int));
@@ -7745,7 +8181,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                 if (!Check_if_Equal(Vy, 0.0) &&
                                                     ((Check_if_Equal(Vy, VyM) || Check_if_Equal(Vy, Vym)) ||
@@ -7772,7 +8208,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                 if (!Check_if_Equal(Vy, 0.0) &&
                                                     ((Check_if_Equal(Vy, VyM) || Check_if_Equal(Vy, Vym)) ||
@@ -7789,7 +8225,7 @@ void Static_analysis(void) {
                                                 }
                                             }
 
-                                            if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                            if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
                                                 fclose(f);
                                                 ret = ask_question(1, "", (char *) confirm, "",
                                                                    (char *) _CANNOT_CREATE_FORCE_BLOCK_, 12, "", 11, 1,
@@ -7833,7 +8269,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                     if (!Check_if_Equal(Vy, 0.0) &&
                                                         ((Check_if_Equal(Vy, VyM) || Check_if_Equal(Vy, Vym)) ||
@@ -7860,7 +8296,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (check_if_not_virtual(x, PL, rep_element_no)) {
                                                     if (!Check_if_Equal(Vy, 0.0) &&
                                                         ((Check_if_Equal(Vy, VyM) || Check_if_Equal(Vy, Vym)) ||
@@ -7877,7 +8313,7 @@ void Static_analysis(void) {
                                                     }
                                                 }
 
-                                                if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1) == NULL) {
+                                                if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1) == NULL) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
                                                                        (char *) _CANNOT_CREATE_FORCE_BLOCK_, 12, "", 11,
@@ -7896,6 +8332,18 @@ void Static_analysis(void) {
                                     }
                                 }
                             }
+                            if (combi_total_numbers[i].combi > 1)  //combi
+                            {
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 3, 0))  //Vy
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (Vy)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
+                                }
+                            }
                         }
                         free(cfp);
                         free(cfm);
@@ -7905,6 +8353,7 @@ void Static_analysis(void) {
                 }
                 fclose(f);
             }
+
             //Mz
             Ldsp.kolor = static_colors.moment_color;
 
@@ -8029,6 +8478,9 @@ void Static_analysis(void) {
                     if (ptr) {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
+
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
 
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
                         cfp = (int *) malloc(nx * sizeof(int));
@@ -8173,7 +8625,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (!Check_if_Equal(Mz, 0.0) &&
                                                 ((Check_if_Equal(Mz, MzM) || Check_if_Equal(Mz, Mzm)) ||
                                                  (Check_if_Equal(x, 0.0) ||
@@ -8192,7 +8644,7 @@ void Static_analysis(void) {
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
-                                            ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                            ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                             if (!Check_if_Equal(Mz, 0.0) &&
                                                 ((Check_if_Equal(Mz, MzM) || Check_if_Equal(Mz, Mzm)) ||
                                                  (Check_if_Equal(x, 0.0) ||
@@ -8202,7 +8654,7 @@ void Static_analysis(void) {
                                                 Mz0 = Mz;
                                             }
 
-                                            if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                            if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
                                                 fclose(f);
                                                 ret = ask_question(1, "", (char *) confirm, "",
                                                                    (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "", 11, 1,
@@ -8238,7 +8690,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Mz, 0.0) &&
                                                     ((Check_if_Equal(Mz, MzM) || Check_if_Equal(Mz, Mzm)) ||
                                                      (Check_if_Equal(x, 0.0) ||
@@ -8257,7 +8709,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Mz, 0.0) &&
                                                     ((Check_if_Equal(Mz, MzM) || Check_if_Equal(Mz, Mzm)) ||
                                                      (Check_if_Equal(x, 0.0) ||
@@ -8267,7 +8719,7 @@ void Static_analysis(void) {
                                                     Mz01 = Mz;
                                                 }
 
-                                                if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1) == NULL) {
+                                                if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1) == NULL) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
                                                                        (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
@@ -8286,6 +8738,19 @@ void Static_analysis(void) {
                                     }
                                 }
                             }
+
+                            if (combi_total_numbers[i].combi > 1)  //combi
+                            {
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 4, 0))  //Mz
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (Mz)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
+                                }
+                            }
                         }
                         free(cfp);
                         free(cfm);
@@ -8295,11 +8760,13 @@ void Static_analysis(void) {
                 }
                 fclose(f);
             }
+
             /////////
             //for steel and wood elements only
             //for RC elements calculation replaced by stress check in compressed part of section and approximation of axial reinforcement ratio
             /////////
-            //σ  sigma  stress check  - just within element lenght outside nodes radius
+
+            //sigma  σ  stress check  - just within element lenght outside nodes radius
             //stress_color is built from 2;
             Ldsp.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -8426,15 +8893,20 @@ void Static_analysis(void) {
                 new_line = TRUE;
                 new_line1 = TRUE;
 
-                while (fgets(report_row, MaxTextLen, f)) {
+                while (fgets(report_row, MaxTextLen, f))
+                {
                     double x, Nx, Vy, Vz, Tx, My, Mz, Dx, Dy, Dz, Rx;
                     ptr = strstr(report_row, "# @");
                     ptr_max = strstr(report_row, "# MAXIMUM");
                     ptr_min = strstr(report_row, "# MINIMUM");
                     ptr_row = strstr(report_row, "#.x");
-                    if (ptr) {
+                    if (ptr)
+                    {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
+
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
 
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
                         cfp = (int *) malloc(nx * sizeof(int));
@@ -8453,9 +8925,11 @@ void Static_analysis(void) {
                         kos1 = sin(Angle_Normal((PL.kat - 90) * Pi / 180));
                         koc1 = cos(Angle_Normal((PL.kat - 90) * Pi / 180));
 
-                        int property_no = st_element[rep_element_no - 1].property_no;
+                        int property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
                         //search for properties
-                        for (int ip = 0; ip < st_property_no; ip++) {
+                        int ip;
+                        for (ip = 0; ip < st_property_no; ip++)
+                        {
                             if (st_property[ip].n == property_no) {
                                 Ax = st_property[ip].A * unit_factors->Am_f;
                                 Asy = st_property[ip].Asy * unit_factors->Am_f;
@@ -8468,12 +8942,12 @@ void Static_analysis(void) {
                                 Fyd = st_property[ip].fyd;
                                 break;
                             }
-                            if (ip == st_property_no) {
-                                sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                        _property_not_defined_);
-                                strcat(report, report_row);
-                                break;
-                            }
+                        }
+
+                        if (ip == st_property_no)
+                        {
+                            sprintf(report_row, "#%d %s%s", property_no, _property_not_defined_,rn);
+                            strcat(report, report_row);
                         }
 
                         Dxy0 = 0;
@@ -8509,8 +8983,10 @@ void Static_analysis(void) {
                         Spm = (Nxm / Ax + fabs(Mzm) / Wy) / unit_factors->S_f;
                         Smm = (Nxm / Ax - fabs(Mzm) / Wy) / unit_factors->S_f;
 
-                    } else if (ptr_row) {
-                        if (not_ignored) {
+                    } else if (ptr_row)
+                    {
+                        if (not_ignored)
+                        {
                             int inxi = 0;
                             while (inxi < nx) {
                                 fgets(report_row, MaxTextLen, f);
@@ -8530,7 +9006,8 @@ void Static_analysis(void) {
                                 }
                             }
 
-                            if ((combi_total_numbers[i].combi < 2) || (combi_total_numbers[i].last == 1)) {
+                            if ((combi_total_numbers[i].combi < 2) || (combi_total_numbers[i].last == 1))
+                            {
                                 if ((st_element[rep_element_no - 1].node1r != -1) &&
                                     (st_element[rep_element_no - 1].node2r != -1)) {
                                     if (combi_total_numbers[i].combi > 1)  //combi
@@ -8599,7 +9076,8 @@ void Static_analysis(void) {
                                 }
                             }
 
-                            for (int inx = 0; inx < inxi; inx++) {
+                            for (int inx = 0; inx < inxi; inx++)
+                            {
                                 double Nx_min, Nx_max, Vy_min, Vy_max, Mz_min, Mz_max, Dx_min, Dx_max, Dy_min, Dy_max, Sp_min, Sp_max, Sm_min, Sm_max, Ss_min, Ss_max;
 
                                 n1 = st_element[rep_element_no - 1].node1;
@@ -8707,7 +9185,7 @@ void Static_analysis(void) {
                                                     Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Sp, 0.0) &&
                                                     (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                        Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -8729,7 +9207,7 @@ void Static_analysis(void) {
                                                 Ldsp1_.x2 = Ldsp1.x1;
                                                 Ldsp1_.y2 = Ldsp1.y1;
                                                 Ldsp1_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                 if (!Check_if_Equal(Sm, 0.0) &&
                                                     (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                        Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -8754,13 +9232,13 @@ void Static_analysis(void) {
                                                 Ldsp_.y2 = Ldsp.y2;
                                                 Ldsp_.blok = 1;
 
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp);
 
                                                 if (Sp < 0)
                                                     Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                 if (!Check_if_Equal(Sp, 0.0) &&
                                                     (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -8778,7 +9256,7 @@ void Static_analysis(void) {
                                                 if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
-                                                                       (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
+                                                                       (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, "",
                                                                        11, 1,
                                                                        62);
 
@@ -8796,13 +9274,13 @@ void Static_analysis(void) {
                                                 Ldsp1_.y2 = Ldsp1.y2;
                                                 Ldsp1_.blok = 1;
 
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1);
 
                                                 if (Sm < 0)
                                                     Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                 if (!Check_if_Equal(Sm, 0.0) &&
                                                     (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -8820,7 +9298,7 @@ void Static_analysis(void) {
                                                 if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
-                                                                       (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
+                                                                       (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, "",
                                                                        11, 1,
                                                                        62);
 
@@ -8878,7 +9356,7 @@ void Static_analysis(void) {
                                                         Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     if (!Check_if_Equal(Sp, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -8900,7 +9378,7 @@ void Static_analysis(void) {
                                                     Ldsp1_.x2 = Ldsp11.x1;
                                                     Ldsp1_.y2 = Ldsp11.y1;
                                                     Ldsp1_.blok = 1;
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                     if (!Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -8925,13 +9403,13 @@ void Static_analysis(void) {
                                                     Ldsp_.y2 = Ldsp01.y2;
                                                     Ldsp_.blok = 1;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp01);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp01);
 
                                                     if (Sp < 0)
                                                         Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                     if (!Check_if_Equal(Sp, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -8949,7 +9427,7 @@ void Static_analysis(void) {
                                                     if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                         fclose(f);
                                                         ret = ask_question(1, "", (char *) confirm, "",
-                                                                           (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12,
+                                                                           (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12,
                                                                            "",
                                                                            11, 1,
                                                                            62);
@@ -8968,13 +9446,13 @@ void Static_analysis(void) {
                                                     Ldsp1_.y2 = Ldsp11.y2;
                                                     Ldsp1_.blok = 1;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp11);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp11);
 
                                                     if (Sm < 0)
                                                         Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                    ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                     if (!Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -8992,7 +9470,7 @@ void Static_analysis(void) {
                                                     if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                         fclose(f);
                                                         ret = ask_question(1, "", (char *) confirm, "",
-                                                                           (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12,
+                                                                           (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12,
                                                                            "",
                                                                            11, 1,
                                                                            62);
@@ -9012,10 +9490,10 @@ void Static_analysis(void) {
                                         }
                                       }
                                     }
-                                    else  //RC
+                                    else //RC
                                     {
                                         //////////////////////////////
-                                        if ((combi_total_numbers[i].combi == 2)) //just for ULSLC
+                                        if (combi_total_numbers[i].combi == 2) //just for ULSLC
                                         {
 
                                             if ((st_element[rep_element_no - 1].node1r != -1) &&
@@ -9126,7 +9604,7 @@ void Static_analysis(void) {
                                                         Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     if (!Check_if_Equal(Sp, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -9148,7 +9626,7 @@ void Static_analysis(void) {
                                                     Ldsp1_.x2 = Ldsp1.x1;
                                                     Ldsp1_.y2 = Ldsp1.y1;
                                                     Ldsp1_.blok = 1;
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                     if (!Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -9173,13 +9651,13 @@ void Static_analysis(void) {
                                                     Ldsp_.y2 = Ldsp.y2;
                                                     Ldsp_.blok = 1;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp);
 
                                                     if (Sp < 0)
                                                         Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                    ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                     if (!Check_if_Equal(Sp, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -9197,7 +9675,7 @@ void Static_analysis(void) {
                                                     if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                         fclose(f);
                                                         ret = ask_question(1, "", (char *) confirm, "",
-                                                                           (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
+                                                                           (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, "",
                                                                            11, 1,
                                                                            62);
 
@@ -9215,13 +9693,13 @@ void Static_analysis(void) {
                                                     Ldsp1_.y2 = Ldsp1.y2;
                                                     Ldsp1_.blok = 1;
 
-                                                    ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1);
 
                                                     if (Sm < 0)
                                                         Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                    ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                    ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                     if (!Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -9239,7 +9717,7 @@ void Static_analysis(void) {
                                                     if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                         fclose(f);
                                                         ret = ask_question(1, "", (char *) confirm, "",
-                                                                           (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
+                                                                           (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, "",
                                                                            11, 1,
                                                                            62);
 
@@ -9314,7 +9792,7 @@ void Static_analysis(void) {
                                                             Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         if (!Check_if_Equal(Sp, 0.0) &&
                                                             (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                                Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -9336,7 +9814,7 @@ void Static_analysis(void) {
                                                         Ldsp1_.x2 = Ldsp11.x1;
                                                         Ldsp1_.y2 = Ldsp11.y1;
                                                         Ldsp1_.blok = 1;
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                         if (!Check_if_Equal(Sm, 0.0) &&
                                                             (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                                Check_if_Equal(dr[inx].Mz, Mzm)) ||
@@ -9361,13 +9839,13 @@ void Static_analysis(void) {
                                                         Ldsp_.y2 = Ldsp01.y2;
                                                         Ldsp_.blok = 1;
 
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp01);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp01);
 
                                                         if (Sp < 0)
                                                             Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                        ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                        ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                         if (!Check_if_Equal(Sp, 0.0) &&
                                                             (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -9385,7 +9863,7 @@ void Static_analysis(void) {
                                                         if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                             fclose(f);
                                                             ret = ask_question(1, "", (char *) confirm, "",
-                                                                               (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12,
+                                                                               (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12,
                                                                                "",
                                                                                11, 1,
                                                                                62);
@@ -9404,13 +9882,13 @@ void Static_analysis(void) {
                                                         Ldsp1_.y2 = Ldsp11.y2;
                                                         Ldsp1_.blok = 1;
 
-                                                        ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp11);
+                                                        ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp11);
 
                                                         if (Sm < 0)
                                                             Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
-                                                        ptr_l_ = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1_);
+                                                        ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                         if (!Check_if_Equal(Sm, 0.0) &&
                                                             (((Check_if_Equal(dr[inx].Mz, MzM) ||
@@ -9428,7 +9906,7 @@ void Static_analysis(void) {
                                                         if ((ptr_l == NULL) || (ptr_l_ == NULL)) {
                                                             fclose(f);
                                                             ret = ask_question(1, "", (char *) confirm, "",
-                                                                               (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12,
+                                                                               (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12,
                                                                                "",
                                                                                11, 1,
                                                                                62);
@@ -9453,12 +9931,27 @@ void Static_analysis(void) {
                                     //// drawing graph ////
                                 }
                             }
+
+                            if (combi_total_numbers[i].combi > 1)  //combi
+                            {
+
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 5, 0))  //S
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (σ)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
+                                }
+                            }
                         }
                         free(cfp);
                         free(cfm);
                         free(dr);
                     }
-                    if (rout) printf("%s", report_row);
+                    if (rout)
+                        printf("%s", report_row);
                 }
                 fclose(f);
             }
@@ -9467,7 +9960,8 @@ void Static_analysis(void) {
             //for steel and wood elements only
             //for RC elements calculation is skipped and replaced by approximation of shear reinforcement ratio
             /////////
-            //τ  tau shear stress check
+
+            //tau τ  shear stress check
             //stress_color is built from 2;
             Ldsp.kolor = static_stress_colors.shear_stress_color;
 
@@ -9600,6 +10094,9 @@ void Static_analysis(void) {
                         ret = sscanf(ptr + 4, "%d %d %d %lf %lf %lf %lf %lf %lf %d", &rep_element_no, &N1, &N2, &X1,
                                      &Y1, &Z1, &X2, &Y2, &Z2, &nx);
 
+                        //new_element_block=TRUE;
+                        add_block_in_block(B_GRAPH,PL_SIEC);
+
                         dr = (DATA_ROW *) malloc(nx * sizeof(DATA_ROW));
 
                         n1 = st_element[rep_element_no - 1].node1;
@@ -9615,9 +10112,11 @@ void Static_analysis(void) {
                         kos1 = sin(Angle_Normal((PL.kat - 90) * Pi / 180));
                         koc1 = cos(Angle_Normal((PL.kat - 90) * Pi / 180));
 
-                        int property_no = st_element[rep_element_no - 1].property_no;
+                        int property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
                         //search for properties
-                        for (int ip = 0; ip < st_property_no; ip++) {
+                        int ip;
+                        for (ip = 0; ip < st_property_no; ip++)
+                        {
                             if (st_property[ip].n == property_no) {
                                 Ax = st_property[ip].A * unit_factors->Am_f;
                                 Asy = st_property[ip].Asy * unit_factors->Am_f;
@@ -9630,12 +10129,12 @@ void Static_analysis(void) {
                                 Fyd = st_property[ip].fyd;
                                 break;
                             }
-                            if (ip == st_property_no) {
-                                sprintf(report_row, "#%d %s\n", st_element[st_thermal_load[i].element].property_no,
-                                        _property_not_defined_);
-                                strcat(report, report_row);
-                                break;
-                            }
+                        }
+
+                        if (ip == st_property_no)
+                        {
+                            sprintf(report_row, "#%d %s%s", property_no, _property_not_defined_,rn);
+                            strcat(report, report_row);
                         }
 
                         Dxy0 = 0;
@@ -9664,8 +10163,10 @@ void Static_analysis(void) {
 
                         Ssm = (Vym / Asy) / unit_factors->S_f;
 
-                    } else if (ptr_row) {
-                        if (not_ignored) {
+                    } else if (ptr_row)
+                    {
+                        if (not_ignored)
+                        {
                             int inxi = 0;
                             while (inxi < nx) {
                                 fgets(report_row, MaxTextLen, f);
@@ -9734,8 +10235,8 @@ void Static_analysis(void) {
 
                                             Ss = fabs((Vy / Asy) / unit_factors->S_f);
 
-                                            SsM = (VyM / Asy) / unit_factors->S_f;
-                                            Ssm = (Vym / Asy) / unit_factors->S_f;
+                                            SsM = ((VyM / unit_factors->F_f) / Asy) / unit_factors->S_f;
+                                            Ssm = ((Vym / unit_factors->F_f) / Asy) / unit_factors->S_f;
 
                                             x = dr[inx].x;
 
@@ -9757,7 +10258,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp.x1;
                                                 Ldsp_.y2 = Ldsp.y1;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Ss, 0.0) &&
                                                     (((Check_if_Equal(Ss, SsM) || Check_if_Equal(Ss, Ssm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
@@ -9779,7 +10280,7 @@ void Static_analysis(void) {
                                                 Ldsp_.x2 = Ldsp.x2;
                                                 Ldsp_.y2 = Ldsp.y2;
                                                 Ldsp_.blok = 1;
-                                                ptr_l = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp_);
+                                                ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Ss, 0.0) &&
                                                     (((Check_if_Equal(Ss, SsM) || Check_if_Equal(Ss, Ssm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
@@ -9791,10 +10292,10 @@ void Static_analysis(void) {
                                                     Ss0 = Ss;
                                                 }
 
-                                                if (dodaj_obiekt((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                                if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
                                                     fclose(f);
                                                     ret = ask_question(1, "", (char *) confirm, "",
-                                                                       (char *) _CANNOT_CREATE_MOMENT_BLOCK_, 12, "",
+                                                                       (char *) _CANNOT_CREATE_SHEAR_STRESS_BLOCK_, 12, "",
                                                                        11, 1,
                                                                        62);
 
@@ -9809,11 +10310,126 @@ void Static_analysis(void) {
                                         }
                                       }
                                     }
-                                    else
+                                    else //RC
                                     {
-                                         //TO DO - estimation of shear forces reinforcing
+                                         //Estimation of the reinforcing due to shear forces:
+                                         //here we assume that the entire shear force is taken up by the perpendicular reinforcement,
+                                         //regardless of whether these are stirrups or bent bars of the longitudinal reinforcement.
+                                         //Assuming that the tensile strength of the steel of the perpendicular reinforcement
+                                         //is the same as the tensile strength of the steel of the longitudinal reinforcement,
+                                         //we can determine the required cross-sectional area of the steel in the cross-section perpendicular to the axis of the element.
+                                         //The percentage share of reinforcement in the cross-section is determined by dividing this value
+                                         //by the total cross-sectional area of the concrete, omitting the effective value of the arm of forces in the cross-section,
+                                         //which allows for a quick assessment of whether the amount of required reinforcement does not exceed the assumed maximum value.
+                                        //////////////////////////////
+                                        if (combi_total_numbers[i].combi == 2) //just for ULSLC
+                                        {
+                                            if ((st_element[rep_element_no - 1].node1r != -1) &&
+                                                (st_element[rep_element_no - 1].node2r != -1)) {
+
+                                                //Vy /= unit_factors->F_f;
+
+                                                Ss = fabs(((Vy / unit_factors->F_f) / Asy) / unit_factors->S_f); //tensions in concrete
+
+                                                SsM = ((VyM / unit_factors->F_f) / Asy) / unit_factors->S_f;  //Max tensions in concrete
+                                                Ssm = ((Vym / unit_factors->F_f) / Asy) / unit_factors->S_f;  //Min tensions in concrete
+
+                                                double Ass = Vy / Fyd;
+                                                double pAss = Ass / (H*B) * 100.0;  //in %
+                                                char p_suffix[4]="";
+                                                double p_shear_precision;
+
+                                                strcpy(p_suffix,"%");
+
+                                                sp_magnitude=p_magnitude*0.1;  //so 10 times more than for main reinforcing
+                                                p_shear_precision = stress_precision;
+
+                                                x = dr[inx].x;
+
+                                                x /= units_factor;
+
+                                                x11 = Le.x1 + jednostkiOb(x) * koc;
+                                                y11 = Le.y1 + jednostkiOb(x) * kos;
+
+                                                Rotate_Point(kos1, koc1, x11, y11, x11 + pAss / sp_magnitude, y11, &xdsp,
+                                                             &ydsp);
+
+                                                if (new_line) {
+                                                    Ldsp.x1 = xdsp;
+                                                    Ldsp.y1 = ydsp;
+                                                    Ldsp.blok = 1;
+                                                    new_line = FALSE;
+                                                    Ldsp_.x1 = x11;
+                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x2 = Ldsp.x1;
+                                                    Ldsp_.y2 = Ldsp.y1;
+                                                    Ldsp_.blok = 1;
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
+                                                    if (!Check_if_Equal(Ss, 0.0) &&
+                                                        (((Check_if_Equal(Ss, SsM) || Check_if_Equal(Ss, Ssm)) ||
+                                                          (Check_if_Equal(x, 0.0) ||
+                                                           Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
+                                                        ((Check_if_Equal2(dr[inx].x, lb)) ||
+                                                         (Check_if_Equal2(dr[inx].x, le)))) {
+                                                        if (!Check_if_Equal(Ss, Ss0))
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix);
+                                                        Ss0 = Ss;
+                                                    }
+
+                                                } else {
+                                                    Ldsp.x2 = xdsp;
+                                                    Ldsp.y2 = ydsp;
+                                                    Ldsp.blok = 1;
+
+                                                    Ldsp_.x1 = x11;
+                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x2 = Ldsp.x2;
+                                                    Ldsp_.y2 = Ldsp.y2;
+                                                    Ldsp_.blok = 1;
+                                                    ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
+                                                    if (!Check_if_Equal(Ss, 0.0) &&
+                                                        (((Check_if_Equal(Ss, SsM) || Check_if_Equal(Ss, Ssm)) ||
+                                                          (Check_if_Equal(x, 0.0) ||
+                                                           Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
+                                                        ((Check_if_Equal2(dr[inx].x, lb)) ||
+                                                         (Check_if_Equal2(dr[inx].x, le)))) {
+                                                        if (!Check_if_Equal(Ss, Ss0))
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix);
+                                                        Ss0 = Ss;
+                                                    }
+
+                                                    if (dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp) == NULL) {
+                                                        fclose(f);
+                                                        ret = ask_question(1, "", (char *) confirm, "",
+                                                                           (char *) _CANNOT_CREATE_SHEAR_STRESS_BLOCK_, 12, "",
+                                                                           11, 1,
+                                                                           62);
+
+                                                        no_error = FALSE;
+                                                        goto error;
+                                                    }
+
+                                                    Ldsp.x1 = Ldsp.x2;
+                                                    Ldsp.y1 = Ldsp.y2;
+
+                                                }
+                                            }
+
+                                        }
                                     }
                                     //// drawing graph ////
+                                }
+                            }
+                            if (combi_total_numbers[i].combi > 1)  //combi
+                            {
+                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 6, Asy))  //Ss
+                                {
+                                    if (failed_elements[rep_element_no]==FALSE)
+                                    {
+                                        sprintf(report_row, "%s #%d (τ)%s", _element_graph_data_failed_, rep_element_no,rn);
+                                        strcat(report, report_row);
+                                        failed_elements[rep_element_no] = TRUE;
+                                    }
                                 }
                             }
                         }
@@ -9824,6 +10440,7 @@ void Static_analysis(void) {
                 fclose(f);
             }
             //////////  DYNAMIC
+
 
             if (st_dynamic_no > 0)
             {
@@ -10035,10 +10652,26 @@ void Static_analysis(void) {
 
     free(st_node);
 
+    if (failed_elements!=NULL) free(failed_elements);
+
+    //set_cursor_pointer();
+    show_mouse(NULL);
+    lock_mouse();
+
     redraw();
 
-    //showing text file
+    //set_cursor_pointer();
 
+    //showing execution report
+    if (strlen(report) > 0) {
+        int edit_params = 0;
+        int tab;
+        int single = 0;
+        ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
+        report[0]='\0';
+    };
+
+    //showing text file
 
     char *okular_="okular";
     char *org_kde_okular_="org.kde.okular";
@@ -10298,6 +10931,905 @@ pdf_viewed=1;
     return;
 }
 
+static int  nooop1(void)
+{
+    return 0;
+}
+
+static void redcr_ele(char typ)
+/*---------------------------*/
+{
+    static void (*CUR_oN)(double, double);
+    static void (*CUR_oFF)(double, double);
+    static int (*SW[9])(), sel_akt, sel_cur, sel_gor, sel_nr;
+
+    if (typ == 0)
+    {
+        CUR_OFF(X, Y);
+        sel_akt = sel.akt; ////sel.akt = 0;
+        sel_cur = sel.cur;
+        sel_gor = sel.gor; sel.gor = 0;
+        sel_nr = sel.nr;
+
+        CUR_oFF = CUR_OFF; CUR_OFF = out_sel_off;
+        CUR_oN = CUR_ON;   CUR_ON = out_sel_on;
+        SW[0] = SERV[73];  SERV[73] = sel_t;
+        SW[1] = SERV[81];  SERV[81] = sel_d;
+
+        SW[2] = SERV[58];
+        SW[3] = SERV[59];
+        SW[4] = SERV[60];
+        SW[5] = SERV[61];
+        SW[6] = SERV[62];
+        SW[7] = SERV[63];
+        SW[8] = SERV[64];
+
+        SERV[58] = nooop1;
+        SERV[59] = nooop1;
+        SERV[60] = nooop1;
+        SERV[61] = nooop1;
+        SERV[62] = nooop1;
+        SERV[63] = nooop1;
+        SERV[64] = nooop1;
+
+        menupini (&mSelect_State, _SELECT_STATE_, _SELECT_STATE_C_, 828) ;
+
+        menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State.pola)[limit_state].txt);
+
+        komunikat(0);
+        komunikat0(169);
+        CUR_ON(X, Y);
+    }
+    else
+    {
+        CUR_OFF(X, Y);
+        CUR_OFF = CUR_oFF;
+        CUR_ON = CUR_oN;
+        SERV[73] = SW[0];
+        SERV[81] = SW[1];
+        //     SERV[63]=SW[2];
+
+        SERV[58] = SW[2];
+        SERV[59] = SW[3];
+        SERV[60] = SW[4];
+        SERV[61] = SW[5];
+        SERV[62] = SW[6];
+        SERV[63] = SW[7];
+        SERV[64] = SW[8];
+
+        sel.akt = sel_akt;
+        sel.cur = sel_cur;
+        sel.gor = sel_gor;
+        sel.nr = sel_nr;
+
+        ////layer_info();
+
+        menupini (NULL, "", ' ', 0) ;
+
+        komunikat(0);
+        komunikat0(0);
+        CUR_ON(X, Y);
+    }
+}
+
+static void  cur_section_off (double x,double y)
+/*----------------------------------------*/
+{
+    flip_screen();
+}
+
+int select_forces(int no, double dx, GRAPH_VALUES* fvalues, float *force_min, float *force_max)
+{   int i;
+    double f, f1, f2, l, l1, x1, x2, df;
+
+    i=0;
+    while (dx>(fvalues+i)->x) i++;
+
+    if (Check_if_Equal(dx, 0.0))
+    {
+        *force_min=fvalues->vmin;
+        *force_max=fvalues->vmax;
+    }
+
+    else if (Check_if_Equal(dx, (fvalues+no-1)->x))
+    {
+        *force_min=(fvalues+no-1)->vmin;
+        *force_max=(fvalues+no-1)->vmax;
+    }
+    else
+    {
+        x1=(fvalues+i-1)->x;
+        x2=(fvalues+i)->x;
+
+        df=(dx-x1)/(x2-x1);
+
+        f1=(fvalues+i-1)->vmin;
+        f2=(fvalues+i)->vmin;
+        f=f1+(f2-f1)*df;
+        *force_min=(float)f;
+
+        f1=(fvalues+i-1)->vmax;
+        f2=(fvalues+i)->vmax;
+        f=f1+(f2-f1)*df;
+        *force_max=(float)f;
+    }
+}
+
+int get_force_at_x(double dx_, double l, float rdf, float rdb, SECTION_GRAPH_DATA *section_data, SECTION_FORCES *forces)
+{   double dx=dx_;
+
+    GRAPH_VALUES *Dy=NULL, *Dx=NULL, *Nx=NULL, *Vy=NULL, *Mz=NULL, *S=NULL, *Ss=NULL;
+    int ret;
+
+    if (section_data->Dy_data!=NULL) Dy=(GRAPH_VALUES*)section_data->Dy_data;
+    if (section_data->Dx_data!=NULL) Dx=(GRAPH_VALUES*)section_data->Dx_data;
+    if (section_data->Nx_data!=NULL) Nx=(GRAPH_VALUES*)section_data->Nx_data;
+    if (section_data->Vy_data!=NULL) Vy=(GRAPH_VALUES*)section_data->Vy_data;
+    if (section_data->Mz_data!=NULL) Mz=(GRAPH_VALUES*)section_data->Mz_data;
+    if (section_data->S_data!=NULL) S=(GRAPH_VALUES*)section_data->S_data;
+    if (section_data->Ss_data!=NULL) Ss=(GRAPH_VALUES*)section_data->Ss_data;
+
+    if (Dy!=NULL) ret = select_forces(section_data->Dy_no, dx, Dy, &forces->Dy_min, &forces->Dy_max);
+    if (Dx!=NULL) ret = select_forces(section_data->Dx_no, dx, Dx, &forces->Dx_min, &forces->Dx_max);
+    if (Nx!=NULL) ret = select_forces(section_data->Nx_no, dx, Nx, &forces->Nx_min, &forces->Nx_max);
+    if (Vy!=NULL) ret = select_forces(section_data->Vy_no, dx, Vy, &forces->Vy_min, &forces->Vy_max);
+    if (Mz!=NULL) ret = select_forces(section_data->Mz_no, dx, Mz, &forces->Mz_min, &forces->Mz_max);
+    if (dx<rdf) dx=rdf;
+    if (dx>(l-rdb)) dx=l-rdb;
+    if (S!=NULL) ret = select_forces(section_data->S_no, dx, S, &forces->S_min, &forces->S_max);
+    if (Ss!=NULL) ret = select_forces(section_data->Ss_no, dx, Ss, &forces->Ss_min, &forces->Ss_max);
+
+    return 1;
+}
+
+void show_forces_simple_variant(double show_x, double show_y, int width, int height, char *force_text)
+{   long x0, y0;
+    char *ptr0,*ptr;
+    int x1, y1, x2, y2;
+
+    x0 = pikseleX(show_x);
+    y0 = pikseleY(show_y);
+
+    x1=x0+2;
+    y1=y0+2;
+    x2=x0+width+6;
+    y2=y0+height+6;
+
+    if (x2 > pXk)
+    {
+        x1 = x0 - width - 6;
+        x2 = x0 - 2;
+    }
+
+    if (y2 > pYp)
+    {
+        y1 = y0 - height - 6;
+        y2 = y0 - 2;
+    }
+
+    tip_frame(x1, y1, x2, y2);
+
+    moveto(x1+2,y1+2);
+    ptr0=force_text;
+    ptr= strchr(force_text,'\n');
+    while (ptr!=NULL)
+    {
+        *ptr='\0';
+        outtext_r_(screen, ptr0);
+        y1+=HEIGHT;
+        moveto(x1+2,y1);
+        ptr0=ptr+1;
+        ptr= strchr(ptr0,'\n');
+    }
+    outtext_r_(screen, ptr0);
+}
+
+void show_forces(double show_x, double show_y, int width, int height, char *force_text)
+{   long x0, y0;
+    char *ptr0,*ptr;
+    int x1, y1, x2, y2, y;
+    BITMAP *tip_screen;
+
+    x0 = pikseleX(show_x);
+    y0 = pikseleY(show_y);
+
+    x1=x0+2;
+    y1=y0+2;
+    x2=x0+width+6;
+    y2=y0+height+6;
+
+    if (x2 > pXk)
+    {
+        x1 = x0 - width - 6;
+        x2 = x0 - 2;
+    }
+
+    if (y2 > pYp)
+    {
+        y1 = y0 - height - 6;
+        y2 = y0 - 2;
+    }
+
+    tip_frame(x1, y1, x2, y2);
+
+    tip_screen= create_bitmap_ex(32, width, height);
+    if (tip_screen==NULL) return;
+    clear_to_color(tip_screen, palette_color[18]);
+
+    Set_Screenplay(tip_screen);
+
+    set_clip_rect(tip_screen, 0, 0, width, height);
+
+    y=0;
+    moveto(0,y);
+    ptr0=force_text;
+    ptr= strchr(force_text,'\n');
+    while (ptr!=NULL)
+    {
+        *ptr='\0';
+        outtext_r_(tip_screen, ptr0);
+        y+=HEIGHT;
+        moveto(0,y);
+        ptr0=ptr+1;
+        ptr= strchr(ptr0,'\n');
+    }
+    outtext_r_(tip_screen, ptr0);
+
+    blit(tip_screen, screen, 0,0,x1+2,y1+2, width, height);
+
+    Set_Screenplay(screen);
+    destroy_bitmap(tip_screen);
+}
+
+void show_forces_buffer_variant(double show_x, double show_y, int width, int height, char *force_text)
+{
+    long x0, y0;
+    char *ptr0,*ptr;
+    int y1;
+    BITMAP *tip_screen;
+
+    x0 = pikseleX(show_x);
+    y0 = pikseleY(show_y);
+
+    tip_screen= create_bitmap_ex(32, width+4, height+4);
+    if (tip_screen==NULL) return;
+
+    Set_Screenplay(tip_screen);
+    tip_frame(0, 0, width+4, height+4);
+
+    y1=2;
+    moveto(2,2);
+    ptr0=force_text;
+    ptr= strchr(force_text,'\n');
+    while (ptr!=NULL)
+    {
+        *ptr='\0';
+        outtext_r_(tip_screen, ptr0);
+        y1+=HEIGHT;
+        moveto(2,y1);
+        ptr0=ptr+1;
+        ptr= strchr(ptr0,'\n');
+    }
+
+    set_clip_rect(tip_screen, 2, 2, width+2, width+2);
+
+    outtext_r_(tip_screen, ptr0);
+
+    blit(tip_screen, screen, 0,0,x0,y0,width+4,height+4);
+
+    Set_Screenplay(screen);
+    destroy_bitmap(tip_screen);
+}
+
+static void  get_section(double l1, double l, int *width_, int *height_, char *force_text)
+/*-----------------------------------------------------------------------------------*/
+{
+    int ret;
+    char f_text[MaxTextLen];
+    SECTION_GRAPH_DATA *section_graph_data;
+    GRAPH_DATA *graph_data;
+    SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int width, width_m = 0, height_m = 0;
+    float rdf, rdb;
+
+    graph_data = (GRAPH_DATA *) all_section_graph_data_p->graph_data;
+    rdf=graph_data->rdf;
+    rdb=graph_data->rdb;
+
+    switch (limit_state)
+    {
+        case 0: section_graph_data = &all_section_graph_data_p->ULS;
+        break;
+        case 1: section_graph_data=&all_section_graph_data_p->SLS;
+        break;
+        case 2: section_graph_data=&all_section_graph_data_p->QPSLS;
+        break;
+        default: section_graph_data = &all_section_graph_data_p->ULS;
+        break;
+    }
+
+
+#ifdef LINUX
+    char lend[3] = "\n";
+#else
+    char lend[3] = "\r\n";
+#endif
+
+    //zeroing
+    memmove(&section_forces, &section_forces0, sizeof(SECTION_FORCES));
+    //l1 is a distance from first node
+    ret = get_force_at_x(l1, l, rdf, rdb, section_graph_data, &section_forces);
+    //showing data on screen
+    sprintf(force_text,"x=%.4f%s",milimetryob(l1), lend);
+    width=TTF_text_len(force_text);
+    if (width>width_m) width_m=width;
+    height_m+=HEIGHT;
+
+    sprintf(f_text, "%s%s", (*mSelect_State.pola)[limit_state].txt, lend);  //state
+    strcat(force_text, f_text);
+    width=TTF_text_len(f_text);
+    if (width>width_m) width_m=width;
+
+    height_m+=HEIGHT;
+
+    if (!Check_if_Equal(section_forces.Dy_min, 0.0))
+    {
+        sprintf(f_text, "Dy min=%.4f%s", section_forces.Dy_min, lend);  //Dy min
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Dy_max, 0.0))
+    {
+        sprintf(f_text, "Dy max=%.4f%s", section_forces.Dy_max, lend);  //Dy max
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Dx_min, 0.0))
+    {
+        sprintf(f_text, "Dx min=%.4f%s", section_forces.Dx_min, lend);  //Dx min
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Dx_max, 0.0))
+    {
+        sprintf(f_text, "Dx max=%.4f%s", section_forces.Dx_max, lend);  //Dx max
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    if (!Check_if_Equal(section_forces.Nx_min, 0.0))
+    {
+        sprintf(f_text, "Nx min=%.4f%s", section_forces.Nx_min, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Nx_max, 0.0))
+    {
+        sprintf(f_text, "Nx max=%.4f%s", section_forces.Nx_max, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    if (!Check_if_Equal(section_forces.Vy_min, 0.0))
+    {
+        sprintf(f_text, "Vy min=%.4f%s", section_forces.Vy_min, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Vy_max, 0.0))
+    {
+        sprintf(f_text, "Vy max=%.4f%s", section_forces.Vy_max, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    if (!Check_if_Equal(section_forces.Mz_min, 0.0))
+    {
+        sprintf(f_text, "Mz min=%.4f%s", section_forces.Mz_min, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Mz_max, 0.0))
+    {
+        sprintf(f_text, "Mz max=%.4f%s", section_forces.Mz_max, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    if (!Check_if_Equal(section_forces.S_min, 0.0))
+    {
+        sprintf(f_text, u8"σ min=%.4f%s", section_forces.S_min, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.S_max, 0.0))
+    {
+        sprintf(f_text, u8"σ max=%.4f%s", section_forces.S_max, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    /*
+    if (!Check_if_Equal(section_forces.Ss_min, 0.0))
+    {
+        sprintf(f_text, u8"τ min=%.4f%s", section_forces.Ss_min, lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+     */
+
+    if (!Check_if_Equal(section_forces.Ss_max, 0.0))
+    {
+        sprintf(f_text, u8"τ max=%.4f%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
+        strcat(force_text, f_text);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    //printf(force_text);
+
+    *width_=width_m;
+    *height_=height_m;
+}
+
+
+static void  cur_section_on(double x,double y)
+{
+    LINIA CSL = Ldef;
+    LINIA eL = Ldef;
+    char force_text[MaxTextLen];
+    double cslength;
+    double x1, x2, y1, y2;
+    double xx, yy;
+    int ret;
+    double l, l1, l2;
+    //char force_text[MaxTextLen];
+    char f_text[MaxTextLen];
+    SECTION_GRAPH_DATA *section_graph_data;
+    GRAPH_DATA *graph_data;
+    SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int width, width_m = 0, height_m = 0;
+    float rdf, rdb;
+
+    if (all_section_graph_data_p->element_line == NULL) {
+        cursel_on(x, y);
+        return;
+    }
+
+    eL.x1 = all_section_graph_data_p->x1;
+    eL.y1 = all_section_graph_data_p->y1;
+    eL.x2 = all_section_graph_data_p->x2;
+    eL.y2 = all_section_graph_data_p->y2;
+
+    xx = x;
+    yy = y;
+
+    ret = prostopadleL_from_point(&xx, &yy, &l, &eL);  //all_section_graph_data_p->element_line
+
+    //adjusating middle point to closest endpoint
+    l1 = sqrt((xx - (eL.x1)) * (xx - (eL.x1)) + (yy - (eL.y1)) * (yy - (eL.y1)));
+    l2 = sqrt((xx - (eL.x2)) * (xx - (eL.x2)) + (yy - (eL.y2)) * (yy - (eL.y2)));
+    if ((l1 > l) || (l2 > l)) {
+        if (l1 < l2) {
+            xx = eL.x1;
+            yy = eL.y1;
+            l1 = 0;
+        } else {
+            xx = eL.x2;
+            yy = eL.y2;
+            l1 = l;
+        }
+    }
+
+    cslength = 15 / skala; //15 mm each side on drawing
+
+    Rotate_Point(cskos, cskoc, xx, yy, xx + cslength, yy, &x1, &y1);
+    x2 = xx + (xx - x1);
+    y2 = yy + (yy - y1);
+
+    CSL.x1 = (float) x1;
+    CSL.y1 = (float) y1;
+    CSL.x2 = (float) x2;
+    CSL.y2 = (float) y2;
+    CSL.warstwa = LiniaG.warstwa;
+    CSL.typ = 32 * 3;
+    CSL.kolor = 8;
+    outlineor(&CSL, COPY_PUT, 1);
+
+    get_section(l1, l, &width_m,&height_m,&force_text);
+
+    show_forces(x,y,width_m,height_m,force_text);
+    last_l=l;
+    last_l1=l1;
+
+    cursel_on(x, y);
+}
+
+int Save_Forces(void)
+{
+    char force_text[MaxTextLen];
+    int width_m = 0, height_m = 0;
+
+    get_section(last_l1,last_l,&width_m,&height_m,&force_text);
+    Put_Str_To_Clip(force_text);
+}
+
+static void redcr_section (char typ)
+/*--------------------------------*/
+{
+    static void (*CUR_oN)(double ,double);
+    static void (*CUR_oFF)(double ,double);
+    static int ( *SW[3])(), akt ;
+
+    if (typ == 0)
+    {
+        CUR_OFF(X, Y);
+        komunikat (0) ;
+        komunikat0 (170) ;
+        akt = sel.akt ; sel.akt = ASel ;
+        CUR_oFF = CUR_OFF ;  CUR_OFF = cur_section_off;
+        CUR_oN = CUR_ON ;   CUR_ON = cur_section_on;
+        SW[0] = SERV[73] ;  SERV[73] = sel_t ;
+        SW[1] = SERV[81] ;  SERV[81] = sel_d ;
+        menupini (&mSelect_State, _SELECT_STATE_, _SELECT_STATE_C_, 828) ;
+        CUR_ON (X, Y) ;
+    }
+    else
+    {
+        CUR_OFF (X, Y) ;
+        CUR_OFF = CUR_oFF ;
+        CUR_ON = CUR_oN ;
+        SERV[73] = SW[0] ;
+        SERV[81] = SW[1] ;
+        sel.akt = akt ;
+        menupini (NULL, "", ' ', 0) ;
+        CUR_ON (X, Y) ;
+        komunikat (0) ;
+        komunikat0 (0) ;
+    }
+}
+
+static void* obiekt_wybrany(unsigned* typ)
+/*---------------------------------------*/
+{
+    return select_w(typ, NULL);
+}
+
+#define SETULS 0
+#define SETSLS 1
+#define SETQPSLS 2
+
+void do_state (int lstate)
+{
+    limit_state=lstate;
+    menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State.pola)[limit_state].txt);
+    CUR_OFF(X,Y);
+    CUR_ON(X,Y);
+}
+
+void Show_Cross_Section (ALL_SECTION_GRAPH_DATA *all_section_graph_data)
+/*--------------------------------------------------------------------*/
+{
+    EVENT *ev;
+    double X0, Y0;
+    int ret;
+
+    redcr_section (0) ;
+    while (1)
+    {
+        //view_state(&State);
+        ev = Get_Event_Point (NULL, &X0, &Y0) ;
+        switch (ev->What)
+        {
+            case evKeyDown :
+                if(ev->Number==0)
+                {
+                    redcr_section (1) ;
+                    return ;
+                }
+                if(ev->Number == ENTER)
+                {
+                    ret=Save_Forces() ;
+                    CUR_OFF (X,Y) ;
+                    CUR_ON (X,Y) ;
+                }
+                break;
+            case evCommandP:
+                if (ev->Number == SETULS)
+                {
+                    do_state (0) ;
+                }
+                else
+                if (ev->Number == SETSLS )
+                {
+                    do_state (1) ;
+                }
+                else if (ev->Number == SETQPSLS )
+                {
+                    do_state (2) ;
+                }
+                break;
+            default :
+                break ;
+        }
+    }
+    komunikat_str_short("", FALSE, TRUE);
+    remove_short_notice();
+    redcr_section (1) ;
+}
+
+void Cross_section_forces(void)
+{
+    void* ad;
+    unsigned typ;
+    EVENT* ev;
+    double X0, Y0;
+    AVECTOR* V;
+    double delX;
+    int vf;
+    float ex1, ey1, ex2, ey2;
+    double ex11, ey11, ex22, ey22;
+    int element_no;
+    unsigned char data_type;
+    NAGLOWEK *nag;
+    LINIA *L;
+    PLINIA PL;
+    GRAPH_DATA *graph_data;
+    float dlf, dlb;
+    ALL_SECTION_GRAPH_DATA all_section_graph_data;
+    SECTION_GRAPH_DATA *section_data, section_data0={0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL};
+    SECTION_DATA *section_params;
+
+    redcr_ele(0);
+
+    vf=1+2+4+8;  //styles 0, 1, 2, 3
+    set_vector_filter(vf);
+
+    while (1)
+    {
+        ev = Get_Event_Point(NULL, &X0, &Y0);
+
+        if (ev->What == evKeyDown)
+        {
+            if (ev->Number == 0)
+            {
+                redcr_ele(1);
+                set_vector_filter(-1);
+                //komunikat_str_short("", FALSE, TRUE);
+                //remove_short_notice();
+                return;
+            }
+            if (ev->Number == ENTER)
+            {
+                redcr_ele(1);
+                typ = Bvector;
+
+                //zeroing
+                all_section_graph_data.element_line=NULL;
+                all_section_graph_data.section_data=NULL;
+                section_data=&all_section_graph_data.ULS;
+                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
+                section_data=&all_section_graph_data.SLS;
+                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
+                section_data=&all_section_graph_data.QPSLS;
+                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
+
+                all_section_graph_data_p=&all_section_graph_data;
+
+                if ((ad = obiekt_wybrany(&typ)) != NULL)
+                {
+                    switch (typ)
+                    {
+                        case Bvector:
+                            if (Layers[((AVECTOR*)ad)->warstwa].edit != 0)
+                            {
+                                V= (AVECTOR *)ad;
+                                if (V->style<4) //ELEMENT
+                                {
+                                    printf("Bingo\n");
+                                    ex1=V->x1;
+                                    ey1=V->y1;
+                                    ex2=V->x2;
+                                    ey2=V->y2;
+                                    //searching for element data lines;
+                                    //lines with ->n==sizeof(LINIA)+sizeof(GRAPH_DATA))
+                                    //where ->x1==ex1, ->y1==ey1, ->x2==ex2, ->y2==ey2
+                                    //once found, element_no=graph_data->enr
+
+                                    set_global_hidden_blocks_visibility(TRUE);
+                                    obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
+                                    while (nag != NULL)
+                                    {
+                                        if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony))
+                                        {
+                                            L = (LINIA *) nag;
+                                            if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA))
+                                            {
+                                                if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                    Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
+                                                {
+                                                    graph_data = (char *) L + sizeof(LINIA);
+                                                    if (graph_data->flags == 45) //element description
+                                                    {
+                                                        all_section_graph_data.enr = graph_data->enr;
+                                                        all_section_graph_data.element_line = (char *) L;
+                                                        all_section_graph_data.graph_data = (char *) L + sizeof(LINIA);
+                                                        all_section_graph_data.section_data = (char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                        dlf=graph_data->dlf;
+                                                        dlb=graph_data->dlb;
+                                                        //correction of searching coordinates
+                                                        parametry_lini(L, &PL);
+                                                        Rotate_Point(PL.sin, PL.cos, ex1, ey1, ex1+dlf, ey1, &ex11, &ey11);
+                                                        Rotate_Point(PL.sin, PL.cos, ex2, ey2, ex2-dlb, ey2, &ex22, &ey22);
+                                                        ex1=(float)ex11;
+                                                        ey1=(float)ey11;
+                                                        ex2=(float)ex22;
+                                                        ey2=(float)ey22;
+                                                        all_section_graph_data.x1=ex1;
+                                                        all_section_graph_data.y1=ey1;
+                                                        all_section_graph_data.x2=ex2;
+                                                        all_section_graph_data.y2=ey2;
+
+                                                        section_params=(SECTION_DATA*)all_section_graph_data.section_data;
+
+                                                        sprintf(section_params_st,"(%d) l=%.5g H=%.5g B=%.5g A=%.5g Asy=%.5g Asz=%.5g Iy=%.5g Iz=%.5g Wy=%.5g Wz=%.5g",all_section_graph_data.enr,
+                                                                milimetryob(PL.dl),
+                                                                section_params->H, section_params->B,
+                                                                section_params->A,section_params->Asy,section_params->Asz,
+                                                                section_params->Iy,section_params->Iz,
+                                                                section_params->Wy,section_params->Wz);
+                                                        komunikat_str_short(section_params_st, TRUE, TRUE);
+
+                                                        strcat(section_params_st,"\n");
+                                                        Put_Str_To_Clip(section_params_st);
+
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        obiekt_tok_all(NULL, ADK, (char **) &nag, Olinia);
+                                    }
+                                    set_global_hidden_blocks_visibility(FALSE);
+
+                                    //searching for forces data line
+                                    //lines with ->n>sizeof(LINIA)+sizeof(GRAPH_DATA))
+                                    //where ->x1==ex1, ->y1==ey1, ->x2==ex2, ->y2==ey2
+                                    //once found, data_type=graph_data->dt
+                                    //searching for nodes size
+                                    set_global_hidden_blocks_visibility(TRUE);
+                                    obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
+                                    while (nag != NULL)
+                                    {
+                                        if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony))
+                                        {
+                                            L = (LINIA *) nag;
+                                            if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
+                                            {
+                                                if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) && Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
+                                                {
+                                                    graph_data=(char*)L + sizeof(LINIA);
+                                                    /*
+                                                    if (graph_data->flags==45) //element description
+                                                    {
+                                                        all_section_graph_data.enr=graph_data->enr;
+                                                        all_section_graph_data.element_line=(char*)L;
+                                                        all_section_graph_data.section_data=(char*)L+sizeof(LINIA)+sizeof(GRAPH_DATA);
+                                                    }
+                                                    else
+                                                     */
+                                                    if (graph_data->flags==71) //force data
+                                                    {
+                                                        element_no=graph_data->enr;
+                                                        //data_state=graph_data->st;
+                                                        switch (graph_data->st)
+                                                        {
+                                                            case 2: section_data=&all_section_graph_data.ULS;
+                                                                break;
+                                                            case 3: section_data=&all_section_graph_data.SLS;
+                                                                break;
+                                                            case 4: section_data=&all_section_graph_data.QPSLS;
+                                                                break;
+                                                        }
+                                                        switch (graph_data->dt)
+                                                        {
+                                                            case 0: //Dy
+                                                            section_data->Dy_no = graph_data->nx;
+                                                            section_data->Dy_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 1: //Dx
+                                                            section_data->Dx_no = graph_data->nx;
+                                                            section_data->Dx_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 2: //Nx
+                                                            section_data->Nx_no = graph_data->nx;
+                                                            section_data->Nx_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 3: //Vy
+                                                            section_data->Vy_no = graph_data->nx;
+                                                            section_data->Vy_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 4: //Mz
+                                                            section_data->Mz_no = graph_data->nx;
+                                                            section_data->Mz_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 5: //S
+                                                            section_data->S_no = graph_data->nx;
+                                                            section_data->S_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                            case 6: //Ss
+                                                            section_data->Ss_no = graph_data->nx;
+                                                            section_data->Ss_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        obiekt_tok_all(NULL, ADK, (char **) &nag, Olinia);
+                                    }
+                                    set_global_hidden_blocks_visibility(FALSE);
+                                    break;
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                if (all_section_graph_data.element_line!=NULL)
+                {
+                    //selecting cross section of the element
+                    parametry_lini((LINIA *)all_section_graph_data.element_line, &PL);
+                    cskos=sin(Pi*(PL.kat+90)/180);
+                    cskoc=cos(Pi*(PL.kat+90)/180);
+                    Show_Cross_Section(&all_section_graph_data);
+                    komunikat_str_short("", FALSE, TRUE);
+                    remove_short_notice();
+                }
+            }
+            redcr_ele(0);
+        }
+        if (ev->What == evCommandP)
+        {
+            if (ev->Number == SETULS) {
+                do_state(0);
+            } else if (ev->Number == SETSLS) {
+                do_state(1);
+            } else if (ev->Number == SETQPSLS) {
+                do_state(2);
+            }
+        }
+    }
+    set_vector_filter(-1);
+}
 
 #undef __O_STATIC__
 

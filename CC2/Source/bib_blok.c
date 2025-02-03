@@ -337,6 +337,7 @@ static void zwblock (char  *adr, double dx, double dy)
   ptrs_block = (BLOK*)adr ;
   ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
   if (((ptrs_block->kod_obiektu == B_EXPORT) ||
+       (ptrs_block->kod_obiektu == B_GRAPH) ||
 	   (ptrs_block->kod_obiektu == B_HATCH) ||
        (ptrs_block->kod_obiektu == B_PPOMIAR) ||
        (ptrs_block->kod_obiektu == B_KPOMIAR) ||
@@ -1005,6 +1006,7 @@ static void skblock (char  *adr,double x,double y,double k1, double k2)
   ptrs_block = (BLOK*)adr ;
   ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
   if (((ptrs_block->kod_obiektu == B_EXPORT) ||
+          (ptrs_block->kod_obiektu == B_GRAPH) ||
 	   (ptrs_block->kod_obiektu == B_HATCH) ||
        (ptrs_block->kod_obiektu == B_PPOMIAR) ||
        (ptrs_block->kod_obiektu == B_KPOMIAR) ||
@@ -1156,9 +1158,18 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
 
     l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
     if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
+    //k0=0;
+    //k0=2.49/ptrs_arc->r;
 
-    ptrs_arc->kat1-=k0;
-    ptrs_arc->kat2+=k0;
+    if (ptrs_arc->kat2<ptrs_arc->kat1)
+    {
+        ptrs_arc->kat1 += k0;
+        ptrs_arc->kat2 -= k0;
+    }
+    else {
+        ptrs_arc->kat1 -= k0;
+        ptrs_arc->kat2 += k0;
+    }
 
     Arc_To_Points (ptrs_arc, &x1, &y1, &x2, &y2);
     Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
@@ -1183,8 +1194,15 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
         l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
         if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
 
-        ptrs_arc->kat1+=k0;
-        ptrs_arc->kat2-=k0;
+        if (ptrs_arc->kat2<ptrs_arc->kat1)
+        {
+            ptrs_arc->kat1 -= k0;
+            ptrs_arc->kat2 += k0;
+        }
+        else {
+            ptrs_arc->kat1 += k0;
+            ptrs_arc->kat2 -= k0;
+        }
 
     }
     else
@@ -1671,6 +1689,7 @@ static void obblock (char  *adr,double x,double y,double k1, double k2)
   ptrs_block = (BLOK*)adr ;
   ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
   if (((ptrs_block->kod_obiektu == B_EXPORT) ||
+          (ptrs_block->kod_obiektu == B_GRAPH) ||
 	   (ptrs_block->kod_obiektu == B_HATCH) ||
        (ptrs_block->kod_obiektu == B_PPOMIAR) ||
        (ptrs_block->kod_obiektu == B_KPOMIAR) ||
@@ -2207,6 +2226,7 @@ static void mirrblock (char  *adr,double x1, double y1,double x2, double y2)
   ptrs_block = (BLOK*)adr ;
   ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
   if (((ptrs_block->kod_obiektu == B_EXPORT) ||
+          (ptrs_block->kod_obiektu == B_GRAPH) ||
 	   (ptrs_block->kod_obiektu == B_HATCH) ||
        (ptrs_block->kod_obiektu == B_PPOMIAR) ||
        (ptrs_block->kod_obiektu == B_KPOMIAR) ||

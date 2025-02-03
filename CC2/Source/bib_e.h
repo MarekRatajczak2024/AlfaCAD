@@ -479,7 +479,7 @@ enum TRANSFORMACJA { Tprzesuw = 1, Tobrot = 2, Tskala = 4, Tmirror = 8, Tpolar =
 enum Block_Type { B_DIM = 'W', B_DIM1 = '\01', B_DIM2 = '2', B_DIM3 = '3', B_EXPORT = 'E', B_PLINE = 'P', B_HATCH = 'H' , B_PROFIL = 'F',
                   B_PPOMIAR = 'p', B_KPOMIAR = 'k', B_INSTALACJE = 'i', B_INSTALACJE_OPIS = 'j', B_INSTALACJE_K = 'K',
                   B_ODWIERT_OLD = 'o', B_ODWIERT = 'O', B_HEKTOMETRY = 'm', B_SEKTORY = 's', B_WIRE = L'-', B_SHADOW = 13,
-                  B_ARM = 'A', B_NIEOKRESLONY = ' ', B_SIEC= 'N', B_VERTEX= 'V', B_032= '\032'} ;
+                  B_ARM = 'A', B_NIEOKRESLONY = ' ', B_SIEC= 'N', B_VERTEX= 'V', B_032= '\032', B_GRAPH = 'G'} ;
 
 enum Pline_Type { PL_OTHER = 0, PL_PLINE = 1, PL_POLYGON = 'P', PL_RECTANGLE = 'R', PL_HATCH = 'H',
                 PL_ELLIPSE = 'E', PL_SKETCH = 'S', PL_TRACE = 'T', PL_CURVE = 'C',
@@ -1478,6 +1478,103 @@ typedef
     } LINIAEND1_1;
 
 typedef  LINIAEND1_1  * LINIAEND_1_1;
+
+typedef
+struct
+{
+    unsigned char flags;  // 'G' 71 graph data
+    unsigned char dt;  //data type (Dx=0, Nx=1, Vy=2, Mz=3, sigma=4, tau=5, geometry=7)
+    unsigned char st;  //state number 2 for ULS or 3 for SLS
+    unsigned char reserve;
+    float dlf;  //front distance
+    float dlb;  //back distance
+    float rdf;  //front radius
+    float rdb;  //back radius
+    unsigned enr : 16;  //element number
+    unsigned nx : 16;  //number of data
+} GRAPH_DATA;
+typedef  GRAPH_DATA  *GRAPH_DATA_;
+
+typedef
+struct
+{
+    float H,B,A,Asy,Asz,Jx,Iy,Iz,Wy,Wz;
+} SECTION_DATA;
+typedef  SECTION_DATA  *SECTION_DATA_;
+
+typedef
+struct
+{
+    int Dy_no;
+    char *Dy_data;
+    int Dx_no;
+    char *Dx_data;
+    int Nx_no;
+    char *Nx_data;
+    int Vy_no;
+    char *Vy_data;
+    int Mz_no;
+    char *Mz_data;
+    int S_no;
+    char *S_data;
+    int Ss_no;
+    char *Ss_data;
+} SECTION_GRAPH_DATA;
+typedef  SECTION_GRAPH_DATA  *SECTION_GRAPH_DATA_;
+
+typedef
+struct
+{
+    float Dy_min;
+    float Dy_max;
+    float Dx_min;
+    float Dx_max;
+    float Nx_min;
+    float Nx_max;
+    float Vy_min;
+    float Vy_max;
+    float Mz_min;
+    float Mz_max;
+    float S_min;
+    float S_max;
+    float Ss_min;
+    float Ss_max;
+} SECTION_FORCES;
+typedef  SECTION_FORCES  *SECTION_FORCES_;
+
+typedef
+struct
+{
+    int enr;
+    char *element_line;
+    float x1, y1, x2, y2;
+    char *graph_data;
+    char *section_data;
+    SECTION_GRAPH_DATA ULS;
+    SECTION_GRAPH_DATA SLS;
+    SECTION_GRAPH_DATA QPSLS;
+} ALL_SECTION_GRAPH_DATA;
+typedef  ALL_SECTION_GRAPH_DATA  *ALL_SECTION_GRAPH_DATA_;
+
+/*
+typedef
+struct
+{
+    unsigned char flags;  // 'E' 45 element data
+    unsigned char reserve;
+    short element_no;
+} ELEMENT_DATA;
+typedef  ELEMENT_DATA  *ELEMENT_DATA_;
+*/
+
+typedef
+struct
+{
+   float x;
+   float vmin;
+   float vmax;
+} GRAPH_VALUES;
+
 #pragma pack( 4 )
 
 typedef
@@ -1501,7 +1598,9 @@ typedef
     } LINIA;
 typedef  LINIA  * LINIA_;
 
-typedef
+#define MAXGRAPHDATANUMBER 256
+
+    typedef
 struct
 { unsigned atrybut  : 3;
     unsigned obiekt   : 4;

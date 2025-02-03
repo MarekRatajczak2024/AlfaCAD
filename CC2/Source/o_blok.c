@@ -3542,7 +3542,6 @@ char *Get_Object (unsigned int typ, char *kom)
     return	adr_object;
 }
 
-
 static int Hide_Layers (void)
 //------------------------------
 {

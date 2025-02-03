@@ -59,7 +59,7 @@ extern int TestBit( unsigned int A[],  int k );
 extern KOLORY kolory;
 
 extern int d_myslider_proc(int msg, void *d, int c);
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 
 extern void Draw_Slider(SLIDER *Slider);
 //extern int slider_function(int *var);
@@ -411,7 +411,7 @@ static int grab_slider(void *dp3, int d2)
     ret = SlideFun(&var1, &var2, &var3, &var4);
     //sprintf(slider_var, "%d-%d", max(0, d2-NoDialogLayers), d2);
     sprintf(slider_var, "%d-%d", var3 - d2 - (var2-var1) + 1, var3-d2);
-    komunikat_str_short(slider_var, FALSE);
+    komunikat_str_short(slider_var, FALSE, FALSE);
 
 
     get_dlg_controls_to_layers ();
@@ -1029,7 +1029,7 @@ static void update_slide(void)
     SlideFun = (int (*)(int *, int *, int *, int *)) slider[0].dp3;
     ret = SlideFun(&var1, &var2, &var3, &var4);
     slider[0].d2 = var3 - var1 - (var2 - var1);
-    komunikat_str_short("", FALSE);
+    komunikat_str_short("", FALSE, FALSE);
 }
 
 static void add_layer (void)

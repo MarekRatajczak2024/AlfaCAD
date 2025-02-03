@@ -134,7 +134,7 @@ extern DWORD SystemSilent(char* strFunct, char* strstrParams);
 #endif
 extern int ask_question(int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image);
 extern double Get_Point_Size(void);
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern int get_alfacad_logo_font();
 extern T_Prot_Date s_prot_date;
 extern char *strlwr2(char *_s);
@@ -2041,7 +2041,7 @@ void show_print_progress(double print_progress)
 	char progress[32];
 
 	sprintf(progress, "%.0f %%", print_progress*100.0);
-	komunikat_str_short(progress, FALSE);
+	komunikat_str_short(progress, FALSE, FALSE);
 	return;
 }
 

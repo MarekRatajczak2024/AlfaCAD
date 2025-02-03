@@ -662,6 +662,8 @@ static char* komunikaty0[] =
 /*166*/u8"",  //custom text
 /*167*/u8"Indicate the frame or truss diagram for static/dynamic analysis",
 /*168*/u8"Dimensioning (to start dimensioning an angle, touch any line)",
+/*169*/u8"Indicate frame or truss element",
+/*170*/u8"Place the section line at the desired element coordinates. Click to save the values to the clipboard",
 };
 
 static char* messages_str[] =
@@ -929,6 +931,19 @@ static char confirm[] = u8"Confirm";
 
 #ifdef __O_STATIC__
 
+#define _SELECT_STATE_ "Limit state (combination)"
+#define _SELECT_STATE_C_ L'L'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"Ultimate limit state (ULS)",'U',0,NULL},
+	{u8"Serviceability limit state (SLS)",'S',0,NULL},
+    {u8"serviceability limit state (Quasi-permanent)",'Q',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
 #define _PROCEED_STATIC_ u8"Proceed static analysis of the specified frame or truss?"
 
 #define _incorrectly_defined_ u8"incorrectly defined"
@@ -939,6 +954,7 @@ static char confirm[] = u8"Confirm";
 #define _load_not_associated_ u8"not associated with any known element"
 #define _thermal_load_inside_element_ u8"not on the entire element with nodes coordinates:"
 #define _unknown_standard_ u8"Unknown standard"
+#define _element_graph_data_failed_ u8"It was unabled to create resulting forces data block for element"
 
 #define _FRAME3DD_ "%FRAME:"
 #define _FRAME3DD_PL "%RAMA:"
@@ -1008,7 +1024,7 @@ char *frame3dd[]={
     /*29*/ u8"error in opening the mass data debugging file , MassData.txt",
     /*30*/ u8"cubic curvefit system matrix for element deformation is not positive definite",
     /*31*/ u8"non-positive definite structural static stiffness matrix",
-    /*32*/ u8"error in eigen-problem analysis",
+    /*32*/ u8"error in eigen-problem analysis. Try again with reduced or zero number of dynamic modes",
     /*33*/ u8"error-free completion",
     /*34*/ u8"error-free completion",
     /*35*/ u8"error-free completion",
@@ -1157,9 +1173,9 @@ char *frame3dd[]={
     /*178*/ u8"error-free completion",
     /*179*/ u8"error-free completion",
     /*180*/ u8"error-free completion",
-    /*181*/ u8"elastic instability (elastic + geometric stiffness matrix not positive definite)",
-    /*182*/ u8"large strain (the average axial strain in one or more elements is greater than 0.001)",
-    /*183*/ u8"large strain and elastic instability",
+    /*181*/ u8"Warning: elastic instability (elastic + geometric stiffness matrix not positive definite)",
+    /*182*/ u8"Warning: large strain (the average axial strain in one or more elements is greater than 0.001)",
+    /*183*/ u8"Warning: large strain and elastic instability",
     /*184*/ u8"error-free completion",
     /*185*/ u8"error-free completion",
     /*186*/ u8"error-free completion",
@@ -1186,7 +1202,6 @@ char *frame3dd[]={
     };
 
 #define _ERROR_FREE_COMPLETION_ u8"error-free completion"
-
 
 #endif
 

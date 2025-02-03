@@ -3225,6 +3225,11 @@ void menupini(TMENU *menu,char *st,unsigned short cod, int iconno)
 
 }
 
+int get_MPMAX(void)
+{
+    return MPMAX;
+}
+
 void getmenupini (TMENU **menu,char *st,unsigned short *cod, int *iconno)
 /*---------------------------------------------------------------------*/
 {

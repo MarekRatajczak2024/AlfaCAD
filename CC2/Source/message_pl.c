@@ -663,6 +663,8 @@ static char* komunikaty0[] =
 /*166*/u8"",  //custom text
 /*167*/u8"Wskaż schemat ramy lyb kratownicy do analizy statycznej/dynamicznej",
 /*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii)",
+/*169*/u8"Wskaż element ramy lub kratownicy",
+/*170*/u8"Umieść linię przekrojową w żądanych współrzędnych elementu. Kliknij aby zapisać wartości w schowku",
 };
 
 static char* messages_str[] =
@@ -928,6 +930,19 @@ static char confirm[] = u8"Potwierdź";
 
 #ifdef __O_STATIC__
 
+#define _SELECT_STATE_ "Stan graniczny (kombinacja)"
+#define _SELECT_STATE_C_ L'S'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"Nośności (SGN)",L'N',0,NULL},
+	{u8"Użytkowalności (SGU)",L'U',0,NULL},
+    {u8"użytkowalności (Quasi-stałe)",L'Q',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
 #define _PROCEED_STATIC_ u8"Przeprowadzić analizę statyczną wskazanej ramy lub kratownicy?"
 
 #define _incorrectly_defined_ u8"błędnie zdefiniowana"
@@ -938,6 +953,7 @@ static char confirm[] = u8"Potwierdź";
 #define _load_not_associated_ u8"niepowiązane z żadnym znanym elementem"
 #define _thermal_load_inside_element_ u8"nie na całym elemencie o współrzędnych węzłów:"
 #define _unknown_standard_ u8"Nieznany standard"
+#define _element_graph_data_failed_ u8"Nie udało się utworzyć bloku danych sił wynikowych dla elementu"
 
 #define _FRAME3DD_ "%FRAME:"
 #define _FRAME3DD_PL "%RAMA:"
@@ -1005,7 +1021,7 @@ char *frame3dd[]={
  /*29*/ u8"błąd podczas otwierania pliku debugowania danych masowych, MassData.txt",
  /*30*/ u8"Macierz systemu dopasowania krzywej sześciennej dla odkształcenia elementu nie jest określona dodatnio",
  /*31*/ u8"niedodatnia określona macierz sztywności statycznej strukturalnej",
- /*32*/ u8"błąd w analizie problemu własnego",
+ /*32*/ u8"błąd w analizie wartości własnych. Spróbuj ponownie ze zmniejszoną lub zerową liczbą postaci drgań",
  /*33*/ u8"zakończenie bez błędów",
  /*34*/ u8"zakończenie bez błędów",
  /*35*/ u8"zakończenie bez błędów",
@@ -1154,9 +1170,9 @@ char *frame3dd[]={
  /*178*/ u8"zakończenie bez błędów",
  /*179*/ u8"zakończenie bez błędów",
  /*180*/ u8"zakończenie bez błędów",
- /*181*/ u8"niestabilność sprężysta (macierz sztywności sprężystej + geometrycznej nieokreślona dodatnio)",
- /*182*/ u8"duże odkształcenie (średnie odkształcenie osiowe w jednym lub większej liczbie elementów jest większe niż 0,001)",
- /*183*/ u8"duże odkształcenie i niestabilność sprężysta",
+ /*181*/ u8"Uwaga: niestabilność sprężysta (macierz sztywności sprężystej + geometrycznej nieokreślona dodatnio)",
+ /*182*/ u8"Uwaga: duże odkształcenie (średnie odkształcenie osiowe w jednym lub większej liczbie elementów jest większe niż 0,001)",
+ /*183*/ u8"Uwaga: duże odkształcenie i niestabilność sprężysta",
  /*184*/ u8"zakończenie bez błędów",
  /*185*/ u8"zakończenie bez błędów",
  /*186*/ u8"zakończenie bez błędów",

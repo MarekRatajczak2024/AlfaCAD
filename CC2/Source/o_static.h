@@ -3,6 +3,7 @@
 #define LIBFUN_PL_H_O_STATIC_H
 
 extern void Static_analysis(void);
+extern void Cross_section_forces(void);
 
 typedef struct
 {
@@ -277,6 +278,7 @@ typedef struct {
 
 
 typedef struct {
+    double x;
     double Nx_min;
     double Nx_max;
     double Vy_min;

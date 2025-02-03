@@ -37,7 +37,8 @@ static char comunics[]="COMUNICS.LIB";
 static char errors[]="ERRORS.LIB";
 
 static BOOL short_notice=FALSE;
-static char short_notice_str[64]="\0";
+static char short_notice_str[128]="\0";  //64
+static BOOL short_notice_center=FALSE;
 
 extern TMENU mTryb ;
 extern void color_bar(void);
@@ -106,9 +107,10 @@ void bar2_short(int len)
     bar(maxX/2 - len*WIDTH-5, ED_INF_HEIGHT, maxX/2, 2 * ED_INF_HEIGHT - y1); //1);
 }
 
-void bar2_short_pxl(int len)
+void bar2_short_pxl(int len, BOOL center)
 {
-    bar(maxX/2 - len, ED_INF_HEIGHT, maxX/2 /*+ len*/, 2 * ED_INF_HEIGHT - y1); //1);
+    if (!center) bar(maxX/2 - len, ED_INF_HEIGHT, maxX/2 /*+ len*/, 2 * ED_INF_HEIGHT - y1); //1);
+    else bar(maxX/2 - len / 2, ED_INF_HEIGHT, maxX/2 + len / 2, 2 * ED_INF_HEIGHT - y1); //1);
 }
 
 void bar1(void)
@@ -415,7 +417,13 @@ void komunikat_str_len(char *st)
     setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
 }
 
-void komunikat_str_short(char *st, BOOL stay)
+void remove_short_notice(void)
+{
+    short_notice=FALSE;
+    layer_info();
+}
+
+void komunikat_str_short(char *st, BOOL stay, BOOL center)
 {
 	struct viewporttype viewinfo;
     int len, len_pxl;
@@ -426,21 +434,26 @@ void komunikat_str_short(char *st, BOOL stay)
     len_pxl=TTF_text_len(st);
 
     setfillstyle_(SOLID_FILL, BKCOLOR);
-    bar2_short_pxl(len_pxl_bak);
+    bar2_short_pxl(len_pxl_bak, center);
 
     if (strlen(st)>0)
     {
         setfillstyle_(SOLID_FILL, kolory.paperk);
-        bar2_short_pxl(len_pxl);
+        bar2_short_pxl(len_pxl, center);
         len_pxl_bak = len_pxl;
-        moveto(maxX / 2 - len_pxl, ED_INF_HEIGHT + y3);
+
+        if (!center)
+          moveto(maxX / 2 - len_pxl, ED_INF_HEIGHT + y3);
+        else moveto(maxX / 2 - len_pxl / 2, ED_INF_HEIGHT + y3 + 1);
+
         setcolor(kolory.inkk);
         outtext_r(st);
 
         if (stay) {
             short_notice = TRUE;
-            strncpy(short_notice_str, st, 64);
-            short_notice_str[63] = '\0';
+            strncpy(short_notice_str, st, 128);  //64
+            short_notice_str[127] = '\0';  //63
+            short_notice_center=center;
         }
     }
     setviewport(viewinfo.left, viewinfo.top, viewinfo.right, viewinfo.bottom, 1);
@@ -448,7 +461,7 @@ void komunikat_str_short(char *st, BOOL stay)
 }
 
 void komunikat_str_short_reminder(void) {
-    komunikat_str_short(short_notice_str, FALSE);
+    komunikat_str_short(short_notice_str, FALSE, short_notice_center);
 }
 
 BOOL get_short_notice(void)
@@ -456,11 +469,6 @@ BOOL get_short_notice(void)
     return short_notice;
 }
 
-void remove_short_notice(void)
-{
-    short_notice=FALSE;
-    layer_info();
-}
 
 void komunikat0(int n)
 {

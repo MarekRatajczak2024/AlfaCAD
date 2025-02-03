@@ -3306,6 +3306,14 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 									charfont_numbers[font_index] = 1;
 									have_texts = TRUE;
 								}
+                                else if (((NAGLOWEK*)ad_b)->obiekt == Olinia)
+                                {
+                                    LINIA *L=(NAGLOWEK*)ad_b;
+                                    if (L->n + sizeof(NAGLOWEK) !=  sizeof (LINIA) )
+                                    {
+                                      int a=0;
+                                    }
+                                }
 								else if (((NAGLOWEK*)ad_b)->obiekt == Owwielokat)
 								{
 									w = (WIELOKAT*)ad_b;

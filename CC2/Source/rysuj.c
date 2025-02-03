@@ -72,6 +72,7 @@
 #include "icon_no_d.h"
 #include "icon_upgrademark_d.h"
 #include "icon_noupgrademark_d.h"
+#include "icon_hourglass_d.h"
 
 #include "leak_detector_c.h"
 
@@ -270,6 +271,7 @@ extern int Get_X11_SCREEN_SHIFT(void);
 extern int Get_WIN_WINDOW_T_B(void);
 
 extern void ini_cursors(void);
+extern void ini_cursor_busy(void);
 
 extern void SteelUS(void);
 extern void TimberUS(void);
@@ -2159,6 +2161,21 @@ extern char *icon_barstyle_p;
 extern BITMAP *icon_perc_mag;
 extern char *icon_perc_mag_p;
 
+extern BITMAP *icon_cross_section_forces;
+extern char *icon_cross_section_forces_p;
+
+extern BITMAP *icon_resilience;
+extern char *icon_resilience_p;
+
+extern BITMAP *icon_hourglass_mem;
+
+extern BITMAP *icon_ULS;
+extern char *icon_ULS_p;
+extern BITMAP *icon_SLS;
+extern char *icon_SLS_p;
+extern BITMAP *icon_QPSLS;
+extern char *icon_QPSLS_p;
+
 extern BITMAP *icon_yes_dmem;
 extern BITMAP *icon_no_dmem;
 extern char *icon_yes_d_pmem;
@@ -2221,9 +2238,11 @@ extern void Automatic_numbering(void);
 extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
-#define WOOD 27 //26   //the number of function for wood choice
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors, /*21*/ Static_analysis, /*22*/ Animate_dynamics, /*23*/ SteelEU, /*24*/SteelUK, /*25*/SteelUS,  /*26*/TimberUS} ;
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors, /*21*/ Static_analysis, /*22*/ Cross_section_forces, /*23*/ Animate_dynamics, /*24*/ SteelEU, /*25*/SteelUK, /*26*/SteelUS,  /*27*/TimberUS} ;
+
+//#define WOOD 28 //26   //the number of function for wood choice
+int WOOD=sizeof(COMNDg)/sizeof(COMNDg[0]);
 
 TMENU menug={15,0,0,16,1,3, ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,&pmenug,NULL,NULL};  //flag 7 : icons
 
@@ -4113,6 +4132,9 @@ else //master
     icon_yes_dmem = load_memory_png(icon_yes_d_pm, png_mem, (RGB *)&pal);
     icon_upgrademark_mem = load_memory_png(icon_upgrademark_d_pm, png_mem64, (RGB*)&pal);
     icon_noupgrademark_mem = load_memory_png(icon_noupgrademark_d_pm, png_mem64, (RGB*)&pal);
+
+    icon_hourglass_mem = load_memory_png(icon_hourglass_d_pm, png_mem, (RGB*)&pal);
+
     icon_no_d_pmem = icon_no_dmem;
     icon_yes_d_pmem = icon_yes_dmem;
     icon_upgrademark_pmem = icon_upgrademark_mem;
@@ -5026,6 +5048,11 @@ if (child==0)
       {&icon_cursorstyle,"cursorstyle",&icon_cursorstyle_p },
       {&icon_barstyle,"barstyle",&icon_barstyle_p },
       {&icon_perc_mag,"perc_mag",&icon_perc_mag_p },
+      {&icon_cross_section_forces,"cross_section_forces",&icon_cross_section_forces_p },
+      {&icon_ULS,"ULS",&icon_ULS_p },
+      {&icon_SLS,"SLS",&icon_SLS_p },
+      {&icon_QPSLS,"QPSLS",&icon_QPSLS_p },
+      {&icon_resilience,"resilience",&icon_resilience_p },
   };
 
     int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -5033,13 +5060,13 @@ BITMAP* bt;
 
 for (int i = 0; i < bitmaps_size; i++)
 {
-
     sprintf(bitmap_file, "%s/%s.png", _BITMAPS_, bitmap_load[i].png_file);
     bt=load_png(bitmap_file, pal);
     *bitmap_load[i].png_b = bt;
     *bitmap_load[i].png_p = *bitmap_load[i].png_b;
-
 }
+
+  //ini_cursor_busy();  //based on bitmap
 
   set_mickey_hand(icon_mickey_hand_s, icon_mickey_hand);
 

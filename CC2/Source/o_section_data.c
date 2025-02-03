@@ -75,6 +75,7 @@ extern double Jednostki;
 extern void set_decimal_format(char *text, double l, double precision);
 extern int get_string (char *, char *, int , int , int );
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
+extern BOOL Check_if_Equal (double , double ) ;
 
 extern double dim_precision;
 extern PROP_PRECISIONS SI_precisions;
@@ -151,7 +152,7 @@ char *regions[]={"US", "EU", "UK"};
 char *get_section_data(char *file_name,  int property_no, char *material, char *section, char *region, char *units_system, char *standard0, char *series0, char *type0, char *species0, char *moisture0)
 {
     FILE *f, *fs;
-    char section_data[MaxTextLen]="";
+    static char section_data[MaxTextLen]="";
     char data_row[MaxMultitextLen];
 
     char series[64];
@@ -200,8 +201,8 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
         data_row[strlen(data_row)-1] = '\0';
 
         //check last appearance of "
-        ptr=&data_row;
-        ptr1=strrchr(&data_row, '\"');
+        ptr=data_row;
+        ptr1=strrchr(data_row, '\"');
         ptr1++;
 
         //"series" "standard" "type" "description" "manufacturer" "measure_system
@@ -267,16 +268,22 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                 return section_data;
             }
 
+            //in case of L with equal flanges
+            if (Check_if_Equal(b, 0)) b=h;
+            if (Check_if_Equal(Az, 0)) Az=Ay;
+            if (Check_if_Equal(Iz, 0)) Iz=Iy;
+            if (Check_if_Equal(Wz, 0)) Wz=Wy;
+
             //#1 h=140 A=16.43 As=8.13 Iy=541.20 Iz=44.92 E=210 G=81 r=0 d=7850 a=11.7e-6 IPE 140
-            set_decimal_format(&par[0], h, prop_precisions->dim_precision);
-            set_decimal_format(&par[1], b, prop_precisions->dim_precision);
-            set_decimal_format(&par[2], A, prop_precisions->A_precision);
-            set_decimal_format(&par[3], Ay, prop_precisions->A_precision);
-            set_decimal_format(&par[4], Az, prop_precisions->A_precision);
-            set_decimal_format(&par[5], Iy, prop_precisions->I_precision);
-            set_decimal_format(&par[6], Iz, prop_precisions->I_precision);
-            set_decimal_format(&par[7], Wy, prop_precisions->I_precision);
-            set_decimal_format(&par[8], Wz, prop_precisions->I_precision);
+            set_decimal_format(par[0], h, prop_precisions->dim_precision);
+            set_decimal_format(par[1], b, prop_precisions->dim_precision);
+            set_decimal_format(par[2], A, prop_precisions->A_precision);
+            set_decimal_format(par[3], Ay, prop_precisions->A_precision);
+            set_decimal_format(par[4], Az, prop_precisions->A_precision);
+            set_decimal_format(par[5], Iy, prop_precisions->I_precision);
+            set_decimal_format(par[6], Iz, prop_precisions->I_precision);
+            set_decimal_format(par[7], Wy, prop_precisions->I_precision);
+            set_decimal_format(par[8], Wz, prop_precisions->I_precision);
 
             if (strcmp(material,"Timber")==0)
             {
@@ -314,8 +321,8 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                                     data_row[strlen(data_row) - 1] = '\0';
 
                                     //check last appearance of "
-                                    ptr = &data_row;
-                                    ptr1 = strrchr(&data_row, '\"');
+                                    ptr = data_row;
+                                    ptr1 = strrchr(data_row, '\"');
                                     ptr1++;
 
                                     //"species" "moisture"
@@ -377,7 +384,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                 }
                 else
                 {
-                    if (strcmp(region, "US")==0)if (strcmp(region, "US")==0)
+                    if (strcmp(region, "US")==0)
                     {
                         E=1595.0;
                         G=100.0;
@@ -408,8 +415,8 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                                     data_row[strlen(data_row) - 1] = '\0';
 
                                     //check last appearance of "
-                                    ptr = &data_row;
-                                    ptr1 = strrchr(&data_row, '\"');
+                                    ptr = data_row;
+                                    ptr1 = strrchr(data_row, '\"');
                                     ptr1++;
 
                                     //"species" "moisture"
@@ -523,10 +530,10 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                 }
             }
 
-            sprintf(&par[9], "%g", E);
-            sprintf(&par[10], "%g", G);
-            sprintf(&par[11], "%g", d);
-            sprintf(&par[12], "%g", a);
+            sprintf(par[9], "%g", E);
+            sprintf(par[10], "%g", G);
+            sprintf(par[11], "%g", d);
+            sprintf(par[12], "%g", a);
 
             sprintf(section_data,"#%d h=%s b=%s A=%s Asy=%s Asz=%s Iy=%s Iz=%s Wy=%s Wz=%s E=%s G=%s r=0 d=%s a=%s  %s", property_no, par[0],par[1],par[2],par[3],par[4],par[5],par[6],par[7],par[8], par[9], par[10], par[11], par[12], type0);
             return section_data;
@@ -539,7 +546,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
 
 char *get_section(int property_no, char *material, char *region0, char *section, char *standard, char *series, char *type, char *species, char *moisture)   //"Steel","UK",section,standard,series,type
 {
-    char section_data[MaxTextLen];
+    static char section_data[MaxTextLen];
     char *units_system;
     char file_name[MAXPATH];
     char *region=region0;
@@ -612,7 +619,7 @@ char *get_section(int property_no, char *material, char *region0, char *section,
 
     strcpy(section_data, get_section_data(file_name,  property_no, material, section, region, units_system, standard, series, type, species, moisture));
 
-    return &section_data;
+    return section_data;
 }
 
 void SteelUS(void)
@@ -632,7 +639,7 @@ void SteelUS(void)
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
-    if (!get_string (&property_no_str, "1234567890", 16, 0, 211))
+    if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
         return;
     }
@@ -653,7 +660,7 @@ void SteelUS(void)
         m_section = pmSteelUS[mSteelUS.foff + mSteelUS.poz].menu;
         m_standard = (*m_section->pola)[m_section->foff + m_section->poz].menu;
         strcpy(standard, (*m_section->pola)[m_section->foff + m_section->poz].txt);
-        m_series = (*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
+        m_series = (PTMENU *)(*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
@@ -668,7 +675,7 @@ void SteelUS(void)
         TextG.height=0;
         hidden=TextG.ukryty;
         TextG.ukryty=hidden_last;
-        if (Tekst_factory(&section_data, FALSE)) last_property_no = property_no;
+        if (Tekst_factory(section_data, FALSE)) last_property_no = property_no;
         hidden_last=TextG.ukryty;
         TextG.ukryty=hidden;
     }
@@ -694,7 +701,7 @@ void TimberUS(void)
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
-    if (!get_string (&property_no_str, "1234567890", 16, 0, 211))
+    if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
         return;
     }
@@ -718,7 +725,7 @@ void TimberUS(void)
         m_section = pmTimberUS[0].menu;
         m_standard = (*m_section->pola)[m_section->foff + m_section->poz].menu;
         strcpy(standard, (*m_section->pola)[m_section->foff + m_section->poz].txt);
-        m_series = (*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
+        m_series = (PTMENU *)(*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
@@ -733,7 +740,7 @@ void TimberUS(void)
         TextG.height=0;
         hidden=TextG.ukryty;
         TextG.ukryty=hidden_last;
-        if (Tekst_factory(&section_data, FALSE)) last_property_no = property_no;
+        if (Tekst_factory(section_data, FALSE)) last_property_no = property_no;
         hidden_last=TextG.ukryty;
         TextG.ukryty=hidden;
     }
@@ -758,7 +765,7 @@ void SteelEU(void)
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
-    if (!get_string (&property_no_str, "1234567890", 16, 0, 211))
+    if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
         return;
     }
@@ -779,7 +786,7 @@ void SteelEU(void)
         m_section = pmSteelEU[mSteelEU.foff + mSteelEU.poz].menu;
         m_standard = (*m_section->pola)[m_section->foff + m_section->poz].menu;
         strcpy(standard, (*m_section->pola)[m_section->foff + m_section->poz].txt);
-        m_series = (*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
+        m_series = (PTMENU *)(*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
@@ -794,7 +801,7 @@ void SteelEU(void)
         TextG.height=0;
         hidden=TextG.ukryty;
         TextG.ukryty=hidden_last;
-        if (Tekst_factory(&section_data, FALSE)) last_property_no = property_no;
+        if (Tekst_factory(section_data, FALSE)) last_property_no = property_no;
         hidden_last=TextG.ukryty;
         TextG.ukryty=hidden;
     }
@@ -819,7 +826,7 @@ void SteelUK(void)
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
-    if (!get_string (&property_no_str, "1234567890", 16, 0, 211))
+    if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
         return;
     }
@@ -839,7 +846,7 @@ void SteelUK(void)
         m_section = pmSteelUK[mSteelUK.foff + mSteelUK.poz].menu;
         m_standard = (*m_section->pola)[m_section->foff + m_section->poz].menu;
         strcpy(standard, (*m_section->pola)[m_section->foff + m_section->poz].txt);
-        m_series = (*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
+        m_series = (PTMENU *)(*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
@@ -854,7 +861,7 @@ void SteelUK(void)
         TextG.height=0;
         hidden=TextG.ukryty;
         TextG.ukryty=hidden_last;
-        if (Tekst_factory(&section_data, FALSE)) last_property_no = property_no;
+        if (Tekst_factory(section_data, FALSE)) last_property_no = property_no;
         hidden_last=TextG.ukryty;
         TextG.ukryty=hidden;
     }

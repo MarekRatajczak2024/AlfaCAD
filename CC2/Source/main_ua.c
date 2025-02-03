@@ -59,16 +59,17 @@ POLE pmRegion[] = {
 };
 
 
-TMENU mRegion = { 3, 0, 0, 16, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 1, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 3, 0, 0, 16, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 
 POLE pmApplications[] = {
         {u8"Статичний і динамічний аналіз",L'С',733, NULL},
+        {u8"Результатні сили в поперечних перерізах",L'Р',824, NULL},
         {u8"Анімувати динаміку",L'А',817, NULL},
         {u8"Вибір перерізу елемента",L'В',775, &mRegion},
 };
 
-TMENU mApplications = { 3, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+TMENU mApplications = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
 
 POLE pmenug[] = {
 	{u8"Намалюй\0", L'Н',57,NULL},

@@ -1696,6 +1696,52 @@ int Block_Proc_Wez_w (int (*DZI)(void *), int (*ODZI)(void *),
   return 1; 
 }
 
+int Block_Proc_Wez_Element (int (*DZI)(void *), int (*ODZI)(void *),
+                      void (*REDROWd)(void), int (*COMND[])(void), int style)
+//---------------------------------------------------------------------------
+{
+//kopia funkcji blok, COMND i Block_Proc zwracaja wartosc,
+
+    void *ad;
+    EVENT *ev;
+    double X0, Y0;
+
+    redcr(0,REDROWd);
+    while(1)
+    {
+        ev=Get_Event_Point(NULL, &X0, &Y0);
+        if(ev->What==evKeyDown)
+        { if(ev->Number==0)
+            { redcr(1,REDROWd);
+                return 0 ;
+            }
+            if(ev->Number==ENTER)
+            {
+                CUR_OFF(X,Y);
+                if ((ad = obiekt_wybrany_typ (Bvector)) != NULL)
+                {
+                    adrem_obiekt_ (ad, DZI, ODZI /*, FALSE*/) ;
+                    CUR_ON(X,Y);
+                    redcr(1,REDROWd);
+                    return 1 ;
+                }
+                CUR_ON(X,Y);
+            }
+        }
+        else
+        {
+            if( ev->What == evCommandP &&
+                TRUE == (*COMND[ev->Number]) ())
+            {
+                redcr (1, REDROWd) ;
+                return 1 ;
+            }
+        }
+    }
+    redcr (1, REDROWd) ;
+    return 1;
+}
+
 BOOL Block_Proc_Set_w(int (*DZI)(void*), int (*ODZI)(void*),
 	void (*REDROWd)(void), int (*COMND[])(void), int info)
 	//---------------------------------------------------------------------

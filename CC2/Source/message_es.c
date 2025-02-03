@@ -662,6 +662,8 @@ static char* komunikaty0[] =
 /*166*/u8"",  //custom text
 /*167*/u8"Indique un diagrama de marco o armadura para análisis estático/dinámico",
 /*168*/u8"Dimensionamiento (para comenzar a dimensionar un ángulo, toque cualquier línea)",
+/*169*/u8"Indicar el elemento del marco o cercha",
+/*170*/u8"Posicione la línea de sección en las coordenadas deseado del elemento. Haga clic para guardar los valores en el portapapeles",
 };
 
 static char* messages_str[] =
@@ -929,6 +931,19 @@ static char confirm[] = u8"Confirmar";
 
 #ifdef __O_STATIC__
 
+#define _SELECT_STATE_ "Estado límite (combinación)"
+#define _SELECT_STATE_C_ L'E'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"estado límite Último (ELU)",L'U',0,NULL},
+    {u8"estado límite de Servicio (ELS)",L'S',0,NULL},
+    {u8"estado límite de servicio (Cuasipermanente)",L'C',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
 #define _PROCEED_STATIC_ u8"¿Proceder a un análisis estático del marco o cercha indicada?"
 
 #define _incorrectly_defined_ u8"definido incorrectamente"
@@ -939,7 +954,7 @@ static char confirm[] = u8"Confirmar";
 #define _load_not_associated_ u8"no asociado con ningún elemento conocido"
 #define _thermal_load_inside_element_ u8"no en todo el elemento con coordenadas de nodos:"
 #define _unknown_standard_ u8"Estándar desconocido"
-
+#define _element_graph_data_failed_ u8"No se pudo crear el bloque de datos de las fuerzas resultantes para el elemento"
 
 #define _FRAME3DD_ "%FRAME:"
 #define _FRAME3DD_PL "%RAMA:"
@@ -1007,7 +1022,7 @@ char *frame3dd[]={
  /*29*/ u8"error al abrir el archivo de depuración masiva de datos, MassData.txt",
  /*30*/ u8"la matriz del sistema de ajuste de curva cúbica para la deformación del elemento no es positiva definida",
  /*31*/ u8"matriz de rigidez estática estructural definida no positiva",
- /*32*/ u8"error en el análisis del problema propio",
+ /*32*/ u8"error en el análisis de valores propios. Inténtelo de nuevo con un número reducido o nulo de modos dinámicos",
  /*33*/ u8"finalización sin errores",
  /*34*/ u8"finalización sin errores",
  /*35*/ u8"finalización sin errores",
@@ -1156,9 +1171,9 @@ char *frame3dd[]={
  /*178*/ u8"finalización sin errores",
  /*179*/ u8"finalización sin errores",
  /*180*/ u8"finalización sin errores",
- /*181*/ u8"inestabilidad elástica (matriz de rigidez elástica + geométrica no definida positiva)",
- /*182*/ u8"deformación grande (la deformación axial promedio en uno o más elementos es mayor que 0.001)",
- /*183*/ u8"gran deformación e inestabilidad elástica",
+ /*181*/ u8"Advertencia: inestabilidad elástica (matriz de rigidez elástica + geométrica no definida positiva)",
+ /*182*/ u8"Advertencia: deformación grande (la deformación axial promedio en uno o más elementos es mayor que 0.001)",
+ /*183*/ u8"Advertencia: gran deformación e inestabilidad elástica",
  /*184*/ u8"finalización sin errores",
  /*185*/ u8"finalización sin errores",
  /*186*/ u8"finalización sin errores",

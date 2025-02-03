@@ -329,6 +329,7 @@ char alfa_mouse_edit_data32[DEFAULT_SPRITE_H32 * DEFAULT_SPRITE_W32] =
                 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
 
+
 static GrContext *second_screen;
 GrContext *second_screen_back;
 ZBUFFER *zbuf;
@@ -512,6 +513,7 @@ static BITMAP *alfa_mouse_edit32 = NULL;
 
 static BITMAP *alfa_mouse_sprite = NULL;
 static BITMAP *alfa_mouse_edit_sprite = NULL;
+static BITMAP *alfa_mouse_busy_sprite = NULL;
 
 extern unsigned long_long imagesizelong(int left, int top, int right, int bottom);
 
@@ -556,6 +558,8 @@ extern int get_arc_points(LUK *l, double **xy, int n0, BOOL reversed, BOOL print
 extern void rysuj_solidarc_(SOLIDARC *ad,int mode,int kolor, BOOL as_redraw, BOOL enforce);
 extern int solidarc_wybrany(SOLIDARC *sa);
 extern BOOL Point_in_SolidArc (SOLIDARC *ptr_sa, double x, double y);
+
+extern BITMAP *icon_hourglass_mem;
 
 int solid_pattern_library_no = 0;
 #define SOLID_PATTERN_LIBRARY_MAX_ITEMS 512 //1024
@@ -9682,6 +9686,15 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
         int typl = (L->typ & 31);
         if (typl==0) pattern_offset = 0;
 
+
+                ////TEMPORARY
+               if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
+               {
+                   GRAPH_DATA *graph_data=(char*)L + sizeof(LINIA);
+                   int flags = graph_data->flags;
+                   int nx = graph_data->nx;
+               }
+
 		//checking if line is dimensioning line
 		if ((L->blok == 1) && (L->obiektt1 == 0) && (L->obiektt2 == 1) && (L->obiektt3 == 0))
 		{
@@ -12632,8 +12645,10 @@ void set_dialog_cursor(BOOL bigsmall)
     if (BIGCURSOR) alfa_mouse_edit_sprite = alfa_mouse_edit32;
     else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 
+    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 
-	set_mouse_sprite(alfa_mouse_sprite);
+    set_mouse_sprite(alfa_mouse_sprite);
 	save_dialog_cursor();
 }
 
@@ -12702,6 +12717,17 @@ void set_cursor_edit(void)
     show_mouse(screen);
 }
 
+void set_cursor_busy(void)
+{
+    scare_mouse();
+    set_mouse_sprite(alfa_mouse_busy_sprite);
+    if (BIGCURSOR) set_mouse_sprite_focus(16, 16);
+    else set_mouse_sprite_focus(16, 16);
+
+    unscare_mouse();
+    show_mouse(screen);
+}
+
 void set_cursor_edit_linux(void)
 {
     //select_mouse_cursor(MOUSE_CURSOR_NONE);
@@ -12757,7 +12783,16 @@ void ini_cursors(void)
     if (BIGCURSOR) alfa_mouse_edit_sprite = alfa_mouse_edit32;
     else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 
+    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else  alfa_mouse_busy_sprite = icon_hourglass_mem;
+
     set_mouse_sprite(alfa_mouse_sprite);
+}
+
+void ini_cursor_busy(void)
+{
+    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 }
 
  void ini_e (void)

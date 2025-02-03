@@ -115,6 +115,13 @@ extern double moment_precision;
 extern double rotation_precision;
 extern double load_precision;
 
+static int vector_filter=-1;
+
+void set_vector_filter(int vf)
+{
+    vector_filter=vf;
+}
+
 void set_XY(double del_minx, double del_miny, double del_maxx, double del_maxy)
 {
 	X1 = del_minx;
@@ -1312,6 +1319,12 @@ int vector_wybrany(AVECTOR *ad)
     double ra;
     double _precision_;
     int ret;
+
+    if (vector_filter>-1) {
+        int vmarker=pow(2,ad->style);
+        if (!(vmarker & vector_filter))
+            return 0;
+    }
 
 #define arrowf 1.0
 

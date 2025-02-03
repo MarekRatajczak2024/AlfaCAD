@@ -2286,9 +2286,22 @@ char *icon_barstyle_p;
 BITMAP *icon_perc_mag;
 char *icon_perc_mag_p;
 
+BITMAP *icon_cross_section_forces;
+char *icon_cross_section_forces_p;
 
+BITMAP *icon_resilience;
+char *icon_resilience_p;
 
-        BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+BITMAP *icon_hourglass_mem;
+
+BITMAP *icon_ULS;
+char *icon_ULS_p;
+BITMAP *icon_SLS;
+char *icon_SLS_p;
+BITMAP *icon_QPSLS;
+char *icon_QPSLS_p;
+
+BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,*/

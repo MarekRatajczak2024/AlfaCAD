@@ -51,7 +51,7 @@ extern void  outtext_r_(BITMAP *ui_screen, char  *textstring);
 extern int TTF_text_len(char *text);
 extern void setcolor(int kolor);
 extern void set_global_hidden_blocks_visibility(BOOL block_visibility);
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern void remove_short_notice(void);
 extern int  getcom(TMENU *menu);
 
@@ -233,7 +233,7 @@ void Animate_dynamics(void)
    Set_Screen();
    flip_screen();
 
-   komunikat_str_short (_ANIMATE_, TRUE);
+   komunikat_str_short (_ANIMATE_, TRUE, FALSE);
 
 //how it is done:
 //outtextxy_w(t, COPY_PUT);
@@ -311,7 +311,7 @@ void Animate_dynamics(void)
 
     if (blocks_no>0) free(i_len);
 
-    komunikat_str_short("", TRUE);
+    komunikat_str_short("", TRUE, FALSE);
     remove_short_notice();
 
 }

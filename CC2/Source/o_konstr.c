@@ -48,7 +48,7 @@
 #include "leak_detector_c.h"
 
 
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern void PlineW1 (char *blok_type);
 extern BOOL Check_if_Equal (double x, double y);
 
@@ -397,7 +397,7 @@ static int rysuj_zbrojenie(void)
    strcpy(zb_glowne, nets_tab0[n]);
   
    sprintf(st1,"%s %s :",opis_zbrojenia[0], zb_glowne);
-   komunikat_str_short(st1, TRUE);
+   komunikat_str_short(st1, TRUE, FALSE);
    
    //line global parameters
    //polyline

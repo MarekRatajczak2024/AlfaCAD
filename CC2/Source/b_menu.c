@@ -279,7 +279,7 @@ extern unsigned short vector_wcod[];
 extern unsigned short point_wcod[];
 
 extern char* typ_punktu_inf[];
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern char *load_symbol[];
 
 extern char* typ_punktu_inf[];
@@ -1276,6 +1276,13 @@ extern char *icon_cursorstyle_p;
 extern char *icon_barstyle_p;
 
 extern char *icon_perc_mag_p;
+extern char *icon_cross_section_forces_p;
+
+extern char *icon_resilience_p;
+
+extern char *icon_ULS_p;
+extern char *icon_SLS_p;
+extern char *icon_QPSLS_p;
 
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
@@ -2561,6 +2568,22 @@ void show_hide_tip(TMENU * menu, BOOL show)
 
 }
 
+
+void tip_frame(int x1, int y1, int x2, int y2)
+{
+    setwritemode(COPY_PUT);
+    setcolor(18);  //inkk
+    setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
+
+    RECTFILL(x1, y1, x2, y2);
+    setcolor(113);
+    LINE(x1 + 1, y1 + 1, x2 - 1, y1 + 1);
+    LINE(x2 - 1, y1 + 1, x2 - 1, y2 -1);
+    LINE(x2 - 1, y2 -1, x1 + 1, y2 -1);
+    LINE(x1 + 1, y2 -1 , x1 + 1, y1 + 1);
+    setcolor(kolory.inkm);
+}
+
 int frame_up(TMENU * menu)
 {
 	int x0, y0, x1, y1, a, b;
@@ -3203,7 +3226,8 @@ static char *get_icons_p(int number)
         /*800*/   icon_stress_mag_p, icon_stress_plus_mag_p, icon_stress_minus_mag_p, icon_shear_stress_mag_p, icon_no_d_12_p,
         /*805*/   icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p, icon_mark_d_12_p,
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
-        /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p,
+        /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
+        /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p,
     };
    
 	if (number>999)
@@ -3831,8 +3855,6 @@ void draww(TMENU  *menu)
     y1=0;
     menu_screen= create_bitmap_ex(32, w, h);
     if (menu_screen==NULL) return;
-
-
 
     Set_Screenplay(menu_screen);
 
@@ -7258,7 +7280,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
                if ((lk==ENTER) || (lk==ESC))
                {
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_back();
-                   komunikat_str_short("", FALSE);
+                   komunikat_str_short("", FALSE, FALSE);
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_high();
                }
                else if (((lk > 0x1F) && (lk < 0x80)) || (lk == 8))
@@ -7266,13 +7288,13 @@ int inkeys(TMENU *menu, BOOL search_ok)
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_back();
                    if (lk == 8) {
                        if (strlen(search_str) > 0) search_str[strlen(search_str) - 1] = '\0';
-                       komunikat_str_short(search_str, FALSE);
+                       komunikat_str_short(search_str, FALSE, FALSE);
                    } else {
                        if (strlen(search_str) < MaxTextLen - 1) {
                            size_t len = strlen(search_str);
                            search_str[len++] = lk;
                            search_str[len] = '\0';
-                           komunikat_str_short(search_str, FALSE);
+                           komunikat_str_short(search_str, FALSE, FALSE);
                        }
                    }
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_high();
@@ -7361,7 +7383,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
                {
                    draw_demokeyimage(819, -1, TRUE, FALSE, FALSE);
                }
-               if (search_ok) komunikat_str_short("", FALSE);
+               if (search_ok) komunikat_str_short("", FALSE, FALSE);
                return ucatch(ESC);
            }
 		   if ((mkeys) & '\01')
@@ -7370,7 +7392,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 			   {
 				   draw_demokeyimage(658, -1, TRUE, FALSE, FALSE);
 			   }
-               if (search_ok) komunikat_str_short("", FALSE);
+               if (search_ok) komunikat_str_short("", FALSE, FALSE);
 			   return ucatch(ESC);
 		   }
 		   if ((mkeys) & '\02')
@@ -7379,7 +7401,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 			   {
 				   draw_demokeyimage(659, -1, TRUE, FALSE, FALSE);
 			   }
-               if (search_ok) komunikat_str_short("", FALSE);
+               if (search_ok) komunikat_str_short("", FALSE, FALSE);
 			   return ucatch('\02');
 		   }
 		   if ((mkeys) & '\04')
@@ -7388,7 +7410,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 			   {
 				   draw_demokeyimage(657, -1, TRUE, FALSE, FALSE);
 			   }
-               if (search_ok) komunikat_str_short("", FALSE);
+               if (search_ok) komunikat_str_short("", FALSE, FALSE);
 			   return ucatch(ENTER);
 		   }
 	   }

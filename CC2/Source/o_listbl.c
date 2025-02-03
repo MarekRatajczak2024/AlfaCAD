@@ -336,6 +336,7 @@ static char *find_block_name(char *block_name, int only_dxf_block)
   while (ptrs_block != NULL)
   {
     if ( ((ptrs_block->kod_obiektu == B_EXPORT) ||
+            (ptrs_block->kod_obiektu == B_GRAPH) ||
           (ptrs_block->kod_obiektu == B_PPOMIAR) ||
           (ptrs_block->kod_obiektu == B_KPOMIAR) ||
           (ptrs_block->kod_obiektu == B_ODWIERT_OLD) ||
@@ -409,6 +410,7 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
   while (ptrs_block != NULL)
   {
     if ( ((ptrs_block->kod_obiektu == B_EXPORT) ||
+            (ptrs_block->kod_obiektu == B_GRAPH) ||
           (ptrs_block->kod_obiektu == B_PPOMIAR) ||
           (ptrs_block->kod_obiektu == B_KPOMIAR) ||
           (ptrs_block->kod_obiektu == B_ODWIERT_OLD) ||

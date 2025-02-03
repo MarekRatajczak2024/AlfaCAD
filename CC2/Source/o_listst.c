@@ -242,7 +242,7 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
 {
   int n, i_len ;
   BOOL b_ret ;
-  char sz_tmp [MaxTextLen] ;
+  char sz_tmp [MaxMultitextLen] ;  //MaxTextLen
   char *ptrsz_tmp ;
   double X__, Y__;
 
@@ -282,19 +282,32 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
 }
 
 #ifndef LINUX
-void encodewin(char *utf8text, char *wintext)
+void encodewin0(char *utf8text, char *wintext)
 {
 	int ret;
 	int count;
-	char unicodetext[MaxTextLen];
+	char unicodetext[MaxMultitextLen]; //MaxTextLen
 
 	count = utf82unicode(utf8text, &unicodetext);
     unicode2win(unicodetext, wintext, count);
+
+}
+/*
+void encodewin(char* utf8text, char* wintext)
+{
+    int ret;
+    int count;
+    char unicodetext[MaxMultitextLen]; //MaxTextLen
+
+    //count = utf82unicode(utf8text, &unicodetext);
+    //unicode2win(unicodetext, wintext, count);
+
+    utf82win(utf8text, wintext);
 }
 
 void Put_Str_To_Clip(char *ptrsz_buf)
 {
-	char ptrsz_sz_tmp[MaxTextLen];
+	char ptrsz_sz_tmp[MaxMultitextLen];  //MaxTextLen
 
 	//utf82win(ptrsz_buf, &ptrsz_sz_tmp);
 	//PutStringToClipboard(&ptrsz_sz_tmp);
@@ -304,7 +317,7 @@ void Put_Str_To_Clip(char *ptrsz_buf)
 
     ////PutStringToClipboard(ptrsz_buf);
 }
-
+*/
 
 BOOL Get_Str_From_Clip(char *ptrsz_buf,
 	int i_poz,
@@ -315,9 +328,9 @@ BOOL Get_Str_From_Clip(char *ptrsz_buf,
 {
 	int n, i_len;
 	BOOL b_ret;
-	char sz_tmp[MaxTextLen];
+	char sz_tmp[MaxMultitextLen];  //MaxTextLen
 	char *ptrsz_tmp;
-	char ptrsz_sz_tmp[MaxTextLen];
+	char ptrsz_sz_tmp[MaxMultitextLen];  //MaxTextLen
     int valid;
 
 	b_ret = FALSE;

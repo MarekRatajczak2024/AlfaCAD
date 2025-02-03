@@ -48,7 +48,7 @@ extern void redraw(void);
 extern int  getwsp1(TMENU *menu);
 extern void komunikat(int n);
 extern void komunikat0(int n);
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern void PlineW1 (char *blok_type);
 extern void set_pline_param (BOOL b_pline);
 extern BOOL add_block_ (void) ;
@@ -221,7 +221,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case NOTICE_STR_SHORT:
-            komunikat_str_short((char*)param1, TRUE);
+            komunikat_str_short((char*)param1, TRUE, FALSE);
             return 0;
             break;
         case GET_LINE_G:

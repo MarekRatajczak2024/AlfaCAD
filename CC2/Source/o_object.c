@@ -87,6 +87,9 @@ char *get_dane0all(void)
 
 void movmem_(void* src, void* dest, long nbyte)  //??? long  or long_long
 {
+
+    ////if (nbyte>100000000)  //TEMPORARY, just for tests
+    ////    return;
 	memmove(dest, src, nbyte);
 }
 
@@ -469,6 +472,9 @@ char* Add_Block_Object(BLOK** ptrptr_adb, void* ad, long l_move)
 	BLOK* blok_nag;
     long_long del_dane0;
     char *dane00;
+
+    ////if (l_move>100000000)  //TEMPORARY, just for tests
+    ////   return NULL;
 
     dane0 = dane,
     dane00 = dane0;

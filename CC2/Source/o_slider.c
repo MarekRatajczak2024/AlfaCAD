@@ -25,7 +25,7 @@ extern void (*CUR_OFF)(double, double);
 extern void (*CUR_ON)(double, double);
 extern double X,Y;
 extern const KOLORY kolory;
-extern void komunikat_str_short(char *st, BOOL stay);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 
 int gui_border_dark, gui_border_light;
 
@@ -95,7 +95,7 @@ int slider_function(int *var)
 {   char slider_var[32];
 
     sprintf(slider_var, "%d", *var);
-    komunikat_str_short(slider_var, FALSE);
+    komunikat_str_short(slider_var, FALSE, FALSE);
     //*var=10;
 
     return 1;

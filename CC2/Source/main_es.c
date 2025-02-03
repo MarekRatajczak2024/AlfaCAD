@@ -57,16 +57,17 @@ POLE pmRegion[] = {
         {u8"Reino Unido", 'R',774, NULL}, //&mSteelUK
 };
 
-TMENU mRegion = { 3, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 1, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 3, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 
 POLE pmApplications[] = {
         {u8"Análisis estático y dinámico",L'A',733, NULL},
+        {u8"Fuerzas resultantes en secciones transversales",L'F',824, NULL},
         {u8"animar la Dinámica",L'D',817, NULL},
         {u8"Selección de sección transversal del elemento",L'S',775, &mRegion},
 };
 
-TMENU mApplications = { 3, 0, 0, 46, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+TMENU mApplications = { 4, 0, 0, 46, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
 
 POLE pmenug[] = {
 	{u8"Dibujar\0",'D',57,NULL},

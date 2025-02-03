@@ -1600,6 +1600,52 @@ int prostopadleL_(double *x,double *y,void *adr)
   return 1;
 }
 
+int prostopadleL_from_point(double *x,double *y, double *l, void *adr)
+{
+    double a, a1, df_min_prec ;
+    LINIA *adrl;
+    PLINIA PL ;
+    double x1, y1;
+
+    x1=*x;
+    y1=*y;
+
+    adrl = (LINIA*)adr ;
+    if (TRUE == Check_if_Equal (adrl->x2, adrl->x1))
+    {
+        *x = adrl->x1 ;
+        *y = y1 ;
+        *l=fabs(adrl->y2-adrl->y1);
+    }
+    else
+    if (TRUE == Check_if_Equal (adrl->y2, adrl->y1))
+    {
+        *y = adrl->y1 ;
+        *x = x1 ;
+        *l=fabs(adrl->x2-adrl->x1);
+    }
+    else
+    {
+        parametry_lini ((LINIA*)adrl, &PL) ;
+        df_min_prec = Get_Prec (MPREC_DOUBLE, 1, 1) ;
+        if (fabs (PL.sin) < df_min_prec)
+        {
+            PL.sin = df_min_prec ;
+        }
+        if (fabs (PL.cos) < df_min_prec)
+        {
+            PL.cos = df_min_prec ;
+        }
+        a = PL.sin / PL.cos ;
+        a1 = 1 / a ;
+        *x = (y1 - adrl->y1 + a * adrl->x1 + x1 * a1) /(a + a1) ;
+        *y = y1 - a1 * (*x - x1) ;
+        *l=PL.dl;
+    }
+
+    return 1;
+}
+
 int prostopadleV_(double *x,double *y,void *adr)
 {
     double a, a1, df_min_prec ;

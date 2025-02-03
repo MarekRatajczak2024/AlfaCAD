@@ -236,9 +236,10 @@ void Get_Menu_Param (int i_pos, int i_maxw, int i_max,
 void menu_par_new (char  *pole, const char *par)
 /*------------------------------------------------*/
 { char *st;
-  int len_s;
-  char param_[60];
-  int i, n;
+  //int len_s;
+  //char param_[60];
+  //int i;
+  int n;
 
   st=pole + strlen(pole) + 1;
 
