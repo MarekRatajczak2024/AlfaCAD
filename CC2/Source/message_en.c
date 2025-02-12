@@ -817,7 +817,7 @@ TCHAR greeting4[] = _T("Click inside to finish");
 
 #ifdef __O_HATCH3__
 
-char* vocabulary[] = { (char*)u8"   press any key:", (char*)u8"area","center of mass",(char*)u8"First moment of area",(char*)u8"Area moment of inertia" };
+char* vocabulary[] = { (char*)u8"   press any key:", (char*)u8"A","center of mass",(char*)u8"First moment of area",(char*)u8"Area moment of inertia" };
 
 #endif
 

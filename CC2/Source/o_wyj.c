@@ -320,6 +320,9 @@ extern void reset_b_layers_bak(void);
 extern BOOL test_python_pillow(void);
 
 extern void DoneArgs(void);
+extern void Restore_Pointer(void);
+
+extern void enable_F11(void);
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude;
@@ -3140,6 +3143,8 @@ void DrawToPrn(void)
   set_trans_blender(0, 0, 0, TRANSLUCENCY); //just for a case
 
   lock_mouse();
+
+  enable_F11();
 }
 
 BOOL DrawToPrn_Serial(int first_number, int last_number, int if_init, int if_exit)
@@ -3643,6 +3648,7 @@ void PltOut (void)
      set_scrsave_time ();
     }
    normalize_text=normalize_text_back;
+   enable_F11();
    return;
 }
 
@@ -5545,8 +5551,6 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
     }
 }
 
-
-
 int Expand_flex()
 {
 	int ret;
@@ -5611,6 +5615,11 @@ int Expand_flex()
 
     if (close_button_pressed) Koniec();
     close_button_pressed=FALSE;
+
+    if ((BAR_POINTER) && (get_menu_level()>0))
+    {
+        Restore_Pointer();
+    }
 
     return ret_menu;
 };

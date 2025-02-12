@@ -909,16 +909,9 @@ static int e_imp_o (BOOL b_graph_value)
   return 1 ;
 }
 
-
 static void cur_offpki(double x,double y)
 {
     flip_screen();
-}
-
-static void cur_offpki__(double x,double y)
-{ 
-  cursel_off(x, y);
-  out_blok1(DX,DY,0,0,Tprzesuw,0);
 }
 
 static void cur_offpkisel(double x, double y)
@@ -926,15 +919,9 @@ static void cur_offpkisel(double x, double y)
     flip_screen();
 }
 
-static void cur_offpkisel__(double x, double y)
-{
-	cursel_off(x,y);
-	out_blok1(DX, DY, 0, 0, Tprzesuw, 0);
-}
-
 static void cur_onpki(double x,double y)
 {
-  cursel_on(x, y);
+  ////cursel_on(x, y);
   DX=x-Px;  DY=y-Py;
   out_blok1(DX,DY,0,0,Tprzesuw,0);
   cursel_on(x, y);
@@ -942,7 +929,7 @@ static void cur_onpki(double x,double y)
 
 static void cur_onpkisel(double x, double y)
 {
-    cursel_on(x, y);
+    ////cursel_on(x, y);
 	DX = x - Px;  DY = y - Py;
 	out_blok1(DX, DY, 0, 0, Tprzesuw, 0);
 	cursel_on(x, y);
@@ -965,7 +952,6 @@ int FileNameIDXF(char *fn, int Max_Len)
 	ret = Load_File(fn, INI_BLOK_DXF, FALSE);
 	return ret;
 }
-
 
 #define DX_BUT_def 72
 #define DY_BUT_def 48
@@ -2792,7 +2778,10 @@ int FileNamePattern(char **pattern_files, int n_list)
 					buttons_pattern[j*nx_but + i + FIXED_BUT_PATTERN].y = j * (DY_BUT[ButSizePat] + 5) + 5;
 					buttons_pattern[j*nx_but + i + FIXED_BUT_PATTERN].id = (j*nx_but + i + ID_IMPORT);
 					buttons_pattern[j*nx_but + i + FIXED_BUT_PATTERN].txt = pattern_file_name[j*nx_but + i];
-					if ((j*nx_but + i) > d_n_list)
+
+                    buttons_pattern[j*nx_but + i + FIXED_BUT_PATTERN].paper=kolory.paper;
+
+                    if ((j*nx_but + i) > d_n_list)
 					{
 						go_break = TRUE;
 						reload = TRUE;

@@ -73,6 +73,9 @@ extern void set_pl(double x, double y);
 extern void change_angle_l(double angle);
 extern BOOL Get_reversed(void);
 extern void Set_reversed(BOOL reversed);
+extern BLOK *FIRSTB(char  *ado);
+extern void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor);
+extern void reset_trace_block(void);
 
 static BOOL check_head_trace(BLOK* ptrs_block);
 
@@ -615,6 +618,9 @@ static BOOL add_trace_line_end (void )
   char* dy_ptr;
   char* name_ptr;
   char* translucency_ptr;
+  BLOK *b;
+  WIELOKAT *sadr;
+  char *adk_b, *adp_b;
 
   if (s_trace.b_line == TRUE)
   {
@@ -661,12 +667,27 @@ static BOOL add_trace_line_end (void )
         }
     }
 
-    if (NULL != dodaj_obiekt (((d_t__pline == TRUE) ? (BLOK*)dane : NULL), &solid_temp))
+    sadr = (WIELOKAT*)dodaj_obiekt (((d_t__pline == TRUE) ? (BLOK*)dane : NULL), &solid_temp);
+    if (sadr !=NULL)
     {
       rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 0) ;
       rysuj_obiekt ((char *)&solid_temp, COPY_PUT, 1) ;
       b_ret = TRUE ;
+
+      if ((sadr->blok==ElemBlok) && (sadr->empty_typ>0) && (sadr->empty_typ<6))
+        {
+            b=FIRSTB((char*)sadr);
+            if ((b->kod_obiektu == B_PLINE) && (b->opis_obiektu[0]== PL_TRACE))
+            {
+                adk_b=(char*)b + sizeof(NAGLOWEK) + b->n;
+                adp_b=(char*)b + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+                reset_trace_block();
+                blokzap(adp_b,adk_b,ANieOkreslony,COPY_PUT,0);
+                blokzap(b, adk_b, ANieOkreslony, COPY_PUT, 1);
+            }
+        }
     }
+
 
     Set_Screen();
     flip_screen();
@@ -3385,6 +3406,48 @@ void Trace_Dline_Tline (void)
              pline_mode = start_trace_arc (df_xbeg, df_ybeg, &s_trace.line, s_trace.b_line, d_line) ;
              if (pline_mode == PL_MODE_END) {
                  redcr0 (1) ;
+
+                 BLOK *b;
+                 char *adp_b, *adk_b;
+                 NAGLOWEK *nag;
+                 WIELOKAT *w;
+                 SOLIDARC *sa;
+                 BOOL redraw_trace=FALSE;
+
+                 nag=(NAGLOWEK*)dane;
+                 if (nag->obiekt==OdBLOK) {
+                     b=(BLOK*)nag;
+                     if ((b->kod_obiektu == B_PLINE) && (b->opis_obiektu[0] == PL_TRACE))
+                     {
+                         adk_b = (char *) b + sizeof(NAGLOWEK) + b->n;
+                         adp_b = (char *) b + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+                         nag=(NAGLOWEK*)adp_b;
+                         if (nag->obiekt==Owwielokat)
+                         {
+                             w=(WIELOKAT*)nag;
+                             if ((w->blok == ElemBlok) && (w->empty_typ > 0) && (w->empty_typ < 6))
+                             {
+                                 redraw_trace=TRUE;
+                             }
+                         }
+                         if (nag->obiekt==Osolidarc)
+                         {
+                             sa=(SOLIDARC*)nag;
+                             if ((sa->blok == ElemBlok) && (sa->empty_typ > 0) && (sa->empty_typ < 6))
+                             {
+                                 redraw_trace=TRUE;
+                             }
+                         }
+                         if (redraw_trace==TRUE)
+                         {
+                             reset_trace_block();
+                             blokzap(adp_b, adk_b, ANieOkreslony, COPY_PUT, 0);
+                             blokzap(b, adk_b, ANieOkreslony, COPY_PUT, 1);
+                             flip_screen();
+                         }
+                     }
+                 }
+
                  pline_mode = PL_MODE_LINE;
                  block_added = FALSE;
                  break;

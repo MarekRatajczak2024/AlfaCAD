@@ -180,6 +180,10 @@ extern void outlinetext(TEXT *t, QUAD *outline, double margin);
 extern int check_dim_line(LINIA *L);
 extern HPDF_Image HPDF_LoadPngImageFromFile_(HPDF_Doc  pdf_doc, char* png_file);
 
+extern void set_trace_block_begin(char *adr);
+extern void set_trace_block_end(char *adr);
+extern void set_trace_block(BOOL tb);
+
 void my_soft_polygon(BITMAP* bmp, int vertices, AL_CONST int* points, int color, int translucency, int colorB);
 void SetPDFClip(int pdf_left, int pdf_bottom, int pdf_right, int pdf_top);
 
@@ -503,6 +507,8 @@ int Line_Width (int width_style)
   int width ;
   double df_width ;
 
+  if (type__drive == PLT_DRIVE) return 0;
+
   df_width = 0 ;
   width = ( width_style & 224 ) / 32 ;
   switch (width)
@@ -534,6 +540,8 @@ int Solid_Line_Width (int solid_width_style)
 {
   int width, width1 ;
   double df_width ;
+
+ if (type__drive == PLT_DRIVE) return 0;
 
   df_width = 0 ;
   width = solid_width_style - 1;
@@ -4166,6 +4174,14 @@ if (draw_logo==TRUE)
              }
           }
 
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+                set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+                set_trace_block(TRUE);
+            }
+            else set_trace_block(FALSE);
+
      break;
        case Olinia :
 	  if (entities!=ENT_ENTITIES) break;
@@ -4522,6 +4538,14 @@ if (draw_logo==TRUE)
              }
           }
 
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+                set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+                set_trace_block(TRUE);
+            }
+            else set_trace_block(FALSE);
+
      break;
        case Olinia :
 	  if (entities!=ENT_ENTITIES) break;
@@ -4846,6 +4870,14 @@ if (draw_logo==TRUE)
               block_adr=(char *)nag + sizeof(NAGLOWEK) + b1->n - 1;
              }
           }
+
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+                set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+                set_trace_block(TRUE);
+            }
+            else set_trace_block(FALSE);
 
      break;
        case Olinia :
@@ -5233,6 +5265,14 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
               block_adr=(char *)nag + sizeof(NAGLOWEK) + b1->n - 1;
              }
           }
+
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+                set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+                set_trace_block(TRUE);
+            }
+            else set_trace_block(FALSE);
 
      break;
        case Olinia :

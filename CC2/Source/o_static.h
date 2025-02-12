@@ -293,6 +293,7 @@ typedef struct {
     double Sp_max;
     double Sm_min;
     double Sm_max;
+    double Ss;
 } COMBI_FORCES;
 
 typedef struct {

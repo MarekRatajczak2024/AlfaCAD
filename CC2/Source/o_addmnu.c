@@ -119,7 +119,8 @@ void skala_window(double xmin, double xmax, double ymin, double ymax, int dark);
 void SkalaW (void);
 double get_skala(void);
 static void solidarc_place (SOLIDARC *sa, double *xmin, double *ymin, double *xmax, double *ymax);
-static void okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax);
+//static
+void okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax);
 static void tekst_place (TEXT *t, double *xmin, double *ymin, double *xmax, double *ymax);
 void luk_place (LUK *l, double *xmin, double *ymin, double *xmax, double *ymax);
 
@@ -1571,8 +1572,8 @@ void SkalaW (void)
 
 /*-------SkalaE--------------------------------------*/
 
-static void
-line_place (LINIA *l, double *xmin, double *ymin, double *xmax, double *ymax)
+//static
+void line_place (LINIA *l, double *xmin, double *ymin, double *xmax, double *ymax)
 {
   if ( l->x1 < *xmin ) *xmin = l->x1;
   if ( l->x2 < *xmin ) *xmin = l->x2;
@@ -1608,13 +1609,13 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
         case 1:
         case 2:
         case 3:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 4:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 7:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 5:
         case 6:
@@ -1640,7 +1641,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             luk_place (&l, xmin, ymin, xmax, ymax) ;
             break;
         case 10:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->x1<V->x2) n=1;
             else n=-1;
@@ -1653,7 +1654,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 11:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->y1<V->y2) n=1;
             else n=-1;
@@ -1666,7 +1667,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 12:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             parametry_lini(V, &PL);
             kos=sin(Pi*(PL.kat+90)/180);
@@ -1680,7 +1681,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 13:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->x1<V->x2)
             {
@@ -1701,7 +1702,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 14:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->y1<V->y2)
             {
@@ -1722,9 +1723,9 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 15:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
-            parametry_lini(V, &PL);
+            parametry_lini((LINIA*)V, &PL);
             kos=sin(Pi*(PL.kat+90)/180);
             koc=cos(Pi*(PL.kat+90)/180);
 
@@ -1736,7 +1737,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
         case 16:
-            line_place(V, xmin, ymin, xmax, ymax);
+            line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             O.warstwa=V->warstwa;
             O.x=V->x1;
@@ -2070,8 +2071,8 @@ static void tekst_place (TEXT *t, double *xmin, double *ymin, double *xmax, doub
 
 }
 
-static void
-okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax)
+//static
+void okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax)
 {
   if ( o->x - o->r < *xmin ) *xmin = o->x - o->r;
   if ( o->y - o->r < *ymin ) *ymin = o->y - o->r;

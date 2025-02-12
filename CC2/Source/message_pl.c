@@ -817,7 +817,7 @@ TCHAR greeting4[] = _T("Kliknij wewnątrz, aby zakończyć");
 
 #ifdef __O_HATCH3__
 
-char* vocabulary[] = { (char*)u8"   naciśnij klawisz:",(char*)u8"pole", (char*)u8"środek ciężkości",(char*)u8"Moment statyczny pola",(char*)u8"Moment bezwładności" };
+char* vocabulary[] = { (char*)u8"   naciśnij klawisz:",(char*)u8"A", (char*)u8"środek ciężkości",(char*)u8"Moment statyczny pola",(char*)u8"Moment bezwładności" };
 
 #endif
 

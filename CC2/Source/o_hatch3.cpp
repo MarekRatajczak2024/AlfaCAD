@@ -65,6 +65,9 @@ extern int my_kbhit(void);
 extern int my_getch(void);
 extern char *get_units(void);
 
+extern void line_place (LINIA *l, double *xmin, double *ymin, double *xmax, double *ymax);
+extern void okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax);
+extern void luk_place (LUK *l, double *xmin, double *ymin, double *xmax, double *ymax);
 
 BOOL Make_Hatch(T_PTR_Hatch_Param ptrs_hatch_param0,
                 T_PTR_Area ptrs_area, int comput_area,
@@ -99,6 +102,11 @@ static double df_x11m ;
 static double df_x22m ;
 static int pole_hatch_add ;
 static double df_dist_ ;
+
+static double xmin_g = MAXDOUBLE ;
+static double xmax_g = -MAXDOUBLE ;
+static double ymin_g = MAXDOUBLE ;
+static double ymax_g = -MAXDOUBLE ;
 
 double g_dfymin;
 double g_dfymax;
@@ -602,6 +610,120 @@ static void get_draw_outline(T_PTR_Hatch_Param ptrs_hatch_param, BOOL draw, int 
 }
 
 
+static void get_range_outline(T_PTR_Hatch_Param ptrs_hatch_param)
+{
+    T_PTR_Vertex ptrs_vertexs;
+    int i_verno, i; // j;
+
+    T_PTR_ALine ptrs_lines;
+    int vertex1_no, vertex2_no;
+    int i_linno;
+
+    T_PTR_AArc ptrs_arcs;
+    double arcr, arca1, arca2, arcx, arcy;	/*parametry luku*/
+    int i_arcno;
+
+    double df_basex = ptrs_hatch_param->df_basex;
+    double df_basey = ptrs_hatch_param->df_basey;
+    double df_angle = 0.0;
+    double l_max=0.0;
+    double dx,dy,dl;
+    int longest_line_i;
+    XY xyp, xyl1, xyl2;
+    double d_max=0.0;
+    double distance;
+    int ret;
+
+    xmin_g = MAXDOUBLE ;
+    xmax_g = -MAXDOUBLE ;
+    ymin_g = MAXDOUBLE ;
+    ymax_g = -MAXDOUBLE ;
+
+    LINIA L=Ldef;
+    OKRAG o=Odef;
+    LUK l=ldef;
+
+    i_verno = ptrs__area0->s_vertexs_alloc.i_size;
+    ptrs_vertexs = (T_PTR_Vertex)malloc(sizeof(T_Vertex)*i_verno);
+    memmove(ptrs_vertexs, ptrs__area0->s_vertexs_alloc.ptrs_vertexs, sizeof(T_Vertex)*i_verno);
+
+    i_linno = ptrs__area0->s_lines_alloc.i_size;
+    ptrs_lines = (T_PTR_ALine)malloc(sizeof(T_ALine)*i_linno);
+    memmove(ptrs_lines, ptrs__area0->s_lines_alloc.ptrs_lines, sizeof(T_ALine)*i_linno);
+
+    i_arcno = ptrs__area0->s_arcs_alloc.i_size;
+    ptrs_arcs = (T_PTR_AArc)malloc(sizeof(T_AArc)*i_arcno);
+    memmove(ptrs_arcs, ptrs__area0->s_arcs_alloc.ptrs_arcs, sizeof(T_AArc)*i_arcno);
+
+    for (i = 0; i < i_linno; i++) {
+        vertex1_no = ptrs_lines[i].vertex1_no;
+        vertex2_no = ptrs_lines[i].vertex2_no;
+        //Add_Line1(ptrs_vertexs[vertex1_no].x, ptrs_vertexs[vertex1_no].y, ptrs_vertexs[vertex2_no].x,
+        //          ptrs_vertexs[vertex2_no].y, df_basex, df_basey, df_angle, draw_line);
+        L.x1=ptrs_vertexs[vertex1_no].x;
+        L.y1=ptrs_vertexs[vertex1_no].y;
+        L.x2=ptrs_vertexs[vertex2_no].x;
+        L.y2=ptrs_vertexs[vertex2_no].y;
+        line_place (&L, &xmin_g, &ymin_g, &xmax_g, &ymax_g) ;
+    }
+
+    for (i = 0; i < i_arcno; i++) {
+        vertex1_no = ptrs_arcs[i].vertex1_no;
+        vertex2_no = ptrs_arcs[i].vertex2_no;
+        arcr = ptrs_arcs[i].r;
+        arca1 = ptrs_arcs[i].a1;
+        arca2 = ptrs_arcs[i].a2;
+        arcx = ptrs_arcs[i].x;
+        arcy = ptrs_arcs[i].y;
+
+        //checking if maybe circle
+        if ((i_arcno - i) >= 3) {
+            if ((TRUE == Check_if_Equal(ptrs_arcs[i].a1, 0.0)) && (TRUE == Check_if_Equal(ptrs_arcs[i].a2, PI2)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 1].a1, PI2)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 1].a2, PI)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 2].a1, PI)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 2].a2, 0.0)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i].x, ptrs_arcs[i + 1].x)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 1].x, ptrs_arcs[i + 2].x)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i].y, ptrs_arcs[i + 1].y)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 1].y, ptrs_arcs[i + 2].y)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i].r, ptrs_arcs[i + 1].r)) &&
+                (TRUE == Check_if_Equal(ptrs_arcs[i + 1].r, ptrs_arcs[i + 2].r))) {
+                //Add_Circle1(arcx, arcy, arcr, df_basex, df_basey, df_angle, draw_line);
+                o.x=arcx;
+                o.y=arcy;
+                o.r=arcr;
+                okrag_place (&o, &xmin_g, &ymin_g, &xmax_g, &ymax_g);
+                i += 2;
+            }
+                //i += 2;
+            else {
+                //Add_Arc1(arcx, arcy, arcr, arca1, arca2, df_basex, df_basey, df_angle, draw_line);
+                l.x=arcx;
+                l.y=arcy;
+                l.r=arcr;
+                l.kat1=arca1;
+                l.kat2=arca2;
+                luk_place (&l, &xmin_g, &ymin_g, &xmax_g, &ymax_g);
+            }
+        } else
+        {
+            //Add_Arc1(arcx, arcy, arcr, arca1, arca2, df_basex, df_basey, df_angle, draw_line);
+            l.x=arcx;
+            l.y=arcy;
+            l.r=arcr;
+            l.kat1=arca1;
+            l.kat2=arca2;
+            luk_place (&l, &xmin_g, &ymin_g, &xmax_g, &ymax_g);
+        }
+    }
+
+    free(ptrs_vertexs);
+    free(ptrs_lines);
+    free(ptrs_arcs);
+}
+
+
 static void sort_vertexs(void)
 /*----------------------------*/
 {
@@ -718,9 +840,11 @@ comp_vertex(int i_ver1, int i_ver2)
   return b_ret ;
 }
 
-static void ret_pole (double p0)
+static void ret_pole (double p0_)
 {
-  double p01;
+  double p0, p01;
+
+  p0=milimetryob(milimetryob(p0_));
 
   if (Jednostki==1)   //mm
    {
@@ -750,60 +874,70 @@ static void ret_pole (double p0)
 
 
 
-static void out_pole (double p0)
+static void out_pole (double p0_)
 {
   char buf [MaxTextLen] ;
-  double p01, p02;
+  double p0, p01, p02;
 
+  p0=milimetryob(milimetryob(p0_));
 
   if (Jednostki==1)   //mm
    {
     p01=p0/1000000;
     p02=p0/pow(10.0, 2);
-    sprintf (buf, u8"%s = %-12.9lg mm²,  %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+    //sprintf (buf, u8"%s = %-12.9lg mm²,  %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+    sprintf (buf, u8"%s=%.9lg mm²,  %.9lg cm²,  %.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
    }
     else if (Jednostki==10) //cm
       {
         p01=p0/10000;
         p02=p0;
-        sprintf (buf, u8"%s = %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p01 ) ;
+        //sprintf (buf, u8"%s = %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p01 ) ;
+        sprintf (buf, u8"%s=%.9lg cm²,  %.9lg m² ", vocabulary[1],p0,p01 ) ;
       }
      else if (Jednostki==1000)  //m
       {
         p02=p0/pow(0.01, 2); //in cm2
-        sprintf (buf, u8"%s = %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p02,p0) ;
+        //sprintf (buf, u8"%s = %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p02,p0) ;
+        sprintf (buf, u8"%s=%.9lg cm²,  %.9lg m² ", vocabulary[1],p02,p0) ;
       }
       else if (Jednostki==1000000) //km
       {
           p01=p0*1000000;
           p02=p0/pow(0.00001, 2);
-          sprintf (buf, u8"%s = %-12.9lg km²,  %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          //sprintf (buf, u8"%s = %-12.9lg km²,  %-12.9lg cm²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          sprintf (buf, u8"%s=%-.9lg km²,  %-.9lg cm²,  %-.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
       }
       else if (Jednostki==25.4) //"
       {
           p01=p0/pow(39.3700787, 2);
           p02=p01;
-          sprintf (buf, u8"%s = %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p01 ) ;
+          //sprintf (buf, u8"%s = %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p01 ) ;
+          sprintf (buf, u8"%s=%.9lg in²,  %.9lg m² ", vocabulary[1],p0,p01 ) ;
       }
       else if (Jednostki==304.8) //'
       {
           p01=p0/pow(3.280839, 2);
           p02=p01 * pow(12, 4);
-          sprintf (buf, u8"%s = %-12.9lg ft²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          //sprintf (buf, u8"%s = %-12.9lg ft²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          sprintf (buf, u8"%s=%.9lg ft²,  %.9lg in²,  %.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
       }
       else if (Jednostki==914.4) //yd
       {
           p01=p0/pow(1.094092, 2);
           p02=p01 * pow(36, 4);
-          sprintf (buf, u8"%s = %-12.9lg yd²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          //sprintf (buf, u8"%s = %-12.9lg yd²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          sprintf (buf, u8"%s=%.9lg yd²,  %.9lg in²,  %.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
       }
       else if (Jednostki==1609344) //mi
       {
           p01=p0/pow(0.000621371, 2);
           p02=p01 * pow(63360, 4);
-          sprintf (buf, u8"%s = %-12.9lg mi²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          //sprintf (buf, u8"%s = %-12.9lg mi²,  %-12.9lg in²,  %-12.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
+          sprintf (buf, u8"%s=%.9lg mi²,  %.9lg in²,  %.9lg m² ", vocabulary[1],p0,p02,p01 ) ;
       }
-       else sprintf (buf, u8"%s = %-12.9lg", vocabulary[1],p0) ;
+       else ///sprintf (buf, u8"%s = %-12.9lg", vocabulary[1],p0) ;
+            sprintf (buf, u8"%s=%.9lg", vocabulary[1],p0) ;
   Add_String_To_List1 (buf) ;
   strcat (buf, vocabulary[0]) ;
   komunikat_str (buf) ;
@@ -817,17 +951,21 @@ static void out_srodek_ciezkosci (double x_s0, double y_s0)
   
   x_s = milimetryobx (x_s0);
   y_s = milimetryoby (y_s0);
-  sprintf (buf, u8"%s: x = %-12.8lg  y = %-12.8lg ", vocabulary[2],x_s, y_s) ;
+  //sprintf (buf, u8"%s: x = %-12.8lg  y = %-12.8lg ", vocabulary[2],x_s, y_s) ;
+  sprintf (buf, u8"%s: x = %.8lg  y = %.8lg ", vocabulary[2],x_s, y_s) ;
   Add_String_To_List1 (buf) ;
   strcat (buf, vocabulary[0]) ;
   komunikat_str (buf) ;
   Get_Key () ;
 }
 
-static void out_moment_statyczny (double mom_stat)
+static void out_moment_statyczny (double mom_stat_)
 {
+  double mom_stat;
   char buf [MaxTextLen] ;
   double mom_stat1, mom_stat2;
+
+  mom_stat=milimetryob(milimetryob(milimetryob(mom_stat_)));
 
   if (Jednostki == 1)   //mm
   {
@@ -871,17 +1009,21 @@ static void out_moment_statyczny (double mom_stat)
   }
 	  
 
-  sprintf(buf, u8"%s: S = %-12.8lg m³,  %-12.8lg cm³ ", vocabulary[3], mom_stat1, mom_stat2);
+  //sprintf(buf, u8"%s: S = %.8lg m³,  %.8lg cm³ ", vocabulary[3], mom_stat1, mom_stat2);
+  sprintf(buf, u8"%s: S=%.8lg m³,  %.8lg cm³ ", vocabulary[3], mom_stat1, mom_stat2);
   Add_String_To_List1 (buf) ;
   strcat (buf, vocabulary[0]) ;
   komunikat_str (buf) ;
   Get_Key () ;
 }
 
-static void out_moment_bezwladnosci (double mom_bezwl)
+static void out_moment_bezwladnosci (double mom_bezwl_)
 {
+  double mom_bezwl;
   char buf [MaxTextLen] ;
   double mom_bezwl1, mom_bezwl2;
+
+  mom_bezwl=milimetryob(milimetryob(milimetryob(milimetryob(mom_bezwl_))));
 
   if (Jednostki == 1)   //mm
   {
@@ -924,20 +1066,32 @@ static void out_moment_bezwladnosci (double mom_bezwl)
       mom_bezwl2 = mom_bezwl1 * pow(63360, 4);
   }
 
-  sprintf (buf, u8"%s: I = %-12.8lg m^4,  %-12.8lg cm^4 ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
+  //sprintf (buf, u8"%s: I = %-12.8lg m^4,  %-12.8lg cm^4 ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
+  sprintf (buf, u8"%s: I=%.8lg m⁴,  %.8lg cm⁴ ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
   Add_String_To_List1 (buf) ;
   strcat (buf, vocabulary[0]) ;
   komunikat_str (buf) ;
   Get_Key () ;
 }
 
-static void out_centr_moment_bezwl (double mom_bezwl_x, double mom_bezwl_y, double wskazn_wytrz_x, double wskazn_wytrz_y)
+static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, double wskazn_wytrz_x_, double wskazn_wytrz_y_)
 
 {
   char buf0 [320] ;
-  char buf[4][100];
+  char buf[4][128];
+  double mom_bezwl_x, mom_bezwl_y, wskazn_wytrz_x, wskazn_wytrz_y;
   double mom_bezwl_x1, mom_bezwl_y1, wskazn_wytrz_x1, wskazn_wytrz_y1;
   double mom_bezwl_x2, mom_bezwl_y2, wskazn_wytrz_x2, wskazn_wytrz_y2;
+#ifdef LINUX
+  char divider[6]=" \n";
+#else
+  char divider[6] = " \r\n";
+#endif
+
+    mom_bezwl_x=milimetryob(milimetryob(milimetryob(milimetryob(mom_bezwl_x_))));
+    mom_bezwl_y=milimetryob(milimetryob(milimetryob(milimetryob(mom_bezwl_y_))));
+    wskazn_wytrz_x=milimetryob(milimetryob(milimetryob(wskazn_wytrz_x_)));
+    wskazn_wytrz_y=milimetryob(milimetryob(milimetryob(wskazn_wytrz_y_)));
 
   ////mom_bezwl
 
@@ -1074,19 +1228,31 @@ static void out_centr_moment_bezwl (double mom_bezwl_x, double mom_bezwl_y, doub
         wskazn_wytrz_y2 = wskazn_wytrz_y1 * pow(63360, 3);;
     }
 
-    sprintf(buf[0], u8"Iy=%-11.8lg m^4,  %-11.8lg cm^4 ", mom_bezwl_x1, mom_bezwl_x2) ;
-    sprintf(buf[1], u8"|  Iz=%-11.8lg m^4,  %-11.8lg cm^4 ", mom_bezwl_y1, mom_bezwl_y2);
-    sprintf(buf[2], u8"|  Wy=%-11.8lg m³,  %-11.8lg cm³ ", wskazn_wytrz_x1, wskazn_wytrz_x2);
-    sprintf(buf[3], u8"|  Wz=%-11.8lg m³,  %-11.8lg cm³ ", wskazn_wytrz_y1, wskazn_wytrz_y2);
+    //sprintf(buf[0], u8"Iy=%-11.8lg m⁴, %-11.8lg cm⁴", mom_bezwl_x1, mom_bezwl_x2) ;
+    //sprintf(buf[1], u8"Iz=%-11.8lg m⁴, %-11.8lg cm⁴", mom_bezwl_y1, mom_bezwl_y2);
+    //sprintf(buf[2], u8"Wy=%-11.8lg m³, %-11.8lg cm³", wskazn_wytrz_x1, wskazn_wytrz_x2);
+    //sprintf(buf[3], u8"Wz=%-11.8lg m³, %-11.8lg cm³ ", wskazn_wytrz_y1, wskazn_wytrz_y2);
 
-  Add_String_To_List1(buf[0]) ;
-  Add_String_To_List1(buf[1]);
-  Add_String_To_List1(buf[2]);
-  Add_String_To_List1(buf[3]);
+    sprintf(buf[0], u8"Iy=%.8lg m⁴, %.8lg cm⁴", mom_bezwl_x1, mom_bezwl_x2) ;
+    sprintf(buf[1], u8"Iz=%.8lg m⁴, %.8lg cm⁴", mom_bezwl_y1, mom_bezwl_y2);
+    sprintf(buf[2], u8"Wy=%.8lg m³, %.8lg cm³", wskazn_wytrz_x1, wskazn_wytrz_x2);
+    sprintf(buf[3], u8"Wz=%.8lg m³, %.8lg cm³ ", wskazn_wytrz_y1, wskazn_wytrz_y2);
+
+  //Add_String_To_List1(buf[0]) ;
+  //Add_String_To_List1(buf[1]);
+  //Add_String_To_List1(buf[2]);
+  //Add_String_To_List1(buf[3]);
   strcpy(buf0, buf[0]);
+    strcat(buf0, divider);
   strcat(buf0, buf[1]);
+    strcat(buf0, divider);
   strcat(buf0, buf[2]);
+    strcat(buf0, divider);
   strcat(buf0, buf[3]);
+
+  Add_String_To_List1(buf0);
+
+  strcat(buf0, divider);
   strcat (buf0, vocabulary[0]) ;
   komunikat_str (buf0) ;
   Get_Key () ;
@@ -1453,6 +1619,7 @@ add_hatch_line (double 		      df_x1,
   double df_scale, df_len_pattern, df_pattern_remx ;
   long l_row ;
   double df_x1m, df_x2m, df_x3m, delta_x, delta_y ;
+  double del_y;
 
   if (TRUE == Check_Break_Key ())
   {
@@ -1512,9 +1679,10 @@ add_hatch_line (double 		      df_x1,
      if ((out_pole_ignore==FALSE) && (draw_line)) rysuj_obiekt ((char *)&LiniaG, COPY_PUT, 1) ;
       if ( comput_area1>0 )
      {
-      df_x1m = milimetryob(LiniaG.x1) ;     /* milimetryob */
+      /*
+      df_x1m = milimetryob(LiniaG.x1) ;     // milimetryob
       df_x2m = milimetryob(LiniaG.x2) ;
-      df_x3m = milimetryob(df_dist_) ;    /* milimetryob */
+      df_x3m = milimetryob(df_dist_) ;    // milimetryob
       if ( pole_hatch == 0 )
       {
       pole_hatch1 = ( ( df_x2m - df_x1m ) * df_x3m ) ;
@@ -1533,12 +1701,12 @@ add_hatch_line (double 		      df_x1,
       if (df_y<min_yw) min_yw=df_y;
       if ((df_y+df_x3m)>max_yw) max_yw=(df_y+df_x3m);
       }
-      /* momenty statyczne */
+      // momenty statyczne
       moment = pole_hatch1 * (LiniaG.y1+(0.5*df_x3m));
       mom_stat_x = mom_stat_x + moment;
       moment = pole_hatch1 * (0.5 * (LiniaG.x1 + LiniaG.x2));
       mom_stat_y = mom_stat_y + moment;
-      /* momenty bezwladnosci */
+      // momenty bezwladnosci
       delta_x=df_x2m - df_x1m;
       delta_y=milimetryob(LiniaG.y1)+(0.5*df_x3m);
       moment = ((delta_x)*df_x3m*df_x3m*df_x3m/12)
@@ -1549,13 +1717,74 @@ add_hatch_line (double 		      df_x1,
       moment = (df_x3m*delta_x*delta_x*delta_x/12)
 		+ (pole_hatch1*((df_x1m+df_x2m)*0.5)*((df_x1m+df_x2m)*0.5));
       mom_bezwl_y=mom_bezwl_y+moment;
-      /* moment dewiacji */
+      // moment dewiacji
       moment = delta_x*df_x3m*(0.5*(df_x1m+df_x2m))*delta_y;
       mom_dewiacji = mom_dewiacji + moment;
 
-
       df_x11m = df_x1m ;
       df_x22m = df_x2m ;
+       */
+
+         df_x1m = LiniaG.x1 ;
+         df_x2m = LiniaG.x2 ;
+         df_x3m = df_dist_ ;
+         if ( pole_hatch == 0 )
+         {
+
+             //del_y=(LiniaG.y1-ymin_g);
+             //if (del_y<(df_dist_/2)) df_x3m-=(df_dist_/2)-del_y; //half of the stripe for first line
+
+         pole_hatch1 = ( ( df_x2m - df_x1m ) * df_x3m ) ;
+         pole_hatch = pole_hatch + pole_hatch1 ;
+         min_xw=df_x1m;
+         max_xw=df_x2m;
+         min_yw=df_y;
+         max_yw=df_y+df_x3m;
+         }
+         else
+         {
+
+             /*
+             del_y=(ymax_g-LiniaG.y1);
+
+             if (del_y<0)
+             {
+                 if (del_y>(-df_dist_/2))
+                     df_x3m=(df_dist_/2)+del_y;
+             }
+             else if (del_y<(df_dist_/2))
+                 df_x3m=(df_dist_/2)+del_y;
+                 */
+
+         pole_hatch1 = (0.5 * (( df_x2m - df_x1m ) + ( df_x22m - df_x11m)) * df_x3m ) ;
+         pole_hatch = pole_hatch + pole_hatch1 ;
+         if (df_x1m<min_xw) min_xw=df_x1m;
+         if (df_x2m>max_xw) max_xw=df_x2m;
+         if (df_y<min_yw) min_yw=df_y;
+         if ((df_y+df_x3m)>max_yw) max_yw=(df_y+df_x3m);
+         }
+         // momenty statyczne
+         moment = pole_hatch1 * (LiniaG.y1+(0.5*df_x3m));
+         mom_stat_x = mom_stat_x + moment;
+         moment = pole_hatch1 * (0.5 * (LiniaG.x1 + LiniaG.x2));
+         mom_stat_y = mom_stat_y + moment;
+         // momenty bezwladnosci
+         delta_x=df_x2m - df_x1m;
+         delta_y=LiniaG.y1+(0.5*df_x3m);
+         moment = ((delta_x)*df_x3m*df_x3m*df_x3m/12)
+           + (pole_hatch1*delta_y*delta_y);
+         mom_bezwl_x=mom_bezwl_x+moment;
+
+         moment = (df_x3m*delta_x*delta_x*delta_x/12)
+           + (pole_hatch1*((df_x1m+df_x2m)*0.5)*((df_x1m+df_x2m)*0.5));
+         mom_bezwl_y=mom_bezwl_y+moment;
+         // moment dewiacji
+         moment = delta_x*df_x3m*(0.5*(df_x1m+df_x2m))*delta_y;
+         mom_dewiacji = mom_dewiacji + moment;
+
+         df_x11m = df_x1m ;
+         df_x22m = df_x2m ;
+
      }
      return TRUE ;
   }
@@ -1808,7 +2037,8 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
   }
 
  
-  while (TRUE == Check_if_LE (df_y, df_ymax))
+  //while (TRUE == Check_if_LE (df_y, df_ymax))
+  while (df_y <= df_ymax)
   {
     if (1 == ptrs_trap->b_line_left)
     {
@@ -2867,13 +3097,19 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
     }
     InfoList(3);
 
-    if (((comput_area == 0) /*|| (comput_area == 10)*/) && (i_hatch_lineno > 0)) {
+    if (((comput_area == 0) /*|| (comput_area == 10)*/) && (i_hatch_lineno > 0))
+    {
 
         get_draw_outline(ptrs_hatch_param, TRUE, draw_line);
 
-    } else if ((comput_area == 10) && (ptrs_hatch_param->insulation_hatch == TRUE)) {
+    } else if ((comput_area == 10) && (ptrs_hatch_param->insulation_hatch == TRUE))
+    {
         get_draw_outline(ptrs_hatch_param, FALSE, draw_line);
     }
+    //else if ((comput_area > 0) && (comput_area<6))
+    //{
+    //   get_range_outline(ptrs_hatch_param);
+    //}
 
     for (j = 0; j < i_hatch_lineno; j++) {
         pole_hatch_add = j;
@@ -2952,18 +3188,18 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
 
     if ((comput_area > 0) && (comput_area < 10)) {
         CUR_OFF(X, Y);
-        if (comput_area == 1)  /* pole */
+        if (comput_area == 1)  // pole
         {
             if (out_pole_ignore == FALSE) out_pole(pole_hatch);
             else ret_pole(pole_hatch);
         } else {
             x_s = mom_stat_y / pole_hatch;
             y_s = mom_stat_x / pole_hatch;
-            if (comput_area == 2) /* srodek ciezkosci */
+            if (comput_area == 2) // srodek ciezkosci
             {
                 Add_Point1(x_s, y_s);
                 out_srodek_ciezkosci(x_s, y_s);
-            } else if (comput_area == 3) /* moment statyczny */
+            } else if (comput_area == 3) // moment statyczny
             {
                 x_p = x_s;
                 y_p = y_s;
@@ -2973,61 +3209,66 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
                 LiniaG1.y1 = df_apy1;
                 LiniaG1.x2 = df_apx2;
                 LiniaG1.y2 = df_apy2;
+
                 poczL = 1;
                 prostopadleL_(&x_p, &y_p, &LiniaG1);
                 poczL = 0;
                 delta_x = x_p - x_s;
                 delta_y = y_p - y_s;
-                delta_l = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
+                ////delta_l = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
+                delta_l = sqrt((delta_x * delta_x) + (delta_y * delta_y));
                 mom_stat_x = pole_hatch * delta_l;
                 out_moment_statyczny(mom_stat_x);
-            } else if (comput_area == 4) /* moment bezwladnosci */
+            } else if (comput_area == 4) // moment bezwladnosci
             {
-                /*moment dla ukladu obroconego o kat alfa  */
-                /*wyznaczenie kata alfa*/
+                //moment dla ukladu obroconego o kat alfa
+                //wyznaczenie kata alfa
                 if (TRUE == Check_if_Equal(df_apx2, df_apx1)) {
                     alfa = 1.570796327;  /* 0.5*pi */
                 } else alfa = atan((df_apy2 - df_apy1) / (df_apx2 - df_apx1));
                 mom_bezwl = (mom_bezwl_x * cos(alfa) * cos(alfa)) + (mom_bezwl_y * sin(alfa) * sin(alfa)) -
                             (mom_dewiacji * sin(2 * alfa));
-                /*moment dla ukladu przesunietego o deltay */
-                /* odleglosc 1 */
-                x_p = x_s;  /*srodek ciezkosci*/
+                //moment dla ukladu przesunietego o deltay
+                // odleglosc 1
+                x_p = x_s;  //srodek ciezkosci
                 y_p = y_s;
                 LiniaG.x1 = x_s;
                 LiniaG.y1 = y_s;
-                /* linia rownolegla do zadanej przechodzaca przez punkt 0,0 */
+                // linia rownolegla do zadanej przechodzaca przez punkt 0,0
                 LiniaG1.x1 = 0;
                 LiniaG1.y1 = 0;
                 if (TRUE == Check_if_Equal(df_apx2, df_apx1)) {
                     LiniaG1.x2 = 0;
-                    LiniaG1.y2 = 100;   /*przykladowo*/
+                    LiniaG1.y2 = 100;   //przykladowo
                 } else {
                     LiniaG1.x2 = 100;
-                    LiniaG1.y2 = (df_apy2 - df_apy1) / (df_apx2 - df_apx1) * 100; /*przykladowo*/
+                    LiniaG1.y2 = (df_apy2 - df_apy1) / (df_apx2 - df_apx1) * 100; //przykladowo
                 }
                 poczL = 1;
                 prostopadleL_(&x_p, &y_p, &LiniaG1);
                 poczL = 0;
                 delta_x = x_p - x_s;
                 delta_y = y_p - y_s;
-                delta_l1 = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
-                /* odleglosc 2 */
+                ////delta_l1 = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
+                delta_l1 = sqrt((delta_x * delta_x) + (delta_y * delta_y));
+                // odleglosc 2
 
                 x_p = x_s;
                 y_p = y_s;
-                LiniaG.x1 = x_s;              /* srodek ciezkosci */
+                LiniaG.x1 = x_s;              // srodek ciezkosci
                 LiniaG.y1 = y_s;
-                LiniaG1.x1 = df_apx1;         /*  zadana linia */
+                LiniaG1.x1 = df_apx1;         //  zadana linia
                 LiniaG1.y1 = df_apy1;
                 LiniaG1.x2 = df_apx2;
                 LiniaG1.y2 = df_apy2;
+
                 poczL = 1;
                 prostopadleL_(&x_p, &y_p, &LiniaG1);
                 poczL = 0;
                 delta_x = x_p - x_s;
                 delta_y = y_p - y_s;
-                delta_l2 = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
+                ////delta_l2 = milimetryob(sqrt((delta_x * delta_x) + (delta_y * delta_y)));
+                delta_l2 = sqrt((delta_x * delta_x) + (delta_y * delta_y));
 
                 delta_l = (delta_l2 - delta_l1);
                 moment = mom_bezwl + (2 * pole_hatch * delta_l1 * delta_l) + (pole_hatch * delta_l * delta_l);
@@ -3035,24 +3276,31 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
                 out_moment_bezwladnosci(mom_bezwl);
             } else if (comput_area == 5) /* centralne momenty bezwladnosci i wskazniki wytrzymalosci */
             {
-                /*moment dla ukladu przesunietego o y_s */
-                /* odleglosc 1 */
-                x_p = x_s;  /*srodek ciezkosci*/
+                //moment dla ukladu przesunietego o y_s
+                // odleglosc 1
+                x_p = x_s;  //srodek ciezkosci
                 y_p = y_s;
-                delta_l1 = milimetryob(y_s);
-                delta_l = milimetryob(-y_s);
+                ////delta_l1 = milimetryob(y_s);
+                delta_l1 = y_s;
+                ////delta_l = milimetryob(-y_s);
+                delta_l = -y_s;
                 moment = mom_bezwl_x + (2 * pole_hatch * delta_l1 * delta_l) + (pole_hatch * delta_l * delta_l);
                 mom_bezwl_x = moment;
-                delta_l1 = milimetryob(x_s);
-                delta_l = milimetryob(-x_s);
+                ////delta_l1 = milimetryob(x_s);
+                delta_l1 = x_s;
+                ////delta_l = milimetryob(-x_s);
+                delta_l = -x_s;
                 moment = mom_bezwl_y + (2 * pole_hatch * delta_l1 * delta_l) + (pole_hatch * delta_l * delta_l);
                 mom_bezwl_y = moment;
                 zmax = fabs(max_yw - y_s);
                 zmax1 = fabs(min_yw - y_s);
                 if (zmax1 > zmax) zmax = zmax1;
-                if (zmax > 0) wskazn_wytrz_x = mom_bezwl_x / (milimetryob(zmax));
-                zmax = fabs(max_xw - milimetryob(x_s));
-                zmax1 = fabs(min_xw - milimetryob(x_s));
+                ////if (zmax > 0) wskazn_wytrz_x = mom_bezwl_x / (milimetryob(zmax));
+                if (zmax > 0) wskazn_wytrz_x = mom_bezwl_x / zmax;
+                ////zmax = fabs(max_xw - milimetryob(x_s));
+                zmax = fabs(max_xw - x_s);
+                ////zmax1 = fabs(min_xw - milimetryob(x_s));
+                zmax1 = fabs(min_xw - x_s);
                 if (zmax1 > zmax) zmax = zmax1;
                 if (zmax > 0) wskazn_wytrz_y = mom_bezwl_y / zmax;
                 out_centr_moment_bezwl(mom_bezwl_x, mom_bezwl_y, wskazn_wytrz_x, wskazn_wytrz_y);

@@ -1485,7 +1485,7 @@ struct
     unsigned char flags;  // 'G' 71 graph data
     unsigned char dt;  //data type (Dx=0, Nx=1, Vy=2, Mz=3, sigma=4, tau=5, geometry=7)
     unsigned char st;  //state number 2 for ULS or 3 for SLS
-    unsigned char reserve;
+    unsigned char material;  //steel or wood, 1 RC
     float dlf;  //front distance
     float dlb;  //back distance
     float rdf;  //front radius

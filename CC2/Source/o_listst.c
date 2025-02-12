@@ -145,7 +145,11 @@ BOOL Add_String_To_List (char *ptr_string)
 #ifdef LINUX
   //copy to clipboard
   Put_Str_To_Clip(ptr_string);
+#else
+  //copy to clipboard
+  Put_Str_To_Clip(ptr_string);
 #endif
+
   return TRUE ;
 }
 

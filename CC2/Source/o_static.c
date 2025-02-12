@@ -270,6 +270,7 @@ static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
 static char section_params_st[128];
 static double last_l=0;
 static double last_l1=0;
+static unsigned char element_RC_flag=0;
 
 STATIC_COLORS static_colors={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_COLORS static_colors0={8, 1, 5, 3, 6, 2, 4, 156};
@@ -1485,7 +1486,7 @@ void draw_reaction_m(LINIA *L, ST_NODE *node, double Mzz)
 }
 
 
-BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA *Le, int dt, double extra_value)
+BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA *Le, int dt_, double extra_value)
 {
     char *graph_buffer = NULL;
     //creating graph data line with data segment
@@ -1499,6 +1500,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
     char *p_gl_fvalue;
     float D_min, D_max;
     double Asy;
+    int dt;
 
     graph_buffer = (char *) malloc(sizeof(LINIA)+sizeof(GRAPH_DATA)+nx*(3 * sizeof(float)) + 10);
 
@@ -1521,9 +1523,11 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
     //line extension
     gl_data=graph_buffer+sizeof(LINIA);
     gl_data->flags=71;  //'G' 71 for Graph
-    gl_data->dt=dt; //Dy=0, Dx=1, Nx=2, Vy=3, Mz=4, S=5, Ss=6
+    if (dt_==7) dt=6;
+    else dt=dt_;
+    gl_data->dt=dt; //Dy=0, Dx=1, Nx=2, Vy=3, Mz=4, S=5, Ss=6, Ss for RC =7
     gl_data->st=combi_total_numbers[i].combi;
-    gl_data->reserve=0;
+    gl_data->material=0;  //is not used here
     gl_data->dlf=0;
     gl_data->dlb=0;
     gl_data->enr=rep_element_no;  //starting from 1
@@ -1541,7 +1545,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
     {
         Vmin=0;
         Vmax=0;
-        switch (dt)
+        switch (dt_)
         {
             case 0:  //Dy
                 //D_min=(float)sqrt((fd[gi].Dx_min*fd[gi].Dx_min)+(fd[gi].Dy_min*fd[gi].Dy_min));
@@ -1581,6 +1585,10 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
                     Vmin = ((fd[gi].Vy_min / unit_factors->F_f) / Asy) / unit_factors->S_f;
                     Vmax = ((fd[gi].Vy_max / unit_factors->F_f) / Asy) / unit_factors->S_f;
                 }
+                break;
+            case 7:  //Ss for RC
+                    Vmin = fd[gi].Ss;
+                    Vmax = fd[gi].Ss;
                 break;
         }
         Xx=(float)jednostkiOb(fd[gi].x / units_factor);  //in mm on drawings
@@ -1636,7 +1644,7 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     el_data=(GRAPH_DATA *)(element_buffer+sizeof(LINIA));
     el_data->flags=45;  //'E' 45 for Graph
     el_data->dt=7;
-    el_data->reserve=0;
+    el_data->material=st_property[property_record].RC_flag;
     el_data->dlf=ldf;
     el_data->dlb=ldb;
     el_data->rdf=rdf;
@@ -1819,7 +1827,8 @@ void Static_analysis(void) {
     FILE *f;
     char params[MAXPATH];
     DWORD runcode;
-    short runcode_short;
+    //short 
+    int runcode_short;
     int runcode_int;
     int hinged;
     char *ptr_block;
@@ -6083,7 +6092,9 @@ void Static_analysis(void) {
 #else
         runcode_short = runcode;
 #endif
-        if ((runcode_short < 0) || (runcode_short > 206)) runcode_short = 1;
+
+        if ((runcode_short > 206) && (runcode_short < 1500))  runcode_short = 1;  //????
+        if ((runcode_short < 0) || (runcode_short > 1500)) runcode_short = 0; //?????
 
         
         printf("\nframe3dd runcode_shoort:%d\n", runcode_short);
@@ -8768,6 +8779,8 @@ void Static_analysis(void) {
 
             //sigma  σ  stress check  - just within element lenght outside nodes radius
             //stress_color is built from 2;
+            BOOL ignore_Sm=FALSE;
+
             Ldsp.kolor = static_stress_colors.axial_stress_plus_color;
 
             memmove(&Ldsp_, &Ldsp, sizeof(LINIA));
@@ -9088,6 +9101,8 @@ void Static_analysis(void) {
                                 double lb = r1 * units_factor;
                                 double le = (milimetryob(st_element[rep_element_no - 1].length) - r2) * units_factor;
 
+                                COMBI_FORCES *fd;
+
                                 if ((Check_if_GE02(dr[inx].x, lb)) && (Check_if_LE2(dr[inx].x, le))) {
                                     if (combi_total_numbers[i].combi > 1)  //combi
                                     {
@@ -9096,7 +9111,7 @@ void Static_analysis(void) {
                                         else if (combi_total_numbers[i].combi == 3) combi_element = combi_element_sls;
                                         else combi_element = combi_element_qpsls;
 
-                                        COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
+                                        fd = combi_element[rep_element_no - 1].fd;
 
                                         Nx_min = fd[inx].Nx_min;
                                         Nx_max = fd[inx].Nx_max;
@@ -9147,7 +9162,16 @@ void Static_analysis(void) {
                                                 Sm = dr[inx].Sm;
                                             }
 
-                                            if (Check_if_Equal(Sp, Sm)) Sm=0;  //TEMPORARY
+
+                                            if (rep_element_no==15)
+                                            {
+                                                int aaa=0;
+                                            }
+
+                                            ignore_Sm=FALSE;
+                                            if (Check_if_Equal3(Sp, Sm))
+                                                //Sm=0;  //TEMPORARY
+                                                ignore_Sm=TRUE;
 
                                             ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
                                             ////else Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_plus_color;
@@ -9208,7 +9232,7 @@ void Static_analysis(void) {
                                                 Ldsp1_.y2 = Ldsp1.y1;
                                                 Ldsp1_.blok = 1;
                                                 ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
-                                                if (!Check_if_Equal(Sm, 0.0) &&
+                                                if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
                                                     (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                        Check_if_Equal(dr[inx].Mz, Mzm)) ||
                                                       (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
@@ -9319,8 +9343,10 @@ void Static_analysis(void) {
                                                 Sp = Sp_max;
                                                 Sm = Sm_max;
 
-
-                                                if (Check_if_Equal(Sp, Sm)) Sm=0;  //TEMPORARY
+                                                ignore_Sm=FALSE;
+                                                if (Check_if_Equal3(Sp, Sm))
+                                                    //Sm=0;  //TEMPORARY
+                                                    ignore_Sm=TRUE;
 
                                                 ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
                                                 ////else Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_plus_color;
@@ -9379,7 +9405,7 @@ void Static_analysis(void) {
                                                     Ldsp1_.y2 = Ldsp11.y1;
                                                     Ldsp1_.blok = 1;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
-                                                    if (!Check_if_Equal(Sm, 0.0) &&
+                                                    if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
@@ -9495,7 +9521,6 @@ void Static_analysis(void) {
                                         //////////////////////////////
                                         if (combi_total_numbers[i].combi == 2) //just for ULSLC
                                         {
-
                                             if ((st_element[rep_element_no - 1].node1r != -1) &&
                                                 (st_element[rep_element_no - 1].node2r != -1))
                                             {
@@ -9505,7 +9530,10 @@ void Static_analysis(void) {
                                                 Sp = Sp_min;
                                                 Sm = Sm_min;
 
-                                                if (Check_if_Equal(Sp, Sm)) Sm=0;  //TEMPORARY
+                                                ignore_Sm=FALSE;
+                                                if (Check_if_Equal3(Sp, Sm))
+                                                    //Sm=0;  //TEMPORARY
+                                                    ignore_Sm=TRUE;
 
                                                 ////check if it is small eccentricity (column) or large eccentricity (beam)
                                                 //RC graph
@@ -9559,6 +9587,7 @@ void Static_analysis(void) {
                                                     Sp = pAs;  //tensions to reinforced ratio replacement
                                                     sp_magnitude=p_magnitude;
                                                     strcpy(p_suffix,"%");
+                                                    fd[inx].Sp_min=pAs;
                                                 }
 
                                                 if (Sm > 0) //tension
@@ -9566,6 +9595,7 @@ void Static_analysis(void) {
                                                     Sm = pAs;
                                                     sm_magnitude=p_magnitude;
                                                     strcpy(m_suffix,"%");
+                                                    fd[inx].Sm_min=pAs;
                                                 }
 
                                                 ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
@@ -9627,7 +9657,7 @@ void Static_analysis(void) {
                                                     Ldsp1_.y2 = Ldsp1.y1;
                                                     Ldsp1_.blok = 1;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
-                                                    if (!Check_if_Equal(Sm, 0.0) &&
+                                                    if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
                                                         (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                            Check_if_Equal(dr[inx].Mz, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
@@ -9738,7 +9768,10 @@ void Static_analysis(void) {
                                                     Sp = Sp_max;
                                                     Sm = Sm_max;
 
-                                                    if (Check_if_Equal(Sp, Sm)) Sm=0;  //TEMPORARY
+                                                    ignore_Sm=FALSE;
+                                                    if (Check_if_Equal3(Sp, Sm))
+                                                        //Sm=0;  //TEMPORARY
+                                                        ignore_Sm=TRUE;
 
                                                     sp_magnitude=s_magnitude*0.1;
                                                     sm_magnitude=s_magnitude*0.1;
@@ -9749,6 +9782,7 @@ void Static_analysis(void) {
                                                         Sp = pAs;  //tensions to reinforced ratio replacement
                                                         sp_magnitude=p_magnitude;
                                                         strcpy(p_suffix,"%");
+                                                        fd[inx].Sp_max=pAs;
                                                     }
 
                                                     if (Sm > 0) //tension
@@ -9756,6 +9790,7 @@ void Static_analysis(void) {
                                                         Sm = pAs;
                                                         sm_magnitude=p_magnitude;
                                                         strcpy(m_suffix,"%");
+                                                        fd[inx].Sm_max=pAs;
                                                     }
 
                                                     ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
@@ -9815,7 +9850,7 @@ void Static_analysis(void) {
                                                         Ldsp1_.y2 = Ldsp11.y1;
                                                         Ldsp1_.blok = 1;
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
-                                                        if (!Check_if_Equal(Sm, 0.0) &&
+                                                        if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
                                                             (((Check_if_Equal(dr[inx].Mz, MzM) ||
                                                                Check_if_Equal(dr[inx].Mz, Mzm)) ||
                                                               (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
@@ -10190,6 +10225,8 @@ void Static_analysis(void) {
                                 double lb = r1 * units_factor;
                                 double le = (milimetryob(st_element[rep_element_no - 1].length) - r2) * units_factor;
 
+                                COMBI_FORCES *fd;
+
                                 if ((Check_if_GE02(dr[inx].x, lb)) && (Check_if_LE2(dr[inx].x, le))) {
                                     if (combi_total_numbers[i].combi > 1)  //combi
                                     {
@@ -10198,7 +10235,7 @@ void Static_analysis(void) {
                                         else if (combi_total_numbers[i].combi == 3) combi_element = combi_element_sls;
                                         else combi_element = combi_element_qpsls;
 
-                                        COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
+                                        fd = combi_element[rep_element_no - 1].fd;
 
                                         Nx_min = fd[inx].Nx_min;
                                         Nx_max = fd[inx].Nx_max;
@@ -10237,6 +10274,8 @@ void Static_analysis(void) {
 
                                             SsM = ((VyM / unit_factors->F_f) / Asy) / unit_factors->S_f;
                                             Ssm = ((Vym / unit_factors->F_f) / Asy) / unit_factors->S_f;
+
+                                            if (combi_total_numbers[i].combi > 1) fd[inx].Ss=0;
 
                                             x = dr[inx].x;
 
@@ -10339,6 +10378,8 @@ void Static_analysis(void) {
                                                 char p_suffix[4]="";
                                                 double p_shear_precision;
 
+                                                fd[inx].Ss=pAss;
+
                                                 strcpy(p_suffix,"%");
 
                                                 sp_magnitude=p_magnitude*0.1;  //so 10 times more than for main reinforcing
@@ -10422,7 +10463,10 @@ void Static_analysis(void) {
                             }
                             if (combi_total_numbers[i].combi > 1)  //combi
                             {
-                                if (!draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 6, Asy))  //Ss
+                                BOOL ret_s;
+                                if (!RC_flag) ret_s=draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 6, Asy);  //Ss
+                                else ret_s=draw_line_graph_data(rep_element_no, i, nx, &Ldsp, &Le, 7, 0);  //Ss for RC element
+                                if (!ret_s)
                                 {
                                     if (failed_elements[rep_element_no]==FALSE)
                                     {
@@ -11358,7 +11402,11 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
 
     if (!Check_if_Equal(section_forces.S_min, 0.0))
     {
-        sprintf(f_text, u8"σ min=%.4f%s", section_forces.S_min, lend);
+        if ((element_RC_flag) && (section_forces.S_min>0))
+        {
+            sprintf(f_text, u8"ρσ=%.2f%%%s", section_forces.S_min, lend);
+        }
+        else sprintf(f_text, u8"σ min=%.4f%s", section_forces.S_min, lend);
         strcat(force_text, f_text);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
@@ -11366,31 +11414,49 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
     }
     if (!Check_if_Equal(section_forces.S_max, 0.0))
     {
-        sprintf(f_text, u8"σ max=%.4f%s", section_forces.S_max, lend);
+        if ((element_RC_flag) && (section_forces.S_max>0))
+        {
+            sprintf(f_text, u8"ρσ=%.2f%%%s", section_forces.S_max, lend);
+        }
+        else sprintf(f_text, u8"σ max=%.4f%s", section_forces.S_max, lend);
         strcat(force_text, f_text);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
 
-    /*
-    if (!Check_if_Equal(section_forces.Ss_min, 0.0))
-    {
-        sprintf(f_text, u8"τ min=%.4f%s", section_forces.Ss_min, lend);
-        strcat(force_text, f_text);
-        width=TTF_text_len(f_text);
-        if (width>width_m) width_m=width;
-        height_m+=HEIGHT;
-    }
-     */
 
-    if (!Check_if_Equal(section_forces.Ss_max, 0.0))
+    if (element_RC_flag)
+     {
+         if (!Check_if_Equal(section_forces.Ss_max, 0.0))
+         {
+             sprintf(f_text, u8"ρτ=%.2f%%%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
+             strcat(force_text, f_text);
+             width = TTF_text_len(f_text);
+             if (width > width_m) width_m = width;
+             height_m += HEIGHT;
+         }
+    }
+    else
     {
-        sprintf(f_text, u8"τ max=%.4f%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
-        strcat(force_text, f_text);
-        width=TTF_text_len(f_text);
-        if (width>width_m) width_m=width;
-        height_m+=HEIGHT;
+        /*
+        if (!Check_if_Equal(section_forces.Ss_min, 0.0))
+        {
+            sprintf(f_text, u8"τ min=%.4f%s", section_forces.Ss_min, lend);
+            strcat(force_text, f_text);
+            width=TTF_text_len(f_text);
+            if (width>width_m) width_m=width;
+            height_m+=HEIGHT;
+        }
+         */
+        if ((!Check_if_Equal(section_forces.Ss_max, 0.0)) || (!Check_if_Equal(section_forces.Ss_min, 0.0)))
+        {
+            sprintf(f_text, u8"τ max=%.4f%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
+            strcat(force_text, f_text);
+            width = TTF_text_len(f_text);
+            if (width > width_m) width_m = width;
+            height_m += HEIGHT;
+        }
     }
 
     //printf(force_text);
@@ -11417,6 +11483,7 @@ static void  cur_section_on(double x,double y)
     SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int width, width_m = 0, height_m = 0;
     float rdf, rdb;
+    int orto_;
 
     if (all_section_graph_data_p->element_line == NULL) {
         cursel_on(x, y);
@@ -11461,7 +11528,10 @@ static void  cur_section_on(double x,double y)
     CSL.warstwa = LiniaG.warstwa;
     CSL.typ = 32 * 3;
     CSL.kolor = 8;
+    orto_=orto;
+    orto=0;
     outlineor(&CSL, COPY_PUT, 1);
+    orto=orto_;
 
     get_section(l1, l, &width_m,&height_m,&force_text);
 
@@ -11653,7 +11723,7 @@ void Cross_section_forces(void)
                                 V= (AVECTOR *)ad;
                                 if (V->style<4) //ELEMENT
                                 {
-                                    printf("Bingo\n");
+                                    //printf("Bingo\n");
                                     ex1=V->x1;
                                     ey1=V->y1;
                                     ex2=V->x2;
@@ -11684,6 +11754,7 @@ void Cross_section_forces(void)
                                                         all_section_graph_data.section_data = (char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
                                                         dlf=graph_data->dlf;
                                                         dlb=graph_data->dlb;
+                                                        element_RC_flag=graph_data->material;
                                                         //correction of searching coordinates
                                                         parametry_lini(L, &PL);
                                                         Rotate_Point(PL.sin, PL.cos, ex1, ey1, ex1+dlf, ey1, &ex11, &ey11);
@@ -11699,7 +11770,9 @@ void Cross_section_forces(void)
 
                                                         section_params=(SECTION_DATA*)all_section_graph_data.section_data;
 
-                                                        sprintf(section_params_st,"(%d) l=%.5g H=%.5g B=%.5g A=%.5g Asy=%.5g Asz=%.5g Iy=%.5g Iz=%.5g Wy=%.5g Wz=%.5g",all_section_graph_data.enr,
+                                                        const char *RC_str=element_RC_flag==0 ? "" : " RC";
+
+                                                        sprintf(section_params_st,"(%d%s) l=%.5g H=%.5g B=%.5g A=%.5g Asy=%.5g Asz=%.5g Iy=%.5g Iz=%.5g Wy=%.5g Wz=%.5g",all_section_graph_data.enr, RC_str,
                                                                 milimetryob(PL.dl),
                                                                 section_params->H, section_params->B,
                                                                 section_params->A,section_params->Asy,section_params->Asz,

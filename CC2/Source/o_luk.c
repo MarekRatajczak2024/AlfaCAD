@@ -119,7 +119,7 @@ static SA_BREAK sa_break;
 #define OCon  1.0E+6      /*1.0E+6*/
 
 #define ID_ARC_CONT 75   //duplicated with o_trace.c
-#define ID_LINE_CONTINUE 84 //duplicated with o_trace.c
+#define ID_LINE_CONTINUE 85 //duplicated with o_trace.c   //was 84
 
 typedef
   struct

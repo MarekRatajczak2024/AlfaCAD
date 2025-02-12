@@ -36,6 +36,16 @@ double INDEX_FACTOR = 0.6;
 BOOL TTF_printing = FALSE;
 double INDEX_SHIFT=0.15;
 
+int known_letters[]={8308, 8364, 8730, 8731};
+int known_letters_no=sizeof(known_letters)/sizeof(known_letters[0]);
+
+int known_bytes[][3]={{226, 129, 180},
+                     {226, 130, 172},
+                     {226, 136, 154},
+                     {226, 136, 155},
+                     };
+int known_bytes_no=sizeof(known_bytes)/sizeof(known_bytes[0]);
+
 /*-----------------------------------------------------------------------*/
 
 extern  BITMAP *screenplay;
@@ -75,6 +85,26 @@ static int w_text_no=0;
 extern char *alft;
 
 extern void setcolor(int kolor);
+
+BOOL known3b(int letter)
+{
+    for (int i=0; i<known_letters_no; i++)
+    {
+        if (letter==known_letters[i]) return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL known3bytes(unsigned char c1, unsigned char c2, unsigned char c3)
+{
+    for (int i=0; i<known_bytes_no; i++)
+    {
+        if ((c1==known_bytes[i][0]) &&
+            (c2==known_bytes[i][1]) &&
+            (c3==known_bytes[i][2])) return TRUE;
+    }
+    return FALSE;
+}
 
 void zero_lw_counter(void)
 {
@@ -269,7 +299,8 @@ int Get_Char_Matix_Len(unsigned int chr, int i_font)
   
   i_first = PTRS__Text_Style [i_font]->first_char ;
   ptrsz_widths = PTRS__Text_Style [i_font]->ptrsz_widths ;
-  i_ret = ptrsz_widths [(unsigned int)chr - i_first] ;
+  if (((unsigned int)chr - i_first) > PTRS__Text_Style [i_font]->num_char) i_ret=0;
+  else i_ret = ptrsz_widths [(unsigned int)chr - i_first] ;
   if (i_ret == 0)
   {
     i_ret = ptrsz_widths [(unsigned int )'a' - i_first] ;
@@ -832,14 +863,26 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 				  if (*ptrsz_tmp >= 127)
 				  {
 					  u8ptrsz_tmp = utf8_to_ucs2(ptrsz_tmp, (const uint8_t **) &end_ptr);
-					  if (u8ptrsz_tmp > 1920) u8ptrsz_tmp = 32;
 
-					  if (f_type == 0)
-					  {
-						  //conver to Mazovia
-						  u8ptrsz_tmp = u8toMazovia(u8ptrsz_tmp);
-					  }
-					  ptrsz_tmp++;
+                      //if (u8ptrsz_tmp == 8308) //⁴ e.g. m⁴
+                      if (u8ptrsz_tmp > 1920)
+                      {
+                          if (known3b(u8ptrsz_tmp)) //⁴ e.g. m⁴
+                              ptrsz_tmp+=2;
+                          else
+                          {
+                              u8ptrsz_tmp = 32;
+                              ptrsz_tmp++;
+                          }
+                      }
+                      else
+                      {
+                          if (f_type == 0) {
+                              //conver to Mazovia
+                              u8ptrsz_tmp = u8toMazovia(u8ptrsz_tmp);
+                          }
+                          ptrsz_tmp++;
+                      }
 				  }
 				  else
 					  u8ptrsz_tmp = *ptrsz_tmp;
@@ -1120,8 +1163,19 @@ void outtextxy_w_menu(TEXT *t)
 		{
 			//convert to UNICODE and shift index
 			u8zn = utf8_to_ucs2(zn, (const uint8_t **) &end_ptr);
-			if (u8zn > 1920) u8zn = 32;
-			zn++;
+
+            //if (u8zn == 8308) //⁴ e.g. m⁴
+            if (u8zn > 1920)
+            {
+                if (known3b(u8zn)) zn+=2;
+                else
+                {
+                    u8zn = 32;
+                    zn++;
+                }
+            }
+            else zn++;
+
 		}
 		else u8zn = (unsigned int)zn[0];
 
@@ -1931,14 +1985,23 @@ void outtextxy_w_(TEXT *t0, int mode)
 					{
 						//convert to UNICODE and shift index
 						u8zn = utf8_to_ucs2(zn, (const uint8_t **) &end_ptr);
-						if (u8zn > 1920) u8zn = 32;
 
-						if (f_type == 0)
-						{
-							//conver to Mazovia
-							u8zn = u8toMazovia(u8zn);
-						}
-						zn++;
+                        if (u8zn > 1920)
+                        {
+                            if (known3b(u8zn)) zn++;  //⁴ e.g. m⁴
+                            else
+                            {
+                                u8zn = 32;
+                            }
+                        }
+                        else {
+                            if (f_type == 0)
+                            {
+                                //conver to Mazovia
+                                u8zn = u8toMazovia(u8zn);
+                            }
+                        }
+                        zn++;
 					}
 					else u8zn = (unsigned int)zn[0];
 

@@ -45,6 +45,10 @@ extern BOOL Draw_Pcx_To_Drive(B_PCX *adr_pcx,int t_drive);
 extern void ObiektTok_No_Superblock (long_long *off, long_long offk, long_long *ad, int obiekt);
 extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 
+extern void set_trace_block_begin(char *adr);
+extern void set_trace_block_end(char *adr);
+extern void set_trace_block(BOOL tb);
+
 /*
    SP;       returns a pen
    SP pen number;
@@ -102,7 +106,6 @@ BOOL plt_pen_width_ink (int pen, double width);
 BOOL plt_mark_char(unsigned char zn);
 static BOOL plt_pens_width_ink (void);
 BOOL write_ter (void);
-
 
 
 static long JednostkiPltX ( double jednostkiX, double jednostkiY, BOOL relative)   /* jednostki -> jednostki plt*/
@@ -734,7 +737,18 @@ static BOOL draw_sheet_plt(int pen0)
     if (( object_to_pen ( nag ) == pen0) || ( object_to_pen ( nag ) == 256))
      {
        switch(nag->obiekt)
-	 { case Olinia :
+	 {
+         case OdBLOK :
+             b1=(BLOK *)nag;
+             if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+             {
+                 set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+                 set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+                 set_trace_block(TRUE);
+             }
+             else set_trace_block(FALSE);
+             break;
+           case Olinia :
 		  if (((LINIA*)nag)->typ == HATCH_OUTLINE_TYPE) break;
         //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
          if (ptrs__ini_date->ink_plotter==1)
@@ -915,6 +929,10 @@ static BOOL draw_sheet_plt(int pen0)
              }
              if (Draw_Vector_To_Drive((AVECTOR*)nag, NULL) == FALSE) return FALSE;
              break;
+         case Opoint:
+             grubosc = 1;
+             plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
+             break;
 	  default :
 	    break;
 	 } /*switch*/
@@ -969,6 +987,14 @@ static BOOL draw_sheet_plt(int pen0)
               block_adr=(char *)nag + sizeof(NAGLOWEK) + b1->n - 1;
              }
           }
+
+         if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+         {
+             set_trace_block_begin((char*)nag + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu);
+             set_trace_block_end((char*)nag + sizeof(NAGLOWEK) + b1->n - 1);
+             set_trace_block(TRUE);
+         }
+         else set_trace_block(FALSE);
 
       break;
 	   case Olinia :
@@ -1132,29 +1158,39 @@ static BOOL draw_sheet_plt(int pen0)
          if (Draw_Pcx_To_Drive ((B_PCX *)nag,1) == FALSE) return FALSE;
         }
      break;
-           case Ovector:
-               //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
-               if (ptrs__ini_date->ink_plotter == 1)
+       case Ovector:
+           //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
+           if (ptrs__ini_date->ink_plotter == 1)
+           {
+               switch (((AVECTOR*)nag)->style<10)
                {
-                   switch (((AVECTOR*)nag)->style<10)
-                   {
-                       case 0:
-                       case 1:
-                       case 2:
-                       case 3:
-                       case 7:
-                       case 8:
-                       case 9:
-                           grubosc = (((AVECTOR*)nag)->typ & 224) / 32;
-                           break;
-                       default:
-                           grubosc = 1;
-                           break;
-                   }
-                   plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
+                   case 0:
+                   case 1:
+                   case 2:
+                   case 3:
+                   case 7:
+                   case 8:
+                   case 9:
+                       grubosc = (((AVECTOR*)nag)->typ & 224) / 32;
+                       break;
+                   case 16:
+                       grubosc = 0;
+                       break;
+                   default:
+                       grubosc = 1;
+                       break;
                }
-               if (Draw_Vector_To_Drive((AVECTOR*)nag, NULL) == FALSE) return FALSE;
-               break;
+               plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
+           }
+           if (Draw_Vector_To_Drive((AVECTOR*)nag, NULL) == FALSE) return FALSE;
+           break;
+         case Opoint:
+             if (ptrs__ini_date->ink_plotter == 1) {
+                 grubosc = 2;
+                 plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
+             }
+             if (Draw_Point_To_Drive((T_Point *)nag) == FALSE) return FALSE;
+             break;
 	  default :
 	    break;
 	 } /*switch*/
@@ -1381,6 +1417,9 @@ static BOOL draw_sheet_plt1(int pen0)
                      case 9:
                          grubosc = (((AVECTOR*)nag)->typ & 224) / 32;
                          break;
+                     case 16:
+                         grubosc = 0;
+                         break;
                      default:
                          grubosc = 1;
                          break;
@@ -1388,6 +1427,13 @@ static BOOL draw_sheet_plt1(int pen0)
                  plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
              }
              if (Draw_Vector_To_Drive((AVECTOR*)nag, NULL) == FALSE) return FALSE;
+             break;
+         case Opoint:
+             if (ptrs__ini_date->ink_plotter == 1) {
+                 grubosc = 2;
+                 plt_pen_width_ink(pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
+             }
+             if (Draw_Point_To_Drive((T_Point *)nag) == FALSE) return FALSE;
              break;
 	  default :
 	    break;
@@ -1403,6 +1449,7 @@ static int object_to_pen ( NAGLOWEK * nag )
 /*-----------------------------------------*/
 {
     LINIA * L;
+    AVECTOR *V;
     TEXT * T;
     int pen_number , grubosc;
     double grubosc_t;
@@ -1411,6 +1458,9 @@ static int object_to_pen ( NAGLOWEK * nag )
      pen_number = 0 ;
      switch (nag->obiekt)
      {
+     case OdBLOK:
+         return 256;
+         break;
 	 case Olinia:
 	 case Oluk:
 	 case Ookrag:
@@ -1433,6 +1483,37 @@ static int object_to_pen ( NAGLOWEK * nag )
 	       pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_ng ;
        }
 	   break;
+         case Ovector:
+             V = (AVECTOR*)nag;
+             switch (V->style<10)
+             {
+                 case 0:
+                 case 1:
+                 case 2:
+                 case 3:
+                 case 7:
+                 case 8:
+                 case 9:
+                     grubosc = ( V->typ & 224 ) / 32;
+                     if ( grubosc == 0)			/*kolory sa numerowane od 1*/
+                         pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_bc ;
+                     else if (grubosc == 1)
+                         pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_c ;
+                     else if (grubosc == 2)
+                         pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_g ;
+                     else if (grubosc == 3)
+                         pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_bg ;
+                     else if (grubosc == 4)
+                         pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_ng ;
+                     break;
+                 default:
+                     pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_bc ;
+                     break;
+             }
+             break;
+         case Opoint:
+             pen_number = ptrs__ini_date->tab_pen_number [ color256[L->kolor] -1] . line_g ;
+             break;
 	case Otekst:
       if ((ptrs__ini_date->color_print==1) && (ptrs__ini_date->ink_plotter==1))
          pen_number=L->kolor;

@@ -817,7 +817,7 @@ TCHAR greeting4[] = _T("Haga clic dentro para completar");
 
 #ifdef __O_HATCH3__
 
-char* vocabulary[] = { (char*)u8"  presione cualquier tecla:", (char*)u8"área",(char*)u8"centro de masa",(char*)u8"Primer momento de área",(char*)u8"Área momento de inercia" };
+char* vocabulary[] = { (char*)u8"  presione cualquier tecla:", (char*)u8"A",(char*)u8"centro de masa",(char*)u8"Primer momento de área",(char*)u8"Área momento de inercia" };
 #endif
 
 #ifdef __O_LTTYPE__

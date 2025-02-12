@@ -3014,11 +3014,12 @@ void draw_push_button(BUTTON *Button)
 	if (Button->flags & BUTTON_HIDDEN) return;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 	setwritemode(COPY_PUT);
+
 	paper = Button->paper == COLOR_NULL ? dlg_kolory->dlg_button_paper : Button->paper;
 	if (Button->enable == 0) ink = DARKGRAY;
 	else ink = Button->ink == COLOR_NULL ? dlg_kolory->dlg_button_ink : Button->ink;
 	border = Button->border == COLOR_NULL ? dlg_kolory->dlg_button_border : Button->border;
-    if ((Button->txt != NULL) && (Button->txt[0] == '\024')) setfillstyle_(SOLID_FILL, DARKGRAY);
+    if ((Button->txt != NULL) && (Button->txt[0] == '\024')) setfillstyle_(SOLID_FILL, paper);  //DARKGRAY
 	    else setfillstyle_(SOLID_FILL, paper);
 	x1 = jed_to_piks_x(Button->x) + pocz_x;
 	x2 = jed_to_piks_x(Button->x + Button->dx - 1) + pocz_x;

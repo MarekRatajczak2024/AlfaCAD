@@ -138,6 +138,8 @@ extern TMENU mTTF_OTF;
 extern void Resize_Vector (void);
 
 extern void Restore_Pointer(void);
+extern int get_menu_level(void);
+extern void set_menu_level(int menu_l);
 
 static TMENU mSektory_Arkusza = { 15,0,0,31,1,3,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmSektory_Arkusza,NULL,NULL };
 
@@ -1822,6 +1824,7 @@ static void (* COMND[])(void)={
 void Magnitudes(void)
 {
     int n, n0, n1, n2;
+    int m_level;
     n0 = mMagnitude.off;
     n1 = mPrecision.off;
     n2 = mStaticColors.off;
@@ -1835,7 +1838,9 @@ void Magnitudes(void)
         n = getwsp1(&mMagnitude);
         if (n == 0)
         {
+            set_menu_level(get_menu_level()+1);  //just in case size of the window was changed
             closew(&mMagnitude);
+            set_menu_level(get_menu_level()-1);
             break;
         }
         else if (n == 127)  //Precision
@@ -1967,9 +1972,10 @@ double SkalaF_(void)
 void Parametry(void)
 { int n;
   int l_kr;
+    int m_level;
 
 
-  go_refresh=FALSE;
+    go_refresh=FALSE;
   vector_refresh=FALSE;
 
  DokF_=DokladnoscF;
@@ -1998,8 +2004,10 @@ void Parametry(void)
    else if (n==8)
    {       //vectors
        (*COMND[n])();
-
+       m_level=get_menu_level();
        Restore_Pointer();
+       if (get_menu_level()==0)
+           return;
    }
 
     else if (n==6)  //temporary

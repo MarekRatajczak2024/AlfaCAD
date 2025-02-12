@@ -87,6 +87,9 @@ extern int TTF_char_len(unsigned int unicode);
 extern void set_cursor_pointer(void);
 extern void set_cursor_edit(void);
 
+extern BOOL known3b(int letter);
+extern BOOL known3bytes(unsigned char c1, unsigned char c2, unsigned char c3);
+
 BOOL editing_text = FALSE;
 
 static int mouse_x_=0, mouse_y_=0;
@@ -360,7 +363,10 @@ int set_wchar0(unsigned char *buf, int len)
 	while (i < len)
 	{
 		if (buf[j] >= 127)
-			j++;
+        {
+            if ((i < len-1) && known3bytes(buf[i], buf[i+1], buf[i+2]) /*((buf[i] == 226) && (buf[i + 1] == 129) && (buf[i + 2] == 180))*/) j++;
+            j++;
+        }
 		i++;
 		j++;
 	}
@@ -580,7 +586,11 @@ int lenutf8to(const unsigned char *s, int to)
 	int i = 0;
 	while ((*s) && (i < to))
 	{
-		if (s[len] >= 127) len += 2;
+		if (s[len] >= 127)
+        {
+            if ((i < to-1) && known3bytes(s[len], s[len+1], s[len+2])/*((s[len] == 226) && (s[len + 1] == 129) && (s[len + 2] == 180))*/) len++;
+            len += 2;
+        }
 		else len++;
 		i++;
 	}
@@ -596,7 +606,11 @@ int posutf8tomaxend(const unsigned char *s, int maxend)
 
 	while ((*s) && (i < to))
 	{
-		if (s[len] >= 127) len += 2;
+		if (s[len] >= 127)
+        {
+            if ((i < to-1) && known3bytes(s[len], s[len+1], s[len+2])/*((s[len] == 226) && (s[len + 1] == 129) && (s[len + 2] == 180))*/) len++;
+            len += 2;
+        }
 		else len++;
 		i++;
 	}
@@ -676,7 +690,7 @@ int editstring(unsigned char *s, char *legal, int maxlength, float width0, BOOL 
 	BOOL insert = TRUE;
 	BOOL b_add;
 	int x, y, x0, y0, x00;
-	unsigned char bytes[2], c1, c2;
+	unsigned char bytes[3], c1, c2, c3;
 	int bytes_n;
 	int len_ttf;
 	int width_w;
@@ -692,6 +706,7 @@ int editstring(unsigned char *s, char *legal, int maxlength, float width0, BOOL 
     unsigned char back_s[MaxMultitextLen];
     int x1, y1, x2, y2;
 	//int mouse_x_, mouse_y_;
+    int32_t len0,len1;
 
     _free_mouse();
     set_cursor_edit();
@@ -725,7 +740,10 @@ aa:
 	if (wlen > maxlength)
 	{
 		if (s[maxlength] >= 127)
-			s[maxlength - 1] = '\0';
+        {
+            if ((wlen > maxlength-1) && known3bytes(s[maxlength], s[maxlength+1], s[maxlength+2])/*((s[maxlength] == 226) && (s[maxlength + 1] == 129) && (s[maxlength + 2] == 180))*/) s[maxlength - 2] = '\0';
+            else s[maxlength - 1] = '\0';
+        }
 		else
 			s[maxlength] = '\0';
 	}
@@ -794,10 +812,11 @@ if (last_edit==TRUE)
   
   c = getukey();
 
-  if (c > 127 && c < 2048)
+  if ((c > 127) && ((c < 2048) || (c == 2074)))
   {
 	  bytes_n = ucs2_to_utf8(c, &utf8c);
 	  if (bytes_n == 2) c = utf8c[0] * 256 + utf8c[1];
+      else if (bytes_n==3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
   }
   else if ((c==F11) || (c==CTRLSPC))
   {
@@ -881,10 +900,11 @@ if (last_edit==TRUE)
 	 my_show_mouse(NULL);
 #endif
 
-	 if ((c > 127) && (c < 2048))
+	 if ((c > 127) && ((c < 2048) || (c == 2074)))
 	 {
 		 bytes_n = ucs2_to_utf8(c, &utf8c);
 		 if (bytes_n==2) c = utf8c[0] * 256 + utf8c[1];
+         else if (bytes_n==3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
 	 }
      else if ((c==F11) || (c==CTRLSPC))
      {
@@ -949,7 +969,10 @@ do
 		break;
 	case ENDKEY:
 		if (s[strlen(s)] > 127)
-			pos = strlen(s) - 1;
+        {
+            if (known3bytes(s[strlen(s)-2], s[strlen(s)-1], s[strlen(s)])/*(((s[strlen(s)] == 180) && (s[strlen(s) - 1] == 129) && (s[strlen(s) - 2] == 226))*/) pos = strlen(s) - 2;
+            else pos = strlen(s) - 1;
+        }
 		else pos = strlen(s);
 		break;
 	case INSKEY:
@@ -963,7 +986,11 @@ do
 		if (pos > 0)
 		{
 			if (s[pos - 1] > 127)
-				pos -= 2;
+            {
+                if ((pos>2) && known3bytes(s[pos-3], s[pos-2], s[pos-1])/*((s[pos] == 180) && (s[pos-1] == 129) && (s[pos-2] == 226))*/)
+                    pos -= 3;
+                else pos -=2;
+            }
 			else pos--;
 		}
 
@@ -973,20 +1000,32 @@ do
 		if (pos < len)
 		{
 			if (s[pos] > 127)
-				pos += 2;
+            {
+                if ((pos < len-1) && known3bytes(s[pos], s[pos+1], s[pos+2])/*((s[pos] == 226) && (s[pos+1] == 129) && (s[pos+2] == 180))*/)
+                    pos += 3;
+                else pos += 2;
+            }
 			else pos++;
 		}
 
 		break;
-	case BS:
-		if (pos > 0)
+	case BS:if (pos > 0)
 		{
-			if (s[pos - 1] > 127)
-			{
-				memmove(&s[pos - 2], &s[pos], len - pos + 1);
-				pos -= 2;
-				len -= 2;
-			}
+            if ((pos > 1) && (s[pos - 1] > 127))
+            {
+                if ((pos > 2) && known3bytes(s[pos-3], s[pos-2], s[pos-1]) /*((s[pos-1] == 180) && (s[pos - 2] == 129) && (s[pos - 3] == 226))*/)
+                {
+                    memmove(&s[pos - 3], &s[pos], len - pos + 1);
+                    pos -= 3;
+                    len -= 3;
+                }
+                else
+                {
+                    memmove(&s[pos - 2], &s[pos], len - pos + 1);
+                    pos -= 2;
+                    len -= 2;
+                }
+            }
 			else
 			{
 				memmove(&s[pos - 1], &s[pos], len - pos + 1);
@@ -1000,8 +1039,16 @@ do
 		{
 			if (s[pos] > 127)
 			{
-				memmove(&s[pos], &s[pos + 2], len - pos - 1);
-				len -= 2;
+                if (((pos+1)<len) && known3bytes(s[pos], s[pos+1], s[pos+2]) /*((s[pos] == 226) && (s[pos+1] == 129) && (s[pos+2] == 180))*/)
+                {
+                    memmove(&s[pos], &s[pos + 3], len - pos - 1);
+                    len -= 3;
+                }
+                else
+                {
+                    memmove(&s[pos], &s[pos + 2], len - pos - 1);
+                    len -= 2;
+                }
 			}
 			else
 			{
@@ -1053,32 +1100,59 @@ do
 				
 			if (insert)
 			{
-				if (c <= 256)
+                if (c > 65535)
+                {
+                    memmove(&s[pos + 3], &s[pos], len - pos + 1);
+                    len += 3;
+                }
+                else if (c > 256)
+                {
+                    memmove(&s[pos + 2], &s[pos], len - pos + 1);
+                    len += 2;
+                }
+				else
 				{
 					memmove(&s[pos + 1], &s[pos], len - pos + 1);
 					len++;
 				}
-				else
-				{
-					memmove(&s[pos + 2], &s[pos], len - pos + 1);
-					len += 2;
-				}
 			}
 			else if (pos >= len)
 			{
-				if (c <= 256) len++;
-				else len += 2;
-			}
-			if (c <= 256) s[pos++] = c;
-			else
-			{
+                if (c > 65535) {len0=3; len+=3;}
+                else if (c > 256) {len0=2; len += 2;}
+				else {len0=1; len++;}
 
+                //len1=utf8_bytes(s[pos]);
+
+			}
+            else //pos < len
+            {
+                if (c > 65535) len0=3;
+                else if (c > 256) len0=2;
+                else len0=1;
+
+                len1=utf8_bytes(s[pos]);
+                memmove(&s[pos + len0], &s[pos+len1], len - pos - len1 + 1);
+
+                len+=(len0-len1);
+            }
+            if (c > 65535)
+            {
+                c1 = (unsigned char)(c >> 16);
+                c2 = (unsigned char)((c >> 8) & 0xFF);
+                c3 = (unsigned char)(c & 0xFF);
+                s[pos++] = c1;
+                s[pos++] = c2;
+                s[pos++] = c3;
+            }
+			else if (c > 256)
+			{
 				c1 = (unsigned char)(c >> 8);
 				c2 = (unsigned char)(c & 0xFF);
 				s[pos++] = c1;
 				s[pos++] = c2;
-
 			}
+            else s[pos++] = c;
 		}
 		break;
 	} /* switch */
@@ -1155,14 +1229,13 @@ do
 	 x = x0 + len_ttf;
 	 cursorT_On (x, y, insert);
 
-	 
-
 	 c = getukey();
 
-	 if ((c > 127) && (c < 2048))
+	 if ((c > 127) && (c < 2048) || (known3b(c))) // == 8308))
 	 {
 		 bytes_n = ucs2_to_utf8(c, &utf8c);
 		 if (bytes_n == 2) c = utf8c[0] * 256 + utf8c[1];
+         else if (bytes_n == 3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
 	 }
      else if ((c==F11) || (c==CTRLSPC))
      {

@@ -161,6 +161,11 @@ extern "C" {
 	static BOOL draw_border_solid_to_drive_null(WIELOKAT *w, int opcja);
 	int Write_To_Device(void *buf, unsigned int len);
 
+
+    //void set_trace_block_begin(char *adr);
+    //void set_trace_block_end(char *adr);
+    //void set_trace_block(BOOL tb);
+
 	extern int Draw_Rectangle_To_Plt(double x1, double y1, double x2, double y2);
 	extern void calc_bspline(int lp, int n, float points[], int p1, float *out_x, float *out_y);
 	
@@ -223,7 +228,7 @@ extern "C" {
 
     extern int solidarc_elements(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l_inner1, LUK *l_inner2, LUK *l_outer1, LUK *l_outer2);
     extern int solidfill_typ[8];
-    extern int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, double *xy, BOOL printer);
+    extern int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, double *xy, BOOL printer, int *n1, int *n2);
 
     extern double Get_Point_Size (void);
     extern double normalize_txt_angle(double angle0);
@@ -247,6 +252,7 @@ extern "C" {
     extern void create_solid_on_line (LINIA *L, WIELOKAT *s, double width1, double width2, double axis);
     extern double measure_vector (float x1, float y1, float x2, float y2, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
     extern point intersectionPoint(point a1,point a2,point b1,point b2);
+    extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
 
     extern char *load_symbol[];
 
@@ -266,12 +272,31 @@ BOOL linen_plt_trans(double x1, double y1, double x2, double y2, int typ, int ko
 static p_vector first_polygon_vector[LAST_POLYGONS_NO] = {0};
 static p_vector last_polygon_vector[LAST_POLYGONS_NO] = {0};
 static T_PixelTVal last_polygon[LAST_POLYGONS_NO][8] = { 0 };
+
+static char *trace_block_begin = NULL, *trace_block_end=NULL;
+static BOOL trace_block=FALSE;
+static POINTF last_trace_point[2], next_trace_point[2];
 /***************  GLOBAL DECLARATION  *****************************/
 
 
 typedef COLOR_ COLOR[256];
 
 typedef char T768[768];
+
+void set_trace_block_begin(char *adr)
+{
+    trace_block_begin=adr;
+}
+
+void set_trace_block_end(char *adr)
+{
+    trace_block_end=adr;
+}
+
+void set_trace_block(BOOL tb)
+{
+    trace_block = tb;
+}
 
 double get_d__luk(void)
 {
@@ -393,6 +418,7 @@ BOOL Draw_Fill_Circle_To_Drive (OKRAG* ptr_circle)
   BOOL bw, grey;
   byte_ intensity;
   int i_width;
+  LUK l;
 
   T_PTR_Prn_Ini_Date* ptrs__prn_ini_date_;
 
@@ -519,7 +545,19 @@ BOOL Draw_Fill_Circle_To_Drive (OKRAG* ptr_circle)
   xy [6] = Xp2 ;
   xy [7] = Yp2 ;
   if (FALSE == draw_rectangle_to_drive (xy, df_dist, kolor, Layers[ptr_circle->warstwa].bw, Layers[ptr_circle->warstwa].grey, translucency, colorB)) return FALSE ;
-  
+
+
+    l.warstwa=ptr_circle->warstwa;
+    l.kolor=ptr_circle->kolor;
+    l.typ = 32;
+    l.x = ptr_circle->x;
+    l.y = ptr_circle->y;
+    l.r = ptr_circle->r;
+    l.kat1 = 0;
+    l.kat2 = Pi2;
+
+    if (FALSE == Draw_Arc_To_Drive(&l))  return FALSE ;
+
   return TRUE;
 }
 
@@ -2060,6 +2098,7 @@ BOOL Draw_Solidarc_To_Drive (SOLIDARC *ptr_sa, Print_Rect *window_to_print)
     double xy[264];
     int in;
     double xs, ys;
+    int n1, n2;
 
     origin_x_ = 0;
     origin_y_ = 0;
@@ -2100,7 +2139,7 @@ BOOL Draw_Solidarc_To_Drive (SOLIDARC *ptr_sa, Print_Rect *window_to_print)
             kat2 = Angle_Normal(ptr_sa->kat2);
             if (kat2 < kat1) kat2 += Pi2;
             dkat = kat2 - kat1;
-            if (Check_if_LE(dkat, Pi_)) in = rysuj_solidarc_factory(ptr_sa, COPY_PUT, kolor, 0, 0, xy, TRUE);
+            if (Check_if_LE(dkat, Pi_)) in = rysuj_solidarc_factory(ptr_sa, COPY_PUT, kolor, 0, 0, xy, TRUE, &n1, &n2);
             else {
                 memmove(&sa1, ptr_sa, sizeof(SOLIDARC));
                 memmove(&sa2, ptr_sa, sizeof(SOLIDARC));
@@ -2128,8 +2167,8 @@ BOOL Draw_Solidarc_To_Drive (SOLIDARC *ptr_sa, Print_Rect *window_to_print)
                 }
 
 
-                in = rysuj_solidarc_factory(&sa1, COPY_PUT, kolor, 1, 0, xy, TRUE);
-                in = rysuj_solidarc_factory(&sa2, COPY_PUT, kolor, 2, in, xy, TRUE);
+                in = rysuj_solidarc_factory(&sa1, COPY_PUT, kolor, 1, 0, xy, TRUE, &n1, &n2);
+                in = rysuj_solidarc_factory(&sa2, COPY_PUT, kolor, 2, in, xy, TRUE, &n1, &n2);
             }
 
 
@@ -3751,8 +3790,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
 
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ / 2, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
@@ -3809,7 +3850,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
 
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], 0, ptrs_vector, PL.kat);
 
@@ -3866,7 +3909,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
 
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_*(PL.kat+90.0)/180.0, ptrs_vector, PL.kat);
 
@@ -3945,7 +3990,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
 
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_/2, ptrs_vector, PL.kat);
 
@@ -4027,7 +4074,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
 
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], 0, ptrs_vector, PL.kat);
 
@@ -4085,7 +4134,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
             line_width_type = Solid_Line_Width (w.empty_typ);
-            if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            if (type__drive != PLT_DRIVE) {
+                if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
+            }
 
             make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_*(PLth.kat+90.0)/180.0, ptrs_vector, PLth.kat);
 
@@ -6134,21 +6185,82 @@ static BOOL draw_border_solidarc_to_drive (SOLIDARC *ptr_sa, int type__drive)
     int ln;
     int typ;
 
+    NAGLOWEK *nag1;
+    WIELOKAT  *w1;
+    SOLIDARC *sa1;
+
+    BOOL begin_line=1, end_line=1;
+
+    if ((ptr_sa->empty_typ>0) && (ptr_sa->empty_typ<6) && (trace_block==TRUE) && (((char*)ptr_sa+ptr_sa->n+sizeof(NAGLOWEK)-1)<=trace_block_end))  //is outlined and can be the last one
+    {
+        double xy[8];
+        get_solidarc_ends(ptr_sa, xy);
+
+        if (((char*)ptr_sa+ptr_sa->n+sizeof(NAGLOWEK))>trace_block_begin)  //this is not first element in polyline
+        {
+            //checking the last coordinates
+            if ((Check_if_Equal(xy[6],last_trace_point[0].x)) &&
+                (Check_if_Equal(xy[7],last_trace_point[0].y)) &&
+                (Check_if_Equal(xy[4],last_trace_point[1].x)) &&
+                (Check_if_Equal(xy[5],last_trace_point[1].y)))
+            {
+                if (!ptr_sa->reversed) end_line=0;
+                else begin_line=0;
+            }
+        }
+
+        nag1=(NAGLOWEK*)((char*)ptr_sa+sizeof(NAGLOWEK)+ptr_sa->n);
+
+        if (nag1->obiekt==Owwielokat)
+        {
+            w1=(WIELOKAT*)nag1;
+            if ((Check_if_Equal(w1->xy[2], xy[2])) &&
+                (Check_if_Equal(w1->xy[3], xy[3])) &&
+                (Check_if_Equal(w1->xy[0], xy[0])) &&
+                (Check_if_Equal(w1->xy[1], xy[1])))
+                if (!ptr_sa->reversed) begin_line=0;
+                else end_line=0;
+        }
+        else if (nag1->obiekt==Osolidarc)
+        {
+            double xy1[8];
+            sa1=(SOLIDARC*)nag1;
+            get_solidarc_ends(sa1, xy1);
+
+            if ((Check_if_Equal(xy1[4], xy[2])) &&
+                (Check_if_Equal(xy1[5], xy[3])) &&
+                (Check_if_Equal(xy1[6], xy[0])) &&
+                (Check_if_Equal(xy1[7], xy[1])))
+                if (!ptr_sa->reversed) begin_line=0;
+                else end_line=0;
+        }
+
+        last_trace_point[0].x=xy[0];
+        last_trace_point[0].y=xy[1];
+        last_trace_point[1].x=xy[2];
+        last_trace_point[1].y=xy[3];
+    }
+
 
     kolor = MakeColor(GetColorWin(ptr_sa->kolor));
 
     ln=solidarc_elements(ptr_sa, &L_left, &L_right, &l_inner1, &l_inner2,&l_outer1, &l_outer2);
 
-    if (type__drive!=PRN_DRIVE) typ=0;
-    else typ=solidfill_typ[ptr_sa->empty_typ];
+    //if (type__drive!=PRN_DRIVE) typ=0;
+    //else typ=solidfill_typ[ptr_sa->empty_typ];
+    typ=0;
 
-    if ( linen_plt1 /*linen_plt*/ ( L_left.x1, L_left.y1, L_left.x2, L_left.y2, 0, kolor, 0, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE ) return FALSE;
+    if (begin_line) {
+        if (linen_plt1 /*linen_plt*/ (L_left.x1, L_left.y1, L_left.x2, L_left.y2, 0, kolor, 0, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE)return FALSE;
+    }
     if ( draw_arc_drv( l_inner1.x, l_inner1.y, (double)(l_inner1.kat1), (double)(l_inner1.kat2), l_inner1.r, typ, kolor, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE) return FALSE;
     if (ln>1)
         {
             if ( draw_arc_drv( l_inner2.x, l_inner2.y, (double)(l_inner2.kat1), (double)(l_inner2.kat2), l_inner2.r, typ, kolor, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE) return FALSE;
         }
+    if (end_line) {
     if ( linen_plt1 /*linen_plt*/ ( L_right.x1, L_right.y1, L_right.x2, L_right.y2, 0, kolor, 0, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE ) return FALSE;
+    }
     if ( draw_arc_drv( l_outer1.x, l_outer1.y, (double)(l_outer1.kat1), (double)(l_outer1.kat2), l_outer1.r, typ, kolor, Layers[ptr_sa->warstwa].bw, Layers[ptr_sa->warstwa].grey) == FALSE) return FALSE;
     if (ln>1)
         {
@@ -6165,6 +6277,10 @@ static BOOL draw_border_solid_to_drive (WIELOKAT *ptr_w)
   int i;
   double s1, s2, p1, p2 ;
   int kolor;
+  NAGLOWEK *nag1;
+  WIELOKAT  *w1;
+  SOLIDARC *sa1;
+  BOOL skip;
 
   kolor = MakeColor(GetColorWin(ptr_w->kolor));
 
@@ -6172,12 +6288,60 @@ static BOOL draw_border_solid_to_drive (WIELOKAT *ptr_w)
   s2 = ptr_w->xy [ptr_w->lp - 1] ;
   for (i = 0 ; i < (int)ptr_w->lp ; i += 2) 	/*dla kazdego wierzcholka*/
   {
+      skip=FALSE;
+      if ((ptr_w->lp>6) && (trace_block==TRUE) && (((char*)ptr_w+ptr_w->n+sizeof(NAGLOWEK)-1)<=trace_block_end))
+      {
+          if (i == 6)  //endpoint
+          {
+              nag1=(NAGLOWEK*)((char*)ptr_w+sizeof(NAGLOWEK)+ptr_w->n);
+              if (nag1->obiekt==Owwielokat)
+              {
+                  w1=(WIELOKAT*)nag1;
+                  if ((Check_if_Equal(ptr_w->xy[4], w1->xy[2])) &&
+                      (Check_if_Equal(ptr_w->xy[5], w1->xy[3])) &&
+                      (Check_if_Equal(ptr_w->xy[6], w1->xy[0])) &&
+                      (Check_if_Equal(ptr_w->xy[7], w1->xy[1])))
+                      skip=TRUE;
+              }
+              else if (nag1->obiekt==Osolidarc)
+              {
+                  double xy[8];
+                  sa1=(SOLIDARC*)nag1;
+                  get_solidarc_ends(sa1, xy);
+
+                  if ((Check_if_Equal(ptr_w->xy[4], xy[4])) &&
+                      (Check_if_Equal(ptr_w->xy[5], xy[5])) &&
+                      (Check_if_Equal(ptr_w->xy[6], xy[6])) &&
+                      (Check_if_Equal(ptr_w->xy[7], xy[7])))
+                      skip=TRUE;
+              }
+              //it has to be also checked if beginning is not identical with the end of the last element in pline block
+          }
+          else if (i == 2)   //startpoint
+          {
+              if (((char*)ptr_w>trace_block_begin) &&
+                  (Check_if_Equal(ptr_w->xy[0],last_trace_point[0].x)) &&
+                  (Check_if_Equal(ptr_w->xy[1],last_trace_point[0].y)) &&
+                  (Check_if_Equal(ptr_w->xy[2],last_trace_point[1].x)) &&
+                  (Check_if_Equal(ptr_w->xy[3],last_trace_point[1].y)))
+                  skip=TRUE;
+              //it has to be also checked if beginning is not identical with the end of the last element in pline block
+          }
+      }
+
+
     p1 = ptr_w->xy [i] ;	    	/*punkt P jest nastepny*/
     p2 = ptr_w->xy [i + 1] ;
+    if (!skip) {
     if ( linen_plt1 /*linen_plt*/ ( s1, s2, p1, p2, 0, kolor, 0, Layers[ptr_w->warstwa].bw, Layers[ptr_w->warstwa].grey) == FALSE ) return FALSE;
+    }
     s1 = p1 ;
     s2 = p2 ;
   }
+    last_trace_point[0].x=ptr_w->xy[6];
+    last_trace_point[0].y=ptr_w->xy[7];
+    last_trace_point[1].x=ptr_w->xy[4];
+    last_trace_point[1].y=ptr_w->xy[5];
   return TRUE;
 }
 
@@ -6338,7 +6502,6 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
     LINIA L;
     LUK l;
     int ret;
-
 
     if (ptrs_point->typ<8) df_psize = Get_Point_Size () / 2;
     else df_psize = Get_Point_Size () / 4 ;
@@ -7113,8 +7276,13 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 				{
 					//convert to UNICODE and shift index
 					u8zn = utf8_to_ucs2(zn, &end_ptr);
-					if (u8zn > 1920) u8zn = 32;
-					zn++;
+
+                    if (u8zn == 8308) //⁴ e.g. m⁴
+                        zn+=2;
+                    else {
+                        if (u8zn > 1920) u8zn = 32;
+                        zn++;
+                    }
 				}
 				else u8zn = (unsigned int)zn[0];
 
@@ -7144,7 +7312,7 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 				if ((f_type < 2) || (f_type == 3) || ((f_type == 2) && (type__drive == PLT_DRIVE)))
 				{
 
-					if (ad != OFFEMPTY)
+					if ((ad != OFFEMPTY) && (u8zn <= (i_first + i_num)))
 					{
 						if (f_type == 0)
 						{

@@ -164,6 +164,10 @@ static void transformacja_obiekt(void *ad,double x,double y,double k1,double k2,
 
 static void mirrorP (double apx1, double apy1, double apx2, double apy2, double x, double y, double *xret, double *yret);
 
+static char *trace_block_begin = NULL, *trace_block_end=NULL;
+static BOOL trace_block=FALSE;
+static POINTF last_trace_point[2], next_trace_point[2];
+
 QUAD quad0, quad1;
 
 BOOL enforce_vector_scale=FALSE;
@@ -177,6 +181,11 @@ typedef struct
 } AD_BUF;
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
+
+void reset_trace_block(void)
+{
+   trace_block=FALSE;
+};
 
 void set_pattern_add_limit(long_long n)
 {
@@ -2968,9 +2977,11 @@ static void rysuj_ellipticalarc_(ELLIPTICALARC *ad,int mode,int kolor)
     if(mvcurb.aktoff) mvcurb.EA--;
 }
 
-int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l_inner, LUK *l_outer, double *xy)
+int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l_inner, LUK *l_outer, double *xy, int *n1, int *n2)
 {  int n;
     n=0;
+
+    *n1=n;
 
     xy[n++] = L_right->x1;
     xy[n++] = L_right->y1;
@@ -2978,6 +2989,8 @@ int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *
     xy[n++] = L_right->y2;
 
     n = get_arc_points(l_inner, xy, n, FALSE, FALSE);
+
+    *n2=n;
 
     xy[n++] = L_left->x1;
     xy[n++] = L_left->y1;
@@ -2990,7 +3003,7 @@ int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *
 
 }
 
-int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, double *xy, BOOL printer)
+int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, double *xy, BOOL printer, int *n1, int *n2)
 {   int n;
 
     if (Layers[sa->warstwa].on == 0) {
@@ -3059,12 +3072,14 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
 
     if (side==0)
     {
+        *n2=n;
         xy[n++] = p10l.x;
         xy[n++] = p10l.y;
         xy[n++] = p7l.x;
         xy[n++] = p7l.y;
 
         n = get_arc_points(&linner, xy, n, FALSE, printer);
+        *n1=n;
 
         xy[n++] = p5l.x;
         xy[n++] = p5l.y;
@@ -3077,6 +3092,8 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
     {
         n = get_arc_points(&louter, xy, n, TRUE, printer);
 
+        *n2=n;
+
         xy[n++] = p10l.x;
         xy[n++] = p10l.y;
         xy[n++] = p7l.x;
@@ -3087,6 +3104,8 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
     else if (side==2)
     {
         n = get_arc_points(&linner, xy, n, FALSE, printer);
+
+        *n1=n;
 
         xy[n++] = p5l.x;
         xy[n++] = p5l.y;
@@ -3099,7 +3118,118 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
     return n;
 }
 
-void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BOOL as_redraw)
+
+int get_solidarc_ends_factory(SOLIDARC *sa, int side, int in, double *xy)
+{
+    int n;
+    POINTD p1l, p2l, p3l, p4l, p5l, p6l, p7l, p8l, p9l, p10l;
+    double midkat;
+    double halfwidth1, halfwidth2, halfmidwidth;
+    double axis1, axis2, midaxis;
+    double kos, koc;
+    LUK louter = ldef;
+    LUK linner = ldef;
+    int retl;
+    double kat1, kat2;
+
+    n=in;
+
+    axis1 = sa->axis1;
+    axis2 = sa->axis2;
+    halfwidth1 = sa->width1 / 2;
+    halfwidth2 = sa->width2 / 2;
+
+    halfmidwidth = (halfwidth1 + halfwidth2) / 2;
+    midaxis=(axis1 + axis2) / 2;
+
+    kat1 = Angle_Normal(sa->kat1);
+    kat2 = Angle_Normal(sa->kat2);
+
+    if (kat2 < kat1) kat2 += Pi2;
+
+    midkat = (kat2 + kat1) / 2;
+
+    //finding points 1 and 2 (base arc)
+    p1l.x = sa->x + sa->r * cos(kat2);
+    p1l.y = sa->y + sa->r * sin(kat2);
+    p2l.x = sa->x + sa->r * cos(kat1);
+    p2l.y = sa->y + sa->r * sin(kat1);
+
+    //finding points 7 and 10
+    koc = cos(kat1);
+    kos = sin(kat1);
+    p7l.x = sa->x + (sa->r - halfwidth2 - axis2) * koc;
+    p7l.y = sa->y + (sa->r - halfwidth2 - axis2) * kos;
+    p10l.x = sa->x + (sa->r + halfwidth2 - axis2) * koc;
+    p10l.y = sa->y + (sa->r + halfwidth2 - axis2) * kos;
+
+    //finding points 5 and 8
+    koc = cos(kat2);
+    kos = sin(kat2);
+    p5l.x = sa->x + (sa->r - halfwidth1 - axis1) * koc;
+    p5l.y = sa->y + (sa->r - halfwidth1 - axis1) * kos;
+    p8l.x = sa->x + (sa->r + halfwidth1 - axis1) * koc;
+    p8l.y = sa->y + (sa->r + halfwidth1 - axis1) * kos;
+
+    //finding points 6 and 9 (base arc)
+    koc = cos(midkat);
+    kos = sin(midkat);
+    p6l.x = sa->x + (sa->r - halfmidwidth - midaxis) * koc;
+    p6l.y = sa->y + (sa->r - halfmidwidth - midaxis) * kos;
+    p9l.x = sa->x + (sa->r + halfmidwidth - midaxis) * koc;
+    p9l.y = sa->y + (sa->r + halfmidwidth - midaxis) * kos;
+
+    retl = get_3p_arc(&linner, &p5l, &p6l, &p7l);
+    retl = get_3p_arc(&louter, &p8l, &p9l, &p10l);
+
+    if (side==0)
+    {
+        /*
+        if (sa->reversed)
+        {
+            xy[n++] = p5l.x;
+            xy[n++] = p5l.y;
+            xy[n++] = p8l.x;
+            xy[n++] = p8l.y;
+
+            xy[n++] = p10l.x;
+            xy[n++] = p10l.y;
+            xy[n++] = p7l.x;
+            xy[n++] = p7l.y;
+        }
+        else
+        {
+         */
+            xy[n++] = p10l.x;
+            xy[n++] = p10l.y;
+            xy[n++] = p7l.x;
+            xy[n++] = p7l.y;
+
+            xy[n++] = p5l.x;
+            xy[n++] = p5l.y;
+            xy[n++] = p8l.x;
+            xy[n++] = p8l.y;
+       // }
+    }
+    else if (side==1)
+    {
+        xy[n++] = p10l.x;
+        xy[n++] = p10l.y;
+        xy[n++] = p7l.x;
+        xy[n++] = p7l.y;
+    }
+    else if (side==2)
+    {
+        xy[n++] = p5l.x;
+        xy[n++] = p5l.y;
+        xy[n++] = p8l.x;
+        xy[n++] = p8l.y;
+    }
+
+    return n;
+}
+
+void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BOOL as_redraw, BOOL begin_line, BOOL end_line, int n1, int n2)
 {   int i;
     int polypoints[264];
     double xs, ys;
@@ -3288,6 +3418,8 @@ void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BO
                 set_mode_solid();
                 for (i = 2; i < n; i += 2) {
 
+                        if ((begin_line==0) && (i-2==n1)) continue;
+                        else if ((end_line==0) && (i-2==n2)) continue;
                         lineC((long) polypoints[i - 2], (long) polypoints[i - 1], (long) polypoints[i],
                               (long) polypoints[i + 1]);
                 }
@@ -3325,6 +3457,8 @@ void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BO
                 set_mode_solid();
                 for (i = 2; i < n; i += 2) {
 
+                    if ((begin_line==0) && (i-2==n1)) continue;
+                    else if ((end_line==0) && (i-2==n2)) continue;
                         lineC((long) polypoints[i - 2], (long) polypoints[i - 1], (long) polypoints[i],
                               (long) polypoints[i + 1]);
                 }
@@ -3336,7 +3470,78 @@ void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BO
         set_mode_solid();
 }
 
-void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enforce)
+void get_solidarc_ends(SOLIDARC *sa, double *xy)
+{
+    SOLIDARC sa1, sa2;
+    double kat1, kat2, dkat;
+    double midkat;
+    double midwidth;
+    int in;
+    //double xy[8];
+
+    kat1 = Angle_Normal(sa->kat1);
+    kat2 = Angle_Normal(sa->kat2);
+
+    if (kat2 < kat1) kat2 += Pi2;
+
+    dkat = kat2 - kat1;
+    if (Check_if_LE(dkat, Pi_)) in=get_solidarc_ends_factory(sa, 0, 0, xy);
+    else {
+        memmove(&sa1, sa, sizeof(SOLIDARC));
+        memmove(&sa2, sa, sizeof(SOLIDARC));
+
+        midwidth = (sa->width1 + sa->width2) / 2;
+
+        midkat = (kat2 + kat1) / 2;
+
+        sa1.kat1 = kat1;
+        sa1.kat2 = midkat;
+
+        sa2.kat1 = midkat;
+        sa2.kat2 =  kat2;
+
+        if (sa1.reversed) {
+            sa1.width2 = sa->width2;
+            sa1.width1 = midwidth;
+            sa2.width2 = midwidth;
+            sa2.width1 = sa->width1;
+        }
+        else {
+            sa1.width1 = midwidth; //sa->width1;
+            sa1.width2 = sa->width2; //midwidth;
+            sa2.width1 = sa->width1; //midwidth;
+            sa2.width2 = midwidth; //sa->width2;
+        }
+
+
+        in = get_solidarc_ends_factory(&sa1, 1, 0, xy);
+        in = get_solidarc_ends_factory(&sa2, 2, in, xy);
+    }
+
+
+    if (!sa->reversed)
+    {
+        double xy0;
+        double xy1;
+
+        xy0=xy[0];
+        xy1=xy[1];
+        xy[0]=xy[4];
+        xy[1]=xy[5];
+        xy[4]=xy0;
+        xy[5]=xy1;
+
+        xy0=xy[2];
+        xy1=xy[3];
+        xy[2]=xy[6];
+        xy[3]=xy[7];
+        xy[6]=xy0;
+        xy[7]=xy1;
+    }
+
+}
+
+void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enforce, BOOL begin_line, BOOL end_line)
 {
     SOLIDARC sa1, sa2;
     double midkat;
@@ -3346,6 +3551,7 @@ void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enf
     double xy[264];
     int in;
     double xs, ys;
+    int n1, n2;
 
 
         //saving selection rectangle
@@ -3367,7 +3573,7 @@ void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enf
         if (kat2 < kat1) kat2 += Pi2;
 
         dkat = kat2 - kat1;
-        if (Check_if_LE(dkat, Pi_)) in=rysuj_solidarc_factory(sa, mode, kolor, 0, 0, xy, FALSE);
+        if (Check_if_LE(dkat, Pi_)) in=rysuj_solidarc_factory(sa, mode, kolor, 0, 0, xy, FALSE, &n1, &n2);
         else {
             memmove(&sa1, sa, sizeof(SOLIDARC));
             memmove(&sa2, sa, sizeof(SOLIDARC));
@@ -3396,11 +3602,11 @@ void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enf
             }
 
 
-            in = rysuj_solidarc_factory(&sa1, mode, kolor, 1, 0, xy, FALSE);
-            in = rysuj_solidarc_factory(&sa2, mode, kolor, 2, in, xy, FALSE);
+            in = rysuj_solidarc_factory(&sa1, mode, kolor, 1, 0, xy, FALSE, &n1, &n2);
+            in = rysuj_solidarc_factory(&sa2, mode, kolor, 2, in, xy, FALSE, &n1, &n2);
         }
 
-        rysuj_solidarc_exe(sa, mode, kolor, in, xy, as_redraw);
+        rysuj_solidarc_exe(sa, mode, kolor, in, xy, as_redraw, begin_line, end_line, n1, n2);
 
         //restoring selection rectangle
         oknoS(rectd.xp, rectd.yp, rectd.xk, rectd.yk);
@@ -3415,6 +3621,7 @@ void rysuj_solidarc___(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL e
     double xy[264];
     RECTD rectd;
     double xs, ys;
+    int n1, n2;
 
     //id sa->widoczny is 1, solidarc edge is crossing screen; if 0, solidarc overlaps screen
 
@@ -3436,9 +3643,9 @@ void rysuj_solidarc___(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL e
     l_inner.kat2=l_inner2.kat2;
     memmove(&l_outer, &l_outer1, sizeof (LUK));
     l_outer.kat2=l_outer2.kat2;
-    in=rysuj_solidarc_factory___(sa, &L_left, &L_right, &l_inner, &l_outer, xy);
+    in=rysuj_solidarc_factory___(sa, &L_left, &L_right, &l_inner, &l_outer, xy, &n1, &n2);
 
-    rysuj_solidarc_exe(sa, mode, kolor, in, xy, as_redraw);
+    rysuj_solidarc_exe(sa, mode, kolor, in, xy, as_redraw, 1,1, n1, n2);
 
     //restoring selection rectangle
     oknoS(rectd.xp, rectd.yp, rectd.xk, rectd.yk);
@@ -4280,7 +4487,7 @@ void rysuj_spline_(SPLINE *ad, float *ad_xy, int mode, int kolor, BOOL count_mvc
 
 static int grubosc_linii_solid[5]={1,1,1,3,3};
 
-static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wpcx, BOOL as_redraw)
+static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wpcx, BOOL as_redraw, BOOL begin_line, BOOL end_line)
 {
   T_PixelTVal PolyPoints [MaxNumPoints] ;
   T_Float PolyPoints_Z[MaxNumPoints_Z] ;
@@ -4498,6 +4705,9 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 
           for(i=0; i< (int)ad->lp && i<MaxNumPoints; i+=2)
            {
+             if ((i == 4)  && (!end_line))  continue;  //endpoint
+             else if ((i == 0) && (!begin_line))  continue;   //startpoint
+
             if (i==(ad->lp-2)) lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[0], PolyPoints[1]);
              else lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[i+2], PolyPoints[i+3]);
            }
@@ -4550,7 +4760,10 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 
         for(i=0; i< (int)ad->lp && i<MaxNumPoints; i+=2)
          {
-          if (i==(ad->lp-2)) lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[0], PolyPoints[1]);
+            if ((i == 4)  && (!end_line))  continue;  //endpoint
+            else if ((i == 0) && (!begin_line))  continue;   //startpoint
+
+            if (i==(ad->lp-2)) lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[0], PolyPoints[1]);
             else lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[i+2], PolyPoints[i+3]);
          }
        }
@@ -4569,14 +4782,20 @@ void rysuj_bitmap_outline(char *ad, int mode, BOOL enforce, int kolor0, int kolo
 		Solid04(ad, (char *)&S4, kolor);  //blok
         S4.empty_typ=gr;
         //S4.kolor=kolor;
-		rysuj_wypelnienie_(&S4, mode, kolor0, 0, TRUE, FALSE);
+		rysuj_wypelnienie_(&S4, mode, kolor0, 0, TRUE, FALSE, 1, 1);
 
 }
 
 void rysuj_obiekt_(char *ad, int mode,int kolor)
-{ // int kk;
+{
    WIELOKAT S4=Stdef;
    BLOK *b1;
+
+    BOOL begin_line=1, end_line=1;
+    NAGLOWEK *nag1;
+    WIELOKAT *w, *w1;
+    SOLIDARC *sa, *sa1;
+    T_PixelTVal PolyPoints[10] ;
 
   switch(((NAGLOWEK*)ad)->obiekt)
     { 
@@ -4594,6 +4813,15 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
 			set_pattern_offset(0);
 			pattern_add_limit = (long_long)(ad) + b1->n - 1;
 		}
+
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                trace_block_begin=(char*)b1 + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu;
+                trace_block_end=(char*)b1 + sizeof(NAGLOWEK) + b1->n - 1;
+                trace_block=TRUE;
+            }
+            else trace_block=FALSE;
+
 		break;
     case Olinia :
 		    rysuj_linia_((LINIA*)ad, mode, kolor);
@@ -4619,7 +4847,59 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
             rysuj_ellipticalarc_((ELLIPTICALARC *)ad,mode,kolor);
             break;
     case Osolidarc:
-            rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE);
+            sa=(SOLIDARC*)ad;
+
+            if ((sa->empty_typ>0) && (sa->empty_typ<6) && (trace_block==TRUE) && (((char*)sa+sa->n+sizeof(NAGLOWEK)-1)<=trace_block_end))  //is outlined and can be the last one
+            {
+                double xy[8];
+                get_solidarc_ends(sa, xy);
+
+                if (((char*)sa+sa->n+sizeof(NAGLOWEK))>trace_block_begin)  //this is not first element in polyline
+                {
+                    //checking the last coordinates
+                    if ((Check_if_Equal(xy[6],last_trace_point[0].x)) &&
+                        (Check_if_Equal(xy[7],last_trace_point[0].y)) &&
+                        (Check_if_Equal(xy[4],last_trace_point[1].x)) &&
+                        (Check_if_Equal(xy[5],last_trace_point[1].y)))
+                    {
+                        if (!sa->reversed) end_line=0;
+                        else begin_line=0;
+                    }
+                }
+
+                nag1=(NAGLOWEK*)((char*)sa+sizeof(NAGLOWEK)+sa->n);
+                if (nag1->obiekt==Owwielokat)
+                {
+                    w1=(WIELOKAT*)nag1;
+                    if ((Check_if_Equal(w1->xy[2], xy[2])) &&
+                        (Check_if_Equal(w1->xy[3], xy[3])) &&
+                        (Check_if_Equal(w1->xy[0], xy[0])) &&
+                        (Check_if_Equal(w1->xy[1], xy[1])))
+                        if (!sa->reversed) begin_line=0;
+                        else end_line=0;
+                }
+                else if (nag1->obiekt==Osolidarc)
+                {
+                    double xy1[8];
+                    sa1=(SOLIDARC*)nag1;
+                    get_solidarc_ends(sa1, xy1);
+
+                    if ((Check_if_Equal(xy1[4], xy[2])) &&
+                        (Check_if_Equal(xy1[5], xy[3])) &&
+                        (Check_if_Equal(xy1[6], xy[0])) &&
+                        (Check_if_Equal(xy1[7], xy[1])))
+                        if (!sa->reversed) begin_line=0;
+                        else end_line=0;
+
+                }
+
+                last_trace_point[0].x=xy[0];
+                last_trace_point[0].y=xy[1];
+                last_trace_point[1].x=xy[2];
+                last_trace_point[1].y=xy[3];
+            }
+
+            rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, begin_line, end_line);
         break;
     case   Ofilledellipse :
 
@@ -4629,7 +4909,69 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
             rysuj_luk_((LUK*)ad,mode,kolor);
    break;
       case   Owwielokat :
-            rysuj_wypelnienie_((WIELOKAT*)ad,mode,kolor,0,FALSE, FALSE);
+          w=(SOLIDARC*)ad;
+          if ((w->empty_typ>0) &&  (w->empty_typ<6) && (w->lp==8) && (trace_block==TRUE) && (((char*)w+w->n+sizeof(NAGLOWEK)-1)<=trace_block_end))
+          {
+              for(int i=0; i<(int)w->lp && i<MaxNumPoints; i++)
+                  if ((i % 2) == 0)
+                  {
+                      PolyPoints[i]=pikseleX0(w->xy[i]);
+                  }
+                  else PolyPoints[i]=pikseleY0(w->xy[i]);
+
+              PolyPoints[8] = PolyPoints[0];
+              PolyPoints[9] = PolyPoints[1];
+
+              for(int i=0; i<(int)w->lp && i<MaxNumPoints; i+=2)
+              {
+                  if (i == 4)  //endpoint
+                  {
+                      nag1 = (NAGLOWEK *) ((char *) w + sizeof(NAGLOWEK) + w->n);
+                      if (nag1->obiekt == Owwielokat) {
+                          w1 = (WIELOKAT *) nag1;
+                          if ((Check_if_Equal(w->xy[4], w1->xy[2])) &&
+                              (Check_if_Equal(w->xy[5], w1->xy[3])) &&
+                              (Check_if_Equal(w->xy[6], w1->xy[0])) &&
+                              (Check_if_Equal(w->xy[7], w1->xy[1])))
+                              //continue;
+                              end_line=0;
+                      } else if (nag1->obiekt == Osolidarc) {
+                          double xy[8];
+                          sa1 = (SOLIDARC *) nag1;
+                          get_solidarc_ends(sa1, xy);
+
+                          if ((Check_if_Equal(w->xy[4], xy[4])) &&
+                              (Check_if_Equal(w->xy[5], xy[5])) &&
+                              (Check_if_Equal(w->xy[6], xy[6])) &&
+                              (Check_if_Equal(w->xy[7], xy[7])))
+                              //continue;
+                              end_line=0;
+                      }
+                      //it has to be also checked if beginning is not identical with the end of the last element in pline block
+                  } else if (i == 0)   //startpoint
+                  {
+                      if (((char *) w > trace_block_begin) &&
+                          (Check_if_Equal(w->xy[0], last_trace_point[0].x)) &&
+                          (Check_if_Equal(w->xy[1], last_trace_point[0].y)) &&
+                          (Check_if_Equal(w->xy[2], last_trace_point[1].x)) &&
+                          (Check_if_Equal(w->xy[3], last_trace_point[1].y)))
+                          //continue;
+                          begin_line=0;
+                      //it has to be also checked if beginning is not identical with the end of the last element in pline block
+                  }
+
+                  last_trace_point[0].x = w->xy[6];
+                  last_trace_point[0].y = w->xy[7];
+                  last_trace_point[1].x = w->xy[4];
+                  last_trace_point[1].y = w->xy[5];
+
+                  //if (i==(w->lp-2)) lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[0], PolyPoints[1]);
+                  //else lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[i+2], PolyPoints[i+3]);
+              }
+              //break;
+          }
+
+            rysuj_wypelnienie_((WIELOKAT*)ad,mode,kolor,0,FALSE, FALSE, begin_line, end_line);
    break;
 	  case   Ospline:
 		    rysuj_spline_((SPLINE*)ad, ((SPLINE*)ad)->xy, mode, kolor, TRUE, FALSE, TRUE);
@@ -4658,10 +5000,170 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
 			 }
             Solid04(ad, (char *)&S4, kolory.blok);
             S4.empty_typ=5;
-            rysuj_wypelnienie_(&S4,mode,kolor,0,TRUE, FALSE);
+            rysuj_wypelnienie_(&S4,mode,kolor,0,TRUE, FALSE, 1,1);
            }
       break;
       default  : break;
+    }
+}
+
+
+void rysuj_obiekt_b_w_sa_(char *ad, int mode,int kolor, char *ad0)
+{
+    WIELOKAT S4=Stdef;
+    BLOK *b1;
+
+    BOOL begin_line=1, end_line=1;
+    NAGLOWEK *nag1;
+    WIELOKAT *w, *w1;
+    SOLIDARC *sa, *sa1;
+    T_PixelTVal PolyPoints[10] ;
+
+    switch(((NAGLOWEK*)ad)->obiekt)
+    {
+        case OdBLOK:
+            b1 = (BLOK *)ad;
+            if ((b1->kod_obiektu == B_PLINE) &&
+                ((b1->opis_obiektu[0] == PL_PLINE) ||
+                 (b1->opis_obiektu[0] == PL_ELLIPSE) ||
+                 (b1->opis_obiektu[0] == PL_SKETCH) ||
+                 (b1->opis_obiektu[0] == PL_CURVE) ||
+                 (b1->opis_obiektu[0] == PL_ELLIPSE_ARC)
+                ))
+            {
+                set_pattern_count(TRUE);
+                set_pattern_offset(0);
+                pattern_add_limit = (long_long)(ad) + b1->n - 1;
+            }
+
+            b1 = (BLOK *)ad0;
+            if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+            {
+                trace_block_begin=(char*)b1 + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu;
+                trace_block_end=(char*)b1 + sizeof(NAGLOWEK) + b1->n - 1;
+                trace_block=TRUE;
+            }
+            else trace_block=FALSE;
+
+            break;
+        case Osolidarc:
+            sa=(SOLIDARC*)ad0;
+
+            if ((sa->empty_typ>0) && (sa->empty_typ<6) && (trace_block==TRUE) && (((char*)sa+sa->n+sizeof(NAGLOWEK)-1)<=trace_block_end))  //is outlined and can be the last one
+            {
+                double xy[8];
+                get_solidarc_ends(sa, xy);
+
+                if (((char*)sa+sa->n+sizeof(NAGLOWEK))>trace_block_begin)  //this is not first element in polyline
+                {
+                    //checking the last coordinates
+                    if ((Check_if_Equal(xy[6],last_trace_point[0].x)) &&
+                        (Check_if_Equal(xy[7],last_trace_point[0].y)) &&
+                        (Check_if_Equal(xy[4],last_trace_point[1].x)) &&
+                        (Check_if_Equal(xy[5],last_trace_point[1].y)))
+                    {
+                        if (!sa->reversed) end_line=0;
+                        else begin_line=0;
+                    }
+                }
+
+                nag1=(NAGLOWEK*)((char*)sa+sizeof(NAGLOWEK)+sa->n);
+                if (nag1->obiekt==Owwielokat)
+                {
+                    w1=(WIELOKAT*)nag1;
+                    if ((Check_if_Equal(w1->xy[2], xy[2])) &&
+                        (Check_if_Equal(w1->xy[3], xy[3])) &&
+                        (Check_if_Equal(w1->xy[0], xy[0])) &&
+                        (Check_if_Equal(w1->xy[1], xy[1])))
+                        if (!sa->reversed) begin_line=0;
+                        else end_line=0;
+                }
+                else if (nag1->obiekt==Osolidarc)
+                {
+                    double xy1[8];
+                    sa1=(SOLIDARC*)nag1;
+                    get_solidarc_ends(sa1, xy1);
+
+                    if ((Check_if_Equal(xy1[4], xy[2])) &&
+                        (Check_if_Equal(xy1[5], xy[3])) &&
+                        (Check_if_Equal(xy1[6], xy[0])) &&
+                        (Check_if_Equal(xy1[7], xy[1])))
+                        if (!sa->reversed) begin_line=0;
+                        else end_line=0;
+                }
+
+                last_trace_point[0].x=xy[0];
+                last_trace_point[0].y=xy[1];
+                last_trace_point[1].x=xy[2];
+                last_trace_point[1].y=xy[3];
+            }
+
+            rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, begin_line, end_line);
+            break;
+        case   Owwielokat :
+            w=(SOLIDARC*)ad0;
+            if ((w->empty_typ>0) &&  (w->empty_typ<6) && (w->lp==8) && (trace_block==TRUE) && (((char*)w+w->n+sizeof(NAGLOWEK)-1)<=trace_block_end))
+            {
+                for(int i=0; i<(int)w->lp && i<MaxNumPoints; i++)
+                    if ((i % 2) == 0)
+                    {
+                        PolyPoints[i]=pikseleX0(w->xy[i]);
+                    }
+                    else PolyPoints[i]=pikseleY0(w->xy[i]);
+
+                    PolyPoints[8] = PolyPoints[0];
+                    PolyPoints[9] = PolyPoints[1];
+
+                for(int i=0; i<(int)w->lp && i<MaxNumPoints; i+=2)
+                {
+                    if (i == 4)  //endpoint
+                    {
+                    nag1 = (NAGLOWEK *) ((char *) w + sizeof(NAGLOWEK) + w->n);
+                    if (nag1->obiekt == Owwielokat) {
+                        w1 = (WIELOKAT *) nag1;
+                        if ((Check_if_Equal(w->xy[4], w1->xy[2])) &&
+                            (Check_if_Equal(w->xy[5], w1->xy[3])) &&
+                            (Check_if_Equal(w->xy[6], w1->xy[0])) &&
+                            (Check_if_Equal(w->xy[7], w1->xy[1])))
+                            end_line = 0;
+                    } else if (nag1->obiekt == Osolidarc) {
+                        double xy[8];
+                        sa1 = (SOLIDARC *) nag1;
+                        get_solidarc_ends(sa1, xy);
+
+                        if ((Check_if_Equal(w->xy[4], xy[4])) &&
+                            (Check_if_Equal(w->xy[5], xy[5])) &&
+                            (Check_if_Equal(w->xy[6], xy[6])) &&
+                            (Check_if_Equal(w->xy[7], xy[7])))
+                            end_line = 0;
+                    }
+                    //it has to be also checked if beginning is not identical with the end of the last element in pline block
+                    } else if (i == 0)   //startpoint
+                    {
+                        if (((char *) w > trace_block_begin) &&
+                            (Check_if_Equal(w->xy[0], last_trace_point[0].x)) &&
+                            (Check_if_Equal(w->xy[1], last_trace_point[0].y)) &&
+                            (Check_if_Equal(w->xy[2], last_trace_point[1].x)) &&
+                            (Check_if_Equal(w->xy[3], last_trace_point[1].y)))
+                            begin_line = 0;
+                        //it has to be also checked if beginning is not identical with the end of the last element in pline block
+                    }
+
+                    last_trace_point[0].x = w->xy[6];
+                    last_trace_point[0].y = w->xy[7];
+                    last_trace_point[1].x = w->xy[4];
+                    last_trace_point[1].y = w->xy[5];
+
+                    //if (i==(w->lp-2)) lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[0], PolyPoints[1]);
+                    //else lineC (PolyPoints[i], PolyPoints[i+1], PolyPoints[i+2], PolyPoints[i+3]);
+
+                }
+                //break;
+            }
+
+            rysuj_wypelnienie_((WIELOKAT*)ad,mode,kolor,0,FALSE, FALSE, begin_line, end_line);
+          break;
+        default  : break;
     }
 }
 
@@ -4711,7 +5213,7 @@ void rysuj_obiekt_no_pcx(char *ad, int mode,int kolor)
         rysuj_ellipticalarc_((ELLIPTICALARC *)ad,mode,kolor);
         break;
     case Osolidarc:
-        rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE);
+        rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, 1,1);
         break;
     case   Ofilledellipse :
 
@@ -4722,7 +5224,7 @@ void rysuj_obiekt_no_pcx(char *ad, int mode,int kolor)
         rysuj_luk_((LUK*)ad,mode,kolor);
    break;
       case   Owwielokat :
-        rysuj_wypelnienie_((WIELOKAT*)ad,mode,kolor,0,FALSE, FALSE);
+        rysuj_wypelnienie_((WIELOKAT*)ad,mode,kolor,0,FALSE, FALSE,1,1);
    break;
 	  case   Ospline:
 		  rysuj_spline_((SPLINE*)ad, ((SPLINE*)ad)->xy, mode, kolor, TRUE, FALSE, FALSE);
@@ -5190,6 +5692,61 @@ void blokzap(char  *adp,char  *adk,int atrybut,int mode, int kolor)
   Set_Screen();
  }
 
+
+void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor)
+{
+    NAGLOWEK *ad;
+    BLOK *b;
+    char *adk_b;
+
+    reset_dane0();
+
+    if (adp == NULL || adk == NULL)
+    {
+        return;
+    }
+
+    Set_Second_Screen();
+
+    setwritemode(COPY_PUT);
+    obiekt_tok((char*)adp,adk,(char **) &ad,ONieOkreslony);
+    while (ad!=NULL)
+    {
+        if (ad->widoczny && TRUE == Check_Attribute (ad->atrybut, atrybut))
+        {
+            if ((ad->blok==ElemBlok) && ((ad->obiekt==Owwielokat) || (ad->obiekt==Osolidarc)))
+            {
+                b=FIRSTB(ad);
+                if ((b->kod_obiektu == B_PLINE) && (b->opis_obiektu[0]== PL_TRACE))
+                {
+                    adk_b=(char*)b + sizeof(NAGLOWEK) + b->n;
+                    blokzap(b,adk_b,ANieOkreslony,mode,kolor);
+                    //adp=adk_b;
+                    //obiekt_tok((char*)adp,adk,(char **) &ad,ONieOkreslony);
+                    //goto shortcut;
+                    ad=adk_b;
+                }
+                else
+                {
+                    trace_block=FALSE;
+                }
+            }
+            else rysuj_obiekt_((char *) ad, mode, kolor);
+        }
+        obiekt_tok(NULL,adk,(char **) &ad,ONieOkreslony);
+
+        shortcut:
+        if ((get_pattern_count() == TRUE) && (pattern_add_limit > 0) && ((long_long)ad > pattern_add_limit))
+        {
+            set_pattern_count(FALSE);
+            pattern_add_limit = 0;
+            set_pattern_offset(0);
+        }
+    }
+
+    Set_Screen();
+}
+
 void blokzap_v(char  *adp, char  *adk, int atrybut, int mode, int kolor)
 {
 	NAGLOWEK *ad;
@@ -5445,7 +6002,7 @@ void out_blok2 (double x,double y,double k1,double k2,
 /*-------------------------------------------------------------------------------------------------------*/
 { NAGLOWEK *ad, *adl;
   WIELOKAT *w;
-  BLOK *b=NULL;
+  BLOK *b=NULL, *b1=NULL;
   LINIA *L;
   POINTF p[8];
   int l;
@@ -5457,6 +6014,8 @@ void out_blok2 (double x,double y,double k1,double k2,
   int ad_buf_no=0;
   AD_BUF ad_buf[4];
   BOOL convex0, convex1;
+  //char *trace_block_begin = NULL, *trace_block_end=NULL;
+  //BOOL trace_block=FALSE;
 
  if (ADP == NULL || ADK == NULL)
  {
@@ -5484,7 +6043,7 @@ void out_blok2 (double x,double y,double k1,double k2,
 	   !mvcurb.O && !mvcurb.l && !mvcurb.W && !mvcurb.P)
            goto e;
 
-       if(ad->obiekt==Olinia || ad->obiekt==Otekst || ad->obiekt==Okolo ||
+      if(ad->obiekt==OdBLOK || ad->obiekt==Olinia || ad->obiekt==Otekst || ad->obiekt==Okolo ||
 	  ad->obiekt==Ookrag || ad->obiekt==Oluk ||ad->obiekt==Owwielokat || ad->obiekt == Ospline ||
 	  ad->obiekt==Opoint ||
       ad->obiekt==Oellipticalarc || ad->obiekt==Oellipse || ad->obiekt== Ofilledellipse || ad->obiekt== Osolidarc || ad->obiekt==Ovector ||
@@ -5498,7 +6057,7 @@ void out_blok2 (double x,double y,double k1,double k2,
         if (trans==Tobrot) transformacja_obiekt((char *)&S4,x,y,k1,k2,xa, ya, ka1, ka2, TobrotPCX,z);
           else transformacja_obiekt((char *)&S4,x,y,k1,k2,xa, ya, ka1, ka2, trans,z);
            S4.empty_typ=5;
-           rysuj_wypelnienie_(&S4,COPY_PUT,1,0,TRUE,FALSE);
+           rysuj_wypelnienie_(&S4,COPY_PUT,1,0,TRUE,FALSE,1,1);
        }
         else
          {
@@ -5560,12 +6119,31 @@ void out_blok2 (double x,double y,double k1,double k2,
                  }
              }
 
-             rysuj_obiekt_(buf,COPY_PUT,1);
+             if  ((((NAGLOWEK*)buf)->obiekt==OdBLOK) || (((NAGLOWEK*)buf)->obiekt==Owwielokat) || ((((NAGLOWEK*)buf)->obiekt==Osolidarc)))
+             {
+                 rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, ad);
+             }
+             else  rysuj_obiekt_(buf,COPY_PUT,1);
 
          }
 	}
      }
-    obiekt_tok(NULL,ADK,(char **) &ad,ONieOkreslony);
+     /*
+      else if(ad->obiekt==OdBLOK)
+      {
+          b1=(BLOK *)ad;
+
+          if ((b1->kod_obiektu == B_PLINE) && (b1->opis_obiektu[0]== PL_TRACE))
+          {
+              trace_block_begin=(char*)b1 + sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu;
+              trace_block_end=(char*)b1 + sizeof(NAGLOWEK) + b1->n - 1;
+              trace_block=TRUE;
+          }
+          else trace_block=FALSE;
+
+      }
+      */
+       obiekt_tok(NULL,ADK,(char **) &ad,ONieOkreslony);
   }
   //setting quads if any
     if (get_dragging_quad()) {

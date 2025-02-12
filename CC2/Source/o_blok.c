@@ -110,6 +110,7 @@ extern int Inverse_VectorP(void);
 extern int Reverse_VectorC(void);
 extern int Reverse_VectorP(void);
 extern void set_global_set_stretch(BOOL v_s_s);
+extern void orto_l(LINIA *L, int *Orto_Dir);
 
 enum OBIEKTT3C	  { NoAblokC,AblokC};
 #define def67 67
@@ -241,6 +242,8 @@ extern int get_menu_level(void);
 extern void set_menu_level(int menu_l);
 
 extern int Simple_Menu_Proc (TMENU *) ;
+extern void reset_trace_block(void);
+extern void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor);
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
@@ -2966,13 +2969,16 @@ int dziWez_t_pattern(void* ad)	 /*get trace pattern if filled with image*/
 int dziSet_t_pattern(void* ad)	 /*set trace pattern if filled with image*/
 {
 	WIELOKAT* w0;
+    SOLIDARC* sa0;
 	char* scale_ptr;
 	char* dx_ptr;
 	char* angle_ptr;
 	char* dy_ptr;
 	char* name_ptr;
 	WIELOKAT w;
+    SOLIDARC sa;
 	WIELOKAT* w_change;
+    SOLIDARC* sa_change;
 	char* translucency_ptr;
 
 	if (((NAGLOWEK*)ad)->obiekt == Owwielokat)
@@ -3032,6 +3038,40 @@ int dziSet_t_pattern(void* ad)	 /*set trace pattern if filled with image*/
 
 		}
 	}
+    else if (((NAGLOWEK*)ad)->obiekt == Osolidarc)
+    {
+        sa0 = (SOLIDARC *) ad;
+        memcpy(&sa, sa0, sizeof(SOLIDARC));
+
+        rysuj_obiekt(ad, COPY_PUT, 0);
+
+            if (TracePattern == 1) {
+                sa.empty_typ = SolidFillTyp;
+                sa.pattern = TracePattern;
+
+                if (sa.pattern == 1)
+                {
+                    sa.scale=TracePatternScale; //sizeof(short int)
+                    sa.dx=TracePatternDx;  //sizeof(short int)
+                    sa.dy=TracePatternDy;  //sizeof(short int)
+                    sa.angle=TracePatternAngle;  //sizeof(short int)
+                    memmove(sa.patternname, &TracePatternName, strlen(TracePatternName) + 1);
+                    sa.n = SOLIDARC_N + (int)strlen(TracePatternName) ;
+                }
+                else
+                {
+                    sa.translucent = TraceTranslucent;
+                    sa.translucency = TraceTranslucency;
+
+                    sa.n = SOLIDARC_N;
+                }
+
+            if ((sa_change = korekta_obiekt((void *) sa0, (void *) &sa)) == NULL)
+                ErrList(15);
+
+            rysuj_obiekt((void *) sa_change, COPY_PUT, 1);
+        }
+    }
 	ADP = ADK = NULL;
 	return 1;
 }
@@ -5183,6 +5223,7 @@ static void	redcrck(char typ)
              outlineor(&L, XOR_PUT, 0);
 
              CUR_ON=cur_onk;
+             ////reset_trace_block();
          }
 
 		 mvcurbp(1);
@@ -5241,7 +5282,10 @@ static int ciagnijk(void)
   while(1)
 	
 	 {ev=Get_Event_Point(NULL,	&X0, &Y0);
-	  if(ev->What == evKeyDown	&&	 ev->Number==0) {	redcrck(1);	return ESC;	}
+	  if(ev->What == evKeyDown	&&	 ev->Number==0)
+      {	redcrck(1);
+          return ESC;
+      }
 	  if((ev->What	==	evKeyDown &&  ev->Number== ENTER)	||	strwyj)
 		{ Cur_offd(X,Y);
 	blokzap(ADP,ADK,Ablok,COPY_PUT,0);
@@ -5253,7 +5297,11 @@ static int ciagnijk(void)
 
     reset_stretch_vector();
 
-	blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+    reset_trace_block();
+	blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+    ////In case of traces, should be deep refresh of entire trace
+    blokzap_deep(ADP,ADK,Ablok,COPY_PUT,1);
+    //flip_screen();
 	redcrck(2);
 	return ENTER;
 		}
@@ -5646,10 +5694,17 @@ int edit_load_character(AVECTOR *v)
 
 int dzic(void *ad)
 {
+  BLOK *b;
+
   ((NAGLOWEK*)ad)->atrybut=Ablok;
   ((NAGLOWEK*)ad)->przec=AblokC;
   test_utwierdzenia(ad,	Get_Block_Window ());
-  if (((NAGLOWEK*)ad)->atrybut==Ablok) rysuj_obiekt(ad,XOR_PUT,1); ////
+  if (((NAGLOWEK*)ad)->atrybut==Ablok)
+  {
+      ////b=FIRSTB(ad);
+      ////if (b!=NULL) rysuj_obiekt(b,XOR_PUT,1); ////
+      rysuj_obiekt(ad,XOR_PUT,1);
+  }
   return 1;
 }
 
@@ -5850,7 +5905,11 @@ static void	redcrC(char	typ)
 		break;
 	  case 3	: 
 	  case 4	:
-				if ((ADP!=NULL)	&&	(ADK!=NULL)) blokzap(ADP,ADK,Ablok,COPY_PUT,1);   //XOR_PUT
+				if ((ADP!=NULL)	&&	(ADK!=NULL))
+                {
+                    blokzap(ADP, ADK, Ablok, COPY_PUT, 0);   //XOR_PUT
+                    blokzap_deep(ADP, ADK, Ablok, COPY_PUT, 1);   //XOR_PUT
+                }
 	  case 5	:
 			  if ((ADP!=NULL) && (ADK!=NULL))					 
 			 {
@@ -5923,6 +5982,8 @@ void ciagnij(void)
 
 blokc_again:
 
+
+    reset_trace_block();
 
     if (selection==SELECT_CROSS)
     {
@@ -7806,6 +7867,7 @@ void Srodek_ciezkosci (void)
 void Moment_statyczny (void)
 /*-----------------------*/
 {
+    LINIA L;
 	int ret;
   add_zbior_2=0;
   comput_area = 3	;
@@ -7814,6 +7876,17 @@ void Moment_statyczny (void)
   blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
   redcrHatch (1) ;
   Os_odniesienia () ;
+
+    if (orto) {
+        L.x1 = df_apx1;
+        L.y1 = df_apy1;
+        L.x2 = df_apx2;
+        L.y2 = df_apy2;
+        orto_l(&L, &Orto_Dir);
+        df_apx2 = L.x2;
+        df_apy2 = L.y2;
+    }
+
   redcrHatch(1);
   ret = Hatch_Proc (	comput_area, df_apx1, df_apy1, df_apx2, df_apy2	) ;
   redcrHatch (2) ;
@@ -7824,6 +7897,7 @@ void Moment_statyczny (void)
 void Moment_bezwladnosci (void)
 /*---------------------------*/
 {
+    LINIA L;
 	int ret;
   add_zbior_2=0;
   comput_area = 4	;
@@ -7831,7 +7905,19 @@ void Moment_bezwladnosci (void)
   redcrHatch (3) ;
   blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
   redcrHatch (1) ;
+
   Os_odniesienia () ;
+
+    if (orto) {
+        L.x1 = df_apx1;
+        L.y1 = df_apy1;
+        L.x2 = df_apx2;
+        L.y2 = df_apy2;
+        orto_l(&L, &Orto_Dir);
+        df_apx2 = L.x2;
+        df_apy2 = L.y2;
+    }
+
   redcrHatch(1);
   ret = Hatch_Proc (	comput_area, df_apx1, df_apy1, df_apx2, df_apy2	) ;
   redcrHatch (2) ;

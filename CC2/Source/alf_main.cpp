@@ -85,6 +85,7 @@ int Width;
 #ifndef LINUX
 CToolTipCtrl* m_ToolTip;
 HWND editor_hWnd = NULL;
+void unicode2utf8(char* unicodetext, unsigned char* utf8text);
 #endif
 
 bool next_time=0;
@@ -150,6 +151,8 @@ extern int texteditor(char *text, int maxchars, const int startrow, const int st
 
 extern bool file_bak (char *fn, char *fext);
 extern char *File_Ext(char *fn, char *fext);
+
+extern BOOL known3b(int letter);
 
 #ifndef LINUX
 __declspec(dllexport) int testCall(int val);
@@ -278,6 +281,11 @@ int EDIT_DY = 132;
 int dHeight = 60;
 
 #define DEGREESIGN 176
+
+#define SUPERSCRIPT4 0x2074
+#define ROOTSIGN 0x221A
+#define ROOT3SIGN 0x221B
+#define EUROSIGN 0x20AC
 #define SUPERSCRIPT3 179
 #define SUPERSCRIPT2 178
 #define PLUSMINUS 177
@@ -501,19 +509,27 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					break;
 				case '3': wParam = SUPERSCRIPT3;
 					break;
+				case '4': wParam = SUPERSCRIPT4;
+					break;
+				case '$': wParam = EUROSIGN;
+					break;
 				case '2': wParam = SUPERSCRIPT2;
 					break;
 				case '-': wParam = PLUSMINUS;
 					break;
 				case '/': wParam = DIVISION;
 					break;
+				case '\\': wParam = ROOTSIGN;
+					break;
+				case '|': wParam = ROOT3SIGN;
+					break;
 				case '.': wParam = MIDDLEDOT;
 					break;
 				case '1': wParam = ONEHALF;
 					break;
-				case '4': wParam = ONEQUARTER;
+				case '5': wParam = ONEQUARTER;
 					break;
-				case '5': wParam = THREEQUARTERS;
+				case '6': wParam = THREEQUARTERS;
 					break;
 				case '0': wParam = DIAMETERSIGN;
 					break;
@@ -618,19 +634,27 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				break;
 			case '3': wParam = SUPERSCRIPT3;
 				break;
+			case '4': wParam = SUPERSCRIPT4;
+				break;
+			case '$': wParam = EUROSIGN;
+				break;
 			case '2': wParam = SUPERSCRIPT2;
 				break;
 			case '-': wParam = PLUSMINUS;
 				break;
 			case '/': wParam = DIVISION;
 				break;
+			case '\\': wParam = ROOTSIGN;
+				break;
+			case '|': wParam = ROOT3SIGN;
+				break;
 			case '.': wParam = MIDDLEDOT;
 				break;
 			case '1': wParam = ONEHALF;
 				break;
-			case '4': wParam = ONEQUARTER;
+			case '5': wParam = ONEQUARTER;
 				break;
-			case '5': wParam = THREEQUARTERS;
+			case '6': wParam = THREEQUARTERS;
 				break;
 			case '0': wParam = DIAMETERSIGN;
 				break;
@@ -1657,8 +1681,8 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	int len_str = 0;
 	int length;
 
-	char Assets[65];
-	char uAssets[256]="\0\0";
+	char Assets[1024];  //65
+	char uAssets[2048]="\0\0";  //256
 	int k=0;
 
 	get_strings_list(&string_no, &ptrsz_long);
@@ -1668,8 +1692,9 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	for (k = 0; k < string_no; k+=1)
 	{
 		
-		strncpy((char *)&Assets, (char *)(ptrsz_list + len_str), 64);
-		Assets[64] = '\0';
+		strncpy((char *)&Assets, (char *)(ptrsz_list + len_str), 1024);  //65
+		Assets[1023] = '\0';  //64
+	
 
 		len_str += (int)strlen(Assets) + 1;
 
@@ -1861,11 +1886,20 @@ void unicode2utf8(char *unicodetext, unsigned char *utf8text)
 		if (*zn >= 127)
 		{
 			bytes_n = ucs2_to_utf8(*zn, (uint8_t*)utf8c);
-			if ((*zn < 1920) && (bytes_n<3))
+			if ((known3b(*zn)) && (bytes_n == 3))
 			{
-				*utf8ptr = utf8c[0];  //0xC4  196
+				*utf8ptr = utf8c[0];  //e.g. 226
 				utf8ptr++;
-				*utf8ptr = utf8c[1]; // 0x84  132
+				*utf8ptr = utf8c[1]; //e.g. 129
+				utf8ptr++;
+                *utf8ptr = utf8c[2]; //e.g. 180
+				utf8ptr++;
+			}
+			else if ((*zn < 1920) && (bytes_n<3))
+			{
+				*utf8ptr = utf8c[0];  //e.g. 0xC4  196
+				utf8ptr++;
+				*utf8ptr = utf8c[1]; //e.g. 0x84  132
 				utf8ptr++;
 			}
 			else
@@ -2036,7 +2070,18 @@ int utf82unicode(unsigned char *utf8text, unsigned char *unicodetext)
 		{
 			//convert to UNICODE and shift index
 			u8zn = utf8_to_ucs2((const uint8_t  *)zn, &end_ptr);
-			if (u8zn > 1920)
+			if (known3b(u8zn))
+			{
+				c1 = (unsigned char)(u8zn & 0xFF);
+				c2 = (unsigned char)(u8zn >> 8);
+				*unicodeptr = c1;
+				unicodeptr++;
+				*unicodeptr = c2;
+				unicodeptr++;
+				count += 2;
+				zn++;
+			}
+			else if (u8zn > 1920)
 			{
 				*unicodeptr = 32;
 				unicodeptr++;
@@ -2631,7 +2676,7 @@ void unicode2win(char *unicodetext, char *wintext, int count)   //TO DO
 int utf82unicode(unsigned char *utf8text, unsigned char *unicodetext)
 {
     unsigned char *zn;
-    unsigned char c1, c2;
+    unsigned char c1, c2, c3;
     unsigned int u8zn;
     const uint8_t *end_ptr;
     unsigned char *unicodeptr;
@@ -2646,7 +2691,21 @@ int utf82unicode(unsigned char *utf8text, unsigned char *unicodetext)
         {
             //convert to UNICODE and shift index
             u8zn = utf8_to_ucs2((const uint8_t  *)zn, &end_ptr);
-            if (u8zn > 1920)
+            //if (u8zn == 8308)
+			if (known3b(u8zn))
+            {
+                c1 = (unsigned char)(u8zn & 0xFF);
+                c2 = (unsigned char)((u8zn >> 8) & 0xFF);
+                c3 = (unsigned char)(u8zn >> 16);
+                *unicodeptr = c1;
+                unicodeptr++;
+                *unicodeptr = c2;
+                unicodeptr++;
+                *unicodeptr = c3;
+                unicodeptr++;
+                count += 3;
+            }
+            else if (u8zn > 1920)
             {
                 *unicodeptr = 32;
                 unicodeptr++;
