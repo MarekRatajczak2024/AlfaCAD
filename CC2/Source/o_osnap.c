@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "bib_e.h"
+#include "allegext.h"
 #include "rysuj_e.h"
 #include "o_osnap.h"
 #include "o_libfun.h"

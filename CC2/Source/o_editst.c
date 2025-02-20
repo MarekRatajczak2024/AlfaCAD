@@ -1530,7 +1530,7 @@ int get_string_str (char *tekst, char *legal, int maxlength, int width0, char *k
     }
     else width = width0;
 
-    zn = editstring(tekst, legal, maxlength, width, FALSE, 1, TRUE, 4, 3) ;
+    zn = editstring(tekst, legal, maxlength, width, FALSE, 1, TRUE, 2, 4) ;  //4,3
 
     komunikat(k);
     MVCUR=CUR;
@@ -1576,10 +1576,10 @@ int get_string1 (char *tekst, char *legal, int maxlength, int width0, int kom, i
 
    k=Komunikat_R;
    komunikat(kom);
-   moveto (x, y) ;
+   moveto (x + 5, y + 2) ;
    CUR=MVCUR; MVCUR=noop;
    width=width0;
-   zn = editstring(tekst, legal, maxlength, width, FALSE,0, TRUE, 4, 3) ;
+   zn = editstring(tekst, legal, maxlength, width, FALSE,0, TRUE, 2, 4) ;  //4,3
    komunikat(k);
    MVCUR=CUR;
    return zn==27 ? 0 : 1;

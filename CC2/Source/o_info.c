@@ -16,7 +16,9 @@
 
 #define __INFO__
 #include<forwin.h>
+#ifndef LINUX
 #include<stddef.h>
+#endif
 #include<stdio.h>
 #include<math.h>
 #include<string.h>

@@ -116,7 +116,7 @@ list_str_t *plugin_func_name_block;
 list_str_t *plugin_func_name_aux;
 
 
-static ESTR eCustom={0,ESTR_Y,0,r14 ,NULL, NULL, 0, 1, GV_DIST, NULL, NULL};;
+static ESTR eCustom={0,ESTR_Y,0,-1, 0,r14 ,NULL, NULL, 0, 1, GV_DIST, NULL, NULL, NULL};
 static int npCustom;
 
 static void ( *LASTFUN_BAK)(void)=NULL;

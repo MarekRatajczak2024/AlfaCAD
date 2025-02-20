@@ -18,6 +18,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "bib_e.h"
+#include "allegext.h"
 #include "rysuj_e.h"
 #include "o_osnap.h"
 
@@ -84,7 +85,7 @@ EVENT *Get_Event_Point (TMENU *menu , double *X0, double *Y0)
 
   ev=GetEvent(menu);
 
-  if( ev->What==evKeyDown  && ev->Number== ENTER)
+ if( ev->What==evKeyDown  && ev->Number== ENTER)
    {
      SelWyj_(X0, Y0);
    }

@@ -1280,7 +1280,7 @@ MyDane *dane_s;
 static double Ds,y_pikseleY0, temp_X0, temp_Y0 ;
 #define r23 23
 static int skokBW(BOOL);
-ESTR e={0,ESTR_Y,0,r23 ,NULL, NULL, 0, 2, GV_POINT, NULL, skokBW};
+ESTR e={0,ESTR_Y, 0, -1, 0,r23 ,NULL, NULL, 0, 2, GV_POINT, NULL, skokBW, NULL};
 static char  *dane0_Data[MAX_NUMBER_OF_WINDOWS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 static void  nooop(void)
 {

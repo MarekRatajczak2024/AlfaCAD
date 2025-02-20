@@ -76,6 +76,9 @@ extern void Set_reversed(BOOL reversed);
 extern BLOK *FIRSTB(char  *ado);
 extern void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor);
 extern void reset_trace_block(void);
+extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
+extern void remove_short_notice(void);
 
 static BOOL check_head_trace(BLOK* ptrs_block);
 
@@ -85,6 +88,10 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj);
 double trace_angle_orig=0.0;
 BOOL trace_angle_changed=FALSE;
 BOOL trace_orto_orig=FALSE;
+
+static POINTD point1,point2;
+static unsigned char b_ptr_before_last=0;
+static WIELOKAT s_trace_solid;
 
 enum DRAW_ARC_TYPE { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
 IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE, ARC_rev_Y, ARC_rev_N } ;
@@ -220,6 +227,8 @@ int get_Tbreak(void)
 void set_Tbreak(int tbreak)
 {
     Tbreak=tbreak;
+    komunikat_str_short((tbreak==0 ? "" : _BREAK_), (tbreak==0 ? FALSE : TRUE), TRUE);
+    if (!tbreak) remove_short_notice();
 }
 
 int get_AfterTbreak(void)
@@ -702,6 +711,36 @@ static BOOL add_trace_line_end (void )
   return b_ret ;
 }
 
+
+static void get_solid_trace_axis(double *x1, double *y1, double *x2, double *y2)
+{  double dx1, dy1, dx2, dy2, df_l1 ;
+    double angle_r, si_r, co_r, angle_b, si_b, co_b ;
+    double df_sx1, df_sy1, df_sx2, df_sy2 ;
+
+    dx1 = *x2 - *x1 ;
+    dy1 = *y2 - *y1 ;
+    df_l1 = sqrt (dx1 * dx1 + dy1 * dy1) ;
+    angle_r = Atan2 (dy1, dx1) ;
+    si_r = sin (angle_r) ;
+    co_r = cos (angle_r) ;
+
+    df_sx1 = 0; //df_l1 ;
+    df_sx2 = 0; //df_l1 ;
+
+    df_sy1 = s_trace.axis;
+    df_sy2 = s_trace.axis;
+
+    obrd (si_r, co_r, df_sx1, df_sy1, &df_sx1, &df_sy1) ;
+    obrd (si_r, co_r, df_sx2, df_sy2, &df_sx2, &df_sy2) ;
+
+    *x1 = *x1 + df_sx1;
+    *y1 = *y1 + df_sy1;
+
+    *x2 = *x2 + df_sx2;
+    *y2 = *y2 + df_sy2;
+
+}
+
 static void set_next_solid (BOOL b_solid, BOOL b_end)
 /*--------------------------------------------------*/
 {
@@ -937,7 +976,7 @@ static BOOL add_2line (BOOL b_strwyj, int opcja)
 }
 
 
-static BOOL add_trace_line (BOOL b_strwyj)
+static BOOL add_trace_line(BOOL b_strwyj)
 /*--------------------------------------*/
 {
   BOOL b_ret = FALSE ;
@@ -1560,10 +1599,11 @@ static BOOL add_block (void)
 }
 
 
-static void redraw_trace (void)
+//static
+void redraw_trace (void)
 /*----------------------------*/
 {
-   if (s_trace.b_line == TRUE)
+   if ( s_trace.b_line == TRUE)
    {
      rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 1) ;  //TUTAJ
    }
@@ -1770,8 +1810,10 @@ BOOL Get_End_Trace(void* ptr_pl,
     WIELOKAT* ptrs_solid_bl;
     SOLIDARC *ptrs_solidarc_bl;
     void* ptr_before_last, * ptr_last;
+    double xy[8];
 
     double x1, y1, x2, y2, x1l, y1l, x2l, y2l;
+    double df_x_beg, df_y_beg;
 
     *df_x_pl_end = df_x_pl_beg;
     *df_y_pl_end = df_y_pl_beg;
@@ -1814,19 +1856,48 @@ BOOL Get_End_Trace(void* ptr_pl,
     {
        ptrs_solid_bl = (WIELOKAT*)ptr_last;
 
+        df_x_beg = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 8] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 6])/2;
+        df_y_beg = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 7] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 5])/2;
+
         *df_x_pl_end = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 2] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 4])/2;
         *df_y_pl_end = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 1] + ptrs_solid_bl->xy[ptrs_solid_bl->lp -3 ])/2;
+        get_solid_trace_axis(&df_x_beg, &df_y_beg, df_x_pl_end, df_y_pl_end);
 
-        *b_first_end = FALSE;
+
+        memmove(&s_trace_solid, &ptrs_solid_bl, sizeof(ptrs_solid_bl));
+
+        point1.x = df_x_beg;
+        point1.y = df_y_beg;
+        point2.x = *df_x_pl_end;
+        point2.y = *df_y_pl_end;
+
+       *b_first_end = FALSE;
         return TRUE;
     }
     else if (((NAGLOWEK*)ptr_last)->obiekt == Osolidarc)
     {
         ptrs_solidarc_bl=(SOLIDARC *)ptr_last;
-        x1l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos (ptrs_solidarc_bl->kat1) ;
-        y1l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin (ptrs_solidarc_bl->kat1) ;
-        x2l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos (ptrs_solidarc_bl->kat2) ;
-        y2l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin (ptrs_solidarc_bl->kat2) ;
+
+        x1l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat1);
+        y1l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat1);
+        x2l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat2);
+        y2l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat2);
+
+        if (ptrs_solidarc_bl->reversed)
+        {
+            *df_x_pl_end = x1l ;
+            *df_y_pl_end = y1l ;
+            *b_first_end = TRUE ;
+        }
+        else
+        {
+            *df_x_pl_end = x2l ;
+            *df_y_pl_end = y2l ;
+            *b_first_end = FALSE ;
+        }
+
+
+        /*
         //checking if solidarc is reversed
         if (ptr_before_last == NULL)
         {
@@ -1837,19 +1908,35 @@ BOOL Get_End_Trace(void* ptr_pl,
         {
             if (((NAGLOWEK*)ptr_before_last)->obiekt == Owwielokat)
             {
-                ptrs_solid_bl = (WIELOKAT*)ptr_before_last;
-                x1 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 2] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 4])/2; ;
-                y1 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 1] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 3])/2; ;
-                x2 = (ptrs_solid_bl->xy[0] + ptrs_solid_bl->xy[2])/2; ;
-                y2 = (ptrs_solid_bl->xy[1] + ptrs_solid_bl->xy[3])/2; ;
-            }
+               ptrs_solid_bl = (WIELOKAT*)ptr_before_last;
+
+                x1 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 8] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 6])/2;
+                y1 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 7] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 5])/2;
+                x2 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 2] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 4])/2;
+                y2 = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 1] + ptrs_solid_bl->xy[ptrs_solid_bl->lp - 3])/2;
+
+                get_solid_trace_axis(&x1, &y1, &x2, &y2);
+
+                b_ptr_before_last=Owwielokat;
+
+           }
             else if (((NAGLOWEK*)ptr_before_last)->obiekt == Osolidarc)
             {
-                ptrs_solidarc_bl = (SOLIDARC*)ptr_before_last;
-                x1 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos (ptrs_solidarc_bl->kat1) ;
-                y1 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin (ptrs_solidarc_bl->kat1) ;
-                x2 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos (ptrs_solidarc_bl->kat2) ;
-                y2 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin (ptrs_solidarc_bl->kat2) ;
+             ptrs_solidarc_bl = (SOLIDARC*)ptr_before_last;
+                //get_solidarc_ends(ptrs_solidarc_bl, &xy);
+
+                if (ptrs_solidarc_bl->reversed) {
+                    x1 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat1);
+                    y1 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat1);
+                    x2 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat2);
+                    y2 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat2);
+                }
+                else {
+                    x2 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat1);
+                    y2 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat1);
+                    x1 = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat2);
+                    y1 = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat2);
+                }
             }
         }
         *df_x_pl_end = x1l ;
@@ -1864,6 +1951,7 @@ BOOL Get_End_Trace(void* ptr_pl,
             *df_y_pl_end = y2l ;
             *b_first_end = FALSE ;
         }
+        */
         return TRUE;
     }
     
@@ -1872,8 +1960,8 @@ BOOL Get_End_Trace(void* ptr_pl,
 
 
 
-int last_trace_delete(void)
-/*------------------------*/
+int last_trace_delete_factory(void)
+/*-------------------------------------*/
 {
     void* ptr_temp, *ptr_temp1, *ptr_temp2, *ptr_temp0, * ptr_temp02, * ptr_ob;
     double df_xend, df_yend;
@@ -1893,11 +1981,14 @@ int last_trace_delete(void)
     int ob_number, ob_number_min;
     BOOL found_break;
     int ret;
-    BOOL delete_again = FALSE;
     BOOL catch_second_end=FALSE;
     static LINIA line_g_bak = Ldef ;
+    BOOL b_second_pl_seg;
+    double df_xbeg, df_ybeg;
 
     Tbreak = 0;
+    komunikat_str_short("", FALSE, TRUE);
+    remove_short_notice();
 
    if (!block_added) return -83;
 
@@ -1927,13 +2018,15 @@ int last_trace_delete(void)
     }
     else
     {
-
             if (d_line == 0)
             {
 
                 if (((NAGLOWEK*)ptr_temp)->obiekt==Owwielokat)
                 {
-                    rysuj_obiekt((char *) &s_trace.line, COPY_PUT, 0);
+                   if (s_trace.b_line) rysuj_obiekt((char *) &s_trace.line, COPY_PUT, 0); ////
+
+                    if (pline_mode == PL_MODE_ARC)
+                        pline_mode = PL_MODE_LINE;
 
                     memcpy(&s_trace.solid, ptr_temp, sizeof(s_trace.solid));
                     memcpy(&s_trace_line, &s_trace.line, sizeof(s_trace_line));
@@ -1961,7 +2054,6 @@ int last_trace_delete(void)
 
                     s_trace.line.x2 += df_sx1;
                     s_trace.line.y2 += df_sy1;
-
 
                     //intersection with first line
                     s_line2.x1 = ((WIELOKAT *) ptr_temp)->xy[0];
@@ -2001,7 +2093,6 @@ int last_trace_delete(void)
                             rysuj_obiekt(ptr_temp, COPY_PUT, 1);
                         }
                         ptr_archive_set = FALSE;
-                        delete_again = TRUE;
                     }
                 }
                 else if (((NAGLOWEK*)ptr_temp)->obiekt==Osolidarc)
@@ -2009,6 +2100,10 @@ int last_trace_delete(void)
                     SOLIDARC *sa;
                     sa=(SOLIDARC*)ptr_temp;
                     POINTD p1l, p2l;
+
+
+                    if (pline_mode == PL_MODE_LINE)
+                        pline_mode = PL_MODE_ARC;
 
                     //finding points 1 and 2 (base arc)
                     p1l.x = sa->x + sa->r * cos(sa->kat2);
@@ -2154,7 +2249,6 @@ int last_trace_delete(void)
                         rysuj_obiekt(ptr_temp1, COPY_PUT, 1);
                     }
                     ptr_archive_set = FALSE;
-                    delete_again = TRUE;
                 }
 
             } else if (d_line == 2) //3 linia
@@ -2243,19 +2337,16 @@ int last_trace_delete(void)
                     s_trace.line.y2 = y2;
                 }
 
-
                 if (break_line) tail0 = dane + dane_size - (char *) ptr_temp0;
                 if (break_line2) tail02 = dane + dane_size - (char *) ptr_temp02;
                 tail = dane + dane_size - (char *) ptr_temp;
                 tail1 = dane + dane_size - (char *) ptr_temp1;
-
 
                 if (break_line) rysuj_obiekt((char *) ptr_temp0, COPY_PUT, 0);
                 if (break_line2) rysuj_obiekt((char *) ptr_temp02, COPY_PUT, 0);
                 rysuj_obiekt((char *) ptr_temp, COPY_PUT, 0);
                 rysuj_obiekt((char *) ptr_temp1, COPY_PUT, 0);
                 rysuj_obiekt((char *) ptr_temp2, COPY_PUT, 0);
-
 
                 Usun_Object(ptr_temp2, FALSE);
                 ptr_temp1 = dane + dane_size - tail1;
@@ -2290,32 +2381,28 @@ int last_trace_delete(void)
                         rysuj_obiekt(ptr_temp2, COPY_PUT, 1);
                     }
                     ptr_archive_set = FALSE;
-                    delete_again = TRUE;
                 }
             }
 
-        Get_End_Trace((void*)dane, &ptr_ob, &b_first_end,
+       Get_End_Trace((void*)dane, &ptr_ob, &b_first_end,
             df__xbeg, df__ybeg, &df_xend, &df_yend);
 
         if (ptr_ob!=NULL)
         {
              if (((NAGLOWEK*)ptr_ob)->obiekt==Owwielokat)
              {
-
-                rysuj_obiekt((char *) &s_trace.line, COPY_PUT, 1);
-
-                if (pline_mode == PL_MODE_ARC) {
-                    pline_mode = PL_MODE_LINE;
-                    delete_again = TRUE;
-                    catch_second_end = TRUE;
-                }
-
                 s_trace.b_line = TRUE;
             }
             else if ((ptr_ob!=NULL) && (((NAGLOWEK*)ptr_ob)->obiekt==Osolidarc))
             {
-                s_trace.b_line = FALSE;
+              if (b_ptr_before_last==Owwielokat) s_trace.b_line = TRUE;
+              else s_trace.b_line = FALSE;
+
+                if (pline_mode == PL_MODE_LINE)
+                    pline_mode = PL_MODE_ARC;
+
                 s_trace.b_solid = FALSE;
+                s_trace.b_line=0; ////
 
                 SOLIDARC *sa;
                 sa = (SOLIDARC *) ptr_ob;
@@ -2351,8 +2438,6 @@ int last_trace_delete(void)
         LiniaG.y1 = line_g.y1;
         LiniaG.x2 = line_g.x2;
         LiniaG.y2 = line_g.y2;
-
-        //s_trace.b_line = TRUE;
 
         //get information about previous solid
         if ((NULL != (ptr_temp = Get_Trace_Last_Ob((void*)dane, &ob_number))) && (!catch_second_end))
@@ -2582,8 +2667,7 @@ int last_trace_delete(void)
                 }
             }
 
-            //rysuj_obiekt((char*)&s_line, COPY_PUT, 1);
-            if (Check_if_Equal(s_trace.line.x1, s_line.x2) && Check_if_Equal(s_trace.line.y1, s_line.y2)) 
+            if (Check_if_Equal(s_trace.line.x1, s_line.x2) && Check_if_Equal(s_trace.line.y1, s_line.y2))
                 s_trace.b_solid = TRUE;
 
         }
@@ -2592,7 +2676,11 @@ int last_trace_delete(void)
         CUR_OFF(X, Y);
         CUR_ON(X, Y);
     }
-    if (delete_again==TRUE) ret = last_trace_delete();
+
+    if (b_ptr_before_last)
+    {
+       b_ptr_before_last=0;
+    }
 
     if (catch_second_end==TRUE)
     {
@@ -2603,6 +2691,18 @@ int last_trace_delete(void)
     CUR_ON(X, Y);
     return -83;
 }
+
+int last_trace_delete(void)
+{
+    if (trace_angle_changed)
+    {
+        change_angle_l(trace_angle_orig);
+        orto=trace_orto_orig;
+        trace_angle_changed=FALSE;
+    }
+    return last_trace_delete_factory();
+}
+
 static void  nooop(void)
 {}
 
@@ -2736,6 +2836,8 @@ int close_trace(void)
     if (add_trace_line_close())
     {
         Tbreak = 0;
+        komunikat_str_short("", FALSE, TRUE);
+        remove_short_notice();
         block_added = FALSE;
         redcr(1);
         return -183;
@@ -2747,6 +2849,7 @@ int close_trace(void)
 int break_trace(void)
 {
     Tbreak = 1;
+    komunikat_str_short(_BREAK_, TRUE, TRUE);
     if (pline_mode==PL_MODE_LINE) {
         if (d_line == 0) {
             add_trace_line_end();
@@ -2818,6 +2921,8 @@ int start_trace (double X0, double Y0, BOOL delete_last, BOOL join_last, BOOL co
   } 
   redcr (0) ;
 
+  flip_screen();
+
   if (continue_last)
   {
       //restoring s_trace
@@ -2840,6 +2945,10 @@ int start_trace (double X0, double Y0, BOOL delete_last, BOOL join_last, BOOL co
     case evNothing:
         if (ev->Number == -183) 
             return 0;
+        if (ev -> Number == -83)
+            {
+                if (pline_mode == PL_MODE_ARC) return 3;
+            }
         break;
       case evKeyDown :
 	 if(ev->Number == 0)
@@ -2848,21 +2957,28 @@ int start_trace (double X0, double Y0, BOOL delete_last, BOOL join_last, BOOL co
 	   if ( d_line == 0 )
 	    {
 	     add_trace_line_end () ;
-         Tbreak = 0;
 	     }
 	       else if ( d_line == 1 )
 		 {
 		 add_2line_end (0) ;
-         Tbreak = 0;
 		 }
 		 else
 		 {
 		 add_2line_end (1) ;
-         Tbreak = 0;
 		 }
+         Tbreak = 0;
+         komunikat_str_short("", FALSE, TRUE);
+         remove_short_notice();
 
        s_trace.b_line = FALSE;
 	   redcr (1) ;
+
+       if (trace_angle_changed)
+       {
+         change_angle_l(trace_angle_orig);
+         orto=trace_orto_orig;
+         trace_angle_changed=FALSE;
+       }
 	   return 0;
 	 }
 aaa:	 if (ev->Number == ENTER || strwyj)
@@ -2871,19 +2987,22 @@ aaa:	 if (ev->Number == ENTER || strwyj)
 
 	   if ( d_line == 0 )
 	     {
-      add_trace_line (strwyj) ;
-          Tbreak = 0;
+          add_trace_line(strwyj) ;
 	      }
-	      else if (d_line == 1)
+        else if (d_line == 1)
 		{
 		add_2line (strwyj,0) ;
-        Tbreak = 0;
 		}
 		else
 		{
 		add_2line (strwyj,1) ;
-        Tbreak = 0;
 		}
+        if (Tbreak) {
+            Tbreak = 0;
+            komunikat_str_short("", FALSE, TRUE);
+            remove_short_notice();
+        }
+
         if (trace_angle_changed)
          {
              change_angle_l(trace_angle_orig);
@@ -2925,7 +3044,7 @@ static void  cur_off(double x,double y)
 static void  cur_on(double x,double y)
 { line_g.x2=x; line_g.y2=y;
   line_g.kolor = Get_Current_Color () ;
-  redraw_trace();
+   redraw_trace();
   outlineor(&line_g,COPY_PUT,1);
   cursor_on(x, y);
 }
@@ -3076,7 +3195,6 @@ static void redcr0(char typ)
   }
 }
 
-
 double get_trace_width(int side)
 {
 switch (side)
@@ -3100,7 +3218,6 @@ double get_trace_axis(int side) {
             break;
     }
 }
-
 
 void update_trace_width(void)
 {
@@ -3154,6 +3271,8 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             {
                 block_added = FALSE;
                 Tbreak = 0;
+                komunikat_str_short("", FALSE, TRUE);
+                remove_short_notice();
             }
             CUR_ON(X, Y);
             break;
@@ -3225,6 +3344,7 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             break;
         case ID_BREAK:  //5
             Tbreak = 1;
+            komunikat_str_short(_BREAK_, TRUE, TRUE);
             if (pline_mode==PL_MODE_LINE) {
                 if (d_line == 0) {
                     add_trace_line_end();
@@ -3377,6 +3497,9 @@ void Trace_Dline_Tline (void)
            }
 
            pline_mode = PL_MODE_LINE;
+
+           s_trace.b_line=0; ////
+
            join_last=TRUE;
            goto beg;
          }
@@ -3403,8 +3526,9 @@ void Trace_Dline_Tline (void)
          }
          else
          {
+             s_trace.b_line=0;
              pline_mode = start_trace_arc (df_xbeg, df_ybeg, &s_trace.line, s_trace.b_line, d_line) ;
-             if (pline_mode == PL_MODE_END) {
+              if (pline_mode == PL_MODE_END) {
                  redcr0 (1) ;
 
                  BLOK *b;
@@ -3479,6 +3603,7 @@ void Trace_Dline_Tline (void)
 
 	   break ;
 	default :
+        redcr0 (1) ;
 	     break;
       }
    }

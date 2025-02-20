@@ -76,9 +76,11 @@ extern int pline_trace;
 
 extern double get_d__luk(void);
 
+//extern void redraw_trace (void);
+
 enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
 	PL_MODE_END, PL_MODE_UNDO, PL_MODE_ARC_ESC, PL_MODE_ARC_CR,
-	PL_MODE_UNDO_CONT, PL_MODE_ARC_CONTINUE, PL_MODE_BREAK, PL_MODE_LINE_CONTINUE, PL_MODE_LINE_BAK} ;
+	PL_MODE_UNDO_CONT, PL_MODE_ARC_CONTINUE, PL_MODE_BREAK, PL_MODE_LINE_CONTINUE, PL_MODE_LINE_BAK, PL_MODE_ARC_EDIT} ;
 
 enum DRAW_ARC_TYPE
 { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
@@ -97,7 +99,11 @@ static double df__xbeg, df__ybeg ;
 static void (*cursor_on)(double ,double)=out_cur_on;
 static void (*cursor_off)(double ,double)=out_cur_off;
 
+static int el_ra(BOOL b_graph_value);
+static int el_lc(BOOL b_graph_value);
+
 static BOOL arc_reversed=FALSE;
+static BOOL global_ra=FALSE;
 
 
 typedef struct SA_BREAK {
@@ -243,6 +249,8 @@ void kom (char *str, int ch, int d, int i)
 void type_arc_pl (int ev_nr)
 /*-------------------------------*/
 {
+    static int np;
+
     if (ev_nr == ARC_rev_Y) {
         Set_reversed(TRUE);
         menu_par_new ((*mLukm.pola)[8].txt, YES);
@@ -263,7 +271,7 @@ void type_arc_pl (int ev_nr)
   ns__pl = ns_arc;
   if (ns_arc == ARC_Con)
   {
-    redcr (0) ;
+    ////redcr (0) ;
   }
   komunikat0_str (ns_arc, u8"") ;
   kom (komunikaty_arc[ns_arc], '-', r6, 0) ;
@@ -271,6 +279,29 @@ void type_arc_pl (int ev_nr)
   {
     kom (komunikaty_arc[ns_arc], '-', r6, 1) ;
   }
+
+  switch (ns_arc) {
+      case 7:
+          elc.ESTRF = el_ra;
+          elc.mode = GV_VECTOR;
+          elc.extend = 0;
+          elc.val_no_max = 2;
+          elc.format = "%#10.8lg\0%#10.8lg";
+          //np=dodajstr(&el);
+          break;
+      default:
+          el.ESTRF = el_lc;
+          el.mode = GV_DIST;
+          el.extend = 0;
+          el.val_no_max = 1;
+          el.format = "%#12.9lg";
+          break;
+    }
+
+    if (el.st!=NULL) {
+        strcpy(el.st, "");
+        Out_Edited_Draw_Param((ESTR *) &el, TRUE);
+    }
 }
 
 
@@ -278,6 +309,7 @@ static int type_arc (int ev_nr)
 /*----------------------------*/
 {
   int ret ;
+    static int np;
 
   if (ev_nr == ARC_rev_Y) {
       Set_reversed(TRUE);
@@ -303,6 +335,29 @@ static int type_arc (int ev_nr)
   {
     ret = PL_MODE_ARC_CONTINUE ;
   }
+
+    switch (ns_arc) {
+        case 7:
+            elc.ESTRF = el_ra;
+            elc.mode = GV_VECTOR;
+            elc.extend = 0;
+            elc.val_no_max = 2;
+            elc.format = "%#10.8lg\0%#10.8lg";
+            //np=dodajstr(&el);
+            break;
+        default:
+            el.ESTRF = el_lc;
+            el.mode = GV_DIST;
+            el.extend = 0;
+            el.val_no_max = 1;
+            el.format = "%#12.9lg";
+            break;
+    }
+
+    if (el.st!=NULL) {
+        strcpy(el.st, "");
+        Out_Edited_Draw_Param((ESTR *) &el, TRUE);
+    }
   return ret ;
 }
 
@@ -314,13 +369,19 @@ static const void near (*parl[8])(PLUK *pl,LUK *l,double x, double y, double ws,
 
 static const void near out_parametry_luku1(int ns)
 {
-  double xx;
+  double xx, xxx;
   double angle_l;
-  char buf [100];
+  static char buf [100];
 
-  if(ns==0 || ns==1 || ns == ARC_Con) return;
+  if(ns==0 || ns==1 /*|| ns == ARC_Con*/)
+  {
+      //strcpy(el.st, "");
+      //Out_Edited_Draw_Param((ESTR *) &el, TRUE);
+      return;
+  }
   switch(ns)
-  {  case 2 :
+  {
+     case 2 :
      case 5 : xx=(LukG.kat2-LukG.kat1)*180/Pi;
 	      if(xx<0) xx+=360;
 	      break;
@@ -338,12 +399,33 @@ static const void near out_parametry_luku1(int ns)
 	       }
 	      if(xx<0) xx+=360;
 	      break;
+      case 7 :
+          xxx=milimetryob(LukG.r);
+
+          xx=(LukG.kat2-LukG.kat1)*180/Pi;
+          if(xx<0) xx+=360;
+          break;
     default : break;
   }
   buf [0] = '\0' ;
-  sprintf (buf, "%#12.9lg", xx) ;
-  strcpy (el.st, buf);
-  Out_Edited_Draw_Param ((ESTR *)&el, TRUE) ;
+
+  if (ns == 7)
+  {
+      if (elc.st != NULL)
+      {
+          sprintf(buf, "%#10.8lg; %#10.8lg", xxx, xx);
+          strncpy(elc.st, buf, 24);
+          Out_Edited_Draw_Param((ESTR *) &elc, TRUE);
+      }
+  }
+  else {
+      if (el.st!=NULL)
+      {
+          sprintf(buf, "%#12.9lg", xx);
+          strncpy(el.st, buf, r22);
+          Out_Edited_Draw_Param((ESTR *) &el, TRUE);
+      }
+  }
 }
 
 
@@ -351,22 +433,11 @@ static void  cur_off(double x,double y)
 {
     flip_screen();
 }
-/*
-  static void  cur_off__(double x,double y)
-{
-  if (ns_arc != ARC_Con)
-  {
-    outline(&L,XOR_PUT,0);
-  }
-  if(fabs(LukG.kat1-LukG.kat2)>OZero)
-    out_luk (&LukG, XOR_PUT) ;
-  cursor_off(x,y);
-}
-*/
 
 static void  cur_on(double x,double y)
 {
     BOOL reversed=Get_reversed();
+    //redraw_trace();
     (*parl[ns_arc])(&pl,&LukG,x,y,0, FALSE, &reversed);
     if (ns_arc != ARC_Con)
     {
@@ -381,41 +452,24 @@ static void  cur_on(double x,double y)
     cursor_on(x,y);
 }
 
-/*
-static void  cur_on__(double x,double y)
-{
-    BOOL reversed=Get_reversed();
-  cursor_on(x,y);
-  (*parl[ns_arc])(&pl,&LukG,x,y,0, FALSE, &reversed);
-  if (ns_arc != ARC_Con)
-  {
-    outline(&L,XOR_PUT,0);
-  }
-  if(fabs(LukG.kat1-LukG.kat2)>OZero)
-   { mvcurb.mvc=0;
-     out_luk (&LukG, XOR_PUT) ;
-     out_parametry_luku1 (ns_arc) ;
-   }
-}
-*/
 static void redcr(char typ)
 {
   static void (*CUR_oN)(double ,double);
   static void (*CUR_oFF)(double ,double);
   if (typ==0)
   {
-     mvcurb.l=1;
-     Cur_offd(X,Y);
+      mvcurb.l=1;
+     CUR_OFF(X,Y);
      CUR_oFF=CUR_OFF;  CUR_OFF=cur_off;
      CUR_oN=CUR_ON;   CUR_ON=cur_on;
-     Cur_ond (X, Y) ;
+      CUR_ON(X, Y);
   }
   else
   {
-     Cur_offd(X,Y);
+     CUR_OFF(X,Y);
      CUR_OFF=CUR_oFF;
      CUR_ON=CUR_oN;
-     Cur_ond (X, Y) ;
+      CUR_ON(X, Y);
   }
 }
 
@@ -431,6 +485,11 @@ int getwsp_pl (double *X0, double *Y0)
   {
      view_line_type(&LiniaG);
      ev = Get_Event_Point (NULL, X0, Y0) ;
+      if ((ev -> Number < -1) && (ev -> Number > -7))  //np from editstr
+      {
+          ret_command = PL_MODE_ARC_CONTINUE ;
+          break;
+      }
      if (ev -> Number == -83)
       {
        ret_command = PL_MODE_UNDO_CONT ;
@@ -477,7 +536,12 @@ int getwsp_tr (double *X0, double *Y0, int d_line)
     while(1)
     {
         view_line_type(&LiniaG);
-        ev = Get_Event_Point (NULL, X0, Y0) ;
+         ev = Get_Event_Point (NULL, X0, Y0) ;
+        if ((ev -> Number < -1) && (ev -> Number > -7))  //np from editstr
+        {
+            ret_command = PL_MODE_ARC_EDIT ;
+            break;
+        }
         if (ev -> Number == -83)
         {
             ret_command = PL_MODE_UNDO_CONT ;
@@ -562,9 +626,11 @@ int getwsp_arc (double *X0, double *Y0)
 
 
 static BOOL add_arc (double X0, double Y0, BOOL strwyj)
-/*---------------------------------------------------*/
+/*----------------------------------------------------*/
 {
   BOOL b_ret ;
+  double x1, y1;
+  BOOL reversed_bak;
 
 
   BOOL reversed=Get_reversed();
@@ -572,15 +638,27 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
   b_ret = FALSE ;
   if(!strwyj)
    {
+       x1 = LukG.x + LukG.r * cos (LukG.kat1) ;
+       y1 = LukG.y + LukG.r * sin (LukG.kat1) ;
+
+       if ((Check_if_Equal(X, x1)) && (Check_if_Equal(Y, y1)))  reversed=1;
+       else reversed=0;
+
+       //reversed_bak=reversed;
+       reversed=0;
+
      (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, FALSE, &reversed);
+       //reversed=reversed_bak;
    }
   else
    {
-     memmove(&LukG,&lpom,sizeof(LUK));
+      if (!global_ra)  memmove(&LukG,&lpom,sizeof(LUK));
+      else (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, TRUE, &reversed);
+       global_ra=FALSE;
    }
   LukG.kat1 = Angle_Normal (LukG.kat1) ;
   LukG.kat2 = Angle_Normal (LukG.kat2) ;
-  if (TRUE == Check_if_Equal (LukG.kat1, LukG.kat2))
+ if (TRUE == Check_if_Equal (LukG.kat1, LukG.kat2))
   {
      ErrList (66) ;
      return FALSE ;
@@ -589,7 +667,6 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
       NULL != dodaj_obiekt (((b__pline == TRUE) ? (BLOK*)dane : NULL), (void *)&LukG))
   {
     b_ret = TRUE ;
-    //out_luk (&LukG, COPY_PUT) ;
       rysuj_obiekt(&LukG, COPY_PUT, 1) ;
   }
 
@@ -600,16 +677,28 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
 /*--------------------------------------------------------------------*/
 {
     BOOL b_ret ;
+    double x1, y1;
+
     BOOL reversed=Get_reversed();
 
     b_ret = FALSE ;
     if(!strwyj)
     {
+        x1 = LukG.x + LukG.r * cos (LukG.kat1) ;
+        y1 = LukG.y + LukG.r * sin (LukG.kat1) ;
+
+        if ((Check_if_Equal(X, x1)) && (Check_if_Equal(Y, y1)))  reversed=1;
+        else reversed=0;
+
+        reversed=0;
+
         (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, FALSE, &reversed);
     }
     else
     {
-        memmove(&LukG,&lpom,sizeof(LUK));
+        if (!global_ra) memmove(&LukG,&lpom,sizeof(LUK));
+        else (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, TRUE, &reversed);
+        global_ra=FALSE;
     }
     LukG.kat1 = Angle_Normal (LukG.kat1) ;
     LukG.kat2 = Angle_Normal (LukG.kat2) ;
@@ -630,6 +719,8 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
     sa.kat1=LukG.kat1;
     sa.kat2=LukG.kat2;
 
+    if (strwyj) LukG.kat1=LukG.kat2;
+
     sa.reversed=reversed;
 
     if (reversed) {
@@ -645,8 +736,8 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
         sa.width1 = get_trace_width(1);
         sa.width2 = get_trace_width(2);
 
-        sa.axis1 = get_trace_axis(1);
-        sa.axis2 = get_trace_axis(2);
+        sa.axis1 = -get_trace_axis(1);
+        sa.axis2 = -get_trace_axis(2);
     }
     sa.translucent=0;
 
@@ -803,6 +894,8 @@ static const void near SER(double X0, double Y0)  /*poczatek koniec promien*/
   el.mode = GV_DIST ;
   el.ESTRF = el_r;
   el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
   np=dodajstr(&el);
   kom(komunikaty_arc[ns_arc],'-',r6,1);
   Getwsp1();
@@ -825,6 +918,8 @@ static const void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
     el.mode = GV_DIST ;
     el.ESTRF = el_r;
     el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
     np=dodajstr(&el);
     kom(komunikaty_arc[ns_arc],'-',r6,1);
     tGetwsp1();
@@ -905,6 +1000,8 @@ static const void near SEA(double X0, double Y0)  /*poczatek koniec kat*/
   el.mode = GV_ANGLE ;
   el.ESTRF=el_a;
   el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
   np=dodajstr(&el);
   kom(komunikaty_arc[ns_arc],'-',r6,1);
   Getwsp1();
@@ -925,6 +1022,8 @@ static const void near tSEA(double X0, double Y0)  /*poczatek koniec kat*/
     el.mode = GV_ANGLE ;
     el.ESTRF=el_a;
     el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
     np=dodajstr(&el);
     kom(komunikaty_arc[ns_arc],'-',r6,1);
     tGetwsp1();
@@ -994,7 +1093,6 @@ void INVPOLYARC(SOLIDARC *sa, double *x_s, double *y_s, double *x_e, double *y_e
 {
 
 }
-
 
 typedef struct {
     double x;
@@ -1126,6 +1224,8 @@ static const void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
   el.ESTRF=el_d;
   el.mode = GV_ANGLE ;
   el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
   np=dodajstr(&el);
   kom(komunikaty_arc[ns_arc],'-',r6,1);
   Getwsp1();
@@ -1146,6 +1246,8 @@ static const void near tSED(double X0, double Y0)  /*poczatek koniec kierunek*/
     el.ESTRF=el_d;
     el.mode = GV_ANGLE ;
     el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
     np=dodajstr(&el);
     kom(komunikaty_arc[ns_arc],'-',r6,1);
     tGetwsp1();
@@ -1534,6 +1636,8 @@ static const void near SCA(double X0, double Y0)  /*poczatek srodek kat*/
   el.ESTRF=el_ac;
   el.extend = 0;
   el.mode = GV_ANGLE ;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
   np=dodajstr(&el);
   kom(komunikaty_arc[ns_arc],'-',r6,1);
   Getwsp1();
@@ -1556,6 +1660,8 @@ static const void near tSCA(double X0, double Y0)  /*poczatek srodek kat*/
     el.ESTRF=el_ac;
     el.extend = 0;
     el.mode = GV_ANGLE ;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
     np=dodajstr(&el);
     kom(komunikaty_arc[ns_arc],'-',r6,1);
     tGetwsp1();
@@ -1638,6 +1744,71 @@ static int el_lc(BOOL b_graph_value)
   }
 }
 
+static int el_ra(BOOL b_graph_value)
+{
+    double r, a;
+    float LukG_kat1;
+    BOOL reversed;  //=Get_reversed();
+    float d_kat;
+    double x1, y1, x2, y2;
+    BOOL reversed1;
+
+    reversed=0;
+
+    x1 = LukG.x + LukG.r * cos (LukG.kat1) ;
+    y1 = LukG.y + LukG.r * sin (LukG.kat1) ;
+
+    if ((Check_if_Equal(X, x1)) && (Check_if_Equal(Y, y1)))  reversed=1;
+    else reversed=0;
+
+    //d_kat=LukG.kat2-LukG.kat1;
+
+    b_graph_value = b_graph_value ;
+    if (elc.val_no < 2)
+    {
+        return 0 ;
+    }
+    r = elc.values [0] ;
+    a = elc.values [1] ;
+    if ((r>0) && (a!=0))
+    {
+        memmove(&lpom,&LukG,sizeof(LUK));
+        (*parl[ns_arc])(&pl, &lpom, r, a, 0, TRUE, &reversed);
+
+
+        ////strwyj=1;
+        ////global_ra=TRUE;
+        ////if (elc.flag==0) add_arc(r, a, strwyj);
+        ////else add_solidarc( r, a, strwyj, get_Tbreak());
+
+        if(reversed) {
+            x2 = lpom.x + lpom.r * cos(lpom.kat1);
+            y2 = lpom.y + lpom.r * sin(lpom.kat1);
+        }
+        else
+        {
+            x2 = lpom.x + lpom.r * cos(lpom.kat2);
+            y2 = lpom.y + lpom.r * sin(lpom.kat2);
+        }
+
+        strwyj=0;
+        global_ra=FALSE;
+        if (elc.flag==0) add_arc(x2, y2, strwyj);
+        else add_solidarc( x2, y2, strwyj, get_Tbreak());
+
+
+        pl.xs=pl.xe;
+        pl.ys=pl.ye;
+        //strwyj=0;
+        return 1;
+    }
+    else
+    {
+        ErrList(35);
+        return 0;
+    }
+}
+
 static const void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
 {
   int np;
@@ -1654,6 +1825,8 @@ static const void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
   el.ESTRF=el_lc;
   el.mode = GV_DIST ;
   el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
   np=dodajstr(&el);
   kom(komunikaty_arc[ns_arc],'-',r6,1);
   Getwsp1();
@@ -1676,6 +1849,8 @@ static const void near tSCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*
     el.ESTRF=el_lc;
     el.mode = GV_DIST ;
     el.extend = 0;
+    el.val_no_max = 1 ;
+    el.format = "%#12.9lg" ;
     np=dodajstr(&el);
     kom(komunikaty_arc[ns_arc],'-',r6,1);
     tGetwsp1();
@@ -1807,9 +1982,24 @@ static double get_continue_angle (void *ptr_con, BOOL b_first_end)
 static void near Con_pl (double X0, double Y0)
 /*-----------------------------------------*/
 {		/*kontynuacja linii lub luku*/
+    int np;
+
   pl.xe = X0 ;
   pl.ye = Y0 ;
+
+  /*
+    el.ESTRF=el_ra;
+    el.mode = GV_VECTOR ;
+    el.extend = 0;
+    el.val_no_max = 2 ;
+    el.format = "%#10.8lg\0%#10.8lg" ;
+    np=dodajstr(&el);
+    */
+
   add_arc (X0, Y0, 0) ;
+
+    //usunstr(np);
+
   Cur_offd (X, Y) ;
   Cur_ond (X, Y) ;
 }
@@ -1817,10 +2007,25 @@ static void near Con_pl (double X0, double Y0)
 static void near tCon_pl (double X0, double Y0)
 /*-----------------------------------------*/
 {		/*kontynuacja linii lub luku*/
+    int np;
+
     pl.xe = X0 ;
     pl.ye = Y0 ;
+
+    /*
+    el.ESTRF=el_ra;
+    el.mode = GV_VECTOR ;
+    el.extend = 0;
+    el.val_no_max = 2 ;
+    el.format = "%#10.8lg\0%#10.8lg" ;
+    np=dodajstr(&el);
+     */
+
     int tbreak=get_Tbreak();
-    add_solidarc (X0, Y0, 0, tbreak) ;
+    add_solidarc (X0, Y0, 0, tbreak);
+
+    ////usunstr(np);
+
     Cur_offd (X, Y) ;
     Cur_ond (X, Y) ;
 }
@@ -1828,17 +2033,46 @@ static void near tCon_pl (double X0, double Y0)
 static void near Con_arc (double X0, double Y0)
 /*-----------------------------------------*/
 {		/*kontynuacja linii lub luku*/
+    int np;
+
   pl.xe = X0 ;
   pl.ye = Y0 ;
+
+  /*
+  el.ESTRF=el_ra;
+  el.mode = GV_VECTOR ;
+  el.extend = 0;
+  el.val_no_max = 2 ;
+  el.format = "%#10.8lg\0%#10.8lg" ;
+  np=dodajstr(&el);
+   */
+
   Getwsp1();
+
+    //usunstr(np);
 }
 
 static void near tCon_arc (double X0, double Y0)
 /*-----------------------------------------*/
 {		/*kontynuacja linii lub luku*/
+    int np;
+
     pl.xe = X0 ;
     pl.ye = Y0 ;
+
+
+    /*
+    el.ESTRF=el_ra;
+    el.mode = GV_VECTOR ;
+    el.extend = 0;
+    el.val_no_max = 2 ;
+    el.format = "%#10.8lg\0%#10.8lg" ;
+    np=dodajstr(&el);
+     */
+
     tGetwsp1();
+
+    //usunstr(np);
 }
 
 static const void near Con (double X0, double Y0)
@@ -1871,20 +2105,72 @@ static const void near tCon (double X0, double Y0)
 /*---------------*/
 
 
-static const void near pCon (PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static const void near pCon (PLUK *pl,LUK *l,double par1, double par2, double ws, BOOL b_edit, BOOL *reversed)
 /*---------------------------------------------------------------------------------------------------*/
 {
+    double r, a;
+    double x1, y1, xs, ys;
+    BOOL reversed_bak;
+
   ws = ws ;
   b_edit = b_edit ;
-  pl->xe = X ;
-  pl->ye = Y ;
-  if (TRUE == Check_if_Equal (pl->xe, pl->xs) &&
-      TRUE == Check_if_Equal (pl->ye, pl->ys))
+  if (b_edit)
   {
-    LukG.kat1 = LukG.kat2 = 0 ;
-    return ;
+      r=jednostkiOb(par1);  //which is radius in object units
+      a=par2;  //which is internal angle in deg
+
+      if (*reversed)
+      {
+          x1 = l->x + l->r * cos(l->kat2);
+          y1 = l->y + l->r * sin(l->kat2);
+
+          l->x = x1 - r * cos(l->kat2);
+          l->y = y1 - r * sin(l->kat2);
+      }
+      else
+      {
+          x1 = l->x + l->r * cos(l->kat1);
+          y1 = l->y + l->r * sin(l->kat1);
+
+          l->x = x1 - r * cos(l->kat1);
+          l->y = y1 - r * sin(l->kat1);
+      }
+
+      l->r=r;
+
+      reversed_bak=*reversed;
+      pSCA(pl, l, par1, par2, a, TRUE, reversed);
+      *reversed=reversed_bak;
+
+
+      if (*reversed)
+      {
+          pl->xe = l->x + l->r * cos(l->kat1);
+          pl->ye = l->y + l->r * sin(l->kat1);
+      }
+      else
+      {
+          pl->xe = l->x + l->r * cos(l->kat2);
+          pl->ye = l->y + l->r * sin(l->kat2);
+      }
+      pl->r=l->r;
+
+      X=pl->xe;
+      Y=pl->ye;
   }
-  pSED (pl, l, X, Y, pl->con_angle, TRUE, reversed) ;
+  else
+  {
+      pl->xe = par1;  //which is X
+      pl->ye = par2;  //which is Y
+      if (TRUE == Check_if_Equal(pl->xe, pl->xs) &&
+          TRUE == Check_if_Equal(pl->ye, pl->ys)) {
+          LukG.kat1 = LukG.kat2 = 0;
+          return;
+      }
+      ////reversed_bak=*reversed;
+      pSED(pl, l, par1, par2, pl->con_angle, TRUE, reversed);
+      ////*reversed=reversed_bak;
+  }
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2031,6 +2317,7 @@ static void redcr0 (char typ)
   static void (*CUR_oN)(double ,double);
   static void (*CUR_oFF)(double ,double);
   static int ( *SW[5])(), akt;
+  static int np;
   if (typ==0)
   {
      if (b__pline == FALSE)
@@ -2052,12 +2339,24 @@ static void redcr0 (char typ)
 
      cursor_off= cursel_off;
 	 cursor_on=cursel_on;
+
+      el.x=maxX-PL266;
+      el.y=ESTR_Y;
+      el.lmax=r22;
+      el.val_no_max = 1 ;
+      el.format = "%#12.9lg" ;
      
-     el.x=maxX-PL266;
-     el.y=ESTR_Y;
-     el.lmax=r22;
-     el.val_no_max = 1 ;
-     el.format = "%#12.9lg" ;
+     elc.x=maxX-PL266;
+     elc.y=ESTR_Y;
+     elc.lmax=24;
+     elc.val_no_max = 2 ;
+     elc.format = "%#10.8lg\0%#10.8lg" ;
+     elc.ESTRF=el_ra;
+     elc.mode = GV_VECTOR ;
+     elc.extend=0;
+     elc.flag=0;
+     np=dodajstr(&elc);
+
      CUR_oFF=CUR_OFF;  CUR_OFF=cursel_off;
      CUR_oN=CUR_ON;   CUR_ON=cursel_on;
      SW[0]=SERV[73];  SERV[73]=sel_t;
@@ -2095,6 +2394,18 @@ static void redcr0 (char typ)
         el.lmax=r22;
         el.val_no_max = 1 ;
         el.format = "%#12.9lg" ;
+
+        elc.x=maxX-PL266;
+        elc.y=ESTR_Y;
+        elc.lmax=24;
+        elc.val_no_max = 2 ;
+        elc.format = "%#10.8lg\0%#10.8lg" ;
+        elc.ESTRF=el_ra;
+        elc.mode = GV_VECTOR ;
+        elc.extend=0;
+        elc.flag=1;
+        np=dodajstr(&elc);
+
         CUR_oFF=CUR_OFF;  CUR_OFF=cursel_off;
         CUR_oN=CUR_ON;   CUR_ON=cursel_on;
         ////SW[0]=SERV[73];  SERV[73]=sel_t;
@@ -2124,6 +2435,7 @@ static void redcr0 (char typ)
        ns__pl = ns_arc ;
        LukG.blok = NoElemBlok ;
      }
+       usunstr(np);
    }
   else if (typ==11)
   {
@@ -2150,6 +2462,8 @@ static void redcr0 (char typ)
       SERV[83] = SW[4];
       SERV[71]= SW[3];
       SERV[79] = SW[2];
+
+      usunstr(np);
   }
 }
 
@@ -2303,7 +2617,7 @@ int PLine_Arc_Command_Proc (int ev_nr)
 static int last_parc_delete (void)
 /*-----------------------------*/
 {
-  PLine_Arc_Command_Proc (9);
+  PLine_Arc_Command_Proc (IDM_UNDO);
   return -83;
 }
 
@@ -2412,20 +2726,23 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
             ptr_ob=&sa_break.sa;
             df_xend=sa_break.df_xend;
             df_yend=sa_break.df_yend;
+
             b_second_pl_seg=sa_break.b_second_pl_seg;
             b_first_end=sa_break.b_first_end;
             set_AfterTbreak(0);
 
             pl.xs = df_xend ;
             pl.ys = df_yend ;
+
             out_krz (pl.xs, pl.ys) ;
             pl.ptr_con = ptr_ob ;
             pl.b_first_end = b_first_end ;
-            pl.con_angle = Angle_Normal(sa_break.angle - Pi_/2)*180/Pi_;
+
+            if (pl.b_first_end) pl.con_angle = Angle_Normal(sa_break.angle - Pi_/2)*180/Pi_;
+            else  pl.con_angle = Angle_Normal(sa_break.angle + Pi_/2)*180/Pi_;
         }
         else
         {
-
             if ((s_trace_line != NULL) && (b_line))
             {
                 ptr_ob = s_trace_line;
@@ -2476,8 +2793,7 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
 
             break ;
         }
-        else
-        if (ret_command == PL_MODE_ARC_CR)
+        else if (ret_command == PL_MODE_ARC_CR)
         {
              (*poczatekt [ns_arc]) (X0, Y0) ;
 
@@ -2489,8 +2805,17 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
                  set_AfterTbreak(1);
              }
         }
-        else
-        if (ret_command == PL_MODE_UNDO_CONT)
+        else if (ret_command == PL_MODE_ARC_EDIT)
+        {
+            s_trace_line=NULL;
+
+            if (get_Tbreak())
+            {
+                set_Tbreak(0);
+                set_AfterTbreak(1);
+            }
+        }
+        else if (ret_command == PL_MODE_UNDO_CONT)
         {
             //check if mode is changed
             if (get_pline_mode()==PL_MODE_LINE)
@@ -2500,13 +2825,11 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
             }
             continue ;
         }
-        else
-        if (ret_command == PL_MODE_UNDO)
+        else if (ret_command == PL_MODE_UNDO)
         {
             continue ;
         }
-        else
-        if (ret_command == PL_MODE_BREAK)
+        else if (ret_command == PL_MODE_BREAK)
         {
 
             set_Tbreak(1);

@@ -290,7 +290,7 @@ char plt_file0[10]="";
 long DelDaneSize=32768; //16384;
 unsigned short dos_version=1792; /*DOS7.0=WINDOWS 95*/
 int procesp=0;
-ESTR eO,eL,el,eTens,eA,eEA;       /* interface */
+ESTR eO,eL,el,elc,eTens,eA,eEA;       /* interface */
 int selq=0;            /* interface */
 KOLORY kolory=Defkolory;
 KOLORY_ASTER kolorya=Defkolorya;  /*dla potrzeb astera*/

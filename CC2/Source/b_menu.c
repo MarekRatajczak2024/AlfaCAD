@@ -298,7 +298,7 @@ static int menu_init_slider(int *var1, int *var2, int *var3, int *var4);
 
 extern void disable_F11(void);
 extern void enable_F11(void);
-
+extern void Restore_Pointer(void);
 
 #define MAXMENULEVEL 8
 static  int set_slider[MAXMENULEVEL]={0,0,0,0,0,0,0,0};
@@ -8490,7 +8490,7 @@ int  getcom(TMENU *menu)
 		     baron(menu);
 		n++;
     } /* switch */
-   if (menu!=NULL)
+    if (menu!=NULL)
    {
    if (n<1000 && n>0 /*&&((menu->flags & FIXED)==0) && (menu2=(*(menu->pola))[n-1].menu)!=NULL*/)
      {
@@ -9826,7 +9826,7 @@ void ch_x_ (int nr)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -10163,7 +10163,7 @@ void ch_y_ (int nr)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -10536,7 +10536,7 @@ void ch_radius (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -10621,7 +10621,7 @@ void ch_radiusy (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -10675,6 +10675,7 @@ void ch_angle (void)
 
     object_type = ((NAGLOWEK *) object_info_ad)->obiekt;
     ret = get_string_str(sk_info, "", MaxTextLen, 0, sk0_info);
+    Restore_Pointer();
     if (FALSE == calculator(sk_info, &retval_no, buf_ret) || retval_no < 1) {
         baronoff_(&mInfoAboutA);
         baronoff(&mInfoAboutA);
@@ -10778,6 +10779,7 @@ void ch_angle1 (void)
 
     object_type = ((NAGLOWEK *) object_info_ad)->obiekt;
     ret = get_string_str(sk_info, "", MaxTextLen, 0, sk0_info);
+    Restore_Pointer();
     if (FALSE == calculator(sk_info, &retval_no, buf_ret) || retval_no < 1) {
         baronoff_(&mInfoAboutA);
         baronoff(&mInfoAboutA);
@@ -10863,6 +10865,7 @@ void ch_angle2 (void)
 
     object_type = ((NAGLOWEK *) object_info_ad)->obiekt;
     ret = get_string_str(sk_info, "", MaxTextLen, 0, sk0_info);
+    Restore_Pointer();
     if (FALSE == calculator(sk_info, &retval_no, buf_ret) || retval_no < 1) {
         baronoff_(&mInfoAboutA);
         baronoff(&mInfoAboutA);
@@ -10929,7 +10932,7 @@ void ch_width1 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -10972,7 +10975,7 @@ void ch_width2 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11015,7 +11018,7 @@ void ch_magnitude1 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11101,7 +11104,7 @@ void ch_magnitude2 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11143,7 +11146,7 @@ void ch_axis1 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11186,7 +11189,7 @@ void ch_axis2 (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11473,7 +11476,7 @@ void ch_dx_pcx (void)
     if (object_type==Opcx)
     {
         ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+        Restore_Pointer();
         if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
         {
             baronoff_(&mInfoAboutA);
@@ -11509,7 +11512,7 @@ void ch_dy_pcx (void)
     if (object_type==Opcx)
     {
         ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+        Restore_Pointer();
         if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
         {
             baronoff_(&mInfoAboutA);
@@ -11695,7 +11698,7 @@ void ch_heigh_t (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);
@@ -11738,7 +11741,7 @@ void ch_width_t (void)
 
     object_type=((NAGLOWEK *)object_info_ad)->obiekt;
     ret=get_string_str (sk_info, "", MaxTextLen, 0, sk0_info);
-
+    Restore_Pointer();
     if (FALSE == calculator (sk_info, &retval_no, buf_ret)  || retval_no < 1)
     {
         baronoff_(&mInfoAboutA);

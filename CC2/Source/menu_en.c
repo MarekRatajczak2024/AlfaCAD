@@ -2216,6 +2216,8 @@ static POLE pmMLine[] = {
 #define _YES__ "Y"
 #define _NO__ "N"
 
+#define _BREAK_ u8"Break"
+
 #endif
 
 #ifdef __O_SKETCH__

@@ -2211,7 +2211,8 @@ typedef struct
 
 typedef struct
  { int       x, y ;
-   //char      j;
+   char      flag;
+   int       np;
    int       extend;
    int       lmax ;
    char      *st;
@@ -2222,7 +2223,6 @@ typedef struct
    char      *format ;
    int       (*ESTRF)(BOOL) ;
    char      * address;
-
  } ESTR;
 
 enum GRAPH_VALUE { GV_POINT = 0, GV_DIST, GV_VECTOR, GV_VECTOR_XY,

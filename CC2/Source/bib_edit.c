@@ -208,6 +208,7 @@ int dodajstr(ESTR *e)  	/*zaklada sie, ze dodajstr i usunstr wystepuja parami*/
   e->val_no = 0 ;
   e->values = (double *)ptr_values ;
   et[lp++] = e ;
+  e->np = np;
   return np ;
 }
 
