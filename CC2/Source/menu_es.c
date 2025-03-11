@@ -85,7 +85,6 @@ POLE pmElliptical[] = {
 TMENU mElliptical = { 3,0,0,19,16,8,ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmElliptical,NULL,NULL };
 
 POLE pmInsetDraw[] = {
-	//{u8"Rebar",L'R',29,NULL},
     {u8"",L' ',0,NULL},
 	{u8"",L' ',0,NULL},
 	{u8"",L' ',0,NULL},
@@ -153,7 +152,7 @@ POLE pmInsetDraw[] = {
 
 };
 
-TMENU mInsetDraw = { 0,0,0,6,16,8,/*ICONS*/0,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmInsetDraw,NULL,NULL };
+TMENU mInsetDraw = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmInsetDraw,NULL,NULL };
 
 POLE pmInsetEdit[] = {
     {u8"",L' ',0,NULL},
@@ -223,7 +222,7 @@ POLE pmInsetEdit[] = {
 
 };
 
-TMENU mInsetEdit = { 0,0,0,6,16,8,/*ICONS*/0,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetEdit,NULL,NULL };
+TMENU mInsetEdit = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetEdit,NULL,NULL };
 
 POLE pmInsetBlock[] = {
     {u8"",L' ',0,NULL},
@@ -293,7 +292,7 @@ POLE pmInsetBlock[] = {
 
 };
 
-TMENU mInsetBlock = { 0,0,0,6,16,8,/*ICONS*/0,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetBlock,NULL,NULL };
+TMENU mInsetBlock = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetBlock,NULL,NULL };
 
 POLE pmArray[] = {
 	{u8"Rectangular",	'R', 116,NULL},
@@ -1078,7 +1077,7 @@ POLE pmInsetAux[] = {
 	{u8"",L' ',0,NULL},
 };
 
-TMENU mInsetAux = { 0,0,0,6,0,0,/*ICONS*/0,CMNU,CMBR,CMTX,0,173,0,0,0,(POLE(*)[]) &pmInsetAux,NULL,NULL };
+TMENU mInsetAux = { 0,0,0,6,0,0,ICONS,CMNU,CMBR,CMTX,0,173,0,0,0,(POLE(*)[]) &pmInsetAux,NULL,NULL };
 
 
 //52 pointfinder, 53 camera, 54 parameters, 55 layers, 56 measure, 3 search

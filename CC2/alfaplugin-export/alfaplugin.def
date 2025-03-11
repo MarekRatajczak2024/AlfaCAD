@@ -1,0 +1,9 @@
+LIBRARY   cplug_alfa_rebar
+EXPORTS
+plugin_type @1
+init @2
+deinit @3
+plugin_name @4
+plugin_version @5
+plugin_api_version @6
+alfa_func @7

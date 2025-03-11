@@ -1300,6 +1300,11 @@ static int przesunp(void)
 	}
 }
 
+int przesunp_(void)
+{
+    return przesunp();
+}
+
 static int przesunpZ(void)
 {
   double	X0,Y0;
@@ -2075,6 +2080,8 @@ static void	redcrP(char	typ)
 			break;
 	  case 3	: break;
 	  case 4	: break;
+      case 24	: break;
+      case 25	: break;
 	  default: break;
 	}
   if(typ==2	||	typ==12 || typ==15 || typ==18 || typ==3 || typ==4)
@@ -2098,20 +2105,30 @@ static void	redcrP(char	typ)
          komunikat (0) ;
 	      komunikat0 (0) ;
 		 }	
-		 else	if (typ==15)
+		 else if (typ==15)
          {
 		     zmien_atrybut(dane,dane+dane_size,Ablok,Anormalny);
            Cur_ond(X,Y);
 	        komunikat0 (0) ;
          }
-        else	if (typ==18)
+        else if (typ==18)
          {
            zmien_atrybut_undo(dane, dane	+ dane_size);
 		     zmien_atrybut(dane,dane+dane_size,Ablok,Aoblok);
            Cur_ond(X,Y);
 	        komunikat0 (0) ;
          }
-         else
+        if (typ==5)  //kill
+        {
+            zmien_atrybut_undo(dane, dane	+ dane_size);
+            zmien_atrybut(ADP,ADK,Ablok,Ausuniety);
+            usun_blok(ADP, ADK);
+
+            Cur_ond(X,Y);
+            komunikat (0) ;
+            komunikat0 (0) ;
+        }
+        else
            {
              zmien_atrybut(ADP,ADK,Ablok,Aoblok);
              Cur_ond(X,Y);
@@ -2149,6 +2166,33 @@ void Przesun(void)
   if (TTF_redraw)  redraw();
   else flip_screen();
   return;
+}
+
+int move_block_or_forget(char *adp, char *adk)
+{
+    ADP=adp;
+    ADK=adk;
+    TTF_redraw = FALSE;
+    redcrP(0);
+    redcrP(1);
+    L.x1=L.x2=X;
+    L.y1=L.y2=Y;
+    Px=X;Py=Y;
+    Cur_offd(X, Y);
+    outlineor(&L,COPY_PUT,0);
+    Cur_ond(X, Y);
+    if(przesunk()==ESC)
+        //redcrP(25);
+        return 0;
+    else
+    {
+        //redcrP(24);
+        return 1;
+    }
+    //if (TTF_redraw)  redraw();
+    //else flip_screen();
+    //return typ;
+    return 0;
 }
 
 

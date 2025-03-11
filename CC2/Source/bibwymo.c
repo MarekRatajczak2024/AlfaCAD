@@ -73,7 +73,7 @@ static void okrag_w (void  *adr)
   if( (nb=(BLOK*)dodaj_obiekt(NULL,&B))==NULL) return ;
   kat1=kat.kat;
   memmove(&(nb->opis_obiektu[0]),&kat1,sizeof(kat1));
-  outs();
+  outs(TRUE);
   CUR_OFF(X,Y);
   CUR_ON(X,Y);
 }

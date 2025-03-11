@@ -1,0 +1,8 @@
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_redraw.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_stirrup.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_rebar.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_fillet_polyline.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_coordinates.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/marek/alfaplugin-export/cmake-build-debug/CMakeFiles/rebuild_cache.dir

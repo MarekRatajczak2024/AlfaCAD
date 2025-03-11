@@ -14,6 +14,7 @@ typedef struct pm_manager pm_manager_t;
 typedef struct {
     list_str_t *plugs;
     int parts[128];
+    int icons[128];
 } Plugs_Parts;
 
 

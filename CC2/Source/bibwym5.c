@@ -101,7 +101,7 @@ static double Xkat,Ykat;
 	 w.x2=(y-w.y0+(1/a)*x+a*w.x0)/(a+1/a);
 	 w.y2=w.y0+a*(w.x2-w.x0);
        }
-     if( !outs() ) return 0;
+     if( !outs(TRUE) ) return 0;
    }
   n1=x>w.x2 ?  1 : -1;
   n2=y>w.y2 ? -1 :  1;

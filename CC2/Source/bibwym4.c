@@ -124,7 +124,7 @@ static void near korektalr(void)
 
 /*---------------------------------------------------------------*/
 
-void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok)
+void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw)
 {
     LINIA Lbuf, *L, *Ld=NULL;
     QUAD t_outline;
@@ -210,7 +210,7 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok)
                 if (grubosc_l > 4) grubosc_l = 4;
                 Lbuf.typ = grubosc_l * 32 + typ_l;
 
-                rysuj_obiekt(&Lbuf, COPY_PUT, 0);
+                if (draw) rysuj_obiekt(&Lbuf, COPY_PUT, 0);
 
                 select_color_type(Ld);
             }
@@ -262,7 +262,7 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok)
                 if (grubosc_l > 4) grubosc_l = 4;
                 lbuf.typ = grubosc_l * 32 + typ_l;
 
-                rysuj_obiekt(&lbuf, COPY_PUT, 0);
+                if (draw) rysuj_obiekt(&lbuf, COPY_PUT, 0);
 
                 select_color_type(ld);
             }
@@ -299,7 +299,7 @@ static void near ruchblokw(void)
 {
     PTR__GTMP6=ADP;
     PTR__GTMP7=NULL;
-    break_dim_line(ADP, Ablok, 0, 0);
+    break_dim_line(ADP, Ablok, 0, 0, TRUE);
     blokzap(ADP,ADK,Ablok,COPY_PUT,0);
     CUR_OFF_ON();
     BlokM=1;
@@ -312,7 +312,7 @@ static void near noruchblokw(void)
     ////if (PTR__GTMP6 !=NULL) nag=(NAGLOWEK*)PTR__GTMP6;
     ////else nag=(NAGLOWEK*)ADP;
 
-    ////break_dim_line(nag, Ablok, 1, 0);
+    ////break_dim_line(nag, Ablok, 1, 0, TRUE);
 
     blokzap(ADP,ADK,Ablok,COPY_PUT,1);
 
@@ -375,7 +375,7 @@ static int W_t (BOOL b_graph_value)
     okno_all_second();
     Set_Screen();
 
-    break_dim_line(t, Anormalny, 1, 1);
+    break_dim_line(t, Anormalny, 1, 1, TRUE);
 
     Set_Second_Screen();
     okno_r_second();
@@ -395,6 +395,7 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
   WIELOKAT *w;
   char *ptr_n;
   char buf [MaxTextLen*2];
+  int	wy;
 
   if (!(b+bl+r+p+t))
   {
@@ -440,7 +441,23 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 
 		      zmien_atrybut(ADP,ADK,Anormalny,Ablok);
 		      r=1; //ruchblokw();
-		      ((LINIA *)adr)->obiektt1=Utwierdzony2;
+
+              wy=linia_wybrana(adr);
+
+              if (wy)
+              {
+                  switch(wy)
+                  {
+                      case	1 :
+                          ((LINIA *)adr)->obiektt1=Utwierdzony2;
+                          break;
+                      case 2:
+                          ((LINIA *)adr)->obiektt1=Utwierdzony1;
+                          break;
+                  }
+              }
+
+                //  ((LINIA *)adr)->obiektt1=Utwierdzony1;  //Utwierdzony2
 
               if (lps_edit_block->kod_obiektu == B_DIM3)  //leader
               {

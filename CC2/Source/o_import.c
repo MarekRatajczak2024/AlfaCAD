@@ -3963,6 +3963,12 @@ static void redcrI(char typ)
       set_insert_point (X, Y, (void*)ADP) ; /* patrz ReadBlock_ i Get_List_Block*/
       zmien_atrybut(ADP,ADK,Ablok,Aoblok);
       break;
+      case 6 :
+       memmove(&UNDO_REC, &UNDO_REC_255, sizeof(UNDO_TAB_REC));
+       zmien_atrybut_undo(dane, dane + dane_size);
+       zmien_atrybut(ADP,ADK,Ablok,Aoblok);
+
+       break;
      default : break;
    }
   if(typ==2 || typ == 5)
@@ -4198,6 +4204,16 @@ void Place_Import_Block (int opcja, char *blockfile)
 		CUR_OFF(X, Y);
 	}
   }
+  else if (opcja==5)
+  {
+      BLOK *b;
+      b=(BLOK*)dane;
+      ADP=dane;
+      ADK=(char*)b+b->n+sizeof(NAGLOWEK) -1;
+      strcpy(blok_name, blockfile);
+	  X0 = 0; Y0 = 0;
+
+  }
 
   if (Error != 0)
   {
@@ -4249,10 +4265,12 @@ void Place_Import_Block (int opcja, char *blockfile)
          blokzap(ADP,ADK,Ablok,COPY_PUT,1);
          CUR_OFF(X, Y);
          CUR_ON(X, Y);
-         redcrI(4);
+
+         if (opcja!=5) redcrI(4);
+         else redcrI(6);
          if (TTF_redraw) redraw();
 
-         KopiujM ();
+         if (opcja!=5) KopiujM ();
          redcrI(1);
        }
   komunikat (0);

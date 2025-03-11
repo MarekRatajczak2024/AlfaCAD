@@ -8,6 +8,7 @@
 struct htable_bucket {
     void *key;
     void *val;
+    int icon;
     struct htable_bucket *next;
 };
 typedef struct htable_bucket htable_bucket_t;
@@ -48,7 +49,7 @@ static size_t htable_bucket_idx(htable_t *ht, void *key)
 }
 
 
-static void htable_add_to_bucket(htable_t *ht, void *key, void *val, bool isrehash)
+static void htable_add_to_bucket(htable_t *ht, void *key, int icon, void *val, bool isrehash)
 {
     htable_bucket_t *cur;
     htable_bucket_t *last;
@@ -62,6 +63,7 @@ static void htable_add_to_bucket(htable_t *ht, void *key, void *val, bool isreha
                 val = ht->cbs.val_copy(val);
         }
         ht->buckets[idx].key = key;
+        ht->buckets[idx].icon = icon;
         ht->buckets[idx].val = val;
         if (!isrehash)
             ht->num_used++;
@@ -90,6 +92,7 @@ static void htable_add_to_bucket(htable_t *ht, void *key, void *val, bool isreha
                     val = ht->cbs.val_copy(val);
             }
             cur->key = key;
+            cur->icon = icon; ////
             cur->val = val;
             last->next = cur;
             if (!isrehash)
@@ -119,11 +122,11 @@ static void htable_rehash(htable_t *ht)
         if (buckets[i].key == NULL)
             continue;
 
-        htable_add_to_bucket(ht, buckets[i].key, buckets[i].val, true);
+        htable_add_to_bucket(ht, buckets[i].key, buckets[i].icon, buckets[i].val, true);
         if (buckets[i].next != NULL) {
             cur = buckets[i].next;
             do {
-                htable_add_to_bucket(ht, cur->key, cur->val, true);
+                htable_add_to_bucket(ht, cur->key, cur->icon, cur->val, true);
                 next = cur->next;
                 free(cur);
                 cur = next;
@@ -198,7 +201,7 @@ void htable_destroy(htable_t *ht)
 }
 
 
-void htable_insert(htable_t *ht, void *key, void *val)
+void htable_insert(htable_t *ht, void *key, int icon, void *val)
 {
     void *ckey;
     void *cval;
@@ -207,7 +210,7 @@ void htable_insert(htable_t *ht, void *key, void *val)
         return;
 
     htable_rehash(ht);
-    htable_add_to_bucket(ht, key, val, false);
+    htable_add_to_bucket(ht, key, icon, val, false);
 }
 
 
@@ -304,7 +307,7 @@ htable_enum_t *htable_enum_create(htable_t *ht)
     return he;
 }
 
-bool htable_enum_next(htable_enum_t *he, void **key, void **val)
+bool htable_enum_next(htable_enum_t *he, void **key, int *icon, void **val)
 {
     void *mykey;
     void *myval;
@@ -328,6 +331,7 @@ bool htable_enum_next(htable_enum_t *he, void **key, void **val)
     }
 
     *key = he->cur->key;
+    *icon = he->cur->icon;
     *val = he->cur->val;
     he->cur = he->cur->next;
 

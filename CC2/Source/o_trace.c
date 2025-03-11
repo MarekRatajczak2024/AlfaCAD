@@ -1599,6 +1599,12 @@ static BOOL add_block (void)
 }
 
 
+BOOL add_trace_ (void)
+{
+    return add_block ();
+}
+
+
 //static
 void redraw_trace (void)
 /*----------------------------*/
@@ -3566,7 +3572,7 @@ void Trace_Dline_Tline (void)
                          {
                              reset_trace_block();
                              blokzap(adp_b, adk_b, ANieOkreslony, COPY_PUT, 0);
-                             blokzap(b, adk_b, ANieOkreslony, COPY_PUT, 1);
+                             blokzap((char*)b, adk_b, ANieOkreslony, COPY_PUT, 1);
                              flip_screen();
                          }
                      }

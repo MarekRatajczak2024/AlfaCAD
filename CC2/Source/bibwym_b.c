@@ -99,7 +99,7 @@ extern void orto_l(LINIA *L, int *Orto_Dir);
 extern void reset_strwyj(void);
 extern BOOL get_strwyj(void);
 
-void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok);
+void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw);
 
 static void nooop(void)
 {}

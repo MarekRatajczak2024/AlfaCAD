@@ -85,7 +85,7 @@ static int MaxNoBlock=1000;
  
 #define ESTR_Y 2
 
-#define MAX_CLIENT_BITMAP 16
+#define MAX_CLIENT_BITMAP 64
 #define FIRST_CLIENT_BITMAP_NO 1000
 
 #pragma pack(4)

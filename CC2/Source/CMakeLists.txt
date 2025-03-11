@@ -13645,7 +13645,7 @@ target_link_libraries(${PROJECT_NAME}
         fltk
         cups
         xcb
-        ruby
+        #ruby
         curl
         Xmu
         glib-2.0

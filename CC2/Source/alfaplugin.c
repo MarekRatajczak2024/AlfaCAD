@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <wchar.h>
 #include <string.h>
 #ifdef LINUX
 #include <ds/list.h>
@@ -28,10 +29,13 @@
 #include "rysuj_e.h"
 #include "ds/list_str.h"
 
+#include <stdint.h>
+#include "unicode.h"
+
 #ifdef LINUX
-#include "../alfaplugin/alfaplugin_enum.h"
+#include "../alfaplugin-export/alfaplugin_enum.h"
 #else
-#include "../../alfaplugin/alfaplugin_enum.h"
+#include "../alfaplugin-export/alfaplugin_enum.h"
 #endif
 
 #define r14 14
@@ -52,6 +56,7 @@ extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern void PlineW1 (char *blok_type);
 extern void set_pline_param (BOOL b_pline);
 extern BOOL add_block_ (void) ;
+extern BOOL add_trace_ (void) ;
 extern BOOL get_start_pline_ (double *X0, double *Y0);
 extern void erase_pline_ (void);
 extern int Pline_Line (double df_xbeg, double df_ybeg);
@@ -84,6 +89,15 @@ extern BOOL Cust_Semaphore;
 extern void draw_ramka(int opt);
 extern void simulate_keypress(int key);
 extern void change_angle_l(double angle);
+extern double normalize_txt_angle(double angle);
+extern void normalize_txt(TEXT *ptrs_text);
+extern void get_posXY(double *pozx, double *pozy);
+extern void adrem_blok1 (BLOK *adb, int atrybut);
+extern int move_block_or_forget(char* adp,char* adk);
+extern void Place_Import_Block (int opcja, char *blockfile);
+extern void luk_w_in_block (void  *adr);
+extern void get_dim_round_text(double l, char *text);
+//extern int32_t ucs2_to_utf8 (int32_t ucs2, uint8_t * utf8)
 
 extern LINIA LiniaG;
 extern LUK LukG;
@@ -139,7 +153,7 @@ void plugin_func_draw(void)
     //cleaning after plugin
     Cust_Semaphore=FALSE;
     if (eCustom.values!=NULL) usunstr(npCustom);
-    delete_all_client_bitmaps();
+    //delete_all_client_bitmaps();
 }
 
 void plugin_func_edit(void)
@@ -148,7 +162,7 @@ void plugin_func_edit(void)
     //cleaning after plugin
     Cust_Semaphore=FALSE;
     if (eCustom.values!=NULL) usunstr(npCustom);
-    delete_all_client_bitmaps();
+    //delete_all_client_bitmaps();
 }
 
 void plugin_func_block(void)
@@ -157,7 +171,7 @@ void plugin_func_block(void)
     //cleaning after plugin
     Cust_Semaphore=FALSE;
     if (eCustom.values!=NULL) usunstr(npCustom);
-    delete_all_client_bitmaps();
+    //delete_all_client_bitmaps();
 }
 
 void plugin_func_aux(void)
@@ -166,7 +180,7 @@ void plugin_func_aux(void)
     //cleaning after plugin
     Cust_Semaphore=FALSE;
     if (eCustom.values!=NULL) usunstr(npCustom);
-    delete_all_client_bitmaps();
+    //elete_all_client_bitmaps();
 }
 
 int the_num_get(void)
@@ -228,11 +242,11 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return &LiniaG;
             break;
         case SET_LINE_G_TYPE:
-            LiniaG.typ=(int)param1;
+            LiniaG.typ=*(int*)param1;
             return 0;
             break;
         case SET_ARC_G_TYPE:
-            LukG.typ=(int)param1;
+            LukG.typ=*(int*)param1;
             return 0;
             break;
         case PLINEW:
@@ -251,6 +265,9 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             break;
         case ADD_BLOCK:
             return (BOOL*)add_block_();
+            break;
+        case ADD_TRACE:
+            return (BOOL*)add_trace_();
             break;
         case GET_START_PLINE:
             return (BOOL*)get_start_pline_(param1, param2);
@@ -310,6 +327,9 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             rysuj_obiekt((char*)param1, (int)param2, (int)param3);
             return 0;
             break;
+        case DRAW_BLOCK:
+            blokzap((char*)param1, (char*)param2, (int)param3, COPY_PUT, 1);
+            return 0;
         case FILLET_LINE_TO_LINE:
             return (char*)fillet_line_to_line(*(double *) param1, (LINIA *) param2, (LINIA *) param3);
             break;
@@ -521,15 +541,85 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             simulate_keypress(*(int*)param1);
             return 0;
             break;
+        case NORMALIZE_TXT_ANGLE:
+            p1 = normalize_txt_angle(*(double*)param1);
+            return &p1;
+            break;
+        case NORMALIZE_TXT:
+            normalize_txt((TEXT*)param1);
+            return 0;
+            break;
+        case SET_ATTRIBUTE:
+            ((NAGLOWEK*)param1)->atrybut=*(int*)param2;
+            return 0;
+            break;
+        case RESET_ATTRIBUTES:
+            zmien_atrybut((char*)param1,(char*)param2,Ablok,Anormalny);
+            return 0;
+            break;
+        case BLOKZAP0:
+            blokzap((char*)param1,(char*)param2, Ablok, COPY_PUT, 0);
+            return 0;
+            break;
+        case BLOKZAP1:
+            blokzap((char*)param1,(char*)param2, Ablok, COPY_PUT, 1);
+            return 0;
+            break;
+        case GET_POSXY:
+            get_posXY((double *)param1, (double *)param2);
+            return 0;
+            break;
+        case ADREM_BLOK1:
+            adrem_blok1 ((BLOK *)param1, *(int*)param2);
+            return 0;
+            break;
+        case PLACE_BLOCK:
+            //return (int*)move_block_or_forget((char*)param1,(char*)param2);
+            Place_Import_Block(5, (char *)param1);
+            return 0;
+            break;
+        case DELETE_BLOCK:
+            zmien_atrybut((char*)param1,(char*)param2,Ablok,Ausuniety);
+            usun_blok((char*)param1,(char*)param2);
+            return 0;
+            break;
+        case LUK_W_IN_BLOCK:
+            WymInterF(1);
+            luk_w_in_block((char*)param1);
+            return 0;
+            break;
+        case GET_DIM_ROUND_TEXT:
+            get_dim_round_text(*(double*)param1, param2);
+            return 0;
+            break;
+        case GET_DIM_PRECISION:
+            return &zmwym.dokladnosc;
+            break;
+        case SET_DIM_PRECISION:
+            zmwym.dokladnosc=*(double*)param1;
+            return 0;
         default:
             return 0;
             break;
     }
 }
 
+void set_wcod(unsigned short *wcod, char *name)
+{
+    const uint8_t *next;
+
+    if ((unsigned char)name[0]<127)
+        *wcod=(unsigned char)name[0];
+    else
+    {
+        *wcod = utf8_to_ucs2 ((uint8_t*)name, &next);
+    }
+}
+
 int alfaplugins(void)
 {
-    const char *name;
+    char *name;
+    int icon;
     Plugs_Parts *plugs_parts;
     char       *out;
     size_t      len;
@@ -556,6 +646,7 @@ int alfaplugins(void)
     printf("Alfa Plugins (%zu):\n", len);
     for (i=0; i<len; i++) {
         name = list_str_get(plugs_parts->plugs, i);
+        icon=plugs_parts->icons[i];
         printf("PLUGIN: %s   %s\n", name, part_name[plugs_parts->parts[i]]);
         switch (plugs_parts->parts[i])
         {
@@ -563,8 +654,9 @@ int alfaplugins(void)
                 break;
             case PLUGIN_PART_DRAW:
                 strcpy((*mInsetDraw.pola)[mInsetDraw.max].txt,name);
-                (*mInsetDraw.pola)[mInsetDraw.max].wcod=name[0];
-                (*mInsetDraw.pola)[mInsetDraw.max].iconno=0;
+                //(*mInsetDraw.pola)[mInsetDraw.max].wcod=name[0];
+                set_wcod(&(*mInsetDraw.pola)[mInsetDraw.max].wcod,name);
+                (*mInsetDraw.pola)[mInsetDraw.max].iconno=icon;
                 (*mInsetDraw.pola)[mInsetDraw.max].menu=NULL;
                 if ((utf8len(name)+1)>mInsetDraw.xdl) mInsetDraw.xdl=(utf8len(name)+1);
                 ret=list_str_append(plugin_func_name_draw, name);
@@ -575,8 +667,9 @@ int alfaplugins(void)
                 break;
             case PLUGIN_PART_EDIT:
                 strcpy((*mInsetEdit.pola)[mInsetEdit.max].txt,name);
-                (*mInsetEdit.pola)[mInsetEdit.max].wcod=name[0];
-                (*mInsetEdit.pola)[mInsetEdit.max].iconno=0;
+                //(*mInsetEdit.pola)[mInsetEdit.max].wcod=name[0];
+                set_wcod(&(*mInsetEdit.pola)[mInsetEdit.max].wcod,name);
+                (*mInsetEdit.pola)[mInsetEdit.max].iconno=icon;
                 (*mInsetEdit.pola)[mInsetEdit.max].menu=NULL;
                 if ((utf8len(name)+1)>mInsetEdit.xdl) mInsetEdit.xdl=(utf8len(name)+1);
                 ret=list_str_append(plugin_func_name_edit, name);
@@ -587,8 +680,9 @@ int alfaplugins(void)
                 break;
             case PLUGIN_PART_BLOCK:
                 strcpy((*mInsetBlock.pola)[mInsetBlock.max].txt,name);
-                (*mInsetBlock.pola)[mInsetBlock.max].wcod=name[0];
-                (*mInsetBlock.pola)[mInsetBlock.max].iconno=0;
+                //(*mInsetBlock.pola)[mInsetBlock.max].wcod=name[0];
+                set_wcod(&(*mInsetBlock.pola)[mInsetBlock.max].wcod,name);
+                (*mInsetBlock.pola)[mInsetBlock.max].iconno=icon;
                 (*mInsetBlock.pola)[mInsetBlock.max].menu=NULL;
                 if ((utf8len(name)+1)>mInsetBlock.xdl) mInsetBlock.xdl=(utf8len(name)+1);
                 ret=list_str_append(plugin_func_name_block, name);
@@ -599,8 +693,9 @@ int alfaplugins(void)
                 break;
             case PLUGIN_PART_AUX:
                 strcpy((*mInsetAux.pola)[mInsetAux.max].txt,name);
-                (*mInsetAux.pola)[mInsetAux.max].wcod=name[0];
-                (*mInsetAux.pola)[mInsetAux.max].iconno=0;
+                //(*mInsetAux.pola)[mInsetAux.max].wcod=name[0];
+                set_wcod(&(*mInsetAux.pola)[mInsetAux.max].wcod,name);
+                (*mInsetAux.pola)[mInsetAux.max].iconno=icon;
                 (*mInsetAux.pola)[mInsetAux.max].menu=NULL;
                 if ((utf8len(name)+1)>mInsetAux.xdl) mInsetAux.xdl=(utf8len(name)+1);
                 ret=list_str_append(plugin_func_name_aux, name);
@@ -624,5 +719,6 @@ int alfaplugins_off(void)
     list_str_destroy(plugin_func_name_edit);
     list_str_destroy(plugin_func_name_block);
     list_str_destroy(plugin_func_name_aux);
+    delete_all_client_bitmaps();
     return 0;
 }

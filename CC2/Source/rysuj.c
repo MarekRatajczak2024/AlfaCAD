@@ -4201,6 +4201,9 @@ if (child==0)
   init_file_dropped_fill_buf();
 #endif;
 
+  //reseting client bitmaps
+  for (i = 0; i < MAX_CLIENT_BITMAP; i++) client_bitmap_load[i]=NULL;
+
   ////PLUGINS
   ret=alfaplugins();
 
@@ -5126,8 +5129,8 @@ for (int i = 0; i < bitmaps_size; i++)
 
   reset_bmp_back();
 
-  //reseting client bitmaps
-  for (i = 0; i < MAX_CLIENT_BITMAP; i++) client_bitmap_load[i]=NULL;
+  ////reseting client bitmaps
+  ////for (i = 0; i < MAX_CLIENT_BITMAP; i++) client_bitmap_load[i]=NULL;
 
   kasowanie_licznikow = TRUE;
 

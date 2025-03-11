@@ -3233,7 +3233,7 @@ static char *get_icons_p(int number)
         /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p,
     };
    
-	if (number>999)
+	if (number>1999)
 	   	return icons[0];  //just for a case, when no literal L for utf8
 return icons[number];
 }

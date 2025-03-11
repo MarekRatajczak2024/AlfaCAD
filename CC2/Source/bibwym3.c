@@ -144,8 +144,46 @@ void get_architectural_format(double l)
     sprintf(T.text, "%d'-%d %d/%d\"", feet, inches, ifraction, denominator);
 }
 
+void get_dim_round_text(double l, char *text)
+{
+    switch (zmwym.format) {
+        case 0: //Decimal: all in decimal
+            get_decimal_format(l);
+            break;
+        case 1:  //Engineering:  feet-inches with decimals:   1'-2.4311"
+            if ((Jednostki==25.4) || (Jednostki==304.8)) //inch or foot
+            {
+                get_engineering_format(l);
+            }
+            else get_decimal_format(l);  //all other units, it doesn't make sense showing mm with fractions
+            break;
 
-static int wyznacz_tekst(void)
+        case 2:  //Architectural: feet-inches with fraction:  1'-2 7/16"
+            if ((Jednostki==25.4) || (Jednostki==304.8)) //inch or foot
+            {
+                get_architectural_format(l);
+            }
+            else get_decimal_format(l);  //all other units, no fractions for e.g. mm
+            break;
+
+        case 3:  //Fractional: for inches and feet fractional, for other decimal
+            if (Jednostki==25.4)  //inch
+            {
+                get_fractional_format(l);
+                strcat(T.text,u8"\"");
+            }
+            else if (Jednostki==304.8) //foot
+            {
+                get_fractional_format(l);
+                strcat(T.text,u8"'");
+            }
+            else get_decimal_format(l);  //all other units
+            break;
+    }
+    strcpy(text, T.text);
+}
+
+static int wyznacz_tekst(BOOL draw)
 { double l,l1;
   double x1,x2,y1,y2,x,y,wysokosc,kat2_1,sin_kat2_1,cos_kat2_1;
   int lx,z;
@@ -307,10 +345,10 @@ static int wyznacz_tekst(void)
   {
 
       //breaking dim line
-      break_dim_line(dane, Anormalny, 1, 1);
+      break_dim_line(dane, Anormalny, 1, 1, draw);
 
       //outtextxy_w(&T,COPY_PUT);
-      rysuj_obiekt(&T, COPY_PUT, 1);
+      if (draw) rysuj_obiekt(&T, COPY_PUT, 1);
 
   }
   return 1;
@@ -638,10 +676,11 @@ static int s2(void)
  }
 
 
-static int s_l(void)
+static int s_l(BOOL draw)
 /*-----------------------*/
 { int Wst0;
   double kat1,n,l;
+
   kat1=kat.kat;
   l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
   Wst0=(l>2*Kp2s*cos(Pi*kat0/180)) ? 0 : 1;
@@ -659,15 +698,17 @@ static int s_l(void)
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
-       rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
+     else if(WymInter) {
+        if (draw) rysuj_obiekt((char *) &St, COPY_PUT, 1);
+     }
      Ko.warstwa=Current_Layer;
      Ko.x=w.x0;
      Ko.y=w.y0;
      Ko.r=K0_5;
      if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
-     else if(WymInter)
-       rysuj_obiekt ((char *)&Ko, COPY_PUT, 1) ;
+     else if(WymInter) {
+         if (draw) rysuj_obiekt((char *) &Ko, COPY_PUT, 1);
+     }
   return 1;
 }
 
@@ -813,8 +854,8 @@ static int s_o(void)
   return 1;
 }
 
-static int outs(void)
-/*---------------------*/
+static int outs(BOOL draw)
+/*----------------------*/
 {
   int ret ;
   double x1p, y1p, x1k, y1k, x2p, y2p, x2k, y2k;
@@ -866,13 +907,16 @@ static int outs(void)
 	  Lw.y2 = y2p;
 	  Lw.obiektt2 = O2BlockDim;
 	  Lw.obiektt3 = O3WymRoz;
-	  if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
-		  if (dodaj_obiekt((BLOK*)dane, &Lw) == NULL) return 0;
-		  else if (WymInter)
-          {
-              //outline(&Lw, COPY_PUT, 0);
-              rysuj_obiekt(&Lw, COPY_PUT, 1);
-          }
+      if(typ_wymiar != Oluk) ////
+      {
+          if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
+              if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
+              else if (WymInter)
+              {
+                  //outline(&Lw, COPY_PUT, 0);
+                  if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+              }
+      }
   }
   else
   {
@@ -952,13 +996,12 @@ static int outs(void)
         Lw.y2 = w.y2 - r2 * kat.sin;
     }
 
-
-  if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
-   if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
-   else if(WymInter)
-   {
-       rysuj_obiekt(&Lw, COPY_PUT, 1);
-   }
+    if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
+        if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
+        else if (WymInter)
+        {
+            if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+        }
 
   if (wym_okregu == 0)
   {
@@ -969,24 +1012,27 @@ static int outs(void)
 	  Lw.y2 = y2k;
 	  Lw.obiektt2 = O2BlockDim;
 	  Lw.obiektt3 = O3WymRoz;
-	  if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
-		  if (dodaj_obiekt((BLOK*)dane, &Lw) == NULL) return 0;
-		  else if (WymInter)
-          {
-              rysuj_obiekt(&Lw, COPY_PUT, 1);
-          }
+      if(typ_wymiar != Oluk) ////
+      {
+          if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
+              if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
+              else if (WymInter)
+              {
+                  if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+              }
+      }
   }
 
   katkat(PL.kat);
 
-  if(!wyznacz_tekst()) return 0;
+  if(!wyznacz_tekst(draw)) return 0;
   if(typ_wymiar == Oluk)
-    return s_l();
+    return s_l(draw);
   if(typ_wymiar == Ookrag)
    {
    if (wym_okregu==0)
     return s_o();
-     else return s_l();
+     else return s_l(draw);
    }
 
 
@@ -1070,7 +1116,7 @@ static int outss(void)
    }
 
 
-  if(!wyznacz_tekst()) return 0;
+  if(!wyznacz_tekst(TRUE)) return 0;
 
     return s_ll();
 

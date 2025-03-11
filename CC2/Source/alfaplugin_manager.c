@@ -17,6 +17,7 @@
 #ifdef LINUX
 #include <dlfcn.h>
 #include <dirent.h>
+#include <unistd.h>
 #else
 #include "dirent.h"
 #endif
@@ -47,6 +48,7 @@ extern int My_GetFiles(char *szDir, int *n_list, char *pattern, char *pattern1, 
 typedef bool (*cpm_init)(char *plug_ptr);
 typedef void (*cpm_deinit)(void);
 typedef const char *(*cpm_name)(void);
+typedef const int (*cpm_icon)(void);
 typedef int (*cpm_version)(void);
 typedef int (*cpm_api_version)(void);
 typedef char *(*cpm_txt_transform)(const char *in);
@@ -73,6 +75,7 @@ typedef struct {
     cpm_init       init;
     cpm_deinit     deinit;
     cpm_name       name;
+    cpm_icon       icon;
     cpm_version    version;
     plugin_type_t  type;
     plugin_part_t  part;
@@ -191,7 +194,7 @@ static bool pm_load_txt_transform(pm_manager_t *pm, pgen_t *gen)
         ptxt_transform_destroy(p);
         return false;
     }
-    htable_insert(pm->ptxt_transform, (void *)p->gen->name(), p);
+    htable_insert(pm->ptxt_transform, (void *)p->gen->name(), p->gen->icon(), p);
     return true;
 }
 
@@ -216,7 +219,7 @@ static bool pm_load_txt_info(pm_manager_t *pm, pgen_t *gen)
         ptxt_info_destroy(p);
         return false;
     }
-    htable_insert(pm->ptxt_info, (void *)p->gen->name(), p);
+    htable_insert(pm->ptxt_info, (void *)p->gen->name(), p->gen->icon(), p);
     return true;
 }
 
@@ -241,7 +244,7 @@ static bool pm_load_num_math(pm_manager_t *pm, pgen_t *gen)
         pnum_math_destroy(p);
         return false;
     }
-    htable_insert(pm->pnum_math, (void *)p->gen->name(), p);
+    htable_insert(pm->pnum_math, (void *)p->gen->name(), p->gen->icon(), p);
     return true;
 }
 
@@ -267,7 +270,7 @@ static bool pm_load_alfa_func(pm_manager_t *pm, pgen_t *gen)
         palfa_func_destroy(p);
         return false;
     }
-    htable_insert(pm->palfa_func, (void *)p->gen->name(), p);
+    htable_insert(pm->palfa_func, (void *)p->gen->name(), p->gen->icon(), p);
 
     return true; 
 }
@@ -277,6 +280,7 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
 {
     pgen_t          *gen;
     const char      *const_temp;
+    int              plugin_icon;
     cpm_type         typef;
     cpm_part         partf;
     cpm_api_version  api_ver;
@@ -360,6 +364,17 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
     gen->version = (cpm_version)GetProcAddress(handle, "plugin_version");
 #endif
 
+#ifdef LINUX
+    gen->icon = dlsym(handle, "plugin_icon");
+#else
+    gen->icon = (cpm_icon)GetProcAddress(handle, "plugin_icon");
+#endif
+
+    if (gen->icon == NULL) {
+        free(gen);
+        return;
+    }
+    plugin_icon = gen->icon();
 
     switch (gen->type) {
         case PLUGIN_TYPE_TXT:
@@ -381,6 +396,11 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
 
     if (!ret)
         free(gen);
+
+#ifdef LINUX
+        usleep(10000);
+#else Sleep(10);
+#endif
 }
 
 
@@ -520,10 +540,11 @@ static list_str_t *pm_plugins(htable_t *ht)
     htable_enum_t *he;
     const char    *name;
     void          *mygen;
+    int icon;
 
     ls = list_str_create(LIST_STR_NONE);
     he = htable_enum_create(ht);
-    while (htable_enum_next(he, (void **)&name, NULL)) {
+    while (htable_enum_next(he, (void **)&name, &icon, NULL)) {
         list_str_append(ls, name);
     }
     htable_enum_destroy(he);
@@ -537,16 +558,18 @@ static Plugs_Parts *pm_plugins_parts(htable_t *ht)
     htable_enum_t *he;
     const char    *name;
     void          *mygen;
+    int icon;
     palfa_func_t  *p;
     Plugs_Parts   *pp=&pp_base;
     int ipp=0;
 
     ls = list_str_create(LIST_STR_NONE);
     he = htable_enum_create(ht);
-    while (htable_enum_next(he, (void **)&name, (void **)&mygen)) {
+    while (htable_enum_next(he, (void **)&name, &icon, (void **)&mygen)) {
         list_str_append(ls, name);
         p=mygen;
         pp->parts[ipp]=p->gen->part;
+        pp->icons[ipp]=icon;
         ipp++;
     }
     htable_enum_destroy(he);
