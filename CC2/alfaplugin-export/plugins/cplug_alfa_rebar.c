@@ -185,7 +185,9 @@ void Dimensioning_polyline(char *adr0, int opcja)
     LINIA *L;
     LUK *l;
     int new_texts;
+    int new_arcs;
     TEXT Tn[32];
+    LUK ln[32];
     TEXT Tn0=Tdef, Tn1=Tdef;
     char Tl[MaxTextLen];
     double max_length, c_x, c_y, c_angle;
@@ -199,12 +201,17 @@ void Dimensioning_polyline(char *adr0, int opcja)
     double dh1_text;    //3.0 [mm]
     int ret;
     double precision, precision1;
+    BOOL convex=1;
+    double last_r=0.0, this_r;
+
+    float dh_text0=0.0; //to move away from arc, if needed
 
     ZMIENNE *zmwym;
     int Current_Layer;
     char *dane;
     char *adr;
     double L_x1, L_x2;
+    int p2, p3;
 
     zmwym = (ZMIENNE*)(plugin_ptr(GET_DIM_VARIABLES, NULL, NULL, NULL));
 
@@ -234,6 +241,7 @@ void Dimensioning_polyline(char *adr0, int opcja)
     Tn0.italics=zmwym->italics;
 
     new_texts=0;
+    new_arcs=0;
     len_pline=0;
     poliline_length=0;
 
@@ -303,6 +311,7 @@ void Dimensioning_polyline(char *adr0, int opcja)
         else if (nag->obiekt == Oluk)
         {
             l = (LUK*)adp;
+
             //dimensioning of a polyline arc
             if (new_texts<max_new_texts)
             {
@@ -312,8 +321,26 @@ void Dimensioning_polyline(char *adr0, int opcja)
                 l_x2=l->x+l->r*cos(l->kat2);
                 l_y2=l->y+l->r*sin(l->kat2);
                 memmove(&Tn[new_texts-1], &Tn0, sizeof(TEXT));
-                Tn[new_texts-1].x=(l_x1+l_x2)/2;
-                Tn[new_texts-1].y=(l_y1+l_y2)/2;
+
+                new_arcs++;
+                memmove(&ln[new_arcs-1], l, sizeof(LUK));
+
+                double kat1=l->kat1;
+                double kat2=l->kat2;
+
+                if (kat2<kat1) kat2+=Pi2;
+                double angle=(kat1+kat2)/2;
+                if (angle>Pi2) angle-=Pi2;
+
+                double x11=l->x+(l->r+dh_text0)*cos(angle);
+                double y11=l->y+(l->r+dh_text0)*sin(angle);
+
+                ////Tn[new_texts-1].x=(l_x1+l_x2)/2;
+                ////Tn[new_texts-1].y=(l_y1+l_y2)/2;
+                Tn[new_texts-1].x=(float)x11;
+                Tn[new_texts-1].y=(float)y11;
+
+
                 //counting length
                 if (l->kat1 > l->kat2) del_kat=(l->kat2 + Pi2) - l->kat1;
                 else del_kat = l->kat2 - l->kat1;
@@ -324,8 +351,19 @@ void Dimensioning_polyline(char *adr0, int opcja)
                 if (VOID_TO_INT(plugin_ptr(CHECK_IF_EQUAL, &(l_x2), &(l_x1), NULL))) line_angle=M_PI/2;
                 else line_angle=atan((l_y2-l_y1)/(l_x2-l_x1));
                 Tn[new_texts-1].kat=line_angle;
-                Tn[new_texts-1].x-=(dh_text*sin(line_angle));
-                Tn[new_texts-1].y+=(dh_text*cos(line_angle));
+
+                if ((angle >= 0) && (angle<=Pi_)) convex=1;
+                else convex=0;
+
+                if (!convex) {
+                    Tn[new_texts - 1].x += (float) ((dh_text + zmwym->wysokosc) * sin(line_angle));
+                    Tn[new_texts - 1].y -= (float) ((dh_text + zmwym->wysokosc) * cos(line_angle));
+                }
+                else {
+                    Tn[new_texts - 1].x -= (float) (dh_text * sin(line_angle));
+                    Tn[new_texts - 1].y += (float) (dh_text * cos(line_angle));
+                }
+
                 Tn[new_texts-1].justowanie=j_srodkowo;
                 //sprintf(Tn[new_texts-1].text,"%.0f",len_pline);
                 ret=VOID_TO_INT(plugin_ptr(GET_DIM_ROUND_TEXT, (char*)&len_pline, (char*)&Tn[new_texts-1].text, NULL));
@@ -336,6 +374,9 @@ void Dimensioning_polyline(char *adr0, int opcja)
                 Tn[new_texts-1].blok=1;
                 Tn[new_texts-1].warstwa=Current_Layer;
                 Tn[new_texts-1].ukryty=0;
+
+                ret=VOID_TO_INT(plugin_ptr(NORMALIZE_TXT, (char*)&Tn[new_texts-1], NULL, NULL));
+
                 if (new_texts==1)
                 {
                     max_length=len_pline;
@@ -376,6 +417,23 @@ void Dimensioning_polyline(char *adr0, int opcja)
             }
             ret = VOID_TO_INT(plugin_ptr(DRAW_OBJECT, (char*)&Tn[i], COPY_PUT, (int*)1));
         }
+
+        last_r=0.0;
+        for (i=0; i<new_arcs; i++)
+        {
+            this_r=(double)ln[i].r;
+            if ((VOID_TO_INT(plugin_ptr(CHECK_IF_EQUAL, (char*)&this_r, (char*)&last_r, NULL)))==0)
+            {
+                //ret = (VOID_TO_INT(plugin_ptr(LUK_W_IN_BLOCK, (char *) &ln[i], NULL, NULL)));
+                p2=TRUE;
+                adr = plugin_ptr(LUK_W_IN_BLOCK, (char *) &ln[i], (char*)&p2, NULL);
+
+                p3=ANieOkreslony;
+                if (adr!=NULL) ret = VOID_TO_INT(plugin_ptr(BLOKZAP1, adr, adr + ((BLOK *) adr)->n + sizeof(NAGLOWEK) - 1, (char*)&p3));
+            }
+            last_r=this_r;
+        }
+
         //summ length
         memmove(&Tn1, &Tn0, sizeof(TEXT));
         Tn1.x=c_x;
@@ -565,11 +623,11 @@ void fill_polyline(char *dane000, double radius_)
             }
 
             adr1 = (char *) (plugin_ptr(FILLET_LINE_TO_LINE, (char*)&radius_, (char*)line1, (char*)line2));
-            if (adr1!=NULL) adr=adr1;
+            if (adr1!=NULL) adr=adr1 + (sizeof(NAGLOWEK) + ((NAGLOWEK *) adr1)->n);
+
             i_no--;
 
             if (i_no >= (l_no-1)) break;  //there is just one line left, so no filling possible
-            adr += (sizeof(NAGLOWEK) + ((NAGLOWEK *) adr)->n);
         }
         if (closed)
         {  //taking first and last line
@@ -741,6 +799,8 @@ start:
             if (radius>0.0) fill_polyline(dane000, radius_sk);
             dane000 = (char *) plugin_ptr(GET_DATA, NULL, NULL, NULL);
             Dimensioning_polyline(dane000, 0);
+            ret = VOID_TO_INT(plugin_ptr(FLIPSCREEN, NULL, NULL, NULL));
+
             dane_size000 = (long)plugin_ptr(GET_DATA_SIZE, NULL, NULL, NULL) - dane_size0000;
             if (dane_size000 > 0)
             {

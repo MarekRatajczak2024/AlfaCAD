@@ -28,7 +28,7 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
       
       The C compiler identification is Clang, found in:
-        /home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/3.30.5/CompilerIdC/a.out
+        /home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/3.30.5/CompilerIdC/a.out
       
   -
     kind: "message-v1"
@@ -50,7 +50,7 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
       
       The CXX compiler identification is Clang, found in:
-        /home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/3.30.5/CompilerIdCXX/a.out
+        /home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/3.30.5/CompilerIdCXX/a.out
       
   -
     kind: "try_compile-v1"
@@ -61,8 +61,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU"
-      binary: "/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU"
+      source: "/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8"
+      binary: "/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
       CMAKE_C_FLAGS: ""
@@ -70,10 +70,10 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU'
+        Change Dir: '/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8'
         
-        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_19a03
-        [1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e3d2e
+        [1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         clang version 19.1.7
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -85,7 +85,7 @@ events:
         Candidate multilib: 32;@m32
         Selected multilib: .;@m64
          (in-process)
-         "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU -v -fcoverage-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+         "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8 -v -fcoverage-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8 -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
         ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"
         ignoring nonexistent directory "/include"
@@ -95,7 +95,7 @@ events:
          /usr/local/include
          /usr/include
         End of search list.
-        [2/2] : && /usr/bin/clang  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -o cmTC_19a03   && :
+        [2/2] : && /usr/bin/clang  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -o cmTC_e3d2e   && :
         clang version 19.1.7
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -106,7 +106,7 @@ events:
         Candidate multilib: .;@m64
         Candidate multilib: 32;@m32
         Selected multilib: .;@m64
-         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_19a03 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_e3d2e /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
         GNU ld (GNU Binutils) 2.44
         
       exitCode: 0
@@ -140,10 +140,10 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU']
+        ignore line: [Change Dir: '/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_19a03]
-        ignore line: [[1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e3d2e]
+        ignore line: [[1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [clang version 19.1.7]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -158,7 +158,7 @@ events:
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
         ignore line: [ (in-process)]
-        ignore line: [ "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU -v -fcoverage-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-p2iQCU -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8 -v -fcoverage-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-LGeiy8 -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
         ignore line: [ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"]
         ignore line: [ignoring nonexistent directory "/include"]
@@ -168,7 +168,7 @@ events:
         ignore line: [ /usr/local/include]
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v  -rdynamic CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -o cmTC_19a03   && :]
+        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v  -rdynamic CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -o cmTC_e3d2e   && :]
         ignore line: [clang version 19.1.7]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -182,7 +182,7 @@ events:
         ignore line: [@m32]
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
-        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_19a03 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_e3d2e /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [--hash-style=gnu] ==> ignore
           arg [--build-id] ==> ignore
@@ -194,7 +194,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_19a03] ==> ignore
+          arg [cmTC_e3d2e] ==> ignore
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o]
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o]
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
@@ -205,7 +205,7 @@ events:
           arg [-L/lib] ==> dir [/lib]
           arg [-L/usr/lib] ==> dir [/usr/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_19a03.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_e3d2e.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-lgcc] ==> lib [gcc]
           arg [--as-needed] ==> ignore
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -254,8 +254,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2"
-      binary: "/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2"
+      source: "/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq"
+      binary: "/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
       CMAKE_CXX_FLAGS: ""
@@ -264,10 +264,10 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2'
+        Change Dir: '/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq'
         
-        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_5a16c
-        [1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_363f7
+        [1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
         clang version 19.1.7
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -279,7 +279,7 @@ events:
         Candidate multilib: 32;@m32
         Selected multilib: .;@m64
          (in-process)
-         "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2 -v -fcoverage-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2 -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
+         "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq -v -fcoverage-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
         ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"
         ignoring nonexistent directory "/include"
@@ -292,7 +292,7 @@ events:
          /usr/local/include
          /usr/include
         End of search list.
-        [2/2] : && /usr/bin/clang++  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_5a16c   && :
+        [2/2] : && /usr/bin/clang++  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_363f7   && :
         clang version 19.1.7
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -303,7 +303,7 @@ events:
         Candidate multilib: .;@m64
         Candidate multilib: 32;@m32
         Selected multilib: .;@m64
-         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_5a16c /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_363f7 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
         GNU ld (GNU Binutils) 2.44
         
       exitCode: 0
@@ -343,10 +343,10 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
-        ignore line: [Change Dir: '/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2']
+        ignore line: [Change Dir: '/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq']
         ignore line: []
-        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_5a16c]
-        ignore line: [[1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_363f7]
+        ignore line: [[1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang version 19.1.7]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -361,7 +361,7 @@ events:
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
         ignore line: [ (in-process)]
-        ignore line: [ "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2 -v -fcoverage-compilation-dir=/home/marek/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-JbRzG2 -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq -v -fcoverage-compilation-dir=/home/marek/CC2/alfaplugin-export/cmake-build-release/CMakeFiles/CMakeScratch/TryCompile-NPtZDq -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
         ignore line: [ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"]
         ignore line: [ignoring nonexistent directory "/include"]
@@ -374,7 +374,7 @@ events:
         ignore line: [ /usr/local/include]
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v  -rdynamic CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_5a16c   && :]
+        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v  -rdynamic CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_363f7   && :]
         ignore line: [clang version 19.1.7]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -388,7 +388,7 @@ events:
         ignore line: [@m32]
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
-        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_5a16c /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_363f7 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [--hash-style=gnu] ==> ignore
           arg [--build-id] ==> ignore
@@ -400,7 +400,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_5a16c] ==> ignore
+          arg [cmTC_363f7] ==> ignore
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o]
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o]
           arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
@@ -411,7 +411,7 @@ events:
           arg [-L/lib] ==> dir [/lib]
           arg [-L/usr/lib] ==> dir [/usr/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_5a16c.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_363f7.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lstdc++] ==> lib [stdc++]
           arg [-lm] ==> lib [m]
           arg [-lgcc_s] ==> lib [gcc_s]

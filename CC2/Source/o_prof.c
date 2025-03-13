@@ -258,7 +258,8 @@ static char *fillet_line_line (double df_r, LINIA*L1,LINIA *L2,double X1,double 
    }
   memcpy (&Lp1, L1, sizeof (LINIA));
   memcpy (&Lp2, L2, sizeof (LINIA));
-  if(!przeciecieLLn_ (&p3.x0, &p3.y0, &Lp1, &Lp2)) return 0 ;
+  if(!przeciecieLLn_ (&p3.x0, &p3.y0, &Lp1, &Lp2))
+      return NULL ;
   najblizszyL_ (&X1,&Y1,&Lp1);
   k1=obciecie(&Lp1,p3.x0,p3.y0,X1,Y1);
   df_l1x = Lp1.x1 ;
@@ -311,7 +312,7 @@ static char *fillet_line_line (double df_r, LINIA*L1,LINIA *L2,double X1,double 
   if (p3.x1 > df_l1x || p3.x2 > df_l2x)
   {
     ErrList (32) ;
-    return NULL;
+     return NULL;
   }
   obrd(si,co,p3.x1,p3.y1,&p3.x1,&p3.y1);
   obrd(si,co,p3.x2,p3.y2,&p3.x2,&p3.y2);

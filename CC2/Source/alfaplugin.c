@@ -95,7 +95,7 @@ extern void get_posXY(double *pozx, double *pozy);
 extern void adrem_blok1 (BLOK *adb, int atrybut);
 extern int move_block_or_forget(char* adp,char* adk);
 extern void Place_Import_Block (int opcja, char *blockfile);
-extern void luk_w_in_block (void  *adr);
+extern void *luk_w_in_block (void  *adr, BOOL draw);
 extern void get_dim_round_text(double l, char *text);
 //extern int32_t ucs2_to_utf8 (int32_t ucs2, uint8_t * utf8)
 
@@ -254,7 +254,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case SET_PLINE_PARAM:
-            set_pline_param ((BOOL)param1);
+            set_pline_param (*(int*)param1);
             return 0;
             break;
         case GET_DATA:
@@ -558,11 +558,11 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case BLOKZAP0:
-            blokzap((char*)param1,(char*)param2, Ablok, COPY_PUT, 0);
+            blokzap((char*)param1,(char*)param2, *(int*)param3, COPY_PUT, 0);
             return 0;
             break;
         case BLOKZAP1:
-            blokzap((char*)param1,(char*)param2, Ablok, COPY_PUT, 1);
+            blokzap((char*)param1,(char*)param2, *(int*)param3, COPY_PUT, 1);
             return 0;
             break;
         case GET_POSXY:
@@ -585,8 +585,8 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             break;
         case LUK_W_IN_BLOCK:
             WymInterF(1);
-            luk_w_in_block((char*)param1);
-            return 0;
+            return luk_w_in_block((char*)param1, *(int*)param2);
+            //return 0;
             break;
         case GET_DIM_ROUND_TEXT:
             get_dim_round_text(*(double*)param1, param2);

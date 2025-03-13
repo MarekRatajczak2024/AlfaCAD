@@ -240,6 +240,7 @@ void Dimensioning_stirrup(char *adr0, int opcja, int clockwise, BOOL draw)
     double x11, y11;
     double r1, angle;
     double precision, precision1;
+    int p2;
 
     zmwym = (ZMIENNE*)(plugin_ptr(GET_DIM_VARIABLES, NULL, NULL, NULL));
     precision=zmwym->dokladnosc;
@@ -508,7 +509,11 @@ void Dimensioning_stirrup(char *adr0, int opcja, int clockwise, BOOL draw)
         {
             this_r=(double)ln[i].r;
             if ((VOID_TO_INT(plugin_ptr(CHECK_IF_EQUAL, (char*)&this_r, (char*)&last_r, NULL)))==0)
-                ret = (VOID_TO_INT(plugin_ptr(LUK_W_IN_BLOCK, (char *) &ln[i], NULL, NULL)));
+            {
+                //ret = (VOID_TO_INT(plugin_ptr(LUK_W_IN_BLOCK, (char *) &ln[i], NULL, NULL)));
+                p2 = FALSE;
+                adr = plugin_ptr(LUK_W_IN_BLOCK, (char *) &ln[i], (char *) &p2, NULL);
+            }
             last_r=this_r;
         }
 
@@ -576,8 +581,8 @@ static void update_dia_and_rad_in_menu(void)
     sprintf(st1, u8"%s %s r=%g*D", reinforcement, main_reinforcement, radius_factor);
     ret = VOID_TO_INT(plugin_ptr(NOTICE_STR_SHORT, st1, NULL, NULL));
 
-    sprintf(r_str, u8"%g", radius_factor);
-    sprintf(a_str, u8"%s %g/%g", anchor_std, anchor_factor, anchor_length);
+    sprintf(r_str, u8"%g*D", radius_factor);
+    sprintf(a_str, u8"%s %g*D/%gmm", anchor_std, anchor_factor, anchor_length);
 
     mRebar.xdl = VOID_TO_INT(plugin_ptr(UTF8LEN, (char *) ((*mRebar.pola)[1].txt), NULL, NULL)) + 8;
     ret = VOID_TO_INT(plugin_ptr(MENU_PAR_NEW, (char *) ((*mRebar.pola)[0].txt), main_reinforcement, NULL));
@@ -1562,7 +1567,8 @@ beginning:
         dane000 = (char *) plugin_ptr(GET_DATA, NULL, NULL, NULL);
         dane_size000 = (long)plugin_ptr(GET_DATA_SIZE, NULL, NULL, NULL);
 
-        ret=VOID_TO_INT(plugin_ptr(BLOKZAP1, dane000, dane000+dane_size000, NULL));
+        p3=Ablok;
+        ret=VOID_TO_INT(plugin_ptr(BLOKZAP1, dane000, dane000+dane_size000, (char*)&p3));
         ret=VOID_TO_INT(plugin_ptr(RESET_ATTRIBUTES, dane000, dane000+dane_size000, NULL));
 
         p2=Ablok;

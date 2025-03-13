@@ -329,11 +329,10 @@ void fill_polyline(char *dane000, double radius)
                 continue;
             }
             adr1 = (char *) (plugin_ptr(FILLET_LINE_TO_LINE, &radius, line1, line2));
-            if (adr1!=NULL) adr=adr1;
+            if (adr1!=NULL) adr=adr1 + (sizeof(NAGLOWEK) + ((NAGLOWEK *) adr1)->n);
             i_no--;
 
             if (i_no >= (l_no-1)) break;  //there is just one line left, so no filling possible
-            adr += (sizeof(NAGLOWEK) + ((NAGLOWEK *) adr)->n);
         }
         if (closed)
         {  //taking first and last line

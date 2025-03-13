@@ -954,8 +954,8 @@ static int poczatekPL (double X0, double Y0)
      }
     if (strwyj == 1)
     {
-      CUR_OFF (X, Y) ;
       add_line (TRUE) ;
+      CUR_OFF (X, Y) ;
       CUR_ON (X, Y) ;
       continue ;
     }

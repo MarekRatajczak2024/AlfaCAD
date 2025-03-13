@@ -60,7 +60,7 @@ static void luk_w (void  *adr)
   CUR_ON(X,Y);
 }
 
-void luk_w_in_block (void  *adr)
+void *luk_w_in_block (void  *adr, BOOL draw)
 {   BLOK *b,*B1;
     size_t b_size;
     BLOK *nb1;
@@ -103,17 +103,17 @@ void luk_w_in_block (void  *adr)
     typ_wymiar = Oluk;
     kat_w_now = 0;
     Continue=1;
-    if( (nb=(BLOK*)dodaj_obiekt(NULL,&B))==NULL) return ;
+    if( (nb=(BLOK*)dodaj_obiekt(NULL,&B))==NULL) return NULL;
     kat1=kat.kat;
     memmove(&(nb->opis_obiektu[0]),&kat1,sizeof(kat1));
-    outs(FALSE);
+    outs(draw);
 
     //creating buffer
     b=(BLOK*)dane;
-    if (b->kod_obiektu!=0x01) return;  //it's not dim block
+    if (b->kod_obiektu!=0x01) return NULL;  //it's not dim block
     b_size=b->n+sizeof(NAGLOWEK);
     B1=malloc(b_size);
-    if (B1==NULL) return;
+    if (B1==NULL) return NULL;
     //buffering block
     memmove(B1, b, b_size);
     //deleting block from data
@@ -122,10 +122,11 @@ void luk_w_in_block (void  *adr)
     zmien_atrybut (ADP1, ADK1,	ANieOkreslony, Ausuniety)	;
     usun_blok(ADP1,ADK1);
     //inserting block into stirrup block
-    B1->blok=1;
+    B1->blok=Ablok;
     nb1=(BLOK*)dodaj_obiekt(dane,B1);
     //freeing buffer
     free(B1);
+    return nb1;
 }
 
 static void luk_wdl (void  *adr)
