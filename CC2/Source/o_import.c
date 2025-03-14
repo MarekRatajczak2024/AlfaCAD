@@ -3261,7 +3261,8 @@ static void redcrpki(char typ)
      menu_par_new ((*mBlok_Imp.pola)[0].txt, st) ;
 
      b_check_arc = check_if_obiekt (ADP, ADK, Ablok, Oluk);
-     Cur_ond(X,Y);
+     //Cur_ond(X,Y);
+     CUR_ON(X,Y);
    }
   else
   {

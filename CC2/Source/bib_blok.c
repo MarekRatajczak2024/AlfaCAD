@@ -6006,7 +6006,8 @@ void out_blok2 (double x,double y,double k1,double k2,
   LINIA *L;
   POINTF p[8];
   int l;
-  static char buf[MaxSizeObiekt];
+  //static char buf[MaxSizeObiekt];
+  char *buf;
   WIELOKAT S4=Stdef;
   char keym;
   BOOL retb;
@@ -6061,6 +6062,8 @@ void out_blok2 (double x,double y,double k1,double k2,
        }
         else
          {
+            buf=malloc(l+1);
+            if (buf==NULL) return;
             memmove(buf,ad,l);
 
             if (get_dragging_quad()) {
@@ -6124,6 +6127,8 @@ void out_blok2 (double x,double y,double k1,double k2,
                  rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, ad);
              }
              else  rysuj_obiekt_(buf,COPY_PUT,1);
+
+             free(buf);
 
          }
 	}

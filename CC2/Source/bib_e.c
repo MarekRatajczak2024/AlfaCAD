@@ -1805,25 +1805,25 @@ void get_World(long *pXp1, long *pYp1, long *pXk1, long *pYk1)
 int get_pXp(void)
 /*------------------*/
 {
- return pXp;
+ return (int)pXp;
 }
 
 int get_pXk(void)
 /*------------------*/
 {
- return pXk;
+ return (int)pXk;
 }
 
 int get_pYp(void)
 /*------------------*/
 {
- return pYp;
+ return (int)pYp;
 }
 
 int get_pYk(void)
 /*------------------*/
 {
- return pYk;
+ return (int)pYk;
 }
 
 static int jed_to_piks_x (int jednostki_x)
