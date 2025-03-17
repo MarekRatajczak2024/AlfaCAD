@@ -124,17 +124,25 @@ static int obciecie(LINIA *L, double x0,double y0,double x,double y)
 { double t;
   int k;
 
-  y = y;
-  if(fabs(L->x2-L->x1)<=.0001)
+  if(Check_if_Equal(L->x2,L->x1))
   {
-    if (fabs (L->y2 - y) < fabs (L->y1 - y)) k = 1;
-    else k = 2;
-    return k;
+    t=(y0-L->y1)/(L->y2-L->y1);
+
+    if(0<=t && t<=1)
+      if(y0==L->y1 || (y-L->y1)/(y0-L->y1)>=1) k=2;
+      else k=1;
+    else
+      { t=(L->y2-L->y1)/(y0-L->y1);
+          if(t>0 && t<1) k=1;
+          else k=2;
+      }
+      return k;
   }
-  else t=(x0-L->x1)/(L->x2-L->x1);
+  else
+      t=(x0-L->x1)/(L->x2-L->x1);
   if(0<=t && t<=1)
-   if(x0==L->x1 || (x-L->x1)/(x0-L->x1)>=1) k=2;
-   else k=1;
+    if(x0==L->x1 || (x-L->x1)/(x0-L->x1)>=1) k=2;
+    else k=1;
   else
    { t=(L->x2-L->x1)/(x0-L->x1);
      if(t>0 && t<1) k=1;
@@ -1047,7 +1055,7 @@ static BOOL chamfer (double X1, double Y1, double X2, double Y2)
   float L_x1, L_y1;
   BOOL inversion = FALSE;
 
-  if (FILLET_PL_NO == (i_fillet_type = Check_Pline_to_Fillet (ptrs__line1, ptrs__line2)))
+   if (FILLET_PL_NO == (i_fillet_type = Check_Pline_to_Fillet (ptrs__line1, ptrs__line2)))
   {
     ErrList (86) ;
     return 0 ;
