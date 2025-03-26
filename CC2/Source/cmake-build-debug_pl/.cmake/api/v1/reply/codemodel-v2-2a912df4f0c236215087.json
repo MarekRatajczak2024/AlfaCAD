@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Release_UA-f5ebdc15457944623624.json",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16.0"
@@ -19,7 +19,7 @@
 					]
 				}
 			],
-			"name" : "Release_UA",
+			"name" : "Debug",
 			"projects" : 
 			[
 				{
@@ -38,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "AlfaCADUA::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCADUA-Release_UA-be26bd5fad5bf3507ec2.json",
-					"name" : "AlfaCADUA",
+					"id" : "AlfaCADPL::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-AlfaCADPL-Debug-c830f90ca32901ba5102.json",
+					"name" : "AlfaCADPL",
 					"projectIndex" : 0
 				}
 			]
@@ -49,7 +49,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-release_ua",
+		"build" : "/home/marek/CC2/Source/cmake-build-debug_pl",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

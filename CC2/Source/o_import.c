@@ -1855,10 +1855,10 @@ int getBlockFromDialog(TMENU *mBlockList0, long *my_ptr__off_block)
     BOOL re_group=FALSE;
     re_sort=TRUE;
 
-    POLE *mBlockList=(POLE*)malloc(mBlockList0->max*sizeof(POLE));
+    POLE *mBlockList=(POLE*)malloc(mBlockList0->max*sizeof(POLE)+1000);
     memmove(mBlockList, mBlockList0->pola, mBlockList0->max*sizeof(POLE));
 
-    POLE *BlockList=(POLE*)malloc(mBlockList0->max*sizeof(POLE));
+    POLE *BlockList=(POLE*)malloc(mBlockList0->max*sizeof(POLE)+1000);
 
     n_list_blk=mBlockList0->max;
 
@@ -3905,7 +3905,7 @@ static void redcrI(char typ)
   switch(typ)
    { case 0 :
 	  CUR_OFF(X, Y);
-      komunikat0 (0) ;
+      ////komunikat0 (0) ;
       sel_akt=sel.akt;
       sel.akt=1; 
       ADP=ADK=NULL;  
@@ -4089,7 +4089,7 @@ void Select_Pattern_From_Folder(int opcja)
 void Place_Import_Block (int opcja, char *blockfile)
 /*------------------------------------------------*/
 {
-  double X0,Y0;
+  double X0=0,Y0=0;
   int status;
 
   char blok_name[MaxLen] = _BLOCK__;
@@ -4102,7 +4102,9 @@ void Place_Import_Block (int opcja, char *blockfile)
 
   dane_size0=dane_size;
 
-  Error=0;  
+	Set_Screen();
+
+  Error=0;
   redcrI(0);
   if (opcja == 0)
   {
@@ -4189,7 +4191,9 @@ void Place_Import_Block (int opcja, char *blockfile)
      strcpy(st, _NO_BLOCK_IN_CATALOG_);
      strcat(st,fn);
      strcat(st,")");
-     komunikat_str (st);
+     //komunikat_str (st);
+     komunikat_str_short(st, TRUE, FALSE);
+
      redcrI(2);
      return;
     }
@@ -4208,12 +4212,16 @@ void Place_Import_Block (int opcja, char *blockfile)
   else if (opcja==5)
   {
       BLOK *b;
+      T_Desc_Ex_Block 	*ptrs_desc_bl ;
+
       b=(BLOK*)dane;
       ADP=dane;
       ADK=(char*)b+b->n+sizeof(NAGLOWEK) -1;
       strcpy(blok_name, blockfile);
-	  X0 = 0; Y0 = 0;
-
+	  //X0 = 0; Y0 = 0;
+      ptrs_desc_bl = (T_Desc_Ex_Block *)(&b->opis_obiektu [0]) ;
+      X0 = ptrs_desc_bl->x;
+      Y0 = ptrs_desc_bl->y;
   }
 
   if (Error != 0)
@@ -4226,7 +4234,8 @@ void Place_Import_Block (int opcja, char *blockfile)
   if (blok_name [0] != 0)
   {
      blok_name [MaxLen - 1] = '\0';
-     komunikat_str (blok_name);
+     //komunikat_str (blok_name);
+     komunikat_str_short(blok_name, TRUE, FALSE);
   }
   DX=X-X0; DY=Y-Y0;
   Px=X0;Py=Y0;
@@ -4274,7 +4283,9 @@ void Place_Import_Block (int opcja, char *blockfile)
          if (opcja!=5) KopiujM ();
          redcrI(1);
        }
-  komunikat (0);
+  //komunikat (0);
+  komunikat_str_short("", TRUE, FALSE);
+  remove_short_notice();
 
   SERV[73]= (void*)SW[0];
   SERV[81]= (void*)SW[1];
@@ -4834,6 +4845,13 @@ int Write_Block_PCX (char *adr)
     return 1;
 }
 
+void komunikat_null(void)
+{
+    komunikat(0);
+    komunikat_str_short("", TRUE, FALSE);
+    remove_short_notice();
+}
+
 int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double *ptrdf_y, int comput_area)
 /*-------------------------------------------------------------------------------------------------*/
 {
@@ -4965,7 +4983,8 @@ int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double *ptrdf_
              if (insulation_hatch==TRUE)  strcat(blok_name, AUTOSCALE);
 
              blok_name [MaxLen - 1] = '\0';
-             komunikat_str_len (blok_name);
+             //komunikat_str_len (blok_name);
+             komunikat_str_short(blok_name, TRUE, FALSE);
           }   
         }           
 
@@ -4987,7 +5006,9 @@ try_again:
       redcrH(3);
       zmien_atrybut(dane,dane + dane_size,Aoblok,Ablok);
 
-      komunikat (0);
+    //komunikat(0);
+    komunikat_null();
+
       sel.akt = 0;
       draw_hatch_pattern = FALSE;
       return 0;
@@ -4996,7 +5017,9 @@ try_again:
       {
        redcrH(3);
        zmien_atrybut(dane,dane + dane_size,Aoblok,Ablok);
-       komunikat (0);
+      //komunikat(0);
+      komunikat_null();
+
        sel.akt = 0;
        draw_hatch_pattern = FALSE;
        return 2;
@@ -5005,7 +5028,9 @@ try_again:
 	  {
 		  redcrH(3);
 		  zmien_atrybut(dane, dane + dane_size, Aoblok, Ablok);
-		  komunikat(0);
+		  //komunikat(0);
+          komunikat_null();
+
 		  sel.akt = 0;
 		  draw_hatch_pattern = FALSE;
 		  return 20;
@@ -5014,7 +5039,8 @@ try_again:
 	  {
 		  redcrH(3);
 		  zmien_atrybut(dane, dane + dane_size, Aoblok, Ablok);
-		  komunikat(0);
+          //komunikat(0);
+          komunikat_null();
 		  sel.akt = 0;
 		  draw_hatch_pattern = FALSE;
 		  return 21;
@@ -5023,7 +5049,8 @@ try_again:
 		  {
 		  redcrH(3);
 		  zmien_atrybut(dane, dane + dane_size, Aoblok, Ablok);
-		  komunikat(0);
+          //komunikat(0);
+          komunikat_null();
 		  sel.akt = 0;
 		  draw_hatch_pattern = FALSE;
 		  return 22;
@@ -5033,7 +5060,8 @@ try_again:
       redcrH(3);
       Cur_ond(X,Y);
 
-      komunikat (0);
+     //komunikat(0);
+     komunikat_null();
      
       zmien_atrybut(dane,dane + dane_size,Aoblok,Ablok);
 

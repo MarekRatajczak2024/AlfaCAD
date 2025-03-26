@@ -13,6 +13,7 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
+#define __O_HATCH1__
 
 #include "forwin.h"
 #define ALLEGWIN
@@ -30,6 +31,9 @@
 #include "o_hatch.h"
 #include "b_messag.h"
 #include "b_libfun.h"
+
+#include "b_messag.h"
+#include "message.h"
 
 #include "leak_detector_cpp.hpp"
 
@@ -67,6 +71,8 @@ static int get_objectsno (long_long, long_long) ; /*liczba obiektow wskazanych*/
 static void get_global_node_coord (int , double *, double *) ;
 
 extern void Free_Areas_Mem(void);
+
+#define MAX_NO_OF_OBJECTS 6000
 
 
 static int fcmp_linear (const void *val1, const void *val2)
@@ -849,6 +855,7 @@ int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
   long_long le_abd;
   int ret;
   double df_pointx_, df_pointy_;
+  double DF_PRECISION_;
 
   if (abd!=NULL)  le_abd = (long_long)dane + dane_size - (long_long)abd;  //position of existing blok from end of data
   else le_abd = -1;
@@ -936,9 +943,10 @@ int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
     return 0;
   }
 
-  if (i__objects_no>2048)
+  if (i__objects_no>MAX_NO_OF_OBJECTS)
   {
       if ((solidarc_shadows_no + shadows_no + arc_shadows_no + el_shadows_no) > 0) delete_spline_shadows(TRUE);
+      ErrListStr(_TO_MANY_OBJECTS_);
       return 0;
   }
 
@@ -980,6 +988,9 @@ int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
   }
   sort_nodes_table (l_offb, l_offe) ;
 
+    //DF_PRECISION_=DF_PRECISION;
+    //DF_PRECISION=1000;
+
   ret = Make_areas (l_offb, l_offe, seeds_no,
 			   df_pointx, df_pointy,
                 &df_pointx_, &df_pointy_,
@@ -987,6 +998,8 @@ int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
 			   &s__nodes_coord_alloc,
 			   ptrs__nodes_table,
 			   &s__area);
+
+    //DF_PRECISION=DF_PRECISION_;
 
     if (ret != 1) {
         if ((solidarc_shadows_no + shadows_no + arc_shadows_no + el_shadows_no) > 0) delete_spline_shadows(TRUE);
@@ -1127,3 +1140,5 @@ BOOL hatch_proc_test (long_long l_offb0, long_long l_offe0,
   if ((solidarc_shadows_no + shadows_no + arc_shadows_no + el_shadows_no) > 0) delete_spline_shadows(FALSE);
   return TRUE;
 }
+
+#undef __O_HATCH1__

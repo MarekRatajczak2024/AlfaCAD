@@ -292,8 +292,12 @@ static void (*COMND[])(void)= {  InicjacjaMakra, WykonanieMakra, ReadMakro, Writ
 void Makro(void)
 { int n;
  Semaphore = FALSE;
- if((n=getwsp1(&mMakro)-1)>=0) (*COMND[n])();    /* n=-1 -> esc */
- LASTFUN=COMND[n];
+ if((n=getwsp1(&mMakro)-1)>=0)
+ {
+     //LASTFUN=NULL;
+     (*COMND[n])();    /* n=-1 -> esc */
+     LASTFUN = COMND[n];
+ }
 }
 
 #undef __O_MAK__

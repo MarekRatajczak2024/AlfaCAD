@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "AlfaCADPL"
+			"path" : "AlfaCAD"
 		}
 	],
 	"backtrace" : 1,
@@ -27,25 +27,25 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 499,
+				"line" : 501,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 13637,
+				"line" : 13639,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 1337,
+				"line" : 1339,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 804,
+				"line" : 806,
 				"parent" : 0
 			}
 		]
@@ -68,6 +68,10 @@
 				{
 					"backtrace" : 3,
 					"define" : "BIT64"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "ENGLISH"
 				},
 				{
 					"backtrace" : 3,
@@ -296,6 +300,10 @@
 				{
 					"backtrace" : 3,
 					"define" : "BIT64"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "ENGLISH"
 				},
 				{
 					"backtrace" : 3,
@@ -628,11 +636,12 @@
 				183,
 				184,
 				186,
-				187
+				187,
+				188
 			]
 		}
 	],
-	"id" : "AlfaCADPL::@6890427a1f51a3e7e1df",
+	"id" : "AlfaCAD::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -787,8 +796,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "AlfaCADPL",
-	"nameOnDisk" : "AlfaCADPL",
+	"name" : "AlfaCAD",
+	"nameOnDisk" : "AlfaCAD",
 	"paths" : 
 	{
 		"build" : ".",
@@ -982,7 +991,8 @@
 				183,
 				184,
 				186,
-				187
+				187,
+				188
 			]
 		},
 		{
@@ -993,7 +1003,8 @@
 				135,
 				148,
 				178,
-				185
+				185,
+				189
 			]
 		}
 	],
@@ -2121,6 +2132,17 @@
 			"compileGroupIndex" : 1,
 			"path" : "o_wmctrl.c",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "o_section_block.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "o_section_block.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"

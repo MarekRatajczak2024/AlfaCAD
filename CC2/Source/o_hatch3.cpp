@@ -2957,26 +2957,26 @@ static BOOL break_up_arcs (void)
     ptrs_arcs = ptrs__area0->s_arcs_cpy_alloc.ptrs_arcs ;
     memcpy (&s_arc, &ptrs_arcs [i], sizeof (T_AArc)) ;
 
-    if (TRUE == Check_Angle (s_arc.a1, Pi2 * 3. / 4, Pi2 / 4) &&
-	TRUE == Sharp_Check_Angle (Pi2 / 4,  s_arc.a1, s_arc.a2))
+    if (TRUE == Check_Angle (s_arc.a1, Pi2 * 3. / 4., Pi2 / 4.) &&
+	TRUE == Sharp_Check_Angle (Pi2 / 4.,  s_arc.a1, s_arc.a2))
     {
-       if (FALSE == add_arc (&s_arc, Pi2 / 4))
+       if (FALSE == add_arc (&s_arc, Pi2 / 4.))
        {
 	 return FALSE ;
        }
     }
-    if (TRUE == Check_if_LT (s_arc.a1, Pi2 * 3. / 4) &&
-	TRUE == Sharp_Check_Angle (Pi2 * 3. / 4,  s_arc.a1, s_arc.a2))
+    if (TRUE == Check_if_LT (s_arc.a1, Pi2 * 3. / 4.) &&
+	TRUE == Sharp_Check_Angle (Pi2 * 3. / 4.,  s_arc.a1, s_arc.a2))
     {
-       if (FALSE == add_arc (&s_arc, Pi2 * 3. / 4))
+       if (FALSE == add_arc (&s_arc, Pi2 * 3. / 4.))
        {
 	 return FALSE ;
        }
     }
-    if (TRUE == Check_Angle (s_arc.a1, Pi2 * 3. / 4, Pi2 / 4) &&
-	TRUE == Sharp_Check_Angle (Pi2 / 4,  s_arc.a1, s_arc.a2))
+    if (TRUE == Check_Angle (s_arc.a1, Pi2 * 3. / 4., Pi2 / 4.) &&
+	TRUE == Sharp_Check_Angle (Pi2 / 4.,  s_arc.a1, s_arc.a2))
     {
-      if (FALSE == add_arc (&s_arc, Pi2 / 4))
+      if (FALSE == add_arc (&s_arc, Pi2 / 4.))
       {
 	return FALSE ;
       }

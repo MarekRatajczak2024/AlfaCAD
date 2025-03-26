@@ -24,6 +24,7 @@
     <LocalDebuggerCommandArguments>--NOCHDIR</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>../../../ALFACAD</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_ES|Win32'">
     <LocalDebuggerCommandArguments>--NOCHDIR</LocalDebuggerCommandArguments>

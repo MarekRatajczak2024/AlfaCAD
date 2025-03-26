@@ -753,7 +753,7 @@ void destroy_parent(void)
 	parent_screen=NULL;
 }
 
-void     setviewport(int left, int top, int right, int bottom, int clip)
+void setviewport(int left, int top, int right, int bottom, int clip)
 {
     int x_left;
     int y_top;
@@ -1524,8 +1524,8 @@ void     GrMouseSetColors(GrColor fg,GrColor bg)
 
 void     GrMouseDisplayCursor(void)
 {
-  show_mouse(screen);
-  return;
+    //acquire_bitmap(screen);
+    show_mouse((BITMAP*)screen);
 }
 
 
@@ -1543,37 +1543,32 @@ static void uunscare_mouse(void)
 
 void     GrMouseEraseCursor(void)
 {
-  scare_mouse();  
-  return;
+  scare_mouse();
 }
 
 void     GrMouseUnEraseCursor(void)
 {
   unscare_mouse();
-  return;
 }
 
 void     GrMouseWarp(int x,int y)
 {
   position_mouse(x-viewport_x, y-viewport_y);
-  return;
 }
 
 void GrMouseEventMode(int dummy)
 {
-  return;
+  ;
 }
 
 void GrMouseInit(void)
 {
   install_mouse();
-  return;
 }
 
 void GrMouseUnInit(void)
 {
   remove_mouse();
-  return;
 }
 
 
@@ -1606,7 +1601,6 @@ void GrMouseGetEventT(int flags,GrMouseEvent *event,long timout_msecs)
       event->x = mouse_x + viewport_x;
       event->y = mouse_y + viewport_y;
     }
-  return;
 }
 
 int  GrMouseDetect(void)
@@ -1629,7 +1623,6 @@ void GrMouseGetEvent(int flags,GrMouseEvent *event)
       event->x = mouse_x+viewport_x;
       event->y = mouse_y+viewport_y;
     }
-  return;
 }
 
 void GrMouseRelease00(void)
@@ -1639,7 +1632,6 @@ void GrMouseRelease00(void)
    int p_mouse = my_poll_mouse();
    if (mouse_b == 0) break;
   }
-  return;
 }
 
 void GrMouseRelease(void)
@@ -1648,7 +1640,6 @@ void GrMouseRelease(void)
 	{
 		my_poll_mouse();
 	} while (mouse_b > 0);
-	return;
 }
 
 void GrMouseClear(void)
@@ -1717,7 +1708,6 @@ void GrMouseGetEvent1(int flags,GrMouseEvent *event)
       event->x = mouse_x+viewport_x;
       event->y = mouse_y+viewport_y;
     }
-  return;
 }
 
 void     outtextxy(int x, int y0, const char *textstring)
@@ -1734,7 +1724,6 @@ void     outtextxy(int x, int y0, const char *textstring)
         else textout(screen, font3, textstring, x/*-viewport_x*/, y/*-viewport_y*/, cur_color);
 
   moveto(x + textwidth(textstring), y0);
-  return;
 }
 
 void     settextsettings(int font_number, int direction, int charsize, int horiz, int vert)
@@ -1753,19 +1742,17 @@ void     gettextsettings(struct textsettingstype  *texttypeinfo)
   texttypeinfo->charsize=font_charsize;  //get_HEIGHT();
   texttypeinfo->horiz=cur_text_just_horiz;
   texttypeinfo->vert=cur_text_just_vert;
-  return;
 }
 
 void change_font(int nr_font)
 {
  if (nr_font==0) font3 = font1;
    else font3 = font2;
- return;
 }
 
 void     settextstyle(int font, int direction, int charsize)
 {
-  return;
+	;
 }
 
 int      textwidth(const char  *textstring)
@@ -1780,7 +1767,6 @@ void     setrgbpalette(int color, int red, int green, int blue)
     mypal[color].b=blue;
  
   if (color==255)  set_palette(mypal);
-  return;
 }
 
 void     mysetrgbdefaults(void)
@@ -1794,14 +1780,13 @@ void     mysetrgbdefaults(void)
    }
   
   set_palette(mypal);
-  return;
 }
 
 
 void set_default_background()
 {
 	background_pcx=(BITMAP *)data[gregre].dat;
-	set_background_menu("greygres");
+	set_background_menu((char*)"greygres");
 }
 
 void set_special_background(char *file_pcx)
@@ -1820,7 +1805,7 @@ void set_special_background(char *file_pcx)
 	if (background_pcx == NULL)
 	{
 		set_default_background();
-		set_background_menu("greygres");
+		set_background_menu((char*)"greygres");
 	}
 	else
 	{
@@ -2438,7 +2423,7 @@ void reset_if_resized(void)
     int revert;
     int ret;
 
-    display = XOpenDisplay(NULL);
+    display = XOpenDisplay(0);
 
 
     root_window=DefaultRootWindow(display);
@@ -2611,7 +2596,7 @@ int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width,
         int revert;
         int ret;
 
-        display = XOpenDisplay(NULL);
+        display = XOpenDisplay(0);
 
         root_window=DefaultRootWindow(display);
 
@@ -2777,7 +2762,7 @@ void xwin_set_hints(int dx, int dy) {
 
 void get_display_window(void)
 {
-    main_display = XOpenDisplay(NULL);
+    main_display = XOpenDisplay(0);
     main_root_window=DefaultRootWindow(main_display);
 }
 
@@ -3306,7 +3291,7 @@ int set_window_origin(int x_win_orig, int y_win_orig)
 
     XWindowAttributes attr;
 
-    display = XOpenDisplay(NULL);
+    display = XOpenDisplay(0);
 
     root_window=DefaultRootWindow(display);
 
@@ -3347,7 +3332,7 @@ void get_cur_widt_height(int *cur_width, int *cur_height)
     int revert;
     int ret;
 
-    display = XOpenDisplay(NULL);
+    display = XOpenDisplay(0);
     root_window=DefaultRootWindow(display);
 
     focus=_xwin.window;
@@ -3665,7 +3650,7 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
     int revert;
     int ret;
 
-    display = XOpenDisplay(NULL);
+    display = XOpenDisplay(0);
 
 
     XRRScreenResources* sr = XRRGetScreenResources(display, DefaultRootWindow(display));
@@ -3759,26 +3744,27 @@ void XWindow_Name(int client_number) {
     strcpy(_xwin.window_title, Window_Name);
 }
 
+/*
 int get_screen_dims(void)
         {
         Display *disp;
-        XRRScreenResources *screen;
+        XRRScreenResources *screen0;
         XRROutputInfo *info;
         XRRCrtcInfo *crtc_info;
         int iscres;
         int icrtc;
 
         disp = XOpenDisplay(0);
-
-        for (iscres = screen->noutput; iscres > 0; ) {
+        //screen
+        for (iscres = disp->noutput; iscres > 0; ) {
             --iscres;
 
-            info = XRRGetOutputInfo (disp, screen, screen->outputs[iscres]);
+            info = XRRGetOutputInfo (disp, screen0, screen0->outputs[iscres]);
             if (info->connection == RR_Connected) {
                 for (icrtc = info->ncrtc; icrtc > 0;) {
                     --icrtc;
 
-                    crtc_info = XRRGetCrtcInfo (disp, screen, screen->crtcs[icrtc]);
+                    crtc_info = XRRGetCrtcInfo (disp, screen0, screen0->crtcs[icrtc]);
                     fprintf(stderr, "==> %dx%d+%dx%d\n", crtc_info->x, crtc_info->y, crtc_info->width, crtc_info->height);
 
                     XRRFreeCrtcInfo(crtc_info);
@@ -3786,19 +3772,20 @@ int get_screen_dims(void)
             }
             XRRFreeOutputInfo (info);
         }
-        XRRFreeScreenResources(screen);
+        XRRFreeScreenResources(screen0);
 
         XCloseDisplay(disp);
 
         return 0;
         }
+*/
 
 int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y, int mon) {
     int ret_left_x_ = INT_MAX;
     int ret_right_x_ = INT_MIN;
     int ret_top_y_ = INT_MAX;
     int ret_bottom_y_ = INT_MIN;
-    Display *display;
+    _XDisplay *display;
     int i,j, output;
     Window *list;
     char *name;
@@ -5620,7 +5607,7 @@ int Free_Mouse(void)
         int revert;
         int ret;
 
-        display = XOpenDisplay(NULL);
+        display = XOpenDisplay(0);
 
         root_window=DefaultRootWindow(display);
 
@@ -6793,7 +6780,7 @@ void my_set_window_title(char* wnd_title)
     Display *display;
     Window focus;
     int revert;
-    display = XOpenDisplay(NULL);
+    display = XOpenDisplay(0);
     focus=_xwin.window;
     set_title(display, focus, wnd_title);
 #endif
@@ -6813,7 +6800,7 @@ void Set_XWindow_header_height(void) {
     long* extents;
     XEvent e;
 
-    d = XOpenDisplay(0);
+    d = XOpenDisplay(nullptr);
     s = DefaultScreen(d);
     root = DefaultRootWindow(d);
     fg = BlackPixel(d, s);

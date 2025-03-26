@@ -1499,13 +1499,16 @@ int Tekst_factory(char *prefix, BOOL repeat)
     int ret;
 	int tab = 0;
 
+    if (aktmakro!=NULL) return 0; //TEMPORARY due to makro
+
 	edit_functions = TRUE;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 	strcpy(&TextG.text, prefix);
 	TextG.multiline = 0;
 
 	redcr(0);
-	Cur_offd(X, Y);
+	//Cur_offd(X, Y);
+    CUR_OFF(X, Y);
 re_edit:
 
 	re_EDIT = FALSE;
@@ -1539,6 +1542,7 @@ re_edit:
 	TextG.height = 0;
 	TextG.obiektt2 = O2NoBlockS;
 	///////////
+    CUR_OFF(X, Y);
 
 
 	DF_to_String(sk, "%-6.2f", Rad_to_Grid(TextG.kat), 6);
@@ -1546,7 +1550,8 @@ re_edit:
 
 	set_menu_string();
 
-	Cur_ond(X, Y);
+	//Cur_ond(X, Y);
+    CUR_ON(X, Y);
 
 	sel.akt=1;
 
@@ -1559,14 +1564,16 @@ re_edit:
 		{
 		case evKeyDown: if (ev->Number == 0)
 		{
-			Cur_offd(X, Y);
+			//Cur_offd(X, Y);
+            CUR_OFF(X, Y);
 			redcr(1);
 			edit_functions = FALSE;
 			return 0;
 		}
 						if (ev->Number == ENTER)
 						{
-							Cur_offd(X, Y);
+							//Cur_offd(X, Y);
+                            CUR_OFF(X, Y);
 							if ((PTRS__Text_Style[TextG.czcionka]->type == 2))
 							{
 								;
@@ -1577,12 +1584,13 @@ re_edit:
 								edit_functions = FALSE;
 								return 1;
 							}
-							Cur_ond(X, Y);
-
+							//Cur_ond(X, Y);
+                            CUR_ON(X, Y);
 						}
 						if ((ev->Number == _EDIT_) || (ev->Number == _edit_))
 						{
-							Cur_offd(X, Y);
+							//Cur_offd(X, Y);
+                            CUR_OFF(X, Y);
 							goto re_edit;
 						}
 						break;
@@ -1593,7 +1601,8 @@ re_edit:
 		}
 		if (re_EDIT == TRUE)
 		{
-			Cur_offd(X, Y);
+			//Cur_offd(X, Y);
+            CUR_OFF(X, Y);
 			goto re_edit;
 		}
 	}

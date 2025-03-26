@@ -6481,8 +6481,8 @@ void Zapamietaj(void)
 {
   static void (*REDdod)(void)=nooop;
   char fn [MAXPATH] ;
-  int	i_maxlen	= Max_Spec_Value ;
-  int i_maxtype = Max_Spec_Name ;
+  int i_maxlen = Max_Spec_Value ;
+  int i_maxtype = 32; //Max_Spec_Block/2;
   char blok_name [Max_Spec_Block] ;
   char blok_type [Max_Spec_Block] ;
 
@@ -6506,6 +6506,7 @@ void Zapamietaj(void)
 
   if (Block_Type (blok_type, i_maxtype))
 	{
+         strcat(blok_name,blok_type);
 		 CUR_OFF(X,Y);
 		 WriteBlock(fn,X,Y, blok_name, blok_type,0, 1);
 		 CUR_ON(X,Y);

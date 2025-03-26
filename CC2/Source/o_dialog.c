@@ -53,7 +53,7 @@ typedef struct tagRECT {
 } RECT, * PRECT, * NPRECT, * LPRECT;
 #endif
 
-BITMAP *slbitmap=NULL;
+//BITMAP *slbitmap=NULL;
 
 static int (*kls)(void);
 static void (*mv)(int x, int y);
@@ -130,7 +130,7 @@ extern int i__font_nomax;
 extern void outetextxy(int x, int y, int maxlength, int width, char *s,
 					int ink, int paper);;
 extern void setcolor(int kolor);
-extern void myline(int x1, int y1, int x2, int y2);
+//extern void myline(int x1, int y1, int x2, int y2);
 extern void setfillstyle_(int pattern, int color);
 extern void setlinestyle1(int line_style, unsigned short u_pattern, int thickness);
 extern void setwritemode( int mode );
@@ -489,7 +489,7 @@ static void draw_check_box(BUTTON *Button);
 static TDIALOG dlg0;
 
 static int global_dialog_flag = 0;
-static char global_dialog_name[6];
+static char global_dialog_name[16];
 static char *global_dialog_ptr=NULL;
 static int curr_x0, curr_y0, curr_h, curr_v;
 static int ret_left_x, ret_right_x, ret_top_y, ret_bottom_y;
@@ -1520,7 +1520,7 @@ static void draw_listbox(LISTBOX  * listbox)
 			strcpy(sk, ptr_temp + 2);
 			if (listbox->wartosc > 16)
 			{
-				sprintf(sk1, " %#ld", listbox->wartosc);
+				sprintf(sk1, " %d", listbox->wartosc);
 				strncat(sk, sk1, strlen(sk1));
 				kolor_m = GetColorAC1(listbox->wartosc);
 			}
@@ -1649,7 +1649,7 @@ static void draw_listbox(LISTBOX  * listbox)
 static int listbox_init_slider(int *var1, int *var2, int *var3, int *var4)
 {
     LISTBOX *listbox;
-    listbox=listbox_address;
+    listbox=(LISTBOX *)listbox_address;
 
     *var1=listbox->foff;  //  n_first_layer_in_dlg;
     *var2=listbox->foff+listbox->maxw; //  n_last_layer_in_dlg+1;
@@ -1665,7 +1665,7 @@ static int listbox_grab_slider(void *dp3, int d2)
     int (*SlideFun)(int*, int*, int*, int*);
 
     LISTBOX *listbox;
-    listbox=listbox_address;
+    listbox=(LISTBOX *)listbox_address;
 
     SlideFun = (int(*)(int *, int *, int *, int *))dp3;
 
@@ -2361,7 +2361,7 @@ static BOOL edit_combo_box(COMBOBOX *ComboBox)
     {
       if ((set_listbox_slider) && (ev->Number == ENTER))
       {
-          ret = find_listbox_slider(listbox_address, &listbox_slider);
+          ret = find_listbox_slider((LISTBOX*)listbox_address, &listbox_slider);
           if (ret==1) continue;
       }
       init_lbox(1);
@@ -3079,9 +3079,11 @@ void draw_push_button(BUTTON *Button)
 	{
         if ((strlen(Button->txt) > 0) && (Button->txt[0] == '\023'))
         {
-            txt_scale_factor = (float) Button->dx / 72.0 * 0.8;
-            if (txt_scale_factor < 0.65) txt_scale_factor = 0.65;
-            if (txt_scale_factor > 0.85) txt_scale_factor = 0.85;
+            txt_scale_factor = (float) (Button->dx / 72.0 * 0.8);
+            if (txt_scale_factor < 0.65) txt_scale_factor = 0.65f;
+            if (txt_scale_factor > 0.85) txt_scale_factor = 0.85f;
+
+            ////txt_scale_factor = 1.0; ////temporary
 
             movex0 = x1 + 6;
             deltax0 = x2 - x1 - 12;
@@ -3109,16 +3111,16 @@ void draw_push_button(BUTTON *Button)
                     ret = ViewInsBlock(Button->adr, FALSE);
             }
 
-            strcpy(&file, (char *) (Button->txt + 1));
+            strcpy(&file, (char *)(Button->txt + 1));
             setcolor(ink);
             moveto(x0 + 1, y2 + 3);
             settextjustify(CENTER_TEXT, TOP_TEXT);
             HEIGHT_BAK = HEIGHT;
             WIDTH_BAK = WIDTH;
-            HEIGHT *= txt_scale_factor;
-            WIDTH *= txt_scale_factor;
+            HEIGHT = (int)((float)HEIGHT*txt_scale_factor);
+            WIDTH = (int)((float)WIDTH*txt_scale_factor);
             len = utf8len(file);
-            pos_txt = findfpostopxl(file, deltax0 / 0.95);
+            pos_txt = findfpostopxl(file, (int)((float)deltax0 / 0.95f));
             if (pos_txt < len) outtext_r(&file[pos_txt]);
 
             HEIGHT = HEIGHT_BAK;
@@ -3126,9 +3128,9 @@ void draw_push_button(BUTTON *Button)
         }
 		else if ((strlen(Button->txt) > 0) && (Button->txt[0] == '\024'))
 		{
-			txt_scale_factor = (float)Button->dx / 72.0 * 0.8;
-			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65;
-			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85;
+			txt_scale_factor = (float)Button->dx / 72.0f * 0.8f;
+			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65f;
+			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85f;
 
 			movex0 = x1 + 6;
 			deltax0 = x2 - x1 - 12;
@@ -3141,18 +3143,18 @@ void draw_push_button(BUTTON *Button)
 			settextjustify(CENTER_TEXT, TOP_TEXT);
 			HEIGHT_BAK = HEIGHT;
 			WIDTH_BAK = WIDTH;
-			HEIGHT *= txt_scale_factor;
-			WIDTH *= txt_scale_factor;
-			pos_txt= findfpostopxl(file, deltax0 / 0.95);
+			HEIGHT = (int)((float)HEIGHT*txt_scale_factor);
+			WIDTH = (int)((float)WIDTH*txt_scale_factor);
+			pos_txt= findfpostopxl(file, (int)((float)deltax0 / 0.95));
 			outtext_r(&file[pos_txt]);
 			HEIGHT = HEIGHT_BAK;
 			WIDTH = WIDTH_BAK;
 		}
 		else if ((strlen(Button->txt) > 0) && (Button->txt[0] == '\026'))
 		{
-			txt_scale_factor = (float)Button->dx / 72.0 * 0.8;
-			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65;
-			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85;
+			txt_scale_factor = (float)(Button->dx / 72.0 * 0.8);
+			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65f;
+			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85f;
 
 			movex0 = x1 + 6;
 			deltax0 = x2 - x1 - 12;
@@ -3190,18 +3192,18 @@ void draw_push_button(BUTTON *Button)
 			settextjustify(CENTER_TEXT, TOP_TEXT);
 			HEIGHT_BAK = HEIGHT;
 			WIDTH_BAK = WIDTH;
-			HEIGHT *= txt_scale_factor;
-			WIDTH *= txt_scale_factor;
-			pos_txt = findfpostopxl(file, deltax0 / 0.95);
+			HEIGHT = (int)((float)HEIGHT*txt_scale_factor);
+			WIDTH = (int)((float)WIDTH*txt_scale_factor);
+			pos_txt = findfpostopxl(file, (int)((float)deltax0 / 0.95f));
 			outtext_r(&file[pos_txt]);
 			HEIGHT = HEIGHT_BAK;
 			WIDTH = WIDTH_BAK;
 		}
 		else if ((strlen(Button->txt) > 0) && (Button->txt[0] == '\025'))
 		{
-			txt_scale_factor = (float)Button->dx / 72.0 * 0.8;
-			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65;
-			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85;
+			txt_scale_factor = (float)((float)Button->dx / 72.0f * 0.8f);
+			if (txt_scale_factor < 0.65) txt_scale_factor = 0.65f;
+			if (txt_scale_factor > 0.85) txt_scale_factor = 0.85f;
 
 			movex0 = x1 + 6;
 			deltax0 = x2 - x1 - 12;
@@ -3240,9 +3242,9 @@ void draw_push_button(BUTTON *Button)
 			settextjustify(CENTER_TEXT, TOP_TEXT);
 			HEIGHT_BAK = HEIGHT;
 			WIDTH_BAK = WIDTH;
-			HEIGHT *= txt_scale_factor;
-			WIDTH *= txt_scale_factor;
-			pos_txt = findfpostopxl(file, deltax0 / 0.95);
+			HEIGHT = (int)((float)HEIGHT*txt_scale_factor);
+			WIDTH = (int)((float)WIDTH*txt_scale_factor);
+			pos_txt = findfpostopxl(file, (int)((float)deltax0 / 0.95f));
 			outtext_r(&file[pos_txt]);
 			HEIGHT = HEIGHT_BAK;
 			WIDTH = WIDTH_BAK;
@@ -3279,7 +3281,7 @@ void draw_push_button(BUTTON *Button)
 					   blit(bmp, screenplay, 0, 0, x1, y1, wh, wh);
                     else
                     {
-                        BITMAP *bmp1= create_bitmap(bmp->w, bmp->h);
+                        BITMAP *bmp1= create_bitmap_ex(32, bmp->w, bmp->h);
                         dimm_dialog_bitmap(bmp, bmp1, bmp->w, bmp->h, 5);
                         blit(bmp1, screenplay, 0, 0, x1, y1, wh, wh);
                         destroy_bitmap(bmp1);
@@ -3624,8 +3626,8 @@ static void draw_radio_button(BUTTON *Button)
   setfillstyle_(SOLID_FILL,paper);
   x1 = jed_to_piks_x(Button->x)+pocz_x;
 
-  skl = ((float)(HEIGHT) / 15.0);
-  if (skl < 1.0) skl = 1.0;
+  skl = (float)((float)(HEIGHT) / 15.0);
+  if (skl < 1.0) skl = 1.0f;
 
   SIZE_RADIOBUTTON = (int)((float)SIZE_RADIOBUTTON0 *skl);
   x0 = x1 + SIZE_RADIOBUTTON;
@@ -4023,12 +4025,17 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
 
   show_mouse(NULL); ////
 
-  blit(dialog_screen, screen, 0, 0, dialog_rect->left, dialog_rect->top, dialog_rect->right-dialog_rect->left, dialog_rect->bottom-dialog_rect->top);
+  blit(dialog_screen, screen, 0, 0, (int)dialog_rect->left, (int)dialog_rect->top, (int)(dialog_rect->right-dialog_rect->left), (int)(dialog_rect->bottom-dialog_rect->top));
   destroy_bitmap(dialog_screen);
 
   Set_Screenplay(screen);
 
+  acquire_screen();
+#ifdef LINUX
+  show_x_cursor();
+#endif
   show_mouse(screen); ////
+  release_screen();
   //select_mouse_cursor(MOUSE_CURSOR_ALLEGRO);
 
 
@@ -4541,7 +4548,7 @@ static void init(char typ, TDIALOG *Dlg, TMENU *tipsmenu)
          //if sliders exist
          for (int i=0; i<Dlg->SizeSliderT; i++)
          {
-             BITMAP *slbitmap;
+             //BITMAP *slbitmap;
              SLIDER *slider = Dlg->Sliders;
 
              if (slider[i].flags & 0xF0) continue;
@@ -4763,7 +4770,9 @@ int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)
     get_size_and_disable_F11(dim);
 
 	global_dialog_flag = 1;
-	strncpy(&global_dialog_name, dlg->txt, 5);
+	strncpy(&global_dialog_name, dlg->txt, 15);
+    global_dialog_name[15]='\0';
+
     global_dialog_ptr=(char*)dlg;
 
 	if (dlg->process != NULL)
@@ -4774,7 +4783,8 @@ int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)
 	else ProcFG = NULL;
 
 	dialog_window_was_resized = FALSE;
-	_free_mouse();
+	//_free_mouse();
+    free_mouse();
 
 
 	if (GFX_WIN == 1)
@@ -4881,7 +4891,8 @@ continue2:
 		dlg->flags &= 0x40;
 
 		global_dialog_flag = 0;
-		strncpy(global_dialog_name, "", 5);
+		strncpy(global_dialog_name, "", 15);
+        global_dialog_name[15]='\0';
         check_size_and_enable_F11(dim);
 		return 0;
 	}
@@ -4913,7 +4924,8 @@ continue2:
 		  ////////////////////////////////
 
 		  global_dialog_flag = 0;
-		  strncpy(global_dialog_name, "",5);
+		  strncpy(global_dialog_name, "",15);
+          global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
 		  return 0;
          }
@@ -4926,7 +4938,8 @@ continue2:
 		 ////////////////////////////////
 
 		 global_dialog_flag = 0;
-		 strncpy(global_dialog_name, "",5);
+		 strncpy(global_dialog_name, "",15);
+         global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
        	 return 0;
          }	
@@ -4955,7 +4968,8 @@ continue2:
 		  ////////////////////////////////
 
 		  global_dialog_flag = 0;
-		  strncpy(global_dialog_name, "",5);
+		  strncpy(global_dialog_name, "",15);
+          global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
 		  return 2;
          }
@@ -4968,7 +4982,8 @@ continue2:
 		 ////////////////////////////////
 
 		 global_dialog_flag = 0;
-		 strncpy(global_dialog_name, "", 5);
+		 strncpy(global_dialog_name, "", 15);
+         global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
        	 return 0;
          }	
@@ -4996,7 +5011,8 @@ continue2:
 		  ////////////////////////////////
 
 		  global_dialog_flag = 0;
-		  strncpy(global_dialog_name, "",5);
+		  strncpy(global_dialog_name, "",15);
+          global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
 		  return 10;
          }
@@ -5009,7 +5025,8 @@ continue2:
 		 ////////////////////////////////
 
 		 global_dialog_flag = 0;
-		 strncpy(global_dialog_name, "",5);
+		 strncpy(global_dialog_name, "",15);
+         global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
        	 return 0;
          }	
@@ -5114,7 +5131,8 @@ continue_lb:
 			  }
 			////////////////////////////////
 			global_dialog_flag = 0;
-			strncpy(global_dialog_name, "", 5);
+			strncpy(global_dialog_name, "", 15);
+            global_dialog_name[15]='\0';
             check_size_and_enable_F11(dim);
 			return n;
 		  }
@@ -5123,7 +5141,8 @@ continue_lb:
     }
   }
   global_dialog_flag = 0;
-  strncpy(global_dialog_name, "", 5);
+  strncpy(global_dialog_name, "", 15);
+  global_dialog_name[15]='\0';
 
   check_size_and_enable_F11(dim);
   return 0;

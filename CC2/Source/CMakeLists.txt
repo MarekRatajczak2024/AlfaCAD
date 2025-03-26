@@ -469,7 +469,9 @@ set(Source_Files
     "../../../CC2/Source/o_animate_dynamics.h"
     "../../../CC2/Source/o_slider.c"
     "../../../CC2/Source/o_wmctrl.c"
-    #"../../../CC2/Source/present_window.cpp"
+    "../../../CC2/Source/o_section_block.c"
+    "../../../CC2/Source/o_section_block.h"
+        #"../../../CC2/Source/present_window.cpp"
     #"../../../CC2/Source/present_window.h"
 )
 source_group("Source Files" FILES ${Source_Files})

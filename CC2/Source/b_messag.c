@@ -451,7 +451,7 @@ void komunikat_str_short(char *st, BOOL stay, BOOL center)
 
         if (stay) {
             short_notice = TRUE;
-            strncpy(short_notice_str, st, 128);  //64
+            strncpy(short_notice_str, st, 127);  //64
             short_notice_str[127] = '\0';  //63
             short_notice_center=center;
         }

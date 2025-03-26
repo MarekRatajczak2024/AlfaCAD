@@ -815,6 +815,12 @@ TCHAR greeting4[] = _T("Kliknij wewnątrz, aby zakończyć");
 
 #endif
 
+#ifdef __O_HATCH1__
+
+char _TO_MANY_OBJECTS_[]= u8"Wybrano zbyt wiele obiektów, aby kontynuować (maksymalnie 6000)";
+
+#endif
+
 #ifdef __O_HATCH3__
 
 char* vocabulary[] = { (char*)u8"   naciśnij klawisz:",(char*)u8"A", (char*)u8"środek ciężkości",(char*)u8"Moment statyczny pola",(char*)u8"Moment bezwładności" };

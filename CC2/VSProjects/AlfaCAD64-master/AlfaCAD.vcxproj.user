@@ -4,11 +4,13 @@
     <LocalDebuggerCommandArguments>--NOCHDIR</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>../../../ALFACAD64</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerWorkingDirectory>../../../ALFACAD64</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>--NOCHDIR</LocalDebuggerCommandArguments>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ES|x64'">
     <LocalDebuggerWorkingDirectory>../../../ALFACAD64ES</LocalDebuggerWorkingDirectory>

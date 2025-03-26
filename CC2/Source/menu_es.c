@@ -2657,7 +2657,7 @@ char Yes[2] = "Y";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _SAVED_BLOCK_ u8"< bloque guardado >"
+#define _SAVED_BLOCK_ u8"< bloque guardado > "
 
 #define _CHANGE_ u8"Cambio"
 #define _CHANGE_C_ L'C'

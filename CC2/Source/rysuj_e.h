@@ -487,6 +487,8 @@ extern void ErrListStr(char *);
 extern void  Internal_Error (int line, char * file);
 extern void komunikat(int);
 extern void komunikat_str(char  *st);
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
+extern void remove_short_notice(void);
 extern void komunikat_str_len(char  *st);
 extern void komunikat0(int);
 extern void komunikat0_str (int n, char  *st);

@@ -27,25 +27,25 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 499,
+				"line" : 501,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 13637,
+				"line" : 13639,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 1337,
+				"line" : 1339,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 804,
+				"line" : 806,
 				"parent" : 0
 			}
 		]
@@ -56,7 +56,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -fcolor-diagnostics"
+					"fragment" : "-O0 -O0 -fcolor-diagnostics"
 				}
 			],
 			"defines" : 
@@ -72,6 +72,10 @@
 				{
 					"backtrace" : 3,
 					"define" : "LINUX"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "NDEBUG"
 				},
 				{
 					"backtrace" : 3,
@@ -178,10 +182,6 @@
 				},
 				{
 					"backtrace" : 4,
-					"path" : "/usr/include/qt/QtPrintSupport"
-				},
-				{
-					"backtrace" : 4,
 					"path" : "/usr/include/KF5/KDELibs4Support"
 				},
 				{
@@ -227,14 +227,6 @@
 				{
 					"backtrace" : 4,
 					"path" : "/usr/include/qt/QtDBus"
-				},
-				{
-					"backtrace" : 4,
-					"path" : "/usr/include/ruby-3.0.0"
-				},
-				{
-					"backtrace" : 4,
-					"path" : "/usr/include/ruby-3.0.0/x86_64-linux"
 				},
 				{
 					"backtrace" : 4,
@@ -292,7 +284,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -fcolor-diagnostics"
+					"fragment" : "-O0 -O0 -fcolor-diagnostics"
 				}
 			],
 			"defines" : 
@@ -308,6 +300,10 @@
 				{
 					"backtrace" : 3,
 					"define" : "LINUX"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "NDEBUG"
 				},
 				{
 					"backtrace" : 3,
@@ -414,10 +410,6 @@
 				},
 				{
 					"backtrace" : 4,
-					"path" : "/usr/include/qt/QtPrintSupport"
-				},
-				{
-					"backtrace" : 4,
 					"path" : "/usr/include/KF5/KDELibs4Support"
 				},
 				{
@@ -463,14 +455,6 @@
 				{
 					"backtrace" : 4,
 					"path" : "/usr/include/qt/QtDBus"
-				},
-				{
-					"backtrace" : 4,
-					"path" : "/usr/include/ruby-3.0.0"
-				},
-				{
-					"backtrace" : 4,
-					"path" : "/usr/include/ruby-3.0.0/x86_64-linux"
 				},
 				{
 					"backtrace" : 4,
@@ -644,7 +628,8 @@
 				183,
 				184,
 				186,
-				187
+				187,
+				188
 			]
 		}
 	],
@@ -654,7 +639,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O0 -g",
+				"fragment" : "-O0 -O0",
 				"role" : "flags"
 			},
 			{
@@ -998,7 +983,8 @@
 				183,
 				184,
 				186,
-				187
+				187,
+				188
 			]
 		},
 		{
@@ -1009,7 +995,8 @@
 				135,
 				148,
 				178,
-				185
+				185,
+				189
 			]
 		}
 	],
@@ -2137,6 +2124,17 @@
 			"compileGroupIndex" : 1,
 			"path" : "o_wmctrl.c",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "o_section_block.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "o_section_block.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"

@@ -815,6 +815,12 @@ TCHAR greeting4[] = _T("Натисніть всередині, щоб закін
 
 #endif
 
+#ifdef __O_HATCH1__
+
+char _TO_MANY_OBJECTS_[]= u8"Для продовження вибрано багато об’єктів (максимум 6000)";
+
+#endif
+
 #ifdef __O_HATCH3__
 
 char* vocabulary[] = { (char*)u8"   натисніть клавішу:", (char*)u8"A", (char*)u8"центр ваги", (char*)u8"Статичний момент поля", (char*)u8"Момент інерції" };

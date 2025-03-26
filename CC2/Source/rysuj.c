@@ -136,6 +136,15 @@ char *winvar;
 char *winfont;
 char *otffont;
 
+typedef struct
+{
+    BITMAP **png_b;
+    char* png_file;
+    char** png_p;
+} BITMAP_LOAD;
+
+BITMAP *client_bitmap_load[MAX_CLIENT_BITMAP]={NULL};
+
 static int wt_lw_no;
 int PL166, PL266, PL366;
 
@@ -2219,6 +2228,7 @@ extern "C" {
 }
 #endif
 
+
 #include "o_protec.h"
 #include "b_windem.c"
 
@@ -3581,6 +3591,7 @@ void extra_logo(int x, int y, int option, char *file_name)
 	gk_done_renderer(rend);
 }
 
+/*
 typedef struct
 {
 	BITMAP **png_b;
@@ -3589,6 +3600,7 @@ typedef struct
 } BITMAP_LOAD;
 
 BITMAP *client_bitmap_load[MAX_CLIENT_BITMAP]={NULL};
+ */
 
 BITMAP *load_png_(char* png_file, PALETTE pal)
 {
@@ -3671,9 +3683,12 @@ int load_client_bitmap(char *bitmap_file) {
 }
 
 int delete_client_bitmap(int iconno) {
+    BITMAP *btm;
     printf("%d\n", iconno);
     if (client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]!=NULL) {
-        destroy_bitmap(client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]);
+        btm=(BITMAP*)client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO];
+        ////if ((btm->w==32) && (btm->h==32))
+            destroy_bitmap(client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]);
         client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]=NULL;
     }
     return 0;
@@ -3681,11 +3696,14 @@ int delete_client_bitmap(int iconno) {
 
 int delete_all_client_bitmaps(void)
 {
+    BITMAP *btm;
     for (int i=0; i<MAX_CLIENT_BITMAP; i++)
     {
         if (client_bitmap_load[i]!=NULL)
         {
-            destroy_bitmap(client_bitmap_load[i]);
+            btm=(BITMAP*)client_bitmap_load[i];
+            ////if ((btm->w==32) && (btm->h==32))
+                destroy_bitmap(client_bitmap_load[i]);
             client_bitmap_load[i]=NULL;
         }
     }

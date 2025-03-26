@@ -80,7 +80,7 @@ TMENU mIH_section_US_si_7 = { 9,0,0,4,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]
 
 POLE pmIH_section_US_si_8[] = {
 {u8"W",L' ',0,&mIH_section_US_si_8_0},
-{u8"I",L' ',0,&mIH_section_US_si_8_1},
+{u8"I W",L' ',0,&mIH_section_US_si_8_1},
 {u8"HP",L' ',0,&mIH_section_US_si_8_2},
 {u8"H",L' ',0,&mIH_section_US_si_8_3},
 };

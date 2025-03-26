@@ -866,8 +866,10 @@ int gk;
 		  {
               ////  !!!!!!!!!!!!!!! NO IDEA IF NEEDED, HAS TO BE CONFIRMED
 			  if (face_ttf[i]!=NULL)
-			      gk_unload_face(face_ttf[i]);
-			      face_ttf[i] = NULL;
+              {
+                  //   gk_unload_face(face_ttf[i]);  //this can crash after operations in Dialog
+                  face_ttf[i] = NULL;
+              }
 
 			  free((char *)PTRS__Text_Style[i]);
 		  }
@@ -883,7 +885,9 @@ int gk;
   Free_ini_font();
   Free_alft();
 
-  gk_library_cleanup();
+  size_t gk_bytes=gk_bytes_allocated();
+
+  ////gk_library_cleanup();  //is better to ignore that, after operations in Dialog it crashes at the end
 }
 
 int get_alfacad_logo_font(void)

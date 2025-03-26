@@ -28,6 +28,8 @@ extern int solidarc_elements(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l
 
 #define Npts 90
 
+static double LINE_ARC_ALIGN=0.006; //0.005, 0.001this parameter should be available to set in options
+
 static BOOL check_line_t (double df_t,
                          LINIA  *ptrs_line)
 //------------------------------------------
@@ -137,6 +139,11 @@ int IntersectionLl (LINIA  *ptrs_line,
 		    ptrs_line, ptrs_arc) ;
   for (i = 0 ; i < i_interno ; i++)
   {
+
+      if (fabs(1-df_t [i])<LINE_ARC_ALIGN) df_t [i]=1.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
+      if (fabs(df_t [i])<LINE_ARC_ALIGN) df_t [i]=0.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
     if (TRUE == check_line_t (df_t [i], ptrs_line))
     {
       ptrdf_tl [i_ret] = df_t [i] ;

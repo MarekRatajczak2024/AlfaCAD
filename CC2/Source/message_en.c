@@ -815,6 +815,12 @@ TCHAR greeting4[] = _T("Click inside to finish");
 
 #endif
 
+#ifdef __O_HATCH1__
+
+char _TO_MANY_OBJECTS_[]= {u8"To many objects are selected to proceed (max is 6000)"};
+
+#endif
+
 #ifdef __O_HATCH3__
 
 char* vocabulary[] = { (char*)u8"   press any key:", (char*)u8"A","center of mass",(char*)u8"First moment of area",(char*)u8"Area moment of inertia" };

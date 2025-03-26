@@ -1087,6 +1087,16 @@ BOOL check_if_block_in_win (long_long offp, long_long offk, int dwc)
 	   case Ospline:
 	   w = spline_dwc((SPLINE*)ad, dwc);
 	   break;
+        case Oellipse   :
+        case Ofilledellipse:
+       w = ellipse_dwc((ELLIPSE*)ad,dwc);
+       break;
+        case Oellipticalarc:
+        w = ellipticalarc_dwc((ELLIPTICALARC*)ad,dwc);
+        break;
+        case Ovector:
+        w = vector_dwc((AVECTOR*)ad,dwc);
+        break;
        default :
 	   w = 1 ;
 	  break;

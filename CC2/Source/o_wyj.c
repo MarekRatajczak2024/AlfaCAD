@@ -5121,35 +5121,35 @@ void Koniec(void)
 		   DoneBuffers(i);
    }
 
-   strcat(byebye, "!");  //See you soon! Na razie! Hasta luego!!
-   komunikat_str(byebye);
-   strcat(byebye, "!");  //See you soon!Na razie!Hasta luego!!!
-   komunikat_str(byebye);
+   //strcat(byebye, "!");  //See you soon! Na razie! Hasta luego!!
+   //komunikat_str(byebye);
+   //strcat(byebye, "!");  //See you soon!Na razie!Hasta luego!!!
+   //komunikat_str(byebye);
 
    DoneBackground();
 
-   strcat(byebye, "!");  //See you soon! Na razie! Hasta luego!!!!
-   komunikat_str(byebye);
+   //strcat(byebye, "!");  //See you soon! Na razie! Hasta luego!!!!
+   //komunikat_str(byebye);
 
    DonePatterns();
 
-   strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!.
-   komunikat_str(byebye);
+   //strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!.
+   //komunikat_str(byebye);
 
    DonePatternBitmapScaled();
 
-   strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!..
-   komunikat_str(byebye);
+   //strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!..
+   //komunikat_str(byebye);
 
    DoneKeyimage();
    DoneMickeyHand();
 
-   strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!...
-   komunikat_str(byebye);
+   //strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!...
+   //komunikat_str(byebye);
    DoneCursorimage();
 
-   strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!....
-   komunikat_str(byebye);
+   //strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!....
+   //komunikat_str(byebye);
 
    DoneBuffers3();
 

@@ -6,7 +6,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Release_ES-f5ebdc15457944623624.json",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16.0"
@@ -19,7 +19,7 @@
 					]
 				}
 			],
-			"name" : "Release_ES",
+			"name" : "Debug",
 			"projects" : 
 			[
 				{
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "AlfaCADES::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCADES-Release_ES-be79b7248f390512acff.json",
+					"jsonFile" : "target-AlfaCADES-Debug-3ba72436eb44aec1c173.json",
 					"name" : "AlfaCADES",
 					"projectIndex" : 0
 				}
@@ -49,7 +49,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-release_es",
+		"build" : "/home/marek/CC2/Source/cmake-build-debug_es",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

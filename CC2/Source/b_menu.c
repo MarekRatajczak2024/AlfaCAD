@@ -2147,7 +2147,7 @@ static char *addpress=NULL,*addpresse;
 
 int  kbrdy(void)
 {   if(addpress!=NULL) return 1;
-    if(aktmakro!=NULL) return 1;
+    ////if(aktmakro!=NULL) return 1;
     return my_kbhit();
 }
 
@@ -6299,7 +6299,7 @@ static void redcr(char typ)
 
          for (n1 = 0; n1 < SVMAX-84 ; n1++)
          {
-			 if (((n1 + 84) != 172) && ((n1 + 84) != 175) && ((n1 + 84) != 177) & ((n1 + 84) != 180))
+			 if (((n1 + 84) != 172) && ((n1 + 84) != 175) && ((n1 + 84) != 177) & ((n1 + 84) != 180) && ((n1 + 84) != 117))
 			 {
 				 SW0[n1 + 9] = SERV[n1 + 84];
 				 SERV[n1 + 84] = noop;
@@ -6375,7 +6375,8 @@ static void unredcr(void)
 
       for(n1 = 0 ;n1 < SVMAX-84 ; n1++)
         {
-          SERV [n1+84] = SW0[n1+9];
+          if ((n1 + 84) != 117)
+              SERV [n1+84] = SW0[n1+9];
         }
         
       SERV [47] = SW0[100];
@@ -7136,13 +7137,15 @@ int inkeys(TMENU *menu, BOOL search_ok)
    	else
 	  { zn=*aktmakro++;
 	   test_aktmakro();
+       ////my_sleep(50);
 	   return zn;
 	  }
     }
    if((lk=lastk)!='\0')
-     { lastk='\0';
+   { lastk='\0';
        return ucatch(lk);
-     }
+   }
+   //else ucatch(lk);
 
 #ifdef LINUX
     ////Odczyt_licznikow();
@@ -7178,6 +7181,9 @@ int inkeys(TMENU *menu, BOOL search_ok)
 			   }
 		   }
 	   }
+
+       if (key_shifts & (KB_CTRL_FLAG) && (key[KEY_END]))
+           return 9998;
 	   
 	   if ((now_is_dialog==0) && ((menu == NULL) || (menu_level == 0)) && (key_shifts & (KB_ALT_FLAG | KB_SHIFT_FLAG | KB_CTRL_FLAG)) && (!keypressed()))
 	   {
@@ -7280,7 +7286,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		   lk = ucatch (getchp());
 		   if (lk == '\0')
 		   {
-			   lastk = ucatch (getchp());
+			   //lastk = ucatch (getchp());
+               lastk = getchp();
 		   }
 		   kbflush();
            if (search_ok) {
@@ -7534,7 +7541,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		  }
        }
 
-       if (menu==&manimation) return 0;
+       if (menu==&manimation)
+           return 0;
     }
   return ucatch('\0');
 }
@@ -7765,6 +7773,7 @@ int inukeys(TMENU *menu)
 					return ucatch(COPYCLIP);
 				}
 			}
+
 			if ((key[KEY_ALT] || altkey) && key[KEY_8]) { clear_keybuff();  return ucatch(DEGREESIGN); }
 			if ((key[KEY_ALT] || altkey) && key[KEY_3]) { clear_keybuff();  return ucatch(SUPERSCRIPT3); }
             if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && ((key[KEY_ALT] || altkey) && key[KEY_4])) { clear_keybuff(); return ucatch(EUROSIGN); }
@@ -8009,7 +8018,12 @@ int  getcom(TMENU *menu)
 		Pan_Shift();
 		n = 0;
 		continue;
-
+    case 9998:
+        KeyFun = (int(*)(TMENU *))SERV[117];
+        if (KeyFun != NULL)
+            n = KeyFun(menu);
+        n = 0;
+        continue;
 	case '\10':  //Backspace
 		if ((menu_level == 0) && (Get_Global_Dialog_Flag() == 0))
 		{
@@ -8148,8 +8162,9 @@ int  getcom(TMENU *menu)
                 }
             }
 			n = (menu->max ? menu->poz + menu->foff + 1 : 0);
-			if (mkbuf != NULL && (zn = (*(menu->pola))[n - 1].wcod) != '\0')
-				*(mkbuf - 1) = zn;
+            ////TEMPORARY
+			////if (mkbuf != NULL && (zn = (*(menu->pola))[n - 1].wcod) != '\0')
+			////	*(mkbuf - 1) = zn;
 			break;
 		}
 		else
@@ -12244,4 +12259,4 @@ int GET_CONTROL_KEYS(int key)
 	else return key;
 }
 
-#undef __B_MENU__
+#undef __B_MENU__re

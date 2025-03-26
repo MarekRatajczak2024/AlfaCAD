@@ -24,6 +24,8 @@
 #include "message.h"
 #include "o_static.h"
 
+#include "o_section_block.h"
+
 extern TMENU mIH_section_US_si;
 extern TMENU mU_section_US_si;
 extern TMENU mT_section_US_si;
@@ -176,7 +178,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             ip, Sy_max, Sz_max, Wy, Wz, Ay, Az, It, It_s, Wt, w_max, Iw,
             iw, Ww, Sw_max, c_tf, c_tw, Wpl_y, Wpl_z, Wpl_w, Wpl_y_webs, Wpl_z_flanges,
             apl_y, apl_z, apl_w, Apl_y, Apl_z, Npl, Vpl_y, Vpl_z, Mpl_y, Mpl_z,
-             Nu, Gw, Am, V, Am_V, Aw, d0,  w, w1;
+             Nu, Gw, Am, V, Am_V, Aw, d0,  w, w1, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw;
 
     strcpy(section_data,"");
 
@@ -251,15 +253,18 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
         {
             fclose(f);
 
+            //extensions
+            t=0; ha=0; ba=0; ab=0; c=0; c1=0; r3=0; ri=0; bt=0; bb=0; bf=0;
+
             int no=sscanf(ptr1,
-                          "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                          "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
                           &h, &b, &tw, &tf, &hi, &r1, &r2, &b1, &dw, &k,
                           &kdes, &kdet, &k1, &ss, &sf, &A, &Iy, &Iz, &Ip, &iy,
                           &iz, &ip, &Sy_max, &Sz_max, &Wy, &Wz, &Ay, &Az, &It, &It_s,
                           &Wt, &w_max, &Iw, &iw, &Ww, &Sw_max, &c_tf, &c_tw, &Wpl_y, &Wpl_z,
                           &Wpl_w, &Wpl_y_webs, &Wpl_z_flanges, &apl_y, &apl_z, &apl_w, &Apl_y, &Apl_z, &Npl, &Vpl_y,
                           &Vpl_z, &Mpl_y, &Mpl_z, &Nu, &Gw, &Am, &V, &Am_V, &Aw, &d0,
-                          &w, &w1);
+                          &w, &w1, &bt, &bb, &bf, &t, &ha, &ba, &ab, &c, &c1, &r3, &ri, &sw);
 
             if (no<62)
             {
@@ -273,6 +278,10 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             if (Check_if_Equal(Az, 0)) Az=Ay;
             if (Check_if_Equal(Iz, 0)) Iz=Iy;
             if (Check_if_Equal(Wz, 0)) Wz=Wy;
+
+            //TEMPORARY
+            //generating of profile block
+            ret=create_profile_block(units_system, series0, type0, h, b, tw, tf, r1, r2, sf/100.0, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw/100.0);
 
             //#1 h=140 A=16.43 As=8.13 Iy=541.20 Iz=44.92 E=210 G=81 r=0 d=7850 a=11.7e-6 IPE 140
             set_decimal_format(par[0], h, prop_precisions->dim_precision);

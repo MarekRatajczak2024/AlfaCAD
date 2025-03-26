@@ -58,7 +58,7 @@ POLE pmRegion[] = {
         {u8"UK", 'B',774, NULL}, //&mSteelUK
 };
 
-TMENU mRegion = { 3, 0, 0, 8, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 3, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmApplications[] = {
         {u8"Static and dynamic analysis",L'S',733, NULL},

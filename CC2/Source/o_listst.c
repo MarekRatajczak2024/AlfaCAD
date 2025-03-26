@@ -36,12 +36,13 @@ extern void decodingwin(char *text);
 extern float jednostkiX0_(long pixels);
 extern float jednostkiY0_(long pixels);
 
-
 static POLE *pmList_String ;
 static POLE pm_tmp [] = { {u8"",' ',0,NULL}, } ;
 extern int utf8len(const char *s);
 #ifdef LINUX
 extern void Put_Str_To_Clip(char *ptrsz_buf);
+#else
+extern void Put_Str_To_Clip(char* ptrsz_buf);
 #endif
 
 #if defined (MENU_B)

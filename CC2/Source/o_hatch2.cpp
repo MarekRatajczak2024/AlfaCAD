@@ -641,6 +641,11 @@ get_vertex (T_PTR_Area ptrs_area, int i_vertex_no)
   return &ptrs_area->s_vertexs_alloc.ptrs_vertexs [i_vertex_no] ;
 }
 
+static int get_vertex_no (T_PTR_Area ptrs_area)
+{
+    return ptrs_area->s_vertexs_alloc.i_size;
+}
+
 /*funkcja dodaje parametry segmentu do odpowiednich lokalnych tablic obszaru*/
 static BOOL
 add_area_seg (int i_object_no,
@@ -1146,7 +1151,7 @@ aa:
        }
        k++ ;
      }
-     if (TRUE == Check_if_GT (df_t2, 0))
+     if (TRUE == Check_if_GT (df_t2, 0.0))
      {
        if ((TRUE == Check_if_Equal0 (df_ys, df_y2) &&  ////WARNING
 	   TRUE == Check_if_Equal0 (df_xs, df_x2))   || ////WARNING
@@ -1403,7 +1408,7 @@ static BOOL select_area (double df_pointx, double df_pointy)
       }
       else
       {
-	df_x = (get_vertex (&ptrs__areas [i], 0))->x ;
+	df_x = (get_vertex (&ptrs__areas [i], 0))->x ;   ////(A)
 	df_y = (get_vertex (&ptrs__areas [i], 0))->y ;
 	if (TRUE == check_if_area_sel (&ptrs__areas [i_sel], df_x, df_y))
 	{
@@ -1419,12 +1424,31 @@ static BOOL select_area (double df_pointx, double df_pointy)
     ptrs__areas [i].hole = 0 ;
     if (ptrs__areas [i].sel == AST_NOSEL && i != i__area_sel)
     {
-      df_x = (get_vertex (&ptrs__areas [i], 0))->x ;
-      df_y = (get_vertex (&ptrs__areas [i], 0))->y ;
-      if (TRUE == check_if_area_sel (&ptrs__areas [i__area_sel], df_x, df_y))
+      ////instead of this
+      //df_x = (get_vertex (&ptrs__areas [i], 0))->x ;  ////(B)
+      //df_y = (get_vertex (&ptrs__areas [i], 0))->y ;
+
+      ////is this (21-03-2025) to point into the middle of vertices; possible the same should be done above (A)
+      int no_of_vertices=get_vertex_no (&ptrs__areas [i]);
+
+      if (no_of_vertices>0)
       {
-	ptrs__areas [i].hole = 1 ;
+          df_x = 0;
+          df_y = 0;
+          for (int ii = 0; ii < no_of_vertices; ii++)
+          {
+              df_x += (get_vertex(&ptrs__areas[i], ii))->x;
+              df_y += (get_vertex(&ptrs__areas[i], ii))->y;
+          }
+          df_x /= no_of_vertices;
+          df_y /= no_of_vertices;
+
+          if (TRUE == check_if_area_sel(&ptrs__areas[i__area_sel], df_x, df_y))
+          {
+              ptrs__areas[i].hole = 1;
+          }
       }
+      ////
     }
   }
   for (i = i__areasno - 1 ; i >= 0  ; i--) 	/*zwolnienie pamieci zbednych obszarow*/

@@ -7655,7 +7655,7 @@ void Static_analysis(void) {
 
                         //nxi=0;
                     } else if (ptr_max) {
-                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
+                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
                                      &TxM, &MyM, &MzM, &DxM, &DyM, &DzM, &RxM);
 
                         NxM /= unit_factors->F_f;
@@ -7663,7 +7663,7 @@ void Static_analysis(void) {
                         MzM /= unit_factors->M_f;
 
                     } else if (ptr_min) {
-                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
+                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
                                      &Txm, &Mym, &Mzm, &Dxm, &Dym, &Dzm, &Rxm);
 
                         Nxm /= unit_factors->F_f;

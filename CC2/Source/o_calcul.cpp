@@ -34,10 +34,45 @@ extern char* strlwr_(char* s);
 extern "C" {
 extern BOOL Check_if_Equal (double , double ) ;
 extern BOOL Check_if_Equal2(double, double);
+extern char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2);
+
+
+
+extern LINIA LG;
+extern char* LG1, * LG2;
+extern LUK AG;
+extern OKRAG CG;
+extern ELLIPSE EG;
+extern ELLIPTICALARC EAG;
+extern char* OG;
+extern char* Section_Units_System;
+extern char* units_system_si;
+extern char* units_system_imp;
+static double xg = 0, yg = 0;
+
+
+
 }
 
 /*-------------------------------------------------------------*/
 /*-------------------------------------------------------------*/
+//static LINIA LG=Ldef;
+//static LUK AG=ldef;
+//static char *OG;
+/*
+extern LINIA LG;
+extern char *LG1, *LG2;
+extern LUK AG;
+extern OKRAG CG;
+extern ELLIPSE EG;
+extern ELLIPTICALARC EAG;
+extern char *OG;
+extern char *Section_Units_System;
+extern char *units_system_si;
+extern char *units_system_imp;
+static double xg=0, yg=0;
+*/
+
 #define MaxNameSize 50
 const int variable = -1 ;
 const int maxargs = 9 ;
@@ -187,10 +222,22 @@ static double do_asin (double e [])
   return (e [0] > -1 && e [0] < 1) ? asin (e [0]) * RAD_to_DEG: error (65);
 }
 
+static double do_asinr (double e [])
+/*--------------------------------*/
+{
+    return (e [0] > -1 && e [0] < 1) ? asin (e [0]): error (65);
+}
+
 static double do_acos (double e [])
 /*--------------------------------*/
 {
   return (e [0] > -1 && e [0] < 1) ? acos (e [0]) * RAD_to_DEG : error (65);
+}
+
+static double do_acosr (double e [])
+/*--------------------------------*/
+{
+    return (e [0] > -1 && e [0] < 1) ? acos (e [0]) : error (65);
 }
 
 static double do_atan (double e [])
@@ -198,6 +245,351 @@ static double do_atan (double e [])
 {
   return atan (e [0]) * RAD_to_DEG ;
 }
+
+static double do_atanr (double e [])
+/*--------------------------------*/
+{
+    return atan (e [0]);
+}
+
+static double do_x (double e [])
+/*--------------------------------*/
+{
+    xg=e [0];
+    return xg;
+}
+
+static double do_y (double e [])
+/*--------------------------------*/
+{
+    yg=e [0];
+    return yg;
+}
+
+static double do_xy (double e [])
+/*--------------------------------*/
+{   double factor;
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    xg=e [0]*factor;
+    yg=e [1]*factor;
+    OG=NULL;
+    return xg;
+}
+
+static double do_LIN (double e [])
+/*--------------------------------*/
+{   double length, x1, y1, x2, y2;
+    double factor;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+      factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    LG.x1=(float)xg;
+    LG.y1=(float)yg;
+    x1=xg;
+    y1=yg;
+    xg+=e[0]*factor;
+    yg+=e[1]*factor;
+    x2=xg;
+    y2=yg;
+    LG.x2=(float)xg;
+    LG.y2=(float)yg;
+    length=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+    OG=(char*)&LG;
+
+    return length;
+}
+
+static double do_VEC (double e [])
+{
+    double length, x0, y0, x1, y1, x2, y2;
+    double factor;
+    double l,a;
+    double kos, koc;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg;
+    y0=yg;
+
+    if (e[2]==0) {
+        LG.x1=(float)xg;
+        LG.y1=(float)yg;
+    }
+    else  //reverted
+    {
+        LG.x2=(float)xg;
+        LG.y2=(float)yg;
+    }
+
+    x1=xg;
+    y1=yg;
+
+    l=e[0]*factor;
+    a=e[1];
+
+    kos = sin(a);
+    koc = cos(a);
+
+    Rotate_Point(kos, koc, x0, y0, x0+l, y0, &x2, &y2);
+    if (e[2]==0) {
+        LG.x2=(float)x2;
+        LG.y2=(float)y2;
+    }
+    else  //reverted
+    {
+        LG.x1=(float)x2;
+        LG.y1=(float)y2;
+    }
+
+    length=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+    OG=(char*)&LG;
+
+    return length;
+}
+
+static double do_VEC2 (double e [])
+{
+    double length, x0, y0, /*x1, y1,*/ x2, y2;
+    double factor;
+    double l,a;
+    double kos, koc;
+    LINIA LG01, LG02;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg;
+    y0=yg;
+
+    //part 1
+    if (e[2]==0) {
+        LG01.x1=(float)x0;
+        LG01.y1=(float)y0;
+    }
+    else  //reverted
+    {
+        LG01.x2=(float)x0;
+        LG01.y2=(float)y0;
+    }
+
+    //x1=xg;
+    //y1=yg;
+
+    l=e[0]*factor;
+    a=e[1];
+
+    kos = sin(a);
+    koc = cos(a);
+
+    Rotate_Point(kos, koc, x0, y0, x0+l, y0, &x2, &y2);
+    if (e[2]==0) {
+        LG01.x2=(float)x2;
+        LG01.y2=(float)y2;
+    }
+    else  //reverted
+    {
+        LG01.x1=(float)x2;
+        LG01.y1=(float)y2;
+    }
+
+    //part 2
+    if (e[5]==0) {
+        LG02.x1=(float)x0;
+        LG02.y1=(float)y0;
+    }
+    else  //reverted
+    {
+        LG02.x2=(float)x0;
+        LG02.y2=(float)y0;
+    }
+
+    //x1=xg;
+    //y1=yg;
+
+    l=e[3]*factor;
+    a=e[4];
+
+    kos = sin(a);
+    koc = cos(a);
+
+    Rotate_Point(kos, koc, x0, y0, x0+l, y0, &x2, &y2);
+    if (e[5]==0) {
+        LG02.x2=(float)x2;
+        LG02.y2=(float)y2;
+    }
+    else  //reverted
+    {
+        LG02.x1=(float)x2;
+        LG02.y1=(float)y2;
+    }
+
+    LG.x1=LG01.x1;
+    LG.y1=LG01.y1;
+    LG.x2=LG02.x2;
+    LG.y2=LG02.y2;
+
+    length=sqrt((LG.x2-LG.x1)*(LG.x2-LG.x1)+(LG.y2-LG.y1)*(LG.y2-LG.y1));
+    OG=(char*)&LG;
+
+    return length;
+}
+
+static double do_ARC (double e [])
+/*--------------------------------*/
+{   double kos, koc, x0, y0, kat1, kat2, r;
+    double length;
+    double factor;
+
+    if (e[2]==0) return 0;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg+e[0]*factor;
+    y0=yg+e[1]*factor;
+    r=e[2]*factor;
+    AG.x=(float)x0;
+    AG.y=(float)y0;
+    AG.r=(float)(r);
+    AG.kat1=(float)e[3];
+    AG.kat2=(float)e[4];
+
+    if (e[5]==0) {
+        kos = sin(AG.kat2);
+        koc = cos(AG.kat2);
+    }
+    else
+    {
+        kos = sin(AG.kat1);
+        koc = cos(AG.kat1);
+    }
+    Rotate_Point(kos, koc, x0, y0, x0+r, y0, &xg, &yg);
+
+    kat1=e[3];
+    kat2=e[4];
+
+    if (kat2<kat1)
+    {
+        kat1=kat1-(2*Pi);
+    }
+    length=(kat2-kat1)*r;
+
+    OG=(char*)&AG;
+    return length;
+}
+
+static double do_CIR (double e [])
+/*--------------------------------*/
+{   double x0, y0, r;
+    double length;
+    double factor;
+
+    if (e[0]==0) return 0;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg;
+    y0=yg;
+    r=e[0]*factor;
+    CG.x=(float)x0;
+    CG.y=(float)y0;
+    CG.r=(float)(r);
+
+    length=2*Pi_*r;
+
+    OG=(char*)&CG;
+    return length;
+}
+
+static double do_ELP (double e [])
+/*--------------------------------*/
+{   double kos, koc, x0, y0, kat1, kat2, rx, ry;
+    double length;
+    double factor;
+
+    if ((e[0]==0) || (e[1]==0)) return 0;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg;
+    y0=yg;
+    rx=e[0]*factor;
+    ry=e[1]*factor;
+    EG.x=(float)x0;
+    EG.y=(float)y0;
+    EG.rx=(float)rx;
+    EG.ry=(float)ry;
+    EG.angle=(float)e[2];
+
+    length=rx+ry;
+
+    OG=(char*)&EG;
+    return length;
+}
+
+static double do_ELPA (double e [])
+/*--------------------------------*/
+{   double x0, y0, kat1, kat2, rx, ry;
+    double length;
+    double factor;
+
+    if ((e[0]==0) || (e[1]==0)) return 0;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    x0=xg;
+    y0=yg;
+    rx=e[0]*factor;
+    ry=e[1]*factor;
+    kat1=e[3];
+    kat2=e[4];
+
+    EAG.x=(float)x0;
+    EAG.y=(float)y0;
+    EAG.rx=(float)rx;
+    EAG.ry=(float)ry;
+    EAG.angle=(float)e[2];
+    EAG.kat1=(float)kat1;
+    EAG.kat2=(float)kat2;
+
+    length=rx+ry;
+
+    OG=(char*)&EAG;
+    return length;
+}
+
+static double do_FIL (double e [])
+{  //fillet
+    char *adr;
+    double r;
+    double factor;
+
+    if (strcmp(Section_Units_System, units_system_si)==0)
+        factor=1./SkalaF;
+    else factor=25.4/SkalaF;
+
+    r=e[0]*factor;
+
+    adr = fillet_line_to_line(r, (LINIA*)LG1, (LINIA*)LG2);
+    OG=NULL;
+   return 0;
+}
+
 
 
 static BOOL insert_function (void)
@@ -215,14 +607,26 @@ static BOOL insert_function (void)
   insertfunction ("log10", 1, do_log10) == FALSE ||
   insertfunction ("pow", 2, do_pow) == FALSE ||
   insertfunction ("asin", 1, do_asin) == FALSE ||
+  insertfunction ("asinr", 1, do_asinr) == FALSE ||
   insertfunction ("acos", 1, do_acos) == FALSE ||
+  insertfunction ("acosr", 1, do_acosr) == FALSE ||
   insertfunction ("atan", 1, do_atan) == FALSE ||
+  insertfunction ("atanr", 1, do_atanr) == FALSE ||
   insertfunction ("min", 2, do_min) == FALSE ||
   insertfunction ("min2", 2, do_min)== FALSE ||
   insertfunction ("min3", 3, do_min3)==FALSE ||
   insertfunction ("max", 2, do_max)== FALSE ||
   insertfunction ("max2", 2, do_max)== FALSE ||
-  insertfunction ("max3", 3, do_max3)==FALSE)
+  insertfunction ("max3", 3, do_max3)==FALSE ||
+  insertfunction ("xy", 2, do_xy)==FALSE ||
+  insertfunction ("lin", 2, do_LIN)==FALSE ||
+  insertfunction ("arc", 6, do_ARC)==FALSE ||
+  insertfunction ("vec", 3, do_VEC)==FALSE ||
+  insertfunction ("vec2", 6, do_VEC2)==FALSE ||
+  insertfunction ("fil", 1, do_FIL)==FALSE ||
+  insertfunction ("cir", 1, do_CIR)==FALSE ||
+  insertfunction ("elp", 3, do_ELP)==FALSE ||
+  insertfunction ("elpa", 5, do_ELPA)==FALSE)
   {
     b_ret = FALSE ;
   }
@@ -631,7 +1035,7 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
   double ret_expr;
   name * n ;
   int i,iii;
-  char *pow_, *min_, *min2_, *min3_, *min4_, *min5_, *max_, *max2_, *max3_, *max4_, *max5_;
+  char *pow_, *min_, *min2_, *min3_, *min4_, *min5_, *max_, *max2_, *max3_, *max4_, *max5_, *xy_, *LIN_, *ARC_, *VEC_, *VEC2_, *FIL_, *CIR_, *ELP_, *ELPA_;
 
   //tutaj mozna sprawdzic czy wszystkie znaki zawieraja cyfry, kropke i przecinek
   //jezeli tak, i jezeli wystapil przecinek, mozna go zamienic na kropke
@@ -646,9 +1050,19 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
   max3_=strstr(buf,"max3(");
   max4_=strstr(buf,"max4(");
   max5_=strstr(buf,"max5(");
+  xy_=strstr(buf,"xy(");
+  LIN_=strstr(buf,"lin(");
+  ARC_=strstr(buf,"arc(");
+  VEC_=strstr(buf,"vec(");
+  VEC2_=strstr(buf,"vec2(");
+  FIL_=strstr(buf,"fil(");
+  CIR_=strstr(buf,"cir(");
+  ELP_=strstr(buf,"elp(");
+  ELPA_=strstr(buf,"elpa(");
 
-  if ((pow_==NULL) && (min_==NULL) && (min2_==NULL) && (min3_==NULL) && (min4_==NULL) && (min5_==NULL) && 
-	  (max_==NULL) && (max2_==NULL) && (max3_==NULL) && (max4_==NULL) && (max5_==NULL)) 
+  if ((pow_==NULL) && (min_==NULL) && (min2_==NULL) && (min3_==NULL) && (min4_==NULL) && (min5_==NULL) &&
+	  (max_==NULL) && (max2_==NULL) && (max3_==NULL) && (max4_==NULL) && (max5_==NULL) && (xy_==NULL) && (LIN_==NULL) && (ARC_==NULL)
+      && (VEC_==NULL) && (VEC2_==NULL) && (FIL_==NULL) && (CIR_==NULL) && (ELP_==NULL) && (ELPA_==NULL))
   {
 	  if (strchr(buf, ',')!=NULL)
 	  {

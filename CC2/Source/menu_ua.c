@@ -2661,7 +2661,7 @@ char Yes[2] = u8"Т";
 #define _NO_ L'Н'
 #define _no_ L'н'
 
-#define _SAVED_BLOCK_ u8"< збережений блок >"
+#define _SAVED_BLOCK_ u8"< збережений блок > "
 
 #define _CHANGE_ u8"Обмін"
 #define _CHANGE_C_ L'О'

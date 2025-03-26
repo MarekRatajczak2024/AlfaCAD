@@ -48,10 +48,10 @@ extern int getBlockFromDialog(TMENU *mBlockList, long *my_ptr__off_block);
 #define MaxLen 120
 #define MaxTextLength 60
 
-static long *ptr__off_block;
-static BLOK * ptrs__sel_blok ;
+static long *ptr__off_block=NULL;
+static BLOK * ptrs__sel_blok=NULL ;
 
-static POLE *pmList_Blok ;
+static POLE *pmList_Blok=NULL ;
 static POLE pm_tmp [] = { {u8"",' ',0,NULL}, } ;
 
 int blocks_dialog=1;
@@ -384,8 +384,8 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
   char  *adk ;
   int k, max_len, len ;
   POLE key ;
-  char st[10];
-  char st1[70];
+  char st[16];
+  char st1[80];
   int ret;
   long *ptr__off_block1;
   POLE *pmList_Blok1 ;
@@ -454,7 +454,7 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
                pmList_Blok[k].iconno = 0;
            }
 
-           ptr__off_block[k] = (char *) ptrs_block - dane;
+           ptr__off_block[k] = (long)((char *) ptrs_block - dane);
 
            k++;
 

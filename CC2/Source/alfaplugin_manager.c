@@ -374,7 +374,7 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
         free(gen);
         return;
     }
-    plugin_icon = gen->icon();
+    ////plugin_icon = gen->icon();  not necessary due to the same function in pm_load_alfa_func -> htable_insert
 
     switch (gen->type) {
         case PLUGIN_TYPE_TXT:
