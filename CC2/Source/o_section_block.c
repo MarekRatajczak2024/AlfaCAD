@@ -25,6 +25,7 @@ ELLIPTICALARC EAG=eldef;
 char *OG;
 
 char *Section_Units_System;
+static char xy[]="xy(0,0)";
 
 extern char *units_system_si;
 extern double SkalaF;
@@ -36,7 +37,6 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
    double buf_ret [1] = {0};
    char *nag;
    char formula[MaxTextLen*2];
-   char xy[]="xy(0,0)";
    BLOK *blk;
    BLOK blkd=Bdef;
    BLOK *buf_block;
@@ -126,6 +126,10 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     char *SETp[]= {"SEHS"};
     int SETp_n=sizeof(SETp)/sizeof(SETp[0]);
 
+    //VJ
+    char *VJp[]= {"VJ", "VJG"};
+    int VJp_n=sizeof(VJp)/sizeof(VJp[0]);
+
     //IH
     char *IHpd="lin(b,0);lin(0,-tf);lin(-b/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1,0);lin(0,-tf);lin(-b,0);lin(0,tf);lin(b/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1,0);lin(0,tf)";
     char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
@@ -141,7 +145,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     char *Lpcd="lin(max(t-r2,0),0);arc(t-r2,-r2l,r2,0,pi/2.+asinr(min(t-r2,0)/r2),1);lin(0,-h+t+r2l+r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b-t-r2l-r1,0);arc(0,-r2,r2,-asinr(min(t-r2,0)/r2),pi/2.,1);lin(0,max(t-r2,0));lin(-b,0);lin(0,h)"; //modified Lp for t<r2
     char *Ltd="";
     char *Lcfd="xy(t+ri,0);lin(c-t-ri,0);lin(0,-t);lin(-c+t+ri,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,c-t-ri);lin(t,0);lin(0,-c+t+ri);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-b+2*t+2*ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(ri+t,0,ri+t,pi/2.,pi,1)";   //LS
-    char *Ltcfd="lin(t,0);lin(0,-h+t+ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-t-ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-t-ri)";  //LU
+    char *Ltcfd="lin(t,0);lin(0,-h+t+ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-t-ri,0);lin(0,-t);lin(-b+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-t-ri)";  //LU
     //L2
     char *L2pd="lin(b/2.-ab/2.,0);lin(0,-h);lin(-t+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,h-r2-r1-t);arc(-r1,0,r1,0,pi/2.,0);lin(-b/2.+ab/2.+t+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,t-r2);xy(b/2.+ab/2.,0);lin(b/2.-ab/2.,0);lin(0,-t+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+ab/2.+t+r1+r2,0);arc(0,-r1,r1,pi/2.,pi,0);lin(0,-h+t+r1+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-t+r2,0);lin(0,h)";
     char *L2td="";
@@ -164,6 +168,8 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     char *ETpd="elp(b/2.,h/2.,0);elp(b/2.-t,h/2.-t,0)";
     //SET
     char *SETpd="elpa(b/2.,h,0,0,pi);xy(-b/2.,0);lin(b,0);xy(0,0);elpa(b/2.-t,h-t,0,atanr(t/(b/2.-t)),pi-atanr(t/(b/2.-t)));xy(-b/2.+t,t);lin(b-2*t,0)";
+    //VJ
+    char *VJpd="lin(b,0);lin(0,-tf);lin(-b/2.+tw/2.,0);lin(0,-h+2.*tf);lin(b/2.-tw/2.,0);lin(0,-tf);lin(-b,0);lin(0,tf);lin(b/2.-tw/2.,0);lin(0,h-2.*tf);lin(-b/2.+tw/2.,0);lin(0,tf)";
 
     ////WOOD
     //IH
@@ -173,7 +179,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     Section_Units_System=units_system;
 
-    if (FALSE == calculator (xy, &retval_no, buf_ret)  || retval_no < 1)
+    if (FALSE == calculator (xy, &retval_no, buf_ret) || retval_no < 1)
     {
         return 0;
     }
@@ -221,7 +227,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
             {
                 pd0=malloc(strlen(IHsd)+1);
                 memmove(pd0,IHsd,strlen(IHsd)+1);
-                xblk=b/2.;
+                xblk=bt/2.;
                 yblk=0.;
                 found=TRUE;
                 break;
@@ -601,6 +607,22 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
                 pd0 = malloc(strlen(SETpd) + 1);
                 memmove(pd0, SETpd, strlen(SETpd) + 1);
                 xblk=0.;
+                yblk=0.;
+                found = TRUE;
+                break;
+            }
+        }
+    }
+    //VJp
+    if (found==FALSE)
+    {
+        for (i = 0; i < VJp_n; i++)
+        {
+            if (strcmp(series0, VJp[i]) == 0)
+            {
+                pd0 = malloc(strlen(VJpd) + 1);
+                memmove(pd0, VJpd, strlen(VJpd) + 1);
+                xblk=b/2.;
                 yblk=0.;
                 found = TRUE;
                 break;
