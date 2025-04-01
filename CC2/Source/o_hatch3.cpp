@@ -1385,10 +1385,9 @@ hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
         if (interrupted()) return FALSE;
     }
 
-    Internal_Error (__LINE__,__FILE__) ;
-
-    return FALSE ;
-//    return TRUE ;
+    //Internal_Error (__LINE__,__FILE__) ;  //WARNING, TEMPORARY ALLOWED
+    //return FALSE ;  // -//-
+    return TRUE ;
 }
 
 /* - gdy punkt lezy po lewej stronie odcinka + gdy po prawej*/
@@ -2380,9 +2379,11 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 
 	if (interrupted()) return FALSE;
   }
-  Internal_Error (__LINE__,__FILE__) ;
-  return FALSE ;   //TO REMOVE ALREADY GENERATED PART OF HATCH
-  //return TRUE ;  //TO CORRECT
+
+  //Internal_Error (__LINE__,__FILE__) ;   //WARNING, TEMPORARY ALLOWED
+  //return FALSE ;   //TO REMOVE ALREADY GENERATED PART OF HATCH  //  -//-
+  return TRUE ;  //TO CORRECT
+
 }
 
 BOOL check_vertex (int  i_vertex_no,

@@ -118,4 +118,3 @@ POLE pmWoodSpeciesUS[] = {
 };
 
 TMENU mWoodSpeciesUS = { 112,0,0,27,16,8,0,CMNU,CMBR,CMTX,0, 1,0,0,0,(POLE(*)[]) &pmWoodSpeciesUS,NULL,NULL };
-

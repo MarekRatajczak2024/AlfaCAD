@@ -42,23 +42,33 @@ POLE pmWoodMoistureUS[] = {
         {u8"Green",L' ',0,&mWoodSpeciesUS},
         {u8"12%",L' ',0,&mWoodSpeciesUS}};
 
-TMENU mWoodMoistureUS = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+TMENU mWoodMoistureUS = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,3,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+
+TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,169,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
 POLE pmMaterialUS[] = {
         {u8"Acero",'A',775, NULL}, //&mSteelUS
         {u8"Madera", 'M',785, &mWoodMoistureUS}, //&mTimberUS
 };
 
-TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
+TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 5, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
+
+POLE pmMaterialCA[] = {
+        {u8"Acero",'A',775, NULL}, //&mSteelCA
+        {u8"Madera", 'M',785, &mWoodMoistureCA}, //&mTimberCA
+};
+
+TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
 
 POLE pmRegion[] = {
         {u8"EE.UU",'E',772, &mMaterialUS},
         {u8"UE", 'U',773, NULL}, //&mSteelEU
         {u8"Reino Unido", 'R',774, NULL}, //&mSteelUK
+        {u8"Canadá", 'C',829, &mMaterialCA},
+        {u8"Australia", 'A',830, NULL}, //&mSteelAU
 };
 
-TMENU mRegion = { 3, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
-
+TMENU mRegion = { 5, 0, 0, 12, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmApplications[] = {
         {u8"Análisis estático y dinámico",L'A',733, NULL},

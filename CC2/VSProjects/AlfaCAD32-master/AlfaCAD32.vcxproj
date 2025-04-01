@@ -4255,8 +4255,22 @@
     <ClCompile Include="..\..\..\CC2\Source\woods_US.c" />
     <ClCompile Include="..\..\..\CC2\Source\Z_section_US_si.c" />
     <ClCompile Include="..\..\..\glyph-keeper32\src\glyph.c" />
+    <ClCompile Include="..\..\Source\2L_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\CT_section_AU_si.c" />
+    <ClCompile Include="..\..\Source\CT_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\ET_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\IH_section_AU_si.c" />
+    <ClCompile Include="..\..\Source\IH_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\L_section_CA_si.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
+    <ClCompile Include="..\..\Source\RT_section_AU_si.c" />
+    <ClCompile Include="..\..\Source\RT_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\timber_beams_CA_si.c" />
+    <ClCompile Include="..\..\Source\T_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\U_section_AU_si.c" />
+    <ClCompile Include="..\..\Source\U_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\Z_section_CA_si.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\CC2\Source\loadpng.h" />

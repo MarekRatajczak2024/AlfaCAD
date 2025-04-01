@@ -1222,6 +1222,9 @@ extern char *icon_US_Flag_p;
 extern char *icon_EU_Flag_p;
 extern char *icon_UK_Flag_p;
 
+extern char *icon_CA_Flag_p;
+extern char *icon_AU_Flag_p;
+
 extern char *icon_IH_sections_p;
 extern char *icon_U_sections_p;
 extern char *icon_T_sections_p;
@@ -3230,7 +3233,7 @@ static char *get_icons_p(int number)
         /*805*/   icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p, icon_mark_d_12_p,
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
         /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
-        /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p,
+        /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p,
     };
    
 	if (number>1999)

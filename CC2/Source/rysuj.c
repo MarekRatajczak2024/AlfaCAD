@@ -284,8 +284,11 @@ extern void ini_cursor_busy(void);
 
 extern void SteelUS(void);
 extern void TimberUS(void);
+extern void TimberCA(void);
 extern void SteelEU(void);
 extern void SteelUK(void);
+extern void SteelCA(void);
+extern void SteelAU(void);
 
 #ifndef LINUX
 extern void init_file_dropped_fill_buf(void);
@@ -2064,6 +2067,11 @@ extern char *icon_EU_Flag_p;
 extern BITMAP *icon_UK_Flag;
 extern char *icon_UK_Flag_p;
 
+extern BITMAP *icon_CA_Flag;
+extern char *icon_CA_Flag_p;
+extern BITMAP *icon_AU_Flag;
+extern char *icon_AU_Flag_p;
+
 extern BITMAP *icon_IH_sections;
 extern char *icon_IH_sections_p;
 extern BITMAP *icon_U_sections;
@@ -2249,10 +2257,11 @@ extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors, /*21*/ Static_analysis, /*22*/ Cross_section_forces, /*23*/ Animate_dynamics, /*24*/ SteelEU, /*25*/SteelUK, /*26*/SteelUS,  /*27*/TimberUS} ;
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, SteelEU, SteelUK, nooop, SteelAU, SteelUS, TimberUS, SteelCA, TimberCA};
 
 //#define WOOD 28 //26   //the number of function for wood choice
-int WOOD=sizeof(COMNDg)/sizeof(COMNDg[0]);
+int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);
+int WOOD_US=sizeof(COMNDg)/sizeof(COMNDg[0])-2;
 
 TMENU menug={15,0,0,16,1,3, ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,&pmenug,NULL,NULL};  //flag 7 : icons
 
@@ -5024,6 +5033,8 @@ if (child==0)
       {&icon_US_Flag,"US-Flag",&icon_US_Flag_p },
       {&icon_EU_Flag,"EU-Flag",&icon_EU_Flag_p },
       {&icon_US_Flag,"UK-Flag",&icon_UK_Flag_p },
+      {&icon_CA_Flag,"CA-Flag",&icon_CA_Flag_p },
+      {&icon_AU_Flag,"AU-Flag",&icon_AU_Flag_p },
       {&icon_IH_sections,"IH-sections",&icon_IH_sections_p },
       {&icon_U_sections,"U-sections",&icon_U_sections_p },
       {&icon_T_sections,"T-sections",&icon_T_sections_p },
@@ -5202,7 +5213,8 @@ for (int i = 0; i < bitmaps_size; i++)
      Auto_Backup_Proc ();
      ScrSave_Proc (0);
 
-     if (n1>WOOD) n1=WOOD;  //wood sections
+    if (n1>200) n1=WOOD_CA;  //wood CAd sections
+     else if (n1>WOOD_US+2) n1=WOOD_US;  //wood US sections
 
      if(n1 == 0)
      {
@@ -5215,7 +5227,7 @@ for (int i = 0; i < bitmaps_size; i++)
              ret=empty_dlg();
          }
      }
-     else if ((n1>0) && (n1<((sizeof(COMNDg)/sizeof(COMNDg[0]))+1)))
+     else if ((n1>0) && (n1<=((sizeof(COMNDg)/sizeof(COMNDg[0])))))
      {
 	   FF=COMND[n1-1];
        LASTFUN=FF;

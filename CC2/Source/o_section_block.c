@@ -51,7 +51,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     //IH
     char *IHp[]= {"HD","HE","HE A","HE AA","HE B","HE C","HE M","HEA","HEB","HEM","HL","HLZ","IPE","IPE 750","IPE A","IPE AA","IPE O","IPE V","IPER","PEA","UB","UBP","UC",
                  "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF (Table 9)","WF(A-N) (Table 10)","WTM",
-                 "Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)"};
+                 "Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB"};
     int IHp_n=sizeof(IHp)/sizeof(IHp[0]);
     char *IHt[]= {"I W","INP","IPN","J","S","S (Table 11)","S (Table 9)","WF (Table 9)","RSJ"};
     int IHt_n=sizeof(IHt)/sizeof(IHt[0]);
@@ -59,11 +59,11 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     int IHs_n=sizeof(IHs)/sizeof(IHs[0]);
 
     //C
-    char *Cp[]= {"PFC","UPE","CS (Table 4)","CS (Table 7)","Advance UKPFC","PFC","SCP"};
+    char *Cp[]= {"PFC","UPE","CS (Table 4)","CS (Table 7)","Advance UKPFC","PFC-H","PFC-L","PFC-M","SCP"};
     int Cp_n=sizeof(Cp)/sizeof(Cp[0]);
     char *Ct[]= {"UPN","C","C (imperial)","C (metric)","C (Table 5)","C (Table 6)","CS (Table 6)","MC","MC (imperial)","MC (metric)","CH","SC","TFC"};
     int Ct_n=sizeof(Ct)/sizeof(Ct[0]);
-    char *Ccf[]= {"CS","CS-S"};
+    char *Ccf[]= {"CS","CS-S","CFC"};
     int Ccf_n=sizeof(Ccf)/sizeof(Ccf[0]);
     char *Ctcf[]= {"CU-T"};
     int Ctcf_n=sizeof(Ctcf)/sizeof(Ctcf[0]);
@@ -103,19 +103,22 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     int Zp_n=sizeof(Zp)/sizeof(Zp[0]);
     char *Zt[]= {""};
     int Zt_n=sizeof(Zt)/sizeof(Zt[0]);
-    char *Zcf[]= {"ZS"};
+    char *Zcf[]= {"ZS","CFZ","CFZ-M"};
     int Zcf_n=sizeof(Zcf)/sizeof(Zcf[0]);
     char *Ztcf[]= {"ZU"};
     int Ztcf_n=sizeof(Ztcf)/sizeof(Ztcf[0]);
 
     //RT
     char *RTp[]= {"Celsius 355 RHS","Celsius 355 SHS","Celsius RHS","Celsius SHS","Hybox 355 RHS","Hybox 355 SHS","Hybox RHS","Hybox SHS","MSH Q","MSH R","RHC","RHH","RHS","RRK (RHS)","RRK (SHS)","RRW (RHS)","RRW (SHS)","SHC","SHH","SHS",
-                  "Rect HSS","Rect HSS (A1085)","RT (Table 18)","RT (Table 19)","RT (Table 23)","RT (Table 24)","Sqr HSS","Sqr HSS (A1085)"};
+                  "Rect HSS","Rect HSS (A1085)","RT (Table 18)","RT (Table 19)","RT (Table 23)","RT (Table 24)","Sqr HSS","Sqr HSS (A1085)",
+                  "Rect HSS (ASTM A500)", "Rect HSS (CSA G40.20)", "Sqr HSS (ASTM A500)", "Sqr HSS (CSA G40.20)",
+                  "DuraGal RHS","DuraGal SHS","Galtube RHS","Galtube SHS","Tubeline RHS","Tubeline SHS"};
     int RTp_n=sizeof(RTp)/sizeof(RTp[0]);
 
     //CT
     char *CTp[]= {"Celsius 355 CHS","Celsius 355 CHS","Celsius CHS","CHC","CHS","DN","Hybox 355 CHS","Hybox CHS","MSHRund","ROR",
-                  "NPS","NPS (Table 17)","NPS (Table 22)","OD (Table 16)","OD (Table 21)","Pipes Std.","Pipes x-Strong","Pipes xx-Strong","Round HSS","Round HSS (A1085)"};
+                  "NPS","NPS (Table 17)","NPS (Table 22)","OD (Table 16)","OD (Table 21)","Pipes Std.","Pipes x-Strong","Pipes xx-Strong","Round HSS","Round HSS (A1085)",
+                  "Pipe (ASTM A53)","Pipe STD","Pipe XS","Pipe XXS","Round HSS (ASTM A500)","Round HSS (CSA G40.20)","DuraGal CHS","Galtube CHS","Tubeline CHS"};
     int CTp_n=sizeof(CTp)/sizeof(CTp[0]);
 
     //ET
@@ -131,7 +134,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     int VJp_n=sizeof(VJp)/sizeof(VJp[0]);
 
     //IH
-    char *IHpd="lin(b,0);lin(0,-tf);lin(-b/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1,0);lin(0,-tf);lin(-b,0);lin(0,tf);lin(b/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1,0);lin(0,tf)";
+    char *IHpd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+r2+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b,0);lin(0,tf-r2);arc(r2,0,r2,pi/2.,pi,1);lin(b/2.-r2-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
     char *IHsd="lin(bt,0);lin(0,-tf);lin(-bt/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(bb/2.-tw/2.-r1,0);lin(0,-tf);lin(-bb,0);lin(0,tf);lin(bb/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-bt/2.+tw/2.+r1,0);lin(0,tf)";
     //C
@@ -173,7 +176,8 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     ////WOOD
     //IH
-    char *RBar[]= {"Beams and Stringers","Boards","Dimension Lumber","Dimension Lumber and Decking","Post and Timber","Southern Pine Glulam","Western Species Glulam"};
+    char *RBar[]= {"Beams and Stringers","Boards","Dimension Lumber","Dimension Lumber and Decking","Post and Timber","Southern Pine Glulam","Western Species Glulam",
+                   "Glulam","Machine Stress-Rated Lumber","Sawn Lumber","Sawn Timbers"};
     int RBar_n=sizeof(RBar)/sizeof(RBar[0]);
     char *RBard="lin(b,0);lin(0,-h);lin(-b,0);lin(0,h)";
 

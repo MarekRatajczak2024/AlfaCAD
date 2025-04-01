@@ -2183,6 +2183,11 @@ char *icon_EU_Flag_p;
 BITMAP *icon_UK_Flag;
 char *icon_UK_Flag_p;
 
+BITMAP *icon_CA_Flag;
+char *icon_CA_Flag_p;
+BITMAP *icon_AU_Flag;
+char *icon_AU_Flag_p;
+
 BITMAP *icon_IH_sections;
 char *icon_IH_sections_p;
 BITMAP *icon_U_sections;

@@ -3206,3 +3206,6 @@ typedef struct
 
 DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];
 */
+
+
+//#pragma pack()
