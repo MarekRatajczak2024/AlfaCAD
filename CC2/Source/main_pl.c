@@ -40,26 +40,26 @@ POLE pmChangeProperties[] = {
 TMENU mChangeProperties = { 3, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 18, 0, 0,0,(POLE(*)[]) & pmChangeProperties, NULL, NULL };
 
 POLE pmWoodMoistureUS[] = {
-        {u8"Green",L' ',0,&mWoodSpeciesUS},
-        {u8"12%",L' ',0,&mWoodSpeciesUS}};
+        {u8"Zielone",L'Z',0,&mWoodSpeciesUS},
+        {u8"12%",L'1',0,&mWoodSpeciesUS}};
 
-TMENU mWoodMoistureUS = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,3,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+TMENU mWoodMoistureUS = { 2,0,0,7,16,8,0,CMNU,CMBR,CMTX,0,2,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
-TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,169,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+TMENU mWoodMoistureCA = { 2,0,0,7,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
 POLE pmMaterialUS[] = {
         {u8"Stal",'S',775, NULL}, //&mSteelUS
         {u8"Drewno", 'D',785, &mWoodMoistureUS}, //&mTimberUS
 };
 
-TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 5, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
+TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 6, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
 
 POLE pmMaterialCA[] = {
         {u8"Stal",'S',775, NULL}, //&mSteelCA
         {u8"Drewno", 'D',785, &mWoodMoistureCA}, //&mTimberCA
 };
 
-TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
+TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 8, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
 
 
 POLE pmRegion[] = {
@@ -68,9 +68,10 @@ POLE pmRegion[] = {
         {u8"UK", 'B',774, NULL}, //&mSteelUK
         {u8"CA", 'C',829, &mMaterialCA},
         {u8"AU", 'A',830, NULL}, //&mSteelAU
+        {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 5, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 
 POLE pmApplications[] = {

@@ -1224,6 +1224,7 @@ extern char *icon_UK_Flag_p;
 
 extern char *icon_CA_Flag_p;
 extern char *icon_AU_Flag_p;
+extern char *icon_CN_Flag_p;
 
 extern char *icon_IH_sections_p;
 extern char *icon_U_sections_p;
@@ -3233,7 +3234,7 @@ static char *get_icons_p(int number)
         /*805*/   icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p, icon_mark_d_12_p,
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
         /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
-        /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p,
+        /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p, icon_CN_Flag_p,
     };
    
 	if (number>1999)
@@ -4780,9 +4781,11 @@ int openwh(TMENU *menu)
  if ((menu_back = create_bitmap(x2 - x1 + 1, y2 - y1 + 36)) == NULL) return 0;
  menu->back=menu_back;
 
- if (BAR_POINTER) show_mouse(NULL);
+ if (BAR_POINTER)   show_mouse(NULL);
+                    
 getimage(x1,y1-18,x2,y2+18,menu->back);
-if (BAR_POINTER) show_mouse(screen);
+//if (BAR_POINTER)  //show_mouse(screen);
+                    
 
 if (BAR_POINTER) disable_F11();
 
@@ -4807,6 +4810,8 @@ if (set_slider[menu_level-1])
     draw_menu_slider(Slider);
 }
 frame_on(menu);
+
+if (BAR_POINTER) show_mouse(screen);
 
     if ((BAR_POINTER) && (menu_level==1))
     {

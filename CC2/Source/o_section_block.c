@@ -25,7 +25,6 @@ ELLIPTICALARC EAG=eldef;
 char *OG;
 
 char *Section_Units_System;
-static char xy[]="xy(0,0)";
 
 extern char *units_system_si;
 extern double SkalaF;
@@ -34,7 +33,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 {  int i;
    char *pd0, *pd, *pde, *pdf;
    int retval_no = 1 ;
-   double buf_ret [1] = {0};
+   double buf_ret [2] = {0,0};
    char *nag;
    char formula[MaxTextLen*2];
    BLOK *blk;
@@ -50,22 +49,27 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     //IH
     char *IHp[]= {"HD","HE","HE A","HE AA","HE B","HE C","HE M","HEA","HEB","HEM","HL","HLZ","IPE","IPE 750","IPE A","IPE AA","IPE O","IPE V","IPER","PEA","UB","UBP","UC",
-                 "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF (Table 9)","WF(A-N) (Table 10)","WTM",
-                 "Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB"};
+                 "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I W","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF (Table 9)","WF(A-N) (Table 10)","WTM",
+                  "Advance UKB","Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB","IP","W (in)","W (mm)"};
+
     int IHp_n=sizeof(IHp)/sizeof(IHp[0]);
-    char *IHt[]= {"I W","INP","IPN","J","S","S (Table 11)","S (Table 9)","WF (Table 9)","RSJ"};
+
+    char *IHwp[]= {"HA","HAQ","HGZ","WH"};  //welded  //NEW
+    int IHwp_n=sizeof(IHwp)/sizeof(IHwp[0]);
+
+    char *IHt[]= {"I","INP","IPN","J","S","S (Table 11)","S (Table 9)","WF (Table 9)","RSJ", "I "};
     int IHt_n=sizeof(IHt)/sizeof(IHt[0]);
-    char *IHs[]= {"ASB"};
+    char *IHs[]= {"ASB","ASY"};
     int IHs_n=sizeof(IHs)/sizeof(IHs[0]);
 
-    //C
+    //C  (U)
     char *Cp[]= {"PFC","UPE","CS (Table 4)","CS (Table 7)","Advance UKPFC","PFC-H","PFC-L","PFC-M","SCP"};
     int Cp_n=sizeof(Cp)/sizeof(Cp[0]);
-    char *Ct[]= {"UPN","C","C (imperial)","C (metric)","C (Table 5)","C (Table 6)","CS (Table 6)","MC","MC (imperial)","MC (metric)","CH","SC","TFC"};
+    char *Ct[]= {"UPN","C","C (imperial)","C (metric)","C (Table 5)","C (Table 6)","CS (Table 6)","MC","MC (imperial)","MC (metric)","CH","SC","TFC","U"};
     int Ct_n=sizeof(Ct)/sizeof(Ct[0]);
-    char *Ccf[]= {"CS","CS-S","CFC"};
+    char *Ccf[]= {"CS","CS-S","CFC","C (CECS)","C (GB)","JL-CN"};
     int Ccf_n=sizeof(Ccf)/sizeof(Ccf[0]);
-    char *Ctcf[]= {"CU-T"};
+    char *Ctcf[]= {"CU-T","CFU","JL-CD"};
     int Ctcf_n=sizeof(Ctcf)/sizeof(Ctcf[0]);
     char *Cucf[]= {"HU"};
     int Cucf_n=sizeof(Cucf)/sizeof(Cucf[0]);
@@ -73,13 +77,13 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     //L
     char *Lp[]= {"L","L-equal","LNP","LNP-equal",
                  "L (imperial)","L (metric)","L (Table 10)","L (Table 12)","L (Table 14)","L (Table 16)","L-equal","L-equal (imperial)","L-equal (metric)","LS (Table 11)","LS (Table 13)","LS (Table 15)","LS (Table 17)",
-                 "Advance UKA","Advance UKA-equal","EA","UA"};
+                 "Advance UKA","Advance UKA-equal","EA","UA","LU (GB/T)"};
     int Lp_n=sizeof(Lp)/sizeof(Lp[0]);
     char *Lt[]= {""};
     int Lt_n=sizeof(Lt)/sizeof(Lt[0]);
-    char *Lcf[]= {"LS"};
+    char *Lcf[]= {"LS","JL-JJ"};  //lipped
     int Lcf_n=sizeof(Lcf)/sizeof(Lcf[0]);
-    char *Ltcf[]= {"LU"};
+    char *Ltcf[]= {"LU","CFL-equal","JL-JB","JL-JD"};   //angles
     int Ltcf_n=sizeof(Ltcf)/sizeof(Ltcf[0]);
 
     //L2
@@ -91,7 +95,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     int L2cf_n=sizeof(L2cf)/sizeof(L2cf[0]);
 
     //T
-    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)","TB"};
+    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)","TB","T (GB/T)"};
     int Tp_n=sizeof(Tp)/sizeof(Tp[0]);
     char *Tt[]= {"T","TB","TPH","ST","T (A-N) (Table 19)","T (Table 14)","T (Table 18)"};
     int Tt_n=sizeof(Tt)/sizeof(Tt[0]);
@@ -103,9 +107,11 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     int Zp_n=sizeof(Zp)/sizeof(Zp[0]);
     char *Zt[]= {""};
     int Zt_n=sizeof(Zt)/sizeof(Zt[0]);
-    char *Zcf[]= {"ZS","CFZ","CFZ-M"};
+    char *Zcf[]= {"ZS","CFZ","CFZ-M","JL-ZJ","Z45"};  //lipped 45
     int Zcf_n=sizeof(Zcf)/sizeof(Zcf[0]);
-    char *Ztcf[]= {"ZU"};
+    char *Zlcf[]= {"Z90"};  //lipped 90  //NEW
+    int Zlcf_n=sizeof(Zlcf)/sizeof(Zlcf[0]);
+    char *Ztcf[]= {"ZU"};  //Z
     int Ztcf_n=sizeof(Ztcf)/sizeof(Ztcf[0]);
 
     //RT
@@ -135,6 +141,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     //IH
     char *IHpd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+r2+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b,0);lin(0,tf-r2);arc(r2,0,r2,pi/2.,pi,1);lin(b/2.-r2-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
+    char *IHwpd="lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf);xy(b/2.-tw/2.,-tf);lin(0,-h+tf*2);xy(b/2.+tw/2.,-tf);lin(0,-h+tf*2);xy(0,-h+tf);lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf)";  //welded
     char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
     char *IHsd="lin(bt,0);lin(0,-tf);lin(-bt/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(bb/2.-tw/2.-r1,0);lin(0,-tf);lin(-bb,0);lin(0,tf);lin(bb/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-bt/2.+tw/2.+r1,0);lin(0,tf)";
     //C
@@ -162,6 +169,7 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     char *Zpd="lin(b/2.+tw/2.,0);lin(0,-h+tf+r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b/2.-tw/2.,0);lin(0,h-tf-r1);arc(-r1,0,r1,0,pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *Ztd="";
     char *Zcfd="xy(0,-c/sqrt(2));lin(c/sqrt(2),c/sqrt(2));lin(bf-t-ri,0);fil(ri);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri-t*tan(22.5),0);lin((c-t*tan(22.5))/sqrt(2),(c-t*tan(22.5))/sqrt(2));fil(ri);lin(t/sqrt(2),-t/sqrt(2));lin(-c/sqrt(2),-c/sqrt(2));lin(-bf+t+ri,0);fil(ri);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri+t*tan(22.5),0);lin(-(c-t*tan(22.5))/sqrt(2),-(c-t*tan(22.5))/sqrt(2));fil(ri);lin(-t/sqrt(2),t/sqrt(2))"; //ZS
+    char *Zlcfd="xy(0,-c);lin(0,c-ri-t);arc(ri+t,0,ri+t,pi/2.,pi,1);lin(bf-ri*2-t*2,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+ri*2+t*2);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-ri*2-t*2,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,c-ri-t);lin(t,0);lin(0,-c+ri+t);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-bf+ri*2+t*2,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-ri*2-t*2);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+ri*2+t*2,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-c+ri+t);lin(-t,0)";
     char *Ztcfd="lin(bf-t-ri,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri,0);lin(0,-t);lin(-bf+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri,0);lin(0,t)";   //ZU
     //RT
     char *RTpd="xy(0,-ri-t);lin(0,-h+2*t+2*ri);arc(ri+t,0,ri+t,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri+t,ri+t,3./2.*pi,0,0);lin(0,h-2*t-2*ri);arc(-ri-t,0,ri+t,0,pi/2.,0);lin(-b+2*t+2*ri,0);arc(0,-ri-t,ri+t,pi/2.,pi,0);xy(t,-ri-t);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-b+2*t+2*ri,0);arc(0,-ri,ri,pi/2.,pi,0)";
@@ -183,7 +191,9 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     Section_Units_System=units_system;
 
-    if (FALSE == calculator (xy, &retval_no, buf_ret) || retval_no < 1)
+    strcpy(formula, "xy(0,0)");
+
+    if (FALSE == calculator (formula, &retval_no, buf_ret) || retval_no < 1)
     {
         return 0;
     }
@@ -206,6 +216,20 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
            break;
        }
    }
+   //IHwp  //welded
+   if (found==FALSE) {
+        for (i = 0; i < IHwp_n; i++)
+        {
+            if (strcmp(series0, IHwp[i]) == 0) {
+                pd0 = malloc(strlen(IHwpd) + 1);
+                memmove(pd0, IHwpd, strlen(IHwpd) + 1);
+                xblk = b / 2.;
+                yblk = 0.;
+                found = TRUE;
+                break;
+            }
+        }
+    }
    //IHt
    if (found==FALSE)
    {
@@ -530,6 +554,22 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
             {
                 pd0=malloc(strlen(Zcfd)+1);
                 memmove(pd0,Zcfd,strlen(Zcfd)+1);
+                xblk=b/2.;
+                yblk=-h/2.;
+                found=TRUE;
+                break;
+            }
+        }
+    }
+    //Zlcf
+    if (found==FALSE)
+    {
+        for (i=0; i<Zlcf_n; i++)
+        {
+            if (strcmp(series0, Zlcf[i])==0)
+            {
+                pd0=malloc(strlen(Zlcfd)+1);
+                memmove(pd0,Zlcfd,strlen(Zlcfd)+1);
                 xblk=b/2.;
                 yblk=-h/2.;
                 found=TRUE;

@@ -289,6 +289,7 @@ extern void SteelEU(void);
 extern void SteelUK(void);
 extern void SteelCA(void);
 extern void SteelAU(void);
+extern void SteelCN(void);
 
 #ifndef LINUX
 extern void init_file_dropped_fill_buf(void);
@@ -2071,6 +2072,8 @@ extern BITMAP *icon_CA_Flag;
 extern char *icon_CA_Flag_p;
 extern BITMAP *icon_AU_Flag;
 extern char *icon_AU_Flag_p;
+extern BITMAP *icon_CN_Flag;
+extern char *icon_CN_Flag_p;
 
 extern BITMAP *icon_IH_sections;
 extern char *icon_IH_sections_p;
@@ -2257,11 +2260,11 @@ extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, SteelEU, SteelUK, nooop, SteelAU, SteelUS, TimberUS, SteelCA, TimberCA};
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
 
 //#define WOOD 28 //26   //the number of function for wood choice
 int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);
-int WOOD_US=sizeof(COMNDg)/sizeof(COMNDg[0])-2;
+int WOOD_US=sizeof(COMNDg)/sizeof(COMNDg[0])-1;
 
 TMENU menug={15,0,0,16,1,3, ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,&pmenug,NULL,NULL};  //flag 7 : icons
 
@@ -5032,9 +5035,10 @@ if (child==0)
       {&icon_vectors,"vectors",&icon_vectors_p },
       {&icon_US_Flag,"US-Flag",&icon_US_Flag_p },
       {&icon_EU_Flag,"EU-Flag",&icon_EU_Flag_p },
-      {&icon_US_Flag,"UK-Flag",&icon_UK_Flag_p },
+      {&icon_UK_Flag,"UK-Flag",&icon_UK_Flag_p },
       {&icon_CA_Flag,"CA-Flag",&icon_CA_Flag_p },
       {&icon_AU_Flag,"AU-Flag",&icon_AU_Flag_p },
+      {&icon_CN_Flag,"CN-Flag",&icon_CN_Flag_p },
       {&icon_IH_sections,"IH-sections",&icon_IH_sections_p },
       {&icon_U_sections,"U-sections",&icon_U_sections_p },
       {&icon_T_sections,"T-sections",&icon_T_sections_p },
@@ -5213,8 +5217,10 @@ for (int i = 0; i < bitmaps_size; i++)
      Auto_Backup_Proc ();
      ScrSave_Proc (0);
 
-    if (n1>200) n1=WOOD_CA;  //wood CAd sections
-     else if (n1>WOOD_US+2) n1=WOOD_US;  //wood US sections
+     int n11=mWoodSpeciesUS.max;
+
+    if ((n1>200) && (n1<=(200+n11))) n1=WOOD_CA;  //wood CAd sections
+     else if ((n1>WOOD_US) && (n1<(WOOD_US+n11))) n1=WOOD_US;  //wood US sections
 
      if(n1 == 0)
      {

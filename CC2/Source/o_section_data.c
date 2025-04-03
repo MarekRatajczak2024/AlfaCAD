@@ -81,6 +81,14 @@ extern TMENU mET_section_CA_si;
 extern TMENU mZ_section_CA_si;
 extern TMENU mVJ_section_CA_si;
 
+extern TMENU mIH_section_CN_si;
+extern TMENU mU_section_CN_si;
+extern TMENU mT_section_CN_si;
+extern TMENU mL_section_CN_si;
+extern TMENU mRT_section_CN_si;
+//extern TMENU mCT_section_CA_si;
+extern TMENU mZ_section_CN_si;
+
 extern TMENU mtimber_beams_US_si;
 extern POLE pmtimber_beams_US_si[];
 extern TMENU mtimber_beams_CA_si;
@@ -141,6 +149,19 @@ POLE pmSteelCA[] = {
 };
 
 TMENU mSteelCA = { 9,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCA,NULL,NULL };
+
+POLE pmSteelCN[] = {
+        {u8"IH", L'I', 775, &mIH_section_CN_si}, //
+        {u8"U", L'U', 776, &mU_section_CN_si},  //
+        {u8"T", L'T', 777, &mT_section_CN_si},  //
+        {u8"L", L'L', 778, &mL_section_CN_si},  //
+        {u8"RT", L'R', 780, &mRT_section_CN_si},  //
+        //{u8"CT", L'C', 781, &mCT_section_CN_si},
+        {u8"Z", L'Z', 783, &mZ_section_CN_si},  //
+};
+
+TMENU mSteelCN = { 6,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCN,NULL,NULL };
+
 
 POLE pmSteelUK[] = {
         {u8"IH", L'I', 775, &mIH_section_UK_si},
@@ -1103,6 +1124,66 @@ void SteelAU(void)
         fflush(stdout);
 
         strcpy(section_data, get_section(property_no, "Steel", "AU", section, standard, series, type, "", ""));
+
+        if (strlen(section_data) == 0) return;
+
+        TextG.width=0;
+        TextG.height=0;
+        hidden=TextG.ukryty;
+        TextG.ukryty=hidden_last;
+        if (Tekst_factory(section_data, FALSE)) last_property_no = property_no;
+        hidden_last=TextG.ukryty;
+        TextG.ukryty=hidden;
+    }
+
+    return;
+}
+
+void SteelCN(void)
+{
+    int n;
+    char section[MaxTextLen];
+    char standard[MaxTextLen];
+    char series[MaxTextLen];
+    char type[MaxTextLen];
+    TMENU *m_section;
+    TMENU *m_standard;
+    PTMENU *m_series;
+    char section_data[MaxTextLen];
+    char property_no_str[64];
+    int property_no;
+    unsigned int hidden;
+
+    //get property no
+    sprintf(property_no_str,"%d",last_property_no+1);
+    if (!get_string (property_no_str, "1234567890", 16, 0, 211))
+    {
+        return;
+    }
+    if (strlen(property_no_str)==0)
+    {
+        return;
+    }
+
+    property_no=atoi(property_no_str);
+
+    set_menu_level(0);
+    simulate_keypress(ENTER);
+    n = getwsp(&mSteelCN);
+    if (n>0)
+    {
+        strcpy(section, pmSteelCN[mSteelCN.foff + mSteelCN.poz].txt);
+        m_section = pmSteelCN[mSteelCN.foff + mSteelCN.poz].menu;
+        m_standard = (*m_section->pola)[m_section->foff + m_section->poz].menu;
+        strcpy(standard, (*m_section->pola)[m_section->foff + m_section->poz].txt);
+        m_series = (PTMENU *)(*m_standard->pola)[m_standard->foff + m_standard->poz].menu;
+        strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
+        strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CN", section, standard, series, type);
+        fflush(stdout);
+
+        strcpy(section_data, get_section(property_no, "Steel", "CN", section, standard, series, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 

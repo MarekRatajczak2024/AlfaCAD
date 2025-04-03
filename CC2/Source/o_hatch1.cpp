@@ -49,7 +49,7 @@ extern void delete_arc_shadows(void);
 extern int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join, int s_atrybut, int prec, int to_block);
 extern void delete_elliptical_shadows(void);
 
-extern long_long get_free_mem_size (int) ;
+extern unsigned long_long get_free_mem_size (int) ;
 extern void Rotate_Arc (void*, double, double , double , double ) ;
 extern void Rotate_Line (void *, double , double , double , double ) ;
 extern void Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param,

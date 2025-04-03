@@ -2794,7 +2794,7 @@ char *add_block_hatch_in_block(BOOL hatchoutline)
 static BOOL get_mem_trap_table (void)
 /*----------------------------------*/
 {
-  long l_free ;
+  unsigned long_long l_free ;
   BOOL b_ret ;
 
   b_ret = FALSE ;

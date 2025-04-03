@@ -39,26 +39,26 @@ POLE pmChangeProperties[] = {
 TMENU mChangeProperties = { 3, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 18, 0, 0,0,(POLE(*)[]) & pmChangeProperties, NULL, NULL };
 
 POLE pmWoodMoistureUS[] = {
-        {u8"Green",L' ',0,&mWoodSpeciesUS},
-        {u8"12%",L' ',0,&mWoodSpeciesUS}};
+        {u8"Зелений",L'З',0,&mWoodSpeciesUS},
+        {u8"12%",L'1',0,&mWoodSpeciesUS}};
 
-TMENU mWoodMoistureUS = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,3,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+TMENU mWoodMoistureUS = { 2,0,0,7,16,8,0,CMNU,CMBR,CMTX,0,2,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
-TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,169,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
+TMENU mWoodMoistureCA = { 2,0,0,7,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
 POLE pmMaterialUS[] = {
         {u8"Сталь",L'С',775, NULL}, //&mSteelUS
         {u8"Деревина", L'Д',785, &mWoodMoistureUS}, //&mTimberUS
 };
 
-TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 5, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
+TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 6, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
 
 POLE pmMaterialCA[] = {
         {u8"Сталь",L'С',775, NULL}, //&mSteelCA
         {u8"Деревина", L'Д',785, &mWoodMoistureCA}, //&mTimberCA
 };
 
-TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
+TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 8, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
 
 POLE pmRegion[] = {
         {u8"США",L'С',772, &mMaterialUS},
@@ -66,9 +66,10 @@ POLE pmRegion[] = {
         {u8"Великобританія", L'В',774, NULL}, //&mSteelUK
         {u8"Канада", L'К',829, &mMaterialCA},
         {u8"Австралія", L'А',830, NULL}, //&mSteelAU
+        {u8"Китай", L'К',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 5, 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmApplications[] = {
         {u8"Статичний і динамічний аналіз",L'С',733, NULL},

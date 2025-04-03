@@ -5330,16 +5330,22 @@
     <ClCompile Include="..\..\Source\ET_section_CA_si.c" />
     <ClCompile Include="..\..\Source\IH_section_AU_si.c" />
     <ClCompile Include="..\..\Source\IH_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\IH_section_CN_si.c" />
     <ClCompile Include="..\..\Source\L_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\L_section_CN_si.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />
     <ClCompile Include="..\..\Source\RT_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\RT_section_CN_si.c" />
     <ClCompile Include="..\..\Source\timber_beams_CA_si.c" />
     <ClCompile Include="..\..\Source\T_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\T_section_CN_si.c" />
     <ClCompile Include="..\..\Source\U_section_AU_si.c" />
     <ClCompile Include="..\..\Source\U_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\U_section_CN_si.c" />
     <ClCompile Include="..\..\Source\Z_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\Z_section_CN_si.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\CC2\Source\loadpng.h" />
@@ -5359,9 +5365,9 @@
     <Library Include="..\AlfObjects64\Release64\AlfaObjects.lib" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\ALFPRO2\Bitmaps\text_align_baselinecenter.png" />
-    <None Include="..\..\..\ALFPRO2\Bitmaps\text_align_baselineleft.png" />
-    <None Include="..\..\..\ALFPRO2\Bitmaps\text_align_baselineright.png" />
+    <None Include="..\..\..\CC2\Source\res\text_align_baselinecenter.png" />
+    <None Include="..\..\..\CC2\Source\res\text_align_baselineleft.png" />
+    <None Include="..\..\..\CC2\Source\res\text_align_baselineright.png" />
     <None Include="..\..\..\CC2\Source\res\align-center.bmp" />
     <None Include="..\..\..\CC2\Source\res\align-left.bmp" />
     <None Include="..\..\..\CC2\Source\res\align-right.bmp" />

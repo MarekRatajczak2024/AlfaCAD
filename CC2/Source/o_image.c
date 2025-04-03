@@ -38,7 +38,7 @@
 
 typedef unsigned int GrColor;
 
-extern long get_free_mem_size (int way) ;
+extern unsigned long_long get_free_mem_size (int way) ;
 extern void  redraw_cur (BOOL cur) ;
 extern void getimage(int left, int top, int right, int bottom, void  *bitmap);
 extern void putimage(int left, int top,  void  *bitmap, int op);

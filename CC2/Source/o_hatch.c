@@ -140,7 +140,7 @@ static int i__lines_defno ;	/*liczba linii definicji wzorcow*/
 static BOOL get_mem_hatch_def_param (void)
 /*---------------------------------------*/
 {
-  long_long l_free ;
+  unsigned long_long l_free ;
 
   l_free = get_free_mem_size (0) ;
   i__pattern_names_maxno = (int)((l_free - 1000) / sizeof(T_Hatch_Def_Param)) ;
@@ -386,7 +386,7 @@ error :
 static BOOL check_mem_list (int i_pattern_namesno)
 /*------------------------------------*/
 {
-  long_long l_free, l_size=0 ;  //16.08.2007
+  unsigned long_long l_free, l_size=0 ;  //16.08.2007
   BOOL b_ret ;
 
   b_ret = FALSE ;
