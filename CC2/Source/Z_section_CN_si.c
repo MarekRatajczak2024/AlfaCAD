@@ -5,5 +5,5 @@ POLE pmZ_section_CN_si[] = {
 {u8"GB 50018-2002",L' ',0,&mZ_section_CN_si_1},
 };
 
-TMENU mZ_section_CN_si = { 2,0,0,14,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmZ_section_CN_si,NULL,NULL };
+TMENU mZ_section_CN_si = { 2,0,0,14,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmZ_section_CN_si,NULL,NULL };
 

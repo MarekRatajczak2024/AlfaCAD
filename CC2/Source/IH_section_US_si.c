@@ -17,5 +17,5 @@ POLE pmIH_section_US_si[] = {
 {u8"Euronorm 53-62; ASTM A 6/A 6M-07",L' ',0,&mIH_section_US_si_13},
 };
 
-TMENU mIH_section_US_si = { 14,0,0,42,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_US_si,NULL,NULL };
+TMENU mIH_section_US_si = { 14,0,0,42,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_US_si,NULL,NULL };
 

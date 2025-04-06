@@ -14,5 +14,5 @@ POLE pmCT_section_EU_si[] = {
 {u8"EN 10255",L' ',0,&mCT_section_EU_si_10},
 };
 
-TMENU mCT_section_EU_si = { 11,0,0,25,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmCT_section_EU_si,NULL,NULL };
+TMENU mCT_section_EU_si = { 11,0,0,25,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmCT_section_EU_si,NULL,NULL };
 

@@ -13,5 +13,5 @@ POLE pmIH_section_EU_si[] = {
 {u8"DIN 1025-2:1995-11; Euronorm 53-62",L' ',0,&mIH_section_EU_si_9},
 };
 
-TMENU mIH_section_EU_si = { 10,0,0,42,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_EU_si,NULL,NULL };
+TMENU mIH_section_EU_si = { 10,0,0,42,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_EU_si,NULL,NULL };
 

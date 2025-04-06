@@ -7,5 +7,5 @@ POLE pmU_section_UK_si[] = {
 {u8"BS EN 10365:2017",L' ',0,&mU_section_UK_si_3},
 };
 
-TMENU mU_section_UK_si = { 4,0,0,24,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmU_section_UK_si,NULL,NULL };
+TMENU mU_section_UK_si = { 4,0,0,24,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmU_section_UK_si,NULL,NULL };
 

@@ -12,5 +12,5 @@ POLE pmIH_section_CN_si[] = {
 {u8"GB/T 11263-1998",L' ',0,&mIH_section_CN_si_8},
 };
 
-TMENU mIH_section_CN_si = { 9,0,0,16,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_CN_si,NULL,NULL };
+TMENU mIH_section_CN_si = { 9,0,0,16,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmIH_section_CN_si,NULL,NULL };
 

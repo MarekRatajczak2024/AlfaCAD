@@ -7641,6 +7641,7 @@ int inukeys(TMENU *menu)
 #define COPYCLIP 2051
 #define DEGREESIGN 176
 #define SUPERSCRIPT4 0x2074
+#define TRADEMARK 0x2122
 #define ROOTSIGN 0x221A
 #define ROOT3SIGN 0x221B
 #define EUROSIGN 0x20AC

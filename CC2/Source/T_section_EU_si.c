@@ -9,5 +9,5 @@ POLE pmT_section_EU_si[] = {
 {u8"Euronorm 55-80",L' ',0,&mT_section_EU_si_5},
 };
 
-TMENU mT_section_EU_si = { 6,0,0,35,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmT_section_EU_si,NULL,NULL };
+TMENU mT_section_EU_si = { 6,0,0,35,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmT_section_EU_si,NULL,NULL };
 

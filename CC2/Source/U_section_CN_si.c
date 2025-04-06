@@ -9,5 +9,5 @@ POLE pmU_section_CN_si[] = {
 {u8"CECS 102:2002",L' ',0,&mU_section_CN_si_5},
 };
 
-TMENU mU_section_CN_si = { 6,0,0,14,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmU_section_CN_si,NULL,NULL };
+TMENU mU_section_CN_si = { 6,0,0,14,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmU_section_CN_si,NULL,NULL };
 

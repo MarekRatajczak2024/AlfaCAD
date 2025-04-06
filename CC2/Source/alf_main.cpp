@@ -286,6 +286,7 @@ int dHeight = 60;
 #define ROOTSIGN 0x221A
 #define ROOT3SIGN 0x221B
 #define EUROSIGN 0x20AC
+#define TRADEMARK 0x2122
 #define SUPERSCRIPT3 179
 #define SUPERSCRIPT2 178
 #define PLUSMINUS 177

@@ -7,5 +7,5 @@ POLE pm2L_section_US_si[] = {
 {u8"AISC 16",L' ',0,&m2L_section_US_si_3},
 };
 
-TMENU m2L_section_US_si = { 4,0,0,8,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pm2L_section_US_si,NULL,NULL };
+TMENU m2L_section_US_si = { 4,0,0,8,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pm2L_section_US_si,NULL,NULL };
 

@@ -15,5 +15,5 @@ POLE pmCT_section_US_si[] = {
 {u8"ASME B 36.19M:2004",L' ',0,&mCT_section_US_si_11},
 };
 
-TMENU mCT_section_US_si = { 12,0,0,19,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmCT_section_US_si,NULL,NULL };
+TMENU mCT_section_US_si = { 12,0,0,19,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmCT_section_US_si,NULL,NULL };
 

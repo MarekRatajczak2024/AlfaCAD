@@ -79,7 +79,7 @@ POLE pmApplications[] = {
         {u8"Element cross-section selection",L'E',775, &mRegion},
 };
 
-TMENU mApplications = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
 
 POLE pmenug[] = {
 	{u8"Draw\0",'D',57,NULL},

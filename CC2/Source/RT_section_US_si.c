@@ -10,5 +10,5 @@ POLE pmRT_section_US_si[] = {
 {u8"ASD 9",L' ',0,&mRT_section_US_si_6},
 };
 
-TMENU mRT_section_US_si = { 7,0,0,9,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmRT_section_US_si,NULL,NULL };
+TMENU mRT_section_US_si = { 7,0,0,9,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmRT_section_US_si,NULL,NULL };
 

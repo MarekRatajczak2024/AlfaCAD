@@ -6,5 +6,5 @@ POLE pmL_section_EU_si[] = {
 {u8"EN 10056-1:2017",L' ',0,&mL_section_EU_si_2},
 };
 
-TMENU mL_section_EU_si = { 3,0,0,16,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_EU_si,NULL,NULL };
+TMENU mL_section_EU_si = { 3,0,0,16,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_EU_si,NULL,NULL };
 

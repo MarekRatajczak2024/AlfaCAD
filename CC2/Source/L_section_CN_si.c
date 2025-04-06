@@ -10,5 +10,5 @@ POLE pmL_section_CN_si[] = {
 {u8"JG/T 380-2012",L' ',0,&mL_section_CN_si_6},
 };
 
-TMENU mL_section_CN_si = { 7,0,0,15,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_CN_si,NULL,NULL };
+TMENU mL_section_CN_si = { 7,0,0,15,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_CN_si,NULL,NULL };
 

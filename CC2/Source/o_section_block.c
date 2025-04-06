@@ -29,7 +29,7 @@ char *Section_Units_System;
 extern char *units_system_si;
 extern double SkalaF;
 
-int create_profile_block(char *units_system, char *series0, char *type0, double h, double b, double tw, double tf, double r1, double r2, double sf, double bt, double bb, double bf, double t, double ha, double ba, double ab, double c, double c1, double r3, double ri, double sw)
+int create_profile_block(char *units_system, char *series0, char *manufacturer0, char *type0, double h, double b, double tw, double tf, double r1, double r2, double sf, double bt, double bb, double bf, double t, double ha, double ba, double ab, double c, double c1, double r3, double ri, double sw)
 {  int i;
    char *pd0, *pd, *pde, *pdf;
    int retval_no = 1 ;
@@ -49,15 +49,15 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
 
     //IH
     char *IHp[]= {"HD","HE","HE A","HE AA","HE B","HE C","HE M","HEA","HEB","HEM","HL","HLZ","IPE","IPE 750","IPE A","IPE AA","IPE O","IPE V","IPER","PEA","UB","UBP","UC",
-                 "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I W","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF (Table 9)","WF(A-N) (Table 10)","WTM",
-                  "Advance UKB","Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB","IP","W (in)","W (mm)"};
+                 "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I W","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF(A-N) (Table 10)","WTM",
+                  "Advance UKB","Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB","IP","W (in)","W (mm)","I (BS)"};
 
     int IHp_n=sizeof(IHp)/sizeof(IHp[0]);
 
     char *IHwp[]= {"HA","HAQ","HGZ","WH"};  //welded  //NEW
     int IHwp_n=sizeof(IHwp)/sizeof(IHwp[0]);
 
-    char *IHt[]= {"I","INP","IPN","J","S","S (Table 11)","S (Table 9)","WF (Table 9)","RSJ", "I "};
+    char *IHt[]= {"I","INP","IPN","J","S","S (Table 11)","S (Table 9)","WF (Table 9)","RSJ"};
     int IHt_n=sizeof(IHt)/sizeof(IHt[0]);
     char *IHs[]= {"ASB","ASY"};
     int IHs_n=sizeof(IHs)/sizeof(IHs[0]);
@@ -142,7 +142,9 @@ int create_profile_block(char *units_system, char *series0, char *type0, double 
     //IH
     char *IHpd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+r2+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b,0);lin(0,tf-r2);arc(r2,0,r2,pi/2.,pi,1);lin(b/2.-r2-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *IHwpd="lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf);xy(b/2.-tw/2.,-tf);lin(0,-h+tf*2);xy(b/2.+tw/2.,-tf);lin(0,-h+tf*2);xy(0,-h+tf);lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf)";  //welded
-    char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
+    //char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
+    //char *IHtd="lin(b,0);lin(0,-tf+r2);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf-r2);lin(0,-tf+r2);fil(r2);lin(-b,0);lin(0,tf-r2);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf+r2);lin(0,tf-r2);fil(r2)";
+    char *IHtd="lin(b,0);lin(0,min(-tf+r2,0));xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf-r2);lin(0,min(-tf+r2,0));fil(r2);lin(-b,0);lin(0,max(tf-r2,0));xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf+r2);lin(0,max(tf-r2,0));fil(r2)";
     char *IHsd="lin(bt,0);lin(0,-tf);lin(-bt/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(bb/2.-tw/2.-r1,0);lin(0,-tf);lin(-bb,0);lin(0,tf);lin(bb/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-bt/2.+tw/2.+r1,0);lin(0,tf)";
     //C
     char *Cpd="lin(b,0);lin(0,-tf);lin(-b+tw+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b-tw-r1,0);lin(0,-tf);lin(-b,0);lin(0,h)";

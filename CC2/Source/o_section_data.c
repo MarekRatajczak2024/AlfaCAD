@@ -134,7 +134,7 @@ POLE pmSteelAU[] = {
         {u8"CT", L'C', 781, &mCT_section_AU_si},
 };
 
-TMENU mSteelAU = { 4,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelAU,NULL,NULL };
+TMENU mSteelAU = { 4,0,0,6,16,8, TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelAU,NULL,NULL };
 
 POLE pmSteelCA[] = {
         {u8"IH", L'I', 775, &mIH_section_CA_si},
@@ -148,7 +148,7 @@ POLE pmSteelCA[] = {
         {u8"Z", L'Z', 783, &mZ_section_CA_si},
 };
 
-TMENU mSteelCA = { 9,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCA,NULL,NULL };
+TMENU mSteelCA = { 9,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCA,NULL,NULL };
 
 POLE pmSteelCN[] = {
         {u8"IH", L'I', 775, &mIH_section_CN_si}, //
@@ -160,7 +160,7 @@ POLE pmSteelCN[] = {
         {u8"Z", L'Z', 783, &mZ_section_CN_si},  //
 };
 
-TMENU mSteelCN = { 6,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCN,NULL,NULL };
+TMENU mSteelCN = { 6,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelCN,NULL,NULL };
 
 
 POLE pmSteelUK[] = {
@@ -174,7 +174,7 @@ POLE pmSteelUK[] = {
 };
 
 
-TMENU mSteelUK = { 7,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelUK,NULL,NULL };
+TMENU mSteelUK = { 7,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelUK,NULL,NULL };
 
 
 POLE pmSteelEU[] = {
@@ -188,7 +188,7 @@ POLE pmSteelEU[] = {
 };
 
 
-TMENU mSteelEU = { 7,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelEU,NULL,NULL };
+TMENU mSteelEU = { 7,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelEU,NULL,NULL };
 
 
 POLE pmSteelUS[] = {
@@ -204,7 +204,7 @@ POLE pmSteelUS[] = {
 };
 
 
-TMENU mSteelUS = { 9,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelUS,NULL,NULL };
+TMENU mSteelUS = { 9,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelUS,NULL,NULL };
 
 
 POLE pmTimberUS[] = {
@@ -212,27 +212,28 @@ POLE pmTimberUS[] = {
 };
 
 
-TMENU mTimberUS = { 1,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTimberUS,NULL,NULL };
+TMENU mTimberUS = { 1,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTimberUS,NULL,NULL };
 
 POLE pmTimberCA[] = {
         {u8"timber Rectangles", L'R', 785, &mtimber_beams_CA_si},
 };
 
 
-TMENU mTimberCA = { 1,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTimberCA,NULL,NULL };
+TMENU mTimberCA = { 1,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTimberCA,NULL,NULL };
 
 char *units_system_si="si";
 char *units_system_imp="imp";
 
 char *regions[]={"US", "EU", "UK"};
 
-char *get_section_data(char *file_name,  int property_no, char *material, char *section, char *region, char *units_system, char *standard0, char *series0, char *type0, char *species0, char *moisture0)
+char *get_section_data(char *file_name,  int property_no, char *material, char *section, char *region, char *units_system, char *standard0, char *series0, char *manufacturer0, char *type0, char *species0, char *moisture0)
 {
     FILE *f, *fs;
     static char section_data[MaxTextLen]="";
     char data_row[MaxMultitextLen];
 
     char series[64];
+    char *ptr_tm;
     char description[64];
     char standard[64];
     char manufacturer[64];
@@ -254,6 +255,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             iw, Ww, Sw_max, c_tf, c_tw, Wpl_y, Wpl_z, Wpl_w, Wpl_y_webs, Wpl_z_flanges,
             apl_y, apl_z, apl_w, Apl_y, Apl_z, Npl, Vpl_y, Vpl_z, Mpl_y, Mpl_z,
              Nu, Gw, Am, V, Am_V, Aw, d0,  w, w1, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw;
+
 
     strcpy(section_data,"");
 
@@ -324,7 +326,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
         *ptr2='\0';
         strcpy(measure_system,ptr);
 
-        if ((strcmp(standard, standard0)==0) && (strcmp(series, series0)==0) && (strcmp(type, type0)==0))
+        if ((strcmp(standard, standard0)==0) && (strcmp(series, series0)==0) && (strcmp(type, type0)==0) && ((manufacturer0==NULL) || (strcmp(manufacturer, manufacturer0)==0)))
         {
             fclose(f);
 
@@ -356,7 +358,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
 
             //TEMPORARY
             //generating of profile block
-            ret=create_profile_block(units_system, series0, type0, h, b, tw, tf, r1, r2, sf/100.0, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw/100.0);
+            ret=create_profile_block(units_system, series0, manufacturer0, type0, h, b, tw, tf, r1, r2, sf/100.0, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw/100.0);
 
             //#1 h=140 A=16.43 As=8.13 Iy=541.20 Iz=44.92 E=210 G=81 r=0 d=7850 a=11.7e-6 IPE 140
             set_decimal_format(par[0], h, prop_precisions->dim_precision);
@@ -628,7 +630,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
     return section_data;
 }
 
-char *get_section(int property_no, char *material, char *region0, char *section, char *standard, char *series, char *type, char *species, char *moisture)   //"Steel","UK",section,standard,series,type
+char *get_section(int property_no, char *material, char *region0, char *section, char *standard, char *series, char *manufacturer, char *type, char *species, char *moisture)   //"Steel","UK",section,standard,series,type
 {
     static char section_data[MaxTextLen];
     char *units_system;
@@ -701,7 +703,7 @@ char *get_section(int property_no, char *material, char *region0, char *section,
         sprintf(file_name, "%s%s_section_%s_%s.csv", directory, section, region, units_system);
     }
 
-    strcpy(section_data, get_section_data(file_name,  property_no, material, section, region, units_system, standard, series, type, species, moisture));
+    strcpy(section_data, get_section_data(file_name,  property_no, material, section, region, units_system, standard, series, manufacturer, type, species, moisture));
 
     return section_data;
 }
@@ -711,6 +713,7 @@ void SteelUS(void)
     char section[MaxTextLen];
     char standard[MaxTextLen];
     char series[MaxTextLen];
+    //char manufacturer[MaxTextLen];
     char type[MaxTextLen];
     TMENU *m_section;
     TMENU *m_standard;
@@ -720,6 +723,9 @@ void SteelUS(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -748,10 +754,23 @@ void SteelUS(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "US", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0=(*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0)+1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "US", section, standard, series, manufacturer!=NULL ? manufacturer : "" , type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "US", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "US", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 
@@ -781,6 +800,9 @@ void SteelCA(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -809,10 +831,23 @@ void SteelCA(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CA", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0=(*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0)+1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CA", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "CA", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "CA", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 
@@ -843,6 +878,9 @@ void TimberUS(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -874,10 +912,23 @@ void TimberUS(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Timber\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "US", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0=(*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0)+1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Timber\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "US", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Timber", "US", section, standard, series, type, species, moisture));
+        strcpy(section_data, get_section(property_no, "Timber", "US", section, standard, series, manufacturer, type, species, moisture));
 
         if (strlen(section_data) == 0) return;
 
@@ -908,6 +959,9 @@ void TimberCA(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -939,10 +993,12 @@ void TimberCA(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Timber\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CA", section, standard, series, type);
+        manufacturer=NULL;
+
+        printf("\"Timber\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CA", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Timber", "CA", section, standard, series, type, species, moisture));
+        strcpy(section_data, get_section(property_no, "Timber", "CA", section, standard, series, manufacturer, type, species, moisture));
 
         if (strlen(section_data) == 0) return;
 
@@ -972,6 +1028,9 @@ void SteelEU(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -1000,10 +1059,23 @@ void SteelEU(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "EU", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0 = (*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0) + 1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "EU", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "EU", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "EU", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 
@@ -1033,8 +1105,12 @@ void SteelUK(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
+
     sprintf(property_no_str,"%d",last_property_no+1);
     if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
@@ -1060,10 +1136,23 @@ void SteelUK(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "UK", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0 = (*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0) + 1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "UK", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "UK", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "UK", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 
@@ -1093,6 +1182,9 @@ void SteelAU(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -1120,10 +1212,23 @@ void SteelAU(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "AU", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0 = (*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0) + 1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "AU", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "AU", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "AU", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 
@@ -1153,6 +1258,9 @@ void SteelCN(void)
     char property_no_str[64];
     int property_no;
     unsigned int hidden;
+    char *ptrsz_temp0;
+    char *ptrsz_temp_tadd;
+    char *manufacturer;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -1180,10 +1288,23 @@ void SteelCN(void)
         strcpy(series, (*m_standard->pola)[m_standard->foff + m_standard->poz].txt);
         strcpy(type, (*m_series->pola)[m_series->foff + m_series->poz].txt);
 
-        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CN", section, standard, series, type);
+        manufacturer=NULL;
+        if (m_standard->flags&TADD)
+        {
+            ptrsz_temp0 = (*m_standard->pola)[m_standard->foff + m_standard->poz].txt;
+
+            ptrsz_temp_tadd = ptrsz_temp0 + strlen(ptrsz_temp0) + 1;
+            if (strlen(ptrsz_temp_tadd) > 0)
+            {
+                manufacturer = strstr(ptrsz_temp_tadd, u8"™");
+                if (manufacturer != NULL) manufacturer += 3;
+            }
+        }
+
+        printf("\"Steel\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" ", "CN", section, standard, series, manufacturer!=NULL ? manufacturer : "", type);
         fflush(stdout);
 
-        strcpy(section_data, get_section(property_no, "Steel", "CN", section, standard, series, type, "", ""));
+        strcpy(section_data, get_section(property_no, "Steel", "CN", section, standard, series, manufacturer, type, "", ""));
 
         if (strlen(section_data) == 0) return;
 

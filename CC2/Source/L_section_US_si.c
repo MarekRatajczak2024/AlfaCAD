@@ -12,5 +12,5 @@ POLE pmL_section_US_si[] = {
 {u8"ASTM A 6/A 6M",L' ',0,&mL_section_US_si_8},
 };
 
-TMENU mL_section_US_si = { 9,0,0,14,16,8,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_US_si,NULL,NULL };
+TMENU mL_section_US_si = { 9,0,0,14,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmL_section_US_si,NULL,NULL };
 
