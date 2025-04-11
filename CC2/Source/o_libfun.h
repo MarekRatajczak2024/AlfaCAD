@@ -21,6 +21,7 @@ extern BOOL Check_Angle (double k, double k1, double k2);
 extern BOOL Sharp_Check_Angle (double k, double k1, double k2);
 extern BOOL Check_if_Equal0 (double x, double y);
 extern BOOL Check_if_Equal (double x, double y);
+extern BOOL Check_if_Equal1 (double x, double y);
 extern BOOL Check_if_Equal2(double x, double y);
 extern BOOL Check_if_Equal3(double x, double y);
 extern BOOL Check_if_GE (double x, double y);

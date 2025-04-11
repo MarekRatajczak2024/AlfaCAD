@@ -65,7 +65,7 @@ extern int fnsplit (const char *path, char *drive, char *dir, char *name, char *
 extern BOOL b__temp;
 extern double current_hatch_scale, new_hatch_scale, current_hatch_angle, new_hatch_angle;
 extern double current_hatch_distans, new_hatch_distans; 
-extern int i__hatch_pattern_no;
+extern int i_a_hatch_pattern_no;
 static int sel_akt, sel_cur, sel_gor;
 extern void redcrP (char) ;
 extern void hatch_angle_rotate (void) ;
@@ -3099,7 +3099,7 @@ int hatch_rotate_t3(void)
   double d ;
   double kos, koc;
 
-  if (i__hatch_pattern_no == 0) return 0;
+  if (i_a_hatch_pattern_no == 0) return 0;
 
   Hatch_Rotate_t3();
   new_hatch_angle = s_hatch_param_df_angle - current_hatch_angle;
@@ -3120,7 +3120,7 @@ int hatch_rotate_t_3(void)
   double d ;
   double kos, koc;
 
-  if (i__hatch_pattern_no == 0) return 0;
+  if (i_a_hatch_pattern_no == 0) return 0;
 
   Hatch_Rotate_t_3();
   new_hatch_angle = s_hatch_param_df_angle - current_hatch_angle;
@@ -3141,7 +3141,7 @@ int hatch_rotate_t45(void)
   double d ;
   double kos, koc;
 
-  if (i__hatch_pattern_no == 0) return 0;
+  if (i_a_hatch_pattern_no == 0) return 0;
 
   Hatch_Rotate_t45();
   new_hatch_angle = s_hatch_param_df_angle - current_hatch_angle;
@@ -3163,7 +3163,7 @@ int hatch_rotate_t_45(void)
   double d ;
   double kos, koc;
 
-  if (i__hatch_pattern_no == 0) return 0;
+  if (i_a_hatch_pattern_no == 0) return 0;
 
   Hatch_Rotate_t_45();
   new_hatch_angle = s_hatch_param_df_angle - current_hatch_angle;
@@ -3626,7 +3626,7 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
 		break;
 	  case ID_VPATTERN_ANGLE :
 
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 
 	    hatch_angle_rotate () ;
 	    
@@ -3644,7 +3644,7 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
 	    break ;
 	  case ID_VPATTERN_PARALLEL:
 
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 
 		  hatch_angle_rotate_parallel();
 
@@ -3662,7 +3662,7 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
 
 	  case ID_VPATTERN_PERPENDICULAR:
 
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 
 		  hatch_angle_rotate_perpendicular();
 
@@ -3678,7 +3678,7 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
 		  Cur_ond(X, Y);
 		  break;
 	  case ID_SCALE :
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 	    hatch_scale () ;
 	    Cur_offd (X, Y) ;
 	    if (FALSE == Check_if_Equal(current_hatch_scale,0)) 
@@ -3689,11 +3689,11 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
             Cur_ond (X, Y) ;
 	    break ;
 	  case ID_SNAP_BASE :
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 	    hatch_snap_base () ;
 	    break ;
 	  case ID_SNAP_BASE_POINT :
-		  if (i__hatch_pattern_no == 0) break;
+		  if (i_a_hatch_pattern_no == 0) break;
 	    hatch_snap_base_point () ;
 	    break ;  
 	  case ID_PATTERN :	/*menu*/
@@ -3701,7 +3701,7 @@ static int PrzesunH(double *X0, double *Y0, int kod_bloku, int comput_area)
 	  case ID_DIST :
 		hatch_dist () ;
 
-		if (i__hatch_pattern_no != 0)
+		if (i_a_hatch_pattern_no != 0)
 		{
 			if ((ADP != NULL) && (ADK != NULL))
 			{

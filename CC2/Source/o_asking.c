@@ -28,7 +28,7 @@
 #include<sys/stat.h>
 #define ALLEGWIN
 #include <allegext.h>
-
+//#pragma pack(4)  to avoid warning message
 #include "bib_e.h"
 #include "rysuj_e.h"
 #include "o_loadf.h"
@@ -597,21 +597,21 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
     lab[0].ink=color_comment;
 
-    lab[0].x = DXBox2 - dt1 / 2 / wsp_x +DXShift;
+    lab[0].x = DXBox2 - (int)(dt1 / 2. / wsp_x +DXShift);
 
     lab[1].ink = color1_comment;
 
-    lab[1].x = DXBox2 - dt2 / 2 / wsp_x +DXShift;
+    lab[1].x = DXBox2 - (int)(dt2 / 2. / wsp_x +DXShift);
 
     Get_Default_Color_Dlg (&color_dlg);
 
     image_s=imagesize(125, 200, 675, 400);
 
-    x_win_ask = asking_dlg_static.x*wsp_x;
-    y_win_ask = 26 + asking_dlg_static.y*wsp_y;
+    x_win_ask = (int)(asking_dlg_static.x*wsp_x);
+    y_win_ask = (int)(26 + asking_dlg_static.y*wsp_y);
 
-    dx_win_ask = 10 + asking_dlg_static.dx*wsp_x;
-    dy_win_ask = 58 /*52*/ + asking_dlg_static.dy*wsp_y;
+    dx_win_ask = (int)(10 + asking_dlg_static.dx*wsp_x);
+    dy_win_ask = (int)(58 /*52*/ + asking_dlg_static.dy*wsp_y);
 
     images_as[0].iconno = image;
 
@@ -634,7 +634,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
     }
     else if (Ret_Val == Dlg_Ret_Val_Cancel) return 0;  //ESC
     else if (Ret_Val == Dlg_Ret_Val_Return) return 0;  //NIE
-    else return 0;
+    //else
+    return 0;
 }
 
 

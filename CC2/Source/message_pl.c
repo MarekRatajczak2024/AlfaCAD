@@ -32,16 +32,16 @@ static char* komunikaty[] =
 static char* messages[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Przerwanie  --> Esc   (%s%)",
-	/*2*/u8"CZEKAJ -> rozcinanie linii:  (%s%)",
+	/*1*/u8"Przerwanie  --> Esc   (%s%%)",
+	/*2*/u8"CZEKAJ -> rozcinanie linii:  (%s%%)",
 	/*3*/u8"Buforowanie obrazu  (%s)   Przerwanie --> Esc",
 };
 
 static char* messages1[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Przerwanie  --> Esc   (%s%)",
-	/*2*/u8"CZEKAJ -> rozcinanie linii:  (%s%)",
+	/*1*/u8"Przerwanie  --> Esc   (%s%%)",
+	/*2*/u8"CZEKAJ -> rozcinanie linii:  (%s%%)",
 };
 
 static char* errors_kom[] =

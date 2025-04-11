@@ -799,7 +799,7 @@ char *dodaj_obiekt_(BLOK * adb,void  *ad)
     n=blok->n;
     //ad1=dodaj_obiekt(adb, ad);
     if (PTR__GTMPBLOCK!=NULL)
-        ad1=dodaj_obiekt(PTR__GTMPBLOCK, ad);  //instead of adb
+        ad1=dodaj_obiekt((BLOK*)PTR__GTMPBLOCK, ad);  //instead of adb
     else ad1=dodaj_obiekt(adb, ad);
     blok=(BLOK*)dane;
     n1=blok->n;
@@ -818,7 +818,7 @@ char *dodaj_obiekt_reversed_(BLOK * adb,void  *ad)
     n=blok->n;
     //ad1=dodaj_obiekt(adb, ad);
     if (PTR__GTMPBLOCK!=NULL)
-        ad1=dodaj_obiekt_reversed(PTR__GTMPBLOCK, ad);  //instead of adb
+        ad1=dodaj_obiekt_reversed((BLOK*)PTR__GTMPBLOCK, ad);  //instead of adb
     else ad1=dodaj_obiekt_reversed(adb, ad);
     blok=(BLOK*)dane;
     n1=blok->n;
@@ -1157,7 +1157,7 @@ int draw_disp_label(LINIA *L, LINIA *Le, double dx, double vpar1, double vpar2, 
     Dxy = sqrt(vpar1 * vpar1 + vpar2 * vpar2);
 
     //set_decimal_format(T.text, vpar, precision);
-    sprintf(&T.text, "%s%s%s", t1, term, t2);
+    sprintf((char*)&T.text, "%s%s%s", t1, term, t2);
 
     if (strcmp(T.text, T_text)!=0)
     {
@@ -1510,7 +1510,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
 
     COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
 
-    GL=graph_buffer;
+    GL= (LINIA *) graph_buffer;
 
     memmove(GL, Ldsp, sizeof(LINIA));
     GL->typ=gl_width*32+gl_type;
@@ -1521,7 +1521,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
 
     GL->n=20;  //simple line
     //line extension
-    gl_data=graph_buffer+sizeof(LINIA);
+    gl_data= (GRAPH_DATA *) (graph_buffer + sizeof(LINIA));
     gl_data->flags=71;  //'G' 71 for Graph
     if (dt_==7) dt=6;
     else dt=dt_;
@@ -1539,7 +1539,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
 
     GRAPH_VALUES *gl_values;
     //float *gl_values[64];
-    gl_values=p_gl_fvalue;
+    gl_values= (GRAPH_VALUES *) p_gl_fvalue;
 
     for (int gi=0; gi<nx; gi++)
     {
@@ -1628,7 +1628,7 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     SECTION_DATA section_data={0,0,0,0,0,0,0,0,0,0};
 
     element_buffer = (char *) malloc(sizeof(LINIA)+sizeof(GRAPH_DATA)+sizeof(SECTION_DATA)+10);
-    EL=element_buffer;
+    EL= (LINIA *) element_buffer;
 
     memmove(EL, Le, sizeof(LINIA));
     EL->blok=ElemBlok;
@@ -2397,7 +2397,7 @@ void Static_analysis(void) {
             v = (AVECTOR *) nag;
 
             if (v->style < 4) {
-                parametry_lini(v, &PL);
+                parametry_lini((LINIA *) v, &PL);
                 kos = sin(PL.kat * Pi / 180);
                 koc = cos(PL.kat * Pi / 180);
 
@@ -3095,7 +3095,7 @@ void Static_analysis(void) {
                                 st_displacement[st_displacement_no].node = i;
                                 switch (v->style) {
                                     case 4:  //force
-                                        parametry_lini(v, &PL);
+                                        parametry_lini((LINIA *) v, &PL);
                                         kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                         koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3133,7 +3133,7 @@ void Static_analysis(void) {
                                         add_node_force_moment();
                                         break;
                                     case 7:  //displacement
-                                        parametry_lini(v, &PL);
+                                        parametry_lini((LINIA*)v, &PL);
                                         kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                         koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3204,7 +3204,7 @@ void Static_analysis(void) {
                                                           st_node[st_element[i].node2].x,
                                                           st_node[st_element[i].node2].y, 0.0001)) {
 
-                                parametry_lini(v, &PL);
+                                parametry_lini((LINIA*)v, &PL);
                                 kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                 koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3312,7 +3312,7 @@ void Static_analysis(void) {
                     case 12:
                     case 13:
                     case 14:
-                        parametry_lini(v, &PL);
+                        parametry_lini((LINIA*)v, &PL);
                         partial_length = PL.dl;
 
                         for (i = 0; i < st_element_no; i++)  //node1
@@ -3362,7 +3362,7 @@ void Static_analysis(void) {
                                 st_load[st_load_no].element = i;
                                 st_load[st_load_no].partial = 0;
                                 st_load[st_load_no].uniform = 0;
-                                parametry_lini(v, &PL);
+                                parametry_lini((LINIA*)v, &PL);
                                 L.x1 = st_node[st_element[i].node1].x;
                                 L.y1 = st_node[st_element[i].node1].y;
                                 L.x2 = st_node[st_element[i].node2].x;
@@ -3390,7 +3390,7 @@ void Static_analysis(void) {
                                 st_load[st_load_no].element = i;
                                 st_load[st_load_no].spread = 1;
                                 st_load[st_load_no].partial = 1;
-                                parametry_lini(v, &PL);
+                                parametry_lini((LINIA*)v, &PL);
                                 L.x1 = st_node[st_element[i].node1].x;
                                 L.y1 = st_node[st_element[i].node1].y;
                                 L.x2 = st_node[st_element[i].node2].x;
@@ -3438,7 +3438,7 @@ void Static_analysis(void) {
                                                                  st_node[st_element[i].node1].y,
                                                                  st_node[st_element[i].node2].x,
                                                                  st_node[st_element[i].node2].y, 0.0001)))) {
-                                parametry_lini(v, &PL);
+                                parametry_lini((LINIA*)v, &PL);
                                 L.x1 = st_node[st_element[i].node1].x;
                                 L.y1 = st_node[st_element[i].node1].y;
                                 L.x2 = st_node[st_element[i].node2].x;
@@ -3486,7 +3486,7 @@ void Static_analysis(void) {
                                                                  st_node[st_element[i].node1].y,
                                                                  st_node[st_element[i].node2].x,
                                                                  st_node[st_element[i].node2].y, 0.0001)))) {
-                                parametry_lini(v, &PL);
+                                parametry_lini((LINIA*)v, &PL);
                                 L.x1 = st_node[st_element[i].node1].x;
                                 L.y1 = st_node[st_element[i].node1].y;
                                 L.x2 = st_node[st_element[i].node2].x;
@@ -3538,7 +3538,7 @@ void Static_analysis(void) {
                                     st_uniform_load[st_uniform_load_no].layer = v->warstwa;
                                     switch (v->style) {
                                         case 10:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
@@ -3556,7 +3556,7 @@ void Static_analysis(void) {
                                             }
                                             break;
                                         case 11:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3586,7 +3586,7 @@ void Static_analysis(void) {
                                             }
                                             break;
                                         case 13:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
@@ -3603,7 +3603,7 @@ void Static_analysis(void) {
                                             }
                                             break;
                                         case 14:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3628,7 +3628,7 @@ void Static_analysis(void) {
                                     st_trapezoid_load[st_trapezoid_load_no].layer = v->warstwa;
                                     switch (v->style) {
                                         case 10:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
@@ -3654,7 +3654,7 @@ void Static_analysis(void) {
 
                                             break;
                                         case 11:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3693,7 +3693,7 @@ void Static_analysis(void) {
                                             }
                                             break;
                                         case 13:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
@@ -3718,7 +3718,7 @@ void Static_analysis(void) {
                                             }
                                             break;
                                         case 14:
-                                            parametry_lini(v, &PL);
+                                            parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
@@ -3824,7 +3824,7 @@ void Static_analysis(void) {
     while (nag != NULL) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             v = (AVECTOR *) nag;
-            parametry_lini(v, &PL);
+            parametry_lini((LINIA*)v, &PL);
 
             if (TestBit(st_layer, v->warstwa)) {
                 st_thermal_load[st_thermal_load_no].layer = v->warstwa;
@@ -4013,13 +4013,13 @@ void Static_analysis(void) {
 
     if (ret_standard == 1)  //EUROCODE
     {
-        ULSLC = &EUROCODE_ULSLC;
-        SLSLC = &EUROCODE_SLSLC;
-        QPSLSLC = &EUROCODE_QPSLSLC;
+        ULSLC = (COMBINATION *) &EUROCODE_ULSLC;
+        SLSLC = (COMBINATION *) &EUROCODE_SLSLC;
+        QPSLSLC = (COMBINATION *) &EUROCODE_QPSLSLC;
 
-        MC_ULSLC = &EUROCODE_MC_ULSLC;
-        MC_SLSLC = &EUROCODE_MC_SLSLC;
-        MC_QPSLSLC = &EUROCODE_MC_QPSLSLC;
+        MC_ULSLC = (int *) &EUROCODE_MC_ULSLC;
+        MC_SLSLC = (int *) &EUROCODE_MC_SLSLC;
+        MC_QPSLSLC = (int *) &EUROCODE_MC_QPSLSLC;
 
         ULSLC_NO = EUROCODE_ULSLC_NO;
         SLSLC_NO = EUROCODE_SLSLC_NO;
@@ -4029,13 +4029,13 @@ void Static_analysis(void) {
 
     } else if (ret_standard == 2)  //ASCE
     {
-        ULSLC = &ASCE_ULSLC;
-        SLSLC = &ASCE_SLSLC;
-        QPSLSLC = &ASCE_QPSLSLC;
+        ULSLC = (COMBINATION *) &ASCE_ULSLC;
+        SLSLC = (COMBINATION *) &ASCE_SLSLC;
+        QPSLSLC = (COMBINATION *) &ASCE_QPSLSLC;
 
-        MC_ULSLC = &ASCE_MC_ULSLC;
-        MC_SLSLC = &ASCE_MC_SLSLC;
-        MC_QPSLSLC = &ASCE_MC_QPSLSLC;
+        MC_ULSLC = (int *) &ASCE_MC_ULSLC;
+        MC_SLSLC = (int *) &ASCE_MC_SLSLC;
+        MC_QPSLSLC = (int *) &ASCE_MC_QPSLSLC;
 
         ULSLC_NO = ASCE_ULSLC_NO;
         SLSLC_NO = ASCE_SLSLC_NO;
@@ -4044,13 +4044,13 @@ void Static_analysis(void) {
         load_flag = load_flag_ASCE;
     } else if (ret_standard == 3)  //ICC
     {
-        ULSLC = &ICC_ULSLC;
-        SLSLC = &ICC_SLSLC;
-        QPSLSLC = &ICC_QPSLSLC;
+        ULSLC = (COMBINATION *) &ICC_ULSLC;
+        SLSLC = (COMBINATION *) &ICC_SLSLC;
+        QPSLSLC = (COMBINATION *) &ICC_QPSLSLC;
 
-        MC_ULSLC = &ICC_MC_ULSLC;
-        MC_SLSLC = &ICC_MC_SLSLC;
-        MC_QPSLSLC = &ICC_MC_QPSLSLC;
+        MC_ULSLC = (int *) &ICC_MC_ULSLC;
+        MC_SLSLC = (int *) &ICC_MC_SLSLC;
+        MC_QPSLSLC = (int *) &ICC_MC_QPSLSLC;
 
         ULSLC_NO = ICC_ULSLC_NO;
         SLSLC_NO = ICC_SLSLC_NO;
@@ -6085,7 +6085,7 @@ void Static_analysis(void) {
         sprintf(params, "-i %s -o %s > frame3dd.ret", "alfacad.3dd", "alfacad.out");   //-s Off
         runcode = RunSilent("frame3dd.exe", params);
 
-        printf("\nframe3dd runcode:%d\n", runcode);
+        printf("\nframe3dd runcode:%lu\n", runcode);
 
 #ifdef LINUX
         runcode_short = runcode >> 8;
@@ -8072,14 +8072,14 @@ void Static_analysis(void) {
                         new_line1 = TRUE;
 
                     } else if (ptr_max) {
-                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
+                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
                                      &TxM, &MyM, &MzM, &DxM, &DyM, &DzM, &RxM);
                         NxM /= unit_factors->F_f;
                         VyM /= unit_factors->F_f;
                         MzM /= unit_factors->M_f;
 
                     } else if (ptr_min) {
-                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
+                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
                                      &Txm, &Mym, &Mzm, &Dxm, &Dym, &Dzm, &Rxm);
                         Nxm /= unit_factors->F_f;
                         Vym /= unit_factors->F_f;
@@ -8523,14 +8523,14 @@ void Static_analysis(void) {
                         new_line1 = TRUE;
 
                     } else if (ptr_max) {
-                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
+                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
                                      &TxM, &MyM, &MzM, &DxM, &DyM, &DzM, &RxM);
                         NxM /= unit_factors->F_f;
                         VyM /= unit_factors->F_f;
                         MzM /= unit_factors->M_f;
 
                     } else if (ptr_min) {
-                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
+                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
                                      &Txm, &Mym, &Mzm, &Dxm, &Dym, &Dzm, &Rxm);
                         Nxm /= unit_factors->F_f;
                         Vym /= unit_factors->F_f;
@@ -8976,7 +8976,7 @@ void Static_analysis(void) {
                         new_line1 = TRUE;
 
                     } else if (ptr_max) {
-                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
+                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
                                      &TxM, &MyM, &MzM, &DxM, &DyM, &DzM, &RxM);
 
                         NxM /= unit_factors->F_f;
@@ -8987,7 +8987,7 @@ void Static_analysis(void) {
                         SmM = (NxM / Ax - fabs(MzM) / Wy) / unit_factors->S_f;
 
                     } else if (ptr_min) {
-                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
+                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
                                      &Txm, &Mym, &Mzm, &Dxm, &Dym, &Dzm, &Rxm);
                         Nxm /= unit_factors->F_f;
                         Vym /= unit_factors->F_f;
@@ -10183,7 +10183,7 @@ void Static_analysis(void) {
                         new_line1 = TRUE;
 
                     } else if (ptr_max) {
-                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
+                        ret = sscanf(ptr_max + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &NxM, &VyM, &VzM,
                                      &TxM, &MyM, &MzM, &DxM, &DyM, &DzM, &RxM);
 
                         VyM /= unit_factors->F_f;
@@ -10191,7 +10191,7 @@ void Static_analysis(void) {
                         SsM = (VyM / Asy) / unit_factors->S_f;
 
                     } else if (ptr_min) {
-                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
+                        ret = sscanf(ptr_min + 10, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Nxm, &Vym, &Vzm,
                                      &Txm, &Mym, &Mzm, &Dxm, &Dym, &Dzm, &Rxm);
 
                         Vym /= unit_factors->F_f;
@@ -10584,7 +10584,7 @@ void Static_analysis(void) {
 
                         element = 0;
 
-                        strncpy(&mode_str, ptr_mode + 1, 63);
+                        strncpy((char *) &mode_str, ptr_mode + 1, 63);
                         mode_str[64] = '\0';
                         if (mode_str[strlen(mode_str) - 1] == '\n') mode_str[strlen(mode_str) - 1] = '\0';
 
@@ -10812,7 +10812,7 @@ void Static_analysis(void) {
                 if (pdf_view == 1) runcode = SystemSilent(okular, params);
                 else if (pdf_view == 2) runcode = SystemSilent("evince", params);
                 else runcode = SystemSilent("./mupdf-x11 -I -A 8 -r 150", params);
-                printf("%d", runcode);
+                printf("%lu", runcode);
 
                 ret = Expand_flex();
                 simulate_keypress(14592);
@@ -10948,7 +10948,7 @@ pdf_viewed=1;
 #ifdef LINUX
             sprintf(params, "--textbox alfacad.out");
             runcode = SystemSilent("./kdialog4alfa", params);
-            printf("%d", runcode);
+            printf("%lu", runcode);
 
             FreeMouse();
             LockMouse();
@@ -10965,7 +10965,7 @@ pdf_viewed=1;
 
         if (runcode == 0) {
             char sk[MAXPATH] = "";
-            if (Load_File(&sk, ZAPIS_OUT, TRUE) == FALSE) {
+            if (Load_File((char *) &sk, ZAPIS_OUT, TRUE) == FALSE) {
                 return;
             }
             copy("alfacad.out", sk);
@@ -11097,6 +11097,8 @@ int select_forces(int no, double dx, GRAPH_VALUES* fvalues, float *force_min, fl
         f=f1+(f2-f1)*df;
         *force_max=(float)f;
     }
+
+    return 0;
 }
 
 int get_force_at_x(double dx_, double l, float rdf, float rdb, SECTION_GRAPH_DATA *section_data, SECTION_FORCES *forces)
@@ -11533,7 +11535,7 @@ static void  cur_section_on(double x,double y)
     outlineor(&CSL, COPY_PUT, 1);
     orto=orto_;
 
-    get_section(l1, l, &width_m,&height_m,&force_text);
+    get_section(l1, l, &width_m, &height_m, (char *) &force_text);
 
     show_forces(x,y,width_m,height_m,force_text);
     last_l=l;
@@ -11547,8 +11549,10 @@ int Save_Forces(void)
     char force_text[MaxTextLen];
     int width_m = 0, height_m = 0;
 
-    get_section(last_l1,last_l,&width_m,&height_m,&force_text);
+    get_section(last_l1, last_l, &width_m, &height_m, (char *) &force_text);
     Put_Str_To_Clip(force_text);
+
+    return 0;
 }
 
 static void redcr_section (char typ)
@@ -11745,7 +11749,7 @@ void Cross_section_forces(void)
                                                 if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
                                                     Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
                                                 {
-                                                    graph_data = (char *) L + sizeof(LINIA);
+                                                    graph_data = (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
                                                     if (graph_data->flags == 45) //element description
                                                     {
                                                         all_section_graph_data.enr = graph_data->enr;
@@ -11808,7 +11812,7 @@ void Cross_section_forces(void)
                                             {
                                                 if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) && Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
                                                 {
-                                                    graph_data=(char*)L + sizeof(LINIA);
+                                                    graph_data= (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
                                                     /*
                                                     if (graph_data->flags==45) //element description
                                                     {

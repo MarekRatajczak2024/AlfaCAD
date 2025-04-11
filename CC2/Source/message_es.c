@@ -32,16 +32,16 @@ static char* komunikaty[] =
 static char* messages[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Interrumpir --> Esc (%s%)",
-	/*2*/u8"ESPERAR -> romper líneas: (%s%)",
+	/*1*/u8"Interrumpir --> Esc (%s%%)",
+	/*2*/u8"ESPERAR -> romper líneas: (%s%%)",
 	/*3*/u8"Búfer de imagen (%s) Interrupción --> Esc",
 };
 
 static char* messages1[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Interrumpir --> Esc (%s%)",
-	/*2*/u8"ESPERAR -> romper líneas: (%s%)",
+	/*1*/u8"Interrumpir --> Esc (%s%%)",
+	/*2*/u8"ESPERAR -> romper líneas: (%s%%)",
 };
 
 static char* errors_kom[] =

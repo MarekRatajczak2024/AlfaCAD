@@ -27,7 +27,7 @@
 
 #include "message.h"
 
-#include "leak_detector_cpp.hpp"
+////#include "leak_detector_cpp.hpp"
 
 #ifdef __cplusplus
 extern "C" {

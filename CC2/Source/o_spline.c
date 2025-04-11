@@ -109,19 +109,19 @@ static double Lx2, Ly2;
 
 //static int np_tension=-1;
 
-#define MAX_BUF_SPLINE 1000  //100
-#define MAX_BUF_ARC 1000    //100
-#define MAX_BUF_SOLIDARC 1000    //100
-#define MAX_BUF_CIRCLE 1000  //100
-#define MAX_BUF_ELLIPTICALARC 1000    //100
-#define MAX_BUF_ELLIPSE 1000  //100
+static int MAX_BUF_SPLINE=1000;
+static int MAX_BUF_ARC=1000;
+static int MAX_BUF_SOLIDARC=1000;
+static int MAX_BUF_CIRCLE=1000;
+static int MAX_BUF_ELLIPTICALARC=1000;
+static int MAX_BUF_ELLIPSE=1000;
 double MIN_SHADOW_SEGMENT[3] = { 1.0, 1.0, 2.5 };  //0.5, 1.0, 2.5
-SPLINE *buf_spline[MAX_BUF_SPLINE];
-LUK *buf_arc[MAX_BUF_ARC];
-SOLIDARC *buf_solidarc[MAX_BUF_SOLIDARC];
-OKRAG *buf_circle[MAX_BUF_CIRCLE];
-ELLIPTICALARC *buf_ellipticalarc[MAX_BUF_ELLIPTICALARC];
-ELLIPSE *buf_ellipse[MAX_BUF_ELLIPSE];
+SPLINE **buf_spline;
+LUK **buf_arc;
+SOLIDARC **buf_solidarc;
+OKRAG **buf_circle;
+ELLIPTICALARC **buf_ellipticalarc;
+ELLIPSE **buf_ellipse;
 int i_spline_no;
 int i_arc_no;
 int i_solidarc_no;
@@ -2093,7 +2093,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((SPLINE *) nag)->shadowed = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2109,7 +2109,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((SOLIDARC *) nag)->shadowed = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2125,7 +2125,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((ELLIPTICALARC *) nag)->shadowed = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2142,7 +2142,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((ELLIPSE *) nag)->przec = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2158,7 +2158,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((LUK *) nag)->shadowed = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2175,7 +2175,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     else if (nag->atrybut == Abad) nag->atrybut = Anormalny;
                     ((OKRAG *) nag)->przec = 0;
                     i++;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                     ptr_parent = FIRSTB(nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
@@ -2229,10 +2229,9 @@ void delete_spline_shadows(BOOL make_Ablok)
 	ret = remove_spline_shadow_flag(0, dane_size, make_Ablok);
 
 	if (to_delete > 0) usun_blok(dane, dane + dane_size);
-	
+
 	return;
 }
-
 
 void spline_shadows_to_plines(void)
 {
@@ -2266,8 +2265,6 @@ void spline_shadows_to_plines(void)
 	return;
 }
 
-
-
 int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join, int s_atrybut, int prec, int to_block)
 {
 	NAGLOWEK *nag;
@@ -2285,6 +2282,9 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 	int node_count;
     BLOK *ptr_block, *ptr_parent;
 
+    MAX_BUF_SPLINE=1000;
+    buf_spline=(SPLINE**)malloc(MAX_BUF_SPLINE*sizeof(SPLINE*));
+
 	if (prec == 1) 
 		MIN_SHADOW_SEGMENT[prec] = s_hatch_param_df_distans;
 
@@ -2297,6 +2297,12 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 		if (nag->atrybut == Ablok)
 		{
 			//buforowanie spline
+            if (i_spline_no == MAX_BUF_SPLINE)
+            {
+                MAX_BUF_SPLINE+=1000;
+                buf_spline=(SPLINE**)realloc(buf_spline, MAX_BUF_SPLINE*sizeof(SPLINE*));
+            }
+
 			if (i_spline_no < MAX_BUF_SPLINE)
 			{
 				buf_spline[i_spline_no] = malloc(sizeof(SPLINE));
@@ -2318,10 +2324,11 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 	}
 
 
-    if (i_spline_no==MAX_BUF_SPLINE) {
-        for (j = 0; j < i_spline_no; j++) free(buf_spline[j]);
-        return 0;
-    }
+    //if (i_spline_no==MAX_BUF_SPLINE)
+    //{
+     //   for (j = 0; j < i_spline_no; j++) free(buf_spline[j]);
+     //   return 0;
+    //}
 	
 	//generating shadows and freeing memory
 	for (j = 0; j < i_spline_no; j++)
@@ -2503,10 +2510,11 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 		free(buf_spline[j]);
 	}
 
+    free(buf_spline);
+
 	if ((i_spline_no>0) && (join == TRUE)) return 1;
 	else return i_spline_no;
 }
-
 
 int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join, int s_atrybut, int prec, int to_block)
 {
@@ -2527,6 +2535,11 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
     double xy[256];
     long_long l_offb_, l_offe_;
 
+    MAX_BUF_ELLIPSE=1000;
+    MAX_BUF_ELLIPTICALARC=1000;
+    buf_ellipse=(ELLIPSE**)malloc(MAX_BUF_ELLIPSE*sizeof(ELLIPSE*));
+    buf_ellipticalarc=(ELLIPTICALARC**)malloc(MAX_BUF_ELLIPTICALARC*sizeof(ELLIPTICALARC *));
+
     l_offb_ = l_offb;
     l_offe_ = l_offe;
 
@@ -2539,7 +2552,13 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
         nag = (NAGLOWEK*)(dane + l_off);
         if (nag->atrybut == Ablok)
         {
-            //buforowanie spline
+            //buforowanie ellipse
+            if (i_ellipse_no == MAX_BUF_ELLIPSE)
+            {
+                MAX_BUF_ELLIPSE+=1000;
+                buf_ellipse=(ELLIPSE**)realloc(buf_ellipse, MAX_BUF_ELLIPSE*sizeof(ELLIPSE*));
+            }
+
             if (i_ellipse_no < MAX_BUF_ELLIPSE)
             {
                 buf_ellipse[i_ellipse_no] = malloc(sizeof(ELLIPSE));
@@ -2547,16 +2566,17 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
                 i_ellipse_no++;
                 nag->atrybut = s_atrybut;
                 ((ELLIPSE*)nag)->przec = 1;  //no shadowed
-                rysuj_obiekt(nag, COPY_PUT, 1);
+                ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
             }
         }
         Object_Tok(&l_offb, l_offe, &l_off, Oellipse, TOK_LAYER_ON);
     }
 
-    if (i_ellipse_no==MAX_BUF_ELLIPSE) {
-        for (j = 0; j < i_ellipse_no; j++) free(buf_ellipse[j]);
-        return 0;
-    }
+    //if (i_ellipse_no==MAX_BUF_ELLIPSE)
+    //{
+    //    for (j = 0; j < i_ellipse_no; j++) free(buf_ellipse[j]);
+    //    return 0;
+    //}
 
     l_offb=l_offb_;
     l_offe=l_offe_;
@@ -2567,7 +2587,12 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
         nag = (NAGLOWEK*)(dane + l_off);
         if (nag->atrybut == Ablok)
         {
-            //buforowanie spline
+            //buforowanie filled ellipse
+            if (i_ellipse_no == MAX_BUF_ELLIPSE)
+            {
+                MAX_BUF_ELLIPSE+=1000;
+                buf_ellipse=(ELLIPSE**)realloc(buf_ellipse, MAX_BUF_ELLIPSE*sizeof(ELLIPSE*));
+            }
             if (i_ellipse_no < MAX_BUF_ELLIPSE)
             {
                 buf_ellipse[i_ellipse_no] = malloc(sizeof(ELLIPSE));
@@ -2575,16 +2600,17 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
                 i_ellipse_no++;
                 nag->atrybut = s_atrybut;
                 ((ELLIPSE*)nag)->przec = 1; //no shaowed
-                rysuj_obiekt(nag, COPY_PUT, 1);
+                ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
             }
         }
         Object_Tok(&l_offb, l_offe, &l_off, Oellipse, TOK_LAYER_ON);
     }
 
-    if (i_ellipse_no==MAX_BUF_ELLIPSE) {
-        for (j = 0; j < i_ellipse_no; j++) free(buf_ellipse[j]);
-        return 0;
-    }
+    //if (i_ellipse_no==MAX_BUF_ELLIPSE)
+    //{
+    //    for (j = 0; j < i_ellipse_no; j++) free(buf_ellipse[j]);
+    //    return 0;
+    //}
 
     l_offb=l_offb_;
     l_offe=l_offe_;
@@ -2596,7 +2622,12 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
         nag = (NAGLOWEK*)(dane + l_off);
         if (nag->atrybut == Ablok)
         {
-            //buforowanie spline
+            //buforowanie elliptical arc
+            if (i_ellipticalarc_no == MAX_BUF_ELLIPTICALARC)
+            {
+                MAX_BUF_ELLIPTICALARC+=1000;
+                buf_ellipticalarc=(ELLIPTICALARC**)realloc(buf_ellipticalarc, MAX_BUF_ELLIPTICALARC*sizeof(ELLIPTICALARC*));
+            }
             if (i_ellipticalarc_no < MAX_BUF_ELLIPTICALARC)
             {
                 buf_ellipticalarc[i_ellipticalarc_no] = malloc(sizeof(ELLIPTICALARC));
@@ -2604,16 +2635,17 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
                 i_ellipticalarc_no++;
                 nag->atrybut = s_atrybut;
                 ((ELLIPTICALARC*)nag)->shadowed = 1;
-                rysuj_obiekt(nag, COPY_PUT, 1);
+                ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
             }
         }
         Object_Tok(&l_offb, l_offe, &l_off, Oellipticalarc, TOK_LAYER_ON);
     }
 
-    if (i_ellipticalarc_no==MAX_BUF_ELLIPTICALARC) {
-        for (j = 0; j < i_ellipticalarc_no; j++) free(buf_ellipticalarc[j]);
-        return 0;
-    }
+    //if (i_ellipticalarc_no==MAX_BUF_ELLIPTICALARC)
+    //{
+    //    for (j = 0; j < i_ellipticalarc_no; j++) free(buf_ellipticalarc[j]);
+    //    return 0;
+    //}
 
     //generating shadows and freeing memory
     for (j = 0; j < i_ellipse_no; j++)
@@ -2650,6 +2682,8 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
         free(buf_ellipse[j]);
     }
 
+    free(buf_ellipse);
+
     for (j = 0; j < i_ellipticalarc_no; j++)
     {
         //add_shadow_block(buf_spline[j]->atrybut);
@@ -2681,6 +2715,8 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
         free(buf_ellipticalarc[j]);
     }
 
+    free(buf_ellipticalarc);
+
     if (((i_ellipse_no+i_ellipticalarc_no)>0) && (join == TRUE)) return 1;
     else return (i_ellipse_no+i_ellipticalarc_no);
 }
@@ -2694,6 +2730,8 @@ int make_arc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join,
 	char *ptrs_line;
 	BOOL b_ret;
 
+    //LUK **buf_arc_;
+
 	long_long l_offp, l_off;
 	BLOK *ptrs_bl;
 
@@ -2701,6 +2739,11 @@ int make_arc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join,
 	double df_basey = 0.0;
 	double df_sx = 1.0;
 	double df_sy = 1.0;
+
+    MAX_BUF_ARC=1000;
+    MAX_BUF_CIRCLE=1000;
+    buf_arc=(LUK**)malloc(MAX_BUF_ARC*sizeof(LUK*));
+    buf_circle=(OKRAG**)malloc(MAX_BUF_CIRCLE*sizeof(OKRAG*));
 
 	i_arc_no = 0;
     i_circle_no = 0;
@@ -2714,6 +2757,13 @@ int make_arc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join,
 		{
 			if (nag->obiekt == Oluk)
 			{
+
+                if (i_arc_no == MAX_BUF_ARC)
+                {
+                    MAX_BUF_ARC+=1000;
+                    buf_arc=(LUK**)realloc(buf_arc, MAX_BUF_ARC*sizeof(LUK*));
+                    //buf_arc=buf_arc_;
+                }
 				//buforowanie luku
 				if (i_arc_no < MAX_BUF_ARC)
 				{
@@ -2722,30 +2772,37 @@ int make_arc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join,
 					i_arc_no++;
 					nag->atrybut = s_atrybut;
                     ((LUK*)nag)->shadowed = 1;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
 				}
 			}
 			else if ((nag->obiekt == Ookrag) || (nag->obiekt == Okolo))
-				//buforowanie luku
-				if (i_circle_no < MAX_BUF_CIRCLE)
-				{
-					buf_circle[i_circle_no] = malloc(sizeof(OKRAG));
-					memcpy(buf_circle[i_circle_no], nag, sizeof(OKRAG));
-					i_circle_no++;
-					nag->atrybut = s_atrybut;
-                    ((OKRAG*)nag)->przec = 1;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
-				}
+            {
+                //buforowanie okregu
+                if (i_circle_no == MAX_BUF_CIRCLE) {
+                    MAX_BUF_CIRCLE += 1000;
+                    buf_circle = (OKRAG **) realloc(buf_circle, MAX_BUF_CIRCLE * sizeof(OKRAG *));
+                }
+                if (i_circle_no < MAX_BUF_CIRCLE)
+                {
+                    buf_circle[i_circle_no] = malloc(sizeof(OKRAG));
+                    memcpy(buf_circle[i_circle_no], nag, sizeof(OKRAG));
+                    i_circle_no++;
+                    nag->atrybut = s_atrybut;
+                    ((OKRAG *) nag)->przec = 1;
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
+                }
+            }
 		}
 
 		Object_Tok(&l_offb, l_offe, &l_off, ONieOkreslony, TOK_LAYER_ON);
 	}
 
-    if ((i_arc_no==MAX_BUF_ARC) || (i_circle_no==MAX_BUF_CIRCLE)) {
-        for (j = 0; j < i_arc_no; j++) free(buf_arc[j]);
-        for (j = 0; j < i_circle_no; j++) free(buf_circle[j]);
-        return 0;
-    }
+    //if ((i_arc_no==MAX_BUF_ARC) || (i_circle_no==MAX_BUF_CIRCLE))
+    //{
+    //    for (j = 0; j < i_arc_no; j++) free(buf_arc[j]);
+    //    for (j = 0; j < i_circle_no; j++) free(buf_circle[j]);
+    //    return 0;
+    //}
 
 		//generating arcs and freeing memory
 		for (j = 0; j < i_arc_no; j++)
@@ -2754,12 +2811,16 @@ int make_arc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL join,
 			free(buf_arc[j]);
 		}
 
+    free(buf_arc);
+
         //generating circles and freeing memory
 		for (j = 0; j < i_circle_no; j++)
 		{
 			b_ret = trans_scale_circle_shadow(buf_circle[j], df_basex, df_basey, df_sx, df_sy, to_block);
 			free(buf_circle[j]);
 		}
+
+    free(buf_circle);
 
 	if (join == TRUE) return 1;
 	else return i_arc_no + i_circle_no;
@@ -2776,6 +2837,9 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
     BLOK *ptr_block;
     int ln;
 
+    MAX_BUF_SOLIDARC=1000;
+    buf_solidarc=(SOLIDARC**)malloc(MAX_BUF_SOLIDARC*sizeof(SOLIDARC*));
+
     i_solidarc_no=0;
 
     Object_Tok(&l_offb, l_offe, &l_off, ONieOkreslony, TOK_LAYER_ON);
@@ -2786,6 +2850,11 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
         {
             if (nag->obiekt == Osolidarc)
             {
+                if (i_solidarc_no == MAX_BUF_SOLIDARC)
+                {
+                    MAX_BUF_SOLIDARC+=1000;
+                    buf_solidarc=(SOLIDARC**)realloc(buf_solidarc, MAX_BUF_SOLIDARC*sizeof(SOLIDARC*));
+                }
                 //solidarc buffering
                 if (i_solidarc_no < MAX_BUF_SOLIDARC)
                 {
@@ -2794,7 +2863,7 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
                     i_solidarc_no++;
                     nag->atrybut = s_atrybut;
                     ((SOLIDARC*)nag)->shadowed = 1;
-                    rysuj_obiekt(nag, COPY_PUT, 1);
+                    ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
                 }
             }
         }
@@ -2802,11 +2871,11 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
         Object_Tok(&l_offb, l_offe, &l_off, ONieOkreslony, TOK_LAYER_ON);
     }
 
-    if (i_solidarc_no==MAX_BUF_SOLIDARC)
-    {
-        for (j = 0; j < i_solidarc_no; j++) free(buf_solidarc[j]);
-        return 0;
-    }
+    //if (i_solidarc_no==MAX_BUF_SOLIDARC)
+    //{
+    //    for (j = 0; j < i_solidarc_no; j++) free(buf_solidarc[j]);
+    //    return 0;
+    //}
 
     //generating solidarc elements and freeing memory
     for (j = 0; j < i_solidarc_no; j++)
@@ -2839,6 +2908,8 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
 
         free(buf_solidarc[j]);
     }
+    free(buf_solidarc);
+
    return i_solidarc_no;
 }
 

@@ -173,6 +173,7 @@ extern "C" {
 
 	extern int Get_W_Matix_Len(int i_font);
 	extern int Get_W_Matix_Len_TTF(int i_font, int height);
+    extern int Get_Char_Matix_Len_TTF(unsigned int chr, int i_font, float height);
 	extern double Get_TTF_Char_Left_Top(TEXT *ptrs_text, char *ptrsz_t, double font_scale, int font_index0, int *TTF_left, int *TTF_top);
 	extern void Get_Face_Character_yMax(TEXT *t, int *yMax);
 	extern void Init_Draw_TTF_text(TEXT *t, double kat, float wysokosc_p, COLOR_ kolor);
@@ -6955,11 +6956,13 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 
   if (f_type < 2)
   {
-	  df_width_marg = Get_W_Matix_Len(t->czcionka) * df_scale_x;
+	  //df_width_marg = Get_W_Matix_Len(t->czcionka) * df_scale_x;
+      df_width_marg = Get_Char_Matix_Len((unsigned int)'W', t->czcionka) * df_scale_x;
   }
   else
   {
-	  df_width_marg = Get_W_Matix_Len_TTF(t->czcionka, t->wysokosc);
+	  //df_width_marg = Get_W_Matix_Len_TTF(t->czcionka, t->wysokosc);
+      df_width_marg = Get_Char_Matix_Len_TTF((unsigned int)'W', t->czcionka, t->wysokosc);
   }
 
   

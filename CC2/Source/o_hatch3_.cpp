@@ -51,7 +51,7 @@ extern BOOL Add_String_To_List1 (char *ptr_string) ;
 #define BIGNOD 1e200
 #define BIGNOF 1e20
 
-#define TRAPSNO_MAX 10000
+#define TRAPSNO_MAX 100000  //10000
 
 extern "C" {
 extern T_PTR_Hatch_Def_Param Get_Hatch_Def_Table(void);
@@ -79,17 +79,16 @@ BOOL Make_Hatch(T_PTR_Hatch_Param ptrs_hatch_param0,
 
 extern long_long global_block;
 
-//extern BOOL glb_silent;
-
 extern T_PTR_Hatch_Def_Param Get_Hatch_Def_Table999 (void);
 extern T_PTR_Hatch_Line_Def Get_Hatch_Line_Def_Table999 (void);
 
 static int comput_area1 ;
-static int i__trapsno, i__trapsno_max ;	/*liczba aktywnych trapezow*/
-static T_PTR_Trapizium ptrs__traps ;
+static int i_a_trapsno, i_a_trapsno_max ;	/*liczba aktywnych trapezow*/
+static T_PTR_Trapizium ptrs_a_traps ;
 
-static T_PTR_Area ptrs__area0 ;	 	/*adres tablicy obszarow*/
-static int *ptri__tab_ver_no;
+static T_PTR_Area ptrs_a_area0 ;	 	/*adres tablicy obszarow*/
+static int *ptri_a_tab_ver_no;
+static int i_a_verno;
 static double pole_hatch ;
 static double pole_hatch1 ;
 static double mom_bezwl_x ;
@@ -300,7 +299,7 @@ static double atan2_my  (double y, double x)
 {
   if (fabs(y) < 1.0E-10 && fabs (x) < 1.0E-10)
   {
-   Internal_Error (__LINE__,(char*)__FILE__) ;
+   Internal_Error (__LINE__,__FILE__) ;
    return 0 ;
   }
   return atan2 (y, x) ;
@@ -313,17 +312,21 @@ static T_PTR_Vertex get_vertex_ (T_PTR_Area ptrs_area, int i_vertex_no)
   return &ptrs_area->s_vertexs_alloc.ptrs_vertexs [i_vertex_no] ;
 }
 
+T_Vertex empty_vertex={0,0,0,FALSE,FALSE,FALSE};
 
 static T_PTR_Vertex get_vertex (int i_vertex_no)
 /*-----------------------------------------------*/
 {
   int i_ver_no ;
 
-  //if ((i_vertex_no < 0) || (i_vertex_no>100000))
-	//  return NULL;
+  if ((i_vertex_no < 0) || (i_vertex_no>=i_a_verno))
+      i_vertex_no=0; //i_a_verno-1;
 
-	i_ver_no = ptri__tab_ver_no[i_vertex_no];
-	return get_vertex_(ptrs__area0, i_ver_no);
+  //if ((i_vertex_no < 0) || (i_vertex_no>100000))
+//	  return NULL;
+
+	i_ver_no = ptri_a_tab_ver_no[i_vertex_no];
+	return get_vertex_(ptrs_a_area0, i_ver_no);
  
 }
 
@@ -342,10 +345,10 @@ rotation (double 		df_angle,
 
    df_si = sin (df_angle) ;
    df_co = cos (df_angle) ;
-   ptrs_vertexs = ptrs__area0->s_vertexs_alloc.ptrs_vertexs;
-   ptrs_arcs = ptrs__area0->s_arcs_cpy_alloc.ptrs_arcs ;
-   i_vertexes = ptrs__area0->s_vertexs_alloc.i_size ;
-   i_arcsno = ptrs__area0->s_arcs_cpy_alloc.i_size ;
+   ptrs_vertexs = ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs;
+   ptrs_arcs = ptrs_a_area0->s_arcs_cpy_alloc.ptrs_arcs ;
+   i_vertexes = ptrs_a_area0->s_vertexs_alloc.i_size ;
+   i_arcsno = ptrs_a_area0->s_arcs_cpy_alloc.i_size ;
    for (i = 0 ; i < i_vertexes; i++) 	/*dla kazdego wierzcholka*/
    {
      Rotate_Point (df_si, df_co,
@@ -373,7 +376,7 @@ rotation (double 		df_angle,
    }
 }
 
-static int fcmp_sort_vertex_ (const void *val1, const void *val2)
+static int fcmp_sort_vertex (const void *val1, const void *val2)
 /*-------------------------------------------------------*/
 {
   T_PTR_Vertex ptrs_vertex1, ptrs_vertex2 ;
@@ -403,38 +406,6 @@ static int fcmp_sort_vertex_ (const void *val1, const void *val2)
 	}
 	return 0;
   }
-}
-
-static int fcmp_sort_vertex (const void *val1, const void *val2)
-/*-------------------------------------------------------*/
-{
-    T_PTR_Vertex ptrs_vertex1, ptrs_vertex2 ;
-
-    ptrs_vertex1 = (T_PTR_Vertex)val1 ;
-    ptrs_vertex2 = (T_PTR_Vertex)val2 ;
-
-    if (ptrs_vertex1->y < ptrs_vertex2->y)
-        return -1 ;
-    else
-    if (ptrs_vertex1->y > ptrs_vertex2->y)
-        return 1 ;
-    else
-    if (ptrs_vertex1->x < ptrs_vertex2->x)
-        return -1 ;
-    else
-    if (ptrs_vertex1->x > ptrs_vertex2->x)
-        return 1 ;
-    else
-    {
-        if (ptrs_vertex1->vertex_no != ptrs_vertex2->vertex_no &&
-            TRUE == ptrs_vertex1->b_multi &&
-            TRUE == ptrs_vertex2->b_multi)
-        {
-            ptrs_vertex1->b_single = FALSE ;
-            ptrs_vertex2->b_single = FALSE ;
-        }
-        return 0;
-    }
 }
 
 /////////////////////
@@ -523,17 +494,17 @@ static void get_draw_outline(T_PTR_Hatch_Param ptrs_hatch_param, BOOL draw, int 
     double distance;
     int ret;
 
-	i_verno = ptrs__area0->s_vertexs_alloc.i_size;
+	i_verno = ptrs_a_area0->s_vertexs_alloc.i_size;
 	ptrs_vertexs = (T_PTR_Vertex)malloc(sizeof(T_Vertex)*i_verno);
-	memmove(ptrs_vertexs, ptrs__area0->s_vertexs_alloc.ptrs_vertexs, sizeof(T_Vertex)*i_verno);
+	memmove(ptrs_vertexs, ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs, sizeof(T_Vertex)*i_verno);
 
-	i_linno = ptrs__area0->s_lines_alloc.i_size;
+	i_linno = ptrs_a_area0->s_lines_alloc.i_size;
 	ptrs_lines = (T_PTR_ALine)malloc(sizeof(T_ALine)*i_linno);
-	memmove(ptrs_lines, ptrs__area0->s_lines_alloc.ptrs_lines, sizeof(T_ALine)*i_linno);
+	memmove(ptrs_lines, ptrs_a_area0->s_lines_alloc.ptrs_lines, sizeof(T_ALine)*i_linno);
 
-	i_arcno = ptrs__area0->s_arcs_alloc.i_size;
+	i_arcno = ptrs_a_area0->s_arcs_alloc.i_size;
 	ptrs_arcs = (T_PTR_AArc)malloc(sizeof(T_AArc)*i_arcno);
-	memmove(ptrs_arcs, ptrs__area0->s_arcs_alloc.ptrs_arcs, sizeof(T_AArc)*i_arcno);
+	memmove(ptrs_arcs, ptrs_a_area0->s_arcs_alloc.ptrs_arcs, sizeof(T_AArc)*i_arcno);
 
     if (draw==TRUE) {
 
@@ -679,17 +650,17 @@ static void get_range_outline(T_PTR_Hatch_Param ptrs_hatch_param)
     OKRAG o=Odef;
     LUK l=ldef;
 
-    i_verno = ptrs__area0->s_vertexs_alloc.i_size;
+    i_verno = ptrs_a_area0->s_vertexs_alloc.i_size;
     ptrs_vertexs = (T_PTR_Vertex)malloc(sizeof(T_Vertex)*i_verno);
-    memmove(ptrs_vertexs, ptrs__area0->s_vertexs_alloc.ptrs_vertexs, sizeof(T_Vertex)*i_verno);
+    memmove(ptrs_vertexs, ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs, sizeof(T_Vertex)*i_verno);
 
-    i_linno = ptrs__area0->s_lines_alloc.i_size;
+    i_linno = ptrs_a_area0->s_lines_alloc.i_size;
     ptrs_lines = (T_PTR_ALine)malloc(sizeof(T_ALine)*i_linno);
-    memmove(ptrs_lines, ptrs__area0->s_lines_alloc.ptrs_lines, sizeof(T_ALine)*i_linno);
+    memmove(ptrs_lines, ptrs_a_area0->s_lines_alloc.ptrs_lines, sizeof(T_ALine)*i_linno);
 
-    i_arcno = ptrs__area0->s_arcs_alloc.i_size;
+    i_arcno = ptrs_a_area0->s_arcs_alloc.i_size;
     ptrs_arcs = (T_PTR_AArc)malloc(sizeof(T_AArc)*i_arcno);
-    memmove(ptrs_arcs, ptrs__area0->s_arcs_alloc.ptrs_arcs, sizeof(T_AArc)*i_arcno);
+    memmove(ptrs_arcs, ptrs_a_area0->s_arcs_alloc.ptrs_arcs, sizeof(T_AArc)*i_arcno);
 
     for (i = 0; i < i_linno; i++) {
         vertex1_no = ptrs_lines[i].vertex1_no;
@@ -768,18 +739,18 @@ static void sort_vertexs(void)
 	double df_x1, df_x2, df_y1, df_y2;
 
 
-	ptrs_vertexs = ptrs__area0->s_vertexs_alloc.ptrs_vertexs;
-	i_verno = ptrs__area0->s_vertexs_alloc.i_size;
+	ptrs_vertexs = ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs;
+	i_verno = ptrs_a_area0->s_vertexs_alloc.i_size;
     
 	for (i = 0; i < i_verno; i++)
 	{
 		ptrs_vertexs[i].b_single = TRUE;
 		ptrs_vertexs[i].b_equel = FALSE;
 	}
-	qsort(ptrs_vertexs, i_verno, ptrs__area0->s_vertexs_alloc.i_unit_size, fcmp_sort_vertex);
+	qsort(ptrs_vertexs, i_verno, ptrs_a_area0->s_vertexs_alloc.i_unit_size, fcmp_sort_vertex);
 	for (i = 0; i < i_verno; i++)
 	{
-		ptri__tab_ver_no[ptrs_vertexs[i].vertex_no] = i;
+		ptri_a_tab_ver_no[ptrs_vertexs[i].vertex_no] = i;
 	}
 	for (i = 0; i < i_verno; i++)
 	{
@@ -852,8 +823,8 @@ comp_vertex(int i_ver1, int i_ver2)
 	double df_x1, df_y1, df_x2, df_y2;
 	BOOL b_ret;
 
-    if ((i_ver1 < 0) || (i_ver1>100000) || (i_ver2 < 0) || (i_ver2>100000))
-        return FALSE;
+    ////if ((i_ver1 < 0) || (i_ver1>10000) || (i_ver2 < 0) || (i_ver2>10000))  //100000
+    ////    return FALSE;
 
  if (i_ver1 == i_ver2)
  {
@@ -1102,7 +1073,7 @@ static void out_moment_bezwladnosci (double mom_bezwl_)
       mom_bezwl2 = mom_bezwl1 * pow(63360, 4);
   }
 
-  //sprintf (buf, u8"%s: I = %-12.8lg m⁴,  %-12.8lg cm⁴ ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
+  //sprintf (buf, u8"%s: I = %-12.8lg m^4,  %-12.8lg cm^4 ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
   sprintf (buf, u8"%s: I=%.8lg m⁴,  %.8lg cm⁴ ", vocabulary[4],mom_bezwl1, mom_bezwl2) ;
   Add_String_To_List1 (buf) ;
   strcat (buf, vocabulary[0]) ;
@@ -1308,7 +1279,7 @@ BOOL interrupted(void)
 }
 
 static BOOL
-hatch_ver_reg__ (T_PTR_Hatch_Param 	ptrs_hatch_param,
+hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 	       T_PTR_Hatch_Line_Def  	ptrs_hatch_line_def,
 	       T_PTR_Trapizium 		ptrs_trap,
 	       int 			i_ver, int draw_line)
@@ -1319,10 +1290,12 @@ hatch_ver_reg__ (T_PTR_Hatch_Param 	ptrs_hatch_param,
   int key;
   T_PTR_Trapizium ptrs_trap_next;
 
-  ptrs_traps = ptrs__traps ;
-  for (i = 0 ; i < i__trapsno; i++)
+  ptrs_traps = ptrs_a_traps ;
+  for (i = 0 ; i < i_a_trapsno; i++)
   {
-		  ptrs_trap_next= &ptrs_traps[i+1];
+      //if (i < (i_a_trapsno - 1)) ////  ?????????????
+          ptrs_trap_next= &ptrs_traps[i+1];
+      //else ptrs_trap_next = NULL;  ////  ?????????????
 
     if (ptrs_traps[i].b_line_left) {
 
@@ -1362,12 +1335,12 @@ hatch_ver_reg__ (T_PTR_Hatch_Param 	ptrs_hatch_param,
 
   Internal_Error (__LINE__,(char*)__FILE__) ;
 
-  return FALSE ;  //TO REMOVE ALREADY GENERATED PART OF HATCH
-  //return TRUE ;  //TO CORRECT
+  //return FALSE ;  //TO REMOVE ALREADY GENERATED PART OF HATCH
+  return TRUE ;  //TO CORRECT
 }
 
 static BOOL
-hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
+hatch_ver_reg_ (T_PTR_Hatch_Param 	ptrs_hatch_param,
                T_PTR_Hatch_Line_Def  	ptrs_hatch_line_def,
                T_PTR_Trapizium 		ptrs_trap,
                int 			i_ver, int draw_line)
@@ -1379,10 +1352,10 @@ hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 
     T_PTR_Trapizium ptrs_trap_next;
 
-    ptrs_traps = ptrs__traps ;
-    for (i = 0 ; i < i__trapsno; i++)
+    ptrs_traps = ptrs_a_traps ;
+    for (i = 0 ; i < i_a_trapsno; i++)
     {
-        if (i < (i__trapsno - 1))   ////  ?????????????
+        if (i < (i_a_trapsno - 1))   ////  ?????????????
         //if (i < (i__trapsno))   ////  ?????????????
             ptrs_trap_next = &ptrs_traps[i + 1];
         else ptrs_trap_next = NULL;  //// ?????????
@@ -1407,7 +1380,8 @@ hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
             if (TRUE == comp_vertex(i_ver_trap, i_ver)) {
                 ptrs_traps[i].vertex_up_no = i_ver;
                 if (FALSE == hatch_trap(&ptrs_traps[i], ptrs_hatch_param,
-                                        ptrs_hatch_line_def, ptrs_trap_next, draw_line)) {
+                                       ptrs_hatch_line_def, ptrs_trap_next, draw_line))
+              {
                     return FALSE;
                 }
                 ptrs_traps[i].vertex_dn_no = i_ver;
@@ -1421,7 +1395,7 @@ hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
         if (interrupted()) return FALSE;
     }
 
-    //Internal_Error (__LINE__,__FILE__) ;  //WARNING, TEMPORARY ALLOWED
+    Internal_Error (__LINE__,(char*)__FILE__) ;  //WARNING, TEMPORARY ALLOWED
     //return FALSE ;  // -//-
     return TRUE ;
 }
@@ -1497,10 +1471,10 @@ check_ver_in_trap (int i_ver)
   T_PTR_Trapizium ptrs_traps ;
 
   i_ret = -1 ;
-  ptrs_traps = ptrs__traps ;
+  ptrs_traps = ptrs_a_traps ;
   df_x = get_vertex (i_ver)->x ;
   df_y = get_vertex (i_ver)->y ;
-  for (i = 0 ; i < i__trapsno; i++)
+  for (i = 0 ; i < i_a_trapsno; i++)
   {
     if (1 == ptrs_traps [i].b_line_left)
     {
@@ -1873,6 +1847,9 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
   
   double df__xl;
 
+
+    ////if (ptrs_hatch_param->i_number_hatch==0) return TRUE;
+
   ptrs_arc = &t_aarc;
 
   if ( comput_area1>0 )
@@ -1915,14 +1892,9 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
   {
     df_y =  df_ymin + fmod (df_basey - df_ymin, df_dist) ;
   }
-
-    int i_verno=ptrs__area0->s_vertexs_alloc.i_size;
-
-    if ((ptrs_trap->s_line_l.vertex1_no<0) || (ptrs_trap->s_line_l.vertex1_no>i_verno) ||
-        (ptrs_trap->s_line_l.vertex2_no<0) || (ptrs_trap->s_line_l.vertex2_no>i_verno))
-        return TRUE;
-
-  if (1 == ptrs_trap->b_line_left)
+  if ((1 == ptrs_trap->b_line_left)
+    && (ptrs_trap->s_line_l.vertex1_no>=0) && (ptrs_trap->s_line_l.vertex1_no<10000)  //i_a_verno
+       && (ptrs_trap->s_line_l.vertex2_no>=0) && (ptrs_trap->s_line_l.vertex2_no<10000))  //i_a_verno
   {
     df_x1 = get_vertex (ptrs_trap->s_line_l.vertex1_no)->x ;
     df_y1 = get_vertex (ptrs_trap->s_line_l.vertex1_no)->y ;
@@ -1934,12 +1906,9 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
       df_cl = (df_x4 - df_x1) / (df_y4 - df_y1) ;
     }
   }
-
-    if ((ptrs_trap->s_line_r.vertex1_no<0) || (ptrs_trap->s_line_r.vertex1_no>i_verno) ||
-        (ptrs_trap->s_line_r.vertex2_no<0) || (ptrs_trap->s_line_r.vertex2_no>i_verno))
-        return TRUE;
-
-  if (1 == ptrs_trap->b_line_right)
+  if ((1 == ptrs_trap->b_line_right)
+  && (ptrs_trap->s_line_r.vertex1_no>=0) && (ptrs_trap->s_line_r.vertex1_no<10000)  //i_a_verno
+  && (ptrs_trap->s_line_r.vertex2_no>=0) && (ptrs_trap->s_line_r.vertex2_no<10000))  //i_a_verno
   {
     df_x2 = get_vertex (ptrs_trap->s_line_r.vertex1_no)->x ;
     df_y2 = get_vertex (ptrs_trap->s_line_r.vertex1_no)->y ;
@@ -2002,14 +1971,14 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
 			  }
 		  }
 
-		  SolidG.xy[0] = df_x1;
-		  SolidG.xy[1] = df_y1;
-		  SolidG.xy[2] = df_x2;
-		  SolidG.xy[3] = df_y2;
-		  SolidG.xy[4] = df_x3;
-		  SolidG.xy[5] = df_y3;
-		  SolidG.xy[6] = df_x4;
-		  SolidG.xy[7] = df_y4;
+		  SolidG.xy[0] = (float)df_x1;
+		  SolidG.xy[1] = (float)df_y1;
+		  SolidG.xy[2] = (float)df_x2;
+		  SolidG.xy[3] = (float)df_y2;
+		  SolidG.xy[4] = (float)df_x3;
+		  SolidG.xy[5] = (float)df_y3;
+		  SolidG.xy[6] = (float)df_x4;
+		  SolidG.xy[7] = (float)df_y4;
 
 		  dfymin = max(df_y1, df_y2);
 		  dfymax = min(df_y3, df_y4);
@@ -2028,18 +1997,30 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
 		  //left edge
 		  dx = df_x4 - df_x1;
 		  dy = df_y4 - df_y1;
-		  SolidG.xy[0] = df_x1 + (dfymin - df_y1) / dy * dx;
-		  SolidG.xy[6] = df_x4 - (df_y4 - dfymax) / dy * dx;
-		  SolidG.xy[1] = dfymin;
-		  SolidG.xy[7] = dfymax;
+          if (Check_if_Equal1(dy * dx, 0)==FALSE) {
+              SolidG.xy[0] = (float) (df_x1 + (dfymin - df_y1) / dy * dx);
+              SolidG.xy[6] = (float) (df_x4 - (df_y4 - dfymax) / dy * dx);
+          }
+          else
+          {
+              int a=0;
+          }
+              SolidG.xy[1] = (float) dfymin;
+              SolidG.xy[7] = (float) dfymax;
 
 		  //right edge
 		  dx = df_x3 - df_x2;
 		  dy = df_y3 - df_y2;
-		  SolidG.xy[2] = df_x2 + (dfymin - df_y2) / dy * dx;
-		  SolidG.xy[4] = df_x3 - (df_y3 - dfymax) / dy * dx;
-		  SolidG.xy[3] = dfymin;
-		  SolidG.xy[5] = dfymax;
+          if (Check_if_Equal1(dy * dx, 0)==FALSE) {
+              SolidG.xy[2] = (float) (df_x2 + (dfymin - df_y2) / dy * dx);
+              SolidG.xy[4] = (float) (df_x3 - (df_y3 - dfymax) / dy * dx);
+          }
+          else
+          {
+              int a=0;
+          }
+              SolidG.xy[3] = (float) dfymin;
+              SolidG.xy[5] = (float) dfymax;
 
 		  g_dfymin = dfymin;
 		  g_dfymax = dfymax;
@@ -2051,6 +2032,17 @@ hatch_trap (T_PTR_Trapizium 	  ptrs_trap,
 		  Normalize_Solid(&SolidG);
 
           PTR__GTMP6=(char*)global_dane;
+
+
+
+          if ((SolidG.xy[0]<0) || (SolidG.xy[1]<0) ||
+              (SolidG.xy[2]<0) || (SolidG.xy[3]<0) ||
+              (SolidG.xy[4]<0) || (SolidG.xy[5]<0) ||
+              (SolidG.xy[6]<0) || (SolidG.xy[7]<0))
+          {
+              int a=0;
+          }
+
 
 		  global_dane_ob = dodaj_obiekt(global_dane, &SolidG);
 
@@ -2202,18 +2194,18 @@ close_trap (int 		  i_trap_no,
 /*-----------------------------------------------------*/
 {
 
-  if (FALSE == hatch_trap (&ptrs__traps [i_trap_no],
+  if (FALSE == hatch_trap (&ptrs_a_traps [i_trap_no],
 			   ptrs_hatch_param, ptrs_hatch_line_def, NULL, draw_line))
   {
     return FALSE ;
   }
-  if (i__trapsno > 1 && i__trapsno - 1 != i_trap_no)
+  if (i_a_trapsno > 1 && i_a_trapsno - 1 != i_trap_no)
   {
-    memcpy (&ptrs__traps [i_trap_no],
-	    &ptrs__traps [i__trapsno - 1],
+    memcpy (&ptrs_a_traps [i_trap_no],
+	    &ptrs_a_traps [i_a_trapsno - 1],
 	    sizeof (T_Trapizium)) ;
   }
-  i__trapsno-- ;
+  i_a_trapsno-- ;
   return TRUE ;
 }
 
@@ -2230,8 +2222,8 @@ change_trap_vertex_no (T_PTR_Trapizium ptrs_trap)
     i_ver2 = ptrs_trap->s_line_l.vertex2_no ;
     df_y1 = get_vertex (ptrs_trap->s_line_l.vertex1_no)->y ;
     df_y2 = get_vertex (ptrs_trap->s_line_l.vertex2_no)->y ;
-    if ( (df_y1 > df_y2) ||
-	((df_y1 == df_y2) &&
+    if (TRUE == Check_if_GT (df_y1, df_y2) ||
+	(TRUE == Check_if_Equal (df_y1, df_y2) &&
 	 get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
     {
       ptrs_trap->s_line_l.vertex1_no = i_ver2 ;
@@ -2244,8 +2236,8 @@ change_trap_vertex_no (T_PTR_Trapizium ptrs_trap)
     i_ver2 = ptrs_trap->s_arc_l.vertex2_no ;
     df_y1 = get_vertex (i_ver1)->y ;
     df_y2 = get_vertex (i_ver2)->y ;
-    if ((df_y1  > df_y2) ||
-	( (df_y1 == df_y2) &&
+    if (TRUE == Check_if_GT (df_y1, df_y2) ||
+	(TRUE == Check_if_Equal (df_y1, df_y2) &&
 	 get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
     {
       ptrs_trap->s_arc_l.vertex1_no = i_ver2 ;
@@ -2258,8 +2250,8 @@ change_trap_vertex_no (T_PTR_Trapizium ptrs_trap)
     i_ver2 = ptrs_trap->s_line_r.vertex2_no ;
     df_y1 = get_vertex (i_ver1)->y ;
     df_y2 = get_vertex (i_ver2)->y ;
-    if ((df_y1 > df_y2) ||
-       ((df_y1 == df_y2) &&
+    if (TRUE == Check_if_GT (df_y1, df_y2) ||
+       (TRUE == Check_if_Equal (df_y1, df_y2) &&
 	get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
     {
       ptrs_trap->s_line_r.vertex1_no = i_ver2 ;
@@ -2272,8 +2264,8 @@ change_trap_vertex_no (T_PTR_Trapizium ptrs_trap)
     i_ver2 = ptrs_trap->s_arc_r.vertex2_no ;
     df_y1 = get_vertex (i_ver1)->y ;
     df_y2 = get_vertex (i_ver2)->y ;
-    if ((df_y1 > df_y2) ||
-       ((df_y1 == df_y2) &&
+    if (TRUE == Check_if_GT (df_y1, df_y2) ||
+       (TRUE == Check_if_Equal (df_y1, df_y2) &&
 	get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
     {
       ptrs_trap->s_arc_r.vertex1_no = i_ver2 ;
@@ -2282,83 +2274,18 @@ change_trap_vertex_no (T_PTR_Trapizium ptrs_trap)
   }
 }
 
-static void
-change_trap_vertex_no_ (T_PTR_Trapizium ptrs_trap)
-/*----------------------------------------------*/
-{
-    int i_ver1, i_ver2 ;
-    double df_y1, df_y2 ;
-
-    if (1 == ptrs_trap->b_line_left)
-    {
-        i_ver1 = ptrs_trap->s_line_l.vertex1_no ;
-        i_ver2 = ptrs_trap->s_line_l.vertex2_no ;
-        df_y1 = get_vertex (ptrs_trap->s_line_l.vertex1_no)->y ;
-        df_y2 = get_vertex (ptrs_trap->s_line_l.vertex2_no)->y ;
-        if (TRUE == Check_if_GT (df_y1, df_y2) ||
-            (TRUE == Check_if_Equal (df_y1, df_y2) &&
-             get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
-        {
-            ptrs_trap->s_line_l.vertex1_no = i_ver2 ;
-            ptrs_trap->s_line_l.vertex2_no = i_ver1 ;
-        }
-    }
-    else
-    {
-        i_ver1 = ptrs_trap->s_arc_l.vertex1_no ;
-        i_ver2 = ptrs_trap->s_arc_l.vertex2_no ;
-        df_y1 = get_vertex (i_ver1)->y ;
-        df_y2 = get_vertex (i_ver2)->y ;
-        if (TRUE == Check_if_GT (df_y1, df_y2) ||
-            (TRUE == Check_if_Equal (df_y1, df_y2) &&
-             get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
-        {
-            ptrs_trap->s_arc_l.vertex1_no = i_ver2 ;
-            ptrs_trap->s_arc_l.vertex2_no = i_ver1 ;
-        }
-    }
-    if (1 == ptrs_trap->b_line_right)
-    {
-        i_ver1 = ptrs_trap->s_line_r.vertex1_no ;
-        i_ver2 = ptrs_trap->s_line_r.vertex2_no ;
-        df_y1 = get_vertex (i_ver1)->y ;
-        df_y2 = get_vertex (i_ver2)->y ;
-        if (TRUE == Check_if_GT (df_y1, df_y2) ||
-            (TRUE == Check_if_Equal (df_y1, df_y2) &&
-             get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
-        {
-            ptrs_trap->s_line_r.vertex1_no = i_ver2 ;
-            ptrs_trap->s_line_r.vertex2_no = i_ver1 ;
-        }
-    }
-    else
-    {
-        i_ver1 = ptrs_trap->s_arc_r.vertex1_no ;
-        i_ver2 = ptrs_trap->s_arc_r.vertex2_no ;
-        df_y1 = get_vertex (i_ver1)->y ;
-        df_y2 = get_vertex (i_ver2)->y ;
-        if (TRUE == Check_if_GT (df_y1, df_y2) ||
-            (TRUE == Check_if_Equal (df_y1, df_y2) &&
-             get_vertex (i_ver1)->x > get_vertex (i_ver2)->x))
-        {
-            ptrs_trap->s_arc_r.vertex1_no = i_ver2 ;
-            ptrs_trap->s_arc_r.vertex2_no = i_ver1 ;
-        }
-    }
-}
-
 
 static BOOL add_trap (T_PTR_Trapizium ptrs_trap_src)
 /*--------------------------------------------*/
 {
   T_PTR_Trapizium ptrs_trap ;
 
-  if (i__trapsno >= i__trapsno_max)
+  if (i_a_trapsno >= i_a_trapsno_max)
   {
     ErrList (18) ;
     return FALSE ;
   }
-  ptrs_trap = &ptrs__traps [i__trapsno++] ;
+  ptrs_trap = &ptrs_a_traps [i_a_trapsno++] ;
   memcpy (ptrs_trap, ptrs_trap_src, sizeof(T_Trapizium)) ;
   return TRUE ;
 }
@@ -2377,7 +2304,7 @@ hatch_ver_stalt (T_PTR_Hatch_Param 	ptrs_hatch_param,
   BOOL b_ret ;
   T_PTR_Trapizium ptrs_traps ;
 
-  ptrs_traps = ptrs__traps;
+  ptrs_traps = ptrs_a_traps;
   if (-1  != (i_trap_no = check_ver_in_trap (i_ver_no)))
   {
     ptrs_traps [i_trap_no].vertex_up_no = i_ver_no ;
@@ -2424,8 +2351,8 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
   i_trap_r = 0;
 
   i_trap_no = 0 ;
-  ptrs_traps = ptrs__traps;
-  for (i = 0 ; i < i__trapsno ; i++)
+  ptrs_traps = ptrs_a_traps;
+  for (i = 0 ; i < i_a_trapsno ; i++)
   {
     i_ver_trap = get_trap_vertex_no (TRC_LU, &ptrs_traps [i]) ;
     if (TRUE == comp_vertex (i_ver_trap, i_ver))
@@ -2434,13 +2361,6 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
       i_ver_trap = get_trap_vertex_no (TRC_RU, &ptrs_traps [i]) ;
       memcpy (&s_trap.bank_r, &ptrs_traps [i].bank_r, BANK_S) ;
       s_trap.b_line_right = ptrs_traps [i].b_line_right ;
-
-        ////s_trap.s_line_r.vertex1_no = ptrs_traps [i].s_line_r.vertex1_no ;
-        ////s_trap.s_line_r.vertex2_no = ptrs_traps [i].s_line_r.vertex2_no ;
-
-        ////s_trap.s_line_l.vertex1_no = ptrs_traps [i].s_line_l.vertex1_no ;
-        ////s_trap.s_line_l.vertex2_no = ptrs_traps [i].s_line_l.vertex2_no ;
-
       s_trap.vertex_dn_no = i_ver ;
       i_trap_l = i ;
     if (TRUE == comp_vertex (i_ver_trap, i_ver))
@@ -2456,10 +2376,6 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 	  i_trap_l = i_trap_r ;
 	  i_trap_r = i_temp ;
 	}
-          if (s_trap.s_line_r.vertex1_no<0)
-          {
-              int a=0;
-          }
 	if (TRUE == close_trap (i_trap_l, ptrs_hatch_param, ptrs_hatch_line_def, draw_line) &&
 	    TRUE == close_trap (i_trap_r, ptrs_hatch_param, ptrs_hatch_line_def, draw_line) &&
 	    TRUE == add_trap (&s_trap))
@@ -2476,13 +2392,6 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
       i_ver_trap = get_trap_vertex_no (TRC_LU, &ptrs_traps [i]) ;
       memcpy (&s_trap.bank_l, &ptrs_traps [i].bank_l, BANK_S) ;
       s_trap.b_line_left = ptrs_traps [i].b_line_left ;
-
-        ////s_trap.s_line_l.vertex1_no = ptrs_traps [i].s_line_l.vertex1_no ;
-        ////s_trap.s_line_l.vertex2_no = ptrs_traps [i].s_line_l.vertex2_no ;
-
-        ////s_trap.s_line_r.vertex1_no = ptrs_traps [i].s_line_r.vertex1_no ;
-        ////s_trap.s_line_r.vertex2_no = ptrs_traps [i].s_line_r.vertex2_no ;
-
       s_trap.vertex_dn_no = i_ver ;
       i_trap_r = i ;
       if (TRUE == comp_vertex (i_ver_trap, i_ver))
@@ -2498,10 +2407,6 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 	  i_trap_l = i_trap_r ;
 	  i_trap_r = i_temp ;
 	}
-          if (s_trap.s_line_r.vertex1_no<0)
-          {
-              int a=0;
-          }
 	if (TRUE == close_trap (i_trap_l, ptrs_hatch_param, ptrs_hatch_line_def, draw_line) &&
 	    TRUE == close_trap (i_trap_r, ptrs_hatch_param, ptrs_hatch_line_def, draw_line) &&
 	    TRUE == add_trap (&s_trap))
@@ -2590,10 +2495,10 @@ find_corner (int 	     i_vertex_no,
   BOOL b_dir ;
   int i_vertex_find_no ;
 
-  ptrs_lines = ptrs__area0->s_lines_alloc.ptrs_lines ;
-  i_linesno = ptrs__area0->s_lines_alloc.i_size ;
-  ptrs_arcs = ptrs__area0->s_arcs_alloc.ptrs_arcs ;
-  i_arcsno = ptrs__area0->s_arcs_alloc.i_size ;
+  ptrs_lines = ptrs_a_area0->s_lines_alloc.ptrs_lines ;
+  i_linesno = ptrs_a_area0->s_lines_alloc.i_size ;
+  ptrs_arcs = ptrs_a_area0->s_arcs_alloc.ptrs_arcs ;
+  i_arcsno = ptrs_a_area0->s_arcs_alloc.i_size ;
   df_x0 = get_vertex (i_vertex_no)->x ;
   df_y0 = get_vertex (i_vertex_no)->y ;
   i = 0 ;
@@ -2745,7 +2650,7 @@ static BOOL change_trap_branch (T_PTR_Trapizium ptrs_trap,
 }
 
 
-static int find_trap_ (int i_vertex_no,
+static int find_trap (int i_vertex_no,
 		      BOOL b_single,
 		      T_PTR_Trapizium ptrs_trap)
 /*---------------------------------------------*/
@@ -2755,11 +2660,6 @@ static int find_trap_ (int i_vertex_no,
   double df_x1, df_y1, df_x0, df_y0, df_x2, df_y2 ;
   double df_a [2], df_a1, df_a2 ;
   BOOL b_change ;
-
-  if (ptrs_trap->s_line_r.vertex1_no<0)
-  {
-      int a=0;
-  }
 
   df_x0 = get_vertex (i_vertex_no)->x ;
   df_y0 = get_vertex (i_vertex_no)->y ;
@@ -2792,7 +2692,7 @@ static int find_trap_ (int i_vertex_no,
     {
       df_a2 = 0 ;
     }
-    if (df_a2 > df_a1 + Get_Prec (MPREC_4, 1, 1) ||  //4
+    if (df_a2 > df_a1 + Get_Prec (MPREC_4, 1, 1) ||
      TRUE == change_trap_branch (ptrs_trap, min (df_y1, df_y2), i_vertex_no))
     {
       b_change = TRUE ;
@@ -2817,7 +2717,7 @@ static int find_trap_ (int i_vertex_no,
     {
       df_a2 = Pi2 ;
     }
-    if (df_a1 > df_a2 + Get_Prec (MPREC_4, 1, 1) ||  //4
+    if (df_a1 > df_a2 + Get_Prec (MPREC_4, 1, 1) ||
      TRUE == change_trap_branch (ptrs_trap, max (df_y1, df_y2), i_vertex_no))
     {
       b_change = TRUE ;
@@ -2850,123 +2750,7 @@ static int find_trap_ (int i_vertex_no,
      memcpy (ptrs_trap->bank_r, s_trap.bank_l, BANK_S) ;
   }
   change_trap_vertex_no (ptrs_trap) ;
-
-    if (ptrs_trap->s_line_r.vertex1_no<0)
-    {
-        int a=0;
-    }
   return i_ret ;
-}
-
-//this is not needed variant anymore
-static int find_trap (int i_vertex_no,
-                      BOOL b_single,
-                      T_PTR_Trapizium ptrs_trap)
-/*---------------------------------------------*/
-{
-    T_Trapizium s_trap ;
-    int i_ver [2], i_ret ;
-    double df_x1, df_y1, df_x0, df_y0, df_x2, df_y2 ;
-    double df_a [2], df_a1, df_a2 ;
-    BOOL b_change ;
-
-    df_x0 = get_vertex (i_vertex_no)->x ;
-    df_y0 = get_vertex (i_vertex_no)->y ;
-    if (FALSE == find_corner (i_vertex_no, b_single, ptrs_trap, i_ver, df_a))
-    {
-        return VT_UNKNOWN1 ;
-    }
-    df_x1 = get_vertex (i_ver [0])->x ;
-    df_y1 = get_vertex (i_ver [0])->y ;
-    df_x2 = get_vertex (i_ver [1])->x ;
-    df_y2 = get_vertex (i_ver [1])->y ;
-    df_a1 = df_a [0] ;
-    df_a2 = df_a [1] ;
-    b_change = FALSE ;
-    if (((df_y1> df_y0) &&
-         (df_y2> df_y0))         ||
-        ((df_y1 == df_y0) &&
-           //      (TRUE == Check_if_Equal (df_y1, df_y0) &&
-         (df_y2 > df_y0)  &&
-         (df_x1 > df_x0))         ||
-        ((df_y2 == df_y0) &&
-             //   (TRUE == Check_if_Equal (df_y2, df_y0) &&
-         (df_y1 > df_y0)  &&
-         (df_x2 > df_x0)))
-    {
-        i_ret = VT_stalaktyt ;
-        if (fabs (df_a1 - Pi2) < Get_Prec (MPREC_2, 1, 1))
-        {
-            df_a1 = 0 ;
-        }
-        if (fabs (df_a2 - Pi2) < Get_Prec (MPREC_2, 1, 1))
-        {
-            df_a2 = 0 ;
-        }
-        if (df_a2 > df_a1 + Get_Prec (MPREC_2, 1, 1) ||
-            TRUE == change_trap_branch (ptrs_trap, min (df_y1, df_y2), i_vertex_no))
-        {
-            b_change = TRUE ;
-        }
-    }
-    else
-    if (((df_y1 < df_y0) &&
-         (df_y2 < df_y0))        ||
-        ((df_y1 == df_y0) &&
-           //      (TRUE == Check_if_Equal (df_y1, df_y0) &&
-         (df_y2 < df_y0)  &&
-         (df_x1 < df_x0))        ||
-        ((df_y2 == df_y0) &&
-              //  (TRUE == Check_if_Equal (df_y2, df_y0) &&
-         (df_y1 < df_y0)  &&
-         (df_x2 < df_x0)))
-    {
-        i_ret = VT_stalagmit ;
-        if (fabs (df_a1) < Get_Prec (MPREC_2, 1, 1))
-        {
-            df_a1 = Pi2 ;
-        }
-        if (fabs (df_a2) < Get_Prec (MPREC_2, 1, 1))
-        {
-            df_a2 = Pi2 ;
-        }
-        if (df_a1 > df_a2 + Get_Prec (MPREC_2, 1, 1) ||
-            TRUE == change_trap_branch (ptrs_trap, max (df_y1, df_y2), i_vertex_no))
-        {
-            b_change = TRUE ;
-        }
-    }
-    else
-    {
-        i_ret = VT_REGULAR ;
-        if ((df_y1 > df_y2))
-        {
-            b_change = TRUE ;
-        }
-        else
-        //if ((df_y1 == df_y2) &&
-        if (TRUE == Check_if_Equal (df_y1, df_y2) &&
-            (df_x1 > df_x2))
-        {
-            b_change = TRUE ;
-        }
-        /*1 seg nizej, 2 wyzej*/
-        /* 2 */
-        /* > */
-        /* 1 */
-    }
-    if (b_change == TRUE)
-    {
-        //if ((ptrs_trap->vertex_dn_no>=0) && (ptrs_trap->vertex_up_no>=0)) {
-            memcpy(&s_trap, ptrs_trap, sizeof(T_Trapizium));
-            ptrs_trap->b_line_left = s_trap.b_line_right;
-            ptrs_trap->b_line_right = s_trap.b_line_left;
-            memcpy(ptrs_trap->bank_l, s_trap.bank_r, BANK_S);
-            memcpy(ptrs_trap->bank_r, s_trap.bank_l, BANK_S);
-        //}
-    }
-    change_trap_vertex_no (ptrs_trap) ;
-    return i_ret ;
 }
 
 
@@ -3055,31 +2839,34 @@ static BOOL get_mem_trap_table (void)
 
   b_ret = FALSE ;
   l_free = get_free_mem_size (1) ;
-  i__trapsno_max = (int)((l_free - 10000) / sizeof (T_Trapizium)) ;    /*1000 - rezerwa */
-  if (i__trapsno_max>TRAPSNO_MAX) i__trapsno_max=TRAPSNO_MAX;
-  if (i__trapsno_max > 10)
+  i_a_trapsno_max = (int)((l_free - 10000) / sizeof (T_Trapizium)) ;    /*1000 - rezerwa */
+  if (i_a_trapsno_max>TRAPSNO_MAX) i_a_trapsno_max=TRAPSNO_MAX;
+  if (i_a_trapsno_max > 10)
   {
-	ptrs__traps = (T_PTR_Trapizium)malloc(i__trapsno_max * sizeof(T_Trapizium));
-    for (int i=0; i<i__trapsno_max; i++)
+	ptrs_a_traps = (T_PTR_Trapizium)malloc(i_a_trapsno_max * sizeof(T_Trapizium));
+    for (int i=0; i<i_a_trapsno_max; i++)
     {
-        ptrs__traps[i].vertex_up_no = 0;
-        ptrs__traps[i].vertex_dn_no = 0;
+        ptrs_a_traps[i].vertex_up_no=0;
+        ptrs_a_traps[i].vertex_dn_no=0;
 
-        ptrs__traps[i].s_line_l.vertex1_no = 0;
-        ptrs__traps[i].s_line_l.vertex2_no = 0;
-        ptrs__traps[i].s_line_l.b_hole = 0;
+        ptrs_a_traps[i].s_line_l.vertex1_no=0;
+        ptrs_a_traps[i].s_line_l.vertex2_no=0;
+        ptrs_a_traps[i].s_line_l.b_hole=0;
 
-        ptrs__traps[i].s_line_r.vertex1_no = 0;
-        ptrs__traps[i].s_line_r.vertex2_no = 0;
-        ptrs__traps[i].s_line_r.b_hole = 0;
+        ptrs_a_traps[i].s_line_r.vertex1_no=0;
+        ptrs_a_traps[i].s_line_r.vertex2_no=0;
+        ptrs_a_traps[i].s_line_r.b_hole=0;
 
-        ptrs__traps[i].s_arc_l.vertex1_no = 0;
-        ptrs__traps[i].s_arc_l.vertex2_no = 0;
-        ptrs__traps[i].s_arc_l.b_hole = 0;
+        ptrs_a_traps[i].s_arc_l.vertex1_no=0;
+        ptrs_a_traps[i].s_arc_l.vertex2_no=0;
+        ptrs_a_traps[i].s_arc_l.b_hole=0;
 
-        ptrs__traps[i].s_arc_r.vertex1_no = 0;
-        ptrs__traps[i].s_arc_r.vertex2_no = 0;
-        ptrs__traps[i].s_arc_r.b_hole = 0;
+        ptrs_a_traps[i].s_arc_r.vertex1_no=0;
+        ptrs_a_traps[i].s_arc_r.vertex2_no=0;
+        ptrs_a_traps[i].s_arc_r.b_hole=0;
+
+        ptrs_a_traps[i].b_line_left=0;
+        ptrs_a_traps[i].b_line_right=0;
     }
     b_ret = TRUE ;
   }
@@ -3096,22 +2883,22 @@ static BOOL arcs_copy (void)
   int i_arcsno, i_verno ;
   BOOL b_ret = FALSE ;
 
-  i_verno = ptrs__area0->s_vertexs_alloc.i_size ;
-  if (0 == (i_arcsno = ptrs__area0->s_arcs_alloc.i_size))
+  i_verno = ptrs_a_area0->s_vertexs_alloc.i_size ;
+  if (0 == (i_arcsno = ptrs_a_area0->s_arcs_alloc.i_size))
   {
     return TRUE ;
   }
-  if (TRUE == h_realloc ((T_PTR_Units)&ptrs__area0->s_arcs_cpy_alloc, i_arcsno) &&
-      TRUE == h_realloc ((T_PTR_Units)&ptrs__area0->s_vertexs_cpy_alloc, i_verno))
+  if (TRUE == h_realloc ((T_PTR_Units)&ptrs_a_area0->s_arcs_cpy_alloc, i_arcsno) &&
+      TRUE == h_realloc ((T_PTR_Units)&ptrs_a_area0->s_vertexs_cpy_alloc, i_verno))
   {
-    memcpy (ptrs__area0->s_arcs_cpy_alloc.ptrs_arcs,
-	    ptrs__area0->s_arcs_alloc.ptrs_arcs,
+    memcpy (ptrs_a_area0->s_arcs_cpy_alloc.ptrs_arcs,
+	    ptrs_a_area0->s_arcs_alloc.ptrs_arcs,
 	    i_arcsno * sizeof (T_AArc)) ;
-    memcpy (ptrs__area0->s_vertexs_cpy_alloc.ptrs_vertexs,
-	    ptrs__area0->s_vertexs_alloc.ptrs_vertexs,
+    memcpy (ptrs_a_area0->s_vertexs_cpy_alloc.ptrs_vertexs,
+	    ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs,
 	    i_verno * sizeof (T_Vertex)) ;
-    ptrs__area0->s_arcs_cpy_alloc.i_size = i_arcsno ;
-    ptrs__area0->s_vertexs_cpy_alloc.i_size = i_verno ;
+    ptrs_a_area0->s_arcs_cpy_alloc.i_size = i_arcsno ;
+    ptrs_a_area0->s_vertexs_cpy_alloc.i_size = i_verno ;
     b_ret = TRUE ;
   }
   return b_ret ;
@@ -3124,15 +2911,15 @@ arcs_rot_copy (void)
 {
   int i_arcsno, i_verno ;
 
-  if (0 == (i_arcsno = ptrs__area0->s_arcs_cpy_alloc.i_size))
+  if (0 == (i_arcsno = ptrs_a_area0->s_arcs_cpy_alloc.i_size))
   {
     return ;
   }
-  i_verno = ptrs__area0->s_vertexs_cpy_alloc.i_size ;
-  memcpy (ptrs__area0->s_vertexs_alloc.ptrs_vertexs,
-	  ptrs__area0->s_vertexs_cpy_alloc.ptrs_vertexs,
+  i_verno = ptrs_a_area0->s_vertexs_cpy_alloc.i_size ;
+  memcpy (ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs,
+	  ptrs_a_area0->s_vertexs_cpy_alloc.ptrs_vertexs,
 	  i_verno * sizeof (T_Vertex)) ;
-  ptrs__area0->s_vertexs_alloc.i_size = i_verno ;
+  ptrs_a_area0->s_vertexs_alloc.i_size = i_verno ;
 }
 
 static BOOL
@@ -3142,7 +2929,7 @@ add_arc0 (T_PTR_AArc ptrs_arc)
   T_PTR_AArc_Alloc ptrs_arcs_alloc ;
   int i_size ;
 
-  ptrs_arcs_alloc = &ptrs__area0->s_arcs_alloc ;
+  ptrs_arcs_alloc = &ptrs_a_area0->s_arcs_alloc ;
   if (FALSE == h_realloc ((T_PTR_Units)ptrs_arcs_alloc))
   {
     return FALSE ;
@@ -3204,14 +2991,14 @@ static BOOL break_up_arcs (void)
   T_PTR_AArc ptrs_arcs ;
   T_AArc s_arc ;
 
-  if (0 == (i_arcsno = ptrs__area0->s_arcs_cpy_alloc.i_size))
+  if (0 == (i_arcsno = ptrs_a_area0->s_arcs_cpy_alloc.i_size))
   {
     return TRUE ;
   }
-  ptrs__area0->s_arcs_alloc.i_size = 0 ;
+  ptrs_a_area0->s_arcs_alloc.i_size = 0 ;
   for (i = 0 ; i < i_arcsno ; i++)
   {
-    ptrs_arcs = ptrs__area0->s_arcs_cpy_alloc.ptrs_arcs ;
+    ptrs_arcs = ptrs_a_area0->s_arcs_cpy_alloc.ptrs_arcs ;
     memcpy (&s_arc, &ptrs_arcs [i], sizeof (T_AArc)) ;
 
     if (TRUE == Check_Angle (s_arc.a1, Pi2 * 3. / 4., Pi2 / 4.) &&
@@ -3316,11 +3103,11 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
 
     l_dane_size = dane_size;
     b_ret = FALSE;
-    i__trapsno = 0;
-    ptrs__traps = NULL;
-    ptri__tab_ver_no = NULL;
+    i_a_trapsno = 0;
+    ptrs_a_traps = NULL;
+    ptri_a_tab_ver_no = NULL;
     df_cur_angle = 0;
-    ptrs__area0 = ptrs_area;
+    ptrs_a_area0 = ptrs_area;
 
     i_a_hatch_pattern_no = ptrs_hatch_param->i_number_hatch;
 
@@ -3370,12 +3157,10 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
 
     for (j = 0; j < i_hatch_lineno; j++) {
         pole_hatch_add = j;
-        if (i__trapsno != 0) {
-            if (!glb_silent) {
-                Internal_Error(__LINE__, (char*)__FILE__);
-                key = Get_Legal_Key((char*)"\033\015");
-                komunikat(0);
-            }
+        if (i_a_trapsno != 0) {
+            Internal_Error(__LINE__, (char*)__FILE__);
+            if (glb_silent != TRUE) key = Get_Legal_Key("\033\015");
+            komunikat(0);
             goto aa;
             ////continue;  //TO CORRECT
         }
@@ -3385,22 +3170,17 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
         if (FALSE == break_up_arcs()) {
             goto aa;
         }
-        h_free((void *) ptri__tab_ver_no);
-        i_verno = ptrs__area0->s_vertexs_alloc.i_size;
-        if (FALSE == h_alloc((char **) &ptri__tab_ver_no,
-                             sizeof(int) * i_verno)) {
+        h_free((void *) ptri_a_tab_ver_no);
+        i_verno = ptrs_a_area0->s_vertexs_alloc.i_size;
+        if (FALSE == h_alloc((char **) &ptri_a_tab_ver_no,sizeof(int) * (i_verno+1)))
+        {
             goto aa;
         }
-
+        i_a_verno=i_verno;
         sort_vertexs();
+        for (i = 0; i < ptrs_a_area0->s_vertexs_alloc.i_size; i++) {
 
-        for (i = 0; i < ptrs__area0->s_vertexs_alloc.i_size; i++) {
-
-            if (i==15)
-            {
-                int a=0;
-            }
-            i_ver_no = ptrs__area0->s_vertexs_alloc.ptrs_vertexs[i].vertex_no;
+            i_ver_no = ptrs_a_area0->s_vertexs_alloc.ptrs_vertexs[i].vertex_no;
             if (TRUE == get_vertex(i_ver_no)->b_equel) {
                 continue;
             }
@@ -3433,22 +3213,11 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
                     break;
             }
         }
-
         rotation(df_cur_angle, ptrs_hatch_param);
 
         if (interrupted()) {
             goto aa;
         }
-
-        if (s_trap.s_line_r.vertex1_no<0)
-        {
-            int a=0;
-        }
-    }
-
-    if (s_trap.s_line_r.vertex1_no<0)
-    {
-        int a=0;
     }
 
     b_ret = TRUE;
@@ -3459,8 +3228,8 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
             Usun_Object((void *) dane, TRUE);
         }
     }
-    h_free((void *) ptri__tab_ver_no);
-    free(ptrs__traps);
+    h_free((void *) ptri_a_tab_ver_no);
+    free(ptrs_a_traps);
 
     if ((comput_area > 0) && (comput_area < 10)) {
         CUR_OFF(X, Y);

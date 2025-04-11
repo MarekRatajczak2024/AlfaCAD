@@ -700,6 +700,21 @@ BOOL Check_if_Equal (double x, double y)
   return retval ;
 }
 
+BOOL Check_if_Equal1(double x, double y)
+/*---------------------------------------*/
+{
+    BOOL retval;
+    double dd;
+
+    retval = FALSE;
+    dd = get_little_val(DF_PRECISION*0.1, x, y);  ////WARNING    0.1
+    if (fabs(x - y) < dd)
+    {
+        retval = TRUE;
+    }
+    return retval;
+}
+
 BOOL Check_if_Equal2(double x, double y)
 /*---------------------------------------*/
 {

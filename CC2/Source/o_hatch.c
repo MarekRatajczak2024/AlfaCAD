@@ -95,10 +95,10 @@ static T_Hatch_Param 		    s_hatch_param = {1, 0, 1, 0, 0, 0} ;
 static T_Hatch_Param            s_hatch_param2 = { 1, 0, 1, 0, 0, 0 };
 static T_Hatch_Param            s_hatch_param1 = {1, 0, 1, 0, 0, 0} ;
 static T_Hatch_Param            s_hatch_param0 = {1, 0, 1, 0, 0, 0} ;
-int i__hatch_pattern_no = 1 ;
-int i__hatch_pattern_no_bak = 1 ;
+int i_a_hatch_pattern_no = 1 ;
+int i_a_hatch_pattern_no_bak = 1 ;
 static T_Hatch_Param 		    s_hatch_param_bak = {1, 0, 1, 0, 0, 0};
-static int                      i__hatch_pattern_no1 = 1 ;
+static int                      i_a_hatch_pattern_no1 = 1 ;
 static T_Hatch_Def_Param  	    s__def_param = {u8"", 0, 1} ;
 static T_Hatch_Def_Param        s__def_param1 = {u8"", 0, 1} ;
 static T_Hatch_Def_Param        s__def_param0 = {u8"", 0, 1} ;
@@ -565,19 +565,19 @@ void set_hatch_pattern (int i_ev, int opcja, BOOL insulation_h)
 
   }
 
-  i__hatch_pattern_no = i_ev ;
+  i_a_hatch_pattern_no = i_ev ;
   s_hatch_param.i_number_hatch = i_ev;
   s_hatch_param.insulation_hatch = insulation_h;
 
-  if (i__hatch_pattern_no > 2) {
-      if (i__hatch_pattern_no==999)
+  if (i_a_hatch_pattern_no > 2) {
+      if (i_a_hatch_pattern_no==999)
       {
           memcpy(&s__def_param, Get_Hatch_Def_Table999_(), sizeof(s__def_param));
           s__def_param1 = s__def_param;
       }
       else
       {
-          memcpy(&s__def_param, &ptrs__hatch_def_param[i__hatch_pattern_no - 3], sizeof(s__def_param));
+          memcpy(&s__def_param, &ptrs__hatch_def_param[i_a_hatch_pattern_no - 3], sizeof(s__def_param));
           s__def_param1 = s__def_param;
       }
   }
@@ -586,7 +586,7 @@ void set_hatch_pattern (int i_ev, int opcja, BOOL insulation_h)
 
 void backup_hatch_pattern(void)
 {
-    i__hatch_pattern_no_bak=i__hatch_pattern_no;
+    i_a_hatch_pattern_no_bak=i_a_hatch_pattern_no;
     memmove(&s_hatch_param_bak, &s_hatch_param, sizeof(T_Hatch_Param));
     memmove(&s__def_param_bak, &s__def_param, sizeof(T_Hatch_Def_Param));
     SolidHatchPattern_bak = SolidHatchPattern;
@@ -596,7 +596,7 @@ void backup_hatch_pattern(void)
 
 void restore_hatch_pattern(void)
 {
-    i__hatch_pattern_no=i__hatch_pattern_no_bak;
+    i_a_hatch_pattern_no=i_a_hatch_pattern_no_bak;
     memmove(&s_hatch_param, &s_hatch_param_bak, sizeof(T_Hatch_Param));
     memmove(&s__def_param, &s__def_param_bak, sizeof(T_Hatch_Def_Param));
     SolidHatchPattern = SolidHatchPattern_bak;
@@ -610,7 +610,7 @@ void change_hatch_pattern(int hatch_type)
 switch (hatch_type)
  {
   case 0:
-  case 1: if (i__hatch_pattern_no != 2)
+  case 1: if (i_a_hatch_pattern_no != 2)
            {
             strcpy(s_hatch_param_df_name,"TERMAT24");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -624,7 +624,7 @@ switch (hatch_type)
            }
           break;
   case 2:
-  case 4: if (i__hatch_pattern_no != 3)
+  case 4: if (i_a_hatch_pattern_no != 3)
            {
             strcpy(s_hatch_param_df_name,"TERMAT49");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -637,7 +637,7 @@ switch (hatch_type)
             s__def_param.i_size=4;
            }
           break;
-  case 3: if (i__hatch_pattern_no != 4)
+  case 3: if (i_a_hatch_pattern_no != 4)
            {
             strcpy(s_hatch_param_df_name,"TERMAT37");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -650,7 +650,7 @@ switch (hatch_type)
             s__def_param.i_size=4;
            }
           break;
-  case 5: if (i__hatch_pattern_no != 8)
+  case 5: if (i_a_hatch_pattern_no != 8)
            {
             strcpy(s_hatch_param_df_name,"MTHERM36");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -663,7 +663,7 @@ switch (hatch_type)
             s__def_param.i_size=4;
            }
           break;
-  case 6: if (i__hatch_pattern_no != 9)
+  case 6: if (i_a_hatch_pattern_no != 9)
            {
             strcpy(s_hatch_param_df_name,"MTHERM24");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -676,7 +676,7 @@ switch (hatch_type)
             s__def_param.i_size=4;
            }
           break;
-  case 7: if (i__hatch_pattern_no != 10)
+  case 7: if (i_a_hatch_pattern_no != 10)
            {
             strcpy(s_hatch_param_df_name,"MTHERM11");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -700,7 +700,7 @@ switch (hatch_type)
           s__def_param.i_number_line=0;
           s__def_param.i_size=0;
           break;
- default: if (i__hatch_pattern_no != 2)
+ default: if (i_a_hatch_pattern_no != 2)
            {
             strcpy(s_hatch_param_df_name,"TERMAT24");
             s_hatch_param_df_name [PATERN_NAME_MAXLEN - 1] = '\0' ;
@@ -738,12 +738,12 @@ static BOOL free_mem_hatch_pattern (int i_type)
 
   if (i__file_handle == -1)
   {
-    if (i__hatch_pattern_no <= 2)
+    if (i_a_hatch_pattern_no <= 2)
       return TRUE ;
     else
       return FALSE ;
   }
-  if (i_type == 1 || i__hatch_pattern_no <= 2)
+  if (i_type == 1 || i_a_hatch_pattern_no <= 2)
   {
     close (i__file_handle) ;
     return TRUE ;
@@ -1216,7 +1216,7 @@ void redcrP (char typ)
              SERV[71] = hatch_pattern_rotate_t45;  //Home  kat +45
              SERV[79] = hatch_pattern_rotate_t_45;  //End   kat -45
          }
-         else if (i__hatch_pattern_no == 0)
+         else if (i_a_hatch_pattern_no == 0)
          {
              komunikat0(140);
              SERV[73] = noooph;  //PgUp  kat +3
@@ -1227,12 +1227,12 @@ void redcrP (char typ)
          else komunikat0 (88) ;
      if ( wos_area )
       {
-      i__hatch_pattern_no = i__hatch_pattern_no1 ;
+      i_a_hatch_pattern_no = i_a_hatch_pattern_no1 ;
       s_hatch_param = s_hatch_param1 ;
       s__def_param = s__def_param1 ;
       i_namesno = s__head.i_pattern_namesno ;
       set_menu_hatch_pattern ();
-      set_hatch_pattern (i__hatch_pattern_no, 1,FALSE) ;
+      set_hatch_pattern (i_a_hatch_pattern_no, 1,FALSE) ;
       wos_area = FALSE ;
       }
      }
@@ -1241,12 +1241,12 @@ void redcrP (char typ)
 		 komunikat0(138);
 		 if (wos_area)
 		 {
-			 i__hatch_pattern_no = i__hatch_pattern_no1;
+			 i_a_hatch_pattern_no = i_a_hatch_pattern_no1;
 			 s_hatch_param = s_hatch_param1;
 			 s__def_param = s__def_param1;
 			 i_namesno = s__head.i_pattern_namesno;
 			 set_menu_hatch_pattern();
-			 set_hatch_pattern(i__hatch_pattern_no, 1,FALSE);
+			 set_hatch_pattern(i_a_hatch_pattern_no, 1,FALSE);
 			 wos_area = FALSE;
 		 }
 	 }
@@ -1255,13 +1255,13 @@ void redcrP (char typ)
      komunikat0 (98);
      if ( wos_area == FALSE )
       {
-      i__hatch_pattern_no1 = i__hatch_pattern_no ;
+      i_a_hatch_pattern_no1 = i_a_hatch_pattern_no ;
       s_hatch_param1 = s_hatch_param ;
       s__def_param1 = s__def_param ;
       s__def_param = s__def_param0 ;
       s_hatch_param = s_hatch_param0 ;
-      i__hatch_pattern_no = 1 ;  //0  GEOMETRY
-      set_hatch_pattern ( i__hatch_pattern_no, 0,FALSE ) ;
+      i_a_hatch_pattern_no = 1 ;  //0  GEOMETRY
+      set_hatch_pattern ( i_a_hatch_pattern_no, 0,FALSE ) ;
       wos_area = TRUE ;
       }
      }
@@ -1443,13 +1443,13 @@ T_PTR_Hatch_Def_Param Get_Hatch_Def_Table (void)
 /*--------------------------------------------*/
 {
   static T_Hatch_Def_Param  s_def_param = {u8"", 0, 1} ;
-  if (i__hatch_pattern_no > 2)
+  if (i_a_hatch_pattern_no > 2)
   {
     s_def_param.i_size = s__def_param.i_size ;
   }
   else
   {
-	  s_def_param.i_size = max(1, i__hatch_pattern_no);
+	  s_def_param.i_size = max(1, i_a_hatch_pattern_no);
   }
   return &s_def_param ;
 }
@@ -1460,7 +1460,7 @@ T_PTR_Hatch_Line_Def Get_Hatch_Line_Def_Table (void)
   static T_Hatch_Line_Def s_line_def [2] =
   {  {0, 0,0, 0,.125, 0, 0, 0, {0,0,0,0,0,0,0,0,0,0,0,0}},
     {Pi2 / 4, 0, 0, 0,.125, 0, 0, 0, {0,0,0,0,0,0,0,0,0,0,0,0}}  } ;
-  if (i__hatch_pattern_no > 2)
+  if (i_a_hatch_pattern_no > 2)
   {
     return ptrs__hatch_line_def ;
   }
@@ -1774,7 +1774,7 @@ once_again_view:
 	  {
           insulation_hatch=FALSE;
 
-		  i__hatch_pattern_no = pattern_i;
+		  i_a_hatch_pattern_no = pattern_i;
 		  m__list_hatch.poz = pattern_i;
 		  if (m__list_hatch.poz > m__list_hatch.maxw)
 		  {
@@ -1788,7 +1788,7 @@ once_again_view:
 	  }
 
   	if (ptrs__hatch_def_param!=NULL)
-	  strcpy(pattern_file, &(*m__list_hatch.pola)[i__hatch_pattern_no].txt[0]);
+	  strcpy(pattern_file, &(*m__list_hatch.pola)[i_a_hatch_pattern_no].txt[0]);
 
       normalize_file_name(&pattern_file);
       if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))

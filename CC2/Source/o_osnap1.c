@@ -28,7 +28,8 @@ extern int solidarc_elements(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l
 
 #define Npts 90
 
-static double LINE_ARC_ALIGN=0.006; //0.005, 0.001this parameter should be available to set in options
+static double LINE_ARC_ALIGN=0.001; //0.006; //0.005, 0.001this parameter should be available to set in options
+static double LINE_ARC_ALIGN_H=0.006;
 
 static BOOL check_line_t (double df_t,
                          LINIA  *ptrs_line)
@@ -157,6 +158,137 @@ int IntersectionLl (LINIA  *ptrs_line,
   }
   return i_ret ;
 }
+
+int IntersectionLl_h_ (LINIA  *ptrs_line,
+                    LUK  *ptrs_arc,
+                    double *ptrdf_x,
+                    double *ptrdf_y,
+                    double *ptrdf_tl,
+                    double *ptrdf_aa)
+/*-----------------------------------*/
+{
+    int i_ret, i, i_interno ;
+    double df_x [2], df_y [2], df_t [2] ;
+
+    //CORRECTION
+    float x1, y1, x2, y2;
+
+    x1 = (float)((double)ptrs_arc->x + (double)ptrs_arc->r * cos((double)ptrs_arc->kat1));
+    y1 = (float)((double)ptrs_arc->y + (double)ptrs_arc->r * sin((double)ptrs_arc->kat1));
+
+    x2 = (float)((double)ptrs_arc->x + (double)ptrs_arc->r * cos((double)ptrs_arc->kat2));
+    y2 = (float)((double)ptrs_arc->y + (double)ptrs_arc->r * sin((double)ptrs_arc->kat2));
+
+    if ((fabsf(ptrs_line->x1-x1)<LINE_ARC_ALIGN_H) && (fabsf(ptrs_line->y1-y1)<LINE_ARC_ALIGN_H))
+    {
+        ptrs_line->x1=x1;
+        ptrs_line->y1=y1;
+    }
+    else if ((fabsf(ptrs_line->x2-x1)<LINE_ARC_ALIGN_H) && (fabsf(ptrs_line->y2-y1)<LINE_ARC_ALIGN_H))
+    {
+        ptrs_line->x2=x1;
+        ptrs_line->y2=y1;
+    }
+    else if ((fabsf(ptrs_line->x2-x2)<LINE_ARC_ALIGN_H) && (fabsf(ptrs_line->y2-y2)<LINE_ARC_ALIGN_H))
+    {
+        ptrs_line->x2=x2;
+        ptrs_line->y2=y2;
+    }
+    else if ((fabsf(ptrs_line->x1-x2)<LINE_ARC_ALIGN_H) && (fabsf(ptrs_line->y1-y2)<LINE_ARC_ALIGN_H))
+    {
+        ptrs_line->x1=x2;
+        ptrs_line->y1=y2;
+    }
+    //////////
+
+    i_ret = 0 ;
+    i_interno = przeciecieLl_tt (
+            &df_x [0], &df_y [0], &df_t [0],
+            &df_x [1], &df_y [1], &df_t [1],
+            ptrs_line, ptrs_arc) ;
+    for (i = 0 ; i < i_interno ; i++)
+    {
+
+        if (fabs(1-df_t [i])<LINE_ARC_ALIGN) df_t [i]=1.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
+        if (fabs(df_t [i])<LINE_ARC_ALIGN) df_t [i]=0.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
+        if (TRUE == check_line_t (df_t [i], ptrs_line))
+        {
+            ptrdf_tl [i_ret] = df_t [i] ;
+            ptrdf_x [i_ret] = df_x [i] ;
+            ptrdf_y [i_ret] = df_y [i] ;
+            ptrdf_aa [i_ret] = Angle_Normal (Atan2 (
+                    ptrdf_y [i_ret] - ptrs_arc->y,
+                    ptrdf_x [i_ret] - ptrs_arc->x)) ;
+            i_ret++ ;
+        }
+    }
+    return i_ret ;
+}
+
+//for hatch purposes
+int IntersectionLl_h (LINIA  *ptrs_line_,
+                    LUK  *ptrs_arc_,
+                    double *ptrdf_x,
+                    double *ptrdf_y,
+                    double *ptrdf_tl,
+                    double *ptrdf_aa)
+/*-----------------------------------*/
+{
+    int i_ret, i, i_interno ;
+    double df_x [2], df_y [2], df_t [2] ;
+    LINIA line;
+    LUK arc;
+    LINIA  *ptrs_line;
+    LUK  *ptrs_arc;
+    float x0,y0;
+
+    memmove(&line, ptrs_line_, sizeof(LINIA));
+    memmove(&arc, ptrs_arc_, sizeof(LUK));
+
+    ptrs_line=&line;
+    ptrs_arc=&arc;
+
+    x0=ptrs_arc->x;
+    y0=ptrs_arc->y;
+    ptrs_line->x1-=x0;
+    ptrs_line->y1-=y0;
+    ptrs_line->x2-=x0;
+    ptrs_line->y2-=y0;
+    ptrs_arc->x=0.0f;
+    ptrs_arc->y=0.0f;
+
+    i_ret = 0 ;
+    i_interno = przeciecieLl_tt (
+            &df_x [0], &df_y [0], &df_t [0],
+            &df_x [1], &df_y [1], &df_t [1],
+            ptrs_line, ptrs_arc) ;
+    for (i = 0 ; i < i_interno ; i++)
+    {
+
+        if (fabs(1-df_t [i])<LINE_ARC_ALIGN_H) df_t [i]=1.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
+        if (fabs(df_t [i])<LINE_ARC_ALIGN_H) df_t [i]=0.0;   //<0.005 or 0.001 //this parameter should be available to set in options
+
+        if (TRUE == check_line_t (df_t [i], ptrs_line))
+        {
+            ptrdf_tl [i_ret] = df_t [i] ;
+            ptrdf_x [i_ret] = df_x [i];
+            ptrdf_y [i_ret] = df_y [i];
+            ptrdf_aa [i_ret] = Angle_Normal (Atan2 (
+                    ptrdf_y [i_ret] - ptrs_arc->y,
+                    ptrdf_x [i_ret] - ptrs_arc->x)) ;
+
+            ptrdf_x [i_ret]+=x0;
+            ptrdf_y [i_ret]+=y0;
+
+            i_ret++ ;
+        }
+    }
+    return i_ret ;
+}
+
 
 int IntersectionlL (LUK  *ptrs_arc,
                     LINIA  *ptrs_line,

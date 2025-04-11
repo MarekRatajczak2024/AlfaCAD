@@ -282,10 +282,10 @@ BOOL trans_scale_arc_shadow(LUK    *ptrs_arc,
 		Scale_Arc(&s_arc, df_basex, df_basey, df_s0x, df_s0y);
 	}
 	Scale_Point(fabs(df_sx), fabs(df_sy), df_basex, df_basey,
-		s_arc.x, s_arc.y,
+                (double)s_arc.x, (double)s_arc.y,
 		&df_cx, &df_cy);
-	df_xaxis = s_arc.r * fabs(df_sx);
-	df_yaxis = s_arc.r * fabs(df_sy);
+	df_xaxis = (double)s_arc.r * fabs(df_sx);
+	df_yaxis = (double)s_arc.r * fabs(df_sy);
 	c_desc = PL_ELLIPSE_ARC;
 	i_make_type = DE_ADD_Ell_Arc_SGP;
 

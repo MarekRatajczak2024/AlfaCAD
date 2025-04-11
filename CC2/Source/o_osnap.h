@@ -76,6 +76,7 @@ extern int przeciecieLL_tt (double *, double *, void *, void *, double *, double
 /*1*/
 extern int IntersectionLL (LINIA*, LINIA*, double *,double *,double *, double *) ;
 extern int IntersectionLl (LINIA*, LUK*, double *,double *,double *, double *) ;
+extern int IntersectionLl_h (LINIA*, LUK*, double *,double *,double *, double *) ;
 extern int IntersectionLO (LINIA*, OKRAG*, double *,double *,double *, double *) ;
 extern int IntersectionWL (WIELOKAT*, LINIA*, double *,double *,double *, double *) ;
 extern int IntersectionSAL (SOLIDARC*, LINIA*, double *,double *,double *, double *) ;

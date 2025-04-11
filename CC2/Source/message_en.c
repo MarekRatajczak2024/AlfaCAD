@@ -32,16 +32,16 @@ static char* komunikaty[] =
 static char* messages[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Interrrupt  --> Esc   (%s%)",
-	/*2*/u8"WAIT -> breaking lines:  (%s%)",
+	/*1*/u8"Interrrupt  --> Esc   (%s%%)",
+	/*2*/u8"WAIT -> breaking lines:  (%s%%)",
 	/*3*/u8"Image buffering  (%s)   Interrrupt --> Esc",
 };
 
 static char* messages1[] =
 {
 	/*0*/u8"%s",
-	/*1*/u8"Interrupt --> Esc   (%s%)",
-	/*2*/u8"WAIT -> breaking lines:  (%s%)",
+	/*1*/u8"Interrupt --> Esc   (%s%%)",
+	/*2*/u8"WAIT -> breaking lines:  (%s%%)",
 };
 
 static char* errors_kom[] =
@@ -823,7 +823,7 @@ char _TO_MANY_OBJECTS_[]= {u8"To many objects are selected to proceed (max is 60
 
 #ifdef __O_HATCH3__
 
-char* vocabulary[] = { (char*)u8"   press any key:", (char*)u8"A","center of mass",(char*)u8"First moment of area",(char*)u8"Area moment of inertia" };
+char* vocabulary[] = { (char*)u8"   press any key:", (char*)u8"A", (char*)u8"center of mass",(char*)u8"First moment of area",(char*)u8"Area moment of inertia" };
 
 #endif
 

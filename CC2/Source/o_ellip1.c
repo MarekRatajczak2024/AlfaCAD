@@ -37,7 +37,7 @@ extern void set_pattern_count(BOOL p_count);
 extern void set_pattern_offset(int offs);
 
 static int i__ell_count ;
-static int i__Ell_Verno = 120 ; //60
+static int i__Ell_Verno = 60; //120 is too many for hatching with color or image
 static int i__Ell_Angle = 0 ;
 
 static BOOL elipse_seg (double X0,double Y0,double X1,double Y1,double X2,double Y2,int i_mode,BLOK **ptrptr_adb,void *ptr_ob,int i_type,int obiektt2,
@@ -1542,10 +1542,10 @@ BOOL elipse_seg_shadow(double X0, double Y0,
 	}
 	s_line.blok = 1;
 	s_line.obiektt2 = obiektt2;//O2BlockPline ;
-	s_line.x1 = X1;
-	s_line.y1 = Y1;
-	s_line.x2 = X2;
-	s_line.y2 = Y2;
+	s_line.x1 = (float)X1;
+	s_line.y1 = (float)Y1;
+	s_line.x2 = (float)X2;
+	s_line.y2 = (float)Y2;
 
 
 	if (dodaj_obiekt_reversed(ptrptr_adb, (void*)&s_line) == NULL)

@@ -373,6 +373,7 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
 	else
 	{
         strcpy(ext_, ext);
+		/*
 #ifndef LINUX
         if (strcmp(_strupr(ext_),".OTF")==0)
 #else
@@ -381,6 +382,25 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
             fontdir=otffont;
         else fontdir=winfont;
         if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
+		*/
+		if (strcmp(_strupr(ext_), ".OTF") == 0)
+		{
+			fontdir = otffont;
+			if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path))
+			{
+				fontdir = winfont;
+				if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
+			}
+		}
+		else
+		{
+			fontdir = winfont;
+			if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path))
+			{
+				fontdir = otffont;
+				if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
+			}
+		}
 	}
 
 	find_any_font_face(ttf_file_path, &face_name);

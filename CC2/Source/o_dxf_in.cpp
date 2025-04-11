@@ -175,7 +175,7 @@ void decodingwin_true(char *text);
 extern int hatch_proc (long_long l_offb, long_long l_offe, int seeds_no,
                  double df_pointx[], double df_pointy[],
                  T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
-                 double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block=0, int draw=TRUE);
+                 double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block, int draw);  //to_block=0, int draw=TRUE
 extern void settle_hatch_pattern(int no);
 
 extern void set_solidhatchtranslucency(int poz0, int opcja);

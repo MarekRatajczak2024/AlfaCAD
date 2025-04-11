@@ -250,7 +250,7 @@ int Get_Char_Matix_Len_TTF(unsigned int chr, int i_font, float height)
 	GLYPH_FACE *face;
 	GLYPH_REND *rend;
 	float wysokosc_p;
-	char ptrsz_tmp[2];
+	char ptrsz_tmp[6];  //2
 	int text_h, text_v;
 	
 	l_len = 0;
@@ -268,8 +268,10 @@ int Get_Char_Matix_Len_TTF(unsigned int chr, int i_font, float height)
 		gk_rend_set_bold_strength(rend, 50);
 		gk_rend_set_angle_in_radians(rend, 0.0); // ptrs_text->kat);
 
-		ptrsz_tmp[0] = chr;
-		ptrsz_tmp[1] = '\0';
+		//ptrsz_tmp[0] = (char)chr;
+		//ptrsz_tmp[1] = '\0';
+        memmove(&ptrsz_tmp[0],&chr,4);
+        ptrsz_tmp[5] = '\0';
 		gk_text_size_utf8(rend, ptrsz_tmp, &text_h, &text_v);
 		l_len = jednostkiX(text_h);
 		gk_done_renderer(rend);
@@ -315,7 +317,7 @@ int Get_W_Matix_Len(int i_font)
 
 int Get_W_Matix_Len_TTF(int i_font, int height)
 {
-	return Get_Char_Matix_Len_TTF((unsigned int)'W', i_font, height);
+	return ((unsigned int)'W', i_font, height);
 }
 
 
