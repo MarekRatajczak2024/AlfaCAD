@@ -1,6 +1,10 @@
 #ifndef NDEBUG
 #include	<stdio.h>
+#ifdef MACOS
+#include <stdlib.h>
+#else
 #include	<malloc.h>
+#endif
 #include	<string.h>
 #include	"leak_detector_c.h"
 

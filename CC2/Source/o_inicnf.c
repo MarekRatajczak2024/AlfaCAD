@@ -532,7 +532,11 @@ static  void condensation_returned_string (T_Fstring buf)
     {
       chr = (unsigned char) cod;
       s [0] = chr;
+#ifndef MACOS  //MACOS TEMPORARY
       strcpy (s + 1, s1 + len + 1);
+#else
+
+#endif
     }
   }
   condensation_returned_string (s + 1);

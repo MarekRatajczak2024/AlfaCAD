@@ -12,7 +12,7 @@ extern "C" {
 //#ifndef __STRICT_ANSI__       win32
 
 #ifndef _POSIX_SOURCE
-
+#ifndef MACOS
 int  bioscom(int _cmd, char _data, int _port);
 int  biosdisk(int _cmd, int _drive, int _head, int _track, int _sector,
 	      int _nsects, void *_buffer);
@@ -100,7 +100,7 @@ unsigned _bios_timeofday(unsigned _cmd, unsigned long *_timeval);
 
 /* For int86(), int86x() and union REGS. */
 #include <dos.h>
-
+#endif
 #endif /* !_POSIX_SOURCE */
 //#endif /* !__STRICT_ANSI__ */
 #endif /* !__dj_ENFORCE_ANSI_FREESTANDING */

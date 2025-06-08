@@ -109,7 +109,7 @@ const IMAGE images_col[] =
  { XpBox + DXBut * 16 + XpBut * 2 + DXDistance + 6, 5, 48, 48, 112, image_col_tips0},
 };
 
-static TDIALOG colors_config={ XpLabC,YpLabC-20, XpBox * 2 + DXBut * 16 + XpBut * 2 + DXCancel + DXDistance, YpBox * 2 + DYBut * 16 + YpBut + 6,  /*350,225,*/  COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+static TDIALOG colors_config={ XpLabC,YpLabC-20, XpBox * 2 + DXBut * 16 + XpBut * 2 + DXCancel + DXDistance, YpBox * 2 + DYBut * 16 + YpBut + 9,  /*350,225,*/  COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	        CHOOSE_COLORS,
 			0, NULL,
 			0, NULL,
@@ -127,7 +127,7 @@ static TDIALOG colors_config={ XpLabC,YpLabC-20, XpBox * 2 + DXBut * 16 + XpBut 
             NULL,
 };
 
-static TDIALOG colors_config1 = { XpLabC,YpLabC - 20, XpBox * 2 + DXBut * 16 + XpBut * 2 + DXCancel + DXDistance, YpBox * 2 + DYBut * 16 + YpBut + 6,  /*350,225,*/  COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+static TDIALOG colors_config1 = { XpLabC,YpLabC - 20, XpBox * 2 + DXBut * 16 + XpBut * 2 + DXCancel + DXDistance, YpBox * 2 + DYBut * 16 + YpBut + 9,  /*350,225,*/  COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	        CHOOSE_COLORS,
 			0, NULL,
 			0, NULL,

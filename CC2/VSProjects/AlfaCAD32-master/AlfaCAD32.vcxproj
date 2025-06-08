@@ -263,7 +263,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\..\CC2\Source;..\..\..\CC2\Source\include;..\..\..\allegro5-4.4.4\include;..\..\..\allegro5-4.4.4\build\include;..\..\..\allegro5-4.4.4\include\allegro;..\..\..\allegro5-4.4.4\addons\jpgalleg\include;..\..\..\zlib;..\..\..\zlib\build32\;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build32\include\;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper32\src;..\..\..\glyph-keeper32\include;..\..\..\glyph-keeper32\freetype\src;..\..\..\glyph-keeper32\freetype\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build32\qtbase\include;..\..\..\qt5\qt5-build32\qtbase\include\QtGui;..\..\..\qt5\qt5-build32\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -277,6 +277,8 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>Debug/AlfaCAD4Win.exe</OutputFile>

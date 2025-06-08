@@ -142,7 +142,7 @@ static DARK_LIGHT_LINE line_d_l[] =
 
 char deg[8] = u8"[°]";
 
-#define EDITTEXTLEN 9
+#define EDITTEXTLEN 16 //9
 static char dpi_x[EDITTEXTLEN] = "100";
 static char dpi_y[EDITTEXTLEN] = "100";
 static char pxl_x[EDITTEXTLEN] = "";
@@ -318,7 +318,7 @@ static COMBOBOX combobox[] =
 
 static TDIALOG import_PCX_dlg =
 {
-	Xdialog, Ydialog, DXdialog, DYdialog, COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0,
+	Xdialog, Ydialog, DXdialog, DYdialog+2, COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0,
 	imige_file_params,
 	0 , &line_d_l,
 	13, &lab,

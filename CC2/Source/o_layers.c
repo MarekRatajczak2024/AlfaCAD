@@ -64,6 +64,7 @@ extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern void Draw_Slider(SLIDER *Slider);
 //extern int slider_function(int *var);
 //extern int grab_slider(void *dp3, int d2);
+extern int vfv(int v);
 
 #define XpGroup	2
 #define YpGroup 4
@@ -362,7 +363,7 @@ static SLIDER sliders[] =
 
 static TDIALOG layers_dlg=
 {
-	2 ,  1, 620, 216,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+	2 ,  1, 620, 220,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	layer_comm34,
 	2, &lines_top,		/*line*/
     NoLabels, &labels,
@@ -476,7 +477,7 @@ static void set_struct_dialog_control (int erase_flag)
 
     DYGroup=(DYLayer * (NoDialogLayers  + 3) + 5);
 
-    layers_dlg.dy=DYGroup + DYBut0 + 11;
+    layers_dlg.dy=DYGroup + DYBut0 + 14;  //11
 
     gr_box[0].dy=DYGroup;
 
@@ -517,8 +518,8 @@ static void set_struct_dialog_control (int erase_flag)
 
     button_erase.check=erase_flag;
 
-    images_l[3].y1=images_l[4].y1=images_l[5].y1=images_l[13].y1=images_l[14].y1=YpGroup+DYGroup+14+1+ddy;
-    images_l[15].y1=images_l[16].y1=images_l[17].y1=YpGroup+DYGroup + 10 +ddy;
+    images_l[3].y1=images_l[4].y1=images_l[5].y1=images_l[13].y1=images_l[14].y1=YpGroup+DYGroup+14+1+ddy-vfv(1);
+    images_l[15].y1=images_l[16].y1=images_l[17].y1=YpGroup+DYGroup + 10 +ddy - vfv(2);
 
     images_l[0].x1=XpGroup + XOnOff - 3 + ddx;
     images_l[1].x1=XpGroup + XEditButton - 3 + ddx;

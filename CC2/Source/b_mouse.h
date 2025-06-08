@@ -12,8 +12,8 @@ extern void SetMinMaxYMouse (int ymin, int ymax);
 extern void GetCurPos( int *x, int *y);
 extern BOOL Ini_Mouse_Cursor (int, int) ;
 extern void Free_Mem_Mouse_Cur (void) ;
-extern void Hide_Mouse (int, int) ;
-extern void Show_Mouse (int, int) ;
+extern void Hide_Mouse (void) ;
+extern void Show_Mouse (void) ;
 extern void Move_Mouse (int, int) ;
 
 #define MV_MAX 10

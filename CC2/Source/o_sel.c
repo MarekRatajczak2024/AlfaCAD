@@ -248,16 +248,16 @@ int sel_t(void)
 {
 	if(sel.akw || sel.gor || sel.cur)
    { out_sel_off(X,Y);
-     sel.size+=1;
+     sel.size+=(1*(RETINA+1));
      out_sel_on(X,Y);
    }
   return 0;
 }
 int sel_d(void)
 { 
-	if ((sel.akw || sel.gor || sel.cur) && sel.size>1)
+	if ((sel.akw || sel.gor || sel.cur) && sel.size>(1*(RETINA+1)))
    { out_sel_off(X,Y);
-     sel.size-=1;
+     sel.size-=(1*(RETINA+1));
      out_sel_on(X,Y);
    }
   return 0;

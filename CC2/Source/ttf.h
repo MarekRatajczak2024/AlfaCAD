@@ -19,9 +19,11 @@ class TTF
 {
 public:
 	//! default constructor
-	TTF(void);
+	//TTF(void);
+	TTF();
 	//! destructor
-	~TTF(void);
+	////~TTF(void);
+	~TTF();
 
 	struct stOffsetTable
 	{

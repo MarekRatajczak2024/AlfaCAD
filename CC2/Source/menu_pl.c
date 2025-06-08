@@ -35,6 +35,7 @@ char __HIDDEN__[]=u8"Ukryty";
 char __COPY_TEXT__[]=u8"Kopiuj tekst ze schowka";
 
 char _EDIT_TEXT_[]=u8"Edycja tekstu";
+char _EDIT_FILE_[]=u8"Edycja pliku";
 
 #endif
 
@@ -508,7 +509,7 @@ static POLE pmCzcionkaEkranTTF[] = {
    {u8"Szerokość wsp.\0\0 ",'S',230,NULL},      //25
 };
 
-TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };  //26
+TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,30,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };  //26
 
 static POLE pmWindow[] = {
    {u8"rozszerz Horyzontalnie",'H',467,NULL},
@@ -518,25 +519,27 @@ static POLE pmWindow[] = {
    {u8"przywróć Poprzednie",'P',471,NULL},
 };
 
-static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };  //9
+static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,12,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };  //9
 
 
 static POLE pmDialogCursor[] = {
    {u8"Mały",'M',591,NULL},
    {u8"Duży",'D',592,NULL},
+   {u8"Wielki",'W',832,NULL},
 };
 
 #define smallcursor u8"Mały"
 #define bigcursor u8"Duży"
+#define hugecursor u8"Wielki"
 
-static TMENU mDialogCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };  //22
+static TMENU mDialogCursor = { 3,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };  //22
 
 static POLE pmMenuCursor[] = {
    {u8"Ramka",'R',821,NULL},
    {u8"Kursor",'K',822,NULL},
 };
 
-static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };  //22
+static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,35,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };  //22
 
 #define barstyle u8"Ramka"
 #define cursorstyle u8"Kursor"
@@ -552,26 +555,38 @@ static POLE pmTranslucency[] = {
    {u8"30%",'3',539,NULL},
 };
 
-static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };  //14
+static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };  //14
 
-static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };  //24
+static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };  //24
 
-static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,31,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };  //new
+static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };  //new
+
+static POLE pmMouseWheel[] = {
+   {u8"Naturalne",'N',834,NULL},
+   {u8"Regularne",'R',835,NULL},
+};
+
+static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };  //22
+
 
 POLE pmOpcje[] = {
 	{u8"konfiguracja kolorów Pulpitu\0",'P',109,NULL},
-	{u8"auto Panoramowanie \0Yes\0 ",'P',145, &mAutoPan},  //PAN
-	{u8"wielkość Auto-panoramy \0 ",'A',110,NULL},
+	{u8"Auto panoramowanie \0Yes\0 ",'A',145, &mAutoPan},  //PAN
+	{u8"Interwał auto-panoramy \0 ",'I',110,NULL},
 	{u8"Nieprzezroczystość wypełnień \0",'N',542,&mTranslucency},
 	{u8"Czcionka pulpitu \0 ",'C',111,&mCzcionkaEkranTTF},
 	//{u8"Czcionka pulpitu \0 ",'C',111,&mCzcionkaEkran},
 	{u8"Tło pulpitu \0 ",'T',527,NULL},
-	{u8"Kursor w oknach dialogowych \0",'K',590,&mDialogCursor},
+	{u8"kursor w oknach Dialogowych \0",'D',590,&mDialogCursor},
     {u8"styl Menu\0",'M',820,&mMenuCursor},
+    {u8"Kółko myszki\0",'K',833,&mMouseWheel},
 	{u8"Edukacyjny tryb demonstracyjny \0 N\0",'E',661,&mDemoSelect},
 	{u8"Zapisz ustawienie okna \0",'Z',530,NULL},
 	{u8"ustawienie Okna \0",'O',478,&mWindow},
 };
+
+#define _NATURAL__ u8"Naturalne"
+#define _REGULAR__ u8"Regularne"
 
 #define _FILE_ u8"Plik "
 #define _FILE_EXISTS_ u8" istnieje. Zapisać ? (Tak/Nie/Esc):"
@@ -1582,6 +1597,7 @@ static char* desktop_data_param[] =
   "Dynamiczne menu",
   "Kursor",
   "Styl menu",
+  "Styl kolka",
   "Instrukcja",
 };
 
@@ -1591,10 +1607,11 @@ static char* desktop_data_param_comment[] =
 {
 	";",
 	//";min or 0 (off)",
-	";faktor autopanoramy",
+	";inkrement autopanoramy",
 	";",
-	(char*)u8"; mały 0, duży 1",
+	(char*)u8"; mały 0, duży 1, wielki 2",
     (char*)u8"; ramka 0, wskaźnik 1",
+    "; 0-naturalny, 1-regularny",
     (char*)u8"; wyświetlanie krótkiej instrukcji na starcie",
 };
 
@@ -2066,7 +2083,7 @@ static POLE pmFillTyp[] = {
 	   {u8"Gruba\0",'G',279,NULL},
 	   {u8"Bardzo Gruba\0",'B',280,NULL},
 	   {u8"Najgrubsza\0",'N',281,NULL},
-	   {u8"Obraz\0",'O',617,&mSolidPattern},
+	   {u8"Obraz\0",'O',836,&mSolidPattern},
 	   //  {u8"- wyłącz obszar",'-',0,NULL},
 	   //  {u8"+ Aktywny obszar",'+',0,NULL},
 };
@@ -2156,7 +2173,7 @@ static POLE pmFillTyp[] = {
 	   {u8"Gruba",L'G',291,NULL},
 	   {u8"Bardzo Gruba",L'B',292,NULL},
 	   {u8"Najgrubsza",L'N',293,NULL},
-	   {u8"Obraz",L'O',617,&mTracePattern},
+	   {u8"Obraz",L'O',836,&mTracePattern},
 };
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
@@ -2478,7 +2495,7 @@ POLE pmHatch[] = {
 	 {u8"wskaż Punkt bazowy\0 \0", 'P', 438,NULL},
 	 {u8"Dystans linii wzoru / segment splajnu\0 1\0 ", 'D', 439,NULL},
 	 {u8"izolacja Termiczna\0 \0", 'T', 679, &mSelect_Ins},
-	 {u8"Obraz\0 \0",'O',617,&mSolidHatchPattern}
+	 {u8"Obraz\0 \0",'O',836,&mSolidHatchPattern}
 };
 
 #define _HATCHING_ u8"Kreskuj"

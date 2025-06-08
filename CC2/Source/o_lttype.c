@@ -56,7 +56,7 @@ static int alfacad_logo_font=0;
 extern void Free_Desktop_font(void);
 extern char *winfont;
 extern char *otffont;
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern BOOL enforce_redraw;
 extern void find_any_font_face(char *Font_File, char *face_name);
 extern int do_llf_file(int argc, char* argv[]);
@@ -256,10 +256,10 @@ int Add_New_Font_TTF_OTF(char *name, int type, int cur)
 {
 	int i;
 	char sk[MAXPATH] = "";
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 	GLYPH_FACE *new_face_ttf;
 	int font_no;
@@ -349,27 +349,27 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
 /*-------------------------------------------------------------*/
 {
 	int flags;
-	char drive[MAXDRIVE];
-	char dir[MAXDIR];
-	char file[MAXFILE];
-	char ext[MAXEXT], ext_[MAXEXT];
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="", ext_[MAXEXT]="";
 	T_Font_Header *ptrs_header, s_header;
-	char file_ext[32];
+	char file_ext[32]="";
 	long l_alloc;
-	char pathname[MAXPATH];
+	char pathname[MAXPATH]="";
 	char ttf_file_path[MAXPATH]="";
 	GLYPH_FACE *new_face_ttf;
 	int path_len, face_len;
 	int i;
 	char face_name[128]="";
 	int ret_err;
-	char lff_name[64], aft_name[64], aft_font[64];
+	char lff_name[64]="", aft_name[64]="", aft_font[64]="";
     char *fontdir;
 
 
     flags = fnsplit(ptrsz_file, drive, dir, file, ext);
 
-	if (__file_exists(ptrsz_file)) strcpy(ttf_file_path, ptrsz_file);
+	if (my_file_exists(ptrsz_file)) strcpy(ttf_file_path, ptrsz_file);
 	else
 	{
         strcpy(ext_, ext);
@@ -383,7 +383,11 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
         else fontdir=winfont;
         if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
 		*/
-		if (strcmp(_strupr(ext_), ".OTF") == 0)
+#ifndef LINUX
+        if (strcmp(_strupr(ext_),".OTF")==0)
+#else
+        if (strcmp(strupr(ext_),".OTF")==0)
+#endif
 		{
 			fontdir = otffont;
 			if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path))
@@ -430,7 +434,7 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
 	strcat(pathname, EXT);
 	ptrs_header = NULL;
 
-	strcpy(s_header.s_alloc_param.file_buf, pathname);
+	strncpy(s_header.s_alloc_param.file_buf, pathname,13);
 	l_alloc = sizeof(T_Font_Header) + s_header.num_char * sizeof(char);
     ptrs_header = (T_Font_Header*)malloc(l_alloc);
 	if (ptrs_header == NULL)
@@ -476,10 +480,10 @@ int Add_New_Font_CHR(char *name)
 {
 	int i;
 	char sk[MAXPATH] = "";
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 	int font_no;
 	int font_namelen;
@@ -538,18 +542,18 @@ static T_Font_Header *read_font_old(char *ptrsz_file)
 	T_Font_Header *ptrs_header;
 	T_Font_File_Header s_file_header;
 	long l_alloc;
-	char pathname[MAXPATH];
-	char drive[MAXDRIVE];
-	char dir[MAXDIR];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char pathname[MAXPATH]="";
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 
-	char pathname0[MAXPATH];
-	char drive0[MAXDRIVE];
-	char dir0[MAXDIR];
-	char file0[MAXFILE];
-	char ext0[MAXEXT];
-	char font_file[MAXPATH];
+	char pathname0[MAXPATH]="";
+	char drive0[MAXDRIVE]="";
+	char dir0[MAXDIR]="";
+	char file0[MAXFILE]="";
+	char ext0[MAXEXT]="";
+	char font_file[MAXPATH]="";
 	int flags, flags1;
 	long l1, l2;
 	char *bufor_testowy;
@@ -567,7 +571,6 @@ static T_Font_Header *read_font_old(char *ptrsz_file)
 #endif
 	strcat(font_file, ptrsz_file);
 	flags = fnsplit(ptrsz_file, drive, dir, file, ext);
-	flags = flags;
 	pathname[0] = '\0';
 	strcat(pathname, file);
 #define EXT ".TMP"
@@ -626,7 +629,7 @@ static T_Font_Header *read_font_old(char *ptrsz_file)
     header_old_size = sizeof(T_Font_Header_Old);
 	header_size = sizeof(T_Font_Header);
 
-	strcpy(s_header.s_alloc_param.file_buf, pathname);
+	strncpy(s_header.s_alloc_param.file_buf, pathname, 13);
 	l_alloc = sizeof(T_Font_Header) + s_header.num_char * sizeof(char);
     ptrs_header = (T_Font_Header*)malloc(l_alloc);
 	if (ptrs_header == NULL)
@@ -678,10 +681,10 @@ int Add_New_Font_AFF(char *name)
 {
 	int i;
 	char sk[MAXPATH] = "";
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 	int font_no;
 	int font_namelen;
@@ -739,18 +742,18 @@ static T_Font_Header *read_font (char *ptrsz_file)
   T_Font_Header *ptrs_header, s_header ;
   T_Font_File_Header s_file_header ;
   long l_alloc ;
-  char pathname [MAXPATH] ;
-  char drive [MAXDRIVE] ;
-  char dir [MAXDIR] ;
-  char file [MAXFILE] ;
-  char ext [MAXEXT] ;
+  char pathname [MAXPATH]="";
+  char drive [MAXDRIVE]="" ;
+  char dir [MAXDIR]="" ;
+  char file [MAXFILE]="" ;
+  char ext [MAXEXT]="" ;
   
-  char pathname0 [MAXPATH] ;
-  char drive0 [MAXDRIVE] ;
-  char dir0 [MAXDIR] ;
-  char file0 [MAXFILE] ;
-  char ext0 [MAXEXT] ;
-  char font_file [MAXPATH];
+  char pathname0 [MAXPATH]="" ;
+  char drive0 [MAXDRIVE]="" ;
+  char dir0 [MAXDIR]="" ;
+  char file0 [MAXFILE]="" ;
+  char ext0 [MAXEXT]="" ;
+  char font_file [MAXPATH]="";
   int flags, flags1 ;
   long l1,l2;
   char *bufor_testowy;
@@ -810,7 +813,7 @@ static T_Font_Header *read_font (char *ptrsz_file)
 #endif
   header_size = sizeof(T_Font_Header);
 
-  strcpy (s_header.s_alloc_param.file_buf, pathname) ;
+  strncpy (s_header.s_alloc_param.file_buf, pathname, 13) ;
   l_alloc = sizeof(T_Font_Header) + s_header.num_char * sizeof(char) ;
     ptrs_header = (T_Font_Header*)malloc (l_alloc) ;
   if (ptrs_header == NULL)
@@ -922,10 +925,10 @@ get_fonts_param (T_Fstring key_name, T_Fstring ret_string)
 {
   double df_width_factor, df_width_line ;
   char *ptrsz_font_acad_name, *ptrsz_width_factor, *ptrsz_width_line, *endptr ;
-  char drive[MAXDRIVE];
-  char dir[MAXDIR];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char drive[MAXDRIVE]="";
+  char dir[MAXDIR]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
   char file_ext[32];
   int font_namelen = 0;

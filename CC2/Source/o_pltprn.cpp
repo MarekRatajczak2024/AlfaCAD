@@ -7126,7 +7126,6 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 				
 				  draw_ttf_text_to_drive(t, ttf_zn, ttf_x01, ttf_y01, font_scale, font_index, kolor, bw, grey, index_pos);
 			  }
-			 
 
 			  zn += 1;
 
@@ -7174,6 +7173,12 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 				  zn += 1;
 				  continue;
 			  }
+
+              if (*zn == '\n')
+              {
+                  continue;
+              }
+
 			  if (*zn == '\0')
 			  {
 				  break;

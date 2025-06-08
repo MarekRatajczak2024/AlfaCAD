@@ -16,12 +16,18 @@
 
 #define __O_STATIC__
 #include <stdlib.h>
+#ifdef LINUX
+#include <dirent.h>
+#else
+#include <direct.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <forwin.h>
 #ifdef LINUX
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 #include <allegext.h>
 #include "bib_e.h"
@@ -34,6 +40,14 @@
 #include "o_loadf.h"
 
 #include "leak_detector_c.h"
+
+#define COPY_PUT 0
+
+#ifdef LINUX
+#define _STATIC_ "Static/"
+#else
+#define _STATIC_ "Static\\"
+#endif
 
 typedef unsigned long DWORD;
 
@@ -66,12 +80,14 @@ extern void normalize_txt(TEXT *ptrs_text);
 extern BOOL Load_File (char *f_name, int type, BOOL cur);
 extern void get_posXY(double *pozx, double *pozy);
 extern void _free_mouse(void);
+extern void free_mouse(void);
 extern void dialog_cursor(int on);
 extern void lock_mouse(void);
 extern void set_posXY(double pozx, double pozy);
 extern double Get_Point_Size (void);
 extern void create_solid_on_line (LINIA *L, WIELOKAT *s, double width1, double width2, double axis);
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
+extern int my_directory_exists(const char *path);
 extern void  SetBit( unsigned int A[],  int k );
 extern void  ClearBit( unsigned int A[],  int k );
 extern int TestBit( unsigned int A[],  int k );
@@ -102,6 +118,9 @@ extern void Put_Str_To_Clip(char *ptrsz_buf);
 
 extern void set_cursor_pointer(void);
 extern void set_cursor_busy(void);
+
+extern void disable_F11(void);
+extern void enable_F11(void);
 
 extern double thermal_precision;
 extern double force_precision;
@@ -1682,9 +1701,17 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     return TRUE;
 }
 
+/*
 int qsort_by_number(unsigned char *e1, unsigned char *e2)
 { int delta;
     delta=(*e1) - (*e2);
+    return delta;
+}
+*/
+
+int qsort_by_number(const void *e1, const void *e2)
+{ int delta;
+    delta=(*(unsigned char *)e1) - (*(unsigned char *)e2);
     return delta;
 }
 
@@ -1844,6 +1871,7 @@ void Static_analysis(void) {
     SPLINE Sdsp = Splinedef;
 
     BOOL SECOND_LINE = FALSE;
+    int check;
 
     int rep_element_no = 0;
 
@@ -2940,7 +2968,11 @@ void Static_analysis(void) {
 
     //sorting layers
 #ifdef LINUX
+#ifndef MACOS
     qsort(st_layers, st_layer_no, sizeof(unsigned char), (__compar_fn_t) qsort_by_number);
+#else
+    qsort(st_layers, st_layer_no, sizeof(unsigned char), qsort_by_number);
+#endif
 #else
     //good for CLion
     qsort(st_layer, st_layer_no, sizeof(unsigned char), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_number);
@@ -2955,25 +2987,57 @@ void Static_analysis(void) {
         SetBit(st_layer, st_layers[i]);
     }
 
+    ///TEMPORARY
+    if (my_file_exists("alfacad.out")) unlink("alfacad.out");
+    if (my_file_exists("alfacad.plt")) unlink("alfacad.plt");
+    if (my_file_exists("alfacad.add")) unlink("alfacad.add");
+    if (my_file_exists("alfacad_out.CSV")) unlink("alfacad_out.CSV");
+    if (my_file_exists("alfastatic.pdf")) unlink("alfastatic.pdf");
+
+    //if Static folder doesn't exist
+
+    if (!my_directory_exists(_STATIC_)) {
+#ifdef LINUX
+        // Create a directory with read, write, and execute permissions for the owner
+        // and read and execute permissions for group and others.
+        mode_t file_mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+        check = mkdir(_STATIC_, file_mode);
+#else
+        check = _mkdir(_STATIC_);
+#endif
+
+        if (check) {
+            sprintf(report_row, "%s %s",_cannot_create_folder_, _STATIC_);
+            strcat(report, report_row);
+        }
+    }
+
+
     //deleting old files
-    if (__file_exists("alfacad.out")) unlink("alfacad.out");
-    if (__file_exists("alfacad.plt")) unlink("alfacad.plt");
-    if (__file_exists("alfacad.add")) unlink("alfacad.add");
-    if (__file_exists("alfacad_out.CSV")) unlink("alfacad_out.CSV");
-    if (__file_exists("alfastatic.pdf")) unlink("alfastatic.pdf");
+    sprintf(params, "%salfacad.out", _STATIC_);
+    if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%salfacad.plt", _STATIC_);
+    if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%salfacad.add", _STATIC_);
+    if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%salfacad.CSV", _STATIC_);
+    if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%salfacad.pdf", _STATIC_);
+    if (my_file_exists(params)) unlink(params);
 
     ////combinations_number = st_layer_no * 2;  //SLS and ULS
     combinations_number = 2; //SLS and ULS
 
     for (i = 0; i < combinations_number; i++) {
-        sprintf(params, "alfacad.if%02d", i + 1);
-        if (__file_exists(params)) unlink(params);
+        sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
+        if (my_file_exists(params)) unlink(params);
     }
 
     if (strlen(report) > 0) goto error;
 
     //creating data file
-    f = fopen("alfacad.3dd", "wt");
+    sprintf(params, "%salfacad.3dd", _STATIC_);
+    f = fopen(params, "wt");
     fprintf(f, "%s\n", st_title);
     fprintf(f, "\n# node data ...\n");
     fprintf(f, "%d\t\t # number of nodes\n", st_node_no);
@@ -4247,8 +4311,8 @@ void Static_analysis(void) {
     fprintf(f, "%d\t\t# number of static load cases\n", combinations_number);
 
     for (i = 0; i < combinations_number; i++) {
-        sprintf(params, "alfacad.if%02d", i + 1);
-        if (__file_exists(params)) unlink(params);
+        sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
+        if (my_file_exists(params)) unlink(params);
     }
 
     int case_number = 0;
@@ -6073,7 +6137,7 @@ void Static_analysis(void) {
     if (strlen(report) > 0) {
         int edit_params = 0;
         int tab;
-        int single = 0;
+        int single = 2;  //info
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0]='\0';
         no_error = FALSE;
@@ -6082,7 +6146,7 @@ void Static_analysis(void) {
         set_cursor_busy();
         //_free_mouse();
 
-        sprintf(params, "-i %s -o %s > frame3dd.ret", "alfacad.3dd", "alfacad.out");   //-s Off
+        sprintf(params, "-i %s%s -o %s%s > %s%s", _STATIC_, "alfacad.3dd", _STATIC_, "alfacad.out", _STATIC_, "frame3dd.ret");   //-s Off
         runcode = RunSilent("frame3dd.exe", params);
 
         printf("\nframe3dd runcode:%lu\n", runcode);
@@ -6131,7 +6195,7 @@ void Static_analysis(void) {
 
             //Geometry
             //opening file just to confirm
-            sprintf(params, "alfacad.out");
+            sprintf(params, "%salfacad.out", _STATIC_);
             f = fopen(params, "rt");
             if (f == NULL) {
                 ret = ask_question(1, "", (char *) confirm, "", (char *) _CANNOT_CREATE_RESULTS_FILE_, 12, "", 11, 1,
@@ -6755,7 +6819,7 @@ void Static_analysis(void) {
 
                 memmove(&Ldsp_, &Ldsp, sizeof(LINIA));
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -7587,7 +7651,7 @@ void Static_analysis(void) {
                 ////////////////////
                 memmove(&Ldsp_, &Ldsp, sizeof(LINIA));
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -8005,7 +8069,7 @@ void Static_analysis(void) {
                 memmove(&Ldsp_, &Ldsp, sizeof(LINIA));
 
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
                     ret = ask_question(1, "", (char *) confirm, "",
@@ -8455,7 +8519,7 @@ void Static_analysis(void) {
                 /////////////////////
                 memmove(&Ldsp_, &Ldsp, sizeof(LINIA));
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -8881,7 +8945,7 @@ void Static_analysis(void) {
                 Ldsp1_.warstwa = desired_layer_no;
                 /////////////////////
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -10094,7 +10158,7 @@ void Static_analysis(void) {
                 Ldsp1_.warstwa = desired_layer_no;
                 /////////////////////
 
-                sprintf(params, "alfacad.if%02d", i + 1);
+                sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -10536,7 +10600,7 @@ void Static_analysis(void) {
 
                 Sdsp.warstwa = desired_layer_no;
 
-                sprintf(params, "alfacad.add");
+                sprintf(params, "%salfacad.add", _STATIC_);
                 f = fopen(params, "rt");
                 if (f == NULL) {
 
@@ -10667,8 +10731,8 @@ void Static_analysis(void) {
     }
 
     for (i = 0; i < combinations_number; i++) {
-        sprintf(params, "alfacad.if%02d", i + 1);
-        if (__file_exists(params)) unlink(params);
+        sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
+        if (my_file_exists(params)) unlink(params);
     }
 
     error:
@@ -10698,13 +10762,9 @@ void Static_analysis(void) {
 
     if (failed_elements!=NULL) free(failed_elements);
 
-    //set_cursor_pointer();
-    show_mouse(NULL);
     lock_mouse();
 
     redraw();
-
-    //set_cursor_pointer();
 
     //showing execution report
     if (strlen(report) > 0) {
@@ -10720,16 +10780,21 @@ void Static_analysis(void) {
     char *okular_="okular";
     char *org_kde_okular_="org.kde.okular";
     char *okular;
+    char params_in[MAXPATH];
+    char params_out[MAXPATH];
 
     int pdf_viewed = 0;
 
     if (no_error)
     {
-        if (text2PDF("alfacad.out", "alfastatic.pdf")) {
+        sprintf(params_in, "%salfacad.out", _STATIC_);
+        sprintf(params_out, "%salfastatic.pdf", _STATIC_);
+        if (text2PDF(params_in, params_out)) {
             //checking okular
             FILE *pp;
             int pdf_view = 0;
 #ifdef LINUX
+#ifndef MACOS
             sprintf(params,"%s --version", org_kde_okular_);
             pp = popen(params, "r");
             if (pp != NULL) {
@@ -10741,7 +10806,7 @@ void Static_analysis(void) {
                     if ((strstr(strlwr(line), "okular") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
                         pdf_view = 1;
                         okular=org_kde_okular_;
-                        break;
+                        //break;
                     }
                 }
                 pclose(pp);
@@ -10760,7 +10825,7 @@ void Static_analysis(void) {
                         if ((strstr(strlwr(line), "okular") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
                             pdf_view = 1;
                             okular=okular_;
-                            break;
+                            //break;
                         }
                     }
                     pclose(pp);
@@ -10777,7 +10842,7 @@ void Static_analysis(void) {
                         if (line == NULL) break;
                         if ((strstr(strlwr(line), "gnome") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
                             pdf_view = 2;
-                            break;
+                            //break;
                         }
                     }
                     pclose(pp);
@@ -10807,7 +10872,7 @@ void Static_analysis(void) {
                 if (pdf_view == 3)
                     ret = ask_question(1, "", (char *) confirm, "", "", 12, _INSTALL_PDF_VIEWER_, 11, 1, 61);
 
-                sprintf(params, "alfastatic.pdf &");
+                sprintf(params, "%s &", params_out);
 
                 if (pdf_view == 1) runcode = SystemSilent(okular, params);
                 else if (pdf_view == 2) runcode = SystemSilent("evince", params);
@@ -10815,36 +10880,79 @@ void Static_analysis(void) {
                 printf("%lu", runcode);
 
                 ret = Expand_flex();
-                simulate_keypress(14592);
-                simulate_keypress(13);
+
+                _free_mouse();
+                lock_mouse();
 
                 runcode = 255;
 
                 pdf_viewed = 1;
             }
+#else
+
+            sprintf(params,"if open -Ra \"okular.app\" ; then\n echo \"VERIFIED: okular is installed\"\n else\n echo \"ERROR: okular not found\"\nfi\n");
+            pp = popen(params, "r");
+            if (pp != NULL) {
+                while (1) {
+                    char *line;
+                    char buf[1000]="";
+                    line = fgets(buf, sizeof(buf), pp);
+                    if (line == NULL) break;
+                    if ((strstr(strlwr(line), "okular") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
+                        pdf_view = 1;
+                        //break;
+                    }
+                }
+                pclose(pp);
+            }
+
+            if (pdf_view==1)
+                {
+                    char cwd[PATH_MAX];
+                    getcwd(cwd, sizeof(cwd));  //for okular it must be absolute path to file
+
+                    sprintf(params, "-a okular.app --args -p 1 %s/%s &", cwd, params_out);
+                    if (pdf_view == 1) runcode = SystemSilent("open", params);
+                }
+             else
+                 {
+                    sprintf(params, "-a preview %s &", params_out);
+                    runcode = SystemSilent("open", params);
+                }
+
+                 printf("%lu", runcode);
+
+                 ret = Expand_flex();
+
+
+                runcode = 255;
+
+                pdf_viewed = 1;
+
+#endif
 #endif
 #ifndef LINUX
-            //AllocConsole();
-//ShowWindow(GetConsoleWindow(), SW_HIDE);
+
 get_console();
+
 
 pp = _popen("where okular", "r");
 if (pp != NULL)
 {
-while (1)
-{
-char* line;
-char buf[1000];
-line = fgets(buf, sizeof(buf), pp);
-if (line == NULL) break;
-if ((strstr(strlwr(line), "okular.exe") != NULL) && (strstr(strlwr(line), "not find") == NULL))
-{
-pdf_view = 1;
-break;
-}
-//if (line[0] == 'd') printf("%s\n", line); // line includes '\n'
-}
-_pclose(pp);
+    while (1)
+    {
+        char* line;
+        char buf[1000];
+        line = fgets(buf, sizeof(buf), pp);
+        if (line == NULL) break;
+        if ((strstr(strlwr(line), "okular.exe") != NULL) && (strstr(strlwr(line), "not find") == NULL))
+        {
+            pdf_view = 1;
+            //break;
+        }
+        //if (line[0] == 'd') printf("%s\n", line); // line includes '\n'
+    }
+    _pclose(pp);
 }
 
 /*
@@ -10861,100 +10969,126 @@ Remove the /M flag if you want to set the user PATH instead of the system PATH.
 
 if (pdf_view == 0)
 {
-//pp = _popen("dir %userprofile%\\Desktop\\evince.lnk", "r");
-pp = _popen("IF EXIST %userprofile%\\Desktop\\evince.lnk ECHO exists", "r");
-if (pp != NULL)
-{
-while (1)
-{
-char* line;
-char buf[1000];
-line = fgets(buf, sizeof(buf), pp);
-if (line == NULL) break;
-if (strstr(strlwr(line), "exists") != NULL)
-{
-pdf_view = 2;
-break;
-}
-//if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
-}
-_pclose(pp);
-}
+    //pp = _popen("dir %userprofile%\\Desktop\\evince.lnk", "r");
+    pp = _popen("IF EXIST %userprofile%\\Desktop\\evince.lnk ECHO exists", "r");
+    if (pp != NULL)
+    {
+        while (1)
+        {
+            char* line;
+            char buf[1000];
+            line = fgets(buf, sizeof(buf), pp);
+            if (line == NULL) break;
+            if (strstr(strlwr(line), "exists") != NULL)
+            {
+                pdf_view = 2;
+                //break;
+            }
+            //if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
+        }
+        _pclose(pp);
+    }
 }
 if (pdf_view == 0)
 {
 #ifdef BIT64
-pp = _popen("dir sumatrapdf64.exe", "r");
+    pp = _popen("dir sumatrapdf64.exe", "r");
 #else
-pp = _popen("dir sumatrapdf32.exe", "r");
+    pp = _popen("dir sumatrapdf32.exe", "r");
 #endif
-if (pp != NULL)
-{
-while (1)
-{
-char* line;
-char buf[1000];
-line = fgets(buf, sizeof(buf), pp);
-if (line == NULL) break;
+    if (pp != NULL)
+    {
+        while (1)
+        {
+            char* line;
+            char buf[1000];
+            line = fgets(buf, sizeof(buf), pp);
+            if (line == NULL) break;
 #ifdef BIT64
-if ((strstr(strlwr(line), "sumatrapdf64.exe") != NULL) && (strstr(strlwr(line), "file not found") == NULL))
+            if ((strstr(strlwr(line), "sumatrapdf64.exe") != NULL) && (strstr(strlwr(line), "file not found") == NULL))
 #endif
 #ifndef BIT64
-if ((strstr(strlwr(line), "sumatrapdf32.exe") != NULL) && (strstr(strlwr(line), "file not found") == NULL))
+                if ((strstr(strlwr(line), "sumatrapdf32.exe") != NULL) && (strstr(strlwr(line), "file not found") == NULL))
 #endif
-{
-pdf_view = 3;
-break;
+                {
+                    pdf_view = 3;
+                    //break;
+                }
+            //if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
+        }
+        _pclose(pp);
+    }
 }
-//if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
-}
-_pclose(pp);
-}
-}
-//FreeConsole();
+
 free_console();
 
 if (pdf_view==0)
 {
-ret = ask_question(1, "", (char *) confirm, "", (char *) _CANNOT_OPEN_RESULTS_PDF_FILE_, 12, _INSTALL_PDF_VIEWER_, 11, 1, 62);
+    ret = ask_question(1, "", (char *) confirm, "", (char *) _CANNOT_OPEN_RESULTS_PDF_FILE_, 12, _INSTALL_PDF_VIEWER_, 11, 1, 62);
 }
 else
 {
-sprintf(params, "alfastatic.pdf &");
-if (pdf_view==1) runcode = RunSilent("okular", params);
-else if (pdf_view==2) runcode = RunSilent("%userprofile%\\Desktop\\evince.lnk", params);
-else
+    if (pdf_view==1)
+    {
+        char cwd[MAXPATH];
+        getcwd(cwd, sizeof(cwd));  //for okular it must be absolute path to file
+
+        sprintf(params, "%s\\%s &", cwd, params_out);
+        runcode = SystemSilent("okular", params); //runcode = RunSilent("okular", params);
+    }
+    else if (pdf_view==2)
+    {
+        sprintf(params, "%s &", params_out);
+        runcode = SystemSilent("%userprofile%\\Desktop\\evince.lnk", params);  //RunSilent("%userprofile%\\Desktop\\evince.lnk", params);
+    }
+    else
+    {
+        sprintf(params, "%s &", params_out);
 #ifdef BIT64
-runcode = RunSilent("sumatrapdf64 -new-window", params);
+    runcode = SystemSilent("sumatrapdf64 -new-window", params);  //RunSilent("sumatrapdf64 -new-window", params);
 #endif
 #ifndef BIT64
-runcode = RunSilent("sumatrapdf32 -new-window", params);
+    runcode = SystemSilent("sumatrapdf64 -new-window", params);  //RunSilent("sumatrapdf64 -new-window", params);
 #endif
-printf("%d", runcode);
+    }
+    printf("%d", runcode);
 
-simulate_keypress(14592);
+    disable_F11();
+    ret = Expand_flex();
+    enable_F11();
 
-runcode = 255;
+    runcode = 255;
 
-pdf_viewed=1;
+    pdf_viewed=1;
 }
 #endif
         } else {
             ret = ask_question(1, "", (char *) confirm, "", (char *) _CANNOT_CREATE_RESULTS_PDF_FILE_, 12, "", 11, 1, 0/*62*/);
         }
 
+        pdf_viewed=1; //TEMPORARY
+        runcode = 255;
 
         if ((no_error) && (pdf_viewed == 0)) {
 #ifdef LINUX
-            sprintf(params, "--textbox alfacad.out");
+#ifndef MACOS
+            sprintf(params, "--textbox %s", params_in);
             runcode = SystemSilent("./kdialog4alfa", params);
             printf("%lu", runcode);
 
             FreeMouse();
             LockMouse();
+#else
+            sprintf(params, "-a textedit %s &", params_in);
+            runcode = SystemSilent("open", params);
+            printf("%lu", runcode);
+
+            FreeMouse();
+            LockMouse();
+#endif
 #endif
 #ifndef LINUX
-            sprintf(params, "alfacad.out");
+            sprintf(params, "%s", params_in);
             runcode = RunSilent("notepad", params);
             printf("%d", runcode);
 
@@ -10968,7 +11102,8 @@ pdf_viewed=1;
             if (Load_File((char *) &sk, ZAPIS_OUT, TRUE) == FALSE) {
                 return;
             }
-            copy("alfacad.out", sk);
+            sprintf(params, "%salfacad.out", _STATIC_);
+            copy(params, sk);
         }
     }
 

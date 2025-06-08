@@ -306,12 +306,16 @@ typedef struct
   Enter_Clock enter_clock[16];
 } Record_Clock;
 
+#ifdef UKRAINIAN
 #define POLE_TXT_MAX 64
+#else
+#define POLE_TXT_MAX 64
+#endif
 
 /*struktury danych definiujace okna*/
 typedef struct {
 #ifdef FORWIN32
-         char txt[POLE_TXT_MAX]; //128 //poprzednio bylo [64], ale jest 128 z uwagi na void set_list_string (void) w pliku o_listst.c
+         char txt[POLE_TXT_MAX]; //128 or 64 due to void set_list_string (void) if o_listst.c
 #else
 	     char *txt;             /*adres lancucha tresci pozycji*/ 
 #endif
@@ -394,7 +398,7 @@ typedef struct {
 #define MaxSizeObiekt 4160 //2080 //300 /*tekst moze byc dlugi*/
 //#define ED_INF_HEIGHT 12
 #define MaxTextLen  254  //512
-#define MaxMultitextLen  2048
+#define MaxMultitextLen  4096 //2048
 #define MaxPinCount 2000
 #define max_dodatkowe_linie 500 /*wystarczy tyle bo linie dodawane sa sekwencyjnie*/
 #define BKCOLOR         0

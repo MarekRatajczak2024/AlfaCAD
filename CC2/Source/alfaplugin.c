@@ -65,7 +65,7 @@ extern void Wymiarowanie_polilinii1(char *adr0, int opcja);
 extern BOOL group_block_with_type (long dane_size000, double x, double y, char *blok_type0, char obiektt2, char *prefix, char kod_obiektu);
 extern BOOL Check_if_Equal (double x, double y);
 extern void rysuj_obiekt (char *ad, int mode, int kolor);
-extern char* fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2);
+extern char* fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2, BOOL inverted);
 extern int load_client_bitmap(char *bitmap_file);
 extern int delete_client_bitmap(int iconno);
 extern int invoke_custom_comnd(void *c_comnd);
@@ -331,7 +331,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             blokzap((char*)param1, (char*)param2, (int)param3, COPY_PUT, 1);
             return 0;
         case FILLET_LINE_TO_LINE:
-            return (char*)fillet_line_to_line(*(double *) param1, (LINIA *) param2, (LINIA *) param3);
+            return (char*)fillet_line_to_line(*(double *) param1, (LINIA *) param2, (LINIA *) param3, FALSE);
             break;
         case GETMENUP:
             getmenupini (&((MENUPSTRUCT *)param1)->menu, &((MENUPSTRUCT *)param1)->st, (unsigned short*)&((MENUPSTRUCT *)param1)->cod, (int*)&((MENUPSTRUCT *)param1)->iconno);

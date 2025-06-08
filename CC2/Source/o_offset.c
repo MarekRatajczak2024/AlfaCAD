@@ -26,6 +26,7 @@
 #include "bib_e.h"
 #include "rysuj_e.h"
 #include "o_libfun.h"
+#include "o_offset.h"
 #include "b_polyline_offset.h"
 
 #include "menu.h"
@@ -56,8 +57,8 @@ extern void POLYARC(double x_s, double y_s, double x_e, double y_e, double wpsc,
 BOOL offset_smooth = FALSE;
 
 
-enum OFFSET_MODE { POINT_OFFSET_MODE, DIST_OFFSET_MODE, SET_DIST_OFFSET, SET_OFFSET_STYLE, SET_OFFSET_NORMAL, SET_OFFSET_SMOOTH,
-} ;
+//enum OFFSET_MODE { POINT_OFFSET_MODE, DIST_OFFSET_MODE, SET_DIST_OFFSET, SET_OFFSET_STYLE, SET_OFFSET_NORMAL, SET_OFFSET_SMOOTH,
+//} ;
 static int i__offset_mode = DIST_OFFSET_MODE ; //POINT_OFFSET_MODE ;
 static double df__dist_off = 2 ;
 static int np = -1 ;		/*numer pola edycjnego dystansu*/
@@ -72,6 +73,16 @@ static TMENU mOffset = {4, 0,0,26,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr, 0
 
 static void (*CUR_oN0)(double ,double);
 static void (*CUR_oFF0)(double ,double);
+
+int get_i__offset_mode(void)
+{
+    return i__offset_mode;
+}
+
+void set_i__offset_mode(int offs_mode)
+{
+    i__offset_mode=offs_mode;
+}
 
 static BOOL translate_offset_line (void *ptr_ob, double df_x, double df_y)
 /*----------------------------------------------------------------------*/
@@ -118,6 +129,17 @@ static BOOL translate_offset_line (void *ptr_ob, double df_x, double df_y)
   ptrs_line->y2 = y2 ;
 
   return TRUE ;
+}
+
+BOOL translate_offset_line_distance (void *ptr_ob, double df_x, double df_y, double distance)
+{
+    BOOL ret;
+    double df__dist_off_=df__dist_off;
+
+    df__dist_off=distance;
+    ret=translate_offset_line (ptr_ob, df_x, df_y);
+    df__dist_off=df__dist_off_;
+    return ret;
 }
 
 static BOOL find_offset_line(void* ptr_ob, double df_x, double df_y, double *df_dist)

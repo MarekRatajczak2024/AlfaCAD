@@ -32,7 +32,11 @@
 #include <dwmapi.h>
 #include <windowsx.h>
 #else
+#ifndef MACOS
+#include<X11/X.h>
+#include<X11/Xlib.h>
 #include<xalleg.h>
+#endif
 #endif
 #include <stdio.h>
 #include <wchar.h>
@@ -65,6 +69,10 @@
 #endif
 
 #include "menu.h"
+
+#ifdef ALLEGRO5
+#include "alfatextdialogs.h"
+#endif
 
 #include "leak_detector_cpp.hpp"
 
@@ -99,23 +107,36 @@ extern String WStringToString(const WString& widestr);
 char* get_font_family_name(void);
 
 BOOL editor_on = FALSE;
-
+#ifdef MACOS
+static char eTitle[64];
+char *get_eTitle(void);
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+extern void set_forget_mouse(int exp_x, int exp_y);
 extern int Client_number;
 
 extern int Save_Update_flex(int save_upd, int *curr_h, int *curr_v);
 extern int get_window_origin_and_size(int* x_win_orig, int* y_win_orig, int* win_width, int* win_height);
+extern void get_editbox_size_origin(int *w, int *h, int *x, int *y);
+extern void get_editbox_size_origin_line(int *w, int *h, int *x, int *y);
 
 extern	char** argv_;
 extern 	char* argp__;
 
+extern int getmaxx(void);
+extern int getmaxy(void);
+
 void  QInitialize(int argc, char *argv[]);
 
 #ifdef LINUX
+#ifndef MACOS
 extern Window get_toplevel_parent(Display * display, Window window);
+#else
+#endif
 #endif
 
 extern bool DEMO_RECORDING;
@@ -125,6 +146,9 @@ extern void set_demo_scale(float demo_scale_);
 extern int code_page;
 extern int dxf_encoding;
 extern int Rysuj_main(int child, char file_name[255], int nCmdShow, char *application, char *arguments);
+#ifdef OSTYPE_MACOS
+extern int rysuj_main(int argc, char *argv[]);
+#endif
 extern void delay(int time);
 extern void sw_callback_locked_proc(void);
 
@@ -153,6 +177,8 @@ extern bool file_bak (char *fn, char *fext);
 extern char *File_Ext(char *fn, char *fext);
 
 extern BOOL known3b(int letter);
+
+extern void set_sleep_state(BOOL state);
 
 #ifndef LINUX
 __declspec(dllexport) int testCall(int val);
@@ -205,7 +231,6 @@ void set_editbox_geometry_line_win(int x, int y);
 
 //char *get_font_family_name(void);
 
-
 #ifndef LINUX
 _locale_t locale;
 #endif
@@ -218,8 +243,8 @@ int win2unicode(char *wintext, char *unicodetext);
 int win2unicodefactory(char *wintext, char *unicodetext, int codepage);
 void unicode2winfactory(char *unicodetext, char *wintext, int count, int codepage);
 
-static char font_family_name[255];
-static char font_file[255];
+static char font_family_name[255]="";
+static char font_file[255]="";
 static bool alt=FALSE;
 static bool altlock = FALSE;
 static bool altpressed = FALSE;
@@ -2445,13 +2470,36 @@ void get_tens_value(char* st, double tens)
 {
     sprintf(st, "%#12.9lg", tens);
 }
-
+#ifdef MACOS
+char *get_eTitle(void)
+{
+    return eTitle;
+}
+#endif
 int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab) {
     char *my_text;
     int new_edit_params;
 
+    char *etype_text="TEXT";
+    char *etype_info="INFO";
+    char *etype;
+
+    int WspX_, WspY_;
+
+    if (*single==2)
+    {
+        *single=0;
+        etype=etype_info;
+    }
+    else etype=etype_text;
+
+#ifndef ALFAMTEXT
     int HeightI = (int)((float)HEIGHT*0.9);
     int WidthI = (int)((float)WIDTH*0.9);
+#else
+    int HeightI = (int)((float)HEIGHT*1.05);
+    int WidthI = (int)((float)WIDTH*1.05);
+#endif
 
     char Height[16];
     char Width[16];
@@ -2460,8 +2508,11 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
     double DX,DY;
     int ret;
     static int curr_h, curr_v;
-
+#ifndef MACOS
     char eTitle[64];
+#endif
+    int w,h,x,y;
+    int x0m, y0m, dxm, dym;
 
     sprintf(eTitle, "%s(%d)",_EDIT_TEXT_, Client_number);
 
@@ -2473,14 +2524,31 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
 
     get_posXY(&PozX0, &PozY0);
 
+#ifndef ALLEGRO5
     position_mouse(pikseleX(PozX0), pikseleY(PozY0));
     _free_mouse();
     dialog_cursor(1);
+#endif
 
-    my_text = tinyfd_editBox(eTitle/*"Edit text"*/, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "TEXT", (char*)&New_Edit_Params, single);
+#ifdef ALFAMTEXT
+    my_text = alfa_editBox(eTitle/*"Edit text"*/, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, etype, (char*)&New_Edit_Params, single);
+#else
+    my_text = tinyfd_editBox(eTitle/*"Edit text"*/, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, etype, (char*)&New_Edit_Params, single);
+#endif
 
-    dialog_cursor(0);
+    set_sleep_state(FALSE);
+
+#ifdef ALLEGRO5
+    position_mouse(getmaxx()/2, getmaxy()/2);
+
+    //do {
+    //    get_mouse_mickeys(&WspX_, &WspY_);
+    //} while ((WspX_!=0) || (WspY_!=0));
+	set_forget_mouse(getmaxx()/2, getmaxy()/2);
+#else
+	dialog_cursor(0);
     lock_mouse();
+#endif
 
     set_posXY(PozX0, PozY0);
     CUR_ON(PozX0,PozY0);
@@ -2535,6 +2603,11 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
     long sz;
     int ret1;
     static int curr_h, curr_v;
+#ifndef MACOS
+	char eTitle[64];
+#endif
+
+	sprintf(eTitle, "%s(%d)",_EDIT_FILE_, Client_number);
 
     //reading file
     f = fopen(filename, "rt");
@@ -2563,13 +2636,31 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
     ret1=Save_Update_flex(0, &curr_h, &curr_v);
 
     get_posXY(&PozX0, &PozY0);
-    _free_mouse();
-    dialog_cursor(1);
+#ifndef ALLEGRO5
+	position_mouse(pikseleX(PozX0), pikseleY(PozY0));
+	_free_mouse();
+	dialog_cursor(1);
+#endif
 
+#ifdef ALFAMTEXT
+	my_text = alfa_editBox(eTitle, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);
+#else
     my_text = tinyfd_editBox("Edit file", mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);
+#endif
 
-    dialog_cursor(0);
-    lock_mouse();
+	set_sleep_state(FALSE);
+
+#ifdef ALLEGRO5
+	position_mouse(getmaxx()/2, getmaxy()/2);
+
+	//do {
+	//    get_mouse_mickeys(&WspX_, &WspY_);
+	//} while ((WspX_!=0) || (WspY_!=0));
+	set_forget_mouse(getmaxx()/2, getmaxy()/2);
+#else
+	dialog_cursor(0);
+	lock_mouse();
+#endif
 
     set_posXY(PozX0, PozY0);
     CUR_ON(PozX0,PozY0);
@@ -2851,7 +2942,9 @@ END_OF_MAIN()
 
 void Put_Str_To_Clip(char *ptrsz_buf)
 {
+#ifndef MACOS //MACOS TEMPORARY
     clip::set_text(ptrsz_buf);
+#endif
 }
 
 bool Get_Str_From_Clip(char *ptrsz_buf,
@@ -2861,6 +2954,7 @@ bool Get_Str_From_Clip(char *ptrsz_buf,
                        int ypcz)
 /*---------------------------------*/
 {
+#ifndef MACOS //MACOS TEMPORARY
     std::string value;
 
     clip::get_text(value);
@@ -2881,6 +2975,7 @@ bool Get_Str_From_Clip(char *ptrsz_buf,
         memmove(p, value_p, l2);
         p[l1+l2]='\0';
     }
+#endif
     return TRUE;
 }
 

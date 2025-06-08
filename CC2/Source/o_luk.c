@@ -127,6 +127,7 @@ static SA_BREAK sa_break;
 #define ID_ARC_CONT 75   //duplicated with o_trace.c
 #define ID_LINE_CONTINUE 85 //duplicated with o_trace.c   //was 84
 
+/*
 typedef
   struct
    { double xs,ys;
@@ -137,10 +138,11 @@ typedef
      double L;
      double r;
      double d;
-     void *ptr_con ; /*kontynuacja, xs, ys : wsp. konca, do kontynuacji*/
-     BOOL b_first_end ;	/*ktory koniec objektu jest ostatni*/
-     double con_angle ; /*kat kontynuacji*/
+     void *ptr_con ; //kontynuacja, xs, ys : wsp. konca, do kontynuacji
+     BOOL b_first_end ;	//ktory koniec objektu jest ostatni
+     double con_angle ; //kat kontynuacji
    } PLUK;
+*/
 
 static PLUK pl;
 
@@ -927,17 +929,17 @@ static const void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
 }
 /*---------------*/
 
-static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static const void near pSER(PLUK *pl_,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 {
   double x0,y0,x,y,xr,yr,xe,ye,xs,ys,r,dl;
   double a1,a2,si,co;
   L.x2=X; L.y2=Y;
   if(b_edit) r=ws;
   else if((r=dP1P2(X,Y,L.x1,L.y1))<=Rmin) return;
-  pl->r=l->r=r;
-  x0=(pl->xe+pl->xs)/2;
-  y0=(pl->ye+pl->ys)/2;
-  xs=pl->xs-x0; ys=pl->ys-y0;
+  pl_->r=l->r=r;
+  x0=(pl_->xe+pl_->xs)/2;
+  y0=(pl_->ye+pl_->ys)/2;
+  xs=pl_->xs-x0; ys=pl_->ys-y0;
   dl=sqrt(xs*xs+ys*ys);
   si=ys/dl;
   co=xs/dl;
@@ -948,8 +950,8 @@ static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   if(y<0) yr=-yr;
   obrd(si,co,xr,yr,&xr,&yr);
   l->x=xr+x0; l->y=yr+y0;
-  xs=pl->xs-l->x;  xe=pl->xe-l->x;
-  ys=pl->ys-l->y;  ye=pl->ye-l->y;
+  xs=pl_->xs-l->x;  xe=pl_->xe-l->x;
+  ys=pl_->ys-l->y;  ye=pl_->ye-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
 
@@ -965,6 +967,10 @@ static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
   *reversed = FALSE;
 }
 
+void pSER_(PLUK *pl_, LUK *l, double X, double Y, double ws, BOOL b_edit, BOOL *reversed)
+{
+    pSER(pl_, l, X, Y, ws, b_edit, reversed);
+}
 /*-----------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------*/

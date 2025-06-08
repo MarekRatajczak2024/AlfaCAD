@@ -214,9 +214,13 @@ static BOOL get_hatch_param (T_Fstring key_name, T_Fstring ret_string)
        if ((strcmp(ptrs__hatch_def_param[i_namesno].sz_name, "BINSULATION") == 0) ||
            (strcmp(ptrs__hatch_def_param[i_namesno].sz_name, u8"БІЗОЛЯЦІЯ") == 0))
        {
+#ifdef MACOS
+           strcpy(&insulation_hatch_name[0], ptrs__hatch_def_param[i_namesno].sz_name);
+           strcat(&insulation_hatch_name[0], ".axx");
+#else
            strcpy(insulation_hatch_name[0], ptrs__hatch_def_param[i_namesno].sz_name);
            strcat(insulation_hatch_name[0], ".axx");
-
+#endif
            insulation_hatch_pattern[0] = i_namesno+3;
            insulation_hatch_scale[0] = df_scale;
 
@@ -226,8 +230,13 @@ static BOOL get_hatch_param (T_Fstring key_name, T_Fstring ret_string)
        if ((strcmp(ptrs__hatch_def_param[i_namesno].sz_name, "H1INSUN1") == 0) ||
            (strcmp(ptrs__hatch_def_param[i_namesno].sz_name, u8"ІЗОЛЯЦІЯ_X") == 0))
        {
+#ifdef MACOS
+           strcpy(&insulation_hatch_name[1], ptrs__hatch_def_param[i_namesno].sz_name);
+           strcat(&insulation_hatch_name[1], ".axx");
+#else
            strcpy(insulation_hatch_name[1], ptrs__hatch_def_param[i_namesno].sz_name);
            strcat(insulation_hatch_name[1], ".axx");
+#endif
 
            insulation_hatch_pattern[1] = i_namesno+3;
            insulation_hatch_scale[1] = df_scale;

@@ -93,7 +93,8 @@ extern BITMAP *screenplay;
 
 extern BITMAP *_fixup_loaded_bitmap(BITMAP *bmp, PALETTE pal, int bpp);
 
-extern int qsort_by_val(double *e1, double *e2);
+//extern int qsort_by_val(double *e1, double *e2);
+extern int qsort_by_val(const void *e1, const void *e2);
 extern double pikseleX0d (double jednostki);
 extern double pikseleY0d (double jednostki);
 extern char * Get_PCX (int option);
@@ -1991,8 +1992,13 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 				mmyd[i] = pcx_y + (x_[i] - pcx_x)* kos + (y_[i] - pcx_y) * koc;
 			}
 #ifdef LINUX
+#ifndef MACOS
             qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
             qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+			qsort(mmxd, 4, sizeof(double), qsort_by_val);
+			qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
 			//good for Clion
 			qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
@@ -2258,8 +2264,13 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
      }
 
 #ifdef LINUX
+#ifndef MACOS
       qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
       qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+  	qsort(mmxd, 4, sizeof(double), qsort_by_val);
+  	qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
   	//good for Clion
   	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
@@ -2656,8 +2667,13 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 			}
 
 #ifdef LINUX
+#ifndef MACOS
             qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
             qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+			qsort(mmxd, 4, sizeof(double), qsort_by_val);
+			qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
 			//good for Clion
 			qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
@@ -2919,8 +2935,13 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
      }
 
 #ifdef LINUX
+#ifndef MACOS
       qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
       qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+  	qsort(mmxd, 4, sizeof(double), qsort_by_val);
+  	qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
   	//good for Clion
   	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
@@ -3768,8 +3789,13 @@ int Draw_pcx_1(B_PCX *pcx)
      }
 
 #ifdef LINUX
+#ifndef MACOS
       qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
       qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+  	qsort(mmxd, 4, sizeof(double), qsort_by_val);
+  	qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
   	//good for Clion
   	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
@@ -4158,8 +4184,13 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
      }
 
 #ifdef LINUX
+#ifndef MACOS
       qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
       qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+  	qsort(mmxd, 4, sizeof(double), qsort_by_val);
+  	qsort(mmyd, 4, sizeof(double), qsort_by_val);
+#endif
 #else
   	//good for Clion
   	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);

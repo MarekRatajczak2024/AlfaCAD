@@ -880,6 +880,18 @@ extern double node_size;
     extern void my_scare_mouse(void);
     extern void my_unscare_mouse(void);
 
+#ifdef ALLEGRO5
+extern void set_semaphore(BOOL sem);
+extern void set_timer_speed(int speed);
+#endif
+extern void set_forget_mouse(int exp_x, int exp_y);
+extern BOOL RETINA;
+/*
+extern void position_mouse_xy_r(int x, int y);
+extern void position_mouse_r(int x, int y);
+extern void position_mouse_r_(int x, int y);
+*/
+
 #ifdef __cplusplus
 }
 #endif

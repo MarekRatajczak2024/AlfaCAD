@@ -7,30 +7,37 @@ The Code Project Open License (CPOL)
 http://www.codeproject.com/info/cpol10.aspx
 */
 
+#ifdef MACOS
+#define _LIBCPP_PREFERRED_NAME
+#endif
+
 #include "StdAfx.h"
 #include "ttf.h"
 #ifdef LINUX
 #include <iconv.h>
-#include <stdio.h>
-#include <wctype.h>
+#include <cstdio>
+#include <cwctype>
+#ifdef MACOS
+#include <string>
+#endif
 #endif
 
 typedef std::string String;
 typedef std::wstring WString;
 extern String WStringToString(const WString& widestr);
 
-TTF::TTF(void)
+TTF::TTF()
 {
-	m_pFile = NULL;
+	m_pFile = nullptr;
 	m_nInfo = 0;
 	m_bExternalFilePtr = false;
-	m_pMemPtrReader = NULL;
+	m_pMemPtrReader = nullptr;
 	m_bBold = false;
 	m_bRegular = false;
 	m_bItalic = false;
 }
 
-TTF::~TTF(void)
+TTF::~TTF()
 {
 	Clear();
 }
@@ -58,7 +65,7 @@ bool TTF::Parse(FILE* pFile, size_t nOffsetFromStart)
 {
 	Clear();
 
-	if(NULL==pFile)
+	if(nullptr==pFile)
 		return false;
 
 	m_pFile = pFile;
@@ -71,17 +78,19 @@ bool TTF::Parse(FILE* pFile, size_t nOffsetFromStart)
 
 bool TTF::ParseOffsetTable()
 {
-	stOffsetTable OffsetTable;
+	stOffsetTable OffsetTable{};
+#ifndef MACOS
 	memset(&OffsetTable, 0, sizeof(OffsetTable));
+#endif
 	fread(&OffsetTable, sizeof(OffsetTable), 1, m_pFile);
 	EndianSwap::Switch(OffsetTable.numTables);
 
 	for(USHORT i=0; i<OffsetTable.numTables; ++i)
 	{
-		stTableDirectory TableDirectory;
+		stTableDirectory TableDirectory{};
 		memset(&TableDirectory, 0, sizeof(TableDirectory));
 		fread(&TableDirectory, sizeof(TableDirectory), 1, m_pFile);
-		std::string strTag = "";
+		std::string strTag;
 		strTag += TableDirectory.tag[0];
 		strTag += TableDirectory.tag[1];
 		strTag += TableDirectory.tag[2];
@@ -96,7 +105,7 @@ bool TTF::ParseOffsetTable()
 	if(m_pFile&&!m_bExternalFilePtr)
 		fclose(m_pFile);
 
-	m_pFile = NULL;
+	m_pFile = nullptr;
 
 	return false;
 }
@@ -109,12 +118,12 @@ bool TTF::Parse(BYTE* pFile, size_t size)
 bool TTF::Parse(BYTE* pFile, size_t size, size_t offset)
 {
 	Clear();
-	if(pFile == NULL)
+	if(pFile == nullptr)
 		return false;
 
 	m_pMemPtrReader = new MemPtrReader(pFile, size, offset);
 
-	if(m_pMemPtrReader == NULL)
+	if (m_pMemPtrReader == nullptr)
 		return false;
 
 	return ParseOffsetTableMem();
@@ -122,7 +131,7 @@ bool TTF::Parse(BYTE* pFile, size_t size, size_t offset)
 
 bool TTF::ParseOffsetTableMem()
 {
-	stOffsetTable OffsetTable;
+	stOffsetTable OffsetTable{};
 	memset(&OffsetTable, 0, sizeof(OffsetTable));
 	m_pMemPtrReader->Read(&OffsetTable, sizeof(OffsetTable), 1);
 	EndianSwap::Switch(OffsetTable.numTables);
@@ -190,7 +199,7 @@ bool TTF::ParseName(stTableDirectory& TableDirectory)
 
 	fseek(m_pFile, TableDirectory.offset, SEEK_SET);
 
-	stNamingTable NamingTable;
+	stNamingTable NamingTable{};
 	memset(&NamingTable, 0, sizeof(NamingTable));
 	fread(&NamingTable, sizeof(NamingTable), 1, m_pFile);
 	EndianSwap::Switch(NamingTable.NumberOfNameRecords);
@@ -200,7 +209,7 @@ bool TTF::ParseName(stTableDirectory& TableDirectory)
 	std::vector<stNameRecord> vec;
 	for(USHORT i=0; i<NamingTable.NumberOfNameRecords; ++i)
 	{
-		stNameRecord NameRecord;
+		stNameRecord NameRecord{};
 		memset(&NameRecord, 0, sizeof(NameRecord));
 		fread(&NameRecord, sizeof(NameRecord), 1, m_pFile);
 		EndianSwap::Switch(NameRecord.NameID);
@@ -267,7 +276,7 @@ bool TTF::ParseNameMem(stTableDirectory& TableDirectory)
 
 	m_pMemPtrReader->Seek(TableDirectory.offset, SEEK_SET);
 
-	stNamingTable NamingTable;
+	stNamingTable NamingTable{};
 	memset(&NamingTable, 0, sizeof(NamingTable));
 	m_pMemPtrReader->Read(&NamingTable, sizeof(NamingTable), 1);
 	EndianSwap::Switch(NamingTable.NumberOfNameRecords);
@@ -277,7 +286,7 @@ bool TTF::ParseNameMem(stTableDirectory& TableDirectory)
 	std::vector<stNameRecord> vec;
 	for(USHORT i=0; i<NamingTable.NumberOfNameRecords; ++i)
 	{
-		stNameRecord NameRecord;
+		stNameRecord NameRecord{};
 		memset(&NameRecord, 0, sizeof(NameRecord));
 		m_pMemPtrReader->Read(&NameRecord, sizeof(NameRecord), 1);
 		EndianSwap::Switch(NameRecord.NameID);
@@ -436,6 +445,7 @@ void TTF::SetNameIDValue(USHORT uNameID, const std::wstring& str)
 			m_szTrademark = str;
 		m_nInfo |= (1<<7);
 		break;
+	default: break;
 	}
 }
 
@@ -459,6 +469,7 @@ typedef std::wstring WString;
 #include <termios.h>
 #endif
 
+/*
 WString TTF::NarrowToWide__(const String& str)
 {
     if (str.empty())
@@ -515,7 +526,7 @@ WString TTF::NarrowToWide__(const String& str)
 #endif
     return ret;
 }
-
+*/
 std::wstring TTF::NarrowToWide(const std::string& str)
 {
     if (str.empty())
@@ -713,8 +724,7 @@ std::string TTF::WideToNarrow(const std::wstring& szWide)
 		NULL,
 		&bUsedDefaultChar);
 #else
-    iconv_t cd1;
-    cd1 = iconv_open("UTF-8", "ISO8859-2");
+	iconv_t cd1 = iconv_open("UTF-8", "ISO8859-2");
     //cd1 = iconv_open("UTF-8", "WCHAR_T");
 
     char szWide_[255];
@@ -753,8 +763,7 @@ std::string TTF::WideToNarrow(const std::wstring& szWide)
 		NULL,
 		&bUsedDefaultChar);
 #else
-    iconv_t cd2;
-    cd2 = iconv_open("UTF-8", "ISO8859-2");
+	iconv_t cd2 = iconv_open("UTF-8", "ISO8859-2");
     //cd2 = iconv_open("UTF-8", "WCHAR_T");
 
     size_t size2_c = iconv(cd2, &szWide_ptr, &szWide_size,&converted_ptr, &converted_size);
@@ -787,8 +796,8 @@ void TTF::Clear()
 	if(m_pMemPtrReader)
 		delete m_pMemPtrReader;
 
-	m_pFile = NULL;
-	m_pMemPtrReader = NULL;
+	m_pFile = nullptr;
+	m_pMemPtrReader = nullptr;
 	m_szFontName = L"";
 	m_szFilePath = L"";
 	m_szCopyright = L"";
@@ -815,7 +824,7 @@ void TTF::ParseStyles()
 	m_bItalic = false;
 	if(ToLower(m_szFontSubFamilyName).find(L"italic")!=-1)
 		m_bItalic = true;
-	
+
 	m_bRegular = false;
 	if(ToLower(m_szFontSubFamilyName).find(L"regular")!=-1)
 		m_bRegular = true;
@@ -842,7 +851,7 @@ bool TTF::IsRegular()
 
 std::wstring TTF::ToLower(const std::wstring& szNormal)
 {
-	std::wstring szLower = L"";
+	std::wstring szLower;
 	for(size_t i=0; i<szNormal.size() ; ++i)
 	{
 		szLower += (wchar_t)(towlower(szNormal.at(i)));
@@ -853,7 +862,7 @@ std::wstring TTF::ToLower(const std::wstring& szNormal)
 
 std::string TTF::ToLower(const std::string& szNormal)
 {
-	std::string szLower = "";
+	std::string szLower;
 	for(size_t i=0; i<szNormal.size() ; ++i)
 	{
 		szLower += (char)(towlower(szNormal.at(i)));

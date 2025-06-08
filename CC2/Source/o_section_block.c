@@ -95,7 +95,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     int L2cf_n=sizeof(L2cf)/sizeof(L2cf[0]);
 
     //T
-    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)","TB","T (GB/T)"};
+    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)",/*"TB",*/"T (GB/T)"};
     int Tp_n=sizeof(Tp)/sizeof(Tp[0]);
     char *Tt[]= {"T","TB","TPH","ST","T (A-N) (Table 19)","T (Table 14)","T (Table 18)"};
     int Tt_n=sizeof(Tt)/sizeof(Tt[0]);
@@ -142,13 +142,13 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     //IH
     char *IHpd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+r2+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b,0);lin(0,tf-r2);arc(r2,0,r2,pi/2.,pi,1);lin(b/2.-r2-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *IHwpd="lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf);xy(b/2.-tw/2.,-tf);lin(0,-h+tf*2);xy(b/2.+tw/2.,-tf);lin(0,-h+tf*2);xy(0,-h+tf);lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf)";  //welded
-    //char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf);lin(0,-tf);fil(r2);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf);lin(0,tf);fil(r2)";
-    //char *IHtd="lin(b,0);lin(0,-tf+r2);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf-r2);lin(0,-tf+r2);fil(r2);lin(-b,0);lin(0,tf-r2);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf+r2);lin(0,tf-r2);fil(r2)";
-    char *IHtd="lin(b,0);lin(0,min(-tf+r2,0));xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1);xy(b,-h+tf-r2);lin(0,min(-tf+r2,0));fil(r2);lin(-b,0);lin(0,max(tf-r2,0));xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1);xy(0,-tf+r2);lin(0,max(tf-r2,0));fil(r2)";
+    //char *IHtd="lin(b,0);lin(0,-tf);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2,0);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1,0);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1,0);xy(b,-h+tf);lin(0,-tf);fil(r2,0);lin(-b,0);lin(0,tf);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2,0);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1,0);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1,0);xy(0,-tf);lin(0,tf);fil(r2,0)";
+    //char *IHtd="lin(b,0);lin(0,-tf+r2);xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2,0);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1,0);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1,0);xy(b,-h+tf-r2);lin(0,-tf+r2);fil(r2,0);lin(-b,0);lin(0,tf-r2);xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2,0);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1,0);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1,0);xy(0,-tf+r2);lin(0,tf-r2);fil(r2,0)";
+    char *IHtd="lin(b,0);lin(0,min(-tf+r2,0));xy(3./4.*b,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2,1);xy(b/2.+tw/2.,-tf);lin(0,-h+2*tf);fil(r1,0);xy(3./4.*b,-h+tf);vec2(b/4.,pi-atanr(sf),1,b/4.,2*pi-atanr(sf),0);fil(r1,0);xy(b,-h+tf-r2);lin(0,min(-tf+r2,0));fil(r2,1);lin(-b,0);lin(0,max(tf-r2,0));xy(b/4.,-h+tf);vec2(b/4.,pi+atanr(sf),1,b/4.,atanr(sf),0);fil(r2,1);xy(b/2.-tw/2.,-h+tf);lin(0,h-2*tf);fil(r1,0);xy(b/4.,-tf);vec2(b/4.,2*pi-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1,0);xy(0,-tf+r2);lin(0,max(tf-r2,0));fil(r2,1)";
     char *IHsd="lin(bt,0);lin(0,-tf);lin(-bt/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(bb/2.-tw/2.-r1,0);lin(0,-tf);lin(-bb,0);lin(0,tf);lin(bb/2.-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-bt/2.+tw/2.+r1,0);lin(0,tf)";
     //C
     char *Cpd="lin(b,0);lin(0,-tf);lin(-b+tw+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b-tw-r1,0);lin(0,-tf);lin(-b,0);lin(0,h)";
-    char *Ctd="lin(b,0);lin(0,min(-tf+sf*(b/2.-r2)+r2,0));xy(b/2.,-tf);vec2(b/2.,atanr(sf),1,b/2.,pi+atanr(sf),0);fil(r2);xy(tw,-tf);lin(0,-h+2*tf);fil(r1);xy(b/2.,-h+tf);vec2(b/2.,pi-atanr(sf),1,b/2.,2*pi-atanr(sf),0);fil(r1);xy(b,max(-h,-h+tf-sf*(b/2.-r2)-r2));lin(0,min(-tf+sf*(b/2.-r2)+r2,0));fil(r2);lin(-b,0);lin(0,h)";
+    char *Ctd="lin(b,0);lin(0,min(-tf+sf*(b/2.-r2)+r2,0));xy(b/2.,-tf);vec2(b/2.,atanr(sf),1,b/2.,pi+atanr(sf),0);fil(r2,1);xy(tw,-tf);lin(0,-h+2*tf);fil(r1,0);xy(b/2.,-h+tf);vec2(b/2.,pi-atanr(sf),1,b/2.,2*pi-atanr(sf),0);fil(r1,0);xy(b,max(-h,-h+tf-sf*(b/2.-r2)-r2));lin(0,min(-tf+sf*(b/2.-r2)+r2,0));fil(r2,1);lin(-b,0);lin(0,h)";
     char *Ccfd="xy(t+ri,0);lin(b-2*ri-2*t,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-c+ri+t);lin(-t,0);lin(0,c-t-ri);arc(-ri,0,ri,0,pi/2.,0);lin(-b+2*ri+2*t,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,c-t-ri);lin(t,0);lin(0,-c+t+ri);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-b+2*t+2*ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(ri+t,0,ri+t,pi/2.,pi,1)";
     char *Ctcfd="xy(t+ri,0);lin(b-ri-t,0);lin(0,-t);lin(-b+ri+t,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-t-ri,0);lin(0,-t);lin(-b+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(ri+t,0,ri+t,pi/2.,pi,1)";
     char *Cucfd="xy(c1+ri,0);lin(c-2*t-2*ri,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(c1-t-ri,0);lin(0,-t);lin(-c1+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-c+2*t+2*ri,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-h+2*t+2*ri);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-c1+t+ri,0);lin(0,t);lin(c1-t-ri,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,h-2*t-2*ri);arc(ri+t,0,ri+t,pi/2.,pi,1)";
@@ -164,13 +164,14 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     char *L2cfd="";
     //T
     char *Tpd="lin(b,0);lin(0,-tf);lin(-b/2.+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+tf+r1);lin(-tw,0);lin(0,h-tf-r1);arc(-r1,0,r1,0,pi/2.,0);lin(-b/2.+tw/2.+r1,0);lin(0,tf)";
-    char *Ttd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.0*pi,0,1);lin(-b/2.,0);xy(b/2.+tw/2.,-h/2.);vec2(h/2.,pi/2.-atanr(sw),1,h/2.,3./2.*pi-atanr(sw),0);fil(r1);xy(b/2.+tw/2.,-h);lin(-tw,0);fil(r3);xy(b/2.-tw/2.,-h/2.);vec2(h/2,3./2.*pi+atanr(sw),1,h/2.,pi/2.+atanr(sw),0);fil(r3);xy(b/2.-tw/2.,-tf);lin(-b/2.+tw/2.+r2,0);fil(r1);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
+    //char *Ttd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.0*pi,0,1);lin(-b/2.,0);xy(b/2.+tw/2.,-h/2.);vec2(h/2.,pi/2.-atanr(sw),1,h/2.,3./2.*pi-atanr(sw),0);fil(r1,0);xy(b/2.+tw/2.,-h);lin(-tw,0);fil(r3,1);xy(b/2.-tw/2.,-h/2.);vec2(h/2,3./2.*pi+atanr(sw),1,h/2.,pi/2.+atanr(sw),0);fil(r3,1);xy(b/2.-tw/2.,-tf);lin(-b/2.+tw/2.+r2,0);fil(r1,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     //char *Ttd="lin(b,0);lin(0,-tf+r3);arc(-r3,0,r3,3./2.0*pi,0,1);lin(-b/2.,0);xy(b/2.+tw/2.,-h/2.);vec2(h/2.,pi/2.-atanr(sw),1,h/2.,3./2.*pi-atanr(sw),0);fil(r1);xy(b/2.+tw/2.,-h);lin(-tw,0);fil(r3);xy(b/2.-tw/2.,-h/2.);vec2(h/2,3./2.*pi+atanr(sw),1,h/2.,pi/2.+atanr(sw),0);fil(r3);xy(b/2.-tw/2.,-tf);lin(-b/2.+tw/2.+r3,0);fil(r1);arc(0,r3,r3,pi,3./2.*pi,1);lin(0,tf-r3)";
+    char *Ttd="lin(b,0);lin(0,min(-tf+sf*(b/2.-r2)+r2,0)); xy(b*3./4.,-tf);vec2(b/4.,atanr(sf),1,b/4.,pi+atanr(sf),0);fil(r2,1);  xy(b/2.+tw/2.,-h/2.);vec2(h/2.,pi/2.-atanr(sw),1,h/2.,3./2.*pi-atanr(sw),0);fil(r1,0);xy(b/2.+tw/2.,-h);lin(-tw,0);fil(r3,1);xy(b/2.-tw/2.,-h/2.);vec2(h/2,3./2.*pi+atanr(sw),1,h/2.,pi/2.+atanr(sw),0);fil(r3,1);xy(b/4.,-tf);vec2(b/4.,-atanr(sf),1,b/4.,pi-atanr(sf),0);fil(r1,1);xy(0,min(-tf+r2,0));lin(0,max(tf-r2,0));fil(r2,1)";
     char *Tcfd="";
     //Z
     char *Zpd="lin(b/2.+tw/2.,0);lin(0,-h+tf+r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b/2.-tw/2.,0);lin(0,h-tf-r1);arc(-r1,0,r1,0,pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *Ztd="";
-    char *Zcfd="xy(0,-c/sqrt(2));lin(c/sqrt(2),c/sqrt(2));lin(bf-t-ri,0);fil(ri);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri-t*tan(22.5),0);lin((c-t*tan(22.5))/sqrt(2),(c-t*tan(22.5))/sqrt(2));fil(ri);lin(t/sqrt(2),-t/sqrt(2));lin(-c/sqrt(2),-c/sqrt(2));lin(-bf+t+ri,0);fil(ri);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri+t*tan(22.5),0);lin(-(c-t*tan(22.5))/sqrt(2),-(c-t*tan(22.5))/sqrt(2));fil(ri);lin(-t/sqrt(2),t/sqrt(2))"; //ZS
+    char *Zcfd="xy(0,-c/sqrt(2));lin(c/sqrt(2),c/sqrt(2));lin(bf-t-ri,0);fil(ri+t,1);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri-t*tan(22.5),0);lin((c-t*tan(22.5))/sqrt(2),(c-t*tan(22.5))/sqrt(2));fil(ri,0);lin(t/sqrt(2),-t/sqrt(2));lin(-c/sqrt(2),-c/sqrt(2));lin(-bf+t+ri,0);fil(ri+t,1);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri+t*tan(22.5),0);lin(-(c-t*tan(22.5))/sqrt(2),-(c-t*tan(22.5))/sqrt(2));fil(ri,0);lin(-t/sqrt(2),t/sqrt(2))"; //ZS
     char *Zlcfd="xy(0,-c);lin(0,c-ri-t);arc(ri+t,0,ri+t,pi/2.,pi,1);lin(bf-ri*2-t*2,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+ri*2+t*2);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-ri*2-t*2,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,c-ri-t);lin(t,0);lin(0,-c+ri+t);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-bf+ri*2+t*2,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-ri*2-t*2);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+ri*2+t*2,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-c+ri+t);lin(-t,0)";
     char *Ztcfd="lin(bf-t-ri,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri,0);lin(0,-t);lin(-bf+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri,0);lin(0,t)";   //ZU
     //RT
@@ -720,6 +721,8 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
        }
        if (OG!=NULL) {
            printf("obiekt=%d\n", ((NAGLOWEK *) OG)->obiekt);
+           ((NAGLOWEK *) OG)->obiektt2=O2BlockPline;
+
            nag = dodaj_obiekt((BLOK *) dane, OG);
 
            if (((NAGLOWEK*)nag)->obiekt==Olinia)
@@ -787,6 +790,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
         free(buf_block);
     }
     ///////
+
     adrem_blok1 ((BLOK*)dane, Ablok);
     Place_Import_Block(5, type0);
     return 1;

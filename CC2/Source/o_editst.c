@@ -36,6 +36,8 @@
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 
+extern void Odczyt_licznikow(int *mouse_x, int *mouse_y);
+
 extern char *get_komunikat_ptr (int n) ;
 extern BOOL Add_String_To_List (char *) ;
 extern BOOL Get_Str_From_List (char *, int, int, int, int) ;
@@ -89,6 +91,10 @@ extern void set_cursor_edit(void);
 
 extern BOOL known3b(int letter);
 extern BOOL known3bytes(unsigned char c1, unsigned char c2, unsigned char c3);
+
+extern void set_sleep_state(BOOL state);
+
+extern void move_pointer(int x, int y);
 
 BOOL editing_text = FALSE;
 
@@ -532,7 +538,7 @@ int getkey(void)
 	int  lo, ret_key;
 
 	lo = inkeys(NULL, FALSE);
-	sleep_state = FALSE;
+	set_sleep_state(FALSE);
 	if (lo) return lo;
 	lo = inkeys(NULL, FALSE);
 	if (lo == 63) delay_1();
@@ -549,7 +555,7 @@ int getukey(void)
 	int  lo, ret_key;
 
 	lo = inukeys(NULL);
-	sleep_state = FALSE;
+	set_sleep_state(FALSE);
 
 	return lo;
 
@@ -1548,10 +1554,25 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
    int width_w;
    float width;
 
+#ifdef ALLEGRO5
+   mouse_x_=mouse_x;
+   mouse_y_=mouse_y;
+#endif
    k=Komunikat_R;
    komunikat(kom);
    Get_Current_Pos (&x, &y) ;
    moveto (x + 5 , y + 2) ;
+
+#ifdef ALLEGRO5
+#ifndef MACOS
+    move_pointer(x + 10, y + HEIGHT + 20);
+#else
+    position_mouse(x + 10, y + HEIGHT + 20);
+#endif
+#else
+    position_mouse(x + 10, y + HEIGHT + 20);
+#endif
+
    CUR=MVCUR; MVCUR=noop;
    if (width0 == 0)
    {
@@ -1564,6 +1585,16 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
    komunikat(k);
    MVCUR=CUR;
 
+#ifdef ALLEGRO5
+#ifndef MACOS
+    move_pointer(mouse_x_, mouse_y_);
+#else
+    position_mouse(mouse_x_, mouse_y_);
+#endif
+#else
+    position_mouse(mouse_x_, mouse_y_);
+#endif
+    set_forget_mouse(mouse_x_, mouse_y_);
    return zn==27 ? 0 : 1;
 }
 

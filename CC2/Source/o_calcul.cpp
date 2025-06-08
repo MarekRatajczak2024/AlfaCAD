@@ -34,9 +34,7 @@ extern char* strlwr_(char* s);
 extern "C" {
 extern BOOL Check_if_Equal (double , double ) ;
 extern BOOL Check_if_Equal2(double, double);
-extern char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2);
-
-
+extern char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2, BOOL inverted);
 
 extern LINIA LG;
 extern char* LG1, * LG2;
@@ -49,7 +47,6 @@ extern char* Section_Units_System;
 extern char* units_system_si;
 extern char* units_system_imp;
 static double xg = 0, yg = 0;
-
 
 
 }
@@ -578,6 +575,7 @@ static double do_FIL (double e [])
     char *adr;
     double r;
     double factor;
+    BOOL inverted;
 
     if (strcmp(Section_Units_System, units_system_si)==0)
         factor=1./SkalaF;
@@ -585,7 +583,15 @@ static double do_FIL (double e [])
 
     r=e[0]*factor;
 
-    adr = fillet_line_to_line(r, (LINIA*)LG1, (LINIA*)LG2);
+    if (e[5]==0) {
+        inverted = FALSE;
+    }
+    else
+    {
+        inverted = TRUE;
+    }
+
+    adr = fillet_line_to_line(r, (LINIA*)LG1, (LINIA*)LG2, inverted);
     OG=NULL;
    return 0;
 }
@@ -623,7 +629,7 @@ static BOOL insert_function (void)
   insertfunction ("arc", 6, do_ARC)==FALSE ||
   insertfunction ("vec", 3, do_VEC)==FALSE ||
   insertfunction ("vec2", 6, do_VEC2)==FALSE ||
-  insertfunction ("fil", 1, do_FIL)==FALSE ||
+  insertfunction ("fil", 2, do_FIL)==FALSE ||
   insertfunction ("cir", 1, do_CIR)==FALSE ||
   insertfunction ("elp", 3, do_ELP)==FALSE ||
   insertfunction ("elpa", 5, do_ELPA)==FALSE)

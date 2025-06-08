@@ -84,6 +84,8 @@ typedef unsigned long       DWORD;
 
 BOOL preview_blocked = FALSE;
 
+BOOL MacOS15=FALSE;
+
 #pragma pack (1)
 T_PTR_Prn_Config ptrs_config ;
 T_PTR_Prn_Ini_Date ptrs_ini_date;
@@ -105,6 +107,9 @@ extern int get_graphic_drv(void);
 extern BOOL Semaphore;
 extern BOOL Cust_Semaphore;
 
+
+extern void get_posXY(double *pozx, double *pozy);
+extern void set_posXY(double pozx, double pozy);
 extern int get_menu_level(void);
 extern void Ini_Layers_Dlg (void) ;
 extern void Set_Auto_Backup (BOOL) ;
@@ -125,7 +130,7 @@ extern int GetPrintHorzres(void);
 extern int GetPrintVertres(void);
 extern int GetPrintHorizDensity(void);
 extern int GetPrintVertDensity(void);
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern void setcolor(int kolor);
 extern void setwritemode( int mode );
 extern void setlinestyle1(int line_style, unsigned short u_pattern, int thickness);
@@ -280,6 +285,7 @@ extern char *Get_dane0_DATA(int dwg_no);
 extern void Ini_Global_Object (void);
 extern int Get_A_Screen(int ret_left_x, int ret_right_x, int ret_top_y, int ret_bottom_y, int mouse_curx, int mouse_cury);
 extern int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
+extern int get_window_new_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
 extern void expand_dim(int x0, int y0, int width, int height);
 extern void save_window_dim(int x0_, int y0_, int dx_, int dy_);
 extern int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y, int i);
@@ -324,6 +330,23 @@ extern void Restore_Pointer(void);
 
 extern void enable_F11(void);
 
+extern int show_native_message_box(char *title, char *heading, char *text);
+extern void Odczyt_licznikow_simple(void);
+extern void  Test_przycisniec(int *key);
+
+extern int edit_text_flag;
+extern void reset_editbox_geometry_set(void);
+extern int Get_Mouse_Wheel(void);
+extern void Set_Mouse_Wheel(int wheel);
+#ifdef MACOS
+extern int send_AppleScript_Exit(pid_t pid);
+extern pid_t get_e_pid(void);
+extern void MoveOSXCursor(int x, int y);
+#endif
+#ifdef ALLEGRO5
+extern void position_mouse_xy(int x, int y);
+#endif
+
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude;
 extern double load_magnitude; //units per mm  default 10kN/m load per 1 mm on drawing paper
@@ -366,6 +389,14 @@ extern float cups_prn_height_paper;
 extern int findfpostopxl(/*const unsigned*/ char *s, int max_pxl);
 
 extern void Check_ConfigureNotify(void);
+extern int get_tier(void);
+extern int what_tier(int font_size);
+extern void Destroy_Bitmaps(void);
+extern void Load_Bitmaps(int HEIGHT_);
+extern void reload_client_bitmaps(void);
+extern void Set_Mem_Bitmaps(int tier_);
+extern void Set_Mem_Cursors(int tier_);
+extern void save_mouse_wheel(void);
 
 
 static BITMAP *second_screen_bak_=NULL;
@@ -384,14 +415,19 @@ char *ermark_p;
 BITMAP *offmark;
 char *offmark_p;
 
-BITMAP *icon_yes_dmem;
-BITMAP *icon_no_dmem;
+BITMAP *icon_yes_d_mem;
+BITMAP *icon_yes_dx1_5_mem;
+BITMAP *icon_yes_dx2_mem;
+BITMAP *icon_no_d_mem;
+BITMAP *icon_no_dx1_5_mem;
+BITMAP *icon_no_dx2_mem;
 char *icon_yes_d_pmem;
 char *icon_no_d_pmem;
 BITMAP* icon_upgrademark_mem;
 char* icon_upgrademark_pmem;
 BITMAP* icon_noupgrademark_mem;
 char* icon_noupgrademark_pmem;
+BITMAP* icon_alfacad_mem;
 
 BITMAP *plotter;
 char *plotter_p;
@@ -1817,10 +1853,12 @@ char *icon_mirror_block_p;
  BITMAP *icon_cursors;
  BITMAP *icon_cursor_small;
  BITMAP *icon_cursor_big;
+ BITMAP *icon_cursor_extrabig;
 
  char *icon_cursors_p;
  char *icon_cursor_small_p;
  char *icon_cursor_big_p;
+ char *icon_cursor_extrabig_p;
 
  BITMAP *icon_question_mark_db_48;
  char *icon_question_mark_db_48_p;
@@ -1863,6 +1901,8 @@ char *icon_mirror_block_p;
  BITMAP *icon_stonewall;
  char* icon_stonewall_p;
 
+BITMAP* icon_folder_bd24;
+char* icon_folder_bd24_p;
  BITMAP* icon_folder_bd32;
  char* icon_folder_bd32_p;
  BITMAP* icon_folder_bd48;
@@ -2303,6 +2343,24 @@ BITMAP *icon_resilience;
 char *icon_resilience_p;
 
 BITMAP *icon_hourglass_mem;
+BITMAP *icon_hourglassx1_5_mem;
+BITMAP *icon_hourglassx2_mem;
+
+BITMAP *icon_cursor_12x16_mem;
+BITMAP *icon_cursor_18x24_mem;
+BITMAP *icon_cursor_24x32_mem;
+BITMAP *icon_cursor_36x48_mem;
+BITMAP *icon_cursor_48x64_mem;
+BITMAP *icon_cursor_72x96_mem;
+BITMAP *icon_cursor_96x128_mem;
+
+BITMAP *icon_edit_cursor_4x16_mem;
+BITMAP *icon_edit_cursor_6x24_mem;
+BITMAP *icon_edit_cursor_8x32_mem;
+BITMAP *icon_edit_cursor_12x48_mem;
+BITMAP *icon_edit_cursor_16x64_mem;
+BITMAP *icon_edit_cursor_24x96_mem;
+BITMAP *icon_edit_cursor_32x128_mem;
 
 BITMAP *icon_ULS;
 char *icon_ULS_p;
@@ -2310,6 +2368,13 @@ BITMAP *icon_SLS;
 char *icon_SLS_p;
 BITMAP *icon_QPSLS;
 char *icon_QPSLS_p;
+
+BITMAP *icon_mousewheel;
+char *icon_mousewheel_p;
+BITMAP *icon_mousewheelnatural;
+char *icon_mousewheelnatural_p;
+BITMAP *icon_mousewheelregular;
+char *icon_mousewheelregular_p;
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -2378,8 +2443,32 @@ static POLE pmCzcionkaEkran[]={
 TMENU mCzcionkaEkran={36,18,18,13,20,7,0,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmCzcionkaEkran,NULL,NULL};
 
 
-TMENU mOpcje = {11, 0, 0, 42, 1, 3, ICONS | TADD, CMNU, CMBR, CMTX, 0, 0, 0, 0,0,(POLE(*)[]) &pmOpcje, NULL, NULL};
+TMENU mOpcje = {12, 0, 0, 42, 1, 3, ICONS | TADD, CMNU, CMBR, CMTX, 0, 0, 0, 0,0,(POLE(*)[]) &pmOpcje, NULL, NULL};
 
+typedef enum DWG_ERROR
+{
+	DWG_NOERR = 0,
+	/* sorted by severity */
+	DWG_ERR_WRONGCRC = 1,
+	DWG_ERR_NOTYETSUPPORTED = 1 << 1, /* 2 */
+	DWG_ERR_UNHANDLEDCLASS = 1 << 2, /* 4 */
+	DWG_ERR_INVALIDTYPE = 1 << 3, /* 8 */
+	DWG_ERR_INVALIDHANDLE = 1 << 4, /* 16 */
+	DWG_ERR_INVALIDEED = 1 << 5, /* 32 */
+	DWG_ERR_VALUEOUTOFBOUNDS = 1 << 6, /* 64 */
+	/* -------- critical errors ------- */
+	DWG_ERR_CLASSESNOTFOUND = 1 << 7, /* 128 */
+	DWG_ERR_SECTIONNOTFOUND = 1 << 8, /* 256 */
+	DWG_ERR_PAGENOTFOUND = 1 << 9, /* 512 */
+	DWG_ERR_INTERNALERROR = 1 << 10,/* 1024 */
+	DWG_ERR_INVALIDDWG = 1 << 11,/* 2048 */
+	DWG_ERR_IOERROR = 1 << 12,/* 4096 */
+	DWG_ERR_OUTOFMEM = 1 << 13,/* 8192 */
+
+} Dwg_Error;
+
+char* DwgErrorList[] = { "NOERR",/* sorted by severity */"WRONG CRC","NOT YET SUPPORTED","UNHANDLED CLASS","INVALID TYPE","INVALID HANDLE","INVALIDEED","VALUE OUT OF BOUNDS",
+/* -------- critical errors ------- */"CLASSES NOT FOUND","SECTION NOT FOUND","PAGE NOT FOUND","INTERNAL ERROR","INVALID DWG","IO ERROR","OUT OF MEM" };
 
 BOOL get_close_button_pressed(void)
 {  int ret=close_button_pressed;
@@ -2398,7 +2487,7 @@ void load_file_to_history(char *sk)
 { int i;
 	if (strlen(sk) > 0)
 	{
-		i = 0;
+		i = 0;  //Check for MacOS
 		while (i<MAXHISTORYFILES)
 		{
 			if ((strlen(Previous_File[i]) > 0) && (strcmp(sk, Previous_File[i]) == 0))
@@ -2465,7 +2554,7 @@ BOOL zapisz_do(void)
 
 #ifndef LINUX
   /*
-  if (__file_exists(sk)) 
+  if (my_file_exists(sk))
    {
 	strcpy(st1, _FILE_);
 
@@ -2812,16 +2901,18 @@ return_to_dialog:
     {
       restore_second_screen();
       normalize_text=normalize_text_back;
-        simulate_keypress(14592);  //to help hiding cursor after restoring second screen (overwalking)
-        simulate_keypress(ESC);  //return to drawing from transparent dialog;
+        ////simulate_keypress(14592);  //to help hiding cursor after restoring second screen (overwalking)
+        ////simulate_keypress(ESC);  //return to drawing from transparent dialog;
       return FALSE;
     }
 
 #ifdef LINUX
+#ifndef MACOS
        if ((ptrs_ini_date->prn_type==PRN_PCX) || (ptrs_ini_date->prn_type==PRN_WINDOWS))
        {
           if (test_python_pillow()==FALSE) return FALSE;
        }
+#endif
 #endif
 
 
@@ -3682,8 +3773,8 @@ void DwgIn(void)
 	int key;
 	int retval_no = 1;
 	char params[128];
-	DWORD runcode;
-	char error_str_code[64];
+	unsigned long runcode;
+	char error_str_code[72];
 	BOOL ret;
 	DXF_Header dxf_header;
 
@@ -3708,10 +3799,23 @@ void DwgIn(void)
     //LibreDWG variant
     sprintf(params, "\"%s\" --as r2013 -y -v0 -o %s", sk, ALFAIMPORTFILE);
 	runcode = RunSilent("dwg2dxf.exe", params);
+	runcode &= 8191;
 	if (runcode > 0)
 	{
 		CUR_OFF(X, Y);
-		sprintf(error_str_code, "%s%d", err_message_code, runcode);
+		sprintf(error_str_code, "%s%u", err_message_code, runcode);
+		for (int i = 1; i < 13; i++)
+		{
+			if (runcode & (int)pow(2, i))
+			{
+				if (strlen(error_str_code) < 48)
+				{
+					strcat(error_str_code, "-");
+					strcat(error_str_code, DwgErrorList[i]);
+				}
+			}
+		}
+//WRONG CRC,NOT YET SUPPORTED,UNHANDLED CLASS,INVALID TYPE,INVALID HANDLE,INVALIDEED,VALUE OUT OF BOUNDS,CLASSES NOT FOUND,SECTION NOT FOUND,PAGE NOT FOUND,INTERNAL ERROR,INVALID DWG, IO ERROR, OUT OF MEM
 		ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
 		CUR_ON(X, Y);
 		return;
@@ -3886,10 +3990,10 @@ void Inicjacja(void)
 {
   char sk[MAXPATH]="";
   int key;
-  char dir__[MAXPATH];
-  char drive__[MAXDRIVE];
-  char file__[MAXFILE];
-  char ext__[MAXEXT];
+  char dir__[MAXPATH]="";
+  char drive__[MAXDRIVE]="";
+  char file__[MAXFILE]="";
+  char ext__[MAXEXT]="";
   int flags;
   int focus;
   int ret;
@@ -4000,10 +4104,10 @@ void Prototype(void)
 /*-----------------------------*/
 {
 	char sk[MAXPATH] = "";
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAXFILE]="";
+	char ext__[MAXEXT]="";
 	int flags;
 
 	strcpy(sk, "");
@@ -4023,10 +4127,10 @@ void New_from_template(void)
 {
 	char sk[MAXPATH] = "";
 	int key;
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAXFILE]="";
+	char ext__[MAXEXT]="";
 	int flags;
 
 	if (Change)
@@ -4352,10 +4456,10 @@ int Deposit_params(void)
 
 void New_window_factory(int NEW_DRAWING_NUMBER, char *sk) //open another drawing in another window factory
 {
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAXFILE]="";
+	char ext__[MAXEXT]="";
 	int flags;
     int ret;
 
@@ -4464,10 +4568,10 @@ void New_window(void) //open another drawing in another window
 void New_window_from_template(void) //open another drawing in another window
 {
 	char sk[MAXPATH] = "";
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAXFILE]="";
+	char ext__[MAXEXT]="";
 	int flags;
 	int i;
 	int ret;
@@ -4477,7 +4581,7 @@ void New_window_from_template(void) //open another drawing in another window
 	i = 0;
 	while (i < MAX_NUMBER_OF_WINDOWS)
 	{
-		if (Get_dane0_DATA(i) == (int)NULL)
+		if (Get_dane0_DATA(i) == NULL)
 		{
 			NEW_DRAWING_NUMBER = i;
 			break;
@@ -4590,10 +4694,10 @@ void Load_P_File1234(char *previous_file)
 
   char sk[MAXPATH]="";
   int key;
-  char dir__[MAXPATH];
-  char drive__[MAXDRIVE];
-  char file__[MAXFILE];
-  char ext__[MAXEXT];
+  char dir__[MAXPATH]="";
+  char drive__[MAXDRIVE]="";
+  char file__[MAXFILE]="";
+  char ext__[MAXEXT]="";
   int flags;
 
   if (strlen(previous_file)==0) return;
@@ -4820,6 +4924,9 @@ int Load_Last_Window_Settings(int *x_win_orig, int *y_win_orig, int *win_width, 
 	  if (read (f_set_handle, y_win_orig, sizeof(int)) != sizeof(int)) goto error_set1;
 	  if (read (f_set_handle, win_width, sizeof(int)) != sizeof(int)) goto error_set1;
 	  if (read (f_set_handle, win_height, sizeof(int)) != sizeof(int)) goto error_set1;
+
+      printf("LAST: x=%d, y=%d, w=%d, h=%d\n",*x_win_orig, *y_win_orig, *win_width, *win_height);
+
 	  close (f_set_handle) ;
 	  return 1;
 
@@ -4958,6 +5065,20 @@ void Koniec(void)
   char str_zapis[48]= _SAVING_CONF_;
 
   exit_alf=FALSE;
+
+#ifdef MACOS  //maybe not only
+//closing alfaedit if exists
+ if (edit_text_flag>0)  //editor exists
+ {
+  pid_t e_pid;
+  int ret;
+  e_pid=get_e_pid();
+  if (e_pid==0) return;
+  ret=send_AppleScript_Exit(e_pid);
+
+  edit_text_flag=0;
+ }
+#endif
 
   //checking if all drawings are saved after edition
   for (i = 0; i < MAX_NUMBER_OF_WINDOWS; i++)
@@ -5171,7 +5292,11 @@ void Koniec(void)
 
    DoneArgs();
 
+#ifndef MACOS
    quick_exit(0);
+#else
+      exit(0);
+#endif
 
    return;
   }
@@ -5384,6 +5509,9 @@ void Konfig(void)
 	{
 		regen_ctx=TRUE;
 		redraw();
+#ifdef ALLEGRO5
+        flip_screen();
+#endif
 	}
 
   return;
@@ -5509,7 +5637,6 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
     int ret_menu=0;
 	int ret_ref;
 
-
     if (save_upd==0) {
         ret_ref = get_window_origin_and_size(&curr_x0, &curr_y0, curr_h, curr_v);
 
@@ -5533,8 +5660,8 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
 
                         if (!(((TMENU*)(menu_address[get_menu_level()-1]))->flags & NOCLOSE))
                         {
-                            if(opwin) closew(menu_address[get_menu_level()-1]);
-                            else deactiv_menu(menu_address[get_menu_level()-1]);
+                            if(opwin) closew((TMENU*)menu_address[get_menu_level()-1]);
+                            else deactiv_menu((TMENU*)menu_address[get_menu_level()-1]);
                         }
                     }
                 unredcr_menu();
@@ -5558,7 +5685,21 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
     }
 }
 
-int Expand_flex()
+int Expand_flex__(void)
+{  int keys_;
+
+    free_mouse();
+    while (1) {
+        Test_przycisniec(&keys_);
+        if (keys_>0)
+            break;
+        my_sleep(10);
+    }
+    lock_mouse();
+    return 0;
+}
+
+int Expand_flex(void)
 {
 	int ret;
 
@@ -5569,7 +5710,10 @@ int Expand_flex()
     int ret_menu=0;
 	int ret_ref;
 	long mouse_curx, mouse_cury;
+    int WspX_, WspY_;
+    double X_,Y_;
 
+    get_posXY(&X_, &Y_);
 
     ret_ref = get_window_origin_and_size(&curr_x0, &curr_y0, &curr_h, &curr_v);
 	mouse_curx = pikseleX(X);
@@ -5579,12 +5723,50 @@ int Expand_flex()
 #ifdef LINUX
     ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
     xwin_set_hints(320, 200);
-#else
-	ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
-#endif
+#ifdef MACOS
+    enable_hardware_cursor();
+    show_os_cursor(MOUSE_CURSOR_ARROW);
 
     //opening transparent dialogbox
+    if (MacOS15==TRUE) {
+        ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
+    }
+    else {
+        //or just waiting
+        //enable_hardware_cursor();
+        free_mouse();
+        int keys_;
+
+        mouse_b=0;
+
+        while (1)
+            {
+            keys_=mouse_b;
+            if (keys_>0)
+            {
+                while (mouse_b) my_sleep(10);
+                break;
+            }
+            my_sleep(10);
+        }
+
+        lock_mouse();
+        position_mouse(getmaxx()/2, getmaxy()/2);
+        set_forget_mouse(getmaxx()/2, getmaxy()/2);
+    }
+    //disable_hardware_cursor();
+
+    //show_os_cursor(MOUSE_CURSOR_NONE);
+    disable_hardware_cursor();
+#else
     ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
+#endif
+
+#else
+    ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
+
+    ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
+#endif
 
     ret_ref = get_window_origin_and_size(&curr_x01, &curr_y01, &curr_h1, &curr_v1);
 
@@ -5597,8 +5779,8 @@ int Expand_flex()
 
                     if (!(((TMENU*)(menu_address[get_menu_level()-1]))->flags & NOCLOSE))
                     {
-                        if(opwin) closew(menu_address[get_menu_level()-1]);
-                        else deactiv_menu(menu_address[get_menu_level()-1]);
+                        if(opwin) closew((TMENU*)menu_address[get_menu_level()-1]);
+                        else deactiv_menu((TMENU*)menu_address[get_menu_level()-1]);
                     }
                 }
             unredcr_menu();
@@ -5609,7 +5791,11 @@ int Expand_flex()
 		if ((curr_h1 > 0) && (curr_h1 < MIN_H)) curr_h1 = MIN_H;
 		if ((curr_v1 > 0) && (curr_v1 < MIN_V)) curr_v1 = MIN_V;
 #ifdef LINUX
+
         expand_dim(curr_x01, curr_y01, curr_h1, curr_v1);
+        //enable_hardware_cursor();
+        //sleep(0);
+        //disable_hardware_cursor();
 #else
 		expand_dim(curr_x01, curr_y01, curr_h1, curr_v1);
 #endif
@@ -5619,6 +5805,9 @@ int Expand_flex()
     clean_key_buffer();
     clear_keybuf();
 
+    //show_os_cursor(MOUSE_CURSOR_NONE);
+    //disable_hardware_cursor();
+
 
     if (close_button_pressed) Koniec();
     close_button_pressed=FALSE;
@@ -5627,6 +5816,22 @@ int Expand_flex()
     {
         Restore_Pointer();
     }
+
+#ifdef ALLEGRO5
+#ifdef MACOS
+    MoveOSXCursor(getmaxx()/2, getmaxy()/2);
+#else
+    position_mouse_xy(getmaxx()/2, getmaxy()/2);
+#endif
+#else
+    position_mouse(getmaxx()/2, getmaxy()/2);
+#endif
+    set_forget_mouse(getmaxx()/2, getmaxy()/2);
+    my_sleep(10);
+
+    set_posXY(X_, Y_);
+    CUR_ON(X,Y);
+    my_sleep(10);
 
     return ret_menu;
 };
@@ -5654,11 +5859,15 @@ void Expand_last(void)
 void Translucency(void)
 {
 	int n;
+    char sk [MaxTextLen] = "";
 	int translucency_tab[] = { 255, 230, 204, 179, 153, 128, 102, 77 };
 
 	n = mTranslucency.poz + mTranslucency.foff;
 	TRANSLUCENCY = translucency_tab[n];
 	set_trans_blender(0, 0, 0, TRANSLUCENCY);
+
+    sprintf(sk, "%d%%", (int)((TRANSLUCENCY*100/255)+0.5));
+    menu_par_new((*mOpcje.pola)[3].txt, sk);
 
 	redraw();
 }
@@ -5670,7 +5879,7 @@ void DemoModeOn(void)
 
 	DEMO_RECORDING = TRUE;
 	set_demo_scale(2.0);
-	menu_par_new((*mOpcje.pola)[7].txt, _YES__);
+	menu_par_new((*mOpcje.pola)[9].txt, _YES__);
 	ret = ask_question(1, "", "OK", "", _DEMO_MODE_, 1, _DEMO_MODE1_, 1, 1, 61);
 }
 
@@ -5680,20 +5889,26 @@ void DemoModeOff(void)
 
 	DEMO_RECORDING = FALSE;
 	set_demo_scale(1.0);
-	menu_par_new((*mOpcje.pola)[7].txt, _NO__);
+	menu_par_new((*mOpcje.pola)[9].txt, _NO__);
 
 }
 
 void DialogCursorS(void)
 {
-	if (!BIGCURSOR) return;
-	set_dialog_cursor(FALSE);
+	if (BIGCURSOR==0) return;
+	set_dialog_cursor(0);
 }
 
 void DialogCursorB(void)
 {
-	if (BIGCURSOR) return;
-	set_dialog_cursor(TRUE);
+	if (BIGCURSOR==1) return;
+	set_dialog_cursor(1);
+}
+
+void DialogCursorEB(void)
+{
+    if (BIGCURSOR==2) return;
+    set_dialog_cursor(2);
 }
 
 
@@ -5718,6 +5933,7 @@ void  wysokosc_znaku_TTF(void)
 	double d;
 	int ret;
 	double dwt;
+    int old_tier, new_tier;
 
 	DF_to_String(sk, "%-6.2f", (double)HEIGHT, 0);
 	if (!get_string(sk, "", MaxTextLen, 0, 10)) return;
@@ -5732,19 +5948,32 @@ void  wysokosc_znaku_TTF(void)
 		return;
 	}
 	if (d < 12) d = 12.0;
-	if (d > 32) d = 32.0;
+	//if (d > 32) d = 32.0;
+    if (d > 64) d = 64.0;
 
 
 	dwt = ((float)WIDTH / (float)HEIGHT)*1.9;
 
 	MP_SIZE = BAR_G = HEIGHT = (int)(d+0.5);
-	ED_INF_HEIGHT = HEIGHT + 2; //1;
+	ED_INF_HEIGHT = HEIGHT + 2*(RETINA+1); //1;
 
 	WIDTH = (int)((dwt * (float)HEIGHT / 1.9)+0.5);
 
 	menu_par_new((*mCzcionkaEkranTTF.pola)[1].txt, sk);
 	Save_Desktop_font(Czcionka_Pulpitu);
 	set_ttf_digits27_len();
+
+    /*
+    //checking tier
+    old_tier=get_tier();
+    new_tier=what_tier(HEIGHT);
+    if (new_tier!=old_tier)  //changing icons
+    {
+        Destroy_Bitmaps();
+        Load_Bitmaps(HEIGHT);
+        Set_Mem_Bitmaps(new_tier);
+    }
+    */
 	redraw();
 	set_yp();
 	okno_all();
@@ -5752,6 +5981,21 @@ void  wysokosc_znaku_TTF(void)
 	layer_info();
 	regen_ctx = TRUE;
 	redraw();
+    flip_screen();
+
+    //checking tier
+    old_tier=get_tier();
+    new_tier=what_tier(HEIGHT);
+    if (new_tier!=old_tier)  //changing icons
+    {
+        Destroy_Bitmaps();
+        Load_Bitmaps(HEIGHT);
+        reload_client_bitmaps();
+        Set_Mem_Bitmaps(new_tier);
+        Set_Mem_Cursors(new_tier);
+    }
+
+    reset_editbox_geometry_set();
 
 	ret = ask_question(1, "", "OK", "", _FONT_CHANGED_, 12, "", 11, 1, 0);
 
@@ -5799,6 +6043,7 @@ static void width_factor_TTF(void)
 	layer_info();
 	regen_ctx = TRUE;
 	redraw();
+    flip_screen();
 	ret = ask_question(1, "", "OK", "", _FONT_CHANGED_, 12, "", 11, 1, 0);
 }
 
@@ -5806,10 +6051,10 @@ void DesktopFontTTF(void)
 {
 	char sk[MAXPATH] = "";
 	int ret;
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 
 	if (Load_File(sk, INI_TTF_FONT, TRUE) == FALSE)
@@ -5843,10 +6088,10 @@ void DesktopFontOTF(void)
 {
     char sk[MAXPATH] = "";
     int ret;
-    char dir[MAXDIR];
-    char drive[MAXDRIVE];
-    char file[MAXFILE];
-    char ext[MAXEXT];
+    char dir[MAXDIR]="";
+    char drive[MAXDRIVE]="";
+    char file[MAXFILE]="";
+    char ext[MAXEXT]="";
     int flags;
 
     if (Load_File(sk, INI_OTF_FONT, TRUE) == FALSE)
@@ -5925,13 +6170,29 @@ static  void auto_pan_off(void)
 	menu_par_new((*mOpcje.pola)[1].txt, NO);
 }
 
+static void WheelNatural(void)
+{
+    if (Get_Mouse_Wheel()==1) return;
+    Set_Mouse_Wheel(0);
+    menu_par_new((*mOpcje.pola)[8].txt, _NATURAL__);
+    save_mouse_wheel();
+}
+
+static void WheelRegular(void)
+{
+    if (Get_Mouse_Wheel()==-1) return;
+    Set_Mouse_Wheel(1);
+    menu_par_new((*mOpcje.pola)[8].txt, _REGULAR__);
+    save_mouse_wheel();
+}
+
 static void (*COMNDO[])(void)=
 {
-  Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
-  Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, DialogCursorS, DialogCursorB,
+  Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
+  Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, DialogCursorS, DialogCursorB, DialogCursorEB,
   DemoModeOn, DemoModeOff,
   nooop, wysokosc_znaku_TTF, width_factor_TTF,
-  auto_pan_on, auto_pan_off, MenuCursorB, MenuCursorP, DesktopFontTTF,DesktopFontOTF,
+  auto_pan_on, auto_pan_off, MenuCursorB, MenuCursorP, DesktopFontTTF,DesktopFontOTF, WheelNatural, WheelRegular
 } ;
 
 void uaktualnij_pola_file (void)
@@ -5987,10 +6248,10 @@ void Opcje(void)
 /*-----------------*/
 { char sk [MaxTextLen] = "";
   int n;
-  char dir[MAXDIR];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir[MAXDIR]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
 
   if (Auto_Pan) menu_par_new((*mOpcje.pola)[1].txt, YES);
@@ -6012,7 +6273,8 @@ void Opcje(void)
   sprintf(sk, "%s", file);
   menu_par_new((*mOpcje.pola)[5].txt, sk);
 
-  if (BIGCURSOR) strcpy(sk, bigcursor);
+  if (BIGCURSOR==2) strcpy(sk, hugecursor);
+  else if (BIGCURSOR==1) strcpy(sk, bigcursor);
   else strcpy(sk, smallcursor);
   menu_par_new((*mOpcje.pola)[6].txt, sk);
 
@@ -6020,15 +6282,19 @@ void Opcje(void)
   else strcpy(sk, cursorstyle);
   menu_par_new((*mOpcje.pola)[7].txt, sk);
 
-  if (DEMO_RECORDING == TRUE) menu_par_new((*mOpcje.pola)[8].txt, _YES__);
-  else menu_par_new((*mOpcje.pola)[8].txt, _NO__);
+  if (Get_Mouse_Wheel() == 1) menu_par_new((*mOpcje.pola)[8].txt, _NATURAL__);
+  else menu_par_new((*mOpcje.pola)[8].txt, _REGULAR__);
+
+  if (DEMO_RECORDING == TRUE) menu_par_new((*mOpcje.pola)[9].txt, _YES__);
+  else menu_par_new((*mOpcje.pola)[9].txt, _NO__);
 
   sprintf(sk, "%d", HEIGHT);
   menu_par_new((*mCzcionkaEkranTTF.pola)[1].txt, sk);
   sprintf(sk, "%4.2f", ((float)WIDTH/(float)HEIGHT)*1.9);
   menu_par_new((*mCzcionkaEkranTTF.pola)[2].txt, sk);
   Semaphore = FALSE;
-  if((n=getwsp1(&mOpcje)-1)>=0) (*COMNDO[n])();    /* n=-1 -> esc */
+  if((n=getwsp1(&mOpcje)-1)>=0)
+      (*COMNDO[n])();    /* n=-1 -> esc */
   //LASTFUN=COMNDO[n];  //is not recorded
 
   komunikat0(0);
@@ -6130,10 +6396,10 @@ void Desktop(void)
 	double wsp_x, wsp_y;
 	int i_file;
 	int i;
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAX_NUMBER_OF_WINDOWS][MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAX_NUMBER_OF_WINDOWS][MAXFILE]={""};
+	char ext__[MAXEXT]="";
 	int flags;
 	int client_no[64];
 	int active_clients;
@@ -6164,7 +6430,9 @@ void Desktop(void)
 	wsp_y = max(2.5 / 19.0 * (float)HEIGHT, 2.5);  //15
 
 	ShowPreview(0, 0, (int)(getmaxx() / 2), (int)(getmaxy() - (2 * HEIGHT) + 1));
-
+#ifdef ALLEGRO5
+    flip_screen();
+#endif
 	active_clients = return_active_clients() - 1;  //deducted by itself
 
 	height_ = (int)(getmaxy());
@@ -6298,7 +6566,9 @@ void Desktop(void)
 
 		Ini_Place_Marker();
 		Ini_Layers_Dlg();
-
+#ifdef ALLEGRO5
+        flip_screen();
+#endif
 	}
 
 	return;

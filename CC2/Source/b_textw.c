@@ -1920,12 +1920,16 @@ void outtextxy_w_(TEXT *t0, int mode)
 					continue;
 				}
 
+                if (*zn == '\n')
+                {
+                    continue;
+                }
+
 				if (*zn == '\0')
 				{
 					break;
 				}
 			}
-
 
 			if ((*zn == '\45') &&
 				(*(zn + 1) == '\45') &&
@@ -2058,7 +2062,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 								keym = readmouse();
 								//p_keyboard=my_poll_keyboard();
 
-								if (mvcurb.akton && (mvcurb.mvc /*|| keypressed()*/))
+								if (mvcurb.akton && (mvcurb.mvc))  //|| keypressed()
 								{
 									w_char_no = k;
 									w_lw_no = li;
@@ -2140,7 +2144,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 						keym = readmouse();
 						//p_keyboard=my_poll_keyboard();
 
-						if (mvcurb.akton && (mvcurb.mvc /*|| keypressed()*/))
+						if (mvcurb.akton && (mvcurb.mvc))  //|| keypressed()
 						{
 							return;
 						}

@@ -147,7 +147,7 @@ typedef unsigned int GrColor;
 #define DEFAULT_SPRITE_W   16
 #define DEFAULT_SPRITE_H   16
 
-BOOL BIGCURSOR = FALSE;
+int BIGCURSOR = 0;
 extern BOOL BAR_POINTER;
 
 BOOL enforce_redraw = FALSE;
@@ -160,7 +160,13 @@ extern int(*SW2[13])(void);
 extern char readmouse(void);
 extern void _free_mouse(void);
 
+#ifdef ALLEGRO5
+extern void position_mouse_(int x, int y);
+extern void set_mouse_range(int x1, int y1, int x2, int y2);
+extern void set_mouse_speed(int xspeed, int yspeed);
+#endif
 //extern int get_cursor_info(void);
+extern int get_v32(void);
 
 void Scale_Point (double k1, double k2, double x1,double y1,double x2,double y2,double *x,double *y);
 
@@ -331,6 +337,7 @@ char alfa_mouse_edit_data32[DEFAULT_SPRITE_H32 * DEFAULT_SPRITE_W32] =
 
 
 static GrContext *second_screen;
+static GrContext *third_screen;
 GrContext *second_screen_back;
 ZBUFFER *zbuf;
 extern void Write_screen_pcx(void);
@@ -374,6 +381,9 @@ extern void set_mode_solid();
 extern void my_blit_reverse(BITMAP *ctx_bitmap,int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy);
 extern void my_blit(BITMAP *ctx_bitmap,int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy);
 extern void my_blit_s(BITMAP *ctx_bitmap,int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy);
+#ifdef ALLEGRO5
+void my_blit_sd(BITMAP *src_bitmap, BITMAP *dst_bitmap, int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy);
+#endif
 extern void draw_tools(void);
 extern void closegraph(void);
 extern int getmaxcolor(void);
@@ -506,11 +516,13 @@ int(*serv134)(void) = { NULL };
 int(*serv135)(void) = { NULL };
 
 static BITMAP *alfa_mouse_null = NULL;
-static BITMAP *alfa_mouse_pointer = NULL;
+static BITMAP *alfa_mouse_pointer = NULL;/* default mouse pointer */
 static BITMAP *alfa_mouse_pointer32 = NULL;/* default mouse pointer */
+static BITMAP *alfa_mouse_pointer48 = NULL;/* default mouse pointer */
 
 static BITMAP *alfa_mouse_edit = NULL;
 static BITMAP *alfa_mouse_edit32 = NULL;
+static BITMAP *alfa_mouse_edit48 = NULL;
 
 static BITMAP *alfa_mouse_sprite = NULL;
 static BITMAP *alfa_mouse_edit_sprite = NULL;
@@ -540,6 +552,7 @@ extern void set_sketch_offset(int patt_o);
 extern int get_sketch_offset(void);
 
 extern void set_cur_color(int color);
+extern int get_cur_color(void);
 
 extern int Expand_flex();
 
@@ -561,6 +574,7 @@ extern int solidarc_wybrany(SOLIDARC *sa);
 extern BOOL Point_in_SolidArc (SOLIDARC *ptr_sa, double x, double y);
 
 extern BITMAP *icon_hourglass_mem;
+extern int vfv(int v);
 
 int solid_pattern_library_no = 0;
 #define SOLID_PATTERN_LIBRARY_MAX_ITEMS 512 //1024
@@ -1350,7 +1364,7 @@ a_kolor = Get_Current_Color () ;
 setwritemode(COPY_PUT);
 setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
 setfillstyle_ (SOLID_FILL, GetColorAC (a_kolor)) ;
-bar (0, ED_INF_HEIGHT + 1, 8, 2*ED_INF_HEIGHT - 2 /*3*/) ;
+bar (0, ED_INF_HEIGHT + 1, vfv(8), 2*ED_INF_HEIGHT - 2 /*3*/) ;
 }
 
 
@@ -1784,6 +1798,12 @@ void okno_r_second(void)
  setviewport_second ((BITMAP *)second_screen,pXp,pYk,pXk,pYp,1);
 }
 
+void okno_r_bitmap(BITMAP *bitmap)
+/*---------------------*/
+{
+    setviewport_second (bitmap,pXp,pYk,pXk,pYp,1);
+}
+
 void set_World(long pXp1, long pYp1, long pXk1, long pYk1)
 /*-------------------------------------------------------*/
 {
@@ -1848,6 +1868,12 @@ void okno_all_second(void)
 //------------------------
 {
   setviewport_second ((BITMAP*)second_screen,0,0,maxX,maxY,0);
+}
+
+void okno_all_bitmap(BITMAP *bitmap)
+//------------------------
+{
+    setviewport_second (bitmap,0,0,maxX,maxY,0);
 }
 
 
@@ -2066,7 +2092,7 @@ void out_cur_on(double X, double Y)
 	float background_r;
     float background_g;
     float background_b;
-	int color, color_r, color_g, color_b;
+	int color=0, color_r, color_g, color_b;
 	float colord;
 	int cur_d, cur_d_a;
 	SOLID_PATTERN_LIBRARY_ITEM solid_pattern_library_item;
@@ -2076,6 +2102,10 @@ void out_cur_on(double X, double Y)
     int pXp1, pYp1, pXk1, pYk1;
     int w2, h2;
     BITMAP *sec_screen;
+	int d30, d10;
+
+	d30=30*(RETINA+1);
+	d10=10*(RETINA+1);
 
     pXp1=get_pXp();
     pXk1=get_pXk();
@@ -2100,20 +2130,21 @@ void out_cur_on(double X, double Y)
 	setwritemode(COPY_PUT);
 
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
+
 	okno_r();
 
-	if ((KursorS == 0) || (KursorS == 100)) cur_d = 30;
+	if ((KursorS == 0) || (KursorS == 100)) cur_d = d30;
 	else
 	{
-		if (KursorS > 100) cur_d = KursorS - 100;
-		else cur_d = KursorS;
+		if (KursorS > 100) cur_d = (KursorS - 100)*(RETINA+1);
+		else cur_d = KursorS*(RETINA+1);
 	}
 
 	if (reset_pointer == TRUE)
 	{
 		reset_pointer = FALSE;
-		if (KursorS_arch > 100) cur_d_a = KursorS_arch - 100;
-		else cur_d_a = KursorS_arch;
+		if (KursorS_arch > 100) cur_d_a = (KursorS_arch - 100)*(RETINA+1);
+		else cur_d_a = KursorS_arch*(RETINA+1);
 
 		KursorS_arch = KursorS;
 	}
@@ -2149,7 +2180,7 @@ void out_cur_on(double X, double Y)
 				copy_cursor_pattern_fx = current_cursor_fx;
 			}
 
-			putimage_preserve(x0 + 10, y0 + 10, cursor_pattern_bitmap, COPY_PUT);
+			putimage_preserve(x0 + d10, y0 + d10, cursor_pattern_bitmap, COPY_PUT);
 		}
 	}
 	else if ((SolidHatch == 1) && (hatch_cursor == TRUE))
@@ -2185,7 +2216,7 @@ void out_cur_on(double X, double Y)
 
 		set_trans_blender(0, 0, 0, (int)SolidHatchTranslucency);
 
-		draw_trans_sprite(screen, cursor_fill_bitmap, x0 + 10, y0 + 10);
+		draw_trans_sprite(screen, cursor_fill_bitmap, x0 + d10, y0 + d10);
 		set_mode_solid();
 	}
 
@@ -2239,16 +2270,12 @@ void out_cur_on(double X, double Y)
 		}
 	}
 
-
     okno_r();
 
 	x0_bak = x0; y0_bak = y0;
 
 	if ((KursorS == 0) || (KursorS == 100))
 	{
-
-
-
 		if (INTL_CURSOR)
 		{
 			brightness_b = 0.299 * background_r + 0.587 * background_g + 0.114 * background_b;
@@ -2261,22 +2288,35 @@ void out_cur_on(double X, double Y)
 			{
 
 				set_cur_color(0xFFFFFF - palette_color[kolory.cur]);
-				__gr_color = color;
+				//__gr_color = color;  //??????
 				cursor_color = cursor_color0 = 0xFFFFFF - palette_color[kolory.cur];
 			}
 		}
 
 
-		xpp = x0 - 30;
-		xkk = x0 + 30;
-		ypp = y0 - 30;
-		ykk = y0 + 30;
-		hline(screen, xpp, y0, xkk, cursor_color);
-		vline(screen, x0, ypp, ykk, cursor_color);
-		if (KursorS == 100)
+		xpp = x0 - d30;
+		xkk = x0 + d30;
+		ypp = y0 - d30;
+		ykk = y0 + d30;
+
+#ifdef ALLEGRO5  //maybe always ???
+        kursor05 = d30;
+        kursor01 = d10;
+#endif
+        //central cross
+        //it was for Allegro 4
+#ifndef ALLEGRO5
+        hline(screen, xpp, y0, xkk, cursor_color);
+        vline(screen, x0, ypp, ykk, cursor_color);
+#else
+        LINE(x0 - kursor05, y0, x0 + kursor05, y0);
+        LINE(x0, y0 - kursor05, x0, y0 + kursor05);
+#endif
+
+        if (KursorS == 100)
 		{
-			kursor05 = 30;
-			kursor01 = 10;
+			kursor05 = d30;
+			kursor01 = d10;
 			//surrounding cross hor
 			LINE(x0 - kursor05, y0 - 1, x0 - kursor01, y0 - 1);
 			LINE(x0 + kursor01, y0 - 1, x0 + kursor05, y0 - 1);
@@ -2291,6 +2331,7 @@ void out_cur_on(double X, double Y)
 		
 		setwritemode(COPY_PUT);
 
+#ifndef ALLEGRO5
 		lpoints = xpp;
 		for (ii = 0; ii < lpoints; ii += 3)
 			putpixel(screen, ii, y0, cursor_color);
@@ -2303,17 +2344,26 @@ void out_cur_on(double X, double Y)
 
 		for (ii = ykk + 1; ii < pYp; ii += 3)
 			putpixel(screen, x0, ii, cursor_color);
+#else
+        linestyle(32);
+
+        lineC(0, y0, xpp, y0);
+        lineC(xkk, y0, pXk, y0);
+
+        lineC(x0, 0, x0, ypp);
+        lineC(x0, ykk, x0, pYp);
+#endif
 	}
 	else
 	{
 		if (KursorS > 100)
 		{
-			kursor05 = (KursorS - 100) / 2;
-			kursor01 = 10;
+			kursor05 = (KursorS - 100)*(RETINA+1) / 2;
+			kursor01 = d10;
 		}
 		else
 		{
-			kursor05 = KursorS / 2;
+			kursor05 = KursorS*(RETINA+1) / 2;
 			kursor01 = 0;
 		}
 
@@ -2330,7 +2380,7 @@ void out_cur_on(double X, double Y)
 			{
 
 				set_cur_color(0xFFFFFF - palette_color[kolory.cur]);
-				__gr_color = color;
+				//__gr_color = color; //????
 				cursor_color = 0xFFFFFF - palette_color[kolory.cur];
 			}
 
@@ -2459,7 +2509,7 @@ void  grid_on(void)
 			  lineCuncut(*gxa - gsizex, *gya-pYk, *gxa + gsizex, *gya-pYk);
 		  if ((*gya - gsizey) < pikseleY(Yk)-pYk)   //pYk
 			  lineCuncut(*gxa, *gya-pYk, *gxa, *gya + gsizey-pYk);
-		  else if ((*gya + gsizey) > pikseleY(Yp)-pYk)  //pYk
+		  else if ((*gya + gsizey) > pikseleY(Yp)+pYk)  //-pYk  //???
 			  lineCuncut(*gxa, *gya - gsizey-pYk, *gxa, *gya-pYk);
 		  else
 			  lineCuncut(*gxa, *gya - gsizey-pYk, *gxa, *gya + gsizey-pYk);
@@ -3329,7 +3379,14 @@ int lineC(long x1, long y1, long x2, long y2)
   
   l_e=1;
 
+  //maybe here was mistake ... ???
+#ifndef ALLEGRO5
   color_cur= palette_color[getcolor()];  //////???
+#else
+  color_cur= get_cur_color();  //////???
+#endif
+
+  //RETINA:  lineinfo.thickness could be doubled
 
   if (lineinfo.linestyle == USERBIT_LINE)
   {
@@ -7767,7 +7824,7 @@ static void rysuj_bitmapy(void)
   long mxx, mxy, mmx, mmy;
   long mmx1, mxx1, mmy1, mxy1, mmx2, mmy2, mxx2, mxy2, dxx2, dyy2, mmx3, mmy3, dxx3, dyy3, mmx4;
   char st[60];
-  double req_RAM;
+  long req_RAM;
   int ii_loop;
   double d_ctx;
   unsigned long_long req_size, req_size1;
@@ -8079,8 +8136,8 @@ else
 
      req_RAM/=1024;
      req_RAM/=1024;
-     req_RAM+=0.5;
-     sprintf(st,"[%d/%d] %ld MB",j+1,ii_loop,(int)(max(req_RAM,1.0)));
+     //req_RAM+=0.5;
+     sprintf(st,"[%d/%d] %ld MB",j+1,ii_loop,max(req_RAM,1));
      InfoListStr1(3,st);
 
      Set_Screenplay(ctx_bitmap[j]);
@@ -8587,7 +8644,8 @@ void rysuj_skin(void)
 				{
 					if (b_pcx->on_front == 1)
 					{
-						if (pcx_wybrany(b_pcx, FALSE))
+						//if (pcx_wybrany(b_pcx, FALSE))
+                        if (pcx_w_prostokacie(b_pcx))
 						{
 							//zaznaczenie warstwy jako warstwy PCX
 							Warstwy_On_PCX[b_pcx->warstwa].check = 1;
@@ -9411,10 +9469,12 @@ void reset_last_polygon_vectors_e(void)
 
 typedef struct ALLEGRO_COLOR ALLEGRO_COLOR;
 
+#ifndef ALLEGRO5
 struct ALLEGRO_COLOR
 {
 	float r, g, b, a;
 };
+#endif
 
 void select_color_type(char *ad)
 {
@@ -10613,15 +10673,18 @@ void flip_corner(void) {
     int sc_w, sc_h;
     int x2, y2;
     float demo_scale;
+    int v32;
+
+    v32=get_v32();
 
     demo_scale=get_demo_scale();
     sc_w=((BITMAP*)second_screen)->cr-((BITMAP*)second_screen)->cl;
     sc_h=((BITMAP*)second_screen)->cb-((BITMAP*)second_screen)->ct;
 
-    scy0=((BITMAP*)second_screen)->cb-2-32*demo_scale;
+    scy0=((BITMAP*)second_screen)->cb-2-v32*demo_scale;
 
-    x2=3*32*demo_scale;
-    y2=32*demo_scale;
+    x2=3*v32*demo_scale;
+    y2=v32*demo_scale;
 
     if (x2>(sc_w-2)) x2=sc_w-2;
     if (y2>(sc_h-2))
@@ -10630,8 +10693,8 @@ void flip_corner(void) {
         scy0=0;
     }
 
-    scy0=((BITMAP*)second_screen)->cb-2-32*demo_scale;
-    my_blit((BITMAP *) second_screen, 2, scy0-1, pXp+2, maxY -2 - 32*demo_scale, x2, y2+1);
+    scy0=((BITMAP*)second_screen)->cb-2-v32*demo_scale;
+    my_blit((BITMAP *) second_screen, 2, scy0-1, pXp+2, maxY -2 - v32*demo_scale, x2, y2+1);
     get_mouse_mickeys(&mxxx, &myyy);
 }
 
@@ -10642,6 +10705,9 @@ void flip_corner3(void) {
 	int x2, y2;
 	float demo_scale;
 	BITMAP* sec_screen;
+    int v32;
+
+    v32=get_v32();
 
 	sec_screen = (BITMAP*)get_second_screen_bak_();
 
@@ -10651,10 +10717,10 @@ void flip_corner3(void) {
 	sc_w = sec_screen->cr - sec_screen->cl;
 	sc_h = sec_screen->cb - sec_screen->ct;
 
-	scy0 = sec_screen->cb - 2 - 32 * demo_scale;
+	scy0 = sec_screen->cb - 2 - v32 * demo_scale;
 
-	x2 = 3 * 32 * demo_scale;
-	y2 = 32 * demo_scale;
+	x2 = 3 * v32 * demo_scale;
+	y2 = v32 * demo_scale;
 
 	if (x2 > (sc_w - 2)) x2 = sc_w - 2;
 	if (y2 > (sc_h - 2))
@@ -10663,8 +10729,8 @@ void flip_corner3(void) {
 		scy0 = 0;
 	}
 
-	scy0 = sec_screen->cb - 2 - 32 * demo_scale;
-	my_blit(sec_screen, 2, scy0 - 1, pXp + 2, maxY - 2 - 32 * demo_scale, x2, y2 + 1);
+	scy0 = sec_screen->cb - 2 - v32 * demo_scale;
+	my_blit(sec_screen, 2, scy0 - 1, pXp + 2, maxY - 2 - v32 * demo_scale, x2, y2 + 1);
 	get_mouse_mickeys(&mxxx, &myyy);
 }
 
@@ -10726,6 +10792,14 @@ void flip_screen(void) {
     my_blit((BITMAP *) second_screen, 0, 0, pXp, maxY - (pYp - pYk), pXk - pXp + 1, pYp - pYk + 1);
     get_mouse_mickeys(&mxxx, &myyy);
 }
+
+#ifdef ALLEGRO5
+void flip_screen_sd(BITMAP * src_screen, BITMAP * dst_screen) {
+    int mxxx, myyy;
+    my_blit_sd(src_screen, dst_screen,0, 0, pXp, maxY - (pYp - pYk), pXk - pXp + 1, pYp - pYk + 1);
+    get_mouse_mickeys(&mxxx, &myyy);
+}
+#endif
 
 void flip_full_screen(BITMAP * the_screen) {
     int mxxx, myyy;
@@ -11438,6 +11512,10 @@ void redraw(void)
   enforce_redraw = FALSE;
   if (do_not_draw_keys==FALSE) 
  	 restore_keyimages();
+
+    ////??????
+    ////set_mouse_range((int)pXp+50,(int)pYk+50,(int)pXk-50,(int)pYp-50);
+    ////set_mouse_speed(25, 25);
 }
 
 
@@ -11609,12 +11687,23 @@ void get_posXY(double *pozx, double *pozy)
     *pozy=Y;
 }
 
-void set_posXY(double pozx, double pozy)
+void CURON(void)
 {
+    CUR_ON(X,Y);
+}
+
+void set_posXY(double pozx, double pozy)
+{    int WspX_, WspY_;
     //Odczyt_licznikow();
     X=pozx;
     Y=pozy;
-    Odczyt_licznikow();
+#ifndef ALLEGRO5
+    //Odczyt_licznikow();
+#else
+    do {
+        get_mouse_mickeys(&WspX_, &WspY_);
+    } while ((WspX_!=0) || (WspY_!=0));
+#endif
 }
 
 int get_cursor_posX(void)
@@ -12238,6 +12327,9 @@ int czytaj_rysunek(char *rys, BOOL b_err)
 /*-------------------------------------*/
 { int read_err;
   read_err=czytaj_rysunek0(rys, b_err, 1);
+#ifdef ALLEGRO5
+  flip_screen();
+#endif
   return read_err;
 }
 
@@ -12588,8 +12680,12 @@ void standard_func(void)
   SERV[129] = Choose_Layer_10 ;
   SERV[130] = Dec_Layer ;
   SERV[131] = Inc_Layer ;
-  
+
+#ifdef MACOS
+  SERV[133] = (int (*)(void)) Expand_flex; //Free_Mouse; /*F11*/
+#else
   SERV[133] = (int(*)(void)) help ;   /*F12*/;
+#endif
   SERV[134] = (void*)SkalaZ_Minus; //nooop1;
   SERV[135] = (void*)SkalaZ_Plus; //nooop1;
 
@@ -12749,16 +12845,19 @@ void show_x_cursor(void)
 }
 
 
-void set_dialog_cursor(BOOL bigsmall)
+void set_dialog_cursor(int bigsmall)
 {
 	BIGCURSOR = bigsmall;
-	if (BIGCURSOR) alfa_mouse_sprite = alfa_mouse_pointer32;
+	if (BIGCURSOR==2) alfa_mouse_sprite = alfa_mouse_pointer48;
+    else if (BIGCURSOR==1) alfa_mouse_sprite = alfa_mouse_pointer32;
 	else  alfa_mouse_sprite = alfa_mouse_pointer;
 
-    if (BIGCURSOR) alfa_mouse_edit_sprite = alfa_mouse_edit32;
+    if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
+    else if (BIGCURSOR==1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
     else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 
-    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
     else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 
     set_mouse_sprite(alfa_mouse_sprite);
@@ -12803,7 +12902,9 @@ void set_cursor_pointer_linux(void)
 {
     show_os_cursor(MOUSE_CURSOR_NONE);
     //select_mouse_cursor(MOUSE_CURSOR_NONE);
+#ifndef MACOS
     disable_hardware_cursor();
+#endif
     select_mouse_cursor(MOUSE_CURSOR_ALLEGRO);
 }
 
@@ -12812,7 +12913,9 @@ void set_cursor_pointer__(void)
     scare_mouse();
     show_os_cursor(MOUSE_CURSOR_NONE);
     //int ret = get_cursor_info();
+#ifndef MACOS
     disable_hardware_cursor();
+#endif
     select_mouse_cursor(MOUSE_CURSOR_ALLEGRO);
     set_mouse_sprite(alfa_mouse_sprite);
     unscare_mouse();
@@ -12823,8 +12926,10 @@ void set_cursor_edit(void)
 {
     scare_mouse();
     set_mouse_sprite(alfa_mouse_edit_sprite);
-    if (BIGCURSOR) set_mouse_sprite_focus(8, 16);
-    else set_mouse_sprite_focus(8, 8);
+    set_mouse_sprite_focus(alfa_mouse_edit_sprite->w/2, alfa_mouse_edit_sprite->h/2);
+    //if (BIGCURSOR==2) set_mouse_sprite_focus(alfa_mouse_edit_sprite->w/2, alfa_mouse_edit_sprite->h/2);
+    //else if (BIGCURSOR==1) set_mouse_sprite_focus(alfa_mouse_edit_sprite->w/2, alfa_mouse_edit_sprite->h/2);
+    //else set_mouse_sprite_focus(alfa_mouse_edit_sprite->w/2, alfa_mouse_edit_sprite->h/2);
 
     unscare_mouse();
     show_mouse(screen);
@@ -12834,8 +12939,10 @@ void set_cursor_busy(void)
 {
     scare_mouse();
     set_mouse_sprite(alfa_mouse_busy_sprite);
-    if (BIGCURSOR) set_mouse_sprite_focus(16, 16);
-    else set_mouse_sprite_focus(16, 16);
+    set_mouse_sprite_focus(alfa_mouse_busy_sprite->w/2, alfa_mouse_busy_sprite->h/2);
+    //if (BIGCURSOR==2) set_mouse_sprite_focus(16, 16);
+    //if (BIGCURSOR==1) set_mouse_sprite_focus(16, 16);
+    //else set_mouse_sprite_focus(16, 16);
 
     unscare_mouse();
     show_mouse(screen);
@@ -12844,7 +12951,9 @@ void set_cursor_busy(void)
 void set_cursor_edit_linux(void)
 {
     //select_mouse_cursor(MOUSE_CURSOR_NONE);
+#ifndef MACOS
     enable_hardware_cursor();
+#endif
     select_mouse_cursor(MOUSE_CURSOR_EDIT);
     show_os_cursor(MOUSE_CURSOR_EDIT);
 }
@@ -12853,7 +12962,9 @@ void set_cursor_edit__(void)
 {
     scare_mouse();
     set_mouse_sprite(NULL);
+#ifndef MACOS
     enable_hardware_cursor();
+#endif
     select_mouse_cursor(MOUSE_CURSOR_EDIT);
     unscare_mouse();
 }
@@ -12873,6 +12984,28 @@ void Set_Pointer(void)
         set_cursor_pointer();
 }
 
+void reini_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one)
+{
+    alfa_mouse_pointer=small_one;
+    alfa_mouse_pointer32=big_one;
+    alfa_mouse_pointer48=huge_one;
+
+    if (BIGCURSOR==2) alfa_mouse_sprite = alfa_mouse_pointer48;
+    else if (BIGCURSOR==1) alfa_mouse_sprite = alfa_mouse_pointer32;
+    else  alfa_mouse_sprite = alfa_mouse_pointer;
+}
+
+void reini_edit_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one)
+{
+    alfa_mouse_edit=small_one;
+    alfa_mouse_edit32=big_one;
+    alfa_mouse_edit48=huge_one;
+
+    if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
+    else if (BIGCURSOR==1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
+    else  alfa_mouse_edit_sprite = alfa_mouse_edit;
+}
+
 void ini_cursors(void)
 {
     
@@ -12885,7 +13018,11 @@ void ini_cursors(void)
       if (alfa_mouse_pointer != NULL) destroy_bitmap(alfa_mouse_pointer);
       alfa_mouse_pointer32 = create_mouse_pointer32(alfa_mouse_arrow_data32);
       alfa_mouse_pointer = create_mouse_pointer(alfa_mouse_arrow_data);
-      if (BIGCURSOR) alfa_mouse_sprite = alfa_mouse_pointer32;
+
+      alfa_mouse_pointer48=alfa_mouse_pointer32;  //there is no huge cursor created so far
+
+      if (BIGCURSOR==2) alfa_mouse_sprite = alfa_mouse_pointer32;
+      else if (BIGCURSOR==1) alfa_mouse_sprite = alfa_mouse_pointer32;
       else  alfa_mouse_sprite = alfa_mouse_pointer;
 
     if (alfa_mouse_edit32!=NULL) destroy_bitmap(alfa_mouse_edit32);
@@ -12893,18 +13030,24 @@ void ini_cursors(void)
     alfa_mouse_edit32 = create_mouse_pointer32(alfa_mouse_edit_data32);
     alfa_mouse_edit = create_mouse_pointer(alfa_mouse_edit_data);
 
-    if (BIGCURSOR) alfa_mouse_edit_sprite = alfa_mouse_edit32;
+    alfa_mouse_edit48=alfa_mouse_edit32;
+
+    if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
+    else if (BIGCURSOR=1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
     else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 
-    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
     else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 
     set_mouse_sprite(alfa_mouse_sprite);
+
 }
 
 void ini_cursor_busy(void)
 {
-    if (BIGCURSOR) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
     else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 }
 
@@ -12920,7 +13063,7 @@ void ini_cursor_busy(void)
 
   ini_cursors();
 
-    set_clip_rect((BITMAP*)second_screen, 0, 0, getmaxx(), getmaxx());
+  set_clip_rect((BITMAP*)second_screen, 0, 0, getmaxx(), getmaxy());
 
   Set_Version (VERSION4_0) ;
   signal(SIGINT,BreakOut);
@@ -13314,11 +13457,23 @@ int my_getch(void)
  
 
  return key1;
- 
 
 }
 
-int __file_exists(char *name)
+
+int my_directory_exists(const char *path) {
+    struct stat info;
+
+    if (stat(path, &info) != 0)
+        return 0; // Failed to get file/directory information
+#ifdef LINUX
+    return S_ISDIR(info.st_mode); // Check if it's a directory
+#else
+	return (info.st_mode & S_IFDIR);
+#endif
+}
+
+int my_file_exists(char *name)
 {
 	int ret;
 	struct stat buffer;
@@ -13326,7 +13481,7 @@ int __file_exists(char *name)
 	return ret;
 }
 
-int __file_size(char* name)
+int my_file_size(char* name)
 {
     int ret, size;
     struct stat buffer;
@@ -13406,7 +13561,7 @@ void __djgpp_set_ctrl_c(int flaga)       //blokowanie Ctrl-C
     return;
 }
 
-
+#ifndef MACOS
 void getdate(date *aktualna_data)
 {
  long lt;
@@ -13425,7 +13580,7 @@ void getdate(date *aktualna_data)
  aktualna_data->da_min=today->tm_min;
  aktualna_data->da_sec=today->tm_sec;
 }
-
+#endif
 
 int dialog_active(void)
 {

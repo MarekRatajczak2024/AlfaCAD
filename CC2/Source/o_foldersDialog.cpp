@@ -853,12 +853,12 @@ typedef bool BOOL;
 #define NULL		((void *)(0))
 #endif
 
-extern void utf8Lower(unsigned char* text);
+//extern void utf8Lower(unsigned char* text);
 
 extern "C" {
 int My_GetFiles(char *szDir, int *n_list, char *pattern, char *pattern1, char* pattern2, char* pattern3, BOOL blocks);
 void DoneBuffers8(void);
-
+extern void utf8Lower(unsigned char* text);
 extern void sw_callback_locked_proc(void);
 }
 

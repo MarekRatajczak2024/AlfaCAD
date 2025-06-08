@@ -84,7 +84,7 @@ DWORD SystemSilent(char* strFunct, char* strstrParams);
 
 #define WIDTH_DOT 0.2
 
-char wydruk_na_drukarce[80];
+char wydruk_na_drukarce[128];
 typedef enum { PRN_PCX = 0, PRN_WINDOWS, PRN_PDF, PRN_9, PRN_24, PRN_48, PRN_LASER, PRN_ESC_P2 } PRN;
 typedef enum { PRN_MODE_EPSON = 0, PRN_MODE_IBM = 1} PRN_MODE ;
 typedef enum { PRN_COLOR_KCMY = 0, PRN_COLOR_YMCK = 1, PRN_COLOR_MCYK = 2, PRN_COLOR_GRAY = 3} COLOR_MODE ;
@@ -94,7 +94,7 @@ int x1_prev=0, y1_prev=0, x2_prev=0, y2_prev=0, x0_prev=0, y0_prev=0;
 float cups_prn_width_paper;
 float cups_prn_height_paper;
 
-void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp);
+void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp, int p_counter);
 
 typedef enum
 {
@@ -631,7 +631,7 @@ const IMAGE images_pr [] =
  {  XpDensity + 5, YpLineWidth + DYIL + 2.15 * DYLab, 32, 32, 37,image_pr_tips23},
  {  XpDensity + 5, YpLineWidth + DYIL + 2.75 * DYLab, 32, 32, 38,image_pr_tips24},
 
- {  XpCondensed + DXIL + 103, YpCondensed + 4.15 * DYLab - 18, 48, 48, 116,image_pr_tips26},
+ {  XpCondensed + DXIL + 103, YpCondensed + 4.15 * DYLab - 18, 48, 48, 207,image_pr_tips26},
 
  {  XpPrinterType + DXIL + 126, YpCondensed + 2.57 * DYLab + 1 * DYIL - 13, 48, 48, 125,image_pr_tips27},
 };
@@ -714,7 +714,8 @@ static LISTBOX listbox[3] =
     }
 };
 
-void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp) {
+void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp, int p_counter)
+{
     printer_types[no]=cups_printer->printer_name;
 	listbox[2].txt[no] = printer_types[no];
     listbox[2].max=no+1;
@@ -723,14 +724,14 @@ void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp) {
     if (no==0) {listbox[2].poz=0; listbox[2].foff=0;}
     else
     {
-        if (defaultp)
+        if ((defaultp) || (p_counter==0))
         {
             if (no<10) {listbox[2].poz=no; listbox[2].foff=0;}
             else {listbox[2].poz=0; listbox[2].foff=no;}
         }
     }
 
-    if (defaultp)
+    if ((defaultp) ||  (p_counter==0))
     {
         cups_prn_width_paper=cups_printer->width/100.0;
         cups_prn_height_paper=cups_printer->length/100.0;
@@ -786,7 +787,7 @@ static COMBOBOX combobox[3] =
 
 TDIALOG printer_dlg=
 {
-	2, 1, WIDTH_WORLD - 275,HEIGHT_WORLD-60,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+	2, 1, WIDTH_WORLD - 275,HEIGHT_WORLD-58,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	wydruk_na_drukarce/*"Wydruk na drukarce"*/,
 	4, &line_d_l,
 	0, NULL,
@@ -2058,10 +2059,10 @@ static BOOL add_value (FILE *stru)
 static BOOL get_prn_dlg_control (void)
 /*------------------------------------*/
 {
-  char drive [MAXDRIVE] ;
-  char dir [MAXDIR] ;
-  char file [MAXFILE] ;
-  char ext [MAXEXT] ;
+  char drive [MAXDRIVE]="" ;
+  char dir [MAXDIR]="" ;
+  char file [MAXFILE]="" ;
+  char ext [MAXEXT]="" ;
   int flags ;
 
   prn_ini_date.condensed = !Get_Check_Button (&printer_dlg, BUT_CONDENSED_Y) ;

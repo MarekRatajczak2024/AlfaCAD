@@ -37,12 +37,13 @@ using namespace std::literals::string_literals;
 extern "C"
 {
     void utf8Upper(unsigned char* text);
+    void utf8Lower(unsigned char* text);  //MACOS
 
     extern Utf8Char* Utf8StrMakeUprUtf8Str(const Utf8Char* pUtf8);
     extern Utf8Char* Utf8StrMakeLwrUtf8Str(const Utf8Char* pUtf8);
 }
 
-void utf8Lower(unsigned char* text);
+//void utf8Lower(unsigned char* text);  //MACOS
 
 class Strings
 {

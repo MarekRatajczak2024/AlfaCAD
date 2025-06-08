@@ -34,8 +34,12 @@
 #include<process.h>
 #include <wtypes.h>
 #else
+#ifndef MACOS
 #include <linwtypes.h>
 #include <bits/stdint-uintn.h>
+#else
+typedef unsigned long DWORD;
+#endif
 #endif
 
 #include <sys/types.h>
@@ -56,13 +60,19 @@
 #include "forlinux.h"
 
 #include "message.h"
-
+#include "alfversion.h"
 ////#include "leak_detector_c.h"
 
 ////#define UPDATE_DATE
 
 #define SEEK_SET 0
 #define MaxLen 255
+
+#ifdef LINUX
+#define _write write
+#define _read read
+#endif
+
 
 unsigned char  *Change_Block_Descript(BLOK *ptr_block, void *ptr_description, int len_descr);
 
@@ -100,6 +110,9 @@ extern int load_pcx__(B_PCX *b_pcx);
 extern int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf, double angle_f, BOOL background, BOOL preserve_aspect, BOOL on_top, BOOL h_flip, BOOL v_flip);
 extern void reset_n_list_begin_blk(void);
 extern int fnsplit(const char *path, char *drive, char *dir, char *name, char *ext);
+
+extern void get_console(void);
+extern void free_console(void);
 
 static double df__text_height, df__text_width_factor ;
 static BOOL b__italics ;
@@ -158,7 +171,7 @@ extern int get_fonts_for_dxf(unsigned char *charfont_numbers);
 extern int get_patterns_for_solids(unsigned char* pattern_numbers);
 extern void ErrListCode(int n, int error_code);
 
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern int ask_question(int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image);
 extern int LoadPCXinfo(char *filename, PCXheader *head); // , COLOR *palette);
 extern int Get_Point_PCX(double* coord_x, double* coord_y, B_PCX *b_pcx , int opcja);
@@ -1741,7 +1754,8 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 	  uLong sourceLen;
 
 	  *numer_bledu = 185;
-	  if (proc_io == write)
+
+      if (proc_io == _write)
 	  {	  
 		  i_layersno = (No_Layers <= 16) ? MAX_OLD_NUMBER_OF_LAYERS : No_Layers;
 		  sourceLen = sizeof(LAYER)*i_layersno;
@@ -1759,10 +1773,12 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 	  *numer_bledu = 188;
 	  if (proc_io(f, &destLenInt, sizeof(int)) != sizeof(int)) { free(layersBuf); return FALSE; }
 	  if (proc_io(f, layersBuf, destLenInt) != destLenInt) { free(layersBuf); return FALSE; }
-	  if (proc_io == write)
+
+	  if (proc_io == _write)
           free(layersBuf);
 	  *numer_bledu = 189;
-	  if (proc_io == read)
+
+	  if (proc_io == _read)
 	  {
 
 		  destLenIntlong = destLenInt;
@@ -2563,7 +2579,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
     else if (alfa_version == ver1_1) //if (strcmp (blok_naglowka, VER1_1) == 0)
     {
       komunikat0(106);
-	  if (FALSE == read_write_param1_1(f, (int (*)(int, void *, unsigned int)) read, read1_Xp_Yp)) { error_code = 1; goto error;}
+	  if (FALSE == read_write_param1_1(f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp)) { error_code = 1; goto error;}
       zwolnienie_pamieci_1();
 	  if (!SetBufferDaneSize(l__dane_size)) { error_code = 100; goto error18;}
 
@@ -2590,7 +2606,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
 
     else if (alfa_version == ver2_0) //if (strcmp (blok_naglowka, VER2_0) == 0)
     {
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) read, read1_Xp_Yp, 0, 0, &pattern_library_no_var)) { error_code = 6; goto error; }
+      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 0, 0, &pattern_library_no_var)) { error_code = 6; goto error; }
       if (!SetBufferDaneSize (l__dane_size)) { error_code = 101; goto error18; }
 
         del_dane0=dane0-dane00;
@@ -2617,7 +2633,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
     }
     else if (alfa_version == ver2_1)  //if (strcmp (blok_naglowka, VER2_1) == 0)
     {
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) read, read1_Xp_Yp, 1, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
+      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 1, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
       if (!SetBufferDaneSize (l__dane_size)) { error_code = 102; goto error18; }
 
         del_dane0=dane0-dane00;
@@ -2658,7 +2674,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
           opcja_warstw = 2;
 	  else opcja_warstw = 1;
 
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) read, read1_Xp_Yp, opcja_warstw, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
+      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, opcja_warstw, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
 
       if (alfa_version < ver4_1) lseek(f, -16, SEEK_CUR);
 
@@ -3060,7 +3076,7 @@ int get_patterns_for_solids(unsigned char* pattern_numbers)
 				for (i = 0; i < solid_pattern_library_no; i++)
 				{
 					solid_pattern_library_item = (SOLID_PATTERN_LIBRARY_ITEM*)(Solid_Pattern_Library[i]);
-					if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == NULL)
+					if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == 0)
 					{
 						if (pattern_numbers[i] == 0)
 						{
@@ -3082,7 +3098,7 @@ int get_patterns_for_solids(unsigned char* pattern_numbers)
                     for (i = 0; i < solid_pattern_library_no; i++)
                     {
                         solid_pattern_library_item = (SOLID_PATTERN_LIBRARY_ITEM*)(Solid_Pattern_Library[i]);
-                        if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == NULL)
+                        if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == 0)
                         {
                             if (pattern_numbers[i] == 0)
                             {
@@ -3247,7 +3263,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 							for (i = 0; i < solid_pattern_library_no; i++)
 							{
 								solid_pattern_library_item = (SOLID_PATTERN_LIBRARY_ITEM*)(Solid_Pattern_Library[i]);
-								if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == NULL)
+								if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == 0)
 								{
 									if (pattern_numbers[i] == 0)
 									{
@@ -3269,7 +3285,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
                             for (i = 0; i < solid_pattern_library_no; i++)
                             {
                                 solid_pattern_library_item = (SOLID_PATTERN_LIBRARY_ITEM*)(Solid_Pattern_Library[i]);
-                                if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == NULL)
+                                if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == 0)
                                 {
                                     if (pattern_numbers[i] == 0)
                                     {
@@ -3333,7 +3349,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 										for (i = 0; i < solid_pattern_library_no; i++)
 										{
 											solid_pattern_library_item = (SOLID_PATTERN_LIBRARY_ITEM*)(Solid_Pattern_Library[i]);
-											if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == NULL)
+											if (strcmp(name_ptr, solid_pattern_library_item->pattern_name) == 0)
 											{
 												pattern_numbers[i] = 1;
 												patterns_exist=TRUE;
@@ -3426,7 +3442,7 @@ static int read_old_ver_block_param (int f, int alfab_version /*char *blok_naglo
 static TMENU mNie_Tak={2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmNie_Tak,NULL,NULL};
 
 #ifndef LINUX
-DWORD RunSilent(char* strFunct, char* strstrParams)
+ULONG RunSilent(char* strFunct, char* strstrParams)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInfo;
@@ -3480,6 +3496,40 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 	return rc;
 
 }
+
+DWORD SystemSilent(char* strFunct, char* strstrParams)
+{
+	intptr_t ret;
+	char Args[MAXPATH]="C:\\Windows\\System32\\cmd.exe";;
+	FILE *pp;
+
+	get_console();
+
+	pp = _popen("where cmd.exe", "r");
+	if (pp != NULL)
+	{
+		while (1)
+		{
+			char* line;
+			char buf[1000];
+			line = fgets(buf, sizeof(buf), pp);
+			if (line == NULL) break;
+			if ((strstr(strlwr(line), "cmd.exe") != NULL) && (strstr(strlwr(line), "not find") == NULL))
+			{
+				strcpy(Args, line);
+				if (Args[strlen(Args) - 1] == '\n') Args[strlen(Args) - 1] = 0;
+				//break;
+			}
+		}
+		_pclose(pp);
+	}
+
+	ret = _spawnl (P_NOWAIT, Args, "/c", strFunct, strstrParams, NULL) ;
+
+	free_console();
+
+	return (DWORD)ret;  //TO CHECK
+}
 #else
 #include <stdlib.h>
 #endif
@@ -3502,12 +3552,21 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
         }
         sprintf(command, "./%s %s", script, strstrParams);
     }
-    else {
+    else
+#ifndef MACOS
+    	{
         if (ptr_str != NULL) {
             *ptr_str = '\0';
             strcat(script, ".py");
         }
-        sprintf(command, "python %s %s", script, strstrParams);
+        sprintf(command, "%s %s %s", PYTHON, script, strstrParams);
+#else
+	{
+    	if (ptr_str != NULL) {
+    		*ptr_str = '\0';
+    	}
+    	sprintf(command, "./%s %s", script, strstrParams);  //compiled
+#endif
     }
     printf(command, "\n");
     ret = system(command);
@@ -3529,24 +3588,37 @@ DWORD SystemSilent(char* strFunct, char* strstrParams)
     return ret;  //TO CHECK
 }
 
+DWORD SystemSilentS(char* strstrParams)
+{
+    int ret;
+
+    printf("%s\n",strstrParams);
+    ret = system(strstrParams);
+
+    return ret;  //TO CHECK
+}
+
 BOOL test_python(void)
 {
     FILE *pp;
     BOOL python=0;
+	char commnd[MAXFILE]="";
     //checking python
-    pp = popen("python --version", "r");
+	sprintf(commnd,"%s --version", PYTHON);
+    //pp = popen("python --version", "r");
+	pp = popen(commnd, "r");
     if (pp != NULL)
     {
         while (1)
         {
             char *line;
-            char buf[1000];
+            char buf[1000]="";
             line = fgets(buf, sizeof buf, pp);
             if (line == NULL) break;
             if ((strstr(strlwr(line), "python") != NULL) && (strstr(strlwr(line), "not found") == NULL))
             {
                 python = 1;
-                break;
+                //break;
             }
             if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
         }
@@ -3559,26 +3631,90 @@ BOOL test_pillow(void)
 {
     FILE *pp;
     BOOL pillow=0;
+	char commnd[MAXFILE]="";
     //checking pillow
-    pp = popen("python -m pip show pillow", "r");
+	sprintf(commnd,"%s -m pip show pillow", PYTHON);
+    //pp = popen("python -m pip show pillow", "r");
+	pp = popen(commnd, "r");
     if (pp != NULL)
     {
         while (1)
         {
             char *line;
-            char buf[1000];
+            char buf[1000]="";
             line = fgets(buf, sizeof buf, pp);
             if (line == NULL) break;
             if (strstr(strlwr(line), "version:") != NULL)
             {
                 pillow = 1;
-                break;
+                //break;
             }
             if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
         }
         pclose(pp);
     }
     return pillow;
+}
+
+BOOL test_wxpython(void)
+{
+    FILE *pp;
+    BOOL pillow=0;
+    //checking pillow
+	char commnd[MAXFILE]="";
+	//checking wxpython
+	sprintf(commnd,"%s -m pip show wxpython", PYTHON);
+    //pp = popen("python -m pip show wxpython", "r");
+	pp = popen(commnd, "r");
+    if (pp != NULL)
+    {
+        while (1)
+        {
+            char *line;
+            char buf[1000]="";
+            line = fgets(buf, sizeof buf, pp);
+            if (line == NULL) break;
+            if (strstr(strlwr(line), "version:") != NULL)
+            {
+                pillow = 1;
+                //break;
+            }
+            if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
+        }
+        pclose(pp);
+        sleep(0);
+    }
+    return pillow;
+}
+
+BOOL test_pyobjc(void)
+{
+	FILE *pp;
+	BOOL pyobjc=0;
+	//checking pyobjc
+	char commnd[MAXFILE]="";
+	//checking wxpython
+	sprintf(commnd,"%s -m pip show pyobjc", PYTHON);
+	pp = popen(commnd, "r");
+	if (pp != NULL)
+	{
+		while (1)
+		{
+			char *line;
+			char buf[1000]="";
+			line = fgets(buf, sizeof buf, pp);
+			if (line == NULL) break;
+			if (strstr(strlwr(line), "version:") != NULL)
+			{
+				pyobjc = 1;
+				//break;
+			}
+			if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
+		}
+		pclose(pp);
+		sleep(0);
+	}
+	return pyobjc;
 }
 
 
@@ -3588,7 +3724,7 @@ BOOL test_python_pillow(void)
     {
         int ret;
         char tools_to_install[72];
-        sprintf(tools_to_install, "python + Pillow %s",  _TOOLS_TO_INSTALL_);
+        sprintf(tools_to_install, "%s + Pillow %s",  PYTHON, _TOOLS_TO_INSTALL_);
         ret = ask_question(1, _No_, _Yes_, "Error", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1, 203);
         return FALSE;
     }
@@ -3600,6 +3736,37 @@ BOOL test_python_pillow(void)
         ret = ask_question(1, _No_, _Yes_, "Error", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1, 203);
         return FALSE;
     }
+    return TRUE;
+}
+
+BOOL test_python_wxpython_pyobjc(void)
+{
+    if (test_python()==FALSE)
+    {
+        int ret;
+        char tools_to_install[72];
+        sprintf(tools_to_install, "%s + wxPython %s",  PYTHON, _TOOLS_TO_INSTALL_);
+        ret = ask_question(1, _No_, _Yes_, "Error", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1, 61);  //203
+        return FALSE;
+    }
+    if (test_wxpython()==FALSE)
+    {
+        int ret;
+        char tools_to_install[72];
+        sprintf(tools_to_install, "wx for python (wxPython) %s",  _TOOLS_TO_INSTALL_);
+        ret = ask_question(1, _No_, _Yes_, "Error", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1, 61);  //203
+        return FALSE;
+    }
+#ifdef MACOS
+	if (test_pyobjc()==FALSE)
+    {
+        int ret;
+        char tools_to_install[72];
+        sprintf(tools_to_install, "pyobjc for python %s",  _TOOLS_TO_INSTALL_);
+        ret = ask_question(1, _No_, _Yes_, "Error", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1, 61);  //203
+        return FALSE;
+    }
+#endif
     return TRUE;
 }
 
@@ -3686,8 +3853,10 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
   PCXheader head;
 
 #ifdef LINUX
+#ifndef MACOS  //python programs are compiled
     if (test_python_pillow()==FALSE)
         return 0;
+#endif
 #endif
   
   *adp = NULL ;
@@ -3697,7 +3866,7 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
   if (strcmp(extension, ".PCX") != 0)  //needs conversion
   {
 	  //deleting temp.pcx
-	  if (__file_exists("temp.pcx")) unlink("temp.pcx");
+	  if (my_file_exists("temp.pcx")) unlink("temp.pcx");
 
 	  sprintf(params, "\"%s\" temp.pcx", fn);
 	  runcode = RunSilent("image2pcx.exe", params);
@@ -3707,7 +3876,7 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
 		  ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 		  return 0;
 	  }
-	  if (__file_exists("temp.pcx")) strcpy(fn, "temp.pcx");
+	  if (my_file_exists("temp.pcx")) strcpy(fn, "temp.pcx");
 	  else
 	  {
 		  sprintf(error_str, "%s%s", zb_err_message, zb_unknown);
@@ -3875,8 +4044,10 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	unsigned char bits_per_pixel;
 
 #ifdef LINUX
+#ifndef MACOS
     if (test_python_pillow()==FALSE)
         return 0;
+#endif
 #endif
 
 	*adp = NULL;
@@ -3887,7 +4058,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	{
 		
 		//deleting temp.png
-		if (__file_exists("temp.png")) unlink("temp.png");
+		if (my_file_exists("temp.png")) unlink("temp.png");
 
 		sprintf(params, "\"%s\" temp.png", fn);
 		runcode = RunSilent("image2png.exe", params);
@@ -3897,7 +4068,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
-		if (__file_exists("temp.png")) strcpy(fn, "temp.png");
+		if (my_file_exists("temp.png")) strcpy(fn, "temp.png");
 		else
 		{
 			sprintf(error_str, "%s%s", zb_err_message, zb_unknown);
@@ -3909,7 +4080,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	{
 
 		//deleting temp.png
-		if (__file_exists("temp.jpg")) unlink("temp.jpg");
+		if (my_file_exists("temp.jpg")) unlink("temp.jpg");
 
 		sprintf(params, "\"%s\" temp.jpg", fn);
 		runcode = RunSilent("image2jpg.exe", params);
@@ -3919,7 +4090,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
-		if (__file_exists("temp.jpg")) strcpy(fn, "temp.jpg");
+		if (my_file_exists("temp.jpg")) strcpy(fn, "temp.jpg");
 		else
 		{
 			sprintf(error_str, "%s%s", zb_err_message, zb_unknown);
@@ -3932,7 +4103,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	{
 
 		//deleting temp.png
-		if (__file_exists("temp.jpg")) unlink("temp.jpg");
+		if (my_file_exists("temp.jpg")) unlink("temp.jpg");
 
 		sprintf(params, "\"%s\" temp.jpg", fn);
 		runcode = RunSilent("jpg2noexif.exe", params);
@@ -3942,7 +4113,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
-		if (__file_exists("temp.jpg")) strcpy(fn, "temp.jpg");
+		if (my_file_exists("temp.jpg")) strcpy(fn, "temp.jpg");
 		else
 		{
 			sprintf(error_str, "%s%s", zb_err_message, zb_unknown);
@@ -4192,10 +4363,10 @@ int Convert_Image_to_ALX(char *fn) {
     BOOL retval;
     char PBM_invert_[6], PBM_nofilter_[6];
 
-	char drive[MAXDRIVE];
-	char dir[MAXDIR];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 
 
@@ -4216,7 +4387,7 @@ int Convert_Image_to_ALX(char *fn) {
     {
 
 //deleting temp.png
-        if (__file_exists("temp.bmp")) unlink("temp.bmp");
+        if (my_file_exists("temp.bmp")) unlink("temp.bmp");
 
         komunikat0(148);
 
@@ -4250,9 +4421,9 @@ int Convert_Image_to_ALX(char *fn) {
         }
     }
 
-    if (__file_exists(fn_temp))
+    if (my_file_exists(fn_temp))
     {
-        if (__file_exists("temp.pbm")) unlink("temp.pbm");
+        if (my_file_exists("temp.pbm")) unlink("temp.pbm");
 
         komunikat0(149);
 
@@ -4270,9 +4441,9 @@ int Convert_Image_to_ALX(char *fn) {
         return 0;
     }
 
-    if (__file_exists("temp.pbm"))
+    if (my_file_exists("temp.pbm"))
     {
-        if (__file_exists("temp.alx")) unlink("temp.alx");
+        if (my_file_exists("temp.alx")) unlink("temp.alx");
 
         komunikat0(150);
 
@@ -4289,7 +4460,7 @@ int Convert_Image_to_ALX(char *fn) {
         return 0;
     }
 
-    if (__file_exists("temp.alx"))
+    if (my_file_exists("temp.alx"))
     {
         komunikat0(0);
         return 1;

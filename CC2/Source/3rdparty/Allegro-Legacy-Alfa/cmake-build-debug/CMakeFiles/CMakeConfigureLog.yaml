@@ -1,0 +1,1262 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      The system is: Linux - 6.13.2-arch1-1 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/bin/clang 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/3.30.5/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /usr/bin/clang++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/3.30.5/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_b9876
+        [1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+        clang version 19.1.7
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1
+        Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv -v -fcoverage-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/clang/19/include
+         /usr/local/include
+         /usr/include
+        End of search list.
+        [2/2] : && /usr/bin/clang  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -o cmTC_b9876   && :
+        clang version 19.1.7
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1
+        Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_b9876 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
+        GNU ld (GNU Binutils) 2.44
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/clang/19/include]
+          add: [/usr/local/include]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/clang/19/include] ==> [/usr/lib/clang/19/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/clang/19/include;/usr/local/include;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv']
+        ignore line: []
+        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_b9876]
+        ignore line: [[1/2] /usr/bin/clang   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang version 19.1.7]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/bin/clang-19" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv -v -fcoverage-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-T7irFv -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -x c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/clang/19/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v  -rdynamic CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -o cmTC_b9876   && :]
+        ignore line: [clang version 19.1.7]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_b9876 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-export-dynamic] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_b9876] ==> ignore
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
+          arg [-L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1] ==> dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+          arg [-L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64] ==> dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_b9876.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> [/usr/lib64/Scrt1.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> [/usr/lib64/crti.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o] ==> [/usr/lib64/crtn.o]
+        collapse library dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        collapse library dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/usr/lib64/Scrt1.o;/usr/lib64/crti.o;/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o;/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o;/usr/lib64/crtn.o]
+        implicit dirs: [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1;/usr/lib64;/lib64;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.44
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_a52a9
+        [1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
+        clang version 19.1.7
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1
+        Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG -v -fcoverage-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1
+         /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu
+         /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward
+         /usr/lib/clang/19/include
+         /usr/local/include
+         /usr/include
+        End of search list.
+        [2/2] : && /usr/bin/clang++  -v -Wl,-v  -rdynamic CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_a52a9   && :
+        clang version 19.1.7
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1
+        Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_a52a9 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o
+        GNU ld (GNU Binutils) 2.44
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1]
+          add: [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu]
+          add: [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward]
+          add: [/usr/lib/clang/19/include]
+          add: [/usr/local/include]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1] ==> [/usr/include/c++/14.2.1]
+        collapse include dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu] ==> [/usr/include/c++/14.2.1/x86_64-pc-linux-gnu]
+        collapse include dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward] ==> [/usr/include/c++/14.2.1/backward]
+        collapse include dir [/usr/lib/clang/19/include] ==> [/usr/lib/clang/19/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/14.2.1;/usr/include/c++/14.2.1/x86_64-pc-linux-gnu;/usr/include/c++/14.2.1/backward;/usr/lib/clang/19/include;/usr/local/include;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG']
+        ignore line: []
+        ignore line: [Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_a52a9]
+        ignore line: [[1/2] /usr/bin/clang++   -fcolor-diagnostics   -v -MD -MT CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -c /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang version 19.1.7]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/bin/clang++" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG -v -fcoverage-compilation-dir=/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-7n5YKG -resource-dir /usr/lib/clang/19 -dependency-file CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1 -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward -internal-isystem /usr/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../x86_64-pc-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1]
+        ignore line: [ /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu]
+        ignore line: [ /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward]
+        ignore line: [ /usr/lib/clang/19/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v  -rdynamic CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_a52a9   && :]
+        ignore line: [clang version 19.1.7]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Selected GCC installation: /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -export-dynamic -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_a52a9 /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1 -L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-export-dynamic] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_a52a9] ==> ignore
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
+          arg [-L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1] ==> dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+          arg [-L/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64] ==> dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_a52a9.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o]
+          arg [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o] ==> obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/Scrt1.o] ==> [/usr/lib64/Scrt1.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crti.o] ==> [/usr/lib64/crti.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o]
+        collapse obj [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64/crtn.o] ==> [/usr/lib64/crtn.o]
+        collapse library dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1] ==> [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1]
+        collapse library dir [/usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/usr/lib64/Scrt1.o;/usr/lib64/crti.o;/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o;/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o;/usr/lib64/crtn.o]
+        implicit dirs: [/usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1;/usr/lib64;/lib64;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:27 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.44
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:98 (check_include_files)"
+    checks:
+      - "Looking for include file dirent.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hiSLZI"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hiSLZI"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_DIRENT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hiSLZI'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e7098
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e7098.dir/ALLEGRO_LEGACY_HAVE_DIRENT_H.c.o -MF CMakeFiles/cmTC_e7098.dir/ALLEGRO_LEGACY_HAVE_DIRENT_H.c.o.d -o CMakeFiles/cmTC_e7098.dir/ALLEGRO_LEGACY_HAVE_DIRENT_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hiSLZI/ALLEGRO_LEGACY_HAVE_DIRENT_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_e7098.dir/ALLEGRO_LEGACY_HAVE_DIRENT_H.c.o -o cmTC_e7098   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:99 (check_include_files)"
+    checks:
+      - "Looking for include file inttypes.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-llkMHd"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-llkMHd"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_INTTYPES_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-llkMHd'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_79e1c
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_79e1c.dir/ALLEGRO_LEGACY_HAVE_INTTYPES_H.c.o -MF CMakeFiles/cmTC_79e1c.dir/ALLEGRO_LEGACY_HAVE_INTTYPES_H.c.o.d -o CMakeFiles/cmTC_79e1c.dir/ALLEGRO_LEGACY_HAVE_INTTYPES_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-llkMHd/ALLEGRO_LEGACY_HAVE_INTTYPES_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_79e1c.dir/ALLEGRO_LEGACY_HAVE_INTTYPES_H.c.o -o cmTC_79e1c   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:101 (check_include_files)"
+    checks:
+      - "Looking for include file linux/awe_voice.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_d5dd1
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o -MF CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o.d -o CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c
+        FAILED: CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o 
+        /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o -MF CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o.d -o CMakeFiles/cmTC_d5dd1.dir/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4BUgBo/ALLEGRO_LEGACY_HAVE_LINUX_AWE_VOICE_H.c:2:10: fatal error: 'linux/awe_voice.h' file not found
+            2 | #include <linux/awe_voice.h>
+              |          ^~~~~~~~~~~~~~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:102 (check_include_files)"
+    checks:
+      - "Looking for include file linux/input.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-K89mkD"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-K89mkD"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-K89mkD'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_dacbc
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_dacbc.dir/ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H.c.o -MF CMakeFiles/cmTC_dacbc.dir/ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H.c.o.d -o CMakeFiles/cmTC_dacbc.dir/ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-K89mkD/ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_dacbc.dir/ALLEGRO_LEGACY_HAVE_LINUX_INPUT_H.c.o -o cmTC_dacbc   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:105 (check_include_files)"
+    checks:
+      - "Looking for include files sys/types.h, linux/joystick.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-BYU0u1"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-BYU0u1"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-BYU0u1'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_6ddd0
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_6ddd0.dir/ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H.c.o -MF CMakeFiles/cmTC_6ddd0.dir/ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H.c.o.d -o CMakeFiles/cmTC_6ddd0.dir/ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-BYU0u1/ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_6ddd0.dir/ALLEGRO_LEGACY_HAVE_LINUX_JOYSTICK_H.c.o -o cmTC_6ddd0   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:107 (check_include_files)"
+    checks:
+      - "Looking for include file linux/soundcard.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hfD5Fo"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hfD5Fo"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hfD5Fo'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_0a463
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_0a463.dir/ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_0a463.dir/ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_0a463.dir/ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-hfD5Fo/ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_0a463.dir/ALLEGRO_LEGACY_HAVE_LINUX_SOUNDCARD_H.c.o -o cmTC_0a463   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:108 (check_include_files)"
+    checks:
+      - "Looking for include file machine/soundcard.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e9729
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c
+        FAILED: CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o 
+        /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_e9729.dir/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-53Bzqe/ALLEGRO_LEGACY_HAVE_MACHINE_SOUNDCARD_H.c:2:10: fatal error: 'machine/soundcard.h' file not found
+            2 | #include <machine/soundcard.h>
+              |          ^~~~~~~~~~~~~~~~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:110 (check_include_files)"
+    checks:
+      - "Looking for include file soundcard.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SOUNDCARD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_eab86
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c
+        FAILED: CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o 
+        /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_eab86.dir/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-XSd38t/ALLEGRO_LEGACY_HAVE_SOUNDCARD_H.c:2:10: fatal error: 'soundcard.h' file not found
+            2 | #include <soundcard.h>
+              |          ^~~~~~~~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:111 (check_include_files)"
+    checks:
+      - "Looking for include file stdint.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jbhoLS"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jbhoLS"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_STDINT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jbhoLS'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_5418a
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_5418a.dir/ALLEGRO_LEGACY_HAVE_STDINT_H.c.o -MF CMakeFiles/cmTC_5418a.dir/ALLEGRO_LEGACY_HAVE_STDINT_H.c.o.d -o CMakeFiles/cmTC_5418a.dir/ALLEGRO_LEGACY_HAVE_STDINT_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-jbhoLS/ALLEGRO_LEGACY_HAVE_STDINT_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_5418a.dir/ALLEGRO_LEGACY_HAVE_STDINT_H.c.o -o cmTC_5418a   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:112 (check_include_files)"
+    checks:
+      - "Looking for include file sys/io.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Pu9OCq"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Pu9OCq"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYS_IO_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Pu9OCq'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_0afcd
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_0afcd.dir/ALLEGRO_LEGACY_HAVE_SYS_IO_H.c.o -MF CMakeFiles/cmTC_0afcd.dir/ALLEGRO_LEGACY_HAVE_SYS_IO_H.c.o.d -o CMakeFiles/cmTC_0afcd.dir/ALLEGRO_LEGACY_HAVE_SYS_IO_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Pu9OCq/ALLEGRO_LEGACY_HAVE_SYS_IO_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_0afcd.dir/ALLEGRO_LEGACY_HAVE_SYS_IO_H.c.o -o cmTC_0afcd   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:113 (check_include_files)"
+    checks:
+      - "Looking for include file sys/stat.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-RC5wmv"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-RC5wmv"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYS_STAT_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-RC5wmv'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_8b3af
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_8b3af.dir/ALLEGRO_LEGACY_HAVE_SYS_STAT_H.c.o -MF CMakeFiles/cmTC_8b3af.dir/ALLEGRO_LEGACY_HAVE_SYS_STAT_H.c.o.d -o CMakeFiles/cmTC_8b3af.dir/ALLEGRO_LEGACY_HAVE_SYS_STAT_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-RC5wmv/ALLEGRO_LEGACY_HAVE_SYS_STAT_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_8b3af.dir/ALLEGRO_LEGACY_HAVE_SYS_STAT_H.c.o -o cmTC_8b3af   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:114 (check_include_files)"
+    checks:
+      - "Looking for include file sys/time.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PcT3Y1"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PcT3Y1"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYS_TIME_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PcT3Y1'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_04e65
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_04e65.dir/ALLEGRO_LEGACY_HAVE_SYS_TIME_H.c.o -MF CMakeFiles/cmTC_04e65.dir/ALLEGRO_LEGACY_HAVE_SYS_TIME_H.c.o.d -o CMakeFiles/cmTC_04e65.dir/ALLEGRO_LEGACY_HAVE_SYS_TIME_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-PcT3Y1/ALLEGRO_LEGACY_HAVE_SYS_TIME_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_04e65.dir/ALLEGRO_LEGACY_HAVE_SYS_TIME_H.c.o -o cmTC_04e65   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:115 (check_include_files)"
+    checks:
+      - "Looking for include file sys/soundcard.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-utGNyp"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-utGNyp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-utGNyp'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_ef5b9
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_ef5b9.dir/ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H.c.o -MF CMakeFiles/cmTC_ef5b9.dir/ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H.c.o.d -o CMakeFiles/cmTC_ef5b9.dir/ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-utGNyp/ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_ef5b9.dir/ALLEGRO_LEGACY_HAVE_SYS_SOUNDCARD_H.c.o -o cmTC_ef5b9   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckIncludeFiles.cmake:132 (try_compile)"
+      - "CMakeLists.txt:116 (check_include_files)"
+    checks:
+      - "Looking for include file sys/utsname.h"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-MxBxxI"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-MxBxxI"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-MxBxxI'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_3babe
+        [1/2] /usr/bin/clang   -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_3babe.dir/ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H.c.o -MF CMakeFiles/cmTC_3babe.dir/ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H.c.o.d -o CMakeFiles/cmTC_3babe.dir/ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-MxBxxI/ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_3babe.dir/ALLEGRO_LEGACY_HAVE_SYS_UTSNAME_H.c.o -o cmTC_3babe   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:118 (check_function_exists)"
+    checks:
+      - "Looking for getexecname"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Y7qYAX"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Y7qYAX"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_GETEXECNAME"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Y7qYAX'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_885a4
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=getexecname -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Y7qYAX/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=getexecname -rdynamic CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o -o cmTC_885a4   && :
+        FAILED: cmTC_885a4 
+        : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=getexecname -rdynamic CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o -o cmTC_885a4   && :
+        /usr/bin/ld: CMakeFiles/cmTC_885a4.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x17): undefined reference to `getexecname'
+        clang: error: linker command failed with exit code 1 (use -v to see invocation)
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:119 (check_function_exists)"
+    checks:
+      - "Looking for memcmp"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_MEMCMP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_4c37c
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=memcmp -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_4c37c.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_4c37c.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_4c37c.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2/CheckFunctionExists.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2/CheckFunctionExists.c:7:3: warning: incompatible redeclaration of library function 'memcmp' [-Wincompatible-library-redeclaration]
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^
+        <command line>:1:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            1 | #define CHECK_FUNCTION_EXISTS memcmp
+              |                               ^
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DQxPK2/CheckFunctionExists.c:7:3: note: 'memcmp' is a builtin with type 'int (const void *, const void *, unsigned long)'
+        <command line>:1:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            1 | #define CHECK_FUNCTION_EXISTS memcmp
+              |                               ^
+        1 warning generated.
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=memcmp -rdynamic CMakeFiles/cmTC_4c37c.dir/CheckFunctionExists.c.o -o cmTC_4c37c   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:120 (check_function_exists)"
+    checks:
+      - "Looking for mkstemp"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-zwbXNC"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-zwbXNC"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_MKSTEMP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-zwbXNC'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_44eb4
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=mkstemp -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_44eb4.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_44eb4.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_44eb4.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-zwbXNC/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=mkstemp -rdynamic CMakeFiles/cmTC_44eb4.dir/CheckFunctionExists.c.o -o cmTC_44eb4   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:121 (check_function_exists)"
+    checks:
+      - "Looking for mmap"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2hdXYE"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2hdXYE"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_MMAP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2hdXYE'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_5031d
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=mmap -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_5031d.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_5031d.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_5031d.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-2hdXYE/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=mmap -rdynamic CMakeFiles/cmTC_5031d.dir/CheckFunctionExists.c.o -o cmTC_5031d   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:122 (check_function_exists)"
+    checks:
+      - "Looking for mprotect"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4WMVoP"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4WMVoP"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_MPROTECT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4WMVoP'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_250c4
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=mprotect -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_250c4.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_250c4.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_250c4.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4WMVoP/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=mprotect -rdynamic CMakeFiles/cmTC_250c4.dir/CheckFunctionExists.c.o -o cmTC_250c4   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:123 (check_function_exists)"
+    checks:
+      - "Looking for sched_yield"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4IDgq2"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4IDgq2"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SCHED_YIELD"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4IDgq2'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_ddb56
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=sched_yield -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_ddb56.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_ddb56.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_ddb56.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-4IDgq2/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=sched_yield -rdynamic CMakeFiles/cmTC_ddb56.dir/CheckFunctionExists.c.o -o cmTC_ddb56   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:124 (check_function_exists)"
+    checks:
+      - "Looking for stricmp"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xpC4IX"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xpC4IX"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_STRICMP"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xpC4IX'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_53407
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=stricmp -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-xpC4IX/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=stricmp -rdynamic CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o -o cmTC_53407   && :
+        FAILED: cmTC_53407 
+        : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=stricmp -rdynamic CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o -o cmTC_53407   && :
+        /usr/bin/ld: CMakeFiles/cmTC_53407.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x17): undefined reference to `stricmp'
+        clang: error: linker command failed with exit code 1 (use -v to see invocation)
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:125 (check_function_exists)"
+    checks:
+      - "Looking for strlwr"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gJgppX"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gJgppX"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_STRLWR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gJgppX'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_baad7
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=strlwr -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-gJgppX/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=strlwr -rdynamic CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o -o cmTC_baad7   && :
+        FAILED: cmTC_baad7 
+        : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=strlwr -rdynamic CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o -o cmTC_baad7   && :
+        /usr/bin/ld: CMakeFiles/cmTC_baad7.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x17): undefined reference to `strlwr'
+        clang: error: linker command failed with exit code 1 (use -v to see invocation)
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:126 (check_function_exists)"
+    checks:
+      - "Looking for strupr"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-9CTYyi"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-9CTYyi"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_STRUPR"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-9CTYyi'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_0ceff
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=strupr -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-9CTYyi/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=strupr -rdynamic CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o -o cmTC_0ceff   && :
+        FAILED: cmTC_0ceff 
+        : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=strupr -rdynamic CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o -o cmTC_0ceff   && :
+        /usr/bin/ld: CMakeFiles/cmTC_0ceff.dir/CheckFunctionExists.c.o: in function `main':
+        CheckFunctionExists.c:(.text+0x17): undefined reference to `strupr'
+        clang: error: linker command failed with exit code 1 (use -v to see invocation)
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckFunctionExists.cmake:86 (try_compile)"
+      - "CMakeLists.txt:127 (check_function_exists)"
+    checks:
+      - "Looking for sysconf"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3K31E6"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3K31E6"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SYSCONF"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3K31E6'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_fcc78
+        [1/2] /usr/bin/clang   -DCHECK_FUNCTION_EXISTS=sysconf -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_fcc78.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_fcc78.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_fcc78.dir/CheckFunctionExists.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-3K31E6/CheckFunctionExists.c
+        [2/2] : && /usr/bin/clang -DCHECK_FUNCTION_EXISTS=sysconf -rdynamic CMakeFiles/cmTC_fcc78.dir/CheckFunctionExists.c.o -o cmTC_fcc78   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:129 (check_c_source_compiles)"
+    checks:
+      - "Performing Test ALLEGRO_LEGACY_HAVE_SV_PROCFS_H"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_SV_PROCFS_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_8e61a
+        [1/2] /usr/bin/clang -DALLEGRO_LEGACY_HAVE_SV_PROCFS_H  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_8e61a.dir/src.c.o -MF CMakeFiles/cmTC_8e61a.dir/src.c.o.d -o CMakeFiles/cmTC_8e61a.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu/src.c
+        FAILED: CMakeFiles/cmTC_8e61a.dir/src.c.o 
+        /usr/bin/clang -DALLEGRO_LEGACY_HAVE_SV_PROCFS_H  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_8e61a.dir/src.c.o -MF CMakeFiles/cmTC_8e61a.dir/src.c.o.d -o CMakeFiles/cmTC_8e61a.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu/src.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu/src.c:5:29: error: variable has incomplete type 'struct prpsinfo'
+            5 |             struct prpsinfo psinfo;
+              |                             ^
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu/src.c:5:20: note: forward declaration of 'struct prpsinfo'
+            5 |             struct prpsinfo psinfo;
+              |                    ^
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-pwo2Bu/src.c:6:22: error: use of undeclared identifier 'PIOCPSINFO'
+            6 |             ioctl(0, PIOCPSINFO, &psinfo);
+              |                      ^
+        2 errors generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:139 (check_c_source_compiles)"
+    checks:
+      - "Performing Test ALLEGRO_LEGACY_HAVE_PROCFS_ARGCV"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_PROCFS_ARGCV"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e51f4
+        [1/2] /usr/bin/clang -DALLEGRO_LEGACY_HAVE_PROCFS_ARGCV  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e51f4.dir/src.c.o -MF CMakeFiles/cmTC_e51f4.dir/src.c.o.d -o CMakeFiles/cmTC_e51f4.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam/src.c
+        FAILED: CMakeFiles/cmTC_e51f4.dir/src.c.o 
+        /usr/bin/clang -DALLEGRO_LEGACY_HAVE_PROCFS_ARGCV  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e51f4.dir/src.c.o -MF CMakeFiles/cmTC_e51f4.dir/src.c.o.d -o CMakeFiles/cmTC_e51f4.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam/src.c
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam/src.c:4:29: error: variable has incomplete type 'struct prpsinfo'
+            4 |             struct prpsinfo psinfo;
+              |                             ^
+        /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-V1oWam/src.c:4:20: note: forward declaration of 'struct prpsinfo'
+            4 |             struct prpsinfo psinfo;
+              |                    ^
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:149 (check_c_source_compiles)"
+    checks:
+      - "Performing Test MAP_FAILED_DEFINED"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-maTkZ9"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-maTkZ9"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "MAP_FAILED_DEFINED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-maTkZ9'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_b27af
+        [1/2] /usr/bin/clang -DMAP_FAILED_DEFINED  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_b27af.dir/src.c.o -MF CMakeFiles/cmTC_b27af.dir/src.c.o.d -o CMakeFiles/cmTC_b27af.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-maTkZ9/src.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_b27af.dir/src.c.o -o cmTC_b27af   && :
+        
+      exitCode: 0
+  -
+    kind: "try_run-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CheckSourceRuns.cmake:93 (try_run)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckCSourceRuns.cmake:52 (cmake_check_source_runs)"
+      - "CMakeLists.txt:160 (check_c_source_runs)"
+    checks:
+      - "Performing Test ALLEGRO_LEGACY_USE_CONSTRUCTOR"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-U4Xcq2"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-U4Xcq2"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_USE_CONSTRUCTOR_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-U4Xcq2'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_e0e0d
+        [1/2] /usr/bin/clang -DALLEGRO_LEGACY_USE_CONSTRUCTOR  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_e0e0d.dir/src.c.o -MF CMakeFiles/cmTC_e0e0d.dir/src.c.o.d -o CMakeFiles/cmTC_e0e0d.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-U4Xcq2/src.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_e0e0d.dir/src.c.o -o cmTC_e0e0d   && :
+        
+      exitCode: 0
+    runResult:
+      variable: "ALLEGRO_LEGACY_USE_CONSTRUCTOR_EXITCODE"
+      cached: true
+      stdout: |
+      stderr: |
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "/home/marek/clion-2024.3.3/bin/cmake/linux/x64/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:169 (check_c_source_compiles)"
+    checks:
+      - "Performing Test ALLEGRO_LEGACY_HAVE_POSIX_MONOTONIC_CLOCK"
+    directories:
+      source: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-tgG5PL"
+      binary: "/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-tgG5PL"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps"
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/marek/Allegro-Legacy-master/cmake"
+    buildResult:
+      variable: "ALLEGRO_LEGACY_HAVE_POSIX_MONOTONIC_CLOCK"
+      cached: true
+      stdout: |
+        Change Dir: '/home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-tgG5PL'
+        
+        Run Build Command(s): /home/marek/clion-2024.3.3/bin/ninja/linux/x64/ninja -v cmTC_73e2f
+        [1/2] /usr/bin/clang -DALLEGRO_LEGACY_HAVE_POSIX_MONOTONIC_CLOCK  -fcolor-diagnostics -MD -MT CMakeFiles/cmTC_73e2f.dir/src.c.o -MF CMakeFiles/cmTC_73e2f.dir/src.c.o.d -o CMakeFiles/cmTC_73e2f.dir/src.c.o -c /home/marek/Allegro-Legacy-master/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-tgG5PL/src.c
+        [2/2] : && /usr/bin/clang  -rdynamic CMakeFiles/cmTC_73e2f.dir/src.c.o -o cmTC_73e2f   && :
+        
+      exitCode: 0
+...

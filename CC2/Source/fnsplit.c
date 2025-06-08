@@ -35,6 +35,7 @@ int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext)
     flags |= DRIVE;
     if (drive)
     {
+      drive[0]='\0';
       strncpy(drive, pp, 2);
       drive[2] = '\0';
     }
@@ -49,6 +50,7 @@ int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext)
     len = (int)(pe - pp);
     if (dir)
     {
+      dir[0]='\0';
       strncpy(dir, pp, len);
       dir[len] = '\0';
     }
@@ -67,6 +69,7 @@ int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext)
     if (name)
     {
       len = (int)(pp - pe);
+      name[0]='\0';
       strncpy(name, pe, len);
       name[len] = '\0';
       /* advance name over '.'s so they don't get scragged later on when the
@@ -80,8 +83,13 @@ int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext)
   if (pe)
   {
     flags |= EXTENSION;
-    if (ext) 
+    if (ext)
+      {
+      len = strlen(pe);
+      ext[0]='\0';
       strcpy(ext, pe);
+      ext[len] = '\0';
+    }
   }
   else 
     pe = strchr( pp, '\0');
@@ -92,6 +100,7 @@ int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext)
     len = (int)(pe - pp);
     if (name)
     {
+      name[0]='\0';
       strncpy(name, pp, len);
       name[len] = '\0';
     }

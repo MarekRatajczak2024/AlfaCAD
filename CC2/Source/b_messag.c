@@ -56,6 +56,7 @@ extern void     settextjustify(int horiz, int vert);
 extern int TTF_text_len(char* text);
 extern int utf8len(const char* s);
 extern BOOL get_short_notice(void);
+extern int vfv(int v);
 
 #define BUFMAKLEN 20000
 #define y1 0
@@ -86,12 +87,12 @@ void bar2_margin_pxl(int len_pxl)
 
 void bar2_tab(void)
 {
-    bar(10, ED_INF_HEIGHT, maxX - 1, 2 * ED_INF_HEIGHT - y1); //1);
+    bar(vfv(10), ED_INF_HEIGHT, maxX - 1, 2 * ED_INF_HEIGHT - y1); //1);
 }
 
 void bar2_tab_half_margin(void)
 {
-    bar(10, ED_INF_HEIGHT, (maxX - 15) / 2.0 + 4, 2 * ED_INF_HEIGHT - y1); //1);
+    bar(vfv(10), ED_INF_HEIGHT, (maxX - 15) / 2.0 + 4, 2 * ED_INF_HEIGHT - y1); //1);
 }
 
 void bar2_tab_len(int len_pxl)
@@ -99,7 +100,7 @@ void bar2_tab_len(int len_pxl)
     if (len_pxl > (maxX - 15)) len_pxl = maxX - 11;
     else if (len_pxl < (maxX - 15)/2.0) len_pxl = (maxX - 15)/2.0;
 
-    bar(10, ED_INF_HEIGHT, len_pxl+4, 2 * ED_INF_HEIGHT - y1); //1);
+    bar(vfv(10), ED_INF_HEIGHT, len_pxl+4, 2 * ED_INF_HEIGHT - y1); //1);
 }
 
 void bar2_short(int len)
@@ -168,7 +169,7 @@ void InfoList(int n)
   setfillstyle_(SOLID_FILL, BKCOLOR) ;
   bar2();
   if(n)
-   { moveto(10,ED_INF_HEIGHT + y2); 
+   { moveto(vfv(10),ED_INF_HEIGHT + y2);
 	 setcolor(kolory.ink);
 	 outtext_r(komunikaty[n]);
    }
@@ -206,7 +207,7 @@ void InfoListStr(int n, char *st)
   setviewport(0, 0, getmaxx(),getmaxy(), 1);
    setfillstyle_(SOLID_FILL, BKCOLOR) ;
    bar2_tab();
-   moveto(11,ED_INF_HEIGHT + y2);
+   moveto(vfv(11),ED_INF_HEIGHT + y2);
    setcolor(kolory.ink);
    sprintf (buf, messages1 [n], st) ;
    outtext_r(buf);
@@ -222,9 +223,9 @@ void InfoListStr_Inv(int n, char *st)
   getviewsettings (&viewinfo);
   setviewport(0, 0, getmaxx(),getmaxy(), 1);
    setfillstyle_(SOLID_FILL, kolory.ink /*BKCOLOR*/) ;
-   //bar(10,ED_INF_HEIGHT,maxX-1,2*ED_INF_HEIGHT - 1);
+   //bar(vfv(10),ED_INF_HEIGHT,maxX-1,2*ED_INF_HEIGHT - 1);
    bar2_tab();
-   moveto(11,ED_INF_HEIGHT + y2);
+   moveto(vfv(11),ED_INF_HEIGHT + y2);
    setcolor(BKCOLOR /*kolory.ink*/);
    sprintf (buf, messages1 [n], st) ;
    outtext_r(buf);
@@ -267,7 +268,7 @@ void ErrListFactory(int n, char *error_str)
    bar2_tab_half_margin();
   if(n)
    {
-     moveto(11, ED_INF_HEIGHT + y2);
+     moveto(vfv(11), ED_INF_HEIGHT + y2);
  	  setcolor(kolory.inkk);
 
 	  sprintf(komunikat, "%s %s", errors_kom[n], error_str);
@@ -314,7 +315,7 @@ void ErrListStr(char *st)
   Error=1;
   setfillstyle_(SOLID_FILL,kolory.paperk);
   bar2_tab();
-  moveto(11/*1*/,ED_INF_HEIGHT + y2);  //+1
+  moveto(vfv(11)/*1*/,ED_INF_HEIGHT + y2);  //+1
   setcolor(kolory.inkk);
   outtext_r(st);
   setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
@@ -393,7 +394,7 @@ void komunikat_str(char *st)
   setfillstyle_(SOLID_FILL,kolory.paperk);
 
   bar2_margin();
-  moveto(10,ED_INF_HEIGHT + y3);
+  moveto(vfv(10),ED_INF_HEIGHT + y3);
   setcolor(kolory.inkk);
   outtext_r(st);
   setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
@@ -411,7 +412,7 @@ void komunikat_str_len(char *st)
     len_pxl=TTF_text_len(st);
 
     bar2_margin_pxl(min(max(len_pxl+20,maxX/3) , maxX/2 - 10*WIDTH));
-    moveto(10,ED_INF_HEIGHT + y3);
+    moveto(vfv(10),ED_INF_HEIGHT + y3);
     setcolor(kolory.inkk);
     outtext_r(st);
     setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);

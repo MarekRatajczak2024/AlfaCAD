@@ -70,7 +70,7 @@ static char confirm[] = u8"Confirm";
 extern char *hpdf_error_detail[];
 extern size_t utf8_num_bytes(char * s);
 extern int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext);
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern char* strupr(char* s);
 extern char *winfont;
 extern char *otffont;
@@ -331,10 +331,10 @@ int text2PDF (char *in_file_name, char *out_file_name)
     int i, cnt, len, lenc;
 
     int flags;
-    char drive[MAXDRIVE];
-    char dir[MAXDIR];
-    char file[MAXFILE];
-    char ext[MAXEXT], ext_[MAXEXT];
+    char drive[MAXDRIVE]="";
+    char dir[MAXDIR]="";
+    char file[MAXFILE]="";
+    char ext[MAXEXT]="", ext_[MAXEXT]="";
     char ttf_file_path[MAXPATH]="";
     char *fontdir;
     char face_name[128]="";
@@ -375,7 +375,7 @@ int text2PDF (char *in_file_name, char *out_file_name)
     char *ptrsz_file="cour.ttf";
 
     flags = fnsplit(ptrsz_file, drive, dir, file, ext);
-    if (__file_exists(ptrsz_file)) strcpy(ttf_file_path, ptrsz_file);
+    if (my_file_exists(ptrsz_file)) strcpy(ttf_file_path, ptrsz_file);
     else
     {
 

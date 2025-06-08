@@ -41,6 +41,9 @@
 #include FT_GLYPH_H
 
 #include <glyph_structs.h>
+#ifdef MACOS
+#include <glyph.h>
+#endif
 
 #include "leak_detector_cpp.hpp"
 

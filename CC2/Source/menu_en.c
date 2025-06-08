@@ -21,7 +21,7 @@
 #define FILENAME_INI L"ALFACAD.INI"
 LPWSTR filename_ini = (LPWSTR)L"Edit ALFACAD.INI";
 
-// Create a locale object representing the German (Switzerland) locale
+// Create a locale object representing the locale
 #define _LOCALE_ "en-US"
 
 char __BOLD__[]=u8"Bold";
@@ -35,6 +35,7 @@ char __HIDDEN__[]=u8"Hidden";
 char __COPY_TEXT__[]=u8"Copy text from clipboard";
 
 char _EDIT_TEXT_[]=u8"Edit text";
+char _EDIT_FILE_[]=u8"Edit file";
 
 #endif
 
@@ -505,7 +506,7 @@ static POLE pmCzcionkaEkranTTF[] = {
    {u8"Width factor\0 \0", 'W',230,NULL},
 };
 
-TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };  //26
+TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,30,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };
 
 static POLE pmWindow[] = {
    {u8"expand Horizontally",'H',467,NULL},
@@ -515,25 +516,27 @@ static POLE pmWindow[] = {
    {u8"restore Last",'L',471,NULL},
 };
 
-static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };  //9
+static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,12,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };
 
 
 static POLE pmDialogCursor[] = {
    {u8"Small",'S',591,NULL},
    {u8"Big",'B',592,NULL},
+   {u8"Huge",'H',832,NULL},
 };
 
-static TMENU mDialogCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };  //22
+static TMENU mDialogCursor = { 3,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };
 
 #define smallcursor u8"Small"
 #define bigcursor u8"Big"
+#define hugecursor u8"Huge"
 
 static POLE pmMenuCursor[] = {
    {u8"Bar",'B',821,NULL},
    {u8"Cursor",'C',822,NULL},
 };
 
-static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };  //22
+static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,35,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };
 
 #define barstyle u8"Bar"
 #define cursorstyle u8"Cursor"
@@ -550,27 +553,38 @@ static POLE pmTranslucency[] = {
 };
 
 
-static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };  //14
+static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };
 
 
-static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };  //24
+static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
-static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,31,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };  //new
+static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };
+
+static POLE pmMouseWheel[] = {
+   {u8"Natural",'N',834,NULL},
+   {u8"Regular",'R',835,NULL},
+};
+
+static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };
+
 
 POLE pmOpcje[] = {
 {u8"Drawing board configuration\0",'D',109,NULL},
 {u8"auto Pan\0Yes\0 ",'P',145, &mAutoPan},  //PAN
-{u8"Auto-panning factor\0",'A',110,NULL},
+{u8"Auto-panning increment\0",'A',110,NULL},
 {u8"Opacity of fills\0",'O',542,&mTranslucency},
 {u8"desktop Font\0 ",'F',111,&mCzcionkaEkranTTF},
-//{u8"desktop Font\0 ",'F',111,NULL},
 {u8"desktop Background\0",'B',527,NULL},
 {u8"dialog Cursor\0",'C',590,&mDialogCursor},
 {u8"Menu style\0",'M',820,&mMenuCursor},
+{u8"Zoom/scroll wheel\0",'Z',833,&mMouseWheel},
 {u8"Educational demo mode\0 N\0",'E',661,&mDemoSelect},
 {u8"Save window setup\0",'S',530,NULL},
 {u8"Window setup\0",'W',478,&mWindow},
 };
+
+#define _NATURAL__ u8"Natural"
+#define _REGULAR__ u8"Regular"
 
 #define _FILE_ u8"File "
 #define _FILE_EXISTS_ u8" exists. Overwrite it ? (Yes/No/Esc):"
@@ -711,8 +725,7 @@ char instruct_txt[][64]={u8"Open menu / Accept",
                         u8"system shortkeys, press them first, release,",
                         u8"then press another key of the combination",
                         u8"Editing numeric values or re-editing text",
-                        u8"or"};
-
+                        u8"оr"};
 
 #define osnap_icon0 156
 #define osnap_icon1 164
@@ -1583,6 +1596,7 @@ static char* desktop_data_param[] =
   "Dynamic menu",
   "Desktop cursor",
   "Menu style",
+  "Wheel style",
   "Instruction",
 };
 
@@ -1594,8 +1608,9 @@ static char* desktop_data_param_comment[] =
 	//";Screen saver delay in min or 0 (off)",
 	";desktop autopanning factor",
 	";",
-	"; small 0, big 1",
+	"; small 0, big 1, huge 2",
     "; bar 0, pointer 1",
+    "; 0-natural, 1-regular",
     "; showing short instruction on start",
 };
 
@@ -2061,7 +2076,7 @@ static POLE pmFillTyp[] = {
 	   {u8"tHick\0",'H',279,NULL},
 	   {u8"very thicK\0",'K',280,NULL},
 	   {u8"Extra thick\0",'E',281,NULL},
-	   {u8"Pattern\0",'P',617, &mSolidPattern},
+	   {u8"Pattern\0",'P',837, &mSolidPattern},
 	   //  {u8"- wyłącz obszar",'-',0,NULL},
 	   //  {u8"+ Aktywny obszar",'+',0,NULL},
 };
@@ -2152,7 +2167,7 @@ static POLE pmFillTyp[] = {
 	   {u8"tHick\0",'H',291,NULL},
 	   {u8"very thicK\0",'K',292,NULL},
 	   {u8"Extra thick\0",'E',293,NULL},
-	   {u8"Pattern\0",'P',617, &mTracePattern},
+	   {u8"Pattern\0",'P',836, &mTracePattern},
 };
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,10,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
@@ -2478,7 +2493,7 @@ POLE pmHatch[] = {
 	 {u8"indicate Base point\0 \0", 'B', 438,NULL},
 	 {u8"pattern line Distance / spline segment length\0 1\0             ", 'D', 439,NULL},
 	 {u8"Thermal insulation\0 \0", 'T', 679,&mSelect_Ins},
-	 {u8"Image pattern\0 \0",'I',617,&mSolidHatchPattern}
+	 {u8"Image pattern\0 \0",'I',836,&mSolidHatchPattern}
 	  };
 
 #define _HATCHING_ u8"Hatching"

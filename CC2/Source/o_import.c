@@ -157,7 +157,7 @@ extern int get_pXk(void);
 extern int get_pYp(void);
 extern int get_pYk(void);
 
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 
 extern int insulation_hatch_pattern[2];
 extern double insulation_hatch_scale[2];
@@ -1395,10 +1395,10 @@ int GetBackground(char *fn, int Max_Len, int opcja, char* pathname, char *pathna
 	int max_y;
 	int background_dlg_dx;
 	int background_dlg_dy;
-	char drive[MAXDRIVE];
-	char dir[MAXDIR];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 	char* dirptr;
 	double X_bak, Y_bak;
@@ -1436,7 +1436,7 @@ int GetBackground(char *fn, int Max_Len, int opcja, char* pathname, char *pathna
 			dy_win_cat = getmaxy() - 8; // 10;
 
 			background_dlg.dx = ((float)getmaxx() - 20.0) / wsp_x;
-			background_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;
+			background_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;  //-20
 
 			background_dlg_dx = background_dlg.dx;
 			background_dlg_dy = background_dlg.dy;
@@ -1458,8 +1458,8 @@ int GetBackground(char *fn, int Max_Len, int opcja, char* pathname, char *pathna
 			buttons_bkg[3].y = 4 * dy_BUT + 3 * DYButCat;
 			buttons_bkg[4].y = 5 * dy_BUT + 4 * DYButCat;
 
-			buttons_bkg[5].y = background_dlg.dy - DYButCat - dy_BUT;
-			images_bkg[0].y1 = background_dlg.dy - DYButCat*2 - dy_BUT;
+			buttons_bkg[5].y = background_dlg.dy - DYButCat - dy_BUT - 5; ////
+			images_bkg[0].y1 = background_dlg.dy - DYButCat*2 - dy_BUT - 5; ////
 			images_bkg[0].x1 = background_dlg.dx - 32 - dx_BUT;
 
 			param_line_out();
@@ -1559,8 +1559,8 @@ int GetBackground(char *fn, int Max_Len, int opcja, char* pathname, char *pathna
 
 			if (max_y < background_dlg.dy) background_dlg.dy = max_y;
 
-			buttons_bkg[5].y = background_dlg.dy - DYButCat - dy_BUT;
-			images_bkg[0].y1 = background_dlg.dy - DYButCat * 2 - dy_BUT;
+			buttons_bkg[5].y = background_dlg.dy - DYButCat - dy_BUT - 5; ////
+			images_bkg[0].y1 = background_dlg.dy - DYButCat * 2 - dy_BUT - 5; ////
 
 			n_list_till = (n_list_begin_bkg + d_n_list);
 
@@ -1899,7 +1899,7 @@ int getBlockFromDialog(TMENU *mBlockList0, long *my_ptr__off_block)
         dy_win_cat = getmaxy() - 8; // 10;
 
         blocklist_dlg.dx = ((float)getmaxx() - 20.0) / wsp_x;
-        blocklist_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;
+        blocklist_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;  //-20
 
         blocklist_dlg_dx = blocklist_dlg.dx;
         blocklist_dlg_dy = blocklist_dlg.dy;
@@ -1928,9 +1928,9 @@ int getBlockFromDialog(TMENU *mBlockList0, long *my_ptr__off_block)
         buttons_blk[6].y = 7 * dy_BUT + 6 * DYButCat + 14;
         buttons_blk[7].y = 7 * dy_BUT + 6 * DYButCat  + 14;
 
-        buttons_blk[8].y = blocklist_dlg.dy - DYButCat - dy_BUT;
+        buttons_blk[8].y = blocklist_dlg.dy - DYButCat - dy_BUT - 5;  ////
 
-        images_blk[0].y1 = blocklist_dlg.dy - DYButCat*2 - dy_BUT;
+        images_blk[0].y1 = blocklist_dlg.dy - DYButCat*2 - dy_BUT - 5; ////
         images_blk[0].x1 = blocklist_dlg.dx - 32 - dx_BUT;
 
         images_blk[1].y1 = 7 * dy_BUT + 5 * DYButCat  + 27;
@@ -2017,8 +2017,8 @@ int getBlockFromDialog(TMENU *mBlockList0, long *my_ptr__off_block)
 
         if (max_y < blocklist_dlg.dy) blocklist_dlg.dy = max_y;
 
-        buttons_blk[8].y = blocklist_dlg.dy - DYButCat - dy_BUT;
-        images_blk[0].y1 = blocklist_dlg.dy - DYButCat * 2 - dy_BUT;
+        buttons_blk[8].y = blocklist_dlg.dy - DYButCat - dy_BUT - 5;  ////
+        images_blk[0].y1 = blocklist_dlg.dy - DYButCat * 2 - dy_BUT - 5; ////
 
         n_list_till_blk = (n_list_begin_blk + d_n_list);
 
@@ -2240,11 +2240,11 @@ int FileNameOC(char *fn, int Max_Len)
 	int catalog_dlg_dx;
 	int catalog_dlg_dy;
 
-	char pathname[MAXPATH];
-	char drive[MAXDRIVE];
-	char dir[MAXDIR];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char pathname[MAXPATH]="";
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 	int kolory_paper;
 	char* dirptr;
@@ -2318,7 +2318,7 @@ int FileNameOC(char *fn, int Max_Len)
 			dy_win_cat = getmaxy() - 8; // 10;
 
 			catalog_dlg.dx = ((float)getmaxx() - 20.0) / wsp_x;
-			catalog_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;
+			catalog_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;  //-20
 
 			catalog_dlg_dx = catalog_dlg.dx;
 			catalog_dlg_dy = catalog_dlg.dy;
@@ -2343,9 +2343,9 @@ int FileNameOC(char *fn, int Max_Len)
 			buttons_cat[4].y = 5 * dy_BUT + 4 * DYButCat;
 			buttons_cat[5].y = 6 * dy_BUT + 5 * DYButCat;
 
-			buttons_cat[6].y = catalog_dlg.dy - DYButCat - dy_BUT;
+			buttons_cat[6].y = catalog_dlg.dy - DYButCat - dy_BUT - 5; ////
 
-			images_cat[0].y1 = catalog_dlg.dy - DYButCat*2 - dy_BUT;
+			images_cat[0].y1 = catalog_dlg.dy - DYButCat*2 - dy_BUT - 5;  ////
 
             ///////////////////
             Save_Update_flex(0, &curr_h, &curr_v);
@@ -2434,8 +2434,8 @@ int FileNameOC(char *fn, int Max_Len)
 
 			if (max_y < catalog_dlg.dy) catalog_dlg.dy = max_y;
 
-			buttons_cat[6].y = catalog_dlg.dy - DYButCat - dy_BUT;
-			images_cat[0].y1 = catalog_dlg.dy - DYButCat * 2 - dy_BUT;
+			buttons_cat[6].y = catalog_dlg.dy - DYButCat - dy_BUT - 5;  ////
+			images_cat[0].y1 = catalog_dlg.dy - DYButCat * 2 - dy_BUT - 5; ////
 
 			n_list_till = (n_list_begin + d_n_list);
 			
@@ -2672,7 +2672,7 @@ int FileNamePattern(char **pattern_files, int n_list)
 			dy_win_cat = getmaxy() - 8; // 10;
 
 			patterns_dlg.dx = ((float)getmaxx() - 20.0) / wsp_x;
-			patterns_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y;
+			patterns_dlg.dy = ((float)getmaxy() - 42.0 *((float)HEIGHT / 12.0) - 20) / wsp_y; //-20
 
 			patterns_dlg_dx = patterns_dlg.dx;
 			patterns_dlg_dy = patterns_dlg.dy;
@@ -2692,8 +2692,8 @@ int FileNamePattern(char **pattern_files, int n_list)
 			buttons_pattern[1].y = 2 * dy_BUT + DYButCat;
 			buttons_pattern[2].y = 3 * dy_BUT + 2 * DYButCat;
 			buttons_pattern[3].y = 4 * dy_BUT + 3 * DYButCat;
-			buttons_pattern[4].y = patterns_dlg.dy - DYButCat - dy_BUT;
-			images_pattern[0].y1 = patterns_dlg.dy - DYButCat * 2 - dy_BUT;
+			buttons_pattern[4].y = patterns_dlg.dy - DYButCat - dy_BUT - 5; ////
+			images_pattern[0].y1 = patterns_dlg.dy - DYButCat * 2 - dy_BUT - 5; ////
 			images_pattern[0].x1 = patterns_dlg.dx - 32 - dx_BUT;
 
 			Cur_offd(X, Y);
@@ -2800,8 +2800,8 @@ int FileNamePattern(char **pattern_files, int n_list)
 
 			if (max_y < patterns_dlg.dy) patterns_dlg.dy = max_y;
 
-			buttons_pattern[4].y = patterns_dlg.dy - DYButCat - dy_BUT;
-			images_pattern[0].y1 = patterns_dlg.dy - DYButCat * 2 - dy_BUT;
+			buttons_pattern[4].y = patterns_dlg.dy - DYButCat - dy_BUT - 5; ////
+			images_pattern[0].y1 = patterns_dlg.dy - DYButCat * 2 - dy_BUT - 5; ////
 
 			n_list_till = (n_list_begin_patterns + d_n_list);
 
@@ -4880,7 +4880,7 @@ int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double *ptrdf_
   sprintf(hatch_path, "%s%c%s", __PATTERNS__, Slash, hatch_file);
 
 
-  if (!__file_exists((char *) &hatch_path))
+  if (!my_file_exists((char *) &hatch_path))
   {
 	  sprintf(hatch_path, "%s%c%s", __PATTERNS__, Slash, _NO_PATTERN_);
   }

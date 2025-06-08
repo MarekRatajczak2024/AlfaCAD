@@ -138,7 +138,7 @@ extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern int get_alfacad_logo_font();
 extern T_Prot_Date s_prot_date;
 extern char *strlwr2(char *_s);
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern void TTF_text(BITMAP *bmp, char *text, int x, int y);
 extern void Draw_TTF_text(TEXT *t, char *t_text, BITMAP *bmp, int x, int y, double kat, float wysokosc_p, COLOR_ kolor, int mode);
 extern void Init_Draw_TTF_text(TEXT *t, double kat, float wysokosc_p, COLOR_ kolor);
@@ -2167,7 +2167,7 @@ BOOL StartPDFPage(void)
 		if (pdf_page_no == 0) sprintf(png_file, "Temp/pdfimg%03d_.png", Client_number);
 		else sprintf(png_file, "Temp/pdfimg%03d_%03d.png", Client_number, pdf_page_no);
 
-		if (__file_exists(png_file))
+		if (my_file_exists(png_file))
 		{
 			image[pdf_page_no] = HPDF_LoadPngImageFromFile_(pdf_doc, png_file);
 			if (image[pdf_page_no] == NULL) return FALSE;

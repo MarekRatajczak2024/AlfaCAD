@@ -23,7 +23,7 @@
 #include <afxdlgs.h>
 #include <winspool.h>
 #include <shlobj_core.h>
-#include "WinGdi.h"
+////#include "WinGdi.h"
 #include "..\..\source\res\resource.h"
 #else
 #include <stdlib.h>
@@ -33,7 +33,10 @@
 
 #include <time.h>
 #ifndef LINUX
-#include <Windows.h>
+////#include <Windows.h>
+#endif
+#ifdef MACOS
+#include <mouse.h>
 #endif
 #include "bgiext.h"
 #include "menu.h"
@@ -82,7 +85,19 @@ static Client_Bitmap client_bitmap[MAX_NUMBER_OF_WINDOWS] = { {0,0,0,0,0,EMPTY,E
 };
 
 extern "C" {
-
+#ifdef MACOS
+extern void set_sleep_state(BOOL state);
+extern char *al_FileNameDialog(
+		char const * aTitle , /* NULL or "" */
+		char const * aDefaultPathAndFile , /* NULL or "" */
+		int aNumOfFilterPatterns0 , /* 0 */
+		char *aFilterPatterns0 , /* NULL or {"*.jpg","*.png"} */
+		char const * aSingleFilterDescription , /* NULL or "image files" */
+		int aAllowMultipleSelects,
+		int in_out
+		);
+extern int show_native_message_box(char *title, char *heading, char *text);
+#endif
 void PutPixelWin(int i, int i1, int j, unsigned char key);
 void PutPixelWinRGB(int i, int i1, int j, unsigned char keyR, unsigned char keyG, unsigned char keyB);
 int My_GetOpenFolder(char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name); // , int font_height, int font_width, char *font_name)
@@ -96,7 +111,9 @@ void EndWinPage(void);
 void EndWinDoc(void);
 int StartWinPrintDoc(char *doc_name);
 
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
+extern long pikseleX(double jednostki);
+extern long pikseleY(double jednostki);
 
 #ifndef LINUX
 int GetShmpPtr_1(struct shmseg **shmp_);
@@ -115,6 +132,7 @@ extern int Client_number;
 extern BOOL just_file;
 extern int GFX_WIN;
 extern int alert(const char *s1, const char *s2, const char *s3, const char *b1, const char *b2, int c1, int c2);
+extern int Load_Last_Window_Settings(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
 
 extern void redraw(void);
 
@@ -136,9 +154,15 @@ extern void lock_mouse(void);
 extern void _free_mouse(void);
 extern void free_mouse(void);
 extern void get_posXY(double *pozx, double *pozy);
+extern void set_posXY(double pozx, double pozy);
+extern int getmaxx(void);
+extern int getmaxy(void);
 extern void(*CUR_ON)(double, double);
+extern void position_mouse(int x, int y);
+extern void position_mouse_xy(int x, int y);
+extern void set_forget_mouse(int mouse_x, int mouse_y);
 
-extern void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp);
+extern void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp, int p_counter);
 
 extern int Save_Update_flex(int save_upd, int *curr_h, int *curr_v);
 
@@ -148,6 +172,10 @@ extern void set_cups_default_printer_name(CUPS_PRINTERS* cups_printer);
 
 void Done_CUPS_Printers(void);
 BOOL SetDefaultPrinter_(char* printer_name);
+
+extern void Odczyt_licznikow(void);
+
+extern BOOL MacOS15;
 }
 
 extern int win2unicodefactory(char* wintext, char* unicodetext, int codepage);
@@ -239,6 +267,19 @@ void EndWinDoc(void)
 
 void Child_Message(int mode_)
 { int confirm;
+
+#ifdef LINUX
+	struct utsname *buf = (struct utsname*)malloc(sizeof(utsname));
+	int ret = uname(buf);
+
+	if (strstr(buf->sysname,"Darwin")!=NULL) {
+		int osxver=atoi(buf->release);
+		if (osxver>23) MacOS15=TRUE;
+	}
+
+	free(buf);
+#endif
+
     if (mode_==0)
     {
 #ifndef LINUX
@@ -263,14 +304,19 @@ void Initial_Message(char file_name[255])
 #ifndef LINUX
 #ifdef BIT64
  char Ainfo[16] = u8"AlfaCAD Info";
- char logoandquote[512] = u8"AlfaCAD for Windows (x64) © Marek Ratajczak, 2020-2024";
+ char logoandquote[512] = u8"AlfaCAD for Windows (x64) © Marek Ratajczak, 2020-2025";
 #else
  char Ainfo[16] = u8"AlfaCAD Info";
- char logoandquote[512] = u8"AlfaCAD for Windows © Marek Ratajczak, 2020-2024";
+ char logoandquote[512] = u8"AlfaCAD for Windows © Marek Ratajczak, 2020-2025";
 #endif
 #else
     char Ainfo[16] = u8"AlfaCAD Info";
-    char logoandquote[512] = u8"AlfaCAD for Linux (x64) © Marek Ratajczak, 2020-2024";
+#ifndef MACOS
+    char logoandquote[512] = u8"AlfaCAD for Linux (x64) © Marek Ratajczak, 2020-2025";
+#else
+    char logoandquote[512] = u8"AlfaCAD for MacOS (x64)\n © Marek Ratajczak, 2020-2025";
+    //char logoandquote[512] = u8"AlfaCAD for MacOS (arm64)\n © Marek Ratajczak, 2020-2025";
+#endif
 #endif
 
  char NT_version[64];
@@ -329,16 +375,22 @@ void Initial_Message(char file_name[255])
  msgbox.lpszCaption = (LPCSTR)Ainfo;
  msgbox.dwStyle = MB_OKCANCEL | MB_SETFOREGROUND | MB_USERICON;
  msgbox.lpszIcon = MAKEINTRESOURCE(IDI_ALFA);
+ 
 
  ret = MessageBoxIndirect(&msgbox); // 65); // 65);  MB_OK);
  
 if (ret == IDCANCEL) exit(0);
 #else
-    char str_linux[100];
+    char str_linux[100]="";
     struct utsname *buf = (struct utsname*)malloc(sizeof(utsname));
     ret = uname(buf);
 
     sprintf(str_linux,"\nRunning on %s %s %s (%s)", buf->sysname,buf->nodename,buf->release,buf->machine);
+
+	if (strstr(buf->sysname,"Darwin")!=NULL) {
+		int osxver=atoi(buf->release);
+		if (osxver>23) MacOS15=TRUE;
+	}
 
     free(buf);
 
@@ -367,13 +419,33 @@ if (ret == IDCANCEL) exit(0);
         l_and_q = strcat(logoandquote, Quote.author);
     }
 
+#ifdef ALLEGRO5
+#ifndef MACOS
+    int X_WIN_ORIG_, Y_WIN_ORIG_, WIN_WIDTH_, WIN_HEIGHT_;
+
+    GFX_WIN = 1;
+    int ret1=Load_Last_Window_Settings(&X_WIN_ORIG_, &Y_WIN_ORIG_, &WIN_WIDTH_, &WIN_HEIGHT_);
+    GFX_WIN = 0;
+
     ret = tinyfd_messageBox(
             Ainfo , /* NULL or "" */
             logoandquote, /* NULL or ""  may contain \n and \t */
             "okcancel" , /* "ok" "okcancel" "yesno" "yesnocancel" */
             "info" , /* "info" "warning" "error" "question" */
-            0); /* 0 for cancel/no , 1 for ok/yes , 2 for no in yesnocancel */
-
+            0, (X_WIN_ORIG_ + WIN_WIDTH_/2), (Y_WIN_ORIG_ + WIN_HEIGHT_/2)); /* 0 for cancel/no , 1 for ok/yes , 2 for no in yesnocancel */
+#else
+	//char heading[64]="info";
+	ret=show_native_message_box(Ainfo, "info", logoandquote);
+	if (ret==2) ret=0;
+#endif
+#else
+    ret = tinyfd_messageBox(
+            Ainfo , /* NULL or "" */
+            logoandquote, /* NULL or ""  may contain \n and \t */
+            "okcancel" , /* "ok" "okcancel" "yesno" "yesnocancel" */
+            "info" , /* "info" "warning" "error" "question" */
+            0, -1, -1);
+#endif
     if (ret == 0) exit(0);
 #endif
 }
@@ -601,13 +673,15 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
     ret=Save_Update_flex(0, &curr_h, &curr_v);
 
     get_posXY(&PozX0, &PozY0);
-#ifdef LINUX
-    _free_mouse();
-    dialog_cursor(1);
+#ifndef ALLEGRO5
+    position_mouse(pikseleX(PozX0), pikseleY(PozY0));
+	_free_mouse();
+	dialog_cursor(1);
 #endif
 
     if (!in_out)
 #ifdef LINUX
+#ifndef MACOS
         lTheOpenFileName = tinyfd_FileNameDialog(       //tinyfd_FileNameDialog
             dlg_name,
             sz__current_path_file,
@@ -615,7 +689,36 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
             sz__current_mask,
             NULL,
             0);
+#else
 
+	    //char const * aTitle , /* NULL or "" */
+		//char const * aDefaultPathAndFile , /* NULL or "" */
+		//int aNumOfFilterPatterns0 , /* 0 */
+		//char *aFilterPatterns0 , /* NULL or {"*.jpg","*.png"} */
+		//char const * aSingleFilterDescription , /* NULL or "image files" */
+		//int aAllowMultipleSelect
+	{
+
+		//enable_hardware_cursor();
+		set_sleep_state(TRUE);
+		free_mouse();
+
+		enable_hardware_cursor();
+
+        char *ptr=strchr(sz__current_mask,'*');
+		if (ptr==NULL) ptr=sz__current_mask;
+		//strcpy(sz__current_mask,"*.alf");
+		strcat(sz__current_path_file,"/");
+		show_os_cursor(MOUSE_CURSOR_ARROW);
+		lTheOpenFileName = al_FileNameDialog(dlg_name, sz__current_path_file, numoffilters, ptr, NULL, 0, 0);
+		show_os_cursor(MOUSE_CURSOR_NONE);
+
+		disable_hardware_cursor();
+
+		lock_mouse();
+		set_sleep_state(FALSE);
+	}
+#endif
 #else
     {
         char const* lFilterPatterns[2];
@@ -637,12 +740,42 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
 #endif
     else
 #ifdef LINUX
+    #ifndef MACOS
         lTheOpenFileName = tinyfd_saveFileDialog(
                 dlg_name,
                 sz__current_path_file,
                 numoffilters,
                 sz__current_mask,
                 NULL);
+#else
+	//char const * aTitle , /* NULL or "" */
+	//char const * aDefaultPathAndFile , /* NULL or "" */
+	//int aNumOfFilterPatterns0 , /* 0 */
+	//char *aFilterPatterns0 , /* NULL or {"*.jpg","*.png"} */
+	//char const * aSingleFilterDescription , /* NULL or "image files" */
+	//int aAllowMultipleSelect
+	{
+
+		//enable_hardware_cursor();
+		set_sleep_state(TRUE);
+		free_mouse();
+
+		enable_hardware_cursor();
+
+		char *ptr=strchr(sz__current_mask,'*');
+		if (ptr==NULL) ptr=sz__current_mask;
+		//strcpy(sz__current_mask,"*.alf");
+		strcat(sz__current_path_file,"/");
+		show_os_cursor(MOUSE_CURSOR_ARROW);
+		lTheOpenFileName = al_FileNameDialog(dlg_name, sz__current_path_file, numoffilters, sz__current_mask, NULL, 0, 1);
+		show_os_cursor(MOUSE_CURSOR_NONE);
+
+		disable_hardware_cursor();
+
+		lock_mouse();
+		set_sleep_state(FALSE);
+	}
+#endif
 #else
     {
         char const* lFilterPatterns[2];
@@ -659,11 +792,20 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
             NULL);
     }
 #endif
-#ifdef LINUX
+#ifdef ALLEGRO5
+    position_mouse(getmaxx()/2, getmaxy()/2);
+
+    //do {
+    //    get_mouse_mickeys(&WspX_, &WspY_);
+    //} while ((WspX_!=0) || (WspY_!=0));
+    set_forget_mouse(getmaxx()/2, getmaxy()/2);
+#else
     dialog_cursor(0);
-    lock_mouse();
+	lock_mouse();
 #endif
-    if (cur) CUR_ON(PozX0,PozY0);
+
+    set_posXY(PozX0, PozY0);
+    CUR_ON(PozX0,PozY0);
 
 	if (!lTheOpenFileName)
 	{
@@ -684,27 +826,55 @@ int My_GetOpenFolder(char *f_name, char *sz__current_path_file, char *sz__defaul
     int ret;
     static int curr_h, curr_v;
     double PozX0, PozY0;
+	char *f_name_ret;
 
     ret=Save_Update_flex(0, &curr_h, &curr_v);
 
     get_posXY(&PozX0, &PozY0);
-    _free_mouse();
-    dialog_cursor(1);
+#ifndef ALLEGRO5
+    position_mouse(pikseleX(PozX0), pikseleY(PozY0));
+	_free_mouse();
+	dialog_cursor(1);
+#endif
 
 #ifndef LINUX
     HWND hwnd = win_get_window_();
     ret = VeryMy_GetOpenFolder(hwnd, f_name, sz__current_path_file, sz__default_path_file, sz__current_mask, dlg_name); // , int font_height, int font_width, char *font_name)
 #else
-
+#ifndef MACOS
     folder_name = tinyfd_selectFolderDialog(
             dlg_name , /* "" */
             sz__current_path_file ) ; /* "" */
     if (folder_name!=NULL)
         strcpy(f_name, folder_name);
+#else
+	enable_hardware_cursor();
+
+	strcat(sz__current_path_file,"/");
+	show_os_cursor(MOUSE_CURSOR_ARROW);
+	folder_name=al_FileNameDialog(dlg_name, sz__current_path_file, 1, "*.*", NULL, 0, 2);
+	if (folder_name!=NULL)
+		strcpy(f_name, folder_name);
+
+	disable_hardware_cursor();
+
+	show_os_cursor(MOUSE_CURSOR_NONE);
+#endif
 #endif
 
+#ifdef ALLEGRO5
+    position_mouse(getmaxx()/2, getmaxy()/2);
+
+    //do {
+    //    get_mouse_mickeys(&WspX_, &WspY_);
+    //} while ((WspX_!=0) || (WspY_!=0));
+    set_forget_mouse(getmaxx()/2, getmaxy()/2);
+#else
     dialog_cursor(0);
-    lock_mouse();
+	lock_mouse();
+#endif
+
+    set_posXY(PozX0, PozY0);
     CUR_ON(PozX0,PozY0);
 
     ret = Save_Update_flex(1, &curr_h, &curr_v);
@@ -765,7 +935,7 @@ int print_dest(void *user_data, unsigned flags, cups_dest_t *dest)
             cups_printers[cups_printer_no].right=size.right;
             cups_printers[cups_printer_no].top=size.top;
 
-            set_cups_printer_name(cups_printer_no, &cups_printers[cups_printer_no], dest->is_default);
+            set_cups_printer_name(cups_printer_no, &cups_printers[cups_printer_no], dest->is_default, cups_printer_no);
 
             cups_printer_no++;
         }
@@ -798,7 +968,7 @@ int print_dest(void *user_data, unsigned flags, cups_dest_t *dest)
 #else
 
 
-void set_cups_printer_name_(CUPS_PRINTERS* cups_printer, BOOL defaultp)
+void set_cups_printer_name_(CUPS_PRINTERS* cups_printer, BOOL defaultp, int p_counter)  //p_counter is just for compatibility with Unix
 {
 
     //memmove(&cups_printers[cups_printer_no], cups_printer, sizeof(CUPS_PRINTERS));
@@ -818,7 +988,7 @@ void set_cups_printer_name_(CUPS_PRINTERS* cups_printer, BOOL defaultp)
     cups_printers[cups_printer_no].top = cups_printer->top;
 
 
-    set_cups_printer_name(cups_printer_no, &cups_printers[cups_printer_no], defaultp);
+    set_cups_printer_name(cups_printer_no, &cups_printers[cups_printer_no], defaultp, 0);
 
     cups_printer_no++;
 }

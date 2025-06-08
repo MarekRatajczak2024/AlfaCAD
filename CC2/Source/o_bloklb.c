@@ -1935,14 +1935,16 @@ BOOL Block_Proc (int (*DZI)(void *), int (*ODZI)(void *),
 	    redcr(3,REDROWd);
 	  }
 
-	 flip_screen();
-      CUR_ON(X,Y);
+	 ////flip_screen();
+      ////CUR_ON(X,Y);
      //sprawdzenie czy wsrod usunietych obiektow sa bitmapy
     if ((deleted_pcx==TRUE) || (deleted_TTF == TRUE) || deleted_pattern==TRUE || deleted_on_front == TRUE)
      {
       if (deleted_pcx == TRUE) regen_ctx=TRUE;
       redraw();
      }
+     CUR_OFF(X,Y);
+     CUR_ON(X,Y);
 	 }
       }
      else

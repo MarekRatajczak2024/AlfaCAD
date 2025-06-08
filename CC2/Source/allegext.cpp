@@ -38,11 +38,15 @@
 
 #include "allegext.h"
 #include <allegro.h>
+#ifdef MACOS
+#include <osxalleg.h>
+#endif
 #include "loadpng.h"
 #include "jpgalleg.h"
 
 #ifndef LINUX
 #include <winalleg.h>
+#include <iostream>
 #include <gfx.h>
 #include <stdlib.h>
 #include <vector>
@@ -50,6 +54,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#ifndef MACOS
 #include <xalleg.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -57,6 +62,10 @@
 #include <X11/Xos.h>
 #include <X11/keysym.h>
 #include <X11/extensions/Xrandr.h>
+#else
+//#include <cstdint>
+//#include <ApplicationServices/ApplicationServices.h>
+#endif
 #include "report.h"
 #include <curl/curl.h>
 #endif
@@ -70,8 +79,17 @@
 #include"forwin.h"
 
 #ifdef LINUX
+#ifdef ALLEGRO5
+#include "../../Allegro-Legacy-Alfa/include/allegro/font.h"
+#include "../../Allegro-Legacy-Alfa/include/allegro/internal/aintern.h"
+#ifndef MACOS
+#include "../../Allegro-Legacy-Alfa/include/xalleg.h"
+#include "../../Allegro-Legacy-Alfa/include/xdnd.h"
+#endif
+#else
 #include "../../allegro5-4.4.3/include/allegro/font.h"
 #include "../../allegro5-4.4.3/include/allegro/internal/aintern.h"
+#endif
 
 #define LPCTSTR const char *
 #define LPCSTR const char *
@@ -87,7 +105,11 @@
 typedef unsigned long  DWORD;
 
 #ifdef LINUX
+#ifdef ALLEGRO5
+#define GFX_GDI GFX_AUTODETECT_WINDOWED
+#else
 #define GFX_GDI GFX_XWINDOWS
+#endif
 #endif
 
 #else
@@ -153,19 +175,27 @@ extern void startup(LPCSTR lpApplicationName, LPSTR lpParams);
 extern int get_rotation_inversion(void);
 
 extern BOOL get_editor_on(void);
+extern char *get_eTitle(void);
 
 static int last_mouse_b = 0;
 static int cur_mouse_b = 0;
 static BOOL global_resized=FALSE;
 static int attr_x=0,attr_y=0;
 static BOOL is_hidden=FALSE;
+
+extern BOOL RETINA;
+
 int hidden_dy=3000;
 
 #ifdef LINUX
+#ifndef MACOS
 static Display *main_display;
 static Window main_root_window;
 static int X11_SCREEN_SHIFT=36;
 Display *display00=NULL;
+#else
+static int X11_SCREEN_SHIFT=25; //24 point=25 pxl
+#endif
 #else
 extern RECT get_editbox_geometry_win(int opt);
 extern HWND get_editor_hWnd(void);
@@ -184,6 +214,7 @@ static BOOL is_in=TRUE;
 
 ////////////////
 #ifdef LINUX
+#ifndef MACOS
 // State machine structure
 typedef struct {
     bool xdndExchangeStarted;
@@ -206,6 +237,14 @@ XdndSelection, XDND_DATA, XdndTypeList, XdndFinished, WM_PROTOCOLS, WM_DELETE_WI
 
 // XDND global state machine
 static XDNDStateMachine xdndState;
+#else
+typedef struct {
+	int x;
+	int y;
+	int w;
+	int h;
+} WATTR;
+#endif
 #endif
 ////////////////
 
@@ -241,8 +280,8 @@ HWND win_get_window_(void)
 extern "C" {
 #endif
 #ifdef LINUX
+#ifndef MACOS
 #include "xdndfile.h"
-
 //extern BITMAP *parent_screen;
 Window get_allegro_window(void);
 
@@ -252,6 +291,9 @@ static AWIdnd dnd;
     char *winame (Display *disp, Window win);
     int getprop (Display *disp, char *name, Window win, Window root_window);
     char *atomtype (Atom x);
+#else
+	extern int send_AppleScript(pid_t pid, int x, int y);
+#endif
 #endif
 
     void Check_ConfigureNotify(void);
@@ -260,13 +302,18 @@ static AWIdnd dnd;
 	int TestRedraw(void);
 	int testCall(int val);
 
+    BOOL hibernate=FALSE;
+
+	extern void my_sleep(int sleepMs);
+	extern void standard_func(void);
+
     extern int wmctrl (int argc, char **argv);
     extern int edit_text_flag;
 
-extern void show__if_DEMO_RECORDING(int newicon);
+    extern void show__if_DEMO_RECORDING(int newicon);
     extern char _EDIT_TEXT_[];
-    extern void get_editbox_origin(int *x, int *y);
-    extern void get_editbox_origin_line(int *x, int *y);
+    extern void get_editbox_size_origin(int *w, int *h, int *x, int *y);
+    extern void get_editbox_size_origin_line(int *w, int *h, int *x, int *y);
 
     extern void utf8Upper(char* text);
     extern void change_bs2s(T_Fstring thestring);
@@ -348,7 +395,7 @@ extern void show__if_DEMO_RECORDING(int newicon);
 
 	extern int now_is_dialog;
 	extern int Get_Global_Menu_Flags(void);
-	extern BOOL BIGCURSOR;
+	extern int BIGCURSOR;
     extern BOOL BAR_POINTER;
 
 	extern int lineC(long x1, long y1, long x2, long y2);
@@ -410,6 +457,10 @@ extern void show__if_DEMO_RECORDING(int newicon);
     extern void flip_screen(void);
     extern void flip_full_screen(BITMAP * the_screen);
 
+#ifdef ALLEGRO5
+    extern BITMAP* icon_alfacad_mem;
+    extern void set_display_icon(BITMAP *icon);
+#endif
 	int set_window_origin(int x_win_orig, int y_win_orig);
     void LockMouse(void);
 
@@ -423,26 +474,52 @@ extern char **strarray;
 
 extern void flip_any_screen(BITMAP* third_screen);
 extern size_t uri_decode(const char* src, const size_t len, char* dst);
-extern int __file_exists(char* name);
-extern int __file_size(char* name);
+extern int my_file_exists(char* name);
+extern int my_file_size(char* name);
 
 extern void extra_logo(int x, int y, int option, char* file_name);
 extern int getlanguage(void);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
 extern void Restart(void);
 extern DWORD SystemSilent(char* strFunct, char* strstrParams);
+extern DWORD SystemSilentS(char* strstrParams);
 extern DWORD RunSilent(char* strFunct, char* strstrParams);
 
 extern int Expand_flex(void);
+extern int Get_Mouse_Wheel(void);
 
 extern char** argv_;
 
+#ifdef ALLEGRO5
+extern int get_display_width(void);
+extern int get_display_height(void);
+extern void get_window_position(int *x, int *y);
+extern void set_window_position(int x, int y);
+#ifdef MACOS
+extern void set_osx_window_position(pid_t pid, int x, int y, BOOL relative);
+extern pid_t al_getpid(void);
+extern bool isRetinaOSXDisplay(void);
+#endif
+#endif
+extern void set_sleep_state(BOOL state);
 
 #ifdef LINUX
-	extern void _xwin_set_hints(int w, int h);
-    extern char Window_Name[32];
+extern void _xwin_set_hints(int w, int h);
+extern char Window_Name[32];
 
-    int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y, int i);
+int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y, int i);
+#ifdef ALLEGRO5
+extern BOOL al_get_monitor_dims( int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y);
+extern int al_get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
+extern int al_get_window_new_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
+extern bool acknowledge_resize(void);
+
+extern int get_x_window_id(void);
+extern int get_display_flags(void);
+extern void all_render_screen(void);
+extern void set_semaphore(bool sem);
+extern void set_timer_speed(int speed);
+#endif
 #endif
 
 	long global_pan_dx = 0;
@@ -498,8 +575,10 @@ static int origin_x_fix=0, origin_y_fix=0;
 
 static int h_increase_arch=800;
 static int v_increase_arch=600;  
-static int x_increase_arch=0;
-static int y_increase_arch=0;  
+//static
+    int x_increase_arch=0;
+//static
+    int y_increase_arch=0;
 extern BOOL window_was_resized;
 static int sprite_bmp_x[16], sprite_bmp_y[16];
 static int points_old[8]={0,0,0,0,0,0,0,0};
@@ -640,6 +719,89 @@ struct tm* localtime_r(time_t* _clock, struct tm* _result) {
 
 typedef int64_t timestamp_t;
 
+static int origin_x=0;
+static int origin_y=0;
+
+#ifdef LINUX
+#ifdef MACOS
+
+bool isRetinaDisplay(void)
+{
+	return isRetinaOSXDisplay();
+}
+
+#else
+//Linux
+//#include <X11/Xlib.h>
+//#include <X11/Xutil.h>
+
+bool isRetinaDisplay(void) {
+    Display* display = XOpenDisplay(NULL);
+    if (!display) return false;
+
+    int screen = DefaultScreen(display);
+    float dpiX = (float)(DisplayWidth(display, screen) * 25.4) / DisplayWidthMM(display, screen);
+    XCloseDisplay(display);
+
+    return dpiX > (96 * 1.25); // Assuming 96 DPI is the standard, adjust as needed
+}
+#endif
+#else
+//Windows
+//#include <windows.h>
+
+bool isRetinaDisplay(void) {
+    HDC hdc = GetDC(NULL);
+    int dpiX = GetDeviceCaps(hdc, LOGPIXELSX);
+    ReleaseDC(NULL, hdc);
+    return dpiX > (96 * 1.25); // Assuming 96 DPI is the standard, adjust as needed
+}
+#endif
+
+#ifdef LINUX
+#ifndef MACOS
+void _xwin_set_hints(int w, int h)
+{
+    XSizeHints *hints = XAllocSizeHints();
+
+    //if (origin_x<0) origin_x=0;
+    //if (origin_y<0) origin_y=0;
+#ifdef ALLEGRO5
+    return;
+#endif
+    /* Set size and position hints for Window Manager.  */
+    if (hints) {
+        hints->flags = PPosition | PMinSize | PMaxSize | PBaseSize;
+        //hints->min_width  = hints->max_width  = hints->base_width  = w; //MAREK
+        //hints->min_height = hints->max_height = hints->base_height = h;
+        hints->x = origin_x;
+        hints->y = origin_y;
+        hints->min_width  = w; //100;
+        hints->max_width  = 6000;
+        hints->base_width  = w;
+        hints->min_height = h; //350;
+        hints->max_height = 3000;
+        hints->base_height = h;
+        XSetWMNormalHints(_xwin.display, _xwin.wm_window, hints);
+
+        XFree(hints);
+    }
+}
+#else
+void xwin_set_hints_(int w, int h)
+{
+	//MACOS TEMPORARY
+	return;
+}
+#endif
+#endif
+
+void set_origins(int x, int y)
+{
+    origin_x=x;
+    origin_y=y;
+}
+
 timestamp_t currentTimestamp( void )
 {
     time_t t;
@@ -656,8 +818,11 @@ int32_t timestampToStructtm ( timestamp_t timestamp, struct tm* dateStruct)
 {
 
 #ifdef LINUX
-
+#ifndef MACOS
     gmtime_r ( &timestamp, dateStruct);
+#else
+	gmtime_r ( (time_t*)&timestamp, dateStruct);
+#endif
 #else
     struct tm *dateStruct1;
     dateStruct1=gmtime(&timestamp);
@@ -760,10 +925,18 @@ void setviewport(int left, int top, int right, int bottom, int clip)
     int x_right;
     int y_bottom;
 
-    if (parent_screen != NULL) destroy_bitmap(parent_screen);
+    if (parent_screen != NULL) {destroy_bitmap(parent_screen);
+        parent_screen = NULL;
+    }
+#ifndef ALLEGRO5
     screen = NONCLIPPED_SCREEN;
+#endif
     parent_screen = create_sub_bitmap(screen, left, top, right-left+1, bottom-top+1);
+#ifndef ALLEGRO5
     screen = parent_screen;
+#else
+    set_clip_rect(screen,left, top, right-left, bottom-top);
+#endif
     screenplay = parent_screen;
 
     if (left<right) { x_left=left; x_right=right;}
@@ -1338,7 +1511,11 @@ void     rectangle(int left, int top, int right, int bottom)
 
 void     bar(int left, int top, int right, int bottom)
 {
-  _normal_rectfill(screenplay, left, top, right, bottom, cur_fillstyle_color);
+#ifdef ALLEGRO5
+  rectfill(screenplay, left, top, right, bottom, cur_fillstyle_color);
+#else
+    _normal_rectfill(screenplay, left, top, right, bottom, cur_fillstyle_color);
+#endif
   return;
 }
 
@@ -1654,7 +1831,7 @@ void GrMouseGetKeys(GrMouseEvent *event, int PozX, int PozY)
 
 	event->flags=0;
 
-	int p_mouse = my_poll_mouse();  // WINE
+	//int p_mouse = my_poll_mouse();  // WINE
 
 	last_mouse_b = cur_mouse_b;
 	cur_mouse_b = mouse_b;
@@ -1665,7 +1842,6 @@ void GrMouseGetKeys(GrMouseEvent *event, int PozX, int PozY)
         event->flags += 1;
         tvret=gettimeofday(&tvtimestamp, NULL);
     }
-
     if (tvtimestamp.tv_sec>0)
     {
         if (!(cur_mouse_b & 2))
@@ -1676,6 +1852,7 @@ void GrMouseGetKeys(GrMouseEvent *event, int PozX, int PozY)
             if (((tvtimestamp1.tv_sec-tvtimestamp.tv_sec)*1e6 + (tvtimestamp1.tv_usec-tvtimestamp.tv_usec))>500000)
             {
                 tvtimestamp.tv_sec=0;
+            	while (mouse_b!=0) my_sleep(10);
                 show__if_DEMO_RECORDING(819);
                 int ret = Expand_flex();
                 event->flags = 0;
@@ -1683,6 +1860,7 @@ void GrMouseGetKeys(GrMouseEvent *event, int PozX, int PozY)
             }
         }
     }
+
 	if ((cur_mouse_b & 4) && !(last_mouse_b & 4)) event->flags += 2;
 
 }
@@ -1820,6 +1998,7 @@ typedef enum
 	Dtp_dynamic_menu,
 	Dtp_desktop_cursor,
     Dtp_menu_cursor,
+    Dtp_wheel_style,
     Dtp_desktop_instruction,
 } Dtp_types;
 
@@ -1830,6 +2009,7 @@ static BOOL add_desktop(FILE *stru)
 	T_Fstring key_name;
 	T_Fstring comment;
 	int i;
+    int WHEEL_STYLE;
 
 	for (i = 0; i < no_desktop_data_param; i++)
 	{
@@ -1869,6 +2049,13 @@ static BOOL add_desktop(FILE *stru)
                                    key_name, BAR_POINTER, comment))
                     return FALSE;
                 break;
+        case Dtp_wheel_style:
+                if (Get_Mouse_Wheel()==1) WHEEL_STYLE=0;
+                    else WHEEL_STYLE=1;
+                if (EOF == fprintf(stru, "%s=%d\t\t%s\n",
+                                   key_name, WHEEL_STYLE, comment))
+                    return FALSE;
+                break;
         case Dtp_desktop_instruction:
                 if (EOF == fprintf(stru, "%s=%d\t\t%s\n",
                        key_name, desktop_instruction, comment))
@@ -1889,6 +2076,11 @@ void save_dialog_cursor(void)
 }
 
 void save_menu_cursor(void)
+{
+    Add_Private_Profile_Group((T_Fstring)IC_DESKTOP, add_desktop);
+}
+
+void save_mouse_wheel(void)
 {
     Add_Private_Profile_Group((T_Fstring)IC_DESKTOP, add_desktop);
 }
@@ -1982,9 +2174,15 @@ void set_cur_color(int color)
     cur_color=color;
 }
 
+int get_cur_color(void)
+{
+    return cur_color;
+}
 
 void     setcolor__(int color)
 {
+    if (color>255) ////!!!!!!
+        color=0;
   cur_color=palette_color[color];
   __gr_color = color;
   return;
@@ -2303,6 +2501,7 @@ Returns the parent window of "window" (i.e. the ancestor of window
 that is a direct child of the root, or window itself if it is a direct child).
 If window is the root window, returns window.
 */
+#ifndef MACOS
 Window get_toplevel_parent(Display * display, Window window)
 {
     Window wparent;
@@ -2368,15 +2567,20 @@ Window get_my_window(Display * display, Window current, char *needle)
     }
     return retval;
     */
-
+#ifdef ALLEGRO5
+    return get_x_window_id();
+#else
     return _xwin.window;
+#endif
 }
 
 void MessageBeep(long message_sound)
 {
     printf("\a");
 }
+#else
 
+#endif
 #endif
 
 int Get_X11_SCREEN_SHIFT(void)
@@ -2390,6 +2594,65 @@ int Get_WIN_WINDOW_T_B(void)
 	return WIN_WINDOW_T_B;
 }
 #endif
+
+void move_pointer(int x, int y)
+{
+
+#ifndef LINUX
+
+#else
+#ifndef MACOS
+    Display *display;
+    Window focus, toplevel_parent_of_focus, root_window;
+    XWindowAttributes attr;
+    int ret;
+
+    display = XOpenDisplay(0);
+
+    //root_window=DefaultRootWindow(display);
+    //focus=root_window; //ALLEGRO5
+#ifndef ALLEGRO5
+    focus=_xwin.window;
+#else
+    focus=get_x_window_id();
+#endif
+
+    toplevel_parent_of_focus = get_toplevel_parent(display, focus);
+    ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
+
+    XWarpPointer(display, focus, focus, 0, 0, 0, 0, x, y);
+
+    XCloseDisplay(display);
+
+#else
+
+#endif
+#endif
+}
+
+void move_pointer_on_display(int x, int y)
+{
+
+#ifndef LINUX
+
+#else
+#ifndef MACOS
+    Display *display;
+    Window focus, toplevel_parent_of_focus, root_window;
+    XWindowAttributes attr;
+    int ret;
+
+    display = XOpenDisplay(0);
+
+    XWarpPointer(display, None, None, 0, 0, 0, 0, x, y);
+
+    XCloseDisplay(display);
+
+#else
+
+#endif
+#endif
+}
 
 void reset_if_resized(void)
 {
@@ -2407,6 +2670,7 @@ void reset_if_resized(void)
 	GetClientRect(wnd, &clnRect);
 
 #else
+#ifndef MACOS
     typedef struct tagRECT
     {
         LONG    left;
@@ -2434,7 +2698,11 @@ void reset_if_resized(void)
 
 
     //XGetInputFocus(display, &focus, &revert);
+#ifndef ALLEGRO5
     focus=_xwin.window;
+#else
+    focus=get_x_window_id();
+#endif
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
     ////toplevel_parent_of_focus = get_my_window(display, root_window, Window_Name);
     ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
@@ -2455,7 +2723,18 @@ void reset_if_resized(void)
     XRRFreeScreenResources(sr);
 
     XCloseDisplay(display);
+#else
+    typedef struct tagRECT
+	{
+		LONG    left;
+		LONG    top;
+		LONG    right;
+		LONG    bottom;
+	} RECT;
 
+	RECT wndRect, clnRect;
+
+#endif
 #endif
 
 	w = wndRect.right - wndRect.left;
@@ -2471,9 +2750,7 @@ void reset_if_resized(void)
 		y0_new = wndRect.top;
 
 		set_resized_window(dx_new, dy_new);
-
 		ret1 = set_window_origin(x0_new, y0_new);
-		redraw();
 	}
 
 }
@@ -2589,7 +2866,7 @@ int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width,
 
 	gfx_margins->maximize_flag = 0;
 #else
-
+#ifndef MACOS
         Display *display;
         Window focus, toplevel_parent_of_focus, root_window;
         XWindowAttributes attr;
@@ -2604,7 +2881,11 @@ int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width,
         XRRCrtcInfo* ci = XRRGetCrtcInfo(display, sr, sr->crtcs[0]);
         XRROutputInfo* oi = XRRGetOutputInfo(display, sr, sr->outputs[0]);
 
+#ifndef ALLEGRO5
         focus=_xwin.window;
+#else
+        focus=get_x_window_id();
+#endif
         toplevel_parent_of_focus = get_toplevel_parent(display, focus);
         ////toplevel_parent_of_focus = get_my_window(display, root_window, Window_Name);
         ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
@@ -2634,10 +2915,29 @@ int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width,
         *win_width = w;  //client
         *win_height = h;  //client
 
+#ifdef ALLEGRO5
+        *y_win_orig+= X11_SCREEN_SHIFT;
+#endif
+#else
+        ret_ref=al_get_window_origin_and_size(x_win_orig, y_win_orig, win_width, win_height);
+    	return !ret_ref;
+#endif
 #endif
         return ret_ref;
     }
     return 0;
+}
+
+
+int get_window_new_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height)
+{
+    int ret_ref;
+#ifdef MACOS
+    ret_ref=al_get_window_new_origin_and_size(x_win_orig, y_win_orig, win_width, win_height);
+	return !ret_ref;
+#else
+    return get_window_origin_and_size(x_win_orig, y_win_orig, win_width, win_height);
+#endif
 }
 
 
@@ -2650,9 +2950,17 @@ void lock_mouse_switch_callback(void)
 
     is_in=TRUE;
 
+    hibernate=FALSE;
+
+    printf("hibernate=%d\n", hibernate);
+
+#ifdef MACOS
+	//disable_hardware_cursor();
+#endif
+
   return;
 
- sleep_state=FALSE;
+ set_sleep_state(FALSE);
 
  mouse_out = FALSE;
 
@@ -2729,10 +3037,17 @@ void free_mouse_switch_callback(void)
     //when window is loosing focus
     //ret= get_window_origin_and_size(&x_win_orig_, &y_win_orig_, &win_width_, &win_height_);
     is_in=FALSE;
+
+    hibernate=TRUE;
+
+    printf("hibernate=%d\n", hibernate);
+#ifdef MACOS
+	//enable_hardware_cursor();
+#endif
    return;
 
   //free_mouse_switch();
-  //////////////sleep_state=TRUE;
+  //////////////set_sleep_state(TRUE);
 //#ifdef BEEP
  //MessageBeep(MB_OK);
   if (!preview_blocked)
@@ -2746,15 +3061,17 @@ void free_mouse_switch_callback(void)
     ////serv134_135(FALSE);
     free_mouse = 1;
     _free_mouse();
-    ////sleep_state = TRUE;
+    ////set_sleep_state(TRUE);
     ////clean_key_buffer();
     dialog_cursor(1);
 
    ////remove_keyimages(TRUE);
- 
+
+
 }
 
 #ifdef LINUX
+#ifndef MACOS
 void xwin_set_hints(int dx, int dy) {
     _xwin_set_hints(dx, dy);
 }
@@ -2770,9 +3087,14 @@ void focus_display_window(void)
 {
     XRaiseWindow(main_display,main_root_window);
 }
+
 Window get_allegro_window(void)
 {
+#ifdef ALLEGRO5
+    return get_x_window_id();
+#else
     return _xwin.window;
+#endif
 }
 
 //#define GET_SHADED_STATE   //TO DO
@@ -2886,6 +3208,15 @@ int window_is_minimized(Display *display, Window window) {
 }
 #endif  //GET_SHADED_STATE
 
+#ifdef ALLEGRO5
+_xwin_type _xwin;
+#endif
+
+#else
+void xwin_set_hints(int dx, int dy) {
+		xwin_set_hints_(dx, dy);
+	}
+#endif
 #endif
 
 void set_attr_x_attr_y(int x, int y)
@@ -2894,18 +3225,39 @@ void set_attr_x_attr_y(int x, int y)
     attr_y = y;
 }
 
+//#ifdef ALLEGRO5
+//   _xwin_type _xwin;
+//#endif
+
+#ifdef MACOS
+pid_t get_e_pid(void)
+{
+    FILE *etitle_file;
+    char eTitle_file_name[64];
+    char buff[16];
+
+    sprintf(eTitle_file_name,"%s.pid",get_eTitle());
+    etitle_file=fopen(eTitle_file_name,"r");
+    if (etitle_file==NULL) return 0;
+    fread(&buff, 1, 16, etitle_file);
+    fclose(etitle_file);
+    return atoi(buff);
+}
+#endif
+
 void Check_ConfigureNotify(void)
 {
     int ret;
 #ifdef LINUX
-
+#ifndef MACOS
     ///////////////////////
     XWindowAttributes attr;
-    Window toplevel_parent_of_focus;
+    Window focus, toplevel_parent_of_focus;
     char params[128];
     char params1[128];
     char params2[128];
-    int e_x, e_y;
+    int e_w, e_h, e_x, e_y;
+    Display *display;
 
     _xwin_type *_xwin_ = &_xwin;
 
@@ -2926,16 +3278,21 @@ void Check_ConfigureNotify(void)
         edit_text_flag=0;
     }
 
+#ifdef ALLEGRO5
+    display = XOpenDisplay(0);
+    focus=get_x_window_id();
+    toplevel_parent_of_focus = get_toplevel_parent(display, focus);  //_xwin.display, _xwin.window
+    ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);  //_xwin.display
+    XCloseDisplay(display);
+#else
     toplevel_parent_of_focus = get_toplevel_parent(_xwin.display, _xwin.window);
     ret = XGetWindowAttributes(_xwin.display,  toplevel_parent_of_focus, &attr);
+#endif
 
     if ((attr.x!=attr_x) || (attr.y!=attr_y)) {
         printf("origin %d %d\n",attr.x-attr_x,attr.y-attr_y);
 
-        get_editbox_origin(&e_x, &e_y);
-
-        //sprintf(params, "-r \"%s(%d) — KDialog4alfa\" -e 0,%d,%d,-1,-1", _EDIT_TEXT_, Client_number, attr.x-attr_x, attr.y-attr_y);
-        //SystemSilent("./wmctrl", params);
+        get_editbox_size_origin(&e_w, &e_h, &e_x, &e_y);
 
         sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
         sprintf(params2, "0,%d,%d,-1,-1", attr.x-attr_x, attr.y-attr_y);
@@ -2955,33 +3312,47 @@ void Check_ConfigureNotify(void)
 
 //#ifdef GET_SHADED_STATE
     //if (window_is_minimized(_xwin.display, toplevel_parent_of_focus))
-        if (_xwin_->state_change_flag==1)
+#ifdef ALLEGRO5
+        bool is_hidden_now=get_display_flags() & ALLEGRO_MINIMIZED;
+        if (is_hidden_now != is_hidden)
+        {
+            // state is set
+            if (is_hidden == FALSE)
+            {
+                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+                sprintf(params2, "0,0,%d,-1,-1", hidden_dy);
+                char *args[] = {
+                        "wmctrl",
+                        (char *) "-r",
+                        params1,
+                        (char *) "-e",
+                        params2,
+                        NULL
+                };
+                ret = wmctrl(5, args);
+                is_hidden = TRUE;
+            }
+            else
+            {
+                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+                sprintf(params2, "0,0,%d,-1,-1", -hidden_dy);
+                char *args[] = {
+                        "wmctrl",
+                        (char *) "-r",
+                        params1,
+                        (char *) "-e",
+                        params2,
+                        NULL
+                };
+                ret = wmctrl(5, args);
+                is_hidden = FALSE;
+            }
+        }
+#else
+    if (_xwin_->state_change_flag==1)
         { // state is set
             if (is_hidden==FALSE)
             {
-                //sprintf(params, "-r \"%s(%d) — KDialog4alfa\" -b add,shaded", _EDIT_TEXT_, Client_number,attr.x - attr_x, attr.y - attr_y);
-                //SystemSilent("./wmctrl", params);
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
-                /*
-                char *args[] = {
-                        "wmctrl",
-                        (char*)"-r",
-                        params1,
-                        (char*)"-b",
-                        (char*)"add,iconify",
-                        NULL
-                };
-                ret=wmctrl(5, args);
-                char *args1[] = {
-                        "wmctrl",
-                        (char*)"-r",
-                        params1,
-                        (char*)"-b",
-                        (char*)"add,below",
-                        NULL
-                };
-                ret=wmctrl(5, args1);
-                 */
                 sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
                 sprintf(params2, "0,0,%d,-1,-1", hidden_dy);
                 char *args[] = {
@@ -3000,30 +3371,6 @@ void Check_ConfigureNotify(void)
         {
             if (is_hidden==TRUE)
             {
-                //sprintf(params, "-r \"%s(%d) — KDialog4alfa\" -b add,shaded", _EDIT_TEXT_, Client_number,attr.x - attr_x, attr.y - attr_y);
-                //SystemSilent("./wmctrl", params);
-                /*
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
-                char *args[] = {
-                        "wmctrl",
-                        (char*)"-r",
-                        params1,
-                        (char*)"-b",
-                        (char*)"add,resize",
-                        NULL
-                };
-                ret=wmctrl(5, args);
-
-                char *args1[] = {
-                        "wmctrl",
-                        (char*)"-r",
-                        params1,
-                        (char*)"-b",
-                        (char*)"add,above",
-                        NULL
-                };
-                ret=wmctrl(5, args1);
-                 */
                 sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
                 sprintf(params2, "0,0,%d,-1,-1", -hidden_dy);
                 char *args[] = {
@@ -3038,10 +3385,45 @@ void Check_ConfigureNotify(void)
                 is_hidden=FALSE;
             }
         }
-//#endif
-
+#endif
 
     ///////////////////
+#else
+    //ret=send_AppleScript(NULL);
+	WATTR attr;
+	int e_w, e_h, e_x, e_y;
+	pid_t e_pid;
+
+	if (edit_text_flag==1)
+	{
+		get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
+		attr_x=attr.x;
+		attr_y=attr.y;
+		edit_text_flag=2;
+	}
+	else if (edit_text_flag==2)  //text editor is open
+	{
+		e_pid=get_e_pid();
+		if (e_pid==0) return;
+
+		get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
+		if ((attr.x!=attr_x) || (attr.y!=attr_y))
+			{
+				printf("origin %d %d\n",attr.x-attr_x,attr.y-attr_y);
+
+				get_editbox_size_origin(&e_w, &e_h, &e_x, &e_y);
+
+				//version with ApplicationServices by Allegro-Legacy
+				set_osx_window_position(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1), TRUE);
+			    //version with Apple script
+				////ret=send_AppleScript(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1));
+
+				attr_x=attr.x;
+				attr_y=attr.y;
+			}
+	}
+
+#endif
 #else
 
 HWND wnd;
@@ -3053,7 +3435,7 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
     int ret_left_x, ret_right_x, ret_top_y, ret_bottom_y;
     int x, y;
     int width, height;
-    int e_x, e_y;
+    int e_w, e_h, e_x, e_y;
     BOOL ret = FALSE;
 
     wnd = win_get_window();
@@ -3131,7 +3513,7 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
 
         printf("origin %d %d\n", x, y);
 
-        //get_editbox_origin(&e_x, &e_y);
+        //get_editbox_size_origin(&e_w, &w_h, &e_x, &e_y);
 
 
         int opt = 0;
@@ -3177,14 +3559,14 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
 #endif
 }
 
-
+#define ALLEGRO5DND
 void Check_XNextEvent(void) {
 
     char *fptr, *iptr, *bptr;
     int ret;
 
 #ifdef LINUX
-
+#ifndef MACOS
     if (xdnd_buf.mflag==1)  //there is something new
     {
         CURL *curl = curl_easy_init();
@@ -3214,6 +3596,9 @@ void Check_XNextEvent(void) {
 
         curl_easy_cleanup(curl);
     }
+#else
+
+#endif
 #else
 	if ((xdnd_buf!=NULL) && (xdnd_buf->mflag == 1))  //there is something new
 	{
@@ -3284,6 +3669,7 @@ int set_window_origin(int x_win_orig, int y_win_orig)
 	return 1;
   }
  #else
+#ifndef MACOS
     Display *display;
     Window focus, toplevel_parent_of_focus, root_window;
     int revert;
@@ -3293,9 +3679,13 @@ int set_window_origin(int x_win_orig, int y_win_orig)
 
     display = XOpenDisplay(0);
 
-    root_window=DefaultRootWindow(display);
-
+    //root_window=DefaultRootWindow(display);
+    //focus=root_window;
+ #ifndef ALLEGRO5
     focus=_xwin.window;
+ #else
+    focus=get_x_window_id();
+ #endif
 
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
 
@@ -3305,6 +3695,14 @@ int set_window_origin(int x_win_orig, int y_win_orig)
 
     XCloseDisplay(display);
 
+ #ifdef ALLEGRO5
+    set_window_position(x_win_orig, y_win_orig);
+ #endif
+#else
+    pid_t pid=al_getpid();
+	set_osx_window_position(pid, x_win_orig/(RETINA+1), y_win_orig/(RETINA+1), FALSE);
+	//set_window_origin(x_win_orig, y_win_orig);
+#endif
 #endif
   return 0;
 } 
@@ -3326,6 +3724,7 @@ void get_cur_widt_height(int *cur_width, int *cur_height)
 
   }
 #else
+#ifndef MACOS
     Display *display;
     Window focus, toplevel_parent_of_focus, root_window;
     XWindowAttributes attr;
@@ -3335,7 +3734,11 @@ void get_cur_widt_height(int *cur_width, int *cur_height)
     display = XOpenDisplay(0);
     root_window=DefaultRootWindow(display);
 
+#ifndef ALLEGRO5
     focus=_xwin.window;
+#else
+    focus=get_x_window_id();
+#endif
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
 
     ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
@@ -3351,7 +3754,9 @@ void get_cur_widt_height(int *cur_width, int *cur_height)
     XSetWMNormalHints(display, toplevel_parent_of_focus, &size_hints);
 
     XCloseDisplay(display);
+#else
 
+#endif
 #endif
 
   return;
@@ -3611,7 +4016,7 @@ void set_last_window_GFX(DRIVER_STRUCT *drv)
    return;
 }
 
-void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
+void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
 {
     int draw_mode;
    int switch_callback_out, switch_callback_in;
@@ -3622,6 +4027,7 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
    int cur_width_win;
    int cur_height_win;
    int w,w_,h,h_;
+   int ret, ret2, ret_ref;
 
 #ifndef LINUX
    HWND wnd;
@@ -3659,7 +4065,11 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
 
 
     //XGetInputFocus(display, &focus, &revert);
+#ifndef ALLEGRO5
     focus=_xwin.window;
+#else
+    focus=get_x_window_id();
+#endif
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
     ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
 
@@ -3701,22 +4111,70 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
     abort();
    }
 
+#ifndef LINUX
+        _sleep(0);
+#endif
 
+    BOOL CORRECT_GFX=TRUE;
+
+#ifdef ALLEGRO5
+   //set_display_icon(icon_alfacad_mem);
+#endif
+
+#ifdef ALLEGRO5
+    int x0m, y0m, dxm, dym;
+#ifdef MACOS
+    BOOL ret3=acknowledge_resize();
+#endif
+    ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
+#ifndef MACOS
+    dym-=X11_SCREEN_SHIFT;
+#endif
+    if (((drv->gfx_width!=dxm) || (drv->gfx_height!=dym))   && (CORRECT_GFX))
+    {
+        drv->gfx_width=dxm;
+        drv->gfx_height=dym;
+        if (set_gfx_mode(GFX_GDI, drv->gfx_width, drv->gfx_height, 0, 0) != 0)
+        {
+            set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
+            graphic_error(allegro_error);
+
+            exit(1);
+        }
+    }
+#endif
+
+    //if (gfx_capabilities & GFX_HW_MEM_BLIT)
+    //    blit_hw = TRUE;
+
+    cur_colors_depth=drv->gfx_bpp;
+    set_color_depth(drv->gfx_bpp);
+
+    h_increase=drv->gfx_width;
+    v_increase=drv->gfx_height;
 
    draw_mode=set_display_switch_mode(drv->gfx_display_switch);
 
-   //switch_callback_out=set_display_switch_callback(SWITCH_OUT, free_mouse_switch_callback);   ///probably not necessary
-   //switch_callback_in=set_display_switch_callback(SWITCH_IN , lock_mouse_switch_callback);
+   switch_callback_out=set_display_switch_callback(SWITCH_OUT, free_mouse_switch_callback);   ///probably not necessary
+   switch_callback_in=set_display_switch_callback(SWITCH_IN , lock_mouse_switch_callback);
 
-   if (GFX_WIN==1) get_cur_widt_height(&cur_width, &cur_height);
+#ifndef ALLEGRO4
+    if (GFX_WIN==1) get_cur_widt_height(&cur_width, &cur_height);
 	 else
 	{
 		cur_width=drv->gfx_width;
 		cur_height=drv->gfx_height;
 	}
 
-    cur_width=dx;
-    cur_height=dy;
+     cur_width=dx;
+     cur_height=dy;
+#else
+    cur_width=drv->gfx_width;
+    cur_height=drv->gfx_height;
+#endif
+
+    //cur_width=dx;  //???
+    //cur_height=dy;
 
    cur_colors=pow(2,drv->gfx_bpp);
    viewport_x=0;
@@ -3725,10 +4183,45 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
    viewport_yk=cur_height;
 
 
-    set_clip_rect(screen,0,0,getmaxx(),getmaxy());
+   set_clip_rect(screen,0,0,getmaxx(),getmaxy());
 
    Copy_screen();
    screenplay=NONCLIPPED_SCREEN;
+
+#ifndef LINUX
+    HWND allegro_wnd = win_get_window();
+   win_dc =  GetDC(allegro_wnd);
+#endif
+
+
+    //ret2=set_window_origin(X_WIN_ORIG_, Y_WIN_ORIG_);
+    //ret2=centre_window();
+    //ret_ref = get_window_origin_and_size(&x_increase_arch, &y_increase_arch, &h_increase_arch, &v_increase_arch);
+
+    //saving window dimensions
+#ifndef LINUX
+    wnd = win_get_window();  //WINDOWS
+   GetWindowRect(wnd, &wndRect); //WINDOWS
+   GetClientRect(wnd, &clnRect); //WINDOWS
+
+   curr_w = wndRect.right - wndRect.left;
+   curr_w_ = clnRect.right - clnRect.left;
+   curr_h = wndRect.bottom - wndRect.top;
+   curr_h_ = clnRect.bottom - clnRect.top;
+#else
+
+    curr_w = h_increase_arch;
+    curr_w_ = dx_new;
+    curr_h = v_increase_arch;
+    curr_h_ = dy_new;
+
+#endif
+
+#ifdef LINUX
+   sleep(0);
+#else
+    _sleep(0);
+#endif
 
    return;
 }
@@ -3737,13 +4230,23 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy)
 #define ERR_MONITOR_DNE 2
 
 #ifdef LINUX
-
+#ifndef MACOS
 void XWindow_Name(int client_number) {
     sprintf(Window_Name, "AlfaCAD%d", client_number);
     strcpy(_xwin.application_name, Window_Name);
     strcpy(_xwin.window_title, Window_Name);
 }
+#else
+void XWindow_Name(int client_number)
+{
+	sprintf(Window_Name, "AlfaCAD%d", client_number);
+}
+#endif
+#endif
 
+
+#ifdef LINUX
+#ifndef MACOS
 /*
 int get_screen_dims(void)
         {
@@ -3852,7 +4355,7 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
     *ret_top_y = ret_top_y_;
     *ret_bottom_y = ret_bottom_y_;
 
-    printf(">>> %d, %d, %d, %d\n", ret_left_x_, ret_top_y_, ret_right_x_, ret_bottom_y_);
+    //printf(">>> %d, %d, %d, %d\n", ret_left_x_, ret_top_y_, ret_right_x_, ret_bottom_y_);
 
     return 0;
 }
@@ -3943,7 +4446,17 @@ char *atomtype (Atom x) {
     }
     return type_;
 }
+#else
+int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y, int mon)
+	{  BOOL ret;
 
+	   ret= al_get_monitor_dims( ret_left_x, ret_right_x, ret_top_y, ret_bottom_y);
+
+	   //printf(">>> %d, %d, %d, %d\n", *ret_left_x, *ret_top_y, *ret_right_x, *ret_bottom_y);
+
+	   return !ret;
+	}
+#endif
 #endif
 
 void change_mode_gr(DRIVER_STRUCT *drv)
@@ -4051,7 +4564,7 @@ void change_mode_gr(DRIVER_STRUCT *drv)
    if (GFX_WIN==1) 
    {
 	   ret1=Load_Last_Window_Settings(&X_WIN_ORIG_, &Y_WIN_ORIG_, &WIN_WIDTH_, &WIN_HEIGHT_);
-	   if (ret1)
+       if (ret1)
 	   {
 		   drv->gfx_width=WIN_WIDTH_;
 		   drv->gfx_height=WIN_HEIGHT_;
@@ -4097,6 +4610,8 @@ void change_mode_gr(DRIVER_STRUCT *drv)
    request_refresh_rate(drv->gfx_refresh);
 
 #ifdef LINUX
+#ifdef ALLEGRO5
+#endif
     set_origins(X_WIN_ORIG_, Y_WIN_ORIG_);
 #endif
 
@@ -4110,6 +4625,31 @@ void change_mode_gr(DRIVER_STRUCT *drv)
 
 #ifndef LINUX
     _sleep(0);
+#endif
+
+BOOL CORRECT_GFX=TRUE;
+
+#ifdef ALLEGRO5
+    int x0m, y0m, dxm, dym;
+#ifdef MACOS
+    BOOL ret3=acknowledge_resize();
+#endif
+    ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
+#ifndef MACOS
+    dym-=X11_SCREEN_SHIFT;
+#endif
+    if (((drv->gfx_width!=dxm) || (drv->gfx_height!=dym))   && (CORRECT_GFX))
+    {
+        drv->gfx_width=dxm;
+        drv->gfx_height=dym;
+            if (set_gfx_mode(GFX_GDI, drv->gfx_width, drv->gfx_height, 0, 0) != 0)
+        {
+            set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
+            graphic_error(allegro_error);
+
+            exit(1);
+        }
+    }
 #endif
 
    if (gfx_capabilities & GFX_HW_MEM_BLIT)
@@ -4138,7 +4678,7 @@ void change_mode_gr(DRIVER_STRUCT *drv)
 
    draw_mode=set_display_switch_mode(drv->gfx_display_switch);
 
-   switch_callback_out=set_display_switch_callback(SWITCH_OUT, free_mouse_switch_callback);    ///probably not necessary
+   switch_callback_out=set_display_switch_callback(SWITCH_OUT, free_mouse_switch_callback);
    switch_callback_in=set_display_switch_callback(SWITCH_IN , lock_mouse_switch_callback);
 
 #ifndef LINUX
@@ -4171,13 +4711,13 @@ void change_mode_gr(DRIVER_STRUCT *drv)
 
    GFX_WIN = 1;
 
-   if (GFX_WIN==1) 
+   if (GFX_WIN==1)
    {
 	   if (ret1) ret2=set_window_origin(X_WIN_ORIG_, Y_WIN_ORIG_);
 	     else ret2=centre_window();
 	   ret_ref = get_window_origin_and_size(&x_increase_arch, &y_increase_arch, &h_increase_arch, &v_increase_arch);
    }
-   
+
    //saving window dimensions
 #ifndef LINUX
    wnd = win_get_window();  //WINDOWS
@@ -4195,6 +4735,11 @@ void change_mode_gr(DRIVER_STRUCT *drv)
     curr_h = v_increase_arch;
     curr_h_ = dy_new;
 
+#endif
+#ifdef LINUX
+    sleep(0);
+#else
+    _sleep(0);
 #endif
 
    return;
@@ -4380,13 +4925,23 @@ void switch_screen(void)
 void my_blit(BITMAP *ctx_bitmap,int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy)
 {
   if (ctx_bitmap == NULL) return;
-  blit(ctx_bitmap,screen,mmx0,mmy0,mmx1,mmy1-viewport_y,dxx,dyy);
+#ifdef ALLEGRO5
+  blit(ctx_bitmap,screen,mmx0,mmy0,mmx1,mmy1,dxx,dyy);
+#else
+    blit(ctx_bitmap,screen,mmx0,mmy0,mmx1,mmy1-viewport_y,dxx,dyy);
+#endif
 }
 
 void my_blit_s(BITMAP *ctx_bitmap,int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy)
 {
     if (ctx_bitmap == NULL) return;
     blit(ctx_bitmap,screenplay,mmx0,mmy0,mmx1,mmy1-viewport_y,dxx,dyy);
+}
+
+void my_blit_sd(BITMAP *src_bitmap, BITMAP *dst_bitmap, int mmx0,int mmy0,int mmx1,int mmy1,int dxx,int dyy)
+{
+    if ((src_bitmap == NULL) || (dst_bitmap == NULL)) return;
+    blit(src_bitmap,dst_bitmap,mmx0,mmy0,mmx1,mmy1-viewport_y,dxx,dyy);
 }
 
 void my_blit_anim(BITMAP* ctx_bitmap, int mmx0, int mmy0, int mmx1, int mmy1, int dxx, int dyy)
@@ -4551,18 +5106,116 @@ static BOOL get_cloud(T_Fstring key_name, T_Fstring ret_string)
     return TRUE;
 }
 
+int extract_files_from_stream(char *file_in, char *file_out, char *markers[], char *file_prefix)
+{   FILE *f_in, *f_out;
+	struct stat st_ads = {0};
+	char *ptr1, *ptr2, *ptr3;
+    long size;
+	int ret;
+	char *filemem;
+	size_t result;
+	char *file_name;
+	char *file_date;
+	char *file_size;
+	char *file_type;
+	char row[255]="";
+
+	ret = stat(file_in,  &st_ads);
+
+	if (ret==-1) return 0;
+	size=st_ads.st_size;
+
+	filemem=(char*)malloc(size);
+	if (filemem==NULL) return 0;
+
+	f_in=fopen(file_in,"r");
+	result=fread(filemem, 1, size, f_in);
+	fclose(f_in);
+	if (result!=size) return 0;
+
+	f_out=fopen(file_out, "w");
+
+
+    ptr1=strstr(filemem,markers[0]);
+	while (ptr1!=NULL)
+	{
+		ptr2=strstr(ptr1,markers[1]);
+		if (ptr2!=NULL)
+		{
+			*ptr2='\0';
+			file_name=ptr1+strlen(markers[0]);
+			ptr3=strstr(file_name, file_prefix);
+			if (ptr3!=NULL)
+				file_name=ptr3+strlen(file_prefix);
+			ptr1=ptr2+strlen(markers[1]);
+		}
+		else break;
+
+		if (strlen(file_name)==0)
+		{
+			ptr1=strstr(ptr1,markers[0]);
+			continue;
+		}
+
+		ptr1=strstr(ptr1,markers[2]);
+		if (ptr1==NULL) break;
+		ptr2=strstr(ptr1,markers[3]);
+		if (ptr2!=NULL)
+		{
+			*ptr2='\0';
+			file_date=ptr1+strlen(markers[2]);
+			ptr1=ptr2+strlen(markers[3]);
+		}
+		else break;
+
+		ptr1=strstr(ptr1,markers[4]);
+		if (ptr1==NULL) break;
+		ptr2=strstr(ptr1,markers[5]);
+		if (ptr2!=NULL)
+		{
+			*ptr2='\0';
+			file_size=ptr1+strlen(markers[4]);
+			ptr1=ptr2+strlen(markers[5]);
+		}
+		else break;
+
+		ptr1=strstr(ptr1,markers[6]);
+		if (ptr1==NULL) break;
+		ptr2=strstr(ptr1,markers[7]);
+		if (ptr2!=NULL)
+		{
+			*ptr2='\0';
+			file_type=ptr1+strlen(markers[6]);
+			ptr1=ptr2+strlen(markers[7]);
+		}
+		else break;
+
+		if (strlen(file_name)>0)
+		{
+			sprintf(row,"%s\t%s\t%s\t%s\n",file_name,file_date,file_size,file_type);
+			fwrite(&row, 1, strlen(row), f_out);
+		}
+
+		ptr1=strstr(ptr1,markers[0]);
+	}
+
+	fclose(f_out);
+	free(filemem);
+	return 1;
+}
+
 int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y, int d_x, int d_y, int fade_out)
 {
     BITMAP* bmp_add = NULL, *bmp, * bmp0, * bmp1, * buffer, *buffer_f = NULL;
     PALETTE pal;
     int i;
     BITMAP *second_screen, *third_screen;
-    char ad_name[MAXPATH], ad_name_zip[MAXPATH];
+    char ad_name[MAXPATH]="", ad_name_zip[MAXPATH]="";
     double scale_x, scale_y;
     BOOL ret;
     int n_list;
     int runcode;
-    char params[384];
+    char params[384]="";
     static int strcount1 = 0;
     int FILENAMEMAXC;
     long png_mem;
@@ -4790,7 +5443,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
             FILE *pp;
             int curl = 0, unzip = 0, sed = 0, tar=0;
             BOOL time_to_update=FALSE;
-            char *last_upgd_date_file="last_upgd_date.dat";
+            char *last_upgd_date_file=(char*)"last_upgd_date.dat";
             long last_upgd_date_num;
 
             //allocating credentials
@@ -4836,8 +5489,8 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
             if (cloud_connect)  //user wants to connect, to get upgrades etc
             {
-                if (__file_exists(last_upgd_date_file)) {
-                    char list_row[MaxTextLen];
+                if (my_file_exists(last_upgd_date_file)) {
+                    char list_row[MaxTextLen]="";
                     FILE *lupgdf = fopen(last_upgd_date_file, "rt");
                     if (lupgdf != NULL) {
                         strcount1 = 0;
@@ -4852,7 +5505,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                 } else last_upgd_date_num = 0;
 
-                char time_str[32];
+                char time_str[32]="";
                 long date_num_current, date_num;
                 int32_t ts;
                 //current time
@@ -4870,12 +5523,12 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     if (pp != NULL) {
                         while (1) {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if ((strstr(strlwr(line), "curl") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
                                 curl = 1;
-                                break;
+                                //break;
                             }
                         }
                         pclose(pp);
@@ -4885,35 +5538,54 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     if (pp != NULL) {
                         while (1) {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if ((strstr(strlwr(line), "unzip") != NULL) &&
                                 (strstr(strlwr(line), "not found") == NULL)) {
                                 unzip = 1;
-                                break;
+                                //break;
                             }
                         }
                         pclose(pp);
                     }
                     //checking sed
+#ifndef MACOS
                     pp = popen("sed --version", "r");
                     if (pp != NULL) {
                         while (1) {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if ((strstr(strlwr(line), "sed") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
                                 sed = 1;
-                                break;
+                                //break;
                             }
                         }
                         pclose(pp);
                     }
-
+#else
+                	/*  //we don't need that
+                	pp = popen("which -a sed", "r");
+                	if (pp != NULL) {
+                		while (1) {
+                			char *line;
+                			char buf[1000]="";
+                			line = fgets(buf, sizeof(buf), pp);
+                			if (line == NULL) break;
+                			if ((strstr(strlwr(line), "sed") != NULL) && (strstr(strlwr(line), "not found") == NULL)) {
+                				sed = 1;
+                				//break;
+                			}
+                		}
+                		pclose(pp);
+                	}
+                	*/
+                	sed = 1;
+#endif
                     if ((!curl) || (!unzip) || (!sed)) {
-                        char tools_to_install[72];
+                        char tools_to_install[72]="";
                         tools_ok = FALSE;
                         sprintf(tools_to_install, "%s %s %s %s", ((curl == 0) ? "curl" : ""),
                                 ((unzip == 0) ? "unzip" : ""), ((sed == 0) ? "sed" : ""), _TOOLS_TO_INSTALL_);
@@ -4931,13 +5603,13 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         while (1)
                         {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if ((strstr(strlwr(line), "curl") != NULL) && (strstr(strlwr(line), "not recognized") == NULL))
                             {
                                 curl = 1;
-                                break;
+                                //break;
                             }
                             //if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
                         }
@@ -4951,20 +5623,20 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         while (1)
                         {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
 
                             if ((strstr(strlwr(line), "tar") != NULL) && (strstr(strlwr(line), "not recognized") == NULL))
                             {
                                 tar = 1;
-                                break;
+                                //break;
                             }
                             //if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
                         }
                         _pclose(pp);
                     }
-
+#ifdef USESED
                     //checking sed
                     pp = _popen("sed --version", "r");
                     if (pp != NULL)
@@ -4972,18 +5644,21 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         while (1)
                         {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if ((strstr(strlwr(line), "sed") != NULL) && (strstr(strlwr(line), "not recognized") == NULL))
                             {
                                 sed = 1;
-                                break;
+                                //break;
                             }
                             //if (line[0] == 'd') printf("%s\n", line); /* line includes '\n' */
                         }
                         _pclose(pp);
                     }
+#else
+                	sed = 1;
+#endif
 
                     FreeConsole();
 
@@ -4993,10 +5668,10 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         BITMAP* screen_ = screen;
                         global_resized = FALSE;
 
-                        char tools_to_install[72];
+                        char tools_to_install[72]="";
                         tools_ok = FALSE;
                         sprintf(tools_to_install, "%s %s %s %s", ((curl == 0) ? "curl" : ""), ((tar == 0) ? "tar" : ""),((sed == 0) ? "sed" : ""),_TOOLS_TO_INSTALL_);
-                        ret = ask_question(1, _No_, _Yes_, "Upgrade", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1,203);
+                        ret = ask_question(1, _No_, _Yes_, (char*)"Upgrade", tools_to_install, 12, (char *) _INSTALL_TOOLS_, 11, 1,203);
 
                         if (global_resized) {
                             destroy_bitmap(second_screen);
@@ -5020,24 +5695,26 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     ret = My_GetFiles("ads", &n_list, "\\*.png", "\\*.jpg", NULL, NULL, TRUE);
 #endif
 #ifndef LINUX
-                    ret = My_GetFiles("ads", &n_list, "\\*.png", "\\*.jpg", NULL, NULL, -1);
+                    ret = My_GetFiles((char*)"ads", &n_list, (char*)"\\*.png", (char*)"\\*.jpg", NULL, NULL, -1);
 #endif
-                    if (__file_exists("list.out"))
+                    if (my_file_exists((char*)"list.out"))
                         unlink("list.out");
                     flip_full_screen(second_screen);
-                    extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 3, "");
+                    extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 3, (char*)"");
 #ifdef LINUX
+//#ifndef MACOS
+#ifdef USESCRIPT
                     pp = popen("test -x adslist.sh && echo true || echo false", "r");
                     if (pp != NULL) {
                         while (1) {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if (strstr(strlwr(line), "false") != NULL) {
                                 sprintf(params, "+x adslist.sh");
-                                SystemSilent("chmod", params);
-                                break;
+                                runcode = (int)SystemSilent("chmod", params);
+                                //break;
                             }
                         }
                         pclose(pp);
@@ -5045,14 +5722,31 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                     sprintf(params, "%s %s %s %s", cloud_share0_url, cloud_ads0, cloud_user0, cloud_password0);
                     runcode = SystemSilent("./adslist.sh", params);
+#else
+                	//sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/ads\" --connect-timeout 5 -m 5 --user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out");
+                	sprintf(params, "curl %s --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out", cloud_ads_url, cloud_user, cloud_password);
+
+                	printf("%s\n", params);
+                	//runcode = RunSilent("curl", params);
+                	runcode = (int)SystemSilentS(params);
+                	if (my_file_size((char*)"list.out") > 0)
+                	{
+                        char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
+                		char file_prefix[MaxTextLen]="";
+                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_ads0);
+
+                		ret=extract_files_from_stream((char*)"list.out", (char*)"list.out", markers, file_prefix);
+                	}
+#endif
 #endif
 #ifndef LINUX
                     //sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/ads\" --connect-timeout 5 -m 5 --user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out");
                     sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out",
                             cloud_ads_url, cloud_user, cloud_password);
                     //printf("%s\n", params);
-                    runcode = RunSilent("curl", params);
-                    if (__file_size("list.out") > 0)
+                    runcode = RunSilent((char*)"curl", params);
+#ifdef USESED
+                    if (my_file_size("list.out") > 0)
                     {
                         sprintf(params, "-e \"/^<?xml version='1.0'?>/d\" -e \"s@</\\?d:response>@\\n@g\" list.out > b.out");
                         //sed - e "/^<?xml version='1.0'?>/d" - e "s@</\?d:response>@\n@g" list.out > b.out
@@ -5062,21 +5756,31 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         sprintf(params, "-e \"s@.*/remote.php/webdav/%s/@@\" bb.out > list.out", cloud_ads0);
                         runcode = RunSilent("sed", params);
                     }
+#else
+                	if (my_file_size((char*)"list.out") > 0)
+                	{
+                		char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
+                		char file_prefix[MaxTextLen]="";
+                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_ads0);
+
+                		ret=extract_files_from_stream((char*)"list.out", (char*)"list.out", markers, file_prefix);
+                	}
 #endif
-                    if (__file_exists("list.out") && (__file_size("list.out") > 0)) {
+#endif
+                    if (my_file_exists((char*)"list.out") && (my_file_size((char*)"list.out") > 0)) {
                         FILE *lf;
-                        char list_row[MaxTextLen];
+                        char list_row[MaxTextLen]="";
                         int ret;
-                        char row_file[MaxTextLen];
-                        char row_file_name[MaxTextLen];
-                        char row_weekday[6];
+                        char row_file[MaxTextLen]="";
+                        char row_file_name[MaxTextLen]="";
+                        char row_weekday[6]="";
                         int row_day;
-                        char row_month[6];
+                        char row_month[6]="";
                         int row_year;
-                        char row_time[12];
-                        char row_zone[6];
+                        char row_time[12]="";
+                        char row_zone[6]="";
                         int row_size;
-                        char row_type[16];
+                        char row_type[16]="";
                         size_t it;
                         BOOL go_download;
                         BOOL was_download = FALSE;
@@ -5144,7 +5848,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                             cloud_user, cloud_password, cloud_ads0_url, row_file, cloud_ads0,
                                             row_file_name);
 #ifdef LINUX
-                                    runcode = SystemSilent("curl", params);
+                                    runcode = (int)SystemSilent((char*)"curl", params);
 #endif
 #ifndef LINUX
                                     runcode = RunSilent("curl", params);
@@ -5186,20 +5890,44 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         }
 
                         if (was_download) flip_full_screen(second_screen);
-                    } //__file_exists("list.out")
+                    } //my_file_exists("list.out")
 
                     //Checking upgrades
 
                     BOOL go_download_upgds = FALSE;
                     BOOL was_download_upgds = FALSE;
 
-                    char row_file_upgds[MaxTextLen];
-                    char row_file_name_upgds[MaxTextLen];
+                    char row_file_upgds[MaxTextLen]="";
+                    char row_file_name_upgds[MaxTextLen]="";
 
                     int language = getlanguage();
 #ifdef LINUX
+#ifndef MACOS
+#ifndef ALLEGRO5
                     sprintf(ad_name, "AlfaCAD%s", lang_sufix[language]);
                     sprintf(ad_name_zip, "AlfaCAD%s.zip", lang_sufix[language]);
+#else
+                	sprintf(ad_name, "AlfaCAD3%s", lang_sufix[language]);
+                	sprintf(ad_name_zip, "AlfaCAD3%s.zip", lang_sufix[language]);
+#endif
+#else
+#if defined(__x86_64__) || defined(_M_X64)
+    				// Code for x64 architecture
+    				printf("x64 Architecture\n");
+                	sprintf(ad_name, "AlfaCAD3%sx.app/Contents/MacOS/AlfaCAD3%sx", lang_sufix[language],lang_sufix[language]);
+                	sprintf(ad_name_zip, "AlfaCAD3%sx.zip", lang_sufix[language]);
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    				// Code for arm64 architecture
+					printf("ARM64 Architecture\n");
+					sprintf(ad_name, "AlfaCAD3%sa.app/Contents/MacOS/AlfaCAD3%sa", lang_sufix[language],lang_sufix[language]);
+                	sprintf(ad_name_zip, "AlfaCAD3%sa.zip", lang_sufix[language]);
+#else
+					// Code for other architectures or when the architecture is unknown
+					printf("Unknown Architecture\n");
+                	sprintf(ad_name, "AlfaCAD3%sx.app/Contents/MacOS/AlfaCAD3%sx", lang_sufix[language],lang_sufix[language]);
+                	sprintf(ad_name_zip, "AlfaCAD3%sx.zip", lang_sufix[language]);
+#endif
+#endif
 #endif
 #ifndef LINUX
 #ifdef BIT64
@@ -5221,23 +5949,25 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                     //downloading zip list
                     ////////////////////////////////////////
-                    if (__file_exists("upgdslist.out"))
+                    if (my_file_exists("upgdslist.out"))
                         unlink("upgdslist.out");
                     flip_full_screen(second_screen);
                     extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 3, "");
 #ifdef LINUX
+//#ifndef MACOS
+#ifdef USESCRIPT
                     //checking adslist.sh
                     pp = popen("test -x upgdslist.sh && echo true || echo false", "r");
                     if (pp != NULL) {
                         while (1) {
                             char *line;
-                            char buf[1000];
+                            char buf[1000]="";
                             line = fgets(buf, sizeof(buf), pp);
                             if (line == NULL) break;
                             if (strstr(strlwr(line), "false") != NULL) {
                                 sprintf(params, "+x upgdslist.sh");
-                                SystemSilent("chmod", params);
-                                break;
+                                runcode = (int)SystemSilent("chmod", params);
+                                //break;
                             }
                         }
                         pclose(pp);
@@ -5245,13 +5975,34 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                     sprintf(params, "%s %s %s %s", cloud_share0_url, cloud_upgrade0, cloud_user0, cloud_password0);
                     runcode = SystemSilent("./upgdslist.sh", params);
+#else
+
+                	sprintf(params, "curl --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" %s/remote.php/webdav/%s > upgdslist.out", cloud_user, cloud_password, cloud_share0_url, cloud_upgrade0);
+
+                	printf("%s\n", params);
+                	//runcode = RunSilent("curl", params);
+                	runcode = (int)SystemSilentS(params);
+                	if (my_file_size((char*)"upgdslist.out") > 0)
+                	{
+                		char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
+                		char file_prefix[MaxTextLen]="";
+                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_upgrade0);
+
+                		ret=extract_files_from_stream((char*)"upgdslist.out", (char*)"upgdslist.out", markers, file_prefix);
+                	}
+
+
+
+#endif
 #endif
 #ifndef LINUX
                     //sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/upgds\" --connect-timeout 5 -m 5 -user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > upgdslist.out");
                     sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > upgdslist.out",
                         cloud_upgrade_url, cloud_user, cloud_password);
-                    runcode = RunSilent("curl", params);
-                    if (__file_size("upgdslist.out") > 0)
+                    runcode = RunSilent((char*)"curl", params);
+
+#ifdef USESED
+                    if (my_file_size("upgdslist.out") > 0)
                     {
                         sprintf(params, "-e \"/^<?xml version='1.0'?>/d\" -e \"s@</\\?d:response>@\\n@g\" upgdslist.out > b.out");
                         //sed - e "/^<?xml version='1.0'?>/d" - e "s@</\?d:response>@\n@g" list.out > b.out
@@ -5261,8 +6012,18 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         sprintf(params, "-e \"s@.*/remote.php/webdav/%s/@@\" bb.out > upgdslist.out", cloud_upgrade0);
                         runcode = RunSilent("sed", params);
                     }
+#else
+                	if (my_file_size((char*)"upgdslist.out") > 0)
+                	{
+                		char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
+                		char file_prefix[MaxTextLen]="";
+                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_upgrade0);
+
+                		ret=extract_files_from_stream((char*)"upgdslist.out", (char*)"upgdslist.out", markers, file_prefix);
+                	}
 #endif
-                    if (__file_exists("upgdslist.out") && (__file_size("upgdslist.out") > 0)) {
+#endif
+                    if (my_file_exists((char*)"upgdslist.out") && (my_file_size((char*)"upgdslist.out") > 0)) {
                         FILE *lf;
                         char list_row[MaxTextLen];
                         int ret;
@@ -5329,7 +6090,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         FILE *lupgdf = fopen(last_upgd_date_file, "wt");
                         fprintf(lupgdf, "%ld\n", date_num_current);
                         fclose(lupgdf);
-                    }  //__file_exists("upgdslist.out")
+                    }  //my_file_exists("upgdslist.out")
                     ////////////////////////////////////////
                     if (go_download_upgds) {
                         int key;
@@ -5338,7 +6099,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                         drawing_mode(DRAW_MODE_SOLID, NULL, 0, 0);
 
-                        ret = ask_question(2, (char *) _No_, (char *) _Yes_, "Upgrade",
+                        ret = ask_question(2, (char *) _No_, (char *) _Yes_, (char*)"Upgrade",
                                            (char *) _UPGRADE_READY_ /*exit_str*/, 12, (char *) _UPGRADE_RESTART_,
                                            11, 1,
                                            202);
@@ -5366,7 +6127,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds, cloud_upgrade0,
                                     row_file_name_upgds);
 #ifdef LINUX
-                            runcode = SystemSilent("curl", params);
+                            runcode = (int)SystemSilent((char*)"curl", params);
 #endif
 #ifndef LINUX
                             runcode = RunSilent("curl", params);
@@ -5374,7 +6135,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             //upgrading
 #ifdef LINUX
                             sprintf(params, "-o upgds/%s", row_file_name_upgds);
-                            SystemSilent("unzip", params);
+                            runcode = (int)SystemSilent((char*)"unzip", params);
 #endif
 #ifndef LINUX
                             //sprintf(params, "-xf upgds/%s > abc.log", row_file_name_upgds);
@@ -5400,7 +6161,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
 #ifdef LINUX
                             sprintf(params, "+x %s", ad_name);
-                            SystemSilent("chmod", params);
+                            runcode = (int)SystemSilent((char*)"chmod", params);
 #endif
 #ifndef LINUX
                             /////////////////////////////  TO DO ON WINDOWS
@@ -5541,7 +6302,7 @@ int Wake_Up(void)
 		free_mouse = 1;
 		_free_mouse();
 		remove_mouse();
-		sleep_state = TRUE;  //SLEEP_STATE
+		set_sleep_state(TRUE);  //SLEEP_STATE
 
 #ifdef BEEP
 		MessageBeep(0x00000000L);
@@ -5554,7 +6315,8 @@ int Wake_Up(void)
 		lock_mouse();
 		install_mouse();
 		install_keyboard();
-		sleep_state = FALSE;
+		set_sleep_state(FALSE);
+
         show_x_cursor();
 
 	}
@@ -5579,7 +6341,7 @@ int Free_Mouse(void)
 		free_mouse = 1;
 		_free_mouse();
 
-		sleep_state = TRUE;  //SLEEP_STATE
+		set_sleep_state(TRUE);  //SLEEP_STATE
 
         clean_key_buffer();
 
@@ -5600,7 +6362,7 @@ int Free_Mouse(void)
 		curr_h_ = clnRect.bottom - clnRect.top;
 #endif
 #ifdef LINUX
-
+#ifndef MACOS
         Display *display;
         Window focus, toplevel_parent_of_focus, root_window;
         XWindowAttributes attr;
@@ -5611,7 +6373,11 @@ int Free_Mouse(void)
 
         root_window=DefaultRootWindow(display);
 
+#ifndef ALLEGRO5
         focus=_xwin.window;
+#else
+        focus=get_x_window_id();
+#endif
         toplevel_parent_of_focus = get_toplevel_parent(display, focus);
         ////toplevel_parent_of_focus = get_my_window(display, root_window, Window_Name);
         ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
@@ -5622,7 +6388,9 @@ int Free_Mouse(void)
         curr_h_ = attr.height;
 
         XCloseDisplay(display);
+#else
 
+#endif
 #endif
 	}
 	else
@@ -5630,7 +6398,7 @@ int Free_Mouse(void)
 		serv134_135(TRUE);
 		free_mouse = 0;
 		lock_mouse();
-		sleep_state = FALSE;
+		set_sleep_state(FALSE);
 
         dialog_cursor(0);
 
@@ -5668,12 +6436,12 @@ void table_callback(int pos)
 void DoneBuffers1(void)
 {
   if (my_rgb_map==TRUE) free (rgb_map);
-  komunikat_str("@ 1-1");
-  if (trans_map!=NULL) free (trans_map);
-  komunikat_str("@ 1-2");
-  if (trans_map_preview != NULL) free(trans_map_preview);
-  komunikat_str("@ 1-3");
-  if (light_map!=NULL) free (light_map);
+  komunikat_str((char*)"@ 1-1");
+  if (trans_map!=nullptr) free (trans_map);  //NULL
+  komunikat_str((char*)"@ 1-2");
+  if (trans_map_preview != nullptr) free(trans_map_preview); //NULL
+  komunikat_str((char*)"@ 1-3");
+  if (light_map!=nullptr) free (light_map); //NULL
 }
 
 void reset_trans_blender(void)
@@ -5778,7 +6546,6 @@ void expand_horizontally(void)
 	int w, w_, h, h_, Dw, Dw_, Dh, Dh_, dw, dh,dh1, e_h;
 	GFX_MARGINS* gfx_margins;
 	int ret_ref;
-
 
 	wnd = win_get_window();
 
@@ -5892,13 +6659,10 @@ void expand_horizontally(void)
 	dy_new = wndRect.bottom - wndRect.top;
 
 	MoveWindow(wnd, x0_new, y0_new, dx_new, dy_new, TRUE); //WINDOWS
-	
-	cleardevice();
-	redraw();
 
-	int p_mouse = my_poll_mouse();
-	int p_keyboard = my_poll_keyboard();
-	moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//int p_mouse = my_poll_mouse();
+	//int p_keyboard = my_poll_keyboard();
+	//moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 #endif
 #ifdef LINUX
@@ -5923,13 +6687,11 @@ void expand_horizontally(void)
 
     set_origins(x0_new, y0_new);
     set_resized_window(dx_new, dy_new);
+    ret = set_window_origin(x0_new, y0_new);
 
-    cleardevice();
-    redraw();
-
-    int p_mouse = my_poll_mouse();
-    int p_keyboard = my_poll_keyboard();
-    moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+    //int p_mouse = my_poll_mouse();
+    //int p_keyboard = my_poll_keyboard();
+    //moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 
     return;
 #endif
@@ -6063,13 +6825,10 @@ void expand_vertically(void)
 
 	MoveWindow(wnd, x0_new, y0_new, dx_new, dy_new, TRUE); //WINDOWS
 
-	cleardevice();
-	redraw();
-
-	int p_mouse = my_poll_mouse();
-	int p_keyboard = my_poll_keyboard();
-	moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-	position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//int p_mouse = my_poll_mouse();
+	//int p_keyboard = my_poll_keyboard();
+	//moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 #else
     int ret_left_x, ret_right_x, ret_top_y, ret_bottom_y;
     int monitor=0;
@@ -6094,15 +6853,12 @@ void expand_vertically(void)
 
     set_origins(x0_new, y0_new);
     set_resized_window(dx_new, dy_new);
+    ret = set_window_origin(x0_new, y0_new);
 
-
-    cleardevice();
-    redraw();
-
-    int p_mouse = my_poll_mouse();
-    int p_keyboard = my_poll_keyboard();
-    moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-	position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+    //int p_mouse = my_poll_mouse();
+    //int p_keyboard = my_poll_keyboard();
+    //moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
     return;
 #endif
 }
@@ -6355,19 +7111,16 @@ void expand_diagonally(void)
 	dy_new = wndRect.bottom - wndRect.top;
 
 	MoveWindow(wnd, x0_new, y0_new, dx_new, dy_new, TRUE); //WINDOWS
-	
-	cleardevice();
-	redraw();
 
-	int p_mouse = my_poll_mouse();
-	int p_keyboard = my_poll_keyboard();
+	//int p_mouse = my_poll_mouse();
+	//int p_keyboard = my_poll_keyboard();
 	
-	moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-	position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 #else
     int ret_left_x, ret_right_x, ret_top_y, ret_bottom_y;
     int monitor=0;
-    int ret;
+    int ret, ret2;
     int curr_x0, curr_y0, curr_h, curr_v;
 	int ret_ref;
 
@@ -6387,13 +7140,10 @@ void expand_diagonally(void)
     set_origins(x0_new, y0_new);
     set_resized_window(dx_new, dy_new);
 
-    cleardevice();
-    redraw();
-
-    int p_mouse = my_poll_mouse();
-    int p_keyboard = my_poll_keyboard();
-    moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-	position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+    //int p_mouse = my_poll_mouse();
+    //int p_keyboard = my_poll_keyboard();
+    //moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
     return;
 #endif
 }
@@ -6402,6 +7152,10 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
     int ret_left_x, ret_right_x, ret_top_y, ret_bottom_y;
     int monitor=0;
 	int ret, ret_ref;
+	int keys_;
+
+	enable_hardware_cursor();
+
     //checking if doesn't exceed screen baundaries
     ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
 
@@ -6417,6 +7171,7 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 
     set_origins(x0_new, y0_new);
 	set_resized_window(dx_new, dy_new);
+    ret = set_window_origin(x0_new, y0_new);
 #else
     dx_new = w_width;
     dy_new = w_height; // -X11_SCREEN_SHIFT;
@@ -6433,12 +7188,20 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 #endif
 
 
-    int p_mouse = my_poll_mouse();
-    int p_keyboard = my_poll_keyboard();
-    moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-	position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+    //int p_mouse = my_poll_mouse();
+    //int p_keyboard = my_poll_keyboard();
+    //moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+	//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 
-    global_resized=TRUE;
+   ////global_resized=TRUE;
+	//simulate_keypress(27);
+	enable_hardware_cursor();
+	my_sleep(10);
+	disable_hardware_cursor();
+	standard_func();
+	//Test_przycisniec(&keys_);
+	//cur_mouse_b=-1;
+	//mouse_b=0;
 } 
 
 void restore_last_window(void)
@@ -6499,14 +7262,11 @@ void restore_last_window(void)
 		dy_new = wndRect.bottom - wndRect.top;
 
 		MoveWindow(wnd, x0_new, y0_new, dx_new, dy_new, TRUE); //WINDOWS
-		
-		cleardevice();
-		redraw();
 
-		int p_mouse = my_poll_mouse();
-		int p_keyboard = my_poll_keyboard();
-		moveto(x0_back + (dx_back / 2), y0_back + (dy_back / 2));
-		position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+		//int p_mouse = my_poll_mouse();
+		//int p_keyboard = my_poll_keyboard();
+		//moveto(x0_back + (dx_back / 2), y0_back + (dy_back / 2));
+		//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
 
 	}
 #else
@@ -6537,14 +7297,12 @@ void restore_last_window(void)
 
         set_origins(x0_new, y0_new);
         set_resized_window(dx_new, dy_new);
+        ret = set_window_origin(x0_new, y0_new);
 
-        cleardevice();
-        redraw();
-
-        int p_mouse = my_poll_mouse();
-        int p_keyboard = my_poll_keyboard();
-        moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
-		position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+        //int p_mouse = my_poll_mouse();
+        //int p_keyboard = my_poll_keyboard();
+        //moveto(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
+		//position_mouse(x0_new + (dx_new / 2), y0_new + (dy_new / 2));
     }
 
 #endif
@@ -6638,7 +7396,8 @@ int circle_and_rectangle_proc0(int untrap_mouse)
    */
    ret = WinSize(wndRect.left /*- 5*/, wndRect.top /*- 5*/, w /*+ 10*/, h /*+ 10*/, NO_S); 
 
-   sleep_state = FALSE;
+   set_sleep_state(FALSE);
+
    //if (x0_new < 0) x0_new = 0;
    if (y0_new < 0)
    {
@@ -6752,6 +7511,7 @@ void DoneBackground(void)
 }
 
 #ifdef LINUX
+#ifndef MACOS
 static void
 set_title(Display* d, Window w, char* name)
 {
@@ -6768,6 +7528,9 @@ set_title(Display* d, Window w, char* name)
                         XInternAtom(d, "STRING", False), 8,
                         PropModeReplace, (unsigned char*)name, strlen(name)+1);
 }
+#else
+
+#endif
 #endif
 
 void my_set_window_title(char* wnd_title)
@@ -6777,17 +7540,27 @@ void my_set_window_title(char* wnd_title)
 	//do_uconvert(name, U_CURRENT, wnd_title, U_ASCII, WND_TITLE_SIZE);
 	SetWindowText(allegro_wnd, wnd_title);
 #else
+#ifndef MACOS
     Display *display;
-    Window focus;
+    Window focus, root_window;;
     int revert;
     display = XOpenDisplay(0);
+
+#ifndef ALLEGRO5
     focus=_xwin.window;
+#else
+    focus=get_x_window_id();
+#endif
+
     set_title(display, focus, wnd_title);
+#else
+
+#endif
 #endif
 }
 
-
 #ifdef LINUX
+#ifndef MACOS
 void Set_XWindow_header_height(void) {
     Display* d;
     Window w, root;
@@ -6830,7 +7603,15 @@ void Set_XWindow_header_height(void) {
     XDestroyWindow(d, w);
     XCloseDisplay(d);
 }
+#else
+    void Set_XWindow_header_height(void) {
 
+
+	X11_SCREEN_SHIFT=25;  //MACOS TEMPORARY  24points=25pxl
+}
+
+
+#endif
 #endif
 
 #ifdef __cplusplus

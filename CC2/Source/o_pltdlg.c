@@ -509,7 +509,7 @@ static LABEL lab_color=
 
 static TDIALOG ploter_dlg =
 {
-	7, 10, 523,205,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+	7, 10, 523,209,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	plt_dlg_labs0,
 	0, NULL,
 	LAB_SIZE, &lab_table,

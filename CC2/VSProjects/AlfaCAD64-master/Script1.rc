@@ -31,8 +31,8 @@ CAPTION "About"
 FONT 8, "System", 0, 0, 0x0
 BEGIN
     ICON            IDI_ALFA,IDC_ALFA,14,9,20,20
-    LTEXT           "AlfaCad Version 2.5",IDC_STATIC,49,10,119,8
-    LTEXT           "Copyright (C) Marek Ratajczak 2020",IDC_STATIC,49,20,119,8
+    LTEXT           "AlfaCad Version 2.5",IDC_STATIC_A,49,10,119,8
+    LTEXT           "Copyright (C) Marek Ratajczak 2020",IDC_STATIC_A,49,20,119,8
     DEFPUSHBUTTON   "OK",1,195,6,30,11
 END
 
@@ -86,7 +86,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ALFA                ICON                    "..\\..\\source\\Bitmaps\\Alfa.ico"
+IDI_ALFA                ICON                    "..\\..\\source\\Bitmaps\\AlfaCAD64.ico"
 
 IDI_ALLEGRO             ICON                    "..\\..\\source\\Bitmaps\\alfacad.ico"
 
@@ -103,6 +103,8 @@ IDB_LEFT                PNG                     "..\\..\\source\\Bitmaps\\text_a
 IDB_CENTER              PNG                     "..\\..\\source\\Bitmaps\\text_align_baselinecenter.png"
 
 IDB_RIGHT               PNG                     "..\\..\\source\\Bitmaps\\text_align_baselineright.png"
+
+IDB_ALFA                PNG                     "..\\..\\source\\Bitmaps\\AlfaCAD64.png"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -137,6 +139,8 @@ IDB_BITMAP_MIDDLE_CENTER BITMAP                 "..\\..\\source\\Bitmaps\\text_a
 IDB_BITMAP_COPY_TEXT    BITMAP                  "..\\..\\source\\Bitmaps\\copy-text.bmp"
 
 IDB_BITMAP_HIDDEN       BITMAP                  "..\\..\\source\\Bitmaps\\hidden_text.bmp"
+
+IDB_BITMAP_ALFA         BITMAP                  "..\\..\\source\\Bitmaps\\AlfaCAD64.bmp"
 
 
 /////////////////////////////////////////////////////////////////////////////

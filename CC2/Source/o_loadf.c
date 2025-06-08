@@ -542,7 +542,7 @@ static IMAGE images_t[] =
 
 static TDIALOG load_file_dlg =
 {
-	5, 5, DXDialog, DYDialog, //HEIGHT_WORLD - 1,
+	5, 5, DXDialog, DYDialog+5, //HEIGHT_WORLD - 1,
 	COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL,
 	0, XpGrFileName + 2 * DXIL + 15 * 8, YpGrFileName + DYLabS + 2 * DYIL,
 	edit_table,
@@ -742,10 +742,10 @@ static void set_default_param (char     * param_val,
 			       char     * def_path)
 /*---------------------------------------------------*/
 {
-  char dir [MAXDIR];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir [MAXDIR]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
   char buf [200];
 
@@ -800,11 +800,11 @@ static BOOL get_dlg_control (void)
 static BOOL get_prot_control (void)
 //--------------------------------
 {
-  char dir [MAXDIR] ;
-  char path_full [MAXPATH];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir [MAXDIR]="" ;
+  char path_full [MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
   T_PTR_Prototype ptrs_prot ;
   
@@ -905,11 +905,11 @@ static int branch_edit (void)
 //----------------------------
 {
   int ret = Dlg_Ret_Val_Continue ;
-  char dir [MAXDIR] ;
-  char path_full [MAXPATH];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir [MAXDIR]="" ;
+  char path_full [MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
 
   if (i__type_load != SAVE_FILE_AS && i__type_load != EDIT_TABLE)
@@ -1008,11 +1008,11 @@ static int branch_edit_prot (void)
 //--------------------------------
 {
   int ret = Dlg_Ret_Val_Continue ;
-  char dir [MAXDIR] ;
-  char path_full [MAXPATH];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir [MAXDIR] ="";
+  char path_full [MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
 
   flags=fnsplit (sz__edit_prot_name, drive, dir, file, ext);
@@ -1275,11 +1275,11 @@ int ViewBlock(char *FileName, BOOL set_color)
   BOOL options1_scale_DIM;
   BOOL change__;
   double ddx, ddy, DDx, DDy, dddx, dddy;
-  char pathname[MAXPATH];
-  char drive[MAXDRIVE];
-  char dir[MAXDIR];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char pathname[MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char dir[MAXDIR]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
   long_long dane_size00, l;
   double Jednostki_, SkalaF_;
@@ -2156,11 +2156,11 @@ static BOOL get_dir_names (void)
 { char st[60];
   struct ffblk ffblk_;   
   int done;
-  char pathname[MAXPATH];
-  char drive[MAXDRIVE];
-  char dir[MAXDIR];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char pathname[MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char dir[MAXDIR]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
 
 
@@ -2420,11 +2420,11 @@ static BOOL ini_drive_control (void)
 static BOOL ini_dlg_control_prot (void)
 /*-----------------------------------*/
 {
-  char dir [MAXDIR] ;
-  char path_full [MAXPATH];
-  char drive[MAXDRIVE];
-  char file[MAXFILE];
-  char ext[MAXEXT];
+  char dir [MAXDIR]="" ;
+  char path_full [MAXPATH]="";
+  char drive[MAXDRIVE]="";
+  char file[MAXFILE]="";
+  char ext[MAXEXT]="";
   int flags;
   T_PTR_Prototype ptrs_prot ;
   char *ptr;

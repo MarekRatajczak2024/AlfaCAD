@@ -1334,7 +1334,7 @@ double dP1P2 (double x1,double y1, double x2, double y2)
 
 
 
-int przeciecieLO_ (double *x, double *y, void *adr, void *adr1)
+int przeciecieLO_older (double *x, double *y, void *adr, void *adr1)
 /*-----------------------------------------------------------*/
 {
   double x1, x2, y1, y2, t1, t2, t0, x0, y0, l ;
@@ -1363,6 +1363,46 @@ int przeciecieLO_ (double *x, double *y, void *adr, void *adr1)
     *y = y0 ;
   }
   return l ;
+}
+
+int przeciecieLO_ (double *x, double *y, void *adr, void *adr1)
+/*-----------------------------------------------------------*/
+{
+    double x1, x2, y1, y2, t1, t2;
+
+    if (0 == przeciecieLO_tt (&x1, &y1, &t1, &x2, &y2, &t2, adr, adr1))
+    {
+        return 0 ;
+    }
+    //priority for closer point
+    if ((dP1P2  (X, Y, x1, y1) <= dP1P2   (X, Y, x2, y2)) && (t1 >= 0 - o_male_p && t1 <= 1 + o_male_p))
+    {
+        *x = x1 ;
+        *y = y1 ;
+        return 1;
+    }
+    else if (t2 >= 0 - o_male_p && t2 <= 1 + o_male_p)
+    {
+        *x = x2 ;
+        *y = y2 ;
+        return 1;
+    }
+
+    //now no priority
+    if (t1 >= 0 - o_male_p && t1 <= 1 + o_male_p)
+    {
+        *x = x1 ;
+        *y = y1 ;
+        return 1;
+    }
+    else if (t2 >= 0 - o_male_p && t2 <= 1 + o_male_p)
+    {
+        *x = x2 ;
+        *y = y2 ;
+        return 1;
+    }
+
+    return 0 ;
 }
 
 int przeciecieLO_r (double *x, double *y, void *adr, void *adr1)

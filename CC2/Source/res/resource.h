@@ -16,6 +16,7 @@
 #define IDB_LEFT                        132
 #define IDB_CENTER                      133
 #define IDB_RIGHT                       134
+#define IDB_ALFA			135
 #define IDB_BITMAP_LEFT                 136
 #define IDB_BITMAP_CENTER               137
 #define IDB_BITMAP_RIGHT                138
@@ -34,8 +35,9 @@
 #define IDB_BITMAP_COPY_TEXT            152
 //#define IDB_BITMAP5                     153
 #define IDB_BITMAP_HIDDEN               153
+#define IDB_BITMAP_ALFA                 155
 #define IDI_ALLEGRO                     32512
-#define IDC_STATIC                      -1
+#define IDC_STATIC_A                      -1
 
 // Next default values for new objects
 // 

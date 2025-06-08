@@ -57,7 +57,7 @@ static TMENU mList_String = {0, 0,0, MaxTextLength , 1, 3,0, CMNU,CMBR,CMTX,0,0,
 static TMENU mList_String = {0, 0,0, MaxTextLength , 1, 3,0, CMNU,CMBR,CMTX,0,0,0, 0,0,&pm_tmp, NULL,NULL};
 #endif
 
-#define BUF_LIST_SIZE 1000
+#define BUF_LIST_SIZE 4096 //1000
 
 typedef struct
 {
@@ -125,24 +125,27 @@ BOOL Add_String_To_List (char *ptr_string)
   }
   delete_if_equel (ptr_string) ;
   len = strlen (ptr_string) ;
-  if (s_string_list.buf_size <= s_string_list.first_free + len)
+
+  if (len<s_string_list.buf_size)  //string is not too long
   {
-    dl = s_string_list.first_free + len + 1 - s_string_list.buf_size ;
-    len_str = 0 ;
-    ptr_s = s_string_list.ptrsz_list ;
-    do
-    {
-      len_str += strlen (ptr_s) + 1 ;
-      ptr_s = s_string_list.ptrsz_list + len_str ;
-      s_string_list.string_no-- ;
-    }
-    while (len_str < dl) ;
-    s_string_list.first_free -= len_str ;
-    memmove (s_string_list.ptrsz_list, ptr_s, s_string_list.first_free) ;
+   if (s_string_list.buf_size <= s_string_list.first_free + len)
+   {
+      dl = s_string_list.first_free + len + 1 - s_string_list.buf_size;
+      len_str = 0;
+      ptr_s = s_string_list.ptrsz_list;
+      do
+      {
+          len_str += strlen(ptr_s) + 1;
+          ptr_s = s_string_list.ptrsz_list + len_str;
+          s_string_list.string_no--;
+      } while (len_str < dl);
+      s_string_list.first_free -= len_str;
+      memmove(s_string_list.ptrsz_list, ptr_s, s_string_list.first_free);
+   }
+   strcpy(&s_string_list.ptrsz_list[s_string_list.first_free], ptr_string);
+   s_string_list.string_no++;
+   s_string_list.first_free += len + 1;
   }
-  strcpy (&s_string_list.ptrsz_list [s_string_list.first_free], ptr_string) ;
-  s_string_list.string_no++ ;
-  s_string_list.first_free += len + 1 ;
 #ifdef LINUX
   //copy to clipboard
   Put_Str_To_Clip(ptr_string);

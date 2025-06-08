@@ -125,14 +125,22 @@ int tinyfd_notifyPopup(
 	char const * aMessage, /* NULL or "" may contain \n \t */
 	char const * aIconType); /* "info" "warning" "error" */
 		/* return has only meaning for tinyfd_query */
-
+#ifdef LINUX
 int tinyfd_messageBox(
 	char const * aTitle , /* NULL or "" */
 	char const * aMessage , /* NULL or "" may contain \n \t */
 	char const * aDialogType , /* "ok" "okcancel" "yesno" "yesnocancel" */
 	char const * aIconType , /* "info" "warning" "error" "question" */
-	int aDefaultButton ) ;
+	int aDefaultButton, int x, int y ) ;
 		/* 0 for cancel/no , 1 for ok/yes , 2 for no in yesnocancel */
+#else
+	int tinyfd_messageBox(
+	char const * aTitle , /* NULL or "" */
+	char const * aMessage , /* NULL or "" may contain \n \t */
+	char const * aDialogType , /* "ok" "okcancel" "yesno" "yesnocancel" */
+	char const * aIconType , /* "info" "warning" "error" "question" */
+	int aDefaultButton);
+#endif
 
 char * tinyfd_editBox(
     char const * aTitle , /* NULL or "" */

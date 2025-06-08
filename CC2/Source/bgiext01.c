@@ -226,6 +226,8 @@ int getcolor(void)
 #ifdef fullcolor
   return  global_color;
 #else
+    if (__gr_color>255)
+        return 0;
   return __gr_color;
 #endif
 }

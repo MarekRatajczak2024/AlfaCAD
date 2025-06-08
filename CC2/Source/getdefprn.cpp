@@ -15,7 +15,7 @@
 #define MAXPRINTERBUFFERSIZE 250
 
 
-  extern void set_cups_printer_name_(CUPS_PRINTERS* cups_printer, BOOL defaultp);
+  extern void set_cups_printer_name_(CUPS_PRINTERS* cups_printer, BOOL defaultp, int p_counter);
 
 
 // Functions in this file
@@ -65,7 +65,7 @@ int GET_ALL_PRINTERS(void)
         cups_printer.right = 0;
         cups_printer.left = 0;
         cups_printer.top = 0;
-        set_cups_printer_name_(&cups_printer, FALSE);
+        set_cups_printer_name_(&cups_printer, FALSE, 0);
 
         //cups_printer_no++;
     }

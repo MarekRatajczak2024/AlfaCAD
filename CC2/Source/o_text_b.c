@@ -1856,10 +1856,10 @@ static void redcrET(char typ, TEXT  *t, int opcja_bak, unsigned char multiline)
       Set_Second_Screen();
 	  setcolor(kolory.paper);
       okno_r_second();
-	  outtextxy_w_(t, COPY_PUT); okno_all();
+	  outtextxy_w_(t, COPY_PUT);
       okno_all_second();
       Set_Screen();
-      Cur_offd(X, Y);
+      ////Cur_offd(X, Y);
 
 	  eT.x = 1;
 	  eT.y = ESTR_Y;
@@ -1894,7 +1894,13 @@ static void redcrET(char typ, TEXT  *t, int opcja_bak, unsigned char multiline)
       Cur_ond ( X = t->x , Y = t->y );  
       pozycja_kursora();
 
-	  if (PTRS__Text_Style[t->czcionka]->type == 2) redraw();
+	  if (PTRS__Text_Style[t->czcionka]->type == 2)
+      {
+          redraw();
+#ifdef ALLEGRO5
+          flip_screen();
+#endif
+      }
       break;
     case 1 :
 
@@ -2539,6 +2545,7 @@ void  Edit_Text(void  *ad)
      {
       kasowanie_licznikow=TRUE;
      }
+  CUR_ON(X,Y);
   while(1)
    {
      ev=Get_Event_Point(NULL, &X0, &Y0);
@@ -2723,6 +2730,7 @@ void  edit_text_f3(void  *ad)
       snap_ = 0;
       kasowanie_licznikow=TRUE;
      }
+   CUR_ON(X,Y);
    while(1)
    { ev=Get_Event_Point(NULL, &X0, &Y0);
      if (ev->What == evKeyDown && ev->Number == 0)

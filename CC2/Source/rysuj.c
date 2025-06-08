@@ -25,6 +25,9 @@
 #endif
 
 #define ALLEGWIN
+#ifdef ALLEGRO5    //necessary for MACOS
+#include "allegro5/allegro.h"
+#endif
 #include <allegext.h>
 
 #include <glyph.h>
@@ -40,6 +43,8 @@
 #include<string.h>
 #include<fcntl.h>
 #include<glyph.h>
+#include "alfa_cursors.h"
+#include "alfa_edit_cursors.h"
 
 #include "leak_detector_c.h"
 
@@ -74,6 +79,11 @@
 #include "icon_noupgrademark_d.h"
 #include "icon_hourglass_d.h"
 
+#include "icon_alfacad.h"
+#ifdef ALLEGRO5
+#include "alfatextdialogs.h"
+#endif
+
 #include "leak_detector_c.h"
 
 #define GLYPH_TARGET GLYPH_TARGET_ALLEGRO
@@ -81,6 +91,11 @@
 #define TTF_SIZE_BUFFER FALSE
 
 BOOL go_reset_if_resized=FALSE;
+
+int RETINA=0;
+
+static char *Client_Bitmaps[MAX_CLIENT_BITMAP]={NULL};
+static char fsuffix[3][16]={"", "PNG48/", "PNG64/"};
 
 char Window_Name[32]="\x00";
 
@@ -115,6 +130,9 @@ int TTF_bold_factor = 140;
 double TTF_width_factor = 1.25;
 double TTF_height_factor = 1.4;
 
+extern BOOL isRetinaDisplay(void);
+extern double getBackingScaleFactor(void);
+
 extern FONT *font1, *font2, *font3;
 extern GLYPH_FACE *face_ttf[128];
 extern BOOL TTF_redraw;
@@ -122,9 +140,13 @@ extern int empty_dlg();
 
 extern void Check_ConfigureNotify(void);
 
+extern void set_sleep_state(BOOL state);
 extern void _free_mouse(void);
 extern void dialog_cursor(int on);
 extern void relock_mouse(void);
+extern void set_posXY(double pozx, double pozy);
+extern void get_posXY(double *pozx, double *pozy);
+extern void CURON(void);
 
 extern void  QInitialize(int argc, char *argv[]);
 
@@ -266,21 +288,35 @@ extern BOOL Show_Alfa_Instruction(void);
 extern void set_menu_level(int menu_l);
 extern void XWindow_Name(int client_number);
 
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 
 extern void GoRestart(void);
 
 extern int Expand_flex();
 extern int get_window_origin_and_size_(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
 extern void set_editbox_geometry(int x, int y);
+extern void set_editbox_geometry_file(int x, int y);
 extern void set_editbox_geometry_line(int x, int y);
 extern void set_editbox_geometry_set(void);
+extern void set_editbox_geometry_file_set(void);
+//extern BOOL get_editbox_geometry_set(void);
 extern void set_editbox_geometry_line_set(void);
+//extern BOOL get_editbox_geometry_line_set(void);
 extern int Get_X11_SCREEN_SHIFT(void);
 extern int Get_WIN_WINDOW_T_B(void);
 
 extern void ini_cursors(void);
 extern void ini_cursor_busy(void);
+#ifdef ALLEGRO5
+extern void set_display_icon(BITMAP *icon);
+extern void load_set_display_icon(char *icon_file);
+#endif
+extern BOOL test_python_wxpython_pyobjc(void);
+extern int vfv(int v);
+extern void set_fv(float fv_);
+
+extern void reini_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
+extern void reini_edit_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
 
 extern void SteelUS(void);
 extern void TimberUS(void);
@@ -1710,10 +1746,12 @@ extern char *icon_color256_db_48_p;
 extern BITMAP *icon_cursors;
 extern BITMAP *icon_cursor_small;
 extern BITMAP *icon_cursor_big;
+extern BITMAP *icon_cursor_extrabig;
 
 extern char *icon_cursors_p;
 extern char *icon_cursor_small_p;
 extern char *icon_cursor_big_p;
+extern char *icon_cursor_extrabig_p;
 
 extern BITMAP *icon_question_mark_db_48;
 extern char *icon_question_mark_db_48_p;
@@ -1761,6 +1799,8 @@ extern char* icon_brickwall_dx_p;
 extern BITMAP* icon_brickwall_dy;
 extern char* icon_brickwall_dy_p;
 
+extern BITMAP* icon_folder_bd24;
+extern char* icon_folder_bd24_p;
 extern BITMAP* icon_folder_bd32;
 extern char* icon_folder_bd32_p;
 extern BITMAP* icon_folder_bd48;
@@ -2188,6 +2228,24 @@ extern BITMAP *icon_resilience;
 extern char *icon_resilience_p;
 
 extern BITMAP *icon_hourglass_mem;
+extern BITMAP *icon_hourglassx1_5_mem;
+extern BITMAP *icon_hourglassx2_mem;
+
+extern BITMAP *icon_cursor_12x16_mem;
+extern BITMAP *icon_cursor_18x24_mem;
+extern BITMAP *icon_cursor_24x32_mem;
+extern BITMAP *icon_cursor_36x48_mem;
+extern BITMAP *icon_cursor_48x64_mem;
+extern BITMAP *icon_cursor_72x96_mem;
+extern BITMAP *icon_cursor_96x128_mem;
+
+extern BITMAP *icon_edit_cursor_4x16_mem;
+extern BITMAP *icon_edit_cursor_6x24_mem;
+extern BITMAP *icon_edit_cursor_8x32_mem;
+extern BITMAP *icon_edit_cursor_12x48_mem;
+extern BITMAP *icon_edit_cursor_16x64_mem;
+extern BITMAP *icon_edit_cursor_24x96_mem;
+extern BITMAP *icon_edit_cursor_32x128_mem;
 
 extern BITMAP *icon_ULS;
 extern char *icon_ULS_p;
@@ -2196,14 +2254,888 @@ extern char *icon_SLS_p;
 extern BITMAP *icon_QPSLS;
 extern char *icon_QPSLS_p;
 
-extern BITMAP *icon_yes_dmem;
-extern BITMAP *icon_no_dmem;
+extern BITMAP *icon_mousewheel;
+extern char *icon_mousewheel_p;
+extern BITMAP *icon_mousewheelnatural;
+extern char *icon_mousewheelnatural_p;
+extern BITMAP *icon_mousewheelregular;
+extern char *icon_mousewheelregular_p;
+
+extern BITMAP *icon_yes_d_mem;
+extern BITMAP *icon_yes_dx1_5_mem;
+extern BITMAP *icon_yes_dx2_mem;
+extern BITMAP *icon_no_d_mem;
+extern BITMAP *icon_no_dx1_5_mem;
+extern BITMAP *icon_no_dx2_mem;
 extern char *icon_yes_d_pmem;
 extern char *icon_no_d_pmem;
 extern BITMAP* icon_upgrademark_mem;
 extern char* icon_upgrademark_pmem;
 extern BITMAP* icon_noupgrademark_mem;
 extern char* icon_noupgrademark_pmem;
+
+#ifdef ALLEGRO5
+extern BITMAP* icon_alfacad_mem;
+#endif
+
+BITMAP_LOAD bitmap_load[] = {
+        {&qmark,"qmark64",&qmark_p },
+        {&eymark,"eymark64",&eymark_p},
+        {&ermark,"ermark64",&ermark_p},
+        {&offmark,"offmark64",&offmark_p},
+        {&plotter,"plotter",&plotter_p},
+        {&icon_draft,"draft",&icon_draft_p},
+        {&icon_block,"create_block",&icon_block_p},
+        {&icon_modify,"modify",&icon_modify_p},
+        {&icon_search,"search",&icon_search_p},
+        {&icon_explode_text_to_letters,"explode_text_to_letters",&icon_explode_text_to_letters_p},
+        {&icon_dim_horizontal,"dim_horizontal",&icon_dim_horizontal_p},
+        {&icon_hatch,"hatch",&icon_hatch_p},
+        {&icon_polygonal_aread,"polygonal_area",&icon_polygonal_aread_p},
+        {&icon_create_macro,"create_macro",&icon_create_macro_p},
+        {&icon_drawing_settings,"drawing_settings",&icon_drawing_settings_p},
+        {&icon_settings,"settings",&icon_settings_p},
+        {&icon_open,"open",&icon_open_p},
+        {&icon_quit,"quit",&icon_quit_p},
+        {&icon_line,"line",&icon_line_p},
+        {&icon_circle,"circle",&icon_circle_p},
+        {&icon_arc,"arc",&icon_arc_p},
+        {&icon_text,"text",&icon_text_p},
+        {&icon_polygon,"polygon",&icon_polygon_p},
+        {&icon_polygon_n,"polygon_n",&icon_polygon_n_p},
+        {&icon_disc,"disc",&icon_disc_p},
+        {&icon_ellipses,"ellipses",&icon_ellipses_p},
+        {&icon_polylines,"polylines",&icon_polylines_p},
+        {&icon_solid,"solid",&icon_solid_p},
+        {&icon_line_rectangle,"line_rectangle",&icon_line_rectangle_p},
+        {&icon_trace,"trace",&icon_trace_p},
+        {&icon_2line,"2line",&icon_2line_p},
+        {&icon_3line,"3line",&icon_3line_p},
+        {&icon_line_freehand,"line_freehand",&icon_line_freehand_p},
+        {&icon_point,"point",&icon_point_p},
+        {&icon_chart,"chart",&icon_chart_p},
+        {&icon_reinforcing,"reinforcing",&icon_reinforcing_p},
+        {&icon_move,"move",&icon_move_p},
+        {&icon_move_copy,"move_copy",&icon_move_copy_p},
+        {&icon_delete,"delete",&icon_delete_p},
+        {&icon_restore,"restore",&icon_restore_p},
+        {&icon_rotate,"rotate",&icon_rotate_p},
+        {&icon_rotate_block,"rotate_block",&icon_rotate_block_p},
+        {&icon_scale,"scale",&icon_scale_p},
+        {&icon_stretch,"stretch",&icon_stretch_p},
+        {&icon_edit_text,"edit_text",&icon_edit_text_p},
+        {&icon_mirror,"mirror",&icon_mirror_p},
+        {&icon_mirror_leave,"mirror_leave",&icon_mirror_leave_p},
+        {&icon_mirror_replace,"mirror_replace",&icon_mirror_replace_p},
+        {&icon_mirror_block_x,"mirror_block_x",&icon_mirror_block_x_p},
+        {&icon_mirror_block_y,"mirror_block_y",&icon_mirror_block_y_p},
+        {&icon_array,"array",&icon_array_p},
+        {&icon_change,"change",&icon_change_p},
+        {&icon_trim_segments,"trim_segments",&icon_trim_segments_p},
+        {&icon_cutout,"cutout",&icon_cutout_p},
+        {&icon_extend,"extend",&icon_extend_p},
+        {&icon_fillet,"fillet",&icon_fillet_p},
+        {&icon_chamfer,"chamfer",&icon_chamfer_p},
+        {&icon_offset,"offset",&icon_offset_p},
+        {&icon_divide,"divide",&icon_divide_p},
+        {&icon_undo,"undo",&icon_undo_p},
+        {&icon_pointfinder,"pointfinder",&icon_pointfinder_p},
+        {&icon_camera,"camera",&icon_camera_p},
+        {&icon_parameters,"parameters",&icon_parameters_p},
+        {&icon_layers,"layers",&icon_layers_p},
+        {&icon_measure,"measure",&icon_measure_p},
+        {&icon_empty,"empty",&icon_empty_p},
+        {&icon_copy,"copy",&icon_copy_p},
+        {&icon_paste,"paste",&icon_paste_p},
+        {&icon_import_block,"import_block",&icon_import_block_p},
+        {&icon_export_block,"export_block",&icon_export_block_p},
+        {&icon_import_image,"import_image",&icon_import_image_p},
+        {&icon_import_png,"import_png",&icon_import_png_p},
+        {&icon_import_jpg,"import_jpg",&icon_import_jpg_p},
+        {&icon_edit_image,"edit_image",&icon_edit_image_p},
+        {&icon_export_image,"export_image",&icon_export_image_p},
+        {&icon_group,"create_block",&icon_group_p},
+        {&icon_explode,"explode",&icon_explode_p},
+        {&icon_block_list,"block_list",&icon_block_list_p},
+        {&icon_explode_frozen,"explode_frozen",&icon_explode_frozen_p},
+        {&icon_delete_dxf_blocks,"delete_dxf_blocks",&icon_delete_dxf_blocks_p},
+        {&icon_correct_blocks,"correct_blocks",&icon_correct_blocks_p},
+        {&icon_fixed_layers,"fixed_layers",&icon_fixed_layers_p},
+        {&icon_area,"area",&icon_area_p},
+        {&icon_center_of_area,"center_of_area",&icon_center_of_area_p},
+        {&icon_first_moment_of_area,"first_moment_of_area",&icon_first_moment_of_area_p},
+        {&icon_area_moment_of_inertia,"area_moment_of_inertia",&icon_area_moment_of_inertia_p},
+        {&icon_centr_area_mom_of_inertia,"centr_area_mom_of_inertia",&icon_centr_area_mom_of_inertia_p},
+        {&icon_test_of_closed_area,"test_of_closed_area",&icon_test_of_closed_area_p},
+        {&icon_import,"import",&icon_import_p},
+        {&icon_new,"new",&icon_new_p},
+        {&icon_new_window,"new_window",&icon_new_window_p},
+        {&icon_save,"save",&icon_save_p},
+        {&icon_save_as,"save_as",&icon_save_as_p},
+        {&icon_export_dxf,"export_dxf",&icon_export_dxf_p},
+        {&icon_import_dxf,"import_dxf",&icon_import_dxf_p},
+        {&icon_export_cad,"export_cad",&icon_export_cad_p},
+        {&icon_import_cad,"import_cad",&icon_import_cad_p},
+        {&icon_export_dwg,"export_dwg",&icon_export_dwg_p},
+        {&icon_import_dwg,"import_dwg",&icon_import_dwg_p},
+        {&icon_edit_title_block,"edit_title_block",&icon_edit_title_block_p},
+        {&icon_cmd,"cmd",&icon_cmd_p},
+        {&icon_print,"print",&icon_print_p},
+        {&icon_infobox,"Infobox",&icon_infobox_p},
+        {&icon_last_files,"last_files",&icon_last_files_p},
+        {&icon_change_texts,"change_texts",&icon_change_texts_p},
+        {&icon_auto_numbering,"auto_numbering",&icon_auto_numbering_p},
+        {&icon_record,"record",&icon_record_p},
+        {&icon_play,"play",&icon_play_p},
+        {&icon_load,"load",&icon_load_p},
+        //{&icon_save_as,"save_as",&icon_save_as_p},
+        {&icon_format,"format",&icon_format_p},
+        {&icon_dscale,"dscale",&icon_dscale_p},
+        {&icon_accuracy,"accuracy",&icon_accuracy_p},
+        {&icon_units,"units",&icon_units_p},
+        {&icon_coordinates,"coordinates",&icon_coordinates_p},
+        {&icon_local,"local",&icon_local_p},
+        {&icon_pointer,"pointer",&icon_pointer_p},
+        {&icon_edit_ini,"edit_ini",&icon_edit_ini_p},
+        {&icon_cartesian,"cartesian",&icon_cartesian_p},
+        {&icon_geodetic,"geodetic",&icon_geodetic_p},
+        {&icon_point_origin,"point_origin",&icon_point_origin_p},
+        {&icon_axis_angle,"axis_angle",&icon_axis_angle_p},
+        {&icon_rotation_angle,"rotation_angle",&icon_rotation_angle_p},
+        {&icon_colorwheel,"Colorwheel",&icon_colorwheel_p},
+        {&icon_panoramic,"panoramic",&icon_panoramic_p},
+        {&icon_font_type,"font_type",&icon_font_type_p},
+        {&icon_yes,"yes",&icon_yes_p},
+        {&icon_no,"no",&icon_no_p},
+        {&icon_dx_dy,"dx_dy",&icon_dx_dy_p},
+        {&icon_calibrate,"calibrate",&icon_calibrate_p},
+        {&icon_A_rectangular,"A_rectangular",&icon_A_rectangular_p},
+        {&icon_A_circular,"A_circular",&icon_A_circular_p},
+        {&icon_A_circular_rot,"A_circular_rot",&icon_A_circular_rot_p},
+        {&icon_A_circular_n,"A_circular_n",&icon_A_circular_n_p},
+        {&icon_A_circular_rot_n,"A_circular_rot_n",&icon_A_circular_rot_n_p},
+        {&icon_A_circular_angle,"A_circular_angle",&icon_A_circular_angle_p},
+        {&icon_A_circular_rot_angle,"A_circular_rot_angle",&icon_A_circular_rot_angle_p},
+        {&icon_pointmode,"pointmode",&icon_pointmode_p},
+        {&icon_endpoint,"endpoint",&icon_endpoint_p},
+        {&icon_nearest_end,"nearest_end",&icon_nearest_end_p},
+        {&icon_middlepoint,"middlepoint",&icon_middlepoint_p},
+        {&icon_intersection,"intersection",&icon_intersection_p},
+        {&icon_center,"center",&icon_center_p},
+        {&icon_perpendicular,"perpendicular",&icon_perpendicular_p},
+        {&icon_tangential,"tangential",&icon_tangential_p},
+        {&icon_nearest,"nearest",&icon_nearest_p},
+        {&icon_onpoint,"onpoint",&icon_onpoint_p},
+        {&icon_move2xy,"move2xy",&icon_move2xy_p},
+        {&icon_movedxdy,"movedxdy",&icon_movedxdy_p},
+        {&icon_move_polar,"move_polar",&icon_move_polar_p},
+        {&icon_nopointfinder,"nopointfinder",&icon_nopointfinder_p},
+        {&icon_calculator,"calculator",&icon_calculator_p},
+        {&icon_point_measure,"point_measure",&icon_point_measure_p},
+        {&icon_distance_point_to_point,"distance_point_to_point",&icon_distance_point_to_point_p},
+        {&icon_angle_line_to_line,"angle_line_to_line",&icon_angle_line_to_line_p},
+        {&icon_plusminus,"plusminus",&icon_plusminus_p},
+        {&icon_property_list,"property_list",&icon_property_list_p},
+        {&icon_noplusminus,"noplusminus",&icon_noplusminus_p},
+        {&icon_addfavourite,"addfavourite",&icon_addfavourite_p},
+        {&icon_findfavourite,"findfavourite",&icon_findfavourite_p},
+        {&icon_refresh,"refresh",&icon_refresh_p},
+        {&icon_refresh_d,"refresh_d",&icon_refresh_d_p},
+        {&icon_zoom_all,"zoom_all",&icon_zoom_all_p},
+        {&icon_zoom_center,"zoom_center",&icon_zoom_center_p},
+        {&icon_auto_panorama,"auto_panorama",&icon_auto_panorama_p},
+        {&icon_zoom_1,"zoom_1",&icon_zoom_1_p},
+        {&icon_zoom_2,"zoom_2",&icon_zoom_2_p},
+        {&icon_zoom_in,"zoom_in",&icon_zoom_in_p},
+        {&icon_zoom_out,"zoom_out",&icon_zoom_out_p},
+        {&icon_zoom_x,"zoom_x",&icon_zoom_x_p},
+        {&icon_zoom_window,"zoom_window",&icon_zoom_window_p},
+        {&icon_zoom_drawing,"zoom_drawing",&icon_zoom_drawing_p},
+        {&icon_zoom_previous,"zoom_previous",&icon_zoom_previous_p},
+        {&icon_pointer_step,"pointer_step",&icon_pointer_step_p},
+        {&icon_grid_density,"grid_density",&icon_grid_density_p},
+        {&icon_grid_points,"grid_points",&icon_grid_points_p},
+        {&icon_restr_ortho,"restr_ortho",&icon_restr_ortho_p},
+        {&icon_color,"Color",&icon_color_p},
+        {&icon_line_thickness,"line_thickness",&icon_line_thickness_p},
+        {&icon_line_type,"line_type",&icon_line_type_p},
+        {&icon_point_visibility,"point_visibility",&icon_point_visibility_p},
+        {&icon_point_size,"point_size",&icon_point_size_p},
+        {&icon_get_color,"get_color",&icon_get_color_p},
+        {&icon_get_type,"get_type",&icon_get_type_p},
+        {&icon_get_layer,"get_layer",&icon_get_layer_p},
+        {&icon_floating_text,"floating_text",&icon_floating_text_p},
+        {&icon_floating_block,"floating_block",&icon_floating_block_p},
+        {&icon_dim_scale,"dim_scale",&icon_dim_scale_p},
+        {&icon_stretch_in_pin,"stretch_in_pin",&icon_stretch_in_pin_p},
+        {&icon_break_in_pin,"break_in_pin",&icon_break_in_pin_p},
+        {&icon_mask,"mask",&icon_mask_p},
+        {&icon_hidden_text_vis,"hidden_text_vis",&icon_hidden_text_vis_p},
+        {&icon_image_points,"image_points",&icon_image_points_p},
+        {&icon_highlight_layer,"highlight_layer",&icon_highlight_layer_p},
+        {&icon_dbuff_image,"dbuff_image",&icon_dbuff_image_p},
+        {&icon_text_most_readable,"text_most_readable",&icon_text_most_readable_p},
+        {&icon_line_color,"line_color",&icon_line_color_p},
+        {&icon_text_color,"text_color",&icon_text_color_p},
+        {&icon_text_height,"text_height",&icon_text_height_p},
+        {&icon_width,"text_width",&icon_width_p},
+        {&icon_italic,"italic",&icon_italic_p},
+        {&icon_bold,"bold",&icon_bold_p},
+        {&icon_font_type,"font_type",&icon_font_type_p},
+        {&icon_accuracy,"accuracy",&icon_accuracy_p},
+        {&icon_terminators,"terminators",&icon_terminators_p},
+        {&icon_line_offset,"line_offset",&icon_line_offset_p},
+        {&icon_text_direction,"text_direction",&icon_text_direction_p},
+        {&icon_extension_lines,"extension_lines",&icon_extension_lines_p},
+        {&icon_dim_arrowheads,"dim_arrowheads",&icon_dim_arrowheads_p},
+        {&icon_dim_ticks,"dim_ticks",&icon_dim_ticks_p},
+        {&icon_dim_dots,"dim_dots",&icon_dim_dots_p},
+        {&icon_text_parallel,"text_parallel",&icon_text_parallel_p},
+        {&icon_text_horizontal,"text_horizontal",&icon_text_horizontal_p},
+        {&icon_fixed_length,"fixed_length",&icon_fixed_length_p},
+        {&icon_align_to_object,"align_to_object",&icon_align_to_object_p},
+        {&icon_dim_direction,"dim_direction",&icon_dim_direction_p},
+        {&icon_dim_new,"dim_new",&icon_dim_new_p},
+        {&icon_dim_remove,"dim_remove",&icon_dim_remove_p},
+        {&icon_dim_edit,"dim_edit",&icon_dim_edit_p},
+        {&icon_dim_settings,"dim_settings",&icon_dim_settings_p},
+        {&icon_dim_arc_RL,"dim_arc_RL",&icon_dim_arc_RL_p},
+        {&icon_dim_circle_DR,"dim_circle_DR",&icon_dim_circle_DR_p},
+        {&icon_dim_horizontal,"dim_horizontal",&icon_dim_horizontal_p},
+        {&icon_dim_vertical,"dim_vertical",&icon_dim_vertical_p},
+        {&icon_dim_aligned,"dim_aligned",&icon_dim_aligned_p},
+        {&icon_dim_linear,"dim_linear",&icon_dim_linear_p},
+        {&icon_dim_linearX,"dim_linearX",&icon_dim_linearX_p},
+        {&icon_dim_angular,"dim_angular",&icon_dim_angular_p},
+        {&icon_dim_arc_radial,"dim_arc_radial",&icon_dim_arc_radial_p},
+        {&icon_dim_arc_length,"dim_arc_length",&icon_dim_arc_length_p},
+        {&icon_dim_diametric,"dim_diametric",&icon_dim_diametric_p},
+        {&icon_dim_radial,"dim_radial",&icon_dim_radial_p},
+        {&icon_dim_radial_y,"dim_radial_y",&icon_dim_radial_y_p},
+        {&icon_dim_radial_y_dim,"dim_radial_y_dim",&icon_dim_radial_y_dim_p},
+        {&icon_dim_radial_y_point,"dim_radial_y_point",&icon_dim_radial_y_point_p},
+        {&icon_dim_radial_y_tangential,"dim_radial_y_tangential",&icon_dim_radial_y_tangential_p},
+        {&icon_circle_center_radius,"circle_center_radius",&icon_circle_center_radius_p},
+        {&icon_circle_center_diameter,"circle_center_diameter",&icon_circle_center_diameter_p},
+        {&icon_circle_2_points,"circle_2_points",&icon_circle_2_points_p},
+        {&icon_circle_3_points,"circle_3_points",&icon_circle_3_points_p},
+        {&icon_line_close,"line_close",&icon_line_close_p},
+        {&icon_line_remove,"line_remove",&icon_line_remove_p},
+        {&icon_trim_value,"trim_value",&icon_trim_value_p},
+        {&icon_line_continue,"line_continue",&icon_line_continue_p},
+        {&icon_arc_3_points,"arc_3_points",&icon_arc_3_points_p},
+        {&icon_arc_beginning_center_end,"arc_beginning_center_end",&icon_arc_beginning_center_end_p},
+        {&icon_arc_beginning_center_angle,"arc_beginning_center_angle",&icon_arc_beginning_center_angle_p},
+        {&icon_arc_beginning_center_chord,"arc_beginning_center_chord",&icon_arc_beginning_center_chord_p},
+        {&icon_arc_beginning_end_radius,"arc_beginning_end_radius",&icon_arc_beginning_end_radius_p},
+        {&icon_arc_beginning_end_angle,"arc_beginning_end_angle",&icon_arc_beginning_end_angle_p},
+        {&icon_arc_beginning_end_direction,"arc_beginning_end_direction",&icon_arc_beginning_end_direction_p},
+        {&icon_arc_continuation,"arc_continuation",&icon_arc_continuation_p},
+        {&icon_text_angle,"text_angle",&icon_text_angle_p},
+        {&icon_text_width,"text_width",&icon_text_width_p},
+        {&icon_text_type,"text_type",&icon_text_type_p},
+        {&icon_hidden_text,"hidden_text",&icon_hidden_text_p},
+        {&icon_text_align,"text_align",&icon_text_align_p},
+        {&icon_text_interval,"text_interval",&icon_text_interval_p},
+        {&icon_line_polygon_cor_cor,"line_polygon_cor_cor",&icon_line_polygon_cor_cor_p},
+        {&icon_line_polygon_cen_tan,"line_polygon_cen_cor",&icon_line_polygon_cen_tan_p},
+        {&icon_line_polygon_cen_cor,"line_polygon_cen_tan",&icon_line_polygon_cen_cor_p},
+        {&icon_ellipse_approximation,"ellipse_approximation",&icon_ellipse_approximation_p},
+        {&icon_ellipse_axis_center,"ellipse_axis_center",&icon_ellipse_axis_center_p},
+        {&icon_ellipse_axis_start,"ellipse_axis_start",&icon_ellipse_axis_start_p},
+        {&icon_ellipse_center,"ellipse_center",&icon_ellipse_center_p},
+        {&icon_solid_quad_triang,"solid_quad_triang",&icon_solid_quad_triang_p},
+        {&icon_solid_triangular1,"solid_triangular1",&icon_solid_triangular1_p},
+        {&icon_solid_fill_line_width,"solid_fill_line_width",&icon_solid_fill_line_width_p},
+        {&icon_solid_quadrangular,"solid_quadrangular",&icon_solid_quadrangular_p},
+        {&icon_solid_triangular,"solid_triangular",&icon_solid_triangular_p},
+        {&icon_arc_close,"arc_close",&icon_arc_close_p},
+        {&icon_arc_remove,"arc_remove",&icon_arc_remove_p},
+        {&icon_trace_width,"trace_width",&icon_trace_width_p},
+        {&icon_trace_axis_offset,"trace_axis_offset",&icon_trace_axis_offset_p},
+        {&icon_trace_polyline,"trace_polyline",&icon_trace_polyline_p},
+        {&icon_trace_fill_line_width,"trace_fill_line_width",&icon_trace_fill_line_width_p},
+        {&icon_trace_remove,"trace_remove",&icon_trace_remove_p},
+        {&icon_chart_step_dx,"chart_step_dx",&icon_chart_step_dx_p},
+        {&icon_ftfunct,"ftfunct",&icon_ftfunct_p},
+        {&icon_last_block,"last_block",&icon_last_block_p},
+        {&icon_select_all,"select_all",&icon_select_all_p},
+        {&icon_all_layers,"all_layers",&icon_all_layers_p},
+        {&icon_select_cross_window,"select_cross_window",&icon_select_cross_window_p},
+        {&icon_add_remove,"add_remove",&icon_add_remove_p},
+        {&icon_gear1,"gear1",&icon_gear1_p},
+        {&icon_text_align_baselineleft,"text_align_baselineleft",&icon_text_align_baselineleft_p},
+        {&icon_text_align_baselineright,"text_align_baselineright",&icon_text_align_baselineright_p},
+        {&icon_text_align_baselinecenter,"text_align_baselinecenter",&icon_text_align_baselinecenter_p},
+        {&icon_text_align_middlecenter,"text_align_middlecenter",&icon_text_align_middlecenter_p},
+        {&icon_circle_tangential,"circle_tangential",&icon_circle_tangential_p},
+        {&icon_axis_length,"axis_length",&icon_axis_length_p},
+        {&icon_dash_dotted,"dash_dotted",&icon_dash_dotted_p},
+        {&icon_dashed,"dashed",&icon_dashed_p},
+        {&icon_return_all,"return_all",&icon_return_all_p},
+        {&icon_change_mode,"change_mode",&icon_change_mode_p},
+        {&icon_change_property,"change_property",&icon_change_property_p},
+        {&icon_all_texts,"all_texts",&icon_all_texts_p},
+        {&icon_select_window,"select_window",&icon_select_window_p},
+        {&icon_select_cross,"select_cross",&icon_select_cross_p},
+        {&icon_solid_filled,"solid_filled",&icon_solid_filled_p},
+        {&icon_solid_very_thin,"solid_very_thin",&icon_solid_very_thin_p},
+        {&icon_solid_thin,"solid_thin",&icon_solid_thin_p},
+        {&icon_solid_thick,"solid_thick",&icon_solid_thick_p},
+        {&icon_solid_very_thick,"solid_very_thick",&icon_solid_very_thick_p},
+        {&icon_solid_extra_thick,"solid_extra_thick",&icon_solid_extra_thick_p},
+        {&icon_text_angle_0,"text_angle_0",&icon_text_angle_0_p},
+        {&icon_text_angle_90,"text_angle_90",&icon_text_angle_90_p},
+        {&icon_text_parallel_to_object,"text_parallel_to_object",&icon_text_parallel_to_object_p},
+        {&icon_text_perpendicular,"text_perpendicular",&icon_text_perpendicular_p},
+        {&icon_text_angle_to_object,"text_angle_to_object",&icon_text_angle_to_object_p},
+        {&icon_text_angle_x,"text_angle_X",&icon_text_angle_x_p},
+        {&icon_trace_filled,"trace_filled",&icon_trace_filled_p},
+        {&icon_trace_very_thin,"trace_very_thin",&icon_trace_very_thin_p},
+        {&icon_trace_thin,"trace_thin",&icon_trace_thin_p},
+        {&icon_trace_thick,"trace_thick",&icon_trace_thick_p},
+        {&icon_trace_very_thick,"trace_very_thick",&icon_trace_very_thick_p},
+        {&icon_trace_extra_thick,"trace_extra_thick",&icon_trace_extra_thick_p},
+        {&icon_point_simple,"point_simple",&icon_point_simple_p},
+        {&icon_point_base,"point_base",&icon_point_base_p},
+        {&icon_point_pin,"point_pin",&icon_point_pin_p},
+        {&icon_RAM_for_drawing,"RAM_for_drawing",&icon_RAM_for_drawing_p},
+        {&icon_RAM_virtual_image,"RAM_virtual_image",&icon_RAM_virtual_image_p},
+        {&icon_RAM_data_size,"RAM_data_size",&icon_RAM_data_size_p},
+        {&icon_RAM_printing_buffer,"RAM_printing_buffer",&icon_RAM_printing_buffer_p},
+        {&icon_RAM_macro_buffer,"RAM_macro_buffer",&icon_RAM_macro_buffer_p},
+        {&icon_RAM_image_buffer,"RAM_image_buffer",&icon_RAM_image_buffer_p},
+        {&icon_current_folder,"current_folder",&icon_current_folder_p},
+        {&icon_desktop_size,"desktop_size",&icon_desktop_size_p},
+        {&icon_layers_info,"layers_info",&icon_layers_info_p},
+        {&icon_x1,"x1",&icon_x1_p},
+        {&icon_y1,"y1",&icon_y1_p},
+        {&icon_x2,"x2",&icon_x2_p},
+        {&icon_y2,"y2",&icon_y2_p},
+        {&icon_x3,"x3",&icon_x3_p},
+        {&icon_y3,"y3",&icon_y3_p},
+        {&icon_x4,"x4",&icon_x4_p},
+        {&icon_y4,"y4",&icon_y4_p},
+        {&icon_angle1,"angle1",&icon_angle1_p},
+        {&icon_angle2,"angle2",&icon_angle2_p},
+        {&icon_dim_dx,"dim_dx",&icon_dim_dx_p},
+        {&icon_dim_dy,"dim_dy",&icon_dim_dy_p},
+        {&icon_inner_block_name,"inner_block_name",&icon_inner_block_name_p},
+        {&icon_outer_block_name,"outer_block_name",&icon_outer_block_name_p},
+        {&icon_qr_code1,"qr_code1",&icon_qr_code1_p},
+        {&icon_edit,"edit",&icon_edit_p},
+        {&icon_grey,"grey",&icon_grey_p},
+        {&icon_blackwhite,"blackwhite",&icon_blackwhite_p},
+        {&icon_plotter_s,"plotter_s",&icon_plotter_s_p},
+        {&icon_visible,"visible",&icon_visible_p},
+        {&icon_visible_d,"visible_d",&icon_visible_d_p},
+        {&icon_edit_d,"edit_d",&icon_edit_d_p},
+        {&icon_pointfinder_d,"pointfinder_d",&icon_pointfinder_d_p},
+        {&icon_color_d,"Color_d",&icon_color_d_p},
+        {&icon_line_thickness_d,"line_thickness_d",&icon_line_thickness_d_p},
+        {&icon_line_type_d,"line_type_d",&icon_line_type_d_p},
+        {&icon_grey_d,"grey_d",&icon_grey_d_p},
+        {&icon_blackwhite_d,"blackwhite_d",&icon_blackwhite_d_p},
+        {&icon_visible_db,"visible_db",&icon_visible_db_p},
+        {&icon_edit_db,"edit_db",&icon_edit_db_p},
+        {&icon_pointfinder_db,"pointfinder_db",&icon_pointfinder_db_p},
+        {&icon_grey_db,"grey_db",&icon_grey_db_p},
+        {&icon_blackwhite_db,"blackwhite_db",&icon_blackwhite_db_p},
+        {&icon_plotter_64,"plotter_64",&icon_plotter_64_p},
+        {&icon_saveimage_64,"saveimage_64",&icon_saveimage_64_p},
+        {&icon_rotation_d48,"rotation_d48",&icon_rotation_d48_p},
+        {&icon_inversion_d48,"inversion_d48",&icon_inversion_d48_p},
+        {&icon_reflection_d48,"reflection_d48",&icon_reflection_d48_p},
+        {&icon_grey_d48,"grey_d48",&icon_grey_d48_p},
+        {&icon_blackwhite_d48,"blackwhite_d48",&icon_blackwhite_d48_p},
+        {&icon_grey_image_d48,"grey_image_d48",&icon_grey_image_d48_p},
+        {&icon_page_d48,"page_d48",&icon_page_d48_p},
+        {&icon_scale_d48,"scale_d48",&icon_scale_d48_p},
+        {&icon_window_d48,"window_d48",&icon_window_d48_p},
+        {&icon_sheet_d48,"sheet_d48",&icon_sheet_d48_p},
+        {&icon_tools,"tools",&icon_tools_p},
+        {&icon_features,"features",&icon_features_p},
+        {&icon_ctrl,"Ctrl",&icon_ctrl_p},
+        {&icon_alt,"Alt",&icon_alt_p},
+        {&icon_shift,"Shift",&icon_shift_p},
+        {&icon_home,"Home",&icon_home_p},
+        {&icon_end,"End",&icon_end_p},
+        {&icon_esc,"Esc",&icon_esc_p},
+        {&icon_ins,"Ins",&icon_ins_p},
+        {&icon_pgdn,"PgDn",&icon_pgdn_p},
+        {&icon_pgup,"PgUp",&icon_pgup_p},
+        {&icon_spc,"Spc",&icon_spc_p},
+        {&icon_del,"del",&icon_del_p },
+        {&icon_tab,"Tab",&icon_tab_p},
+        {&icon_ent,"Ent",&icon_ent_p },
+        {&icon_er,"er",&icon_er_p },
+        {&icon_k_right,"k_right",&icon_k_right_p },
+        {&icon_k_left,"k_left",&icon_k_left_p },
+        {&icon_k_up,"k_up",&icon_k_up_p },
+        {&icon_k_down,"k_down",&icon_k_down_p },
+        {&icon_0,"0",&icon_0_p},
+        {&icon_1,"1",&icon_1_p},
+        {&icon_2,"2",&icon_2_p},
+        {&icon_3,"3",&icon_3_p},
+        {&icon_4,"4",&icon_4_p},
+        {&icon_5,"5",&icon_5_p},
+        {&icon_6,"6",&icon_6_p},
+        {&icon_7,"7",&icon_7_p},
+        {&icon_8,"8",&icon_8_p},
+        {&icon_9,"9",&icon_9_p},
+        {&icon_plus,"plus",&icon_plus_p},
+        {&icon_minus,"minus",&icon_minus_p},
+        {&icon_f1,"F1",&icon_f1_p},
+        {&icon_f2,"F2",&icon_f2_p},
+        {&icon_f3,"F3",&icon_f3_p},
+        {&icon_f4,"F4",&icon_f4_p},
+        {&icon_f5,"F5",&icon_f5_p},
+        {&icon_f6,"F6",&icon_f6_p},
+        {&icon_f7,"F7",&icon_f7_p},
+        {&icon_f8,"F8",&icon_f8_p},
+        {&icon_f9,"F9",&icon_f9_p},
+        {&icon_f10,"F10",&icon_f10_p},
+        {&icon_f11,"F11",&icon_f11_p},
+        {&icon_f12,"F12",&icon_f12_p},
+        {&icon_mouse3,"mouse3",&icon_mouse3_p},
+        {&icon_mouseR,"mouseR",&icon_mouseR_p},
+        {&icon_measure_tape,"measure_tape",&icon_measure_tape_p},
+        {&icon_spa,"Spa",&icon_spa_p},
+        {&icon_ce,"ce",&icon_ce_p},
+        {&icon_look_down,"look_down",&icon_look_down_p},
+        {&icon_plotter_32,"plotter_32",&icon_plotter_32_p},
+        {&icon_cartridge_d48,"ink_cartridge_d48",&icon_cartridge_d48_p},
+        {&icon_very_thin_d,"very_thin_d",&icon_very_thin_d_p},
+        {&icon_thin_d,"thin_d",&icon_thin_d_p},
+        {&icon_thick_d,"thick_d",&icon_thick_d_p},
+        {&icon_very_thick_d,"very_thick_d",&icon_very_thick_d_p},
+        {&icon_extra_thick_d,"extra_thick_d",&icon_extra_thick_d_p},
+        {&icon_color_d48,"Color_d48",&icon_color_d48_p},
+        {&icon_scale_d,"scale_d",&icon_scale_d_p},
+        {&icon_page_d,"page_d",&icon_page_d_p},
+        {&icon_page_width_d,"page_width_d",&icon_page_width_d_p},
+        {&icon_page_height_d,"page_height_d",&icon_page_height_d_p},
+        {&icon_page_overlap_d,"page_overlap_d",&icon_page_overlap_d_p},
+        {&icon_color256_d48,"Color256_d48",&icon_color256_d48_p},
+        {&icon_multiline_text,"multiline_text",&icon_multiline_text_p},
+        {&icon_underlined,"underlined",&icon_underlined_p},
+        {&icon_line_spacing,"line_spacing",&icon_line_spacing_p},
+        {&icon_bold_d,"bold_d",&icon_bold_d_p},
+        {&icon_font_type_d,"font_type_d",&icon_font_type_d_p},
+        {&icon_hidden_text_d,"hidden_text_d",&icon_hidden_text_d_p},
+        {&icon_italic_d,"italic_d",&icon_italic_d_p},
+        {&icon_layers_d,"layers_d",&icon_layers_d_p},
+        {&icon_text_align_d,"text_align_d",&icon_text_align_d_p},
+        {&icon_text_height_d,"text_height_d",&icon_text_height_d_p},
+        {&icon_text_type_d,"text_type_d",&icon_text_type_d_p},
+        {&icon_width_d,"text_width_d",&icon_width_d_p},
+        {&icon_underlined_d,"underlined_d",&icon_underlined_d_p},
+        {&icon_no_d_12,"no_d_12",&icon_no_d_12_p},
+        {&icon_mark_d_12,"mark_d_12",&icon_mark_d_12_p},
+        {&icon_hor_dpi_sphere_blue_d,"hor_dpi_sphere_blue_d",&icon_hor_dpi_sphere_blue_d_p},
+        {&icon_ver_dpi_sphere_blue_d,"ver_dpi_sphere_blue_d",&icon_ver_dpi_sphere_blue_d_p},
+        {&icon_hor_size_image_d,"hor_size_image_d",&icon_hor_size_image_d_p},
+        {&icon_ver_size_image_d,"ver_size_image_d",&icon_ver_size_image_d_p},
+        {&icon_hor_scale_image_d,"hor_scale_image_d",&icon_hor_scale_image_d_p},
+        {&icon_ver_scale_image_d,"ver_scale_image_d",&icon_ver_scale_image_d_p},
+        {&icon_background_image_d,"background_image_d",&icon_background_image_d_p},
+        {&icon_background_image_d48,"background_image_d48",&icon_background_image_d48_p},
+        {&icon_rotate_angle_image_d,"rotate_angle_image_d",&icon_rotate_angle_image_d_p},
+        {&icon_top_margin_d,"top_margin_d",&icon_top_margin_d_p},
+        {&icon_left_margin_d,"left_margin_d",&icon_left_margin_d_p},
+        {&icon_bottom_margin_d,"bottom_margin_d",&icon_bottom_margin_d_p},
+        {&icon_right_margin_d,"right_margin_d",&icon_right_margin_d_p},
+        {&icon_actual_size_d48,"actual_size_d48",&icon_actual_size_d48_p},
+        {&icon_pattern,"pattern",&icon_pattern_p},
+        {&icon_pattern_angle,"pattern_angle",&icon_pattern_angle_p},
+        {&icon_pattern_scale,"pattern_scale",&icon_pattern_scale_p},
+        {&icon_edit_point_origin,"edit_point_origin",&icon_edit_point_origin_p},
+        {&icon_set_point_origin,"set_point_origin",&icon_set_point_origin_p},
+        {&icon_pattern_line_distance,"pattern_line_distance",&icon_pattern_line_distance_p},
+        {&icon_anglex,"angleX",&icon_anglex_p},
+        {&icon_angle45,"angle45",&icon_angle45_p},
+        {&icon_angle90,"angle90",&icon_angle90_p},
+        {&icon_angle135,"angle135",&icon_angle135_p},
+        {&icon_angle180,"angle180",&icon_angle180_p},
+        {&icon_angle225,"angle225",&icon_angle225_p},
+        {&icon_angle270,"angle270",&icon_angle270_p},
+        {&icon_angle315,"angle315",&icon_angle315_p},
+        {&icon_divide_count,"divide_count",&icon_divide_count_p},
+        {&icon_divide_counter,"divide_counter",&icon_divide_counter_p},
+        {&icon_divide_measure,"divide_measure",&icon_divide_measure_p},
+        {&icon_divide_segment_length,"divide_segment_length",&icon_divide_segment_length_p},
+        {&icon_divide_counter_max,"divide_counter_max",&icon_divide_counter_max_p},
+        {&icon_divide_polyline_segment,"divide_polyline_segment",&icon_divide_polyline_segment_p},
+        {&icon_divide_polyline,"divide_polyline",&icon_divide_polyline_p},
+        {&icon_divide_segment,"divide_segment",&icon_divide_segment_p},
+        {&icon_align_block,"align_block",&icon_align_block_p},
+        {&icon_offset_point,"offset_point",&icon_offset_point_p},
+        {&icon_offset_distance,"offset_distance",&icon_offset_distance_p},
+        {&icon_set_offset_distance,"set_offset_distance",&icon_set_offset_distance_p},
+        {&icon_return,"return",&icon_return_p},
+        {&icon_open_file_folder,"open_file_folder",&icon_open_file_folder_p},
+        {&icon_arrow_up_d48,"arrow_up_d48",&icon_arrow_up_d48_p},
+        {&icon_arrow_up_end_d48,"arrow_up_end_d48",&icon_arrow_up_end_d48_p},
+        {&icon_arrow_down_end_d48,"arrow_down_end_d48",&icon_arrow_down_end_d48_p},
+        {&icon_arrow_down_d48,"arrow_down_d48",&icon_arrow_down_d48_p},
+        {&icon_folder_d48,"folder_d48",&icon_folder_d48_p},
+        {&icon_folder0_d48,"folder0_d48",&icon_folder0_d48_p},
+        {&icon_bigger_d48,"bigger_d48",&icon_bigger_d48_p},
+        {&icon_smaller_d48,"smaller_d48",&icon_smaller_d48_p},
+        {&icon_expand_hor,"expand_hor",&icon_expand_hor_p},
+        {&icon_expand_ver,"expand_ver",&icon_expand_ver_p},
+        {&icon_expand_diag,"expand_diag",&icon_expand_diag_p},
+        {&icon_expand_flex,"expand_flex",&icon_expand_flex_p},
+        {&icon_expand_last,"expand_last",&icon_expand_last_p},
+        {&icon_expand_win,"expand_win",&icon_expand_win_p},
+        {&icon_arrow_up_d,"arrow_up_d",&icon_arrow_up_d_p},
+        {&icon_arrow_down_d,"arrow_down_d",&icon_arrow_down_d_p},
+        {&icon_pgup_d,"pgup_d",&icon_pgup_d_p},
+        {&icon_pgdn_d,"pgdn_d",&icon_pgdn_d_p},
+        {&icon_arrow_up_left_d,"arrow_up_left_d",&icon_arrow_up_left_d_p},
+        {&icon_arrow_down_left_d,"arrow_down_left_d",&icon_arrow_down_left_d_p},
+        {&icon_plotter_start_d_64,"plotter_start_d_64",&icon_plotter_start_d_64_p},
+        {&icon_printer_start_d_64,"printer_start_d_64",&icon_printer_start_d_64_p},
+        {&icon_escape_d_64,"escape_d_64",&icon_escape_d_64_p},
+        {&icon_save_d,"save_d",&icon_save_d_p},
+        {&icon_load_d,"load_d",&icon_load_d_p},
+        {&icon_return_d_24,"return_d_24",&icon_return_d_24_p},
+        {&icon_frame,"frame",&icon_frame_p},
+        {&icon_zones_around,"zones_around",&icon_zones_around_p},
+        {&icon_zones_prefix,"zones_prefix",&icon_zones_prefix_p},
+        {&icon_zones_first_number,"zones_first_number",&icon_zones_first_number_p},
+        {&icon_zones_reversed,"zones_reversed",&icon_zones_reversed_p},
+        {&icon_zone_height,"zone_height",&icon_zone_height_p},
+        {&icon_zone_width,"zone_width",&icon_zone_width_p},
+        {&icon_margin_width,"margin_width",&icon_margin_width_p},
+        {&icon_frame_line,"frame_line",&icon_frame_line_p},
+        {&icon_zones_line,"zones_line",&icon_zones_line_p},
+        {&icon_frame_color,"frame_color",&icon_frame_color_p},
+        {&icon_zones_color,"zones_color",&icon_zones_color_p},
+        {&icon_style2_black,"style2_black",&icon_style2_black_p},
+        {&icon_zones_top,"zones_top",&icon_zones_top_p},
+        {&icon_zones_bottom,"zones_bottom",&icon_zones_bottom_p},
+        {&icon_zones_top_bottom,"zones_top_bottom",&icon_zones_top_bottom_p},
+        {&icon_frame_offset,"frame_offset",&icon_frame_offset_p},
+        {&icon_ok_d_64,"ok_d_64",&icon_ok_d_64_p},
+        {&icon_new_layer_d_64,"new_layer_d_64",&icon_new_layer_d_64_p},
+        {&icon_printer_d_48,"printer_d_48",&icon_printer_d_48_p},
+        {&icon_hor_extents_d,"hor_extents_d",&icon_hor_extents_d_p},
+        {&icon_ver_extents_d,"ver_extents_d",&icon_ver_extents_d_p},
+        {&icon_hor_limits_d,"hor_limits_d",&icon_hor_limits_d_p},
+        {&icon_ver_limits_d,"ver_limits_d",&icon_ver_limits_d_p},
+        {&icon_units_d,"units_d",&icon_units_d_p},
+        {&icon_paper_size_d_48,"paper_size_d_48",&icon_paper_size_d_48_p},
+        {&icon_paper_size_d,"paper_size_d",&icon_paper_size_d_p},
+        {&icon_paper_dim_d_48,"paper_dim_d_48",&icon_paper_dim_d_48_p},
+        {&icon_bspline,"bspline",&icon_bspline_p},
+        {&icon_bspline34,"bspline34",&icon_bspline34_p},
+        {&icon_bspline3p,"bspline3p",&icon_bspline3p_p},
+        {&icon_bspline4,"bspline4",&icon_bspline4_p},
+        {&icon_bspline3,"bspline3",&icon_bspline3_p},
+        {&icon_yes_d_48,"yes_d_48",&icon_yes_d_48_p},
+        {&icon_no_d_48,"no_d_48",&icon_no_d_48_p},
+        {&icon_escape_d_48,"escape_d_48",&icon_escape_d_48_p},
+        {&icon_escape_d,"escape_d",&icon_escape_d_p},
+        {&icon_tartan,"tartan",&icon_tartan_p},
+        {&icon_all_windows,"all_windows",&icon_all_windows_p},
+        {&icon_junction,"junction",&icon_junction_p},
+        {&icon_save_window,"save_window",&icon_save_window_p},
+        {&icon_freehand_segment_length,"freehand_segment_length",&icon_freehand_segment_length_p},
+        {&icon_remove_last_freehand,"remove_last_freehand",&icon_remove_last_freehand_p},
+        {&icon_new_from_template,"new_from_template",&icon_new_from_template_p},
+        {&icon_idea,"idea",&icon_idea_p},
+        {&icon_mirror_block,"mirror_block",&icon_mirror_block_p},
+        {&icon_tree,"tree",&icon_tree_p},
+        {&icon_tree_enter,"tree_enter",&icon_tree_enter_p},
+        {&icon_tree_return,"tree_return",&icon_tree_return_p},
+        {&icon_trans30,"trans30",&icon_trans30_p},
+        {&icon_trans40,"trans40",&icon_trans40_p},
+        {&icon_trans50,"trans50",&icon_trans50_p},
+        {&icon_trans60,"trans70",&icon_trans60_p},
+        {&icon_trans70,"trans70",&icon_trans70_p},
+        {&icon_trans80,"trans80",&icon_trans80_p},
+        {&icon_trans90,"trans90",&icon_trans90_p},
+        {&icon_trans100,"trans100",&icon_trans100_p},
+
+        { &icon_trans05,"trans05",&icon_trans05_p },
+        { &icon_trans10,"trans10",&icon_trans10_p },
+        { &icon_trans15,"trans15",&icon_trans15_p },
+        { &icon_trans20,"trans20",&icon_trans20_p },
+        { &icon_trans25,"trans25",&icon_trans25_p },
+        { &icon_trans35,"trans35",&icon_trans35_p },
+        { &icon_trans45,"trans45",&icon_trans45_p },
+        { &icon_trans55,"trans55",&icon_trans55_p },
+        { &icon_trans65,"trans65",&icon_trans65_p },
+        { &icon_trans75,"trans75",&icon_trans75_p },
+        { &icon_trans85,"trans85",&icon_trans85_p },
+        { &icon_trans95,"trans95",&icon_trans95_p },
+        { &icon_trans50_d,"trans50_d",&icon_trans50_d_p },
+
+        {&icon_back,"Back",&icon_back_p},
+        {&icon_space,"space",&icon_space_p},
+        {&icon_A,"A",&icon_A_p},
+        {&icon_B,"B",&icon_B_p},
+        {&icon_C,"C",&icon_C_p},
+        {&icon_D,"D",&icon_D_p},
+        {&icon_E,"E",&icon_E_p},
+        {&icon_F,"F",&icon_F_p},
+        {&icon_G,"G",&icon_G_p},
+        {&icon_H,"H",&icon_H_p},
+        {&icon_I,"I",&icon_I_p},
+        {&icon_J,"J",&icon_J_p},
+        {&icon_K,"K",&icon_K_p},
+        {&icon_L,"L",&icon_L_p},
+        {&icon_M,"M",&icon_M_p},
+        {&icon_N,"N",&icon_N_p},
+        {&icon_O,"O",&icon_O_p},
+        {&icon_P,"P",&icon_P_p},
+        {&icon_Q,"Q",&icon_Q_p},
+        {&icon_R,"R",&icon_R_p},
+        {&icon_S,"S",&icon_S_p},
+        {&icon_T,"T",&icon_T_p},
+        {&icon_U,"U",&icon_U_p},
+        {&icon_V,"V",&icon_V_p},
+        {&icon_W,"W",&icon_W_p},
+        {&icon_X,"X",&icon_X_p},
+        {&icon_Y,"Y",&icon_Y_p},
+        {&icon_Z,"Z",&icon_Z_p},
+        {&icon_load_d_48,"load_d_48",&icon_load_d_48_p},
+        {&icon_load_ini_d,"load_ini_d",&icon_load_ini_d_p},
+        {&icon_load_ini_d_48,"load_ini_d_48",&icon_load_ini_d_48_p},
+        {&icon_angle0,"angle0",&icon_angle0_p},
+        {&icon_angleRX,"angleRX",&icon_angleRX_p},
+        {&icon_anglePto,"anglePto",&icon_anglePto_p},
+        {&icon_angleRto,"angleRto",&icon_angleRto_p},
+        {&icon_angleXtoP,"angleXtoP",&icon_angleXtoP_p},
+        {&icon_touch_id_db_64,"touch_id_db_64",&icon_touch_id_db_64_p},
+        {&icon_left_margin_d_48,"left_margin_d_48",&icon_left_margin_d_48_p},
+        {&icon_bottom_margin_d_48,"bottom_margin_d_48",&icon_bottom_margin_d_48_p},
+        {&icon_all_layers_db_64,"all_layers_db_64",&icon_all_layers_db_64_p},
+        {&icon_global_db_48,"global_db_48",&icon_global_db_48_p},
+        {&icon_local_db_48,"local_db_48",&icon_local_db_48_p},
+        {&icon_color256_db_48,"Color256_db_48",&icon_color256_db_48_p},
+        {&icon_cursors,"cursors",&icon_cursors_p},
+        {&icon_cursor_small,"cursor_small",&icon_cursor_small_p},
+        {&icon_cursor_big,"cursor_big",&icon_cursor_big_p},
+        {&icon_cursor_extrabig,"cursor_extrabig",&icon_cursor_extrabig_p},
+        {&icon_question_mark_db_48,"question_mark_db_48",&icon_question_mark_db_48_p},
+        {&icon_pointern,"pointerN",&icon_pointern_p},
+        {&icon_pointerb,"pointerB",&icon_pointerb_p},
+        {&icon_pdf_vector_64,"pdf_vector_64",&icon_pdf_vector_64_p},
+        {&icon_pattern_folder,"pattern_folder",&icon_pattern_folder_p},
+        {&icon_close_window,"close_window",&icon_close_window_p},
+        {&icon_change_pattern,"change_pattern",&icon_change_pattern_p},
+        {&icon_import_map,"import_map",&icon_import_map_p},
+        {&icon_starAstar,"starAstar",&icon_starAstar_p},
+        {&icon_starA,"starA",&icon_starA_p},
+        {&icon_Astar,"Astar",&icon_Astar_p},
+        {&icon_Aonly,"Aonly",&icon_Aonly_p},
+        {&icon_gear,"gear",&icon_gear_p},
+        {&icon_confirm_or_deny,"confirm_or_deny",&icon_confirm_or_deny_p},
+        {&icon_stonewall,"StoneWall",&icon_stonewall_p},
+        {&icon_brickwall_dx,"brickwall_dx",&icon_brickwall_dx_p},
+        {&icon_brickwall_dy,"brickwall_dy",&icon_brickwall_dy_p},
+        {&icon_folder_bd24,"folder_bd24",&icon_folder_bd24_p},
+        {&icon_folder_bd32,"folder_bd32",&icon_folder_bd32_p},
+        {&icon_folder_bd48,"folder_bd48",&icon_folder_bd48_p},
+        {&icon_folder_bd64,"folder_bd64",&icon_folder_bd64_p},
+        {&icon_chain_d,"chain_d",&icon_chain_d_p},
+        {&icon_on_top_d,"on_top_d",&icon_on_top_d_p},
+        {&icon_h_flip,"h_flip",&icon_h_flip_p},
+        {&icon_v_flip,"v_flip",&icon_v_flip_p},
+        {&icon_offset_style,"offset_style",&icon_offset_style_p},
+        {&icon_offset_normal,"offset_normal",&icon_offset_normal_p},
+        {&icon_offset_smooth,"offset_smooth",&icon_offset_smooth_p},
+        {&icon_trace_close,"trace_close",&icon_trace_close_p},
+        {&icon_trace_break,"trace_break",&icon_trace_break_p},
+        {&icon_UA_B,u8"Б",&icon_UA_B_p},
+        {&icon_UA_D,u8"Д",&icon_UA_D_p},
+        {&icon_UA_E,u8"Е",&icon_UA_E_p},
+        //{&icon_UA_J,u8"Й",&icon_UA_J_p},
+        {&icon_UA_J,u8"UAJ",&icon_UA_J_p},
+        {&icon_UA_K,u8"К",&icon_UA_K_p},
+        {&icon_UA_N,u8"Н",&icon_UA_N_p},
+        {&icon_UA_P,u8"П",&icon_UA_P_p},
+        {&icon_UA_R,u8"Р",&icon_UA_R_p},
+        {&icon_UA_S,u8"С",&icon_UA_S_p},
+        {&icon_UA_T,u8"Т",&icon_UA_T_p},
+        {&icon_UA_C,u8"Ц",&icon_UA_C_p},
+        {&icon_spline_points,"spline_points",&icon_spline_points_p},
+        {&icon_spline_control_points,"spline_control_points",&icon_spline_control_points_p },
+        {&icon_spline_points_close,"spline_points_close",&icon_spline_points_close_p },
+        {&icon_spline_amend,"spline_amend",&icon_spline_amend_p },
+        {&icon_spline_points_end,"spline_points_end",&icon_spline_points_end_p },
+        {&icon_mouse1b,"mouse1b",&icon_mouse1b_p },
+        {&icon_mouse2b,"mouse2b",&icon_mouse2b_p },
+        {&icon_mouse1b2b,"mouse1b2b",&icon_mouse1b2b_p },
+        {&icon_mouse3b,"mouse3b",&icon_mouse3b_p },
+        {&icon_mouseRb,"mouseRb",&icon_mouseRb_p },
+        {&icon_education,"education",&icon_education_p },
+        {&icon_mickey_hand,"mickey_hand",&icon_mickey_hand_p },
+        {&icon_mickey_hand_s,"mickey_hand_s",&icon_mickey_hand_s_p },
+        {&icon_dim_leader,"dim_leader",&icon_dim_leader_p},
+        {&icon_insulation,"insulation",&icon_insulation_p },
+        {&icon_ins_simple,"ins-simple",&icon_ins_simple_p },
+        {&icon_ins_complex,"ins-complex",&icon_ins_complex_p },
+        {&icon_quad_trans,"quad-trans",&icon_quad_trans_p },
+        {&icon_rect_angle_opt,"rect_angle_opt",&icon_rect_angle_opt_p },
+        {&icon_move_rectangle,"move_rectangle",&icon_move_rectangle_p },
+        {&icon_rect_options,"rect_options",&icon_rect_options_p },
+        {&icon_object_polyline,"object_polyline",&icon_object_polyline_p },
+        {&icon_entire_polyline,"entire_polyline",&icon_entire_polyline_p },
+        {&icon_single_object,"single_object",&icon_single_object_p },
+        {&icon_image_dx,"image_dx",&icon_image_dx_p },
+        {&icon_image_dy,"image_dy",&icon_image_dy_p },
+        {&icon_break_options,"break_options",&icon_break_options_p },
+        {&icon_break_and_leave,"break_and_leave",&icon_break_and_leave_p },
+        {&icon_break_and_cut,"break_and_cut",&icon_break_and_cut_p },
+        {&icon_break_divide,"break_divide",&icon_break_divide_p },
+        {&icon_fixed_scale,"fixed_scale",&icon_fixed_scale_p },
+        {&icon_text_collineal,"text_collineal",&icon_text_collineal_p },
+        {&icon_decimal_fractional,"decimal_fractional",&icon_decimal_fractional_p },
+        {&icon_import_vectorize,"import_vectorize",&icon_import_vectorize_p },
+        {&icon_space128,"space128",&icon_space128_p },
+        {&icon_backspace128,"backspace128",&icon_backspace128_p },
+        {&icon_enter128,"enter128",&icon_enter128_p },
+        {&icon_ttf,"ttf",&icon_ttf_p },
+        {&icon_otf,"otf",&icon_otf_p },
+        {&icon_elliptical,"elliptical",&icon_elliptical_p },
+        {&icon_ellipticalarc,"ellipticalarc",&icon_ellipticalarc_p },
+        {&icon_filledellipses,"filledellipses",&icon_filledellipses_p },
+        {&icon_ellipticalarclocal,"ellipticalarclocal",&icon_ellipticalarclocal_p },
+        {&icon_ellipticalarcglobal,"ellipticalarcglobal",&icon_ellipticalarcglobal_p },
+        {&icon_arc_line_continuation,"arc_line_continuation",&icon_arc_line_continuation_p },
+        {&icon_line_arc_continuation,"line_arc_continuation",&icon_line_arc_continuation_p },
+        {&icon_center_block,"center_block",&icon_center_block_p },
+        {&icon_alpha_sorting_d32,"alpha_sorting_d32",&icon_alpha_sorting_d32_p },
+        {&icon_time_lapse_d32,"time_lapse_d32",&icon_time_lapse_d32_p },
+        {&icon_select_entity,"select_entity",&icon_select_entity_p },
+        {&icon_select,"select",&icon_select_p },
+        {&icon_vector,"vector",&icon_vector_p },
+        {&icon_rigid_rigid,"rigid_rigid",&icon_rigid_rigid_p },
+        {&icon_rigid_pin,"rigid_pin",&icon_rigid_pin_p },
+        {&icon_pin_rigid,"pin_rigid",&icon_pin_rigid_p },
+        {&icon_pin_pin,"pin_pin",&icon_pin_pin_p },
+        {&icon_force,"force",&icon_force_p },
+        {&icon_moment,"moment",&icon_moment_p },
+        {&icon_moment_rev,"moment_rev",&icon_moment_rev_p },
+        {&icon_displacement,"displacement",&icon_displacement_p },
+        {&icon_rotation,"rotation",&icon_rotation_p },
+        {&icon_rotation_rev,"rotation_rev",&icon_rotation_rev_p },
+        {&icon_trapezium_y,"trapezium_y",&icon_trapezium_y_p },
+        {&icon_trapezium_x,"trapezium_x",&icon_trapezium_x_p },
+        {&icon_trapezium_n,"trapezium_n",&icon_trapezium_n_p },
+        {&icon_trapezium_x,"trapezium_h",&icon_trapezium_h_p },
+        {&icon_trapezium_n,"trapezium_v",&icon_trapezium_v_p },
+        {&icon_fixed_h,"fixed_h",&icon_fixed_h_p },
+        {&icon_fixed_vl,"fixed_vl",&icon_fixed_vl_p },
+        {&icon_fixed_vr,"fixed_vr",&icon_fixed_vr_p },
+        {&icon_pinned_h,"pinned_h",&icon_pinned_h_p },
+        {&icon_pinned_vl,"pinned_vl",&icon_pinned_vl_p },
+        {&icon_pinned_vr,"pinned_vr",&icon_pinned_vr_p },
+        {&icon_fixed_roller_h,"fixed_roller_h",&icon_fixed_roller_h_p },
+        {&icon_fixed_roller_vl,"fixed_roller_vl",&icon_fixed_roller_vl_p },
+        {&icon_fixed_roller_vr,"fixed_roller_vr",&icon_fixed_roller_vr_p },
+        {&icon_pinned_roller_h,"pinned_roller_h",&icon_pinned_roller_h_p },
+        {&icon_pinned_roller_vl,"pinned_roller_vl",&icon_pinned_roller_vl_p },
+        {&icon_pinned_roller_vr,"pinned_roller_vr",&icon_pinned_roller_vr_p },
+        {&icon_node,"node",&icon_node_p },
+        {&icon_magnitude,"magnitude",&icon_magnitude_p },
+        {&icon_thermal,"thermal",&icon_thermal_p },
+        {&icon_gear_plus,"gear_plus",&icon_gear_plus_p },
+        {&icon_fixed_hu,"fixed_hu",&icon_fixed_hu_p },
+        {&icon_pinned_hu,"pinned_hu",&icon_pinned_hu_p },
+        {&icon_fixed_roller_hu,"fixed_roller_hu",&icon_fixed_roller_hu_p },
+        {&icon_pinned_roller_hu,"pinned_roller_hu",&icon_pinned_roller_hu_p },
+        {&icon_fixed_rotation,"fixed_rotation",&icon_fixed_rotation_p },
+        {&icon_compression_mag,"compression_mag",&icon_compression_mag_p },
+        {&icon_tension_mag,"tension_mag",&icon_tension_mag_p },
+        {&icon_shear_mag,"shear_mag",&icon_shear_mag_p },
+        {&icon_moments_mag,"moments_mag",&icon_moments_mag_p },
+        {&icon_displacements_mag,"displacements_mag",&icon_displacements_mag_p },
+        {&icon_reactions_xy,"reactions_xy",&icon_reactions_xy_p },
+        {&icon_reactions_m,"reactions_m",&icon_reactions_m_p },
+        {&icon_thermal_y,"thermal_y",&icon_thermal_y_p },
+        {&icon_thermal_t,"thermal_t",&icon_thermal_t_p },
+        {&icon_trapezium_y1,"trapezium_y1",&icon_trapezium_y1_p },
+        {&icon_trapezium_y2,"trapezium_y2",&icon_trapezium_y2_p },
+        {&icon_thermal_t1,"thermal_t1",&icon_thermal_t1_p },
+        {&icon_thermal_t2,"thermal_t2",&icon_thermal_t2_p },
+        {&icon_vectors,"vectors",&icon_vectors_p },
+        {&icon_US_Flag,"US-Flag",&icon_US_Flag_p },
+        {&icon_EU_Flag,"EU-Flag",&icon_EU_Flag_p },
+        {&icon_UK_Flag,"UK-Flag",&icon_UK_Flag_p },
+        {&icon_CA_Flag,"CA-Flag",&icon_CA_Flag_p },
+        {&icon_AU_Flag,"AU-Flag",&icon_AU_Flag_p },
+        {&icon_CN_Flag,"CN-Flag",&icon_CN_Flag_p },
+        {&icon_IH_sections,"IH-sections",&icon_IH_sections_p },
+        {&icon_U_sections,"U-sections",&icon_U_sections_p },
+        {&icon_T_sections,"T-sections",&icon_T_sections_p },
+        {&icon_L_sections,"L-sections",&icon_L_sections_p },
+        {&icon_2L_sections,"2L-sections",&icon_2L_sections_p },
+        {&icon_RT_sections,"RT-sections",&icon_RT_sections_p },
+        {&icon_O_sections,"O-sections",&icon_O_sections_p },
+        {&icon_EO_sections,"EO-sections",&icon_EO_sections_p },
+        {&icon_Z_sections,"Z-sections",&icon_Z_sections_p },
+        {&icon_VJ_sections,"VJ-sections",&icon_VJ_sections_p },
+        {&icon_timber,"timber",&icon_timber_p },
+        {&icon_node_size,"node_size",&icon_node_size_p },
+        {&icon_dead_load,"dead_load2",&icon_dead_load_p },
+        {&icon_live_load,"live_load",&icon_live_load_p },
+        {&icon_roof_load,"roof_load",&icon_roof_load_p },
+        {&icon_wind_load,"wind_load",&icon_wind_load_p },
+        {&icon_snow_load,"snow_load",&icon_snow_load_p },
+        {&icon_earthquake_load,"earthquake_load",&icon_earthquake_load_p },
+        {&icon_rain_load,"rain_load",&icon_rain_load_p },
+        {&icon_soil_load,"soil_load",&icon_soil_load_p },
+        {&icon_fluid_load,"fluid_load",&icon_fluid_load_p },
+        {&icon_thermal_load,"thermal_load",&icon_thermal_load_p },
+        {&icon_unspecified_load,"unspecified_load",&icon_unspecified_load_p },
+        {&icon_unknown_load,"unknown_load",&icon_unknown_load_p },
+        {&icon_number_load,"unspecified_load",&icon_number_load_p },
+        {&icon_stress_mag,"stress_mag",&icon_stress_mag_p },
+        {&icon_stress_plus_mag,"stress_plus_mag",&icon_stress_plus_mag_p },
+        {&icon_stress_minus_mag,"stress_minus_mag",&icon_stress_minus_mag_p },
+        {&icon_shear_stress_mag,"shear_stress_mag",&icon_shear_stress_mag_p },
+        {&icon_eurocode_d48,"eurocode_d48",&icon_eurocode_d48_p },
+        {&icon_asce_d48,"asce_d48",&icon_asce_d48_p },
+        {&icon_icc_d48,"icc_d48",&icon_icc_d48_p },
+        {&icon_combination_d48,"combination_d48",&icon_combination_d48_p },
+        {&icon_erase_layer_db_64,"erase_layer_db_64",&icon_erase_layer_db_64_p },
+        {&icon_mark_layer_db_64,"mark_layer_db_64",&icon_mark_layer_db_64_p },
+        {&icon_AlfaCAD48,"AlfaCAD48",&icon_AlfaCAD48_p },
+        {&icon_Pdelta_d48,"Pdelta_d48",&icon_Pdelta_d48_p },
+        {&icon_dynamics,"dynamics",&icon_dynamics_p },
+        {&icon_vibrations_d48,"vibrations_d48",&icon_vibrations_d48_p },
+        {&icon_inertia_d48,"inertia_d48",&icon_inertia_d48_p },
+        {&icon_dynamics_run,"dynamics_run",&icon_dynamics_run_p },
+        {&icon_menustyle,"menustyle",&icon_menustyle_p },
+        {&icon_cursorstyle,"cursorstyle",&icon_cursorstyle_p },
+        {&icon_barstyle,"barstyle",&icon_barstyle_p },
+        {&icon_perc_mag,"perc_mag",&icon_perc_mag_p },
+        {&icon_cross_section_forces,"cross_section_forces",&icon_cross_section_forces_p },
+        {&icon_ULS,"ULS",&icon_ULS_p },
+        {&icon_SLS,"SLS",&icon_SLS_p },
+        {&icon_QPSLS,"QPSLS",&icon_QPSLS_p },
+        {&icon_resilience,"resilience",&icon_resilience_p },
+        {&icon_mousewheel,"mousewheel",&icon_mousewheel_p },
+        {&icon_mousewheelnatural,"mousewheelnatural",&icon_mousewheelnatural_p },
+        {&icon_mousewheelregular,"mousewheelregular",&icon_mousewheelregular_p },
+};
+
+int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
+
+BITMAP_LOAD bitmap_load_pre[] = {
+    {&icon_folder_bd24,"folder_bd24",&icon_folder_bd24_p},
+    {&icon_folder_bd32,"folder_bd32",&icon_folder_bd32_p},
+    {&icon_folder_bd48,"folder_bd48",&icon_folder_bd48_p},
+    {&icon_folder_bd64,"folder_bd64",&icon_folder_bd64_p},
+    };
+
+int bitmaps_size_pre = sizeof(bitmap_load_pre) / sizeof(bitmap_load_pre[0]);
+
+//BITMAP* bt;
 
 extern int EditText(char *, int adjust, int nCmdShow, int *single, int *tab);
 extern int set_window_icon(void);
@@ -2301,6 +3233,30 @@ struct shmseg {
 static struct shmseg *shmp;
 static struct shmseg shmp_private;
 
+static int tier=0;
+
+void set_tier(int tier_)
+{
+    tier = tier_;
+}
+
+int get_tier(void)
+{
+    return tier;
+}
+
+int what_tier(int font_size)
+{
+    if (HEIGHT>35) return 2; //tier=2;
+    else if (HEIGHT>27) return 1; //tier=1;
+    else return 0; //tier=0;
+}
+
+BOOL is_RETINA(void)
+{
+    return RETINA;
+}
+
 #ifdef LINUX
 void Sleep(int miliseconds) {
     sleep(miliseconds);
@@ -2363,7 +3319,11 @@ int Test_App_Shm(int doit, char *file_name)
                     bufptr->mflag = 1;
                     shmp->complete = 1;
 
-                    quick_exit(1);  //1 for exit after initiating newe file in existing instance
+#ifndef MACOS
+                    quick_exit(1);  //1 for exit after initiating new file in existing instance
+#else
+                    exit(1);
+#endif
                 }
                 else //leaving new instance
                 {
@@ -2506,8 +3466,11 @@ if (doit == 1) {
                 bufptr->flag[i] = 1;
                 bufptr->mflag = 1;
                 shmp->complete = 1;
-
+#ifndef MACOS
                 quick_exit(1);  //1 for exit after initiating newe file in existing instance
+#else
+                exit(1);
+#endif
             }
             else //leaving new instance
             {
@@ -2722,6 +3685,10 @@ void set_resized_window(int dx, int dy)
   int ret;
   int k;
   int drv_ok;
+  double Xpos, Ypos;
+    int WspX_, WspY_;
+
+  get_posXY(&Xpos, &Ypos);
 
   drv_ok=get_master_data(&drv_master);
 
@@ -2755,9 +3722,21 @@ void set_resized_window(int dx, int dy)
 
   if (dane_size>0)
       redraw();
-  k=my_poll_keyboard();
+  ////k=my_poll_keyboard();
 
-  return;
+  flip_screen();
+  //do {
+  //  get_mouse_mickeys(&WspX_, &WspY_);
+  //} while ((WspX_!=0) || (WspY_!=0));
+  //position_mouse(getmaxx()/2, getmaxy()/2);
+  //set_forget_mouse(getmaxx()/2, getmaxy()/2);
+  //sleep(0);
+  set_posXY(Xpos, Ypos);
+  ////CURON();
+    //do {
+    //    get_mouse_mickeys(&WspX_, &WspY_);
+    //} while ((WspX_!=0) || (WspY_!=0));
+
 }
 
 void set_original_window(void)
@@ -2798,8 +3777,6 @@ void set_original_window(void)
   k=my_poll_keyboard();
 
   simulate_keypress(21504);
-  
-  return;
 }
 
 void set_last_window(void)
@@ -2840,7 +3817,6 @@ void set_last_window(void)
   redraw();
   k = my_poll_keyboard();
 
-  return;
 }
 
 void reset_font(void)
@@ -2849,11 +3825,11 @@ void reset_font(void)
 
 	strcpy(font_name, "DejaVuSans.ttf");
 	strcpy(Czcionka_Pulpitu, font_name);
-	MP_SIZE = 19;
-	BAR_G = 19;
-	HEIGHT = 19;
-    ED_INF_HEIGHT = 21; //20;
-	WIDTH = 10;
+	MP_SIZE = 19*(RETINA+1);
+	BAR_G = 19*(RETINA+1);
+	HEIGHT = 19*(RETINA+1);
+    ED_INF_HEIGHT = HEIGHT + 2*(RETINA+1);
+	WIDTH = 10*(RETINA+1);
 	f_ini = fopen(font_file_name, "wt");
 
 	fprintf(f_ini, "%s\n", font_name);
@@ -3466,10 +4442,10 @@ void Initialize_Desktop_font(char *font_name)
 	unsigned char red, green, blue;
 	int horiz, vert;
 
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 
 #ifndef LINUX
@@ -3678,6 +4654,7 @@ int load_client_bitmap(char *bitmap_file) {
     BITMAP* cbt;
     PALETTE pal;
     int i;
+    int fsuffix_no;
 
     //searching for free slot
 
@@ -3687,11 +4664,48 @@ int load_client_bitmap(char *bitmap_file) {
     }
     if (i==MAX_CLIENT_BITMAP) return 0;  //empty icon
 
-    sprintf(client_bitmap_file, "%s/%s", _PLUGIN_BITMAPS_, bitmap_file);
+    ////////////////
+    if (HEIGHT>35) fsuffix_no=2;
+    else if (HEIGHT>27) fsuffix_no=1;
+    else fsuffix_no=0;
+    /////////////////
+
+
+    sprintf(client_bitmap_file, "%s/%s%s", _PLUGIN_BITMAPS_, fsuffix[fsuffix_no], bitmap_file);
     cbt = load_png(client_bitmap_file, pal);
     client_bitmap_load[i] = cbt;
 
+    Client_Bitmaps[i]=malloc(strlen(bitmap_file)+1);
+    strcpy(Client_Bitmaps[i], bitmap_file);
+
     return i+FIRST_CLIENT_BITMAP_NO;
+}
+
+void reload_client_bitmaps(void)
+{
+    int fsuffix_no;
+    char client_bitmap_file[MAXPATH];
+    BITMAP* cbt;
+    PALETTE pal;
+    int i;
+
+    ////////////////
+    if (HEIGHT>35) fsuffix_no=2;
+    else if (HEIGHT>27) fsuffix_no=1;
+    else fsuffix_no=0;
+    /////////////////
+
+
+    for (i=0; i<MAX_CLIENT_BITMAP; i++)
+    {
+        if (client_bitmap_load[i]!=NULL)
+        {
+            destroy_bitmap(client_bitmap_load[i]);
+            sprintf(client_bitmap_file, "%s/%s%s", _PLUGIN_BITMAPS_, fsuffix[fsuffix_no], Client_Bitmaps[i]);
+            cbt = load_png(client_bitmap_file, pal);
+            client_bitmap_load[i] = cbt;
+        }
+    }
 }
 
 int delete_client_bitmap(int iconno) {
@@ -3702,6 +4716,7 @@ int delete_client_bitmap(int iconno) {
         ////if ((btm->w==32) && (btm->h==32))
             destroy_bitmap(client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]);
         client_bitmap_load[iconno-FIRST_CLIENT_BITMAP_NO]=NULL;
+        free(Client_Bitmaps[iconno-FIRST_CLIENT_BITMAP_NO]);
     }
     return 0;
 }
@@ -3717,19 +4732,32 @@ int delete_all_client_bitmaps(void)
             ////if ((btm->w==32) && (btm->h==32))
                 destroy_bitmap(client_bitmap_load[i]);
             client_bitmap_load[i]=NULL;
+            free(Client_Bitmaps[i]);
         }
     }
 }
 
 
-void set_geometry(int single)
+void set_geometry(int single)  //1 is single, 0 is a text, 2 is a file
 {   int x_edit;
     int y_edit;
     int curr_x01, curr_y01, curr_h1, curr_v1;
     get_window_origin_and_size_(&curr_x01, &curr_y01, &curr_h1, &curr_v1);
-    if (!single) {
-        x_edit = curr_x01 + 200;
-        y_edit = curr_y01 + 200;
+    if (single==0) {
+        //x_edit = curr_x01 + 200/(RETINA+1);
+        x_edit = (curr_x01 + 2)/(RETINA+1);
+        //y_edit = curr_y01 + 200/(RETINA+1);
+
+#ifdef ALLEGRO5
+#ifdef MACOS
+        y_edit = Get_X11_SCREEN_SHIFT() + (curr_y01 + ED_INF_HEIGHT * 2 + 6)/(RETINA+1);
+#else
+        y_edit = curr_y01 + ED_INF_HEIGHT * 2 /(RETINA+1);
+#endif
+#else
+        y_edit = curr_y01 + Get_X11_SCREEN_SHIFT() + ED_INF_HEIGHT * 2;
+#endif
+
 #ifdef LINUX
         set_editbox_geometry(x_edit, y_edit);
 #else
@@ -3737,10 +4765,20 @@ void set_geometry(int single)
 #endif
         set_editbox_geometry_set();
     }
-else {
-        x_edit = curr_x01 + 2;
+else if (single==1)
+   {
+        x_edit = (curr_x01 + 2)/(RETINA+1);
 
+#ifdef ALLEGRO5
+#ifdef MACOS
+        y_edit = Get_X11_SCREEN_SHIFT() + (curr_y01 + ED_INF_HEIGHT * 2 + 6)/(RETINA+1);
+#else
+        y_edit = curr_y01 + ED_INF_HEIGHT * 2 /(RETINA+1);
+#endif
+#else
         y_edit = curr_y01 + Get_X11_SCREEN_SHIFT() + ED_INF_HEIGHT * 2;
+#endif
+
 #ifdef LINUX
         set_editbox_geometry_line(x_edit, y_edit);
 #else
@@ -3749,6 +4787,24 @@ else {
 #endif
         set_editbox_geometry_line_set();
     }
+else if (single==2)
+        x_edit = (curr_x01 + 2)/(RETINA+1);
+#ifdef ALLEGRO5
+#ifdef MACOS
+    y_edit = Get_X11_SCREEN_SHIFT() + (curr_y01 + ED_INF_HEIGHT * 2 + 6)/(RETINA+1);
+#else
+    y_edit = curr_y01 + ED_INF_HEIGHT * 2 /(RETINA+1);
+#endif
+#else
+    y_edit = curr_y01 + Get_X11_SCREEN_SHIFT() + ED_INF_HEIGHT * 2;
+#endif
+
+#ifdef LINUX
+    set_editbox_geometry_file(x_edit, y_edit);
+#else
+    set_editbox_geometry_file(x_edit, y_edit);   //i think any difference is not necessary
+#endif
+    set_editbox_geometry_file_set();
 }
 
 void DoneArgs(void)
@@ -3768,11 +4824,255 @@ void DoneArgs(void)
 #endif
 }
 
+
+/////////////////////
+
+void Load_Mem_Bitmaps(int tier)
+{
+    PALETTE pal;
+
+    int png_mem12x16 = 12 * 16 * 4 + 100;
+    int png_mem18x24 = 18 * 24 * 4 + 100;
+    int png_mem24x32 = 24 * 32 * 4 + 100;
+    int png_mem36x48 = 36 * 48 * 4 + 100;
+    int png_mem48x64 = 48 * 64 * 4 + 100;
+    int png_mem72x96 = 72 * 96 * 4 + 100;
+    int png_mem96x128 = 96 * 128 * 4 + 100;
+
+    int png_mem4x16 = 4 * 16 * 4 + 100;
+    int png_mem6x24 = 6 * 24 * 4 + 100;
+    int png_mem8x32 = 8 * 32 * 4 + 100;
+    int png_mem12x48 = 12 * 48 * 4 + 100;
+    int png_mem16x64 = 16 * 64 * 4 + 100;
+    int png_mem24x96 = 24 * 96 * 4 + 100;
+    int png_mem32x128 = 32 * 128 * 4 + 100;
+
+    int png_mem = 32 * 32 * 4 + 100;
+    int png_mem48 = 48 * 48 * 4 + 100;
+    int png_mem64 = 64 * 64 * 4 + 100;
+    int png_mem96 = 96 * 96 * 4 + 100;
+    int png_mem128 = 128 * 128 * 4 + 100;
+    int png_mem192 = 192 * 192 * 4 + 100;
+    int png_mem256 = 256 * 256 * 4 + 100;
+    icon_no_d_mem = load_memory_png(icon_no_d_pm, png_mem, (RGB *) &pal);
+    icon_no_dx1_5_mem = load_memory_png(icon_no_dx1_5_pm, png_mem48, (RGB *) &pal);
+    icon_no_dx2_mem = load_memory_png(icon_no_dx2_pm, png_mem64, (RGB *) &pal);
+
+    icon_yes_d_mem = load_memory_png(icon_yes_d_pm, png_mem, (RGB *) &pal);
+    icon_yes_dx1_5_mem = load_memory_png(icon_yes_dx1_5_pm, png_mem48, (RGB *) &pal);
+    icon_yes_dx2_mem = load_memory_png(icon_yes_dx2_pm, png_mem64, (RGB *) &pal);
+
+    if (!RETINA) icon_upgrademark_mem = load_memory_png(icon_upgrademark_d_pm, png_mem64, (RGB *) &pal);
+    else icon_upgrademark_mem = load_memory_png(icon_upgrademark_dx2_pm, png_mem128, (RGB *) &pal);
+    if (!RETINA) icon_noupgrademark_mem = load_memory_png(icon_noupgrademark_d_pm, png_mem64, (RGB *) &pal);
+    else icon_noupgrademark_mem = load_memory_png(icon_noupgrademark_dx2_pm, png_mem128, (RGB *) &pal);
+
+    icon_hourglass_mem = load_memory_png(icon_hourglass_d_pm, png_mem, (RGB *) &pal);
+    icon_hourglassx1_5_mem = load_memory_png(icon_hourglass_dx1_5_pm, png_mem48, (RGB *) &pal);
+    icon_hourglassx2_mem = load_memory_png(icon_hourglass_dx2_pm, png_mem64, (RGB *) &pal);
+
+    icon_cursor_12x16_mem = load_memory_png(arrow_cursor_12x16, png_mem12x16, (RGB *) &pal);
+    icon_cursor_18x24_mem = load_memory_png(arrow_cursor_18x24, png_mem18x24, (RGB *) &pal);
+    icon_cursor_24x32_mem = load_memory_png(arrow_cursor_24x32, png_mem24x32, (RGB *) &pal);
+    icon_cursor_36x48_mem = load_memory_png(arrow_cursor_36x48, png_mem36x48, (RGB *) &pal);
+    icon_cursor_48x64_mem = load_memory_png(arrow_cursor_48x64, png_mem48x64, (RGB *) &pal);
+    icon_cursor_72x96_mem = load_memory_png(arrow_cursor_72x96, png_mem72x96, (RGB *) &pal);
+    icon_cursor_96x128_mem = load_memory_png(arrow_cursor_96x128, png_mem96x128, (RGB *) &pal);
+
+    icon_edit_cursor_4x16_mem = load_memory_png(edit_cursor_4x16, png_mem4x16, (RGB *) &pal);
+    icon_edit_cursor_6x24_mem = load_memory_png(edit_cursor_6x24, png_mem6x24, (RGB *) &pal);
+    icon_edit_cursor_8x32_mem = load_memory_png(edit_cursor_8x32, png_mem8x32, (RGB *) &pal);
+    icon_edit_cursor_12x48_mem = load_memory_png(edit_cursor_12x48, png_mem12x48, (RGB *) &pal);
+    icon_edit_cursor_16x64_mem = load_memory_png(edit_cursor_16x64, png_mem16x64, (RGB *) &pal);
+    icon_edit_cursor_24x96_mem = load_memory_png(edit_cursor_24x96, png_mem24x96, (RGB *) &pal);
+    icon_edit_cursor_32x128_mem = load_memory_png(edit_cursor_32x128, png_mem32x128, (RGB *) &pal);
+
+    //another cursors: ARROW and EDIT
+
+    /*
+    switch (tier) {
+        case 0:
+            icon_no_d_pmem = icon_no_d_mem;
+            icon_yes_d_pmem = icon_yes_d_mem;
+            break;
+        case 1:
+            icon_no_d_pmem = icon_no_dx1_5_mem;
+            icon_yes_d_pmem = icon_yes_dx1_5_mem;
+            break;
+        case 2:
+            icon_no_d_pmem = icon_no_dx2_mem;
+            icon_yes_d_pmem = icon_yes_dx2_mem;
+            break;
+        default:
+            icon_no_d_pmem = icon_no_d_mem;
+            icon_yes_d_pmem = icon_yes_d_mem;
+            break;
+    }
+    */
+    icon_upgrademark_pmem = icon_upgrademark_mem;
+    icon_noupgrademark_pmem = icon_noupgrademark_mem;
+
+#ifdef ALLEGRO5
+    icon_alfacad_mem = load_memory_png(icon_alfacad_pm, png_mem96, (RGB *) &pal);
+    set_display_icon(icon_alfacad_mem);
+#endif
+}
+
+void Set_Mem_Bitmaps(int tier_)
+{
+    switch (tier_) {
+        case 0:
+            icon_no_d_pmem = icon_no_d_mem;
+            icon_yes_d_pmem = icon_yes_d_mem;
+            break;
+        case 1:
+            icon_no_d_pmem = icon_no_dx1_5_mem;
+            icon_yes_d_pmem = icon_yes_dx1_5_mem;
+            break;
+        case 2:
+            icon_no_d_pmem = icon_no_dx2_mem;
+            icon_yes_d_pmem = icon_yes_dx2_mem;
+            break;
+        default:
+            icon_no_d_pmem = icon_no_d_mem;
+            icon_yes_d_pmem = icon_yes_d_mem;
+            break;
+    }
+}
+
+
+void Set_Mem_Cursors(int tier_)
+{
+    switch (tier_) {
+        case 0:
+            reini_cursors(icon_cursor_18x24_mem, icon_cursor_24x32_mem, icon_cursor_36x48_mem);
+            reini_edit_cursors(icon_edit_cursor_6x24_mem, icon_edit_cursor_8x32_mem, icon_edit_cursor_12x48_mem);
+            break;
+        case 1:
+            reini_cursors(icon_cursor_24x32_mem, icon_cursor_36x48_mem, icon_cursor_48x64_mem);
+            reini_edit_cursors(icon_edit_cursor_8x32_mem, icon_edit_cursor_12x48_mem, icon_edit_cursor_16x64_mem);
+            break;
+        case 2:
+            reini_cursors(icon_cursor_36x48_mem, icon_cursor_48x64_mem, icon_cursor_72x96_mem);
+            reini_edit_cursors(icon_edit_cursor_12x48_mem, icon_edit_cursor_16x64_mem, icon_edit_cursor_24x96_mem);
+            break;
+        default:
+            reini_cursors(icon_cursor_12x16_mem, icon_cursor_24x32_mem, icon_cursor_36x48_mem);
+            reini_edit_cursors(icon_edit_cursor_6x24_mem, icon_edit_cursor_8x32_mem, icon_edit_cursor_12x48_mem);
+            break;
+    }
+}
+/////////////////////
+///
+
+void Load_Bitmaps_pre(int HEIGHT_)
+{
+    char bitmap_file[MAXPATH];
+    char bitmap_folder[MAXPATH];
+    PALETTE pal;
+    BITMAP* bt;
+
+    if (HEIGHT_>35)
+    {
+        sprintf(bitmap_folder, "%s/PNG64", _BITMAPS_);
+        tier=2;
+        set_fv(2.0f);
+    }
+    else if (HEIGHT_>27)
+    {
+        sprintf(bitmap_folder, "%s/PNG48", _BITMAPS_);
+        tier=1;
+        set_fv(1.5f);
+    }
+    else
+    {
+        sprintf(bitmap_folder, "%s", _BITMAPS_);
+        tier=0;
+        set_fv(1.0f);
+    }
+
+    for (int i = 0; i < bitmaps_size_pre; i++) {
+        sprintf(bitmap_file, "%s/%s.png", bitmap_folder, bitmap_load[i].png_file);
+        bt = load_png(bitmap_file, pal);
+        /////////////////
+        if (bt == NULL) printf("%s\n", bitmap_load_pre[i].png_file);
+        /////////////////
+        *bitmap_load_pre[i].png_b = bt;
+        *bitmap_load_pre[i].png_p = *bitmap_load_pre[i].png_b;
+    }
+}
+
+void Load_Bitmaps(int HEIGHT_)
+{
+    char bitmap_file[MAXPATH];
+    char bitmap_folder[MAXPATH];
+    PALETTE pal;
+    BITMAP* bt;
+
+    if (HEIGHT_>35)
+    {
+        sprintf(bitmap_folder, "%s/PNG64", _BITMAPS_);
+        tier=2;
+        set_fv(2.0f);
+    }
+    else if (HEIGHT_>27)
+    {
+        sprintf(bitmap_folder, "%s/PNG48", _BITMAPS_);
+        tier=1;
+        set_fv(1.5f);
+    }
+    else
+    {
+        sprintf(bitmap_folder, "%s", _BITMAPS_);
+        tier=0;
+        set_fv(1.0f);
+    }
+
+    for (int i = 0; i < bitmaps_size; i++) {
+        sprintf(bitmap_file, "%s/%s.png", bitmap_folder, bitmap_load[i].png_file);
+        bt = load_png(bitmap_file, pal);
+/////////////////
+        if (bt == NULL) printf("%s\n", bitmap_load[i].png_file);
+/////////////////
+        *bitmap_load[i].png_b = bt;
+        *bitmap_load[i].png_p = *bitmap_load[i].png_b;
+    }
+}
+
+void Destroy_Bitmaps(void)
+{
+    for (int i = 0; i < bitmaps_size; i++)
+    {
+        if (*bitmap_load[i].png_b!=NULL)
+        {
+            destroy_bitmap(*bitmap_load[i].png_b);
+            *bitmap_load[i].png_b=NULL;
+        }
+    }
+}
+
+void Destroy_Bitmaps_pre(void)
+{
+    for (int i = 0; i < bitmaps_size_pre; i++)
+    {
+        if (*bitmap_load_pre[i].png_b!=NULL)
+        {
+            destroy_bitmap(*bitmap_load_pre[i].png_b);
+            *bitmap_load_pre[i].png_b=NULL;
+        }
+    }
+}
+
+
 #ifndef LINUX
 int Rysuj_main(int child, char file_name[255], int nCmdShow, char *application, char *arg_params)
 {
 #else
+#ifndef MACOS
 int main(int argc, char *argv[])
+#else
+int _al_mangled_main(int argc, char *argv[])
+#endif
 {
     int child=0;
     char file_name[255]="";
@@ -3912,7 +5212,7 @@ int main(int argc, char *argv[])
     {
         strcpy(strAppPath, argv[0]);
         ptr_s = strrchr(&strAppPath,'/');
-        if (ptr_s!=NULL) *ptr_s='\0';
+         if (ptr_s!=NULL) *ptr_s='\0';
         printf("%s\n",strAppPath);
         int ret1 = chdir(&strAppPath);
         if (ret1==-1)
@@ -3920,6 +5220,7 @@ int main(int argc, char *argv[])
             printf("%s\n","Wrong name of AlfaCAD folder");
             exit(0);
         }
+
     }
 #endif
    Set_XWindow_header_height();
@@ -3982,7 +5283,7 @@ allegro_init();
  char const** entries = NULL;
  char konf[10][10][32];
  
- install_keyboard(); 
+ install_keyboard();
  install_timer();
  
  poll_kbd=keyboard_needs_poll(); 
@@ -3998,7 +5299,7 @@ allegro_init();
   exit(1);
   }
 
- if (__file_exists("blk00000.alx")) schowek=unlink("blk00000.alx");
+ if (my_file_exists("blk00000.alx")) schowek=unlink("blk00000.alx");
 
   Ini_Sys_Param () ;	/*ustawia bufor makra, typ myszy i tryb SVGA z pliku alfacad.ini*/
 
@@ -4026,6 +5327,12 @@ allegro_init();
   c_depth=get_desktop_color_depth(); 
   c_256=pow(2,c_depth);
   
+#endif
+
+    RETINA=(isRetinaDisplay()==TRUE) ? 1 : 0;
+#ifdef MACOS
+    double scale_factor=getBackingScaleFactor();
+    RETINA=(scale_factor>1.0) ? 1 : 0;
 #endif
 
 drv_ok=get_master_data(&drv_cur);
@@ -4068,8 +5375,14 @@ else //master
   change_mode_gr(&drv_master);
 }
 
+    printf("RETINA=%d\n", RETINA);
+
+  ////RETINA=TRUE;  //TEMNPORARY
+
+    set_sleep_state(FALSE);
+
   lock_mouse_switch();  //IT MUST BE IN WINDOWS, NEED TO BE CHECKED IN LINUX
-  
+
   Copy_screen();
 
   Load_Data();
@@ -4091,9 +5404,9 @@ else //master
     {
       strcpy(font_name,"DejaVuSans.ttf");
 	  strcpy(Czcionka_Pulpitu, font_name);
-      MP_SIZE=BAR_G=HEIGHT=19;
-      ED_INF_HEIGHT = HEIGHT + 2; //1;
-      WIDTH=10;
+      MP_SIZE=BAR_G=HEIGHT=19*(RETINA+1);
+      ED_INF_HEIGHT = HEIGHT + 2*(RETINA+1); //1;
+      WIDTH=10*(RETINA+1);
       f_ini = fopen ( font_file_name , "wt" ) ;
       fprintf(f_ini,"%s\n",font_name);
 #ifdef LINUX
@@ -4131,9 +5444,9 @@ else //master
 			   if (sscanf(p, "%ld,%ld,%ld,%ld,%ld", &MP_SIZE, &ED_INF_HEIGHT, &BAR_G, &HEIGHT, &WIDTH) < 5)
 #endif
 			   {
-				   MP_SIZE = BAR_G = HEIGHT = 19;
-                   ED_INF_HEIGHT = HEIGHT + 2; //1;
-				   WIDTH = 10;
+				   MP_SIZE = BAR_G = HEIGHT = 19*(RETINA+1);
+                   ED_INF_HEIGHT = HEIGHT + 2*(RETINA+1); //1;
+				   WIDTH = 10*(RETINA+1);
 			   }
 			   if (HEIGHT==0) HEIGHT=ED_INF_HEIGHT-2; //1;
 			}
@@ -4145,30 +5458,21 @@ else //master
     
 	Initialize_alft();
 
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int flags;
 
 	flags = fnsplit(font_name, drive, dir, file, ext);
 	strcat(file, ext);
 	strcpy(Czcionka_Pulpitu, file); // font_name);
 
+    int new_tier=what_tier(HEIGHT);
 
-    int png_mem = 32 * 32 * 4 + 100;
-    int png_mem64 = 64 * 64 * 4 + 100;
-    icon_no_dmem = load_memory_png(icon_no_d_pm, png_mem, (RGB *)&pal);
-    icon_yes_dmem = load_memory_png(icon_yes_d_pm, png_mem, (RGB *)&pal);
-    icon_upgrademark_mem = load_memory_png(icon_upgrademark_d_pm, png_mem64, (RGB*)&pal);
-    icon_noupgrademark_mem = load_memory_png(icon_noupgrademark_d_pm, png_mem64, (RGB*)&pal);
-
-    icon_hourglass_mem = load_memory_png(icon_hourglass_d_pm, png_mem, (RGB*)&pal);
-
-    icon_no_d_pmem = icon_no_dmem;
-    icon_yes_d_pmem = icon_yes_dmem;
-    icon_upgrademark_pmem = icon_upgrademark_mem;
-    icon_noupgrademark_pmem = icon_noupgrademark_mem;
+    Load_Mem_Bitmaps(new_tier);
+    Set_Mem_Bitmaps(new_tier);
+    Load_Bitmaps_pre(HEIGHT);
 
 if (child==0)
 {
@@ -4224,8 +5528,20 @@ if (child==0)
 	extra_logo(x_cent, y_cent, 1, "");
 
 }
+
+#ifdef ALFAMTEXT
+#ifndef MACOS
+    //check python and wx
+    int check=test_python_wxpython_pyobjc();
+#endif
+#endif
   
   ini_e();
+
+  Set_Mem_Cursors(new_tier);
+
+  //set_dialog_cursor(alfa_mouse_pointer);
+
 
 #ifndef LINUX
   init_file_dropped_fill_buf();
@@ -4249,858 +5565,11 @@ if (child==0)
   
   makro_esc();
 
-  char bitmap_file[MAXPATH];
+  Destroy_Bitmaps_pre();
 
-  BITMAP_LOAD bitmap_load[] = {
-	  {&qmark,"qmark64",&qmark_p },
-	  {&eymark,"eymark64",&eymark_p},
-	  {&ermark,"ermark64",&ermark_p},
-	  {&offmark,"offmark64",&offmark_p},
-	  {&plotter,"plotter",&plotter_p},
-	  {&icon_draft,"draft",&icon_draft_p},
-	  {&icon_block,"create_block",&icon_block_p},  
-	  {&icon_modify,"modify",&icon_modify_p},
-	  {&icon_search,"search",&icon_search_p},
-	  {&icon_explode_text_to_letters,"explode_text_to_letters",&icon_explode_text_to_letters_p},
-	  {&icon_dim_horizontal,"dim_horizontal",&icon_dim_horizontal_p},
-	  {&icon_hatch,"hatch",&icon_hatch_p},
-	  {&icon_polygonal_aread,"polygonal_area",&icon_polygonal_aread_p},
-	  {&icon_create_macro,"create_macro",&icon_create_macro_p},
-	  {&icon_drawing_settings,"drawing_settings",&icon_drawing_settings_p},
-	  {&icon_settings,"settings",&icon_settings_p},
-	  {&icon_open,"open",&icon_open_p},
-	  {&icon_quit,"quit",&icon_quit_p},
-	  {&icon_line,"line",&icon_line_p},
-      {&icon_circle,"circle",&icon_circle_p},
-	  {&icon_arc,"arc",&icon_arc_p},
-	  {&icon_text,"text",&icon_text_p},
-	  {&icon_polygon,"polygon",&icon_polygon_p},
-	  {&icon_polygon_n,"polygon_n",&icon_polygon_n_p},
-	  {&icon_disc,"disc",&icon_disc_p},
-	  {&icon_ellipses,"ellipses",&icon_ellipses_p},
-	  {&icon_polylines,"polylines",&icon_polylines_p},
-	  {&icon_solid,"solid",&icon_solid_p},
-	  {&icon_line_rectangle,"line_rectangle",&icon_line_rectangle_p},
-	  {&icon_trace,"trace",&icon_trace_p},
-	  {&icon_2line,"2line",&icon_2line_p},
-	  {&icon_3line,"3line",&icon_3line_p},
-	  {&icon_line_freehand,"line_freehand",&icon_line_freehand_p},
-	  {&icon_point,"point",&icon_point_p},
-	  {&icon_chart,"chart",&icon_chart_p},
-	  {&icon_reinforcing,"reinforcing",&icon_reinforcing_p},
-	  {&icon_move,"move",&icon_move_p},
-	  {&icon_move_copy,"move_copy",&icon_move_copy_p},
-	  {&icon_delete,"delete",&icon_delete_p},
-	  {&icon_restore,"restore",&icon_restore_p},
-	  {&icon_rotate,"rotate",&icon_rotate_p},
-	  {&icon_rotate_block,"rotate_block",&icon_rotate_block_p},
-	  {&icon_scale,"scale",&icon_scale_p},
-	  {&icon_stretch,"stretch",&icon_stretch_p},
-	  {&icon_edit_text,"edit_text",&icon_edit_text_p},
-	  {&icon_mirror,"mirror",&icon_mirror_p},
-	  {&icon_mirror_leave,"mirror_leave",&icon_mirror_leave_p},
-	  {&icon_mirror_replace,"mirror_replace",&icon_mirror_replace_p},
-	  {&icon_mirror_block_x,"mirror_block_x",&icon_mirror_block_x_p},
-	  {&icon_mirror_block_y,"mirror_block_y",&icon_mirror_block_y_p},
-	  {&icon_array,"array",&icon_array_p},
-	  {&icon_change,"change",&icon_change_p},
-	  {&icon_trim_segments,"trim_segments",&icon_trim_segments_p},
-	  {&icon_cutout,"cutout",&icon_cutout_p},
-	  {&icon_extend,"extend",&icon_extend_p},
-	  {&icon_fillet,"fillet",&icon_fillet_p},
-	  {&icon_chamfer,"chamfer",&icon_chamfer_p},
-	  {&icon_offset,"offset",&icon_offset_p},
-	  {&icon_divide,"divide",&icon_divide_p},
-	  {&icon_undo,"undo",&icon_undo_p},
-      {&icon_pointfinder,"pointfinder",&icon_pointfinder_p},
-      {&icon_camera,"camera",&icon_camera_p},
-      {&icon_parameters,"parameters",&icon_parameters_p},
-      {&icon_layers,"layers",&icon_layers_p},
-      {&icon_measure,"measure",&icon_measure_p},
-      {&icon_empty,"empty",&icon_empty_p},
-      {&icon_copy,"copy",&icon_copy_p},
-      {&icon_paste,"paste",&icon_paste_p},
-      {&icon_import_block,"import_block",&icon_import_block_p},
-      {&icon_export_block,"export_block",&icon_export_block_p},
-      {&icon_import_image,"import_image",&icon_import_image_p},
-      {&icon_import_png,"import_png",&icon_import_png_p},
-      {&icon_import_jpg,"import_jpg",&icon_import_jpg_p},
-      {&icon_edit_image,"edit_image",&icon_edit_image_p},
-      {&icon_export_image,"export_image",&icon_export_image_p},
-      {&icon_group,"create_block",&icon_group_p},
-      {&icon_explode,"explode",&icon_explode_p},
-      {&icon_block_list,"block_list",&icon_block_list_p},
-      {&icon_explode_frozen,"explode_frozen",&icon_explode_frozen_p},
-      {&icon_delete_dxf_blocks,"delete_dxf_blocks",&icon_delete_dxf_blocks_p},
-      {&icon_correct_blocks,"correct_blocks",&icon_correct_blocks_p},
-      {&icon_fixed_layers,"fixed_layers",&icon_fixed_layers_p},
-      {&icon_area,"area",&icon_area_p},
-      {&icon_center_of_area,"center_of_area",&icon_center_of_area_p},
-      {&icon_first_moment_of_area,"first_moment_of_area",&icon_first_moment_of_area_p},
-      {&icon_area_moment_of_inertia,"area_moment_of_inertia",&icon_area_moment_of_inertia_p},
-      {&icon_centr_area_mom_of_inertia,"centr_area_mom_of_inertia",&icon_centr_area_mom_of_inertia_p},
-      {&icon_test_of_closed_area,"test_of_closed_area",&icon_test_of_closed_area_p},
-      {&icon_import,"import",&icon_import_p},
-      {&icon_new,"new",&icon_new_p},
-      {&icon_new_window,"new_window",&icon_new_window_p},
-      {&icon_save,"save",&icon_save_p},
-      {&icon_save_as,"save_as",&icon_save_as_p},
-      {&icon_export_dxf,"export_dxf",&icon_export_dxf_p},
-      {&icon_import_dxf,"import_dxf",&icon_import_dxf_p},
-      {&icon_export_cad,"export_cad",&icon_export_cad_p},
-      {&icon_import_cad,"import_cad",&icon_import_cad_p},
-      {&icon_export_dwg,"export_dwg",&icon_export_dwg_p},
-      {&icon_import_dwg,"import_dwg",&icon_import_dwg_p},
-      {&icon_edit_title_block,"edit_title_block",&icon_edit_title_block_p},
-      {&icon_cmd,"cmd",&icon_cmd_p},
-      {&icon_print,"print",&icon_print_p},
-      {&icon_infobox,"Infobox",&icon_infobox_p},
-      {&icon_last_files,"last_files",&icon_last_files_p},
-      {&icon_change_texts,"change_texts",&icon_change_texts_p},
-      {&icon_auto_numbering,"auto_numbering",&icon_auto_numbering_p},
-      {&icon_record,"record",&icon_record_p},
-      {&icon_play,"play",&icon_play_p},
-      {&icon_load,"load",&icon_load_p},
-      {&icon_save_as,"save_as",&icon_save_as_p},
-      {&icon_format,"format",&icon_format_p},
-      {&icon_dscale,"dscale",&icon_dscale_p},
-      {&icon_accuracy,"accuracy",&icon_accuracy_p},
-      {&icon_units,"units",&icon_units_p},
-      {&icon_coordinates,"coordinates",&icon_coordinates_p},
-      {&icon_local,"local",&icon_local_p},
-      {&icon_pointer,"pointer",&icon_pointer_p},
-      {&icon_edit_ini,"edit_ini",&icon_edit_ini_p},
-      {&icon_cartesian,"cartesian",&icon_cartesian_p},
-      {&icon_geodetic,"geodetic",&icon_geodetic_p},
-      {&icon_point_origin,"point_origin",&icon_point_origin_p},
-      {&icon_axis_angle,"axis_angle",&icon_axis_angle_p},
-      {&icon_rotation_angle,"rotation_angle",&icon_rotation_angle_p},
-      {&icon_colorwheel,"Colorwheel",&icon_colorwheel_p},
-      {&icon_panoramic,"panoramic",&icon_panoramic_p},
-      {&icon_font_type,"font_type",&icon_font_type_p},
-      {&icon_yes,"yes",&icon_yes_p},
-      {&icon_no,"no",&icon_no_p},
-      {&icon_dx_dy,"dx_dy",&icon_dx_dy_p},
-      {&icon_calibrate,"calibrate",&icon_calibrate_p},
-      {&icon_A_rectangular,"A_rectangular",&icon_A_rectangular_p},
-      {&icon_A_circular,"A_circular",&icon_A_circular_p},
-      {&icon_A_circular_rot,"A_circular_rot",&icon_A_circular_rot_p},
-      {&icon_A_circular_n,"A_circular_n",&icon_A_circular_n_p},
-      {&icon_A_circular_rot_n,"A_circular_rot_n",&icon_A_circular_rot_n_p},
-      {&icon_A_circular_angle,"A_circular_angle",&icon_A_circular_angle_p},
-      {&icon_A_circular_rot_angle,"A_circular_rot_angle",&icon_A_circular_rot_angle_p},
-      {&icon_pointmode,"pointmode",&icon_pointmode_p},
-      {&icon_endpoint,"endpoint",&icon_endpoint_p},
-      {&icon_nearest_end,"nearest_end",&icon_nearest_end_p},
-      {&icon_middlepoint,"middlepoint",&icon_middlepoint_p},
-      {&icon_intersection,"intersection",&icon_intersection_p},
-      {&icon_center,"center",&icon_center_p},
-      {&icon_perpendicular,"perpendicular",&icon_perpendicular_p},
-      {&icon_tangential,"tangential",&icon_tangential_p},
-      {&icon_nearest,"nearest",&icon_nearest_p},
-      {&icon_onpoint,"onpoint",&icon_onpoint_p},
-      {&icon_move2xy,"move2xy",&icon_move2xy_p},
-      {&icon_movedxdy,"movedxdy",&icon_movedxdy_p},
-      {&icon_move_polar,"move_polar",&icon_move_polar_p},
-      {&icon_nopointfinder,"nopointfinder",&icon_nopointfinder_p},
-      {&icon_calculator,"calculator",&icon_calculator_p},
-      {&icon_point_measure,"point_measure",&icon_point_measure_p},
-      {&icon_distance_point_to_point,"distance_point_to_point",&icon_distance_point_to_point_p},
-      {&icon_angle_line_to_line,"angle_line_to_line",&icon_angle_line_to_line_p},
-      {&icon_plusminus,"plusminus",&icon_plusminus_p},
-      {&icon_property_list,"property_list",&icon_property_list_p},
-      {&icon_noplusminus,"noplusminus",&icon_noplusminus_p},
-      {&icon_addfavourite,"addfavourite",&icon_addfavourite_p},
-      {&icon_findfavourite,"findfavourite",&icon_findfavourite_p},
-      {&icon_refresh,"refresh",&icon_refresh_p},
-      {&icon_refresh_d,"refresh_d",&icon_refresh_d_p},
-      {&icon_zoom_all,"zoom_all",&icon_zoom_all_p},
-      {&icon_zoom_center,"zoom_center",&icon_zoom_center_p},
-      {&icon_auto_panorama,"auto_panorama",&icon_auto_panorama_p},
-      {&icon_zoom_1,"zoom_1",&icon_zoom_1_p},
-      {&icon_zoom_2,"zoom_2",&icon_zoom_2_p},
-      {&icon_zoom_in,"zoom_in",&icon_zoom_in_p},
-      {&icon_zoom_out,"zoom_out",&icon_zoom_out_p},
-      {&icon_zoom_x,"zoom_x",&icon_zoom_x_p},
-      {&icon_zoom_window,"zoom_window",&icon_zoom_window_p},
-      {&icon_zoom_drawing,"zoom_drawing",&icon_zoom_drawing_p},
-      {&icon_zoom_previous,"zoom_previous",&icon_zoom_previous_p},
-      {&icon_pointer_step,"pointer_step",&icon_pointer_step_p},
-      {&icon_grid_density,"grid_density",&icon_grid_density_p},
-      {&icon_grid_points,"grid_points",&icon_grid_points_p},
-      {&icon_restr_ortho,"restr_ortho",&icon_restr_ortho_p},
-      {&icon_color,"Color",&icon_color_p},
-      {&icon_line_thickness,"line_thickness",&icon_line_thickness_p},
-      {&icon_line_type,"line_type",&icon_line_type_p},
-      {&icon_point_visibility,"point_visibility",&icon_point_visibility_p},
-      {&icon_point_size,"point_size",&icon_point_size_p},
-      {&icon_get_color,"get_color",&icon_get_color_p},
-      {&icon_get_type,"get_type",&icon_get_type_p},
-      {&icon_get_layer,"get_layer",&icon_get_layer_p},
-      {&icon_floating_text,"floating_text",&icon_floating_text_p},
-      {&icon_floating_block,"floating_block",&icon_floating_block_p},
-      {&icon_dim_scale,"dim_scale",&icon_dim_scale_p},
-      {&icon_stretch_in_pin,"stretch_in_pin",&icon_stretch_in_pin_p},
-      {&icon_break_in_pin,"break_in_pin",&icon_break_in_pin_p},
-      {&icon_mask,"mask",&icon_mask_p},
-      {&icon_hidden_text_vis,"hidden_text_vis",&icon_hidden_text_vis_p},
-      {&icon_image_points,"image_points",&icon_image_points_p},
-      {&icon_highlight_layer,"highlight_layer",&icon_highlight_layer_p},
-      {&icon_dbuff_image,"dbuff_image",&icon_dbuff_image_p},
-      {&icon_text_most_readable,"text_most_readable",&icon_text_most_readable_p},
-      {&icon_line_color,"line_color",&icon_line_color_p},
-      {&icon_text_color,"text_color",&icon_text_color_p},
-      {&icon_text_height,"text_height",&icon_text_height_p},
-      {&icon_width,"text_width",&icon_width_p},
-      {&icon_italic,"italic",&icon_italic_p},
-      {&icon_bold,"bold",&icon_bold_p},
-      {&icon_font_type,"font_type",&icon_font_type_p},
-      {&icon_accuracy,"accuracy",&icon_accuracy_p},
-      {&icon_terminators,"terminators",&icon_terminators_p},
-      {&icon_line_offset,"line_offset",&icon_line_offset_p},
-      {&icon_text_direction,"text_direction",&icon_text_direction_p},
-      {&icon_extension_lines,"extension_lines",&icon_extension_lines_p},
-      {&icon_dim_arrowheads,"dim_arrowheads",&icon_dim_arrowheads_p},
-      {&icon_dim_ticks,"dim_ticks",&icon_dim_ticks_p},
-      {&icon_dim_dots,"dim_dots",&icon_dim_dots_p},
-      {&icon_text_parallel,"text_parallel",&icon_text_parallel_p},
-      {&icon_text_horizontal,"text_horizontal",&icon_text_horizontal_p},
-      {&icon_fixed_length,"fixed_length",&icon_fixed_length_p},
-      {&icon_align_to_object,"align_to_object",&icon_align_to_object_p},
-      {&icon_dim_direction,"dim_direction",&icon_dim_direction_p},
-      {&icon_dim_new,"dim_new",&icon_dim_new_p},
-      {&icon_dim_remove,"dim_remove",&icon_dim_remove_p},
-      {&icon_dim_edit,"dim_edit",&icon_dim_edit_p},
-      {&icon_dim_settings,"dim_settings",&icon_dim_settings_p},
-      {&icon_dim_arc_RL,"dim_arc_RL",&icon_dim_arc_RL_p},
-      {&icon_dim_circle_DR,"dim_circle_DR",&icon_dim_circle_DR_p},
-      {&icon_dim_horizontal,"dim_horizontal",&icon_dim_horizontal_p},
-      {&icon_dim_vertical,"dim_vertical",&icon_dim_vertical_p},
-      {&icon_dim_aligned,"dim_aligned",&icon_dim_aligned_p},
-      {&icon_dim_linear,"dim_linear",&icon_dim_linear_p},
-      {&icon_dim_linearX,"dim_linearX",&icon_dim_linearX_p},
-      {&icon_dim_angular,"dim_angular",&icon_dim_angular_p},
-      {&icon_dim_arc_radial,"dim_arc_radial",&icon_dim_arc_radial_p},
-      {&icon_dim_arc_length,"dim_arc_length",&icon_dim_arc_length_p},
-      {&icon_dim_diametric,"dim_diametric",&icon_dim_diametric_p},
-      {&icon_dim_radial,"dim_radial",&icon_dim_radial_p},
-      {&icon_dim_radial_y,"dim_radial_y",&icon_dim_radial_y_p},
-      {&icon_dim_radial_y_dim,"dim_radial_y_dim",&icon_dim_radial_y_dim_p},
-      {&icon_dim_radial_y_point,"dim_radial_y_point",&icon_dim_radial_y_point_p},
-      {&icon_dim_radial_y_tangential,"dim_radial_y_tangential",&icon_dim_radial_y_tangential_p},
-      {&icon_circle_center_radius,"circle_center_radius",&icon_circle_center_radius_p},
-      {&icon_circle_center_diameter,"circle_center_diameter",&icon_circle_center_diameter_p},
-      {&icon_circle_2_points,"circle_2_points",&icon_circle_2_points_p},
-      {&icon_circle_3_points,"circle_3_points",&icon_circle_3_points_p},
-      {&icon_line_close,"line_close",&icon_line_close_p},
-      {&icon_line_remove,"line_remove",&icon_line_remove_p},
-      {&icon_trim_value,"trim_value",&icon_trim_value_p},
-      {&icon_line_continue,"line_continue",&icon_line_continue_p},
-      {&icon_arc_3_points,"arc_3_points",&icon_arc_3_points_p},
-      {&icon_arc_beginning_center_end,"arc_beginning_center_end",&icon_arc_beginning_center_end_p},
-      {&icon_arc_beginning_center_angle,"arc_beginning_center_angle",&icon_arc_beginning_center_angle_p},
-      {&icon_arc_beginning_center_chord,"arc_beginning_center_chord",&icon_arc_beginning_center_chord_p},
-      {&icon_arc_beginning_end_radius,"arc_beginning_end_radius",&icon_arc_beginning_end_radius_p},
-      {&icon_arc_beginning_end_angle,"arc_beginning_end_angle",&icon_arc_beginning_end_angle_p},
-      {&icon_arc_beginning_end_direction,"arc_beginning_end_direction",&icon_arc_beginning_end_direction_p},
-      {&icon_arc_continuation,"arc_continuation",&icon_arc_continuation_p},
-      {&icon_text_angle,"text_angle",&icon_text_angle_p},
-      {&icon_text_width,"text_width",&icon_text_width_p},
-      {&icon_text_type,"text_type",&icon_text_type_p},
-      {&icon_hidden_text,"hidden_text",&icon_hidden_text_p},
-      {&icon_text_align,"text_align",&icon_text_align_p},
-      {&icon_text_interval,"text_interval",&icon_text_interval_p},
-      {&icon_line_polygon_cor_cor,"line_polygon_cor_cor",&icon_line_polygon_cor_cor_p},
-      {&icon_line_polygon_cen_tan,"line_polygon_cen_cor",&icon_line_polygon_cen_tan_p},
-      {&icon_line_polygon_cen_cor,"line_polygon_cen_tan",&icon_line_polygon_cen_cor_p},
-      {&icon_ellipse_approximation,"ellipse_approximation",&icon_ellipse_approximation_p},
-      {&icon_ellipse_axis_center,"ellipse_axis_center",&icon_ellipse_axis_center_p},
-      {&icon_ellipse_axis_start,"ellipse_axis_start",&icon_ellipse_axis_start_p},
-      {&icon_ellipse_center,"ellipse_center",&icon_ellipse_center_p},
-      {&icon_solid_quad_triang,"solid_quad_triang",&icon_solid_quad_triang_p},
-      {&icon_solid_triangular1,"solid_triangular1",&icon_solid_triangular1_p},
-      {&icon_solid_fill_line_width,"solid_fill_line_width",&icon_solid_fill_line_width_p},
-      {&icon_solid_quadrangular,"solid_quadrangular",&icon_solid_quadrangular_p},
-      {&icon_solid_triangular,"solid_triangular",&icon_solid_triangular_p},
-      {&icon_arc_close,"arc_close",&icon_arc_close_p},
-      {&icon_arc_remove,"arc_remove",&icon_arc_remove_p},
-      {&icon_trace_width,"trace_width",&icon_trace_width_p},
-      {&icon_trace_axis_offset,"trace_axis_offset",&icon_trace_axis_offset_p},
-      {&icon_trace_polyline,"trace_polyline",&icon_trace_polyline_p},
-      {&icon_trace_fill_line_width,"trace_fill_line_width",&icon_trace_fill_line_width_p},
-      {&icon_trace_remove,"trace_remove",&icon_trace_remove_p},
-      {&icon_chart_step_dx,"chart_step_dx",&icon_chart_step_dx_p},
-      {&icon_ftfunct,"ftfunct",&icon_ftfunct_p},
-      {&icon_last_block,"last_block",&icon_last_block_p},
-      {&icon_select_all,"select_all",&icon_select_all_p},
-      {&icon_all_layers,"all_layers",&icon_all_layers_p},
-      {&icon_select_cross_window,"select_cross_window",&icon_select_cross_window_p},
-      {&icon_add_remove,"add_remove",&icon_add_remove_p},
-      {&icon_gear1,"gear1",&icon_gear1_p},
-      {&icon_text_align_baselineleft,"text_align_baselineleft",&icon_text_align_baselineleft_p},
-      {&icon_text_align_baselineright,"text_align_baselineright",&icon_text_align_baselineright_p},
-      {&icon_text_align_baselinecenter,"text_align_baselinecenter",&icon_text_align_baselinecenter_p},
-      {&icon_text_align_middlecenter,"text_align_middlecenter",&icon_text_align_middlecenter_p},
-      {&icon_circle_tangential,"circle_tangential",&icon_circle_tangential_p},
-      {&icon_axis_length,"axis_length",&icon_axis_length_p},
-      {&icon_dash_dotted,"dash_dotted",&icon_dash_dotted_p},
-      {&icon_dashed,"dashed",&icon_dashed_p},
-      {&icon_return_all,"return_all",&icon_return_all_p},
-      {&icon_change_mode,"change_mode",&icon_change_mode_p},
-      {&icon_change_property,"change_property",&icon_change_property_p},
-      {&icon_all_texts,"all_texts",&icon_all_texts_p},
-      {&icon_select_window,"select_window",&icon_select_window_p},
-      {&icon_select_cross,"select_cross",&icon_select_cross_p},
-      {&icon_solid_filled,"solid_filled",&icon_solid_filled_p},
-      {&icon_solid_very_thin,"solid_very_thin",&icon_solid_very_thin_p},
-      {&icon_solid_thin,"solid_thin",&icon_solid_thin_p},
-      {&icon_solid_thick,"solid_thick",&icon_solid_thick_p},
-      {&icon_solid_very_thick,"solid_very_thick",&icon_solid_very_thick_p},
-      {&icon_solid_extra_thick,"solid_extra_thick",&icon_solid_extra_thick_p},
-      {&icon_text_angle_0,"text_angle_0",&icon_text_angle_0_p},
-      {&icon_text_angle_90,"text_angle_90",&icon_text_angle_90_p},
-      {&icon_text_parallel_to_object,"text_parallel_to_object",&icon_text_parallel_to_object_p},
-      {&icon_text_perpendicular,"text_perpendicular",&icon_text_perpendicular_p},
-      {&icon_text_angle_to_object,"text_angle_to_object",&icon_text_angle_to_object_p},
-      {&icon_text_angle_x,"text_angle_X",&icon_text_angle_x_p},
-      {&icon_trace_filled,"trace_filled",&icon_trace_filled_p},
-      {&icon_trace_very_thin,"trace_very_thin",&icon_trace_very_thin_p},
-      {&icon_trace_thin,"trace_thin",&icon_trace_thin_p},
-      {&icon_trace_thick,"trace_thick",&icon_trace_thick_p},
-      {&icon_trace_very_thick,"trace_very_thick",&icon_trace_very_thick_p},
-      {&icon_trace_extra_thick,"trace_extra_thick",&icon_trace_extra_thick_p},
-      {&icon_point_simple,"point_simple",&icon_point_simple_p},
-      {&icon_point_base,"point_base",&icon_point_base_p},
-      {&icon_point_pin,"point_pin",&icon_point_pin_p},
-      {&icon_RAM_for_drawing,"RAM_for_drawing",&icon_RAM_for_drawing_p},
-      {&icon_RAM_virtual_image,"RAM_virtual_image",&icon_RAM_virtual_image_p},
-      {&icon_RAM_data_size,"RAM_data_size",&icon_RAM_data_size_p},
-      {&icon_RAM_printing_buffer,"RAM_printing_buffer",&icon_RAM_printing_buffer_p},
-      {&icon_RAM_macro_buffer,"RAM_macro_buffer",&icon_RAM_macro_buffer_p},
-      {&icon_RAM_image_buffer,"RAM_image_buffer",&icon_RAM_image_buffer_p},
-      {&icon_current_folder,"current_folder",&icon_current_folder_p},
-      {&icon_desktop_size,"desktop_size",&icon_desktop_size_p},
-      {&icon_layers_info,"layers_info",&icon_layers_info_p},
-      {&icon_x1,"x1",&icon_x1_p},
-      {&icon_y1,"y1",&icon_y1_p},
-      {&icon_x2,"x2",&icon_x2_p},
-      {&icon_y2,"y2",&icon_y2_p},
-      {&icon_x3,"x3",&icon_x3_p},
-      {&icon_y3,"y3",&icon_y3_p},
-      {&icon_x4,"x4",&icon_x4_p},
-      {&icon_y4,"y4",&icon_y4_p},
-      {&icon_angle1,"angle1",&icon_angle1_p},
-      {&icon_angle2,"angle2",&icon_angle2_p},
-      {&icon_dim_dx,"dim_dx",&icon_dim_dx_p},
-      {&icon_dim_dy,"dim_dy",&icon_dim_dy_p},
-      {&icon_inner_block_name,"inner_block_name",&icon_inner_block_name_p},
-      {&icon_outer_block_name,"outer_block_name",&icon_outer_block_name_p},
-      {&icon_qr_code1,"qr_code1",&icon_qr_code1_p},
-      {&icon_edit,"edit",&icon_edit_p},
-      {&icon_grey,"grey",&icon_grey_p},
-      {&icon_blackwhite,"blackwhite",&icon_blackwhite_p},
-      {&icon_plotter_s,"plotter_s",&icon_plotter_s_p},
-      {&icon_visible,"visible",&icon_visible_p},
-      {&icon_visible_d,"visible_d",&icon_visible_d_p},
-      {&icon_edit_d,"edit_d",&icon_edit_d_p},
-      {&icon_pointfinder_d,"pointfinder_d",&icon_pointfinder_d_p},
-      {&icon_color_d,"Color_d",&icon_color_d_p},
-      {&icon_line_thickness_d,"line_thickness_d",&icon_line_thickness_d_p},
-      {&icon_line_type_d,"line_type_d",&icon_line_type_d_p},
-      {&icon_grey_d,"grey_d",&icon_grey_d_p},
-      {&icon_blackwhite_d,"blackwhite_d",&icon_blackwhite_d_p},
-      {&icon_visible_db,"visible_db",&icon_visible_db_p},
-      {&icon_edit_db,"edit_db",&icon_edit_db_p},
-      {&icon_pointfinder_db,"pointfinder_db",&icon_pointfinder_db_p},
-      {&icon_grey_db,"grey_db",&icon_grey_db_p},
-      {&icon_blackwhite_db,"blackwhite_db",&icon_blackwhite_db_p},
-      {&icon_plotter_64,"plotter_64",&icon_plotter_64_p},
-      {&icon_saveimage_64,"saveimage_64",&icon_saveimage_64_p},
-      {&icon_rotation_d48,"rotation_d48",&icon_rotation_d48_p},
-      {&icon_inversion_d48,"inversion_d48",&icon_inversion_d48_p},
-      {&icon_reflection_d48,"reflection_d48",&icon_reflection_d48_p},
-      {&icon_grey_d48,"grey_d48",&icon_grey_d48_p},
-      {&icon_blackwhite_d48,"blackwhite_d48",&icon_blackwhite_d48_p},
-      {&icon_grey_image_d48,"grey_image_d48",&icon_grey_image_d48_p},
-      {&icon_page_d48,"page_d48",&icon_page_d48_p},
-      {&icon_scale_d48,"scale_d48",&icon_scale_d48_p},
-      {&icon_window_d48,"window_d48",&icon_window_d48_p},
-      {&icon_sheet_d48,"sheet_d48",&icon_sheet_d48_p},
-      {&icon_tools,"tools",&icon_tools_p},
-      {&icon_features,"features",&icon_features_p},
-      {&icon_ctrl,"Ctrl",&icon_ctrl_p},
-      {&icon_alt,"Alt",&icon_alt_p},
-      {&icon_shift,"Shift",&icon_shift_p},
-      {&icon_home,"Home",&icon_home_p},
-      {&icon_end,"End",&icon_end_p},
-      {&icon_esc,"Esc",&icon_esc_p},
-      {&icon_ins,"Ins",&icon_ins_p},
-      {&icon_pgdn,"PgDn",&icon_pgdn_p},
-      {&icon_pgup,"PgUp",&icon_pgup_p},
-      {&icon_spc,"Spc",&icon_spc_p},
-      {&icon_del,"del",&icon_del_p },
-      {&icon_tab,"Tab",&icon_tab_p},
-      {&icon_ent,"Ent",&icon_ent_p },
-      {&icon_er,"er",&icon_er_p },
-      {&icon_k_right,"k_right",&icon_k_right_p },
-      {&icon_k_left,"k_left",&icon_k_left_p },
-      {&icon_k_up,"k_up",&icon_k_up_p },
-      {&icon_k_down,"k_down",&icon_k_down_p },
-      {&icon_0,"0",&icon_0_p},
-      {&icon_1,"1",&icon_1_p},
-      {&icon_2,"2",&icon_2_p},
-      {&icon_3,"3",&icon_3_p},
-      {&icon_4,"4",&icon_4_p},
-      {&icon_5,"5",&icon_5_p},
-      {&icon_6,"6",&icon_6_p},
-      {&icon_7,"7",&icon_7_p},
-      {&icon_8,"8",&icon_8_p},
-      {&icon_9,"9",&icon_9_p},
-      {&icon_plus,"plus",&icon_plus_p},
-      {&icon_minus,"minus",&icon_minus_p},
-      {&icon_f1,"F1",&icon_f1_p},
-      {&icon_f2,"F2",&icon_f2_p},
-      {&icon_f3,"F3",&icon_f3_p},
-      {&icon_f4,"F4",&icon_f4_p},
-      {&icon_f5,"F5",&icon_f5_p},
-      {&icon_f6,"F6",&icon_f6_p},
-      {&icon_f7,"F7",&icon_f7_p},
-      {&icon_f8,"F8",&icon_f8_p},
-      {&icon_f9,"F9",&icon_f9_p},
-      {&icon_f10,"F10",&icon_f10_p},
-      {&icon_f11,"F11",&icon_f11_p},
-      {&icon_f12,"F12",&icon_f12_p},
-      {&icon_mouse3,"mouse3",&icon_mouse3_p},
-      {&icon_mouseR,"mouseR",&icon_mouseR_p},
-      {&icon_measure_tape,"measure_tape",&icon_measure_tape_p},
-      {&icon_spa,"Spa",&icon_spa_p},
-      {&icon_ce,"ce",&icon_ce_p},
-      {&icon_look_down,"look_down",&icon_look_down_p},
-      {&icon_plotter_32,"plotter_32",&icon_plotter_32_p},
-      {&icon_cartridge_d48,"ink_cartridge_d48",&icon_cartridge_d48_p},
-      {&icon_very_thin_d,"very_thin_d",&icon_very_thin_d_p},
-      {&icon_thin_d,"thin_d",&icon_thin_d_p},
-      {&icon_thick_d,"thick_d",&icon_thick_d_p},
-      {&icon_very_thick_d,"very_thick_d",&icon_very_thick_d_p},
-      {&icon_extra_thick_d,"extra_thick_d",&icon_extra_thick_d_p},
-      {&icon_color_d48,"Color_d48",&icon_color_d48_p},
-      {&icon_scale_d,"scale_d",&icon_scale_d_p},
-      {&icon_page_d,"page_d",&icon_page_d_p},
-      {&icon_page_width_d,"page_width_d",&icon_page_width_d_p},
-      {&icon_page_height_d,"page_height_d",&icon_page_height_d_p},
-      {&icon_page_overlap_d,"page_overlap_d",&icon_page_overlap_d_p},
-      {&icon_color256_d48,"Color256_d48",&icon_color256_d48_p},
-      {&icon_multiline_text,"multiline_text",&icon_multiline_text_p},
-      {&icon_underlined,"underlined",&icon_underlined_p},
-      {&icon_line_spacing,"line_spacing",&icon_line_spacing_p},
-      {&icon_bold_d,"bold_d",&icon_bold_d_p},
-      {&icon_font_type_d,"font_type_d",&icon_font_type_d_p},
-      {&icon_hidden_text_d,"hidden_text_d",&icon_hidden_text_d_p},
-      {&icon_italic_d,"italic_d",&icon_italic_d_p},
-      {&icon_layers_d,"layers_d",&icon_layers_d_p},
-      {&icon_text_align_d,"text_align_d",&icon_text_align_d_p},
-      {&icon_text_height_d,"text_height_d",&icon_text_height_d_p},
-      {&icon_text_type_d,"text_type_d",&icon_text_type_d_p},
-      {&icon_width_d,"text_width_d",&icon_width_d_p},
-      {&icon_underlined_d,"underlined_d",&icon_underlined_d_p},
-      {&icon_no_d_12,"no_d_12",&icon_no_d_12_p},
-      {&icon_mark_d_12,"mark_d_12",&icon_mark_d_12_p},
-      {&icon_hor_dpi_sphere_blue_d,"hor_dpi_sphere_blue_d",&icon_hor_dpi_sphere_blue_d_p},
-      {&icon_ver_dpi_sphere_blue_d,"ver_dpi_sphere_blue_d",&icon_ver_dpi_sphere_blue_d_p},
-      {&icon_hor_size_image_d,"hor_size_image_d",&icon_hor_size_image_d_p},
-      {&icon_ver_size_image_d,"ver_size_image_d",&icon_ver_size_image_d_p},
-      {&icon_hor_scale_image_d,"hor_scale_image_d",&icon_hor_scale_image_d_p},
-      {&icon_ver_scale_image_d,"ver_scale_image_d",&icon_ver_scale_image_d_p},
-      {&icon_background_image_d,"background_image_d",&icon_background_image_d_p},
-      {&icon_background_image_d48,"background_image_d48",&icon_background_image_d48_p},
-      {&icon_rotate_angle_image_d,"rotate_angle_image_d",&icon_rotate_angle_image_d_p},
-      {&icon_top_margin_d,"top_margin_d",&icon_top_margin_d_p},
-      {&icon_left_margin_d,"left_margin_d",&icon_left_margin_d_p},
-      {&icon_bottom_margin_d,"bottom_margin_d",&icon_bottom_margin_d_p},
-      {&icon_right_margin_d,"right_margin_d",&icon_right_margin_d_p},
-      {&icon_actual_size_d48,"actual_size_d48",&icon_actual_size_d48_p},
-      {&icon_pattern,"pattern",&icon_pattern_p},
-      {&icon_pattern_angle,"pattern_angle",&icon_pattern_angle_p},
-      {&icon_pattern_scale,"pattern_scale",&icon_pattern_scale_p},
-      {&icon_edit_point_origin,"edit_point_origin",&icon_edit_point_origin_p},
-      {&icon_set_point_origin,"set_point_origin",&icon_set_point_origin_p},
-      {&icon_pattern_line_distance,"pattern_line_distance",&icon_pattern_line_distance_p},
-      {&icon_anglex,"angleX",&icon_anglex_p},
-      {&icon_angle45,"angle45",&icon_angle45_p},
-      {&icon_angle90,"angle90",&icon_angle90_p},
-      {&icon_angle135,"angle135",&icon_angle135_p},
-      {&icon_angle180,"angle180",&icon_angle180_p},
-      {&icon_angle225,"angle225",&icon_angle225_p},
-      {&icon_angle270,"angle270",&icon_angle270_p},
-      {&icon_angle315,"angle315",&icon_angle315_p},
-      {&icon_divide_count,"divide_count",&icon_divide_count_p},
-      {&icon_divide_counter,"divide_counter",&icon_divide_counter_p},
-      {&icon_divide_measure,"divide_measure",&icon_divide_measure_p},
-      {&icon_divide_segment_length,"divide_segment_length",&icon_divide_segment_length_p},
-      {&icon_divide_counter_max,"divide_counter_max",&icon_divide_counter_max_p},
-      {&icon_divide_polyline_segment,"divide_polyline_segment",&icon_divide_polyline_segment_p},
-      {&icon_divide_polyline,"divide_polyline",&icon_divide_polyline_p},
-      {&icon_divide_segment,"divide_segment",&icon_divide_segment_p},
-      {&icon_align_block,"align_block",&icon_align_block_p},
-      {&icon_offset_point,"offset_point",&icon_offset_point_p},
-      {&icon_offset_distance,"offset_distance",&icon_offset_distance_p},
-      {&icon_set_offset_distance,"set_offset_distance",&icon_set_offset_distance_p},
-      {&icon_return,"return",&icon_return_p},
-      {&icon_open_file_folder,"open_file_folder",&icon_open_file_folder_p},
-      {&icon_arrow_up_d48,"arrow_up_d48",&icon_arrow_up_d48_p},
-      {&icon_arrow_up_end_d48,"arrow_up_end_d48",&icon_arrow_up_end_d48_p},
-      {&icon_arrow_down_end_d48,"arrow_down_end_d48",&icon_arrow_down_end_d48_p},
-      {&icon_arrow_down_d48,"arrow_down_d48",&icon_arrow_down_d48_p},
-      {&icon_folder_d48,"folder_d48",&icon_folder_d48_p},
-      {&icon_folder0_d48,"folder0_d48",&icon_folder0_d48_p},
-      {&icon_bigger_d48,"bigger_d48",&icon_bigger_d48_p},
-      {&icon_smaller_d48,"smaller_d48",&icon_smaller_d48_p},
-      {&icon_expand_hor,"expand_hor",&icon_expand_hor_p},
-      {&icon_expand_ver,"expand_ver",&icon_expand_ver_p},
-      {&icon_expand_diag,"expand_diag",&icon_expand_diag_p},
-      {&icon_expand_flex,"expand_flex",&icon_expand_flex_p},
-      {&icon_expand_last,"expand_last",&icon_expand_last_p},
-      {&icon_expand_win,"expand_win",&icon_expand_win_p},
-      {&icon_arrow_up_d,"arrow_up_d",&icon_arrow_up_d_p},
-      {&icon_arrow_down_d,"arrow_down_d",&icon_arrow_down_d_p},
-      {&icon_pgup_d,"pgup_d",&icon_pgup_d_p},
-      {&icon_pgdn_d,"pgdn_d",&icon_pgdn_d_p},
-      {&icon_arrow_up_left_d,"arrow_up_left_d",&icon_arrow_up_left_d_p},
-      {&icon_arrow_down_left_d,"arrow_down_left_d",&icon_arrow_down_left_d_p},
-      {&icon_plotter_start_d_64,"plotter_start_d_64",&icon_plotter_start_d_64_p},
-      {&icon_printer_start_d_64,"printer_start_d_64",&icon_printer_start_d_64_p},
-      {&icon_escape_d_64,"escape_d_64",&icon_escape_d_64_p},
-      {&icon_save_d,"save_d",&icon_save_d_p},
-      {&icon_load_d,"load_d",&icon_load_d_p},
-      {&icon_return_d_24,"return_d_24",&icon_return_d_24_p},
-      {&icon_frame,"frame",&icon_frame_p},
-      {&icon_zones_around,"zones_around",&icon_zones_around_p},
-      {&icon_zones_prefix,"zones_prefix",&icon_zones_prefix_p},
-      {&icon_zones_first_number,"zones_first_number",&icon_zones_first_number_p},
-      {&icon_zones_reversed,"zones_reversed",&icon_zones_reversed_p},
-      {&icon_zone_height,"zone_height",&icon_zone_height_p},
-      {&icon_zone_width,"zone_width",&icon_zone_width_p},
-      {&icon_margin_width,"margin_width",&icon_margin_width_p},
-      {&icon_frame_line,"frame_line",&icon_frame_line_p},
-      {&icon_zones_line,"zones_line",&icon_zones_line_p},
-      {&icon_frame_color,"frame_color",&icon_frame_color_p},
-      {&icon_zones_color,"zones_color",&icon_zones_color_p},
-      {&icon_style2_black,"style2_black",&icon_style2_black_p},
-      {&icon_zones_top,"zones_top",&icon_zones_top_p},
-      {&icon_zones_bottom,"zones_bottom",&icon_zones_bottom_p},
-      {&icon_zones_top_bottom,"zones_top_bottom",&icon_zones_top_bottom_p},
-      {&icon_frame_offset,"frame_offset",&icon_frame_offset_p},
-      {&icon_ok_d_64,"ok_d_64",&icon_ok_d_64_p},
-      {&icon_new_layer_d_64,"new_layer_d_64",&icon_new_layer_d_64_p},
-      {&icon_printer_d_48,"printer_d_48",&icon_printer_d_48_p},
-      {&icon_hor_extents_d,"hor_extents_d",&icon_hor_extents_d_p},
-      {&icon_ver_extents_d,"ver_extents_d",&icon_ver_extents_d_p},
-      {&icon_hor_limits_d,"hor_limits_d",&icon_hor_limits_d_p},
-      {&icon_ver_limits_d,"ver_limits_d",&icon_ver_limits_d_p},
-      {&icon_units_d,"units_d",&icon_units_d_p},
-      {&icon_paper_size_d_48,"paper_size_d_48",&icon_paper_size_d_48_p},
-      {&icon_paper_size_d,"paper_size_d",&icon_paper_size_d_p},
-      {&icon_paper_dim_d_48,"paper_dim_d_48",&icon_paper_dim_d_48_p},
-      {&icon_bspline,"bspline",&icon_bspline_p},
-      {&icon_bspline34,"bspline34",&icon_bspline34_p},
-      {&icon_bspline3p,"bspline3p",&icon_bspline3p_p},
-      {&icon_bspline4,"bspline4",&icon_bspline4_p},
-      {&icon_bspline3,"bspline3",&icon_bspline3_p},
-      {&icon_yes_d_48,"yes_d_48",&icon_yes_d_48_p},
-      {&icon_no_d_48,"no_d_48",&icon_no_d_48_p},
-      {&icon_escape_d_48,"escape_d_48",&icon_escape_d_48_p},
-      {&icon_escape_d,"escape_d",&icon_escape_d_p},
-      {&icon_tartan,"tartan",&icon_tartan_p},
-      {&icon_all_windows,"all_windows",&icon_all_windows_p},
-      {&icon_junction,"junction",&icon_junction_p},
-      {&icon_save_window,"save_window",&icon_save_window_p},
-      {&icon_freehand_segment_length,"freehand_segment_length",&icon_freehand_segment_length_p},
-      {&icon_remove_last_freehand,"remove_last_freehand",&icon_remove_last_freehand_p},
-      {&icon_new_from_template,"new_from_template",&icon_new_from_template_p},
-      {&icon_idea,"idea",&icon_idea_p},
-      {&icon_mirror_block,"mirror_block",&icon_mirror_block_p},
-      {&icon_tree,"tree",&icon_tree_p},
-      {&icon_tree_enter,"tree_enter",&icon_tree_enter_p},
-      {&icon_tree_return,"tree_return",&icon_tree_return_p},
-      {&icon_trans30,"trans30",&icon_trans30_p},
-      {&icon_trans40,"trans40",&icon_trans40_p},
-      {&icon_trans50,"trans50",&icon_trans50_p},
-      {&icon_trans60,"trans70",&icon_trans60_p},
-      {&icon_trans70,"trans70",&icon_trans70_p},
-      {&icon_trans80,"trans80",&icon_trans80_p},
-      {&icon_trans90,"trans90",&icon_trans90_p},
-      {&icon_trans100,"trans100",&icon_trans100_p},
+  Load_Bitmaps(HEIGHT);
 
-      { &icon_trans05,"trans05",&icon_trans05_p },
-      { &icon_trans10,"trans10",&icon_trans10_p },
-      { &icon_trans15,"trans15",&icon_trans15_p },
-      { &icon_trans20,"trans20",&icon_trans20_p },
-      { &icon_trans25,"trans25",&icon_trans25_p },
-      { &icon_trans35,"trans35",&icon_trans35_p },
-      { &icon_trans45,"trans45",&icon_trans45_p },
-      { &icon_trans55,"trans55",&icon_trans55_p },
-      { &icon_trans65,"trans65",&icon_trans65_p },
-      { &icon_trans75,"trans75",&icon_trans75_p },
-      { &icon_trans85,"trans85",&icon_trans85_p },
-      { &icon_trans95,"trans95",&icon_trans95_p },
-      { &icon_trans50_d,"trans50_d",&icon_trans50_d_p },
-
-      {&icon_back,"Back",&icon_back_p},
-      {&icon_space,"space",&icon_space_p},	
-      {&icon_A,"A",&icon_A_p},
-      {&icon_B,"B",&icon_B_p},
-      {&icon_C,"C",&icon_C_p},
-      {&icon_D,"D",&icon_D_p},
-      {&icon_E,"E",&icon_E_p},
-      {&icon_F,"F",&icon_F_p},
-      {&icon_G,"G",&icon_G_p},
-      {&icon_H,"H",&icon_H_p},
-      {&icon_I,"I",&icon_I_p},
-      {&icon_J,"J",&icon_J_p},
-      {&icon_K,"K",&icon_K_p},
-      {&icon_L,"L",&icon_L_p},
-      {&icon_M,"M",&icon_M_p},
-      {&icon_N,"N",&icon_N_p},
-      {&icon_O,"O",&icon_O_p},
-      {&icon_P,"P",&icon_P_p},
-      {&icon_Q,"Q",&icon_Q_p},
-      {&icon_R,"R",&icon_R_p},
-      {&icon_S,"S",&icon_S_p},
-      {&icon_T,"T",&icon_T_p},
-      {&icon_U,"U",&icon_U_p},
-      {&icon_V,"V",&icon_V_p},
-      {&icon_W,"W",&icon_W_p},
-      {&icon_X,"X",&icon_X_p},
-      {&icon_Y,"Y",&icon_Y_p},
-      {&icon_Z,"Z",&icon_Z_p},
-      {&icon_load_d_48,"load_d_48",&icon_load_d_48_p},
-      {&icon_load_ini_d,"load_ini_d",&icon_load_ini_d_p},
-      {&icon_load_ini_d_48,"load_ini_d_48",&icon_load_ini_d_48_p},
-      {&icon_angle0,"angle0",&icon_angle0_p},
-      {&icon_angleRX,"angleRX",&icon_angleRX_p},
-      {&icon_anglePto,"anglePto",&icon_anglePto_p},
-      {&icon_angleRto,"angleRto",&icon_angleRto_p},
-      {&icon_angleXtoP,"angleXtoP",&icon_angleXtoP_p},
-      {&icon_touch_id_db_64,"touch_id_db_64",&icon_touch_id_db_64_p},
-      {&icon_left_margin_d_48,"left_margin_d_48",&icon_left_margin_d_48_p},
-      {&icon_bottom_margin_d_48,"bottom_margin_d_48",&icon_bottom_margin_d_48_p},
-      {&icon_all_layers_db_64,"all_layers_db_64",&icon_all_layers_db_64_p},
-      {&icon_global_db_48,"global_db_48",&icon_global_db_48_p},
-      {&icon_local_db_48,"local_db_48",&icon_local_db_48_p},
-      {&icon_color256_db_48,"Color256_db_48",&icon_color256_db_48_p},
-      {&icon_cursors,"cursors",&icon_cursors_p},
-      {&icon_cursor_small,"cursor_small",&icon_cursor_small_p},
-      {&icon_cursor_big,"cursor_big",&icon_cursor_big_p},
-      {&icon_question_mark_db_48,"question_mark_db_48",&icon_question_mark_db_48_p},
-      {&icon_pointern,"pointerN",&icon_pointern_p},
-      {&icon_pointerb,"pointerB",&icon_pointerb_p},
-      {&icon_pdf_vector_64,"pdf_vector_64",&icon_pdf_vector_64_p},
-      {&icon_pattern_folder,"pattern_folder",&icon_pattern_folder_p},
-      {&icon_close_window,"close_window",&icon_close_window_p},
-      {&icon_change_pattern,"change_pattern",&icon_change_pattern_p},
-      {&icon_import_map,"import_map",&icon_import_map_p},
-      {&icon_starAstar,"starAstar",&icon_starAstar_p},
-      {&icon_starA,"starA",&icon_starA_p},
-      {&icon_Astar,"Astar",&icon_Astar_p},
-      {&icon_Aonly,"Aonly",&icon_Aonly_p},
-      {&icon_gear,"gear",&icon_gear_p},
-      {&icon_confirm_or_deny,"confirm_or_deny",&icon_confirm_or_deny_p},
-      {&icon_stonewall,"StoneWall",&icon_stonewall_p},
-      {&icon_brickwall_dx,"brickwall_dx",&icon_brickwall_dx_p},
-      {&icon_brickwall_dy,"brickwall_dy",&icon_brickwall_dy_p},
-      {&icon_folder_bd32,"folder_bd32",&icon_folder_bd32_p},
-      {&icon_folder_bd48,"folder_bd48",&icon_folder_bd48_p},
-      {&icon_folder_bd64,"folder_bd64",&icon_folder_bd64_p},
-      {&icon_chain_d,"chain_d",&icon_chain_d_p},
-      {&icon_on_top_d,"on_top_d",&icon_on_top_d_p},
-      {&icon_h_flip,"h_flip",&icon_h_flip_p},
-      {&icon_v_flip,"v_flip",&icon_v_flip_p},
-      {&icon_offset_style,"offset_style",&icon_offset_style_p},
-      {&icon_offset_normal,"offset_normal",&icon_offset_normal_p},
-      {&icon_offset_smooth,"offset_smooth",&icon_offset_smooth_p},
-      {&icon_trace_close,"trace_close",&icon_trace_close_p},
-      {&icon_trace_break,"trace_break",&icon_trace_break_p},
-      {&icon_UA_B,u8"Б",&icon_UA_B_p},
-      {&icon_UA_D,u8"Д",&icon_UA_D_p},
-      {&icon_UA_E,u8"Е",&icon_UA_E_p},
-      {&icon_UA_J,u8"Й",&icon_UA_J_p},
-      {&icon_UA_K,u8"К",&icon_UA_K_p},
-      {&icon_UA_N,u8"Н",&icon_UA_N_p},
-      {&icon_UA_P,u8"П",&icon_UA_P_p},
-      {&icon_UA_R,u8"Р",&icon_UA_R_p},
-      {&icon_UA_S,u8"С",&icon_UA_S_p},
-      {&icon_UA_T,u8"Т",&icon_UA_T_p},
-      {&icon_UA_C,u8"Ц",&icon_UA_C_p},
-      {&icon_spline_points,"spline_points",&icon_spline_points_p},
-      {&icon_spline_control_points,"spline_control_points",&icon_spline_control_points_p },
-      {&icon_spline_points_close,"spline_points_close",&icon_spline_points_close_p },
-      {&icon_spline_amend,"spline_amend",&icon_spline_amend_p },
-      {&icon_spline_points_end,"spline_points_end",&icon_spline_points_end_p },
-      {&icon_mouse1b,"mouse1b",&icon_mouse1b_p },
-      {&icon_mouse2b,"mouse2b",&icon_mouse2b_p },
-      {&icon_mouse1b2b,"mouse1b2b",&icon_mouse1b2b_p },
-      {&icon_mouse3b,"mouse3b",&icon_mouse3b_p },
-      {&icon_mouseRb,"mouseRb",&icon_mouseRb_p },
-      {&icon_education,"education",&icon_education_p },
-      {&icon_mickey_hand,"mickey_hand",&icon_mickey_hand_p },
-      {&icon_mickey_hand_s,"mickey_hand_s",&icon_mickey_hand_s_p },
-      {&icon_dim_leader,"dim_leader",&icon_dim_leader_p},
-      {&icon_insulation,"insulation",&icon_insulation_p },
-      {&icon_ins_simple,"ins-simple",&icon_ins_simple_p },
-      {&icon_ins_complex,"ins-complex",&icon_ins_complex_p },
-      {&icon_quad_trans,"quad-trans",&icon_quad_trans_p },
-      {&icon_rect_angle_opt,"rect_angle_opt",&icon_rect_angle_opt_p },
-      {&icon_move_rectangle,"move_rectangle",&icon_move_rectangle_p },
-      {&icon_rect_options,"rect_options",&icon_rect_options_p },
-      {&icon_object_polyline,"object_polyline",&icon_object_polyline_p },
-      {&icon_entire_polyline,"entire_polyline",&icon_entire_polyline_p },
-      {&icon_single_object,"single_object",&icon_single_object_p },
-      {&icon_image_dx,"image_dx",&icon_image_dx_p },
-      {&icon_image_dy,"image_dy",&icon_image_dy_p },
-      {&icon_break_options,"break_options",&icon_break_options_p },
-      {&icon_break_and_leave,"break_and_leave",&icon_break_and_leave_p },
-      {&icon_break_and_cut,"break_and_cut",&icon_break_and_cut_p },
-      {&icon_break_divide,"break_divide",&icon_break_divide_p },
-      {&icon_fixed_scale,"fixed_scale",&icon_fixed_scale_p },
-      {&icon_text_collineal,"text_collineal",&icon_text_collineal_p },
-      {&icon_decimal_fractional,"decimal_fractional",&icon_decimal_fractional_p },
-      {&icon_import_vectorize,"import_vectorize",&icon_import_vectorize_p },
-      {&icon_space128,"space128",&icon_space128_p },
-      {&icon_backspace128,"backspace128",&icon_backspace128_p },
-      {&icon_enter128,"enter128",&icon_enter128_p },
-      {&icon_ttf,"ttf",&icon_ttf_p },
-      {&icon_otf,"otf",&icon_otf_p },
-      {&icon_elliptical,"elliptical",&icon_elliptical_p },
-      {&icon_ellipticalarc,"ellipticalarc",&icon_ellipticalarc_p },
-      {&icon_filledellipses,"filledellipses",&icon_filledellipses_p },
-      {&icon_ellipticalarclocal,"ellipticalarclocal",&icon_ellipticalarclocal_p },
-      {&icon_ellipticalarcglobal,"ellipticalarcglobal",&icon_ellipticalarcglobal_p },
-      {&icon_arc_line_continuation,"arc_line_continuation",&icon_arc_line_continuation_p },
-      {&icon_line_arc_continuation,"line_arc_continuation",&icon_line_arc_continuation_p },
-      {&icon_center_block,"center_block",&icon_center_block_p },
-      {&icon_alpha_sorting_d32,"alpha_sorting_d32",&icon_alpha_sorting_d32_p },
-      {&icon_time_lapse_d32,"time_lapse_d32",&icon_time_lapse_d32_p },
-      {&icon_select_entity,"select_entity",&icon_select_entity_p },
-      {&icon_select,"select",&icon_select_p },
-      {&icon_vector,"vector",&icon_vector_p },
-      {&icon_rigid_rigid,"rigid_rigid",&icon_rigid_rigid_p },
-      {&icon_rigid_pin,"rigid_pin",&icon_rigid_pin_p },
-      {&icon_pin_rigid,"pin_rigid",&icon_pin_rigid_p },
-      {&icon_pin_pin,"pin_pin",&icon_pin_pin_p },
-      {&icon_force,"force",&icon_force_p },
-      {&icon_moment,"moment",&icon_moment_p },
-      {&icon_moment_rev,"moment_rev",&icon_moment_rev_p },
-      {&icon_displacement,"displacement",&icon_displacement_p },
-      {&icon_rotation,"rotation",&icon_rotation_p },
-      {&icon_rotation_rev,"rotation_rev",&icon_rotation_rev_p },
-      {&icon_trapezium_y,"trapezium_y",&icon_trapezium_y_p },
-      {&icon_trapezium_x,"trapezium_x",&icon_trapezium_x_p },
-      {&icon_trapezium_n,"trapezium_n",&icon_trapezium_n_p },
-      {&icon_trapezium_x,"trapezium_h",&icon_trapezium_h_p },
-      {&icon_trapezium_n,"trapezium_v",&icon_trapezium_v_p },
-      {&icon_fixed_h,"fixed_h",&icon_fixed_h_p },
-      {&icon_fixed_vl,"fixed_vl",&icon_fixed_vl_p },
-      {&icon_fixed_vr,"fixed_vr",&icon_fixed_vr_p },
-      {&icon_pinned_h,"pinned_h",&icon_pinned_h_p },
-      {&icon_pinned_vl,"pinned_vl",&icon_pinned_vl_p },
-      {&icon_pinned_vr,"pinned_vr",&icon_pinned_vr_p },
-      {&icon_fixed_roller_h,"fixed_roller_h",&icon_fixed_roller_h_p },
-      {&icon_fixed_roller_vl,"fixed_roller_vl",&icon_fixed_roller_vl_p },
-      {&icon_fixed_roller_vr,"fixed_roller_vr",&icon_fixed_roller_vr_p },
-      {&icon_pinned_roller_h,"pinned_roller_h",&icon_pinned_roller_h_p },
-      {&icon_pinned_roller_vl,"pinned_roller_vl",&icon_pinned_roller_vl_p },
-      {&icon_pinned_roller_vr,"pinned_roller_vr",&icon_pinned_roller_vr_p },
-      {&icon_node,"node",&icon_node_p },
-      {&icon_magnitude,"magnitude",&icon_magnitude_p },
-      {&icon_thermal,"thermal",&icon_thermal_p },
-      {&icon_gear_plus,"gear_plus",&icon_gear_plus_p },
-      {&icon_fixed_hu,"fixed_hu",&icon_fixed_hu_p },
-      {&icon_pinned_hu,"pinned_hu",&icon_pinned_hu_p },
-      {&icon_fixed_roller_hu,"fixed_roller_hu",&icon_fixed_roller_hu_p },
-      {&icon_pinned_roller_hu,"pinned_roller_hu",&icon_pinned_roller_hu_p },
-      {&icon_fixed_rotation,"fixed_rotation",&icon_fixed_rotation_p },
-      {&icon_compression_mag,"compression_mag",&icon_compression_mag_p },
-      {&icon_tension_mag,"tension_mag",&icon_tension_mag_p },
-      {&icon_shear_mag,"shear_mag",&icon_shear_mag_p },
-      {&icon_moments_mag,"moments_mag",&icon_moments_mag_p },
-      {&icon_displacements_mag,"displacements_mag",&icon_displacements_mag_p },
-      {&icon_reactions_xy,"reactions_xy",&icon_reactions_xy_p },
-      {&icon_reactions_m,"reactions_m",&icon_reactions_m_p },
-      {&icon_thermal_y,"thermal_y",&icon_thermal_y_p },
-      {&icon_thermal_t,"thermal_t",&icon_thermal_t_p },
-      {&icon_trapezium_y1,"trapezium_y1",&icon_trapezium_y1_p },
-      {&icon_trapezium_y2,"trapezium_y2",&icon_trapezium_y2_p },
-      {&icon_thermal_t1,"thermal_t1",&icon_thermal_t1_p },
-      {&icon_thermal_t2,"thermal_t2",&icon_thermal_t2_p },
-      {&icon_vectors,"vectors",&icon_vectors_p },
-      {&icon_US_Flag,"US-Flag",&icon_US_Flag_p },
-      {&icon_EU_Flag,"EU-Flag",&icon_EU_Flag_p },
-      {&icon_UK_Flag,"UK-Flag",&icon_UK_Flag_p },
-      {&icon_CA_Flag,"CA-Flag",&icon_CA_Flag_p },
-      {&icon_AU_Flag,"AU-Flag",&icon_AU_Flag_p },
-      {&icon_CN_Flag,"CN-Flag",&icon_CN_Flag_p },
-      {&icon_IH_sections,"IH-sections",&icon_IH_sections_p },
-      {&icon_U_sections,"U-sections",&icon_U_sections_p },
-      {&icon_T_sections,"T-sections",&icon_T_sections_p },
-      {&icon_L_sections,"L-sections",&icon_L_sections_p },
-      {&icon_2L_sections,"2L-sections",&icon_2L_sections_p },
-      {&icon_RT_sections,"RT-sections",&icon_RT_sections_p },
-      {&icon_O_sections,"O-sections",&icon_O_sections_p },
-      {&icon_EO_sections,"EO-sections",&icon_EO_sections_p },
-      {&icon_Z_sections,"Z-sections",&icon_Z_sections_p },
-      {&icon_VJ_sections,"VJ-sections",&icon_VJ_sections_p },
-      {&icon_timber,"timber",&icon_timber_p },
-      {&icon_node_size,"node_size",&icon_node_size_p },
-      {&icon_dead_load,"dead_load2",&icon_dead_load_p },
-      {&icon_live_load,"live_load",&icon_live_load_p },
-      {&icon_roof_load,"roof_load",&icon_roof_load_p },
-      {&icon_wind_load,"wind_load",&icon_wind_load_p },
-      {&icon_snow_load,"snow_load",&icon_snow_load_p },
-      {&icon_earthquake_load,"earthquake_load",&icon_earthquake_load_p },
-      {&icon_rain_load,"rain_load",&icon_rain_load_p },
-      {&icon_soil_load,"soil_load",&icon_soil_load_p },
-      {&icon_fluid_load,"fluid_load",&icon_fluid_load_p },
-      {&icon_thermal_load,"thermal_load",&icon_thermal_load_p },
-      {&icon_unspecified_load,"unspecified_load",&icon_unspecified_load_p },
-      {&icon_unknown_load,"unknown_load",&icon_unknown_load_p },
-      {&icon_number_load,"unspecified_load",&icon_number_load_p },
-      {&icon_stress_mag,"stress_mag",&icon_stress_mag_p },
-      {&icon_stress_plus_mag,"stress_plus_mag",&icon_stress_plus_mag_p },
-      {&icon_stress_minus_mag,"stress_minus_mag",&icon_stress_minus_mag_p },
-      {&icon_shear_stress_mag,"shear_stress_mag",&icon_shear_stress_mag_p },
-      {&icon_eurocode_d48,"eurocode_d48",&icon_eurocode_d48_p },
-      {&icon_asce_d48,"asce_d48",&icon_asce_d48_p },
-      {&icon_icc_d48,"icc_d48",&icon_icc_d48_p },
-      {&icon_combination_d48,"combination_d48",&icon_combination_d48_p },
-      {&icon_erase_layer_db_64,"erase_layer_db_64",&icon_erase_layer_db_64_p },
-      {&icon_mark_layer_db_64,"mark_layer_db_64",&icon_mark_layer_db_64_p },
-      {&icon_AlfaCAD48,"AlfaCAD48",&icon_AlfaCAD48_p },
-      {&icon_Pdelta_d48,"Pdelta_d48",&icon_Pdelta_d48_p },
-      {&icon_dynamics,"dynamics",&icon_dynamics_p },
-      {&icon_vibrations_d48,"vibrations_d48",&icon_vibrations_d48_p },
-      {&icon_inertia_d48,"inertia_d48",&icon_inertia_d48_p },
-      {&icon_dynamics_run,"dynamics_run",&icon_dynamics_run_p },
-      {&icon_menustyle,"menustyle",&icon_menustyle_p },
-      {&icon_cursorstyle,"cursorstyle",&icon_cursorstyle_p },
-      {&icon_barstyle,"barstyle",&icon_barstyle_p },
-      {&icon_perc_mag,"perc_mag",&icon_perc_mag_p },
-      {&icon_cross_section_forces,"cross_section_forces",&icon_cross_section_forces_p },
-      {&icon_ULS,"ULS",&icon_ULS_p },
-      {&icon_SLS,"SLS",&icon_SLS_p },
-      {&icon_QPSLS,"QPSLS",&icon_QPSLS_p },
-      {&icon_resilience,"resilience",&icon_resilience_p },
-  };
-
-    int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
-BITMAP* bt;
-
-for (int i = 0; i < bitmaps_size; i++)
-{
-    sprintf(bitmap_file, "%s/%s.png", _BITMAPS_, bitmap_load[i].png_file);
-    bt=load_png(bitmap_file, pal);
-    *bitmap_load[i].png_b = bt;
-    *bitmap_load[i].png_p = *bitmap_load[i].png_b;
-}
+  sel.size*=(RETINA+1);
 
   //ini_cursor_busy();  //based on bitmap
 
@@ -5186,6 +5655,13 @@ for (int i = 0; i < bitmaps_size; i++)
   _free_mouse();
   lock_mouse();
 
+#ifdef ALLEGRO5
+#ifndef MACOS
+  disable_hardware_cursor();  //maybe always - TO DO
+#endif
+  flip_screen();
+#endif
+  CUR_ON(X,Y);
   //MAIN LOOP
 
   while(1)

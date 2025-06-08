@@ -105,17 +105,17 @@ Thanks for contributions, bug corrections & thorough testing to:
 #endif
 #define LOW_MULTIPLE_FILES 32
 
-static char editbox_geometry_file[32]={"640x400+400+250"};
-static char editbox_geometry_text[32]={"640x400+400+250"};
-static char editbox_geometry_line[32]={"800x80+50+50"};
+char editbox_geometry_file[32]={"640x400+400+250"};
+char editbox_geometry_text[32]={"640x400+400+250"};
+char editbox_geometry_line[32]={"800x80+50+50"};
 
 #ifdef LINUX
-typedef bool BOOL;
+typedef int BOOL;
 #endif
 
-BOOL editbox_geometry_file_set=FALSE;
-BOOL editbox_geometry_text_set=FALSE;
-BOOL editbox_geometry_line_set=FALSE;
+static BOOL editbox_geometry_file_set=FALSE;
+static BOOL editbox_geometry_text_set=FALSE;
+static BOOL editbox_geometry_line_set=FALSE;
 
 int edit_text_flag=0;
 
@@ -127,6 +127,9 @@ static int global_cursor_pos=0;
 char tinyfd_version[8] = "3.8.8";
 
 extern void set_geometry(int single);
+
+BOOL get_editbox_geometry_set(void);
+BOOL get_editbox_geometry_line_set(void);
 
 /******************************************************************************************************/
 /**************************************** UTF-8 on Windows ********************************************/
@@ -176,6 +179,10 @@ static char gTitle[]="missing software! (we will try basic console input)";
 
 extern char *get_XDG_CURRENT_DESKTOP(void);
 
+extern int get_window_origin_and_size(int* x_win_orig, int* y_win_orig, int* win_width, int* win_height);
+extern void position_mouse(int x, int y);
+extern void move_pointer(int x, int y);
+
 #ifdef _WIN32
 char tinyfd_needs[] = "\
  ___________\n\
@@ -213,23 +220,46 @@ char tinyfd_needs[] = "\
 
 void set_editbox_geometry_set(void)
 {
-    editbox_geometry_file_set = TRUE;
     editbox_geometry_text_set = TRUE;
+}
+
+void set_editbox_geometry_file_set(void)
+{
+    editbox_geometry_file_set = TRUE;
+}
+
+BOOL get_editbox_geometry_set(void)
+{
+    return editbox_geometry_text_set;
+}
+
+void reset_editbox_geometry_set(void)
+{
+    editbox_geometry_file_set = FALSE;
+    editbox_geometry_line_set = FALSE;
+    editbox_geometry_text_set = FALSE;
 }
 
 void set_editbox_geometry(int x, int y)
 {
-    //editbox_geometry_file[32]={"640x400+400+250"};
-    //editbox_geometry_text[32]={"640x400+400+250"};
-    sprintf(editbox_geometry_file, "640x400+%d+%d", x, y);
     sprintf(editbox_geometry_text, "640x400+%d+%d", x, y);
 }
 
-
-void get_editbox_origin(int *x, int *y)
+BOOL get_editbox_geometry_file_set(void)
 {
-    int w, h;
-    sscanf(editbox_geometry_text, "%dx%d+%d+%d", &w,&h,x,y);
+    return editbox_geometry_file_set;
+}
+
+void set_editbox_geometry_file(int x, int y)
+{
+    sprintf(editbox_geometry_file, "640x400+%d+%d", x, y);
+}
+
+
+void get_editbox_size_origin(int *w, int *h, int *x, int *y)
+{
+    //int w, h;
+    sscanf(editbox_geometry_text, "%dx%d+%d+%d", w,h,x,y);
 }
 
 void set_editbox_geometry_line_set(void)
@@ -237,15 +267,26 @@ void set_editbox_geometry_line_set(void)
     editbox_geometry_line_set = TRUE;
 }
 
+BOOL get_editbox_geometry_line_set(void)
+{
+    return editbox_geometry_line_set;
+}
+
 void set_editbox_geometry_line(int x, int y)
 {
     sprintf(editbox_geometry_line, "800x80+%d+%d", x, y);
 }
 
-void get_editbox_origin_line(int *x, int *y)
+void get_editbox_size_origin_line(int *w, int *h, int *x, int *y)
 {
-    int w, h;
-    sscanf(editbox_geometry_line, "%dx%d+%d+%d", &w,&h,x,y);
+    //int w, h;
+    sscanf(editbox_geometry_line, "%dx%d+%d+%d", w,h,x,y);
+}
+
+void get_editbox_size_origin_file(int *w, int *h, int *x, int *y)
+{
+    //int w, h;
+    sscanf(editbox_geometry_file, "%dx%d+%d+%d", w,h,x,y);
 }
 
 static int getenvDISPLAY(void)
@@ -4539,7 +4580,8 @@ int tinyfd_messageBox(
         char const * aMessage , /* NULL or ""  may contain \n and \t */
         char const * aDialogType , /* "ok" "okcancel" "yesno" "yesnocancel" */
         char const * aIconType , /* "info" "warning" "error" "question" */
-        int aDefaultButton ) /* 0 for cancel/no , 1 for ok/yes , 2 for no in yesnocancel */
+        int aDefaultButton, /* 0 for cancel/no , 1 for ok/yes , 2 for no in yesnocancel */
+        int x, int y )
 {
         char lBuff[MAX_PATH_OR_CMD] ;
         static char * lDialogString;
@@ -4553,6 +4595,7 @@ int tinyfd_messageBox(
         struct termios info;
         size_t lTitleLen ;
         size_t lMessageLen ;
+        char geometry[64];
 
         lBuff[0]='\0';
 
@@ -4566,7 +4609,7 @@ int tinyfd_messageBox(
                 lDialogString = (char *) malloc( MAX_PATH_OR_CMD + lTitleLen + lMessageLen );
         }
 
-        if ( osascriptPresent( ))
+        if ( (1==2) && osascriptPresent())  //do not like
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return 1;}
 
@@ -4647,7 +4690,7 @@ int tinyfd_messageBox(
                 strcat( lDialogString, "-e 'end try'") ;
                 if ( ! osx9orBetter() ) strcat( lDialogString, " -e 'end tell'") ;
         }
-        else if ( tfd_kdialogDirPresent() )
+        else if (  (1==2) &&  tfd_kdialogDirPresent()) //do not like
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialogDir4alfa");return 1;}
 
@@ -4714,7 +4757,7 @@ int tinyfd_messageBox(
                         strcat( lDialogString , ";if [ $? = 0 ];then echo 1;else echo 0;fi");
                 }
         }
-        else if ( tfd_kdialogPresent() )
+        else if ( tfd_kdialogPresent() )  //like very much
         {
             if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return 1;}
 
@@ -4760,6 +4803,13 @@ int tinyfd_messageBox(
                 strcat( lDialogString , aMessage ) ;
             }
             strcat( lDialogString , "\"" ) ;
+
+            if ((x>=0) && (y>=0))
+            {
+                sprintf(geometry, " --geometry 0x0+%d+%d",x,y);
+                strcat(lDialogString, geometry);
+            }
+
             if ( aDialogType && ! strcmp( "okcancel" , aDialogType ) )
             {
                 strcat( lDialogString ,
@@ -4781,7 +4831,7 @@ int tinyfd_messageBox(
                 strcat( lDialogString , ";if [ $? = 0 ];then echo 1;else echo 0;fi");
             }
         }
-        else if ( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() )
+        else if  ((1==2) && ( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() ))  //do not like
         {
                 if ( tfd_zenityPresent() )
                 {
@@ -5610,7 +5660,7 @@ int tinyfd_notifyPopup(
 
         if ( getenv("SSH_TTY") )
         {
-                return tinyfd_messageBox(aTitle, aMessage, "ok", aIconType, 0);
+                return tinyfd_messageBox(aTitle, aMessage, "ok", aIconType, 0, -1, -1);
         }
 
         lTitleLen =  aTitle ? strlen(aTitle) : 0 ;
@@ -5765,7 +5815,7 @@ aIconType?aIconType:"", aTitle?aTitle:"", aMessage?aMessage:"" ) ;
         }
         else
         {
-                return tinyfd_messageBox(aTitle, aMessage, "ok", aIconType, 0);
+                return tinyfd_messageBox(aTitle, aMessage, "ok", aIconType, 0, -1, -1);
         }
 
         if (tinyfd_verbose) printf( "lDialogString: %s\n" , lDialogString ) ;
@@ -6264,6 +6314,9 @@ char * tinyfd_editBox(
     size_t lMessageLen ;
     int inTotal, chunk;
     //char params[32], font_size[16], font_width[16];
+    int w,h,x,y;
+    int x0m, y0m, dxm, dym;
+    int ret;
 
     /*
     bool edit_file, new_bold, new_italic, new_underline, new_adjust;
@@ -6274,24 +6327,30 @@ char * tinyfd_editBox(
     new_adjust = (int)(*aDefaultInput & 48)/16;
     */
 
-    if (strcmp(etype,"TEXT")==0)  //cut cursor position
+    if ((strcmp(etype,"TEXT")==0) ||  (strcmp(etype,"INFO")==0))  //cut cursor position
     {
         if (*single==1)
         {
             if (!editbox_geometry_line_set) set_geometry(1);
-            editbox_geometry=&editbox_geometry_line;
+            editbox_geometry=(char*)&editbox_geometry_line;
+            get_editbox_size_origin_line(&w, &h, &x, &y);
         }
         else
         {
             if (!editbox_geometry_text_set) set_geometry(0);
-            editbox_geometry=&editbox_geometry_text;
+            editbox_geometry=(char*)&editbox_geometry_text;
+            get_editbox_size_origin(&w, &h, &x, &y);
         }
     }
     else
     {
-        if (!editbox_geometry_file_set) set_geometry(0);
-        editbox_geometry=&editbox_geometry_file;
+        if (!editbox_geometry_file_set) set_geometry(2);
+        editbox_geometry=(char*)&editbox_geometry_file;
+        get_editbox_size_origin_file(&w, &h, &x, &y);
     }
+
+    ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
+    position_mouse(x+w-x0m, y+h-y0m);
 
     if (!aTitle && !aMessage && !aDefaultInput) return lBuff; /* now I can fill lBuff from outside */
 
@@ -6749,7 +6808,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
         if ( !gWarningDisplayed && !tinyfd_forceConsole)
         {
             gWarningDisplayed = 1 ;
-            tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+            tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
         }
         if ( aTitle && strlen(aTitle) && !tinyfd_forceConsole)
         {
@@ -6775,7 +6834,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
     }
     else if ( !gWarningDisplayed && ! isTerminalRunning( ) && ! terminalName() ) {
         gWarningDisplayed = 1 ;
-        tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+        tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"no_solution");return (char *)0;}
         free(lDialogString);
         return NULL;
@@ -6786,7 +6845,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
         if ( !gWarningDisplayed && !tinyfd_forceConsole)
         {
             gWarningDisplayed = 1 ;
-            tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+            tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
         }
         if ( aTitle && strlen(aTitle) )
         {
@@ -6881,14 +6940,19 @@ frontmost of process \\\"Python\\\" to true' ''');");
 
             inTotal = 0;
             if (lInt != NULL) {
-                while ((chunk = fread(lBuff, 1, sizeof(lBuff), lInt)) != NULL) {
-                    inTotal += chunk;
-                }
+                while ((chunk = fread(lBuff, 1, sizeof(lBuff), lInt)) != 0)  //NULL
+                    {
+                      inTotal += chunk;
+                    }
                 lBuff[inTotal] = '\0';
                 if (lBuff[inTotal - 1] == '\n') lBuff[inTotal - 1] = '\0';
                 fclose(lInt);
             } else strcpy(lBuff, "");
-        } else lResult = 0;
+        } else
+        {
+            strcpy(lBuff, "");
+            lResult = 0;
+        }
     }
     else
     {
@@ -6920,7 +6984,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
             char *pos_g=strchr(pos_p, ',');
             if (pos_g!=NULL)
             {
-                if (strcmp(etype,"TEXT")==0)  //cut cursor position
+                if ((strcmp(etype,"TEXT")==0) ||  (strcmp(etype,"INFO")==0))  //cut cursor position
                 {
                     if (*single==1)
                     {
@@ -7420,7 +7484,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
                 if ( !gWarningDisplayed && !tinyfd_forceConsole)
                 {
 					gWarningDisplayed = 1 ;
-					tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+					tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
                 }
                 if ( aTitle && strlen(aTitle) && !tinyfd_forceConsole)
                 {
@@ -7446,7 +7510,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
         }
         else if ( !gWarningDisplayed && ! isTerminalRunning( ) && ! terminalName() ) {
 			gWarningDisplayed = 1 ;
-			tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+			tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
 			if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"no_solution");return (char *)0;}
 			free(lDialogString);
 			return NULL;
@@ -7457,7 +7521,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
                 if ( !gWarningDisplayed && !tinyfd_forceConsole)
                 {
                         gWarningDisplayed = 1 ;
-                        tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0);
+                        tinyfd_messageBox(gTitle,tinyfd_needs,"ok","warning",0, -1, -1);
                 }
                 if ( aTitle && strlen(aTitle) )
                 {
@@ -9316,7 +9380,7 @@ char * tinyfd_selectFolderDialog(
                 strcat(lDialogString, "-e 'end try'") ;
                 if ( ! osx9orBetter() ) strcat( lDialogString, " -e 'end tell'") ;
         }
-        else if (tfd_kdialogDirPresent() && (1==1))
+        else if ((1==2) && tfd_kdialogDirPresent())  //we don't like, because it's Qt5
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialogDir4alfa");return (char *)1;}
                 strcpy( lDialogString , "./kdialogDir4alfa" ) ;
@@ -9348,7 +9412,7 @@ char * tinyfd_selectFolderDialog(
                         strcat(lDialogString, "\"") ;
                 }
         }
-        else if (tfd_kdialogPresent() && (1==1))
+        else if ((1==1) && tfd_kdialogPresent())
         {
             if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
             strcpy( lDialogString , "./kdialog4alfa" ) ;

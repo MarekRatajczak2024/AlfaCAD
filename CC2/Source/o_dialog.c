@@ -93,9 +93,14 @@ extern void Test_przycisniec(int *keys);
 extern int  Test_przycisniec0(int *keys);
 extern int my_poll_mouse(void);
 extern void  Odczyt_licznikow(void);
+extern void  Odczyt_licznikow_simple(void);
 extern void flip_full_screen(BITMAP * the_screen);
 extern void putkeepimage(int left, int top, BITMAP  *bitmap, int op);
 extern int get_pYk(void);
+
+#ifdef ALLEGRO5
+static int mouse_x0, mouse_y0;
+#endif
 
 #define LINE myline
 #define CIRCLE mycircle
@@ -213,6 +218,18 @@ extern int gui_border_dark, gui_border_light;
 
 extern char *BLOCKLIST;
 extern BOOL BAR_POINTER;
+
+extern BOOL is_RETINA(void);
+
+#ifdef ALLEGRO5
+extern void position_mouse_(int x, int y);
+extern void position_mouse_xy(int x, int y);
+#ifdef MACOS
+extern void MoveOSXCursor(int x, int y);
+#endif
+#endif
+
+extern int vfv(int v);
 
 BOOL NO_POINTER=FALSE;
 
@@ -361,6 +378,7 @@ extern char *icon_question_mark_db_48_p;
 
 extern char *icon_pdf_vector_64_p;
 
+extern char* icon_folder_bd24_p;
 extern char* icon_folder_bd32_p;
 extern char* icon_folder_bd48_p;
 extern char* icon_folder_bd64_p;
@@ -576,7 +594,7 @@ extern int SkalaZ_Plus(int sclfct);
 		 /*97*/ icon_yes_d_48_p, icon_no_d_48_p, icon_escape_d_48_p, icon_yes_d_pmem, icon_no_d_pmem, icon_escape_d_p,
 		 /*103*/ icon_load_d_48_p, icon_load_ini_d_p, icon_load_ini_d_48_p, icon_touch_id_db_64_p, icon_left_margin_d_48_p, icon_bottom_margin_d_48_p,
 		 /*109*/ icon_all_layers_db_64_p, icon_global_db_48_p, icon_local_db_48_p, icon_color256_db_48_p,
-		 /*113*/ icon_all_windows_p, icon_question_mark_db_48_p, icon_pdf_vector_64_p, icon_paper_size_d_p, icon_folder_bd32_p, icon_folder_bd48_p, icon_folder_bd64_p,
+		 /*113*/ icon_all_windows_p, icon_question_mark_db_48_p, icon_pdf_vector_64_p, icon_folder_bd24_p, icon_folder_bd32_p, icon_folder_bd48_p, icon_folder_bd64_p,
 		 /*120*/ icon_arrow_up_end_d48_p, icon_chain_d_p, icon_on_top_d_p, icon_h_flip_p, icon_v_flip_p, icon_background_image_d48_p,
 		 /*126*/ icon_trans50_d_p, icon_refresh_d_p,
          /*128*/ icon_ctrl_p, icon_alt_p, icon_shift_p, icon_f1_p, icon_f2_p, icon_f3_p, icon_f4_p, icon_f5_p, icon_f6_p, icon_f7_p, icon_f8_p, icon_f9_p, icon_f10_p, icon_f11_p,icon_f12_p,
@@ -588,13 +606,14 @@ extern int SkalaZ_Plus(int sclfct);
          /*189*/ icon_tab_p, icon_arrow_down_end_d48_p, icon_alpha_sorting_d32_p, icon_time_lapse_d32_p, icon_no_d_12_p,
          /*194*/ icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p,
          /*200*/ icon_mark_d_12_p, icon_Pdelta_d48_p, icon_upgrademark_pmem, icon_noupgrademark_pmem, icon_vibrations_d48_p, icon_inertia_d48_p,
-         /*206*/ icon_mouse1b2b_p,
+         /*206*/ icon_mouse1b2b_p, icon_paper_size_d_p
      };
 
 	 return icons[iconno];
  }
 
- int get_icon_size(int iconno)
+#ifdef ICON_SIZE_TAB   //is ignored
+ int get_icon_size__(int iconno)
  {
 	 int icon_size[] = {
 	  32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
@@ -628,6 +647,7 @@ extern int SkalaZ_Plus(int sclfct);
      };
 	 return icon_size[iconno];
  }
+#endif
 
 int jed_to_piks_x(int jednostki_x)
 /*--------------------------------------*/
@@ -1610,7 +1630,7 @@ static void draw_listbox(LISTBOX  * listbox)
 					   fontn.warstwa = Current_Layer;
 					   fontn.widoczny = 1;
 
-					   draw_font_name_ttf(&fontn, &fontn.text, list_screen, xt + 5, yt + HEIGHT / 2 + 4, x2, fontn.kat, 20.0, kolor, COPY_PUT, 0, 0);
+					   draw_font_name_ttf(&fontn, &fontn.text, list_screen, xt + 5, yt + HEIGHT / 2 + 4, x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
 
 				   }
 			   }
@@ -1983,7 +2003,16 @@ static void shift_cursor(LISTBOX  * listbox)
     {
         if ((mouse_y >= y1) && (mouse_y <= y2))
         {
-            position_mouse(mouse_x_, bar_center.y);
+#ifdef ALLEGRO5
+#ifdef MACOS
+        	MoveOSXCursor(mouse_x_, bar_center.y);
+#else
+        	position_mouse(mouse_x_, bar_center.y);
+#endif
+#else
+        	position_mouse(mouse_x_, bar_center.y);
+#endif
+        	set_forget_mouse(mouse_x_, bar_center.y);
         }
     }
     //if (listbox->max > listbox->maxw)
@@ -2369,7 +2398,17 @@ static BOOL edit_combo_box(COMBOBOX *ComboBox)
       PozX=poz_xx;
       PozY=poz_yy;
 
-      position_mouse(PozX0,PozY0);
+#ifdef ALLEGRO5
+#ifdef MACOS
+    	MoveOSXCursor(PozX0,PozY0);
+#else
+    	position_mouse(PozX0,PozY0);
+#endif
+#else
+    	position_mouse(PozX0,PozY0);
+#endif
+    	set_forget_mouse(PozX0,PozY0);
+
       MVCUR(0,0);
       SERV[81]=SW2[0];
 
@@ -2627,7 +2666,7 @@ static int find_combo_box(COMBOBOX *ComboBoxes,int SizeComboBoxT)
 						   fontn.widoczny = 1;
 
 						   
-						   draw_font_name_ttf(&fontn, &fontn.text, screen, x1 + 5, y1 + HEIGHT + 10, x2, fontn.kat, 20.0, kolor, COPY_PUT, 0, 0);
+						   draw_font_name_ttf(&fontn, &fontn.text, screen, x1 + 5, y1 + HEIGHT + vfv(10), x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
 						  
 
 					   }
@@ -2993,23 +3032,28 @@ void draw_push_button(BUTTON *Button)
 {
 	int paper, border, ink;
 	int x1, x2, y1, y2, x0, y0;
-	BITMAP *bmp;
+	BITMAP *bmp, *bmp24, *bmp32, *bmp48, *bmp64;
 	int ret;
 	int flags;
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int dx, dy, wh;
 	int HEIGHT_BAK, WIDTH_BAK;
 	int pos_txt;
 	char* dirptr;
-	int folder_icon_no = 118;
+    int folder_icon_no = 118;
+    int folder_icon_no24 = 116;
+	int folder_icon_no32 = 117;
+    int folder_icon_no48 = 118;
+    int folder_icon_no64 = 119;
 	char Button_txt[MAXDIR];
 	float txt_scale_factor = 0.85;
     int len;
     BITMAP *screenplay=Get_Screenplay();
     int size_checkbox0;
+    int fv;
 
 	if (Button->flags & BUTTON_HIDDEN) return;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
@@ -3027,8 +3071,22 @@ void draw_push_button(BUTTON *Button)
 	y2 = jed_to_piks_y(Button->y + Button->dy - 1) + pocz_y;
 	bar(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
 
-	if ((y2-y1) < 54) folder_icon_no = 117;
-	else if ((y2-y1) > 70) folder_icon_no = 119;
+    //if (is_RETINA())
+    //    fv=2;
+    //else fv=1;
+
+	//if ((y2-y1) < 54*fv) folder_icon_no = 117;
+	//else if ((y2-y1) > 70*fv) folder_icon_no = 119;
+
+    bmp24 = (BITMAP*)get_icon(folder_icon_no24);
+    bmp32 = (BITMAP*)get_icon(folder_icon_no32);
+    bmp48 = (BITMAP*)get_icon(folder_icon_no48);
+    bmp64 = (BITMAP*)get_icon(folder_icon_no64);
+
+    if ((y2-y1)*0.8 < bmp32->h) folder_icon_no = 116;
+    else if ((y2-y1)*0.8 < bmp48->h) folder_icon_no = 117;
+    else if ((y2-y1)*0.8 < bmp64->h) folder_icon_no = 118;
+    else folder_icon_no = 119;
 
 	setcolor(border);
 	LINE(x1 + 1, y1, x2 - 1, y1);
@@ -3092,11 +3150,14 @@ void draw_push_button(BUTTON *Button)
 
             if (Button->flags & BUTTON_FOLDER)
             {
-                wh = get_icon_size(folder_icon_no);
-                dx = -wh / 2;
-                dy = -wh / 2;
+                //wh = get_icon_size(folder_icon_no);
+                //dx = -wh / 2;
+                //dy = -wh / 2;
 
                 bmp = (BITMAP*)get_icon(folder_icon_no);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
                 x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
                 y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3168,11 +3229,14 @@ void draw_push_button(BUTTON *Button)
 			if (dirptr != NULL)
 			{
 
-				wh = get_icon_size(folder_icon_no);
-				dx = -wh / 2;
-				dy = -wh / 2;
+				//wh = get_icon_size(folder_icon_no);
+				//dx = -wh / 2;
+				//dy = -wh / 2;
 
 				bmp = (BITMAP*)get_icon(folder_icon_no);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
 				x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
 				y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3216,11 +3280,14 @@ void draw_push_button(BUTTON *Button)
 			if (dirptr != NULL)
 			{
 
-			   wh = get_icon_size(folder_icon_no);
-			   dx = -wh / 2;
-			   dy = -wh / 2;
+			   //wh = get_icon_size(folder_icon_no);
+			   //dx = -wh / 2;
+			   //dy = -wh / 2;
 
 			   bmp = (BITMAP*)get_icon(folder_icon_no);
+               wh = bmp->w;
+               dx = -wh / 2;
+               dy = -wh / 2;
 			   x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
 			   y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3267,11 +3334,14 @@ void draw_push_button(BUTTON *Button)
 			else if (Button->name2 > 1)
 			{
 
-				wh = get_icon_size(Button->name2);
-				dx = -wh / 2;
-				dy = -wh / 2;
+				//wh = get_icon_size(Button->name2);
+				//dx = -wh / 2;
+				//dy = -wh / 2;
 
 				bmp = (BITMAP *)get_icon(Button->name2);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
 				x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x +dx;
 				y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y +dy;
 
@@ -3303,20 +3373,24 @@ void draw_flat_push_button(BUTTON *Button)
 {
 	int paper, border, ink;
 	int x1, x2, y1, y2, x0, y0;
-	BITMAP *bmp;
+	BITMAP *bmp, *bmp24, *bmp32, *bmp48, *bmp64;
 	int ret;
 	int flags;
-	char dir[MAXDIR];
-	char drive[MAXDRIVE];
-	char file[MAXFILE];
-	char ext[MAXEXT];
+	char dir[MAXDIR]="";
+	char drive[MAXDRIVE]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
 	int dx, dy, wh;
 	int pos_txt;
 	char* dirptr;
 	int folder_icon_no = 118;
+    int folder_icon_no24 = 116;
+    int folder_icon_no32 = 117;
+    int folder_icon_no48 = 118;
+    int folder_icon_no64 = 119;
 	char Button_txt[MAXDIR];
+    int fv;
     BITMAP *screenplay=Get_Screenplay();
-
 
 	if (Button->flags & BUTTON_HIDDEN)
     {
@@ -3342,8 +3416,22 @@ void draw_flat_push_button(BUTTON *Button)
 	y2 = jed_to_piks_y(Button->y + Button->dy - 1) + pocz_y;
 	bar(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
 
-	if ((y2 - y1) < 54) folder_icon_no = 117;
-	else if ((y2 - y1) > 70) folder_icon_no = 119;
+    //if (is_RETINA())
+    //    fv=2;
+    //else fv=1;
+
+    //if ((y2-y1) < 54*fv) folder_icon_no = 117;
+    //else if ((y2-y1) > 70*fv) folder_icon_no = 119;
+
+    bmp24 = (BITMAP*)get_icon(folder_icon_no24);
+    bmp32 = (BITMAP*)get_icon(folder_icon_no32);
+    bmp48 = (BITMAP*)get_icon(folder_icon_no48);
+    bmp64 = (BITMAP*)get_icon(folder_icon_no64);
+
+    if ((y2-y1)*0.8 < bmp32->h) folder_icon_no = 116;
+    else if ((y2-y1)*0.8 < bmp48->h) folder_icon_no = 117;
+    else if ((y2-y1)*0.8 < bmp64->h) folder_icon_no = 118;
+    else folder_icon_no = 119;
 
 	setcolor(border);
 	LINE(x1 + 1, y1, x2 - 1, y1);
@@ -3393,11 +3481,14 @@ void draw_flat_push_button(BUTTON *Button)
 			if (dirptr != NULL)
 			{
 
-				wh = get_icon_size(folder_icon_no);
-				dx = -wh / 2;
-				dy = -wh / 2;
+				//wh = get_icon_size(folder_icon_no);
+				//dx = -wh / 2;
+				//dy = -wh / 2;
 
 				bmp = (BITMAP*)get_icon(folder_icon_no);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
 				x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
 				y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3431,11 +3522,14 @@ void draw_flat_push_button(BUTTON *Button)
 
 			if (dirptr != NULL)
 			{
-				wh = get_icon_size(folder_icon_no);
-				dx = -wh / 2;
-				dy = -wh / 2;
+				//wh = get_icon_size(folder_icon_no);
+				//dx = -wh / 2;
+				//dy = -wh / 2;
 
 				bmp = (BITMAP*)get_icon(folder_icon_no);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
 				x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
 				y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3474,11 +3568,14 @@ void draw_flat_push_button(BUTTON *Button)
 			else if (Button->name2 > 1)
 			{
 
-				wh = get_icon_size(Button->name2);
-				dx = -wh / 2;
-				dy = -wh / 2;
+				//wh = get_icon_size(Button->name2);
+				//dx = -wh / 2;
+				//dy = -wh / 2;
 
 				bmp = (BITMAP *)get_icon(Button->name2);
+                wh = bmp->w;
+                dx = -wh / 2;
+                dy = -wh / 2;
 				x1 = jed_to_piks_x(Button->x + Button->dx / 2) + pocz_x + dx;
 				y1 = jed_to_piks_y(Button->y + Button->dy / 2) + pocz_y + dy;
 
@@ -3964,17 +4061,16 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
                   x02 = bmp->w;
                   y02 = bmp->h;
 
-                  if (x02==128) x2=64;
-                  else x2 = 32;
-
-                  y2=32;
+                  float wsp_sk=max(2.0,(float)y02/ 62.0f);
+                  x02 = (int)((float)x02*wsp_sk);
+                  y02 = (int)((float)y02*wsp_sk);
 
                   buffer = create_bitmap_ex(32, x2, y2 + 1);
 
                   if (buffer != NULL)
                   {
                       clear_to_color(buffer, bitmap_mask_color(buffer));
-                      rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)x2 / (double)x02));
+                      rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)y2 / (double)y02));
                       set_alpha_blender();
                       draw_trans_sprite(screenplay, buffer, x1, y1);
                       destroy_bitmap(buffer);
@@ -3993,7 +4089,8 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
 	  {
 		  ////sprintf(fortip, "@%d;%d$%s", x1 + Images[i].x2, y1 + Images[i].y2, Images[i].txt);
 		  ////strcpy((*(tipsmenu->pola))[i].txt, fortip);
-		  strcpy((*(tipsmenu->pola))[i].txt, Images[i].txt);
+		  strncpy((*(tipsmenu->pola))[i].txt, Images[i].txt, POLE_TXT_MAX-1);
+	  	  (*(tipsmenu->pola))[i].txt[POLE_TXT_MAX-1]='\0';
 		  fortips_map.x1[i] = x01;
 		  fortips_map.y1[i] = y01;
 		  fortips_map.x2[i] = x01 + Images[i].x2;
@@ -4125,7 +4222,6 @@ static void open_dlg(TDIALOG *dlg, char typ, BITMAP **dialog_screen, RECT *dialo
 
 	if (typ == 0)
     {
-		//Move_Mouse((x02 - x01) / 2, (y02 - y01) / 2);
 		//position_mouse((x02 - x01) / 2, (y02 - y01) / 2);
         dlg->xb = x01;
         dlg->yb = y01;
@@ -4370,7 +4466,7 @@ void Redraw_Dlg(TDIALOG *dlg)
 static void cur_off(int x,int y)
 /*------------------------------*/
 {
-  Hide_Mouse(x, y) ;  
+  Hide_Mouse() ;
   ini_cursor=FALSE;
 
 }
@@ -4378,7 +4474,7 @@ static void cur_off(int x,int y)
 static void cur_on(int x,int y)
 /*------------------------------*/
 {
-  Show_Mouse(x, y) ; 
+  Show_Mouse() ;
   ini_cursor = TRUE;
 }
 
@@ -4490,11 +4586,35 @@ static void init(char typ, TDIALOG *Dlg, TMENU *tipsmenu)
 		  PozY = mouse_y;
 	  }
 	
-       Ini_Mouse_Cursor(PozX,PozY) ;
+         //Ini_Mouse_Cursor(PozX,PozY) ;
 		
 	    //moveto(PozX, PozY);
-        cur_on(PozX,PozY);
+        ////cur_on(PozX,PozY);
+#ifdef ALLEGRO5
+#ifdef MACOS
+  		MoveOSXCursor(PozX,PozY);
+#else
+  		  position_mouse_xy(PozX,PozY);
 
+          Ini_Mouse_Cursor(PozX,PozY) ;
+
+          //moveto(PozX, PozY);
+          cur_on(PozX,PozY);
+
+#endif
+#else
+  		//position_mouse(PozX,PozY);
+        Ini_Mouse_Cursor(PozX,PozY) ;
+
+        //moveto(PozX, PozY);
+        cur_on(PozX,PozY);
+#endif
+  		set_forget_mouse(PozX,PozY);
+#ifdef LINUX
+  		sleep(0);
+#else
+  	_sleep(0);
+#endif
 
          SW01 = SERV[84];
          for(n1 = 0; n1 < SVMAX-71 ; n1++)
@@ -4746,6 +4866,32 @@ int Dialog_in_dialog(TDIALOG *dlg)
     return ret;
 }
 
+void reset_cursor_pos(void) {
+#ifdef ALLEGRO5
+    int WspX_, WspY_;
+
+    return;
+
+#ifdef ALLEGRO5
+#ifdef MACOS
+  		//MoveOSXCursor(mouse_x0, mouse_y0);
+        MoveOSXCursor(getmaxx()/2, getmaxy()/2);
+#else
+  		//position_mouse(mouse_x0, mouse_y0);
+        position_mouse(getmaxx()/2, getmaxy()/2);
+#endif
+#else
+  		//position_mouse(mouse_x0, mouse_y0);
+          position_mouse(getmaxx()/2, getmaxy()/2);
+#endif
+    //do {
+    //    get_mouse_mickeys(&WspX_, &WspY_);
+    //} while ((WspX_ != 0) || (WspY_ != 0));
+	//set_forget_mouse(mouse_x0, mouse_y0);
+    set_forget_mouse(getmaxx()/2, getmaxy()/2);
+#endif
+}
+
 int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)
 /*-------------------------------------------------------------------*/
 {
@@ -4763,6 +4909,11 @@ int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)
     BUTTON block_flag_button={ 0, 0, DXHBut, DYHBut, COLOR_NULL, COLOR_NULL, COLOR_NULL, "", 0,B_CHECKBOX, 0, 1,0, 0};
 
     block_changed=FALSE;
+
+#ifdef ALLEGRO5
+    mouse_x0=mouse_x;
+    mouse_y0=mouse_y;
+#endif
 
 
     if (strcmp(dlg->txt,"Dim")==0) dim=0;
@@ -4875,11 +5026,6 @@ continue2:
         }
     }
 
-    ////if  (!(dlg->flags & 0x80))
-	////    Move_Mouse(0, 0);  //can be necessary in Windows
-
-	//position_mouse(0, 0);
-
 	show_mouse(NULL);
 
 	init(init_option, dlg, &tipsmenu);
@@ -4894,6 +5040,7 @@ continue2:
 		strncpy(global_dialog_name, "", 15);
         global_dialog_name[15]='\0';
         check_size_and_enable_F11(dim);
+        reset_cursor_pos();
 		return 0;
 	}
 
@@ -4927,6 +5074,7 @@ continue2:
 		  strncpy(global_dialog_name, "",15);
           global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
+          reset_cursor_pos();
 		  return 0;
          }
        }
@@ -4941,6 +5089,7 @@ continue2:
 		 strncpy(global_dialog_name, "",15);
          global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
+         reset_cursor_pos();
        	 return 0;
          }	
       }
@@ -4971,6 +5120,7 @@ continue2:
 		  strncpy(global_dialog_name, "",15);
           global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
+          reset_cursor_pos();
 		  return 2;
          }
         }
@@ -4985,6 +5135,7 @@ continue2:
 		 strncpy(global_dialog_name, "", 15);
          global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
+         reset_cursor_pos();
        	 return 0;
          }	
       }
@@ -5014,6 +5165,7 @@ continue2:
 		  strncpy(global_dialog_name, "",15);
           global_dialog_name[15]='\0';
           check_size_and_enable_F11(dim);
+          reset_cursor_pos();
 		  return 10;
          }
         }
@@ -5028,6 +5180,7 @@ continue2:
 		 strncpy(global_dialog_name, "",15);
          global_dialog_name[15]='\0';
          check_size_and_enable_F11(dim);
+         reset_cursor_pos();
        	 return 0;
          }	
       }
@@ -5134,6 +5287,7 @@ continue_lb:
 			strncpy(global_dialog_name, "", 15);
             global_dialog_name[15]='\0';
             check_size_and_enable_F11(dim);
+            reset_cursor_pos();
 			return n;
 		  }
 		}
@@ -5145,6 +5299,7 @@ continue_lb:
   global_dialog_name[15]='\0';
 
   check_size_and_enable_F11(dim);
+  reset_cursor_pos();
   return 0;
 }
 

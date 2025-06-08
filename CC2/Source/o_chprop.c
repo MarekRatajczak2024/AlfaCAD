@@ -484,7 +484,7 @@ static IMAGE images_ch[] =
 
 static TDIALOG change_dlg=
 {
-	100, 5 /*10*/, 310 /*338*/, DYGroup + 2 * YpGr,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0, chprop_comm1,
+	100, 5 /*10*/, 310 /*338*/, DYGroup + 2 * YpGr + 2,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0, chprop_comm1,
 	2, (DARK_LIGHT_LINE(*)[])&line_d_l,		/*line*/
 	0, NULL,		/*&labels*/
 	2, (GROUP_BOX(*)[])&gr_box,

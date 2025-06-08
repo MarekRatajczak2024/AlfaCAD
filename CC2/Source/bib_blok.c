@@ -4902,8 +4902,13 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
             rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, begin_line, end_line);
         break;
     case   Ofilledellipse :
-
+#ifdef ALLEGRO5
+            //////set_semaphore(0);
+#endif
             rysuj_filledellipse_((ELLIPSE*)ad,mode,kolor);
+#ifdef ALLEGRO5
+            //////set_semaphore(1);
+#endif
     break;
       case   Oluk :
             rysuj_luk_((LUK*)ad,mode,kolor);
@@ -5216,8 +5221,9 @@ void rysuj_obiekt_no_pcx(char *ad, int mode,int kolor)
         rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, 1,1);
         break;
     case   Ofilledellipse :
-
+        //////set_semaphore(0);
         rysuj_filledellipse_((ELLIPSE*)ad,mode,kolor);
+        //////set_semaphore(1);
         break;
    case   Oluk :
 

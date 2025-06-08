@@ -7,6 +7,20 @@ enum  FILLET_PL
   FILLET_PL_YES_OTHER = 3       /*profilowanie innych obiektow*/
 } ;
 
+typedef
+struct
+{ double xs,ys;
+    double xc,yc;
+    double xe,ye;
+    double x2,y2;
+    double a;
+    double L;
+    double r;
+    double d;
+    void *ptr_con ; /*kontynuacja, xs, ys : wsp. konca, do kontynuacji*/
+    BOOL b_first_end ;	/*ktory koniec objektu jest ostatni*/
+    double con_angle ; /*kat kontynuacji*/
+} PLUK;
 
 #ifdef __cplusplus
 extern "C" {

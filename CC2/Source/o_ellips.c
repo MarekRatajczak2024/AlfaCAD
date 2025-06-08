@@ -592,10 +592,18 @@ static void cur_el_on (double df_x, double df_y)
       if (LiniaG.kolor == 0) SetColorAC(15); else SetColorAC(LiniaG.kolor);
       setwritemode(COPY_PUT);
       linestyle(LiniaG.typ);
+#ifdef ALLEGRO5
+//      acquire_bitmap(screen);
+      set_semaphore(0);
+#endif
       Make_Ellipse(s_ellipse.df_cx, s_ellipse.df_cy,
                    s_ellipse.df_xaxis, s_ellipse.df_yaxis,
                    s_ellipse.df_angle, COPY_PUT, NULL, NULL, DE_Draw, O2BlockPline, outline_disc,
                    FilledEllipseTranslucency, LiniaG.kolor, 1);
+#ifdef ALLEGRO5
+//      release_bitmap(screen);
+      set_semaphore(1);
+#endif
       okno_all();
 
       outlineor(&line_g, COPY_PUT, 0);

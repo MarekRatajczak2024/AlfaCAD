@@ -20,6 +20,9 @@
 #include <io.h>
 #else
 #include <unistd.h>
+#ifdef MACOS
+#include <time.h>
+#endif
 #endif
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -44,7 +47,9 @@ extern BOOL is_utf8(const char* string);
 extern T_spec_name * Get_Local_Spec (void) ;
 extern T_spec_name * Get_Local_Spec_copy(void);
 extern int read_i(int _f, int *int_buf, int l_char);
+#ifndef MACOS
 extern void getdate(date *aktualna_data);
+#endif
 extern int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext);
 extern void fnmerge (char *path, const char *drive, const char *dir, const char *name, const char *ext);
 extern BOOL Edit_Local_Spec(int type, BOOL cur);
@@ -389,12 +394,12 @@ BOOL Save_Spec (int f, T_spec_name *ptrs_specs)
 {
   int i ;
   int i_value_len, i_name_len ;
-  date aktualna_data;  
-  char dzien[6];
-  char miesiac[6];
-  char rok[6];
-  char nowa_data[16];
-  char ptrs_specs13[16];
+  date aktualna_data;
+  char dzien[6]="";
+  char miesiac[6]="";
+  char rok[6]="";
+  char nowa_data[16]="";
+  char ptrs_specs13[16]="";
 
   strcpy(ptrs_specs13, ptrs_specs[13].spec_name);
 
@@ -407,7 +412,23 @@ BOOL Save_Spec (int f, T_spec_name *ptrs_specs)
        (strcmp(ptrs_specs13, u8"ДАТА") == 0) ||
        (strcmp(ptrs_specs13, u8"FECHA") == 0))
      {
+#ifndef MACOS
       getdate(&aktualna_data);
+#else
+     time_t rawtime;
+     struct tm *info;
+     time( &rawtime );
+     info = localtime( &rawtime );
+     printf("Current local time and date: %s", asctime(info));
+     aktualna_data.da_day=info->tm_mday;
+     aktualna_data.da_mon=info->tm_mon+1;
+     aktualna_data.da_year=info->tm_year+1900;
+#endif
+
+     //struct tm *getdate(const char *);
+     //struct tm *gmtime(const time_t *);
+     //struct tm *localtime(const time_t *);
+     //time_t mktime(struct tm *) __DARWIN_ALIAS(mktime);
       sprintf(nowa_data,"%#ld.%#ld.%#ld",aktualna_data.da_day,aktualna_data.da_mon,
               aktualna_data.da_year);
       strcpy(ptrs_specs[13].spec_value,nowa_data);

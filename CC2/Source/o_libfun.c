@@ -77,13 +77,13 @@ extern void myline(int x1, int y1, int x2, int y2);
 extern int getgraphmode(void);
 extern void getviewsettings(struct viewporttype  *viewport);
 extern void setviewport(int left, int top, int right, int bottom, int clip);
-extern void Hide_Mouse (int x, int y);
+extern void Hide_Mouse (void);
 extern void getimage(int left, int top, int right, int bottom, void  *bitmap);
 extern void setcolor(int kolor);
 extern void setwritemode( int mode );
 extern void setlinestyle1(int line_style, unsigned short u_pattern, int thickness);
 extern void setrgbdefaults(void);
-extern void Show_Mouse (int x, int y);
+extern void Show_Mouse (void);
 extern int getchp(void);
 extern void putimage(int left, int top,  void  *bitmap, int op);
 extern void restorecrtmode(void);
@@ -94,7 +94,7 @@ extern int setdisk(int _drive);
 extern int Restore_Screen(void);
 extern int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext);
 extern void fnmerge (char *path, const char *drive, const char *dir, const char *name, const char *ext);
-extern BOOL BIGCURSOR;
+extern int BIGCURSOR;
 
 extern void utf8Upper(char* text);
 extern int my_getch(void);
@@ -110,6 +110,9 @@ extern void Set_Mouse_Speed(float m_speed);
 extern void getcolor_RGB(int *red, int *green, int *blue, int color);
 extern int cursor_color0;
 extern BOOL BAR_POINTER;
+
+extern void set_sleep_state(BOOL state);
+extern void Set_Mouse_Wheel(int val_int);
 
 int check_dim_line(LINIA *L) {
 //checking if line is dimensioning line
@@ -1185,7 +1188,7 @@ BOOL ScrSave_Proc (int opcja)
 
   if ((scrsave_d_time>= time_scrsave) || (opcja==1))
    {
-	  sleep_state=TRUE;  //SLEEP_STATE
+	  set_sleep_state(TRUE);  //SLEEP_STATE
 	  set_scrsave_time();
 
      return 0;
@@ -1592,7 +1595,7 @@ static BOOL get_desktop(T_Fstring key_name, T_Fstring ret_string)
                 if (stricmp(key_name, IC_DIALOG_CURSOR) == 0)
                 {
                     if ((sscanf(ret_string, "%d", &val_int) == 1) &&
-                        ((val_int == 0) || (val_int == 1)))
+                        ((val_int == 0) || (val_int == 1) || (val_int == 2)))
                     {
                         BIGCURSOR = val_int;
                     }
@@ -1605,6 +1608,16 @@ static BOOL get_desktop(T_Fstring key_name, T_Fstring ret_string)
                     {
                         BAR_POINTER = val_int;
                     }
+                }
+            else
+            if (stricmp(key_name, IC_WHEEL_STYLE) == 0)
+                {
+                    if ((sscanf(ret_string, "%d", &val_int) == 1) &&
+                        ((val_int == 0) || (val_int == 1)))
+                    {
+                        Set_Mouse_Wheel(val_int);
+                    }
+
                 }
             else
                 if (stricmp(key_name, IC_INSTRUCTION) == 0)

@@ -71,7 +71,7 @@
     <SccLocalPath />
     <Keyword>MFCProj</Keyword>
     <ProjectGuid>{A526BEBE-1DCA-537D-F8B2-EB678EF97883}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
     <ProjectName>AlfaCAD</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -450,7 +450,8 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;
+%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -463,7 +464,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
-      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug/AlfaCAD4Win64.exe</OutputFile>
@@ -5325,6 +5327,7 @@
     <ClCompile Include="..\..\..\CC2\Source\Z_section_US_si.c" />
     <ClCompile Include="..\..\..\glyph-keeper64\src\glyph.c" />
     <ClCompile Include="..\..\Source\2L_section_CA_si.c" />
+    <ClCompile Include="..\..\Source\bibrys.c" />
     <ClCompile Include="..\..\Source\CT_section_AU_si.c" />
     <ClCompile Include="..\..\Source\CT_section_CA_si.c" />
     <ClCompile Include="..\..\Source\ET_section_CA_si.c" />

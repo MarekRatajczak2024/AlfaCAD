@@ -30,6 +30,7 @@
 #include "o_libfun.h"
 #include "bib_edit.h"
 #include "o_pline.h"
+#include "o_offset.h"
 
 #include "menu.h"
 
@@ -87,6 +88,12 @@ static void (*COMNDProf[])(void)={ fillet_radius, undo_prof };
 
 
 extern void layer_info (void) ;
+extern BOOL translate_offset_line_distance (void *ptr_ob, double df_x, double df_y, double distance);
+extern int get_i__offset_mode(void);
+extern void set_i__offset_mode(int offs_mode);
+extern int przeciecieLO_ (double *x, double *y, void *adr, void *adr1);
+extern int prostopadleL_from_point(double *x,double *y, double *l, void *adr);
+extern void pSER_(PLUK *pl, LUK *l, double X, double Y, double ws, BOOL b_edit, BOOL *reversed);
 
 #define r20 20
 #define r18 12
@@ -416,16 +423,169 @@ static char *fillet_line_line (double df_r, LINIA*L1,LINIA *L2,double X1,double 
   return lps__arc_prof;
 }
 
-char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2)
+char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2, BOOL inverted)
 {
-    double x1, y1, x2, y2;
+    double x1, y1, x2, y2, x, y, len;
+    PLINIA PL1, PL2;
+    OKRAG O;
+    LINIA L;
+    LUK l;
+    int curr_i__offset_mode;
+    int ret;
+    BOOL b_ret;
+    BOOL reversed;
+    BLOK *adb;
+    long off1, off2, l_move;
+    int i_fillet_type ;
+    LINIA *L1_, *L2_;
+    BOOL swapped;
+    double Xref,Yref;
 
-    x1 = L1->x1+2*(L1->x2-L1->x1)/3;
-    y1 = L1->y1+2*(L1->y2-L1->y1)/3;
-    x2 = L2->x1+(L2->x2-L2->x1)/3;
-    y2 = L2->y1+(L2->y2-L2->y1)/3;
+    //if length of L1 > 0 and length of L2 > 0, we can trigger fillet_line_line
+    parametry_lini(L1, &PL1);
+    parametry_lini(L2, &PL2);
+    if ((PL1.dl>0) && (PL2.dl>0))
+    {
+        x1 = L1->x1 + 2 * (L1->x2 - L1->x1) / 3;
+        y1 = L1->y1 + 2 * (L1->y2 - L1->y1) / 3;
+        x2 = L2->x1 + (L2->x2 - L2->x1) / 3;
+        y2 = L2->y1 + (L2->y2 - L2->y1) / 3;
+        return fillet_line_line(df_r, L1, L2, x1, y1, x2, y2);
+    }
+    else  //B-E-R approach for arc tangestial only to the first or second line
+    {
+        if (PL1.dl>0)  //second line doesn't exist
+        {
+            L1_=L1;
+            L2_=L2;
+            swapped=0;
+        }
+        else //first line doesn't exist
+        {
+            L1_=L2;
+            L2_=L1;
+            swapped=1;
+        }
+            //step 1) setting up the circle of the radius r1 and center in the second point of arc.
+            O.x=L2_->x1;
+            O.y=L2_->y1;
+            O.r=(float)df_r;
 
-    return fillet_line_line(df_r, L1, L2, x1, y1, x2, y2);
+            //step 2) setting up the line parallel to flange line with the offset of r2 radius, and on the side on arc center
+            memmove(&L, L1_, sizeof(LINIA));
+            curr_i__offset_mode=get_i__offset_mode();
+            set_i__offset_mode(DIST_OFFSET_MODE);
+
+            b_ret=translate_offset_line_distance (&L, L2_->x1, L2_->y1, df_r);
+            set_i__offset_mode(curr_i__offset_mode);
+
+            //step 3) searching for the point of intersection between set circle and line
+            ret=przeciecieLO_ (&x, &y, &L, &O);
+            if (ret==0) return NULL;
+            Xref=x;
+            Yref=y;
+
+            //step 4) setting the line from point of intersection perpendicular to flange line and get intersection point
+            ret=prostopadleL_from_point(&x,&y, &len, L1_);
+
+            //step 5) creating the arc with Beginning-End-Radius method where Beginning is given point, End is found intersection point and Radius is r2
+            adb = Get_Common_Blok (L1_, L2_);
+            set_prof_arc (&l, L1_, L2_);
+            off1 = (char  *)L1_ - dane;
+            off2 = (char  *)L2_ - dane;
+
+            PLUK pl;
+
+            if (inverted)
+            {
+                if (swapped)
+                {
+                    pl.xs = x;
+                    pl.ys = y;
+                    pl.xe = L2_->x1;
+                    pl.ye = L2_->y1;
+                }
+                else
+                {
+                    pl.xs = L2_->x1;
+                    pl.ys = L2_->y1;
+                    pl.xe = x;
+                    pl.ye = y;
+                }
+            }
+            else
+            {
+                if (swapped)
+                {
+                    pl.xs = L2_->x1;
+                    pl.ys = L2_->y1;
+                    pl.xe = x;
+                    pl.ye = y;
+                }
+                else
+                {
+                    pl.xs = x;
+                    pl.ys = y;
+                    pl.xe = L2_->x1;
+                    pl.ye = L2_->y1;
+                }
+            }
+
+            memcpy (&l, &LukG, sizeof(LUK)) ;
+
+            reversed=FALSE;
+            //trimming
+            if (swapped)
+            {
+                L1_->x1=(float)x;
+                L1_->y1=(float)y;
+            }
+            else
+            {
+                L1_->x2 = (float) x;
+                L1_->y2 = (float) y;
+            }
+
+            pSER_(&pl, &l, Xref, Yref, df_r, TRUE, &reversed);
+
+            if (FILLET_PL_NO == (i_fillet_type = Check_Pline_to_Fillet (L1_, L2_)))
+            {
+                //ErrList (83) ;
+                return NULL ;
+            }
+
+            if (adb == NULL)
+            {
+                l.blok = NoElemBlok;
+                l.obiektt2 = O2NoBlockS ;
+                l_move = 0 ;
+                off1 += sizeof (LUK) ;
+                off2 += sizeof (LUK) ;
+            }
+            else
+            {
+                l.blok = ElemBlok ;
+                l.obiektt2 = L1_->obiektt2 ;
+                if (i_fillet_type == FILLET_PL_YES)
+                {
+                    l_move = min ((char  *)L1_ - (char  *)adb,
+                                  (char  *)L2_ - (char  *)adb) ;
+                    l_move += sizeof(LINIA) ;
+                    if (off1 > off2)
+                        off1 += sizeof (LUK) ;
+                    else
+                        off2 += sizeof (LUK) ;
+                }
+                else
+                {
+                    l_move = sizeof(NAGLOWEK) + adb->n ;
+                }
+            }
+
+            if(NULL == (lps__arc_prof = (LUK*)Add_Block_Object_Ex (&adb, (void *)&l, l_move)))
+                return NULL ;
+            
+    }
 }
 
 static char* fillet_line_circle (double df_r,

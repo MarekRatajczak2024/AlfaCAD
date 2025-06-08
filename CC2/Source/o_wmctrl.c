@@ -39,6 +39,7 @@ Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 *   See readme_alfacad.txt for copyright information.
 *
 */
+#ifndef MACOS
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -1733,5 +1734,129 @@ static Window get_active_window(Display *disp) {/*{{{*/
 
     return(ret);
 }/*}}}*/
+#else
+/*
+-- get the dimensions of the desktop, set up few variables
+tell application "Finder"
+ set displayAreaDimensions to bounds of window of desktop
+ set x1 to item 1 of displayAreaDimensions
+ set y1 to item 2 of displayAreaDimensions
+ set x2 to item 3 of displayAreaDimensions
+ set y2 to item 4 of displayAreaDimensions
+end tell
 
+set width to x2 - x1
+set height to y2 - y1
+
+-- positioning iTunes, make it fullscreen
+tell application "iTunes"
+ set the bounds of the first window to {x1, y1, x2, y2}
+end tell
+
+-- positioning Safari, halfwidth on the right
+tell application "Safari"
+ set the bounds of the first window to {x1 + width / 2, y1, x2, y2}
+end tell
+
+-- positioning iTerm
+tell application "iTerm"
+ set the bounds of the first window to {x1, y1, x1 + 1000, y1 + 600}
+end tell
+
+
+
+tell app "TextEdit"
+    reopen -- unminimizes the first minimized window or makes a new default window
+    activate -- makes the app frontmost
+end tell
+
+
+tell application "Safari"
+  set miniaturized of window 1 to true
+end tell
+
+
+set position of window "Untitled" of process id 42006541 to {39, 578}
+
+
+"tell application \"Safari\" to get name of desktop"
+
+this is working:
+osascript -e 'tell application "Finder" to set position of window 1 of process "AlfaCAD3" to {0, 80}'
+osascript -e 'tell application "Finder" to set position of window 1 of process "Python" to {0, 80}'
+*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define DWORD  		unsigned int //long    int for 64 bit, long for 32 bit
+extern DWORD SystemSilent(char* strFunct, char* strstrParams);
+/*
+//Construct the osascript command.
+char script[1024];
+const char *appleScriptCode = "tell application \"Finder\" to get name of desktop";
+snprintf(script, sizeof(script), "osascript -e '%s'", appleScriptCode);
+
+//Execute the command using system().
+int result = system(script);
+if (result == -1) {
+    perror("system");
+    // Handle error
+} else {
+    // Handle success
+*/
+
+int send_AppleScript(pid_t pid, int x, int y) {
+    char script[1024]="";
+    char subscript[1024]="";
+    char buffer[128]="";
+
+    //sprintf(subscript,"tell application \"Finder\" to set position of window 1 of process \"Python\" to {%d, %d}", x, y);
+
+    //sprintf(subscript,"'tell application \"Finder\"\n set |position| to position of window 1 of process \"Python\"\n set position of window 1 of process \"Python\" to {((item 1 of |position|) + %d), ((item 2 of |position|) + %d)}\n end tell'", x, y);
+
+    sprintf(subscript,"'set thePID to %d\ntell application \"System Events\"\nset frontmost of every process whose unix id is thePID to true --bring it to the front\ntell (first process whose unix id is thePID)\nset |position| to position of window 1\nset position of window 1 to {((item 1 of |position|) + %d), ((item 2 of |position|) + %d)}\nend tell\nend tell'",pid,x,y);
+
+    //sprintf(script, "-e %s", subscript);
+    //DWORD retD=SystemSilent("osascript" ,script);
+
+    sprintf(script, "osascript -e %s", subscript);
+    FILE *pipe = popen(script, "r");
+    if (!pipe) {
+        perror("popen");
+        return 1;
+    }
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        printf("%s\n", buffer);
+    }
+    pclose(pipe);
+
+
+    return 1;
+}
+
+int send_AppleScript_Exit(pid_t pid)
+{
+    char script[1024]="";
+    char subscript[1024]="";
+    char buffer[128]="";
+
+    sprintf(subscript,"'tell application \"Python\" to tell window 1 to quit'");
+
+    sprintf(script, "osascript -e %s", subscript);
+    FILE *pipe = popen(script, "r");
+    if (!pipe) {
+        perror("popen");
+        return 1;
+    }
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        printf("%s\n", buffer);
+    }
+    pclose(pipe);
+
+
+    return 1;
+}
+
+
+#endif
 

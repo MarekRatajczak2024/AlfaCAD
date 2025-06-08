@@ -54,14 +54,30 @@
 #define GMENU_MAX 15
 
 #ifdef LINUX
+#ifndef MACOS
 static float mouse_speed = 2.5;
 #else
-static float mouse_speed = 1.0;
+static float mouse_speed = 2.5;
 #endif
+#ifndef MACOS
+static float mouse_z_factor=1.0;
+#else
+static float mouse_z_factor=0.5;
+#endif
+#else
+static float mouse_speed = 1.0;
+static float mouse_z_factor = 1.0;
+#endif
+
+static double X_, Y_, X__, Y__;
+
+static float fv=2.0f;
 
 static int curr_h, curr_v;
 
 static p_point bar_center;
+
+static int WHEELSIGN=1;
 
 BOOL XORBAR=FALSE;
 
@@ -131,6 +147,9 @@ extern int PozX, PozY;
 extern int i__font_nomax;
 
 extern void Move_Mouse (int, int) ;
+
+extern void get_posXY(double *pozx, double *pozy);
+extern void set_posXY(double pozx, double pozy);
 
 extern int my_kbhit(void);
 extern int my_getch(void);
@@ -248,7 +267,7 @@ extern void nazwa_koloru(char *ad1, char *sk);
 
 extern TMENU mTTF_OTF;
 
-extern BOOL BIGCURSOR;
+extern int BIGCURSOR;
 
 extern double Get_Ds(void);
 extern int Set_WidthL_to_Type(int type, int width);
@@ -291,7 +310,7 @@ extern int gui_border_dark, gui_border_light;
 
 extern void set_cursor_pointer(void);
 extern void set_cursor_edit(void);
-
+extern void set_cursor_busy(void);
 
 static int menu_grab_slider(void *dp3, int d2);
 static int menu_init_slider(int *var1, int *var2, int *var3, int *var4);
@@ -299,6 +318,22 @@ static int menu_init_slider(int *var1, int *var2, int *var3, int *var4);
 extern void disable_F11(void);
 extern void enable_F11(void);
 extern void Restore_Pointer(void);
+
+extern void set_sleep_state(BOOL state);
+#ifdef ALLEGRO5
+extern void position_mouse(int x, int y);
+extern void position_mouse_xy(int x, int y);
+extern void position_mouse_(int x, int y);
+#ifdef MACOS
+extern void MoveOSXCursor(int x, int y);
+extern void MoveOSXCursor_(int x, int y);
+#endif
+extern int my_poll_mouse(void);
+extern void mouse_move(void);
+extern void update_mouse(void);
+#endif
+
+extern BOOL hibernate;
 
 #define MAXMENULEVEL 8
 static  int set_slider[MAXMENULEVEL]={0,0,0,0,0,0,0,0};
@@ -311,6 +346,14 @@ SLIDER slider[MAXMENULEVEL]={{d_myslider_proc,  0, 0,  18, 0,  0,  98,    0,   0
                              {d_myslider_proc,  0, 0,  18, 0,  0,  98,    0,   0,  100,   0,    NULL , menu_grab_slider, menu_init_slider, NULL},
                              {d_myslider_proc,  0, 0,  18, 0,  0,  98,    0,   0,  100,   0,    NULL , menu_grab_slider, menu_init_slider, NULL},
                              };
+
+static int mouse_x_l[Max_Menu_Level], mouse_y_l[Max_Menu_Level];
+
+#ifdef LINUX
+#ifndef MACOS
+extern void move_pointer(int x, int y);
+#endif
+#endif
 
 extern double thermal_precision;
 extern double force_precision;
@@ -1030,6 +1073,7 @@ extern char *icon_color256_db_48_p;
 extern char *icon_cursors_p;
 extern char *icon_cursor_small_p;
 extern char *icon_cursor_big_p;
+extern char *icon_cursor_extrabig_p;
 
 extern char *icon_pointern_p;
 extern char *icon_pointerb_p;
@@ -1060,6 +1104,7 @@ extern char *icon_stonewall_p;
 extern char* icon_brickwall_dx_p;
 extern char* icon_brickwall_dy_p;
 
+extern char* icon_folder_bd24_p;
 extern char* icon_folder_bd32_p;
 extern char* icon_folder_bd48_p;
 extern char* icon_folder_bd64_p;
@@ -1291,6 +1336,10 @@ extern char *icon_ULS_p;
 extern char *icon_SLS_p;
 extern char *icon_QPSLS_p;
 
+extern char *icon_mousewheel_p;
+extern char *icon_mousewheelnatural_p;
+extern char *icon_mousewheelregular_p;
+
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
 extern TMENU mInfoAboutA;
@@ -1303,6 +1352,9 @@ extern int Free_Mouse(void);
 static int  cpgprev(TMENU *menu);
 static int  cpgnext(TMENU *menu);
 
+#ifdef ALLEGRO5
+static int mouse_x0, mouse_y0;
+#endif
 void baronoff(TMENU  * menu);
 void show_hide_tip(TMENU * menu, BOOL show);
 
@@ -1516,6 +1568,25 @@ char *strcasestr(const char *str, const char *pattern) {
 }
 #endif
 
+int vfv(int v)
+{
+    return (int)((float)v*fv);
+}
+
+int get_v32(void)
+{
+    return vfv(32);
+}
+
+void set_fv(float fv_)
+{
+   fv=fv_;
+}
+
+float get_fv(void)
+{
+    return fv;
+}
 
 void Set_Mouse_Speed(float m_speed)
 {
@@ -1567,11 +1638,11 @@ void Set_HEIGHT_high(void)
     HEIGHT_= HEIGHT;
     WIDTH_ = WIDTH;
 
-	MP_SIZE = 27;
-	ED_INF_HEIGHT = 27;
-	BAR_G = 27;
-	HEIGHT = 27;
-	WIDTH = 17;
+	MP_SIZE = vfv(27);
+	ED_INF_HEIGHT = vfv(27);
+	BAR_G = vfv(27);
+	HEIGHT = vfv(27);
+	WIDTH = vfv(17);
 }
 
 void Set_HEIGHT_back(void)
@@ -1627,23 +1698,23 @@ void Test_PMenu (PTMENU *menu)
         xr = ((menu->flags&NVERT) ? size * menu->xdl : menu->xdl);
         yd = ((menu->flags&NVERT) ? 1 : size);
         x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA;
-        y1 = (menu->ypcz - 1) * 32 + YP;
+        y1 = (menu->ypcz - 1) * vfv(32) + YP;
 
         x2 = x1 + xr * SKALA + 2 * (GR + 1);
-        y2 = y1 + yd * 32 + 2 * GR;
+        y2 = y1 + yd * vfv(32) + 2 * GR;
 
         x2 += xs;
         y2 += ys;
 
         if (y2 > maxY)
         {
-            menu->maxw = (maxY - y1) / (32);
+            menu->maxw = (maxY - y1) / (vfv(32));
         }
         else
         {
             if (menu->maxw != menu->maxw0)
             {
-                maxw = (maxY - y1) / (32);
+                maxw = (maxY - y1) / (vfv(32));
                 if (menu->maxw0 > 0)
                 {
                     if (maxw > menu->maxw0)
@@ -1773,7 +1844,7 @@ void Test_Menu (TMENU *menu)
 
     if (menu->flags&ICONS) {
 
-        menu->xdl = (int) (64 * SKALA);
+        menu->xdl = (int) (vfv(64) * SKALA);
     }
 
     if (menu->flags & FIXED)
@@ -1817,23 +1888,23 @@ void Test_Menu (TMENU *menu)
 	  xr = ((menu->flags&NVERT) ? size * menu->xdl : menu->xdl);
 	  yd = ((menu->flags&NVERT) ? 1 : size);
 	  x1 = (menu->xpcz - 1)*WIDTH  * SKALA;
-	  y1 = (menu->ypcz - 1) * 32 + YP;
+	  y1 = (menu->ypcz - 1) * vfv(32) + YP;
 
 	  x2 = x1 + xr * SKALA + 2 * (GR + 1);
-	  y2 = y1 + yd * 32 + 2 * GR;
+	  y2 = y1 + yd * vfv(32) + 2 * GR;
 
       x2 += xs;
       y2 += ys;
 
 	  if (y2 > maxY)
 	  {
-		  menu->maxw = (maxY - y1) / (32);
+		  menu->maxw = (maxY - y1) / (vfv(32));
 	  }
 	  else
 	  {
 		  if (menu->maxw != menu->maxw0)
 		  {
-			  maxw = (maxY - y1) / (32);
+			  maxw = (maxY - y1) / (vfv(32));
 			  if (menu->maxw0 > 0)
 			  {
 				  if (maxw > menu->maxw0)
@@ -1971,6 +2042,7 @@ extern void  outtext_r(char  *textstring);
 extern void  outtext_r_(BITMAP *ui_screen, char  *textstring);
 extern void  Test_przycisniec(int *keys);
 extern void  Odczyt_licznikow(void);
+extern void Odczyt_licznikow_simple(void);
 extern int osnap_(void);
 extern int menupoz(void);
 extern int kolorL_(void);
@@ -1979,8 +2051,6 @@ extern int typ_linii_(void);
 extern int circle_and_rectangle_proc(void);
 extern int set_orig_window(void);
 extern int set_lastest_window(void);
-
-
 
 void mskp(void)
 { msx=msy=0;}
@@ -2008,7 +2078,7 @@ static void  msk (int x, int y)
 
  void (*MSERV)(int x,int y)=msk;
 
-static void  pusk(int x,int y)
+static void pusk(int x,int y)
 {
     int i,x1,y1,x2,y2,size,xr,yd, poz1, dx, dy, x11, x12, y11, y12;
     int mouse_xx, mouse_yy;
@@ -2025,13 +2095,13 @@ static void  pusk(int x,int y)
     {
         xr = ((tmenu->flags&NVERT) ? size * 2 : 2);
         x1=(tmenu->xpcz-1)*WIDTH * SKALA;
-        y1=(tmenu->ypcz-1)*32+YP;
+        y1=(tmenu->ypcz-1)*vfv(32)+YP;
 
-        x2 = x1 + xr *32 * SKALA + 2 * (GR + 1);
-        y2=y1+yd*32 +2*GR;
+        x2 = x1 + xr *vfv(32) * SKALA + 2 * (GR + 1);
+        y2=y1+yd*vfv(32) +2*GR;
 
-        dx = 64;
-        dy = 32;
+        dx = vfv(64);
+        dy = vfv(32);
     }
     else
     {
@@ -2040,7 +2110,7 @@ static void  pusk(int x,int y)
         x2=x1+xr*WIDTH * SKALA +2*(GR+1);
         y2=y1+yd*HEIGHT * SKALA +2*GR;
 
-        dx = 64;
+        dx = vfv(64);
         dy=HEIGHT;
     }
 
@@ -2131,6 +2201,17 @@ static void  usk(int x,int y)
         msud_min = -1;
 
     }
+}
+
+void Set_Mouse_Wheel(int val_int)
+{
+    if (val_int==0) WHEELSIGN=1;
+    else WHEELSIGN=-1;
+}
+
+int Get_Mouse_Wheel(void)
+{
+    return WHEELSIGN;
 }
 
 void
@@ -2466,21 +2547,21 @@ void show_hide_tip(TMENU * menu, BOOL show)
 	if (menu->flags&ICONS)
 	{
 		x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
-		y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+		y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 		if (menu->flags&NVERT)
 		{
-			x1 += menu->poz * 64 * SKALA;
+			x1 += menu->poz * vfv(64) * SKALA;
 			a = 6; 
-			y1 += 32 + 6;
+			y1 += vfv(32) + 6;
 		}
 		else
 		{
-			y1 += menu->poz * 32;
-		    a = 63;
+			y1 += menu->poz * vfv(32);
+		    a = vfv(64) - 1;
 		}
 
 		if (menu->flags&NVERT) a -= WIDTH /*8*/ * SKALA;
-		b = 32;
+		b = vfv(32);
 	}
 	else if ((txt[0] == '@') && (menu->poz>=0))
 	{
@@ -2605,23 +2686,23 @@ int frame_up(TMENU * menu)
 	{
 		x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
 		x0 = x1;
-		y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+		y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 		y0 = y1;
 		if (menu->flags&NVERT)
 		{
 	
-			x1 += menu->poz * 64 * SKALA;
+			x1 += menu->poz * vfv(64) * SKALA;
 
-			a = 64;
+			a = vfv(64);
 		}
 		else
 		{
-			y1 += menu->poz * 32;
+			y1 += menu->poz * vfv(32);
 			
-			a = 63;
+			a = vfv(64) - 1;
 		}
 
-		b = 32;
+		b = vfv(32);
 
 		if (menu->flags&NVERT) {
 			if  ((x1 + (step *2 * frame_counter)) <= x0)
@@ -2713,22 +2794,22 @@ void frame_off(TMENU * menu)
     if ((menu->flags&ICONS) && (menu->poz < (menu->max)))
 	{
 		x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
-		y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+		y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 		
 		if (menu->flags&NVERT)
 		{
-			x1 += menu->poz * 64 * SKALA;
+			x1 += menu->poz * vfv(64) * SKALA;
 			
-			a = 64;
+			a = vfv(64);
 		}
 		else
 		{
-			y1 += menu->poz * 32;
+			y1 += menu->poz * vfv(32);
 			
-			a = 63;
+			a = vfv(64) - 1;
 		}
 
-		b = 32;
+		b = vfv(32);
 
 		setwritemode(XOR_PUT);
 		setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
@@ -2747,29 +2828,86 @@ void frame_off(TMENU * menu)
 void pointer_on(TMENU * menu)
 {
     int x1, y1, a, b;
+	int WspX, WspY_;
+
+    if (menu->back == NULL) return;
+    if (/*(menu->flags&ICONS) &&*/ (menu->poz < menu->max))
+    {
+        x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
+        if (menu->flags&ICONS)
+            y1 = (menu->ypcz - 1) * vfv(32) + GR + YP;
+        else
+            y1 = (menu->ypcz - 1) * HEIGHT * SKALA + GR + YP;
+
+        if (menu->flags&ICONS)
+        {
+            if (menu->flags & NVERT)
+            {
+                x1 += menu->poz * vfv(64) * SKALA;
+
+                a = vfv(64);
+            } else {
+                y1 += menu->poz * vfv(32);
+
+                a = vfv(64)-1;
+            }
+
+            b = vfv(32);
+        }
+        else
+        {
+            y1 += menu->poz * HEIGHT * SKALA;
+            a = menu->xdl * WIDTH * SKALA;
+            b = HEIGHT * SKALA;
+        }
+#ifdef ALLEGRO5
+#ifdef MACOS
+    	MoveOSXCursor(x1 + a/2, y1 + b/2);
+#else
+		position_mouse_xy(x1 + a/2, y1 + b/2);
+#endif
+#else
+        position_mouse(x1 + a/2, y1 + b/2);
+#endif
+    	set_forget_mouse(x1 + a/2, y1 + b/2);
+    }
+}
+
+void pointer_on_old_version(TMENU * menu)
+{
+    int x1, y1, a, b;
 
     if (menu->back == NULL) return;
     if ((menu->flags&ICONS) && (menu->poz < menu->max))
     {
         x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
-        y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+        y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 
         if (menu->flags&NVERT)
         {
-            x1 += menu->poz * 64 * SKALA;
+            x1 += menu->poz * vfv(64) * SKALA;
 
-            a = 64;
+            a = vfv(64);
         }
         else
         {
-            y1 += menu->poz * 32;
+            y1 += menu->poz * vfv(32);
 
-            a = 63;
+            a = vfv(64)-1;
         }
 
-        b = 32;
+        b = vfv(32);
 
-        position_mouse(x1 + a/2, y1 + b/2);
+#ifdef ALLEGRO5
+#ifdef MACOS
+    	MoveOSXCursor(x1 + a/2, y1 + b/2);
+#else
+    	position_mouse(x1 + a/2, y1 + b/2);
+#endif
+#else
+    	position_mouse(x1 + a/2, y1 + b/2);
+#endif
+    	set_forget_mouse(x1 + a/2, y1 + b/2);
     }
 }
 
@@ -2784,22 +2922,22 @@ void frame_on(TMENU * menu)
 	if ((menu->flags&ICONS) && (menu->poz < menu->max))
 	{
 		x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
-		y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+		y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 
 		if (menu->flags&NVERT)
 		{
-			x1 += menu->poz * 64 * SKALA;
+			x1 += menu->poz * vfv(64) * SKALA;
 			
-			a = 64;
+			a = vfv(64);
 		}
 		else
 		{
-			y1 += menu->poz * 32;
+			y1 += menu->poz * vfv(32);
 			
-			a = 63;
+			a = vfv(64) - 1;
 		}
 
-		b = 32;
+		b = vfv(32);
 
 		setwritemode(XOR_PUT);
 		setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
@@ -2841,26 +2979,26 @@ int frame_down(TMENU * menu)
 
 		x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
 		x0 = x1;
-		y1 = (menu->ypcz - 1) * 32 + GR + 1 + YP - 1;
+		y1 = (menu->ypcz - 1) * vfv(32) + GR + 1 + YP - 1;
 		y0 = y1;
 
-        x2 = x1 + xr * 32 * SKALA + 2 * (GR + 1);
-        y2=  y1+yd*32  +2*GR;
+        x2 = x1 + xr * vfv(32) * SKALA + 2 * (GR + 1);
+        y2=  y1+yd*vfv(32)  +2*GR;
 		
 		if (menu->flags&NVERT)
 		{
-			x1 += menu->poz * 64 * SKALA;
-			xm = x0 + 64*menu->max* SKALA - GR; 
-			a = 64;
+			x1 += menu->poz * vfv(64) * SKALA;
+			xm = x0 + vfv(64)*menu->max* SKALA - GR;
+			a = vfv(64);
 		}
 		else
 		{
-			y1 += menu->poz * 32;
-			ym = y0 + 32*menu->max;  
-			a = 63;
+			y1 += menu->poz * vfv(32);
+			ym = y0 + vfv(32)*menu->max;
+			a = vfv(64)-1;
 		}
 
-		b = 32;
+		b = vfv(32);
 
 		if (menu->flags&NVERT) {
 			if ((x1 + a + (step * 2 * frame_counter)) > xm)
@@ -2930,8 +3068,19 @@ int frame_down(TMENU * menu)
                     {
                         if ((mouse_y >= y1) && (mouse_y <= y2))
                         {
-                             position_mouse(mouse_x_, (xy.y2-xy.y1)/2);
+
+						#ifdef ALLEGRO5
+						#ifdef MACOS
+								MoveOSXCursor(x1 + a/2, y1 + b/2);
+						#else
+								position_mouse(x1 + a/2, y1 + b/2);
+						#endif
+						#else
+								position_mouse(x1 + a/2, y1 + b/2);
+						#endif
+						set_forget_mouse(x1 + a/2, y1 + b/2);
                         }
+
                     }
                 }
                  */
@@ -3005,21 +3154,21 @@ void baronoff_(TMENU  * menu)
     if (menu->flags&ICONS)
     {
         x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA+GR+1;
-        y1=(menu->ypcz-1)*32+GR+1+YP -1;
+        y1=(menu->ypcz-1)*vfv(32)+GR+1+YP -1;
         if (menu->flags&NVERT)
         {
-            x1 += menu->poz*64 * SKALA;
+            x1 += menu->poz*vfv(64) * SKALA;
 
-            a = 64;
+            a = vfv(64);
         }
         else
         {
-            y1 += menu->poz * 32;
+            y1 += menu->poz * vfv(32);
 
-            a = 63;
+            a = vfv(64)-1;
         }
 
-        b=32;
+        b=vfv(32);
         l_no=4;
     }
     else
@@ -3201,7 +3350,7 @@ static char *get_icons_p(int number)
 		/*590*/   icon_cursors_p, icon_cursor_small_p, icon_cursor_big_p, icon_question_mark_db_48_p, icon_pointern_p, icon_pointerb_p, icon_pdf_vector_64_p,
 		/*597*/   icon_pattern_folder_p, icon_close_window_p, icon_change_pattern_p, icon_import_map_p, icon_import_png_p, icon_paper_size_d_p,
 		/*603*/   icon_mirror_leave_p, icon_mirror_replace_p, icon_set_offset_distance_p, icon_polygon_n_p, icon_A_circular_n_p, icon_A_circular_angle_p, icon_A_circular_rot_n_p, icon_A_circular_rot_angle_p,
-		/*611*/   icon_starAstar_p, icon_starA_p, icon_Astar_p, icon_Aonly_p, icon_gear_p, icon_confirm_or_deny_p, icon_stonewall_p, icon_folder_bd32_p, icon_folder_bd48_p, icon_folder_bd64_p,icon_arrow_up_end_d48_p,
+		/*611*/   icon_starAstar_p, icon_starA_p, icon_Astar_p, icon_Aonly_p, icon_gear_p, icon_confirm_or_deny_p, icon_folder_bd24_p, icon_folder_bd32_p, icon_folder_bd48_p, icon_folder_bd64_p,icon_arrow_up_end_d48_p,
 		/*622*/   icon_brickwall_dx_p, icon_brickwall_dy_p, icon_import_jpg_p, icon_chain_d_p, icon_on_top_d_p, icon_h_flip_p, icon_v_flip_p,
 		/*629*/   icon_offset_style_p, icon_offset_normal_p, icon_offset_smooth, icon_trace_close_p, icon_trace_break_p, icon_background_image_d48_p,
 		/*635*/   icon_UA_B_p, icon_UA_D_p, icon_UA_E_p, icon_UA_J_p, icon_UA_K_p, icon_UA_N_p, icon_UA_P_p, icon_UA_R_p, icon_UA_S_p, icon_UA_T_p, icon_UA_C_p,
@@ -3235,6 +3384,7 @@ static char *get_icons_p(int number)
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
         /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
         /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p, icon_CN_Flag_p,
+        /*832*/   icon_cursor_extrabig_p, icon_mousewheel_p, icon_mousewheelnatural_p, icon_mousewheelregular_p, icon_stonewall_p
     };
    
 	if (number>1999)
@@ -3279,31 +3429,31 @@ void draw_font_name(char *name, unsigned char fontno, int x, int y)
 	if (strcmp(name, "symbolmisc1") == 0)
 	{
 		strcpy(T.text, "abcdefgh");
-		T.wysokosc = 45;
-		dy = 4;
+		T.wysokosc = vfv(45);
+		dy = vfv(4);
 	}
 	else if (strcmp(name, "symbolmisc2") == 0)
 	{
 		strcpy(T.text, "ABCDEFGHIJK");
-		T.wysokosc = 40;
-		dy = -4;
+		T.wysokosc = vfv(40);
+		dy = -vfv(4);
 	}
 	else if (strcmp(name, "symap") == 0)
 	{
 		strcpy(T.text, "ABCDEFGHIJK");
-		T.wysokosc = 20;
+		T.wysokosc = vfv(20);
 		dy = 0;
 	}
 	else if (strcmp(name, "symath") == 0)
 	{
 		strcpy(T.text, "abcdefghijk");
-		T.wysokosc = 18;
+		T.wysokosc = vfv(18);
 		dy = 0;
 	}
 	else
 	{
 		strcpy(T.text, name);
-		T.wysokosc = 20;
+		T.wysokosc = vfv(20);
 		dy = 0;
 	}
 	T.dl = (int)strlen(T.text);
@@ -3357,16 +3507,16 @@ void pdraww(PTMENU  *menu)
     if (menu->flags&ICONS)
     {
 
-        menu->xdl = (int)(64 * SKALA);
+        menu->xdl = (int)(vfv(64) * SKALA);
 
         xr = ((menu->flags&NVERT) ? size * 2 : 2);
         yd=((menu->flags&NVERT)?1:size);
         x01=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
-        y01=(menu->ypcz-1)*32 + YP;
+        y01=(menu->ypcz-1)*vfv(32) + YP;
 
-        x02 = x01 + xr * 32 * SKALA + 2 * (GR + 1);
-        y02=y01+yd*32  +2*GR;
-        b2 = 32 * SKALA/ 3;
+        x02 = x01 + xr * vfv(32) * SKALA + 2 * (GR + 1);
+        y02=y01+yd*vfv(32)  +2*GR;
+        b2 = vfv(32) * SKALA/ 3;
     }
     else
     {
@@ -3444,7 +3594,7 @@ void pdraww(PTMENU  *menu)
 
             if (menu->flags&ICONS)
             {
-                bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+                bar(xt,yt - 2,w-(GR+2),yt + vfv(32) - 2);
             }
             else
             {
@@ -3492,7 +3642,7 @@ void pdraww(PTMENU  *menu)
 
                 if (menu->flags&ICONS)
                 {
-                    bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+                    bar(xt,yt - 2,w-(GR+2),yt + vfv(32) - 2);
                 }
                 else
                 {
@@ -3561,14 +3711,14 @@ void pdraww(PTMENU  *menu)
             else bmp = (BITMAP *)get_icons_p(ptrsz_iconno);
             if (bmp != NULL)
             {
-                if (bmp->w == 32) blit(bmp, screenplay, 0, 0, xt - 1, yt - 2, 32, 32);
+                if (bmp->w == vfv(32)) blit(bmp, screenplay, 0, 0, xt - 1, yt - 2, vfv(32), vfv(32));
                 else
                 {
-                    buffer = create_bitmap_ex(32, 32, 32);
+                    buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                     if (buffer != NULL)
                     {
                         clear_to_color(buffer, bitmap_mask_color(buffer));
-                        rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp->w));
+                        rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp->w));
                         set_alpha_blender();
                         draw_trans_sprite(screenplay, buffer, xt - 1, yt - 2);
                         destroy_bitmap(buffer);
@@ -3583,16 +3733,16 @@ void pdraww(PTMENU  *menu)
                 bmp_aux = (BITMAP *)get_icons_aux_p(ptrsz_tcod);
                 if (bmp_aux != NULL)
                 {
-                    if (bmp_aux->w == 32)  blit(bmp_aux, screenplay, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+                    if (bmp_aux->w == vfv(32))  blit(bmp_aux, screenplay, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
                     else
                     {
-                        buffer = create_bitmap_ex(32, 32, 32);
+                        buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                         if (buffer != NULL)
                         {
                             clear_to_color(buffer, bitmap_mask_color(buffer));
-                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
                             set_alpha_blender();
-                            draw_trans_sprite(screenplay, buffer, xt - 1 + 32, yt - 2);
+                            draw_trans_sprite(screenplay, buffer, xt - 1 + vfv(32), yt - 2);
                             destroy_bitmap(buffer);
                             set_trans_blender(0, 0, 0, TRANSLUCENCY);
                             set_mode_solid();
@@ -3605,16 +3755,16 @@ void pdraww(PTMENU  *menu)
                 bmp_aux = (BITMAP *)get_icons_p(ptrsz_tcod-1920);
                 if (bmp_aux != NULL)
                 {
-                    if (bmp_aux->w==32) blit(bmp_aux, screenplay, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+                    if (bmp_aux->w==vfv(32)) blit(bmp_aux, screenplay, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
                     else
                     {
-                        buffer = create_bitmap_ex(32, 32, 32);
+                        buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                         if (buffer != NULL)
                         {
                             clear_to_color(buffer, bitmap_mask_color(buffer));
-                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
                             set_alpha_blender();
-                            draw_trans_sprite(screenplay, buffer, xt - 1 + 32, yt - 2);
+                            draw_trans_sprite(screenplay, buffer, xt - 1 + vfv(32), yt - 2);
                             destroy_bitmap(buffer);
                             set_trans_blender(0, 0, 0, TRANSLUCENCY);
                             set_mode_solid();
@@ -3641,7 +3791,9 @@ void pdraww(PTMENU  *menu)
                 x = getx();
                 y = gety();
 
-                b = (int)(-HEIGHT*0.357 + 15);
+                //b = (int)(-HEIGHT*0.357 + vfv(15));
+                //b = vfv(16);
+                b=(int)(-HEIGHT*0.5 + vfv(15));
                 moveto(x + 36, y + b);
                 outtext_r_(menu_screen, sz_temp);
             }
@@ -3652,7 +3804,7 @@ void pdraww(PTMENU  *menu)
             {
                 x = getx();
                 y = gety();
-                HEIGHT1 = 28;
+                HEIGHT1 = vfv(28);
                 b = (int)(HEIGHT - (HEIGHT - HEIGHT1) / 2);
                 moveto(x, y + b);
 
@@ -3663,7 +3815,7 @@ void pdraww(PTMENU  *menu)
                 if (typ_f < i__font_nomax)
                 {
                     if ((PTRS__Text_Style[typ_f]->type < 2) || (PTRS__Text_Style[typ_f]->type==3))
-                        draw_font_name(ptrsz_temp, typ_f, x, y + 21); //22
+                        draw_font_name(ptrsz_temp, typ_f, x, y + vfv(21)); //22
                     else
                     {
                         kolor.red = 0;
@@ -3685,7 +3837,7 @@ void pdraww(PTMENU  *menu)
                         fontn.width = 0;
                         fontn.height = 0;
 
-                        draw_font_name_ttf(&fontn, (char *)&fontn.text, screenplay, x, y + 21, x2, fontn.kat, 20.0, kolor, COPY_PUT, 0, 0);  //22
+                        draw_font_name_ttf(&fontn, (char *)&fontn.text, screenplay, x, y + vfv(21), x2, fontn.kat, vfv(20), kolor, COPY_PUT, 0, 0);  //22
                     }
                 }
                 else
@@ -3756,7 +3908,7 @@ void pdraww(PTMENU  *menu)
         if (menu->flags&NVERT)
         {
             if (menu->flags&ICONS)
-                xtt += 64 * SKALA;
+                xtt += vfv(64) * SKALA;
             else
                 xtt += menu->xdl*WIDTH /*8*/ * SKALA;
         }
@@ -3764,7 +3916,7 @@ void pdraww(PTMENU  *menu)
         {
             if (menu->flags&ICONS)
             {
-                ytt+=32;
+                ytt+=vfv(32);
             }
             else
             {
@@ -3831,16 +3983,16 @@ void draww(TMENU  *menu)
    if (menu->flags&ICONS)
    {  
 
-	   menu->xdl = (int)(64 * SKALA);
+	   menu->xdl = (int)(vfv(64) * SKALA);
 
 	   xr = ((menu->flags&NVERT) ? size * 2 : 2);
 	   yd=((menu->flags&NVERT)?1:size);
 	   x01=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
-	   y01=(menu->ypcz-1)*32 + YP;
+	   y01=(menu->ypcz-1)*vfv(32) + YP;
 	   
-	   x02 = x01 + xr * 32 * SKALA + 2 * (GR + 1);
-	   y02=y01+yd*32  +2*GR;
-	   b2 = 32 * SKALA/ 3;
+	   x02 = x01 + xr * vfv(32) * SKALA + 2 * (GR + 1);
+	   y02=y01+yd*vfv(32)  +2*GR;
+	   b2 = vfv(32) * SKALA/ 3;
    }
    else
    {
@@ -3926,7 +4078,7 @@ void draww(TMENU  *menu)
 
 		  if (menu->flags&ICONS)
 		  {
-              bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+              bar(xt,yt - 2,w-(GR+2),yt + vfv(32) - 2);
 		  }
 		  else
 		  {
@@ -3973,7 +4125,7 @@ void draww(TMENU  *menu)
              
 			  if (menu->flags&ICONS)
 			  {
-                  bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+                  bar(xt,yt - 2,w-(GR+2),yt + vfv(32) - 2);
 			  }
 			  else
               {
@@ -3999,7 +4151,7 @@ void draww(TMENU  *menu)
 
                 if (menu->flags&ICONS)
                 {
-                    bar(xt,yt - 2,w-(GR+2),yt + 32 - 2);
+                    bar(xt,yt - 2,w-(GR+2),yt + vfv(32) - 2);
                 }
                 else
                 {
@@ -4040,7 +4192,7 @@ void draww(TMENU  *menu)
 					}
 					else
 					{
-						if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
+						if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
 						{
 							typ_f = menu->foff + i;
 						}
@@ -4061,14 +4213,14 @@ void draww(TMENU  *menu)
 		 else bmp = (BITMAP *)get_icons_p(ptrsz_iconno);
 		 if (bmp != NULL)
 		 {
-			 if (bmp->w == 32) blit(bmp, screenplay, 0, 0, xt - 1, yt - 2, 32, 32);
+			 if (bmp->w == vfv(32)) blit(bmp, screenplay, 0, 0, xt - 1, yt - 2, vfv(32), vfv(32));
 			 else
 			 {
-				 buffer = create_bitmap_ex(32, 32, 32);
+				 buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 				 if (buffer != NULL)
 				 {
 					 clear_to_color(buffer, bitmap_mask_color(buffer));			 
-					 rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp->w));
+					 rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp->w));
 					 set_alpha_blender();
 					 draw_trans_sprite(screenplay, buffer, xt - 1, yt - 2);
 					 destroy_bitmap(buffer);
@@ -4083,16 +4235,16 @@ void draww(TMENU  *menu)
 			 bmp_aux = (BITMAP *)get_icons_aux_p(ptrsz_tcod);
 			 if (bmp_aux != NULL)
 			 {		 
-			  if (bmp_aux->w == 32)  blit(bmp_aux, screenplay, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+			  if (bmp_aux->w == vfv(32))  blit(bmp_aux, screenplay, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
 			  else
 			  {
-				  buffer = create_bitmap_ex(32, 32, 32);
+				  buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 				  if (buffer != NULL)
 				  {
 					  clear_to_color(buffer, bitmap_mask_color(buffer));
-					  rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+					  rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
 					  set_alpha_blender();
-					  draw_trans_sprite(screenplay, buffer, xt - 1 + 32, yt - 2);
+					  draw_trans_sprite(screenplay, buffer, xt - 1 + vfv(32), yt - 2);
 					  destroy_bitmap(buffer);
 					  set_trans_blender(0, 0, 0, TRANSLUCENCY);
 					  set_mode_solid();
@@ -4105,16 +4257,16 @@ void draww(TMENU  *menu)
 			 bmp_aux = (BITMAP *)get_icons_p(ptrsz_tcod-1920);
 			 if (bmp_aux != NULL)
 			 {
-				 if (bmp_aux->w==32) blit(bmp_aux, screenplay, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+				 if (bmp_aux->w==vfv(32)) blit(bmp_aux, screenplay, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
 				 else
 				 {
-					 buffer = create_bitmap_ex(32, 32, 32);
+					 buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 					 if (buffer != NULL)
 					 {
 						 clear_to_color(buffer, bitmap_mask_color(buffer));
-						 rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+						 rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
 						 set_alpha_blender();
-						 draw_trans_sprite(screenplay, buffer, xt - 1 + 32, yt - 2);
+						 draw_trans_sprite(screenplay, buffer, xt - 1 + vfv(32), yt - 2);
 						 destroy_bitmap(buffer);
 						 set_trans_blender(0, 0, 0, TRANSLUCENCY);
 						 set_mode_solid();
@@ -4141,18 +4293,20 @@ void draww(TMENU  *menu)
 			 x = getx();
 			 y = gety();
 
-			 b = (int)(-HEIGHT*0.357 + 15);
-			 moveto(x + 36, y + b);
+			 //b = (int)(-HEIGHT*0.357 + vfv(15));
+             //b = vfv(16);
+             b=(int)(-HEIGHT*0.5 + vfv(15));
+			 moveto(x + vfv(32) + vfv(4), y + b);
 			 outtext_r_(menu_screen, sz_temp);
 		 }
 	 }
 	 else 
 	 {
-		if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
+		if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
 		{
 			x = getx();
 			y = gety();
-			HEIGHT1 = 28;
+			HEIGHT1 = vfv(28);
 			b = (int)(HEIGHT - (HEIGHT - HEIGHT1) / 2);
 			moveto(x, y + b);
 
@@ -4256,7 +4410,7 @@ void draww(TMENU  *menu)
 	 if (menu->flags&NVERT)
 	 {
 		 if (menu->flags&ICONS)
-			 xtt += 64 * SKALA;
+			 xtt += vfv(64) * SKALA;
 		 else
 			 xtt += menu->xdl*WIDTH /*8*/ * SKALA;
 	 }
@@ -4264,7 +4418,7 @@ void draww(TMENU  *menu)
 	 {
 		 if (menu->flags&ICONS)
 		 {
-		   ytt+=32;
+		   ytt+=vfv(32);
 		 }
 		 else
          {
@@ -4314,12 +4468,12 @@ void drawp(TMENU *menu)
 	   frame_on(menu);
 
 	   x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA +GR+1;
-	   y1=(menu->ypcz-1)*32 +GR+1+YP; y1+=menu->poz*32;
-       y2=y1+32;
-	   c= 32;
-	   a = 64;
-	   b=32;
-	   b2 = 32 * SKALA / 3;
+	   y1=(menu->ypcz-1)*vfv(32) +GR+1+YP; y1+=menu->poz*vfv(32);
+       y2=y1+vfv(32);
+	   c= vfv(32);
+	   a = vfv(64);
+	   b=vfv(32);
+	   b2 = vfv(32) * SKALA / 3;
 
        w=x2=x02-x01;
        h=y2=y02-y01;
@@ -4373,7 +4527,7 @@ void drawp(TMENU *menu)
 
 		   setfillstyle_(SOLID_FILL, kolor_m);
 		  
-		   bar(x1+32+d, y1+d, x1 + a-d, y1 + b-d);
+		   bar(x1+vfv(32)+d, y1+d, x1 + a-d, y1 + b-d);
 
 		   if (kolor_m > 16)
 		   {
@@ -4393,7 +4547,7 @@ void drawp(TMENU *menu)
 
            setfillstyle_(SOLID_FILL, kolor_m);
 
-           bar(x1+32+d, y1+d, x1 + a-d, y1 + b-d);
+           bar(x1+vfv(32)+d, y1+d, x1 + a-d, y1 + b-d);
 
            if (kolor_m > 16)
            {
@@ -4581,10 +4735,10 @@ static int find_menu_slider(TMENU *menu, SLIDER *slider)
         if (menu->flags&NVERT)
         {
             x1=(menu->xpcz-1)*WIDTH * SKALA;
-            y1=(menu->ypcz-1)*32+YP;
+            y1=(menu->ypcz-1)*vfv(32)+YP;
 
-            dx = 64;
-            dy = 32;
+            dx = vfv(64);
+            dy = vfv(32);
             for (i = 0; i < size; i++) {
                 x11 = x1 + i * dx;
                 x12 = x11 + dx;
@@ -4604,15 +4758,15 @@ static int find_menu_slider(TMENU *menu, SLIDER *slider)
             if (menu->flags&ICONS)
             {
                 x1=(menu->xpcz-1)*WIDTH  * SKALA;
-                y1=(menu->ypcz-1)*32 + YP;
-                dy=32;
+                y1=(menu->ypcz-1)*vfv(32) + YP;
+                dy=vfv(32);
             }
             else {
                 x1 = (menu->xpcz - 1) * WIDTH * SKALA;
                 y1 = (menu->ypcz - 1) * HEIGHT * SKALA + YP;
                 dy=HEIGHT;
             }
-            dx = 64;
+            dx = vfv(64);
 
             for (i = 0; i < size; i++) {
                 y11 = y1 + i * dy;
@@ -4646,6 +4800,8 @@ void draw_menu_slider(SLIDER *slider)
 
     gui_border_dark = palette_color[8];
     gui_border_light = palette_color[15];
+
+    slider->w=vfv(18);
 
     slider->flags &= ~0x800;
 
@@ -4693,12 +4849,18 @@ void draw_menu_slider(SLIDER *slider)
     Slider_.bg = palette_color[Slider_.bg /*kolory.paperk*/];
 
     Slider_.slider = slider;
-
+#ifndef ALLEGRO5
+#ifndef MACOS
     disable_hardware_cursor();
+#endif
+#endif
 
     ret = slider->proc(MSG_DRAW, &Slider_, '\0');
-
+#ifndef ALLEGRO5
+#ifndef MACOS
     enable_hardware_cursor();
+#endif
+#endif
 }
 
 void redraw_menu_slider(SLIDER *slider)
@@ -4757,10 +4919,10 @@ int openwh(TMENU *menu)
  {
 	 xr = ((menu->flags&NVERT) ? size * 2 : 2);
 	 x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
-	 y1=(menu->ypcz-1)*32+YP;
+	 y1=(menu->ypcz-1)*vfv(32)+YP;
 	 
-	 x2 = x1 + xr *32 * SKALA + 2 * (GR + 1);
-	 y2=y1+yd*32 +2*GR;
+	 x2 = x1 + xr *vfv(32) * SKALA + 2 * (GR + 1);
+	 y2=y1+yd*vfv(32) +2*GR;
  }
  else
  {
@@ -4773,21 +4935,25 @@ int openwh(TMENU *menu)
  set_slider[menu_level-1]=0;
  if ((BAR_POINTER) && (menu->maxw>0) && (menu->maxw<menu->max))
  {
-     if (menu->flags&NVERT) y2+=20;
-     else x2+=20;
+     if (menu->flags&NVERT) y2+=vfv(20);
+     else x2+=vfv(20);
      set_slider[menu_level-1]=1;
  }
 
- if ((menu_back = create_bitmap(x2 - x1 + 1, y2 - y1 + 36)) == NULL) return 0;
+ if ((menu_back = create_bitmap(x2 - x1 + 1, y2 - y1 + vfv(32) + vfv(4))) == NULL) return 0;
  menu->back=menu_back;
 
+    //set_cursor_edit();
  if (BAR_POINTER)   show_mouse(NULL);
                     
-getimage(x1,y1-18,x2,y2+18,menu->back);
+getimage(x1,y1-vfv(18),x2,y2+vfv(18),menu->back);
 //if (BAR_POINTER)  //show_mouse(screen);
                     
 
 if (BAR_POINTER) disable_F11();
+
+mouse_x_l[menu_level]=mouse_x;
+mouse_y_l[menu_level]=mouse_y;
 
 draww(menu);
 if (set_slider[menu_level-1])
@@ -4796,12 +4962,12 @@ if (set_slider[menu_level-1])
     if (menu->flags&NVERT)
     {
         Slider->x = x1;
-        Slider->y = y2-20;
+        Slider->y = y2-vfv(20);
         Slider->h = x2 - x1;
     }
     else
     {
-        Slider->x = x2 - 20;
+        Slider->x = x2 - vfv(20);
         Slider->y = y1;
         Slider->h = y2 - y1;
     }
@@ -4811,14 +4977,20 @@ if (set_slider[menu_level-1])
 }
 frame_on(menu);
 
-if (BAR_POINTER) show_mouse(screen);
+//if (BAR_POINTER) show_mouse(screen);
 
-    if ((BAR_POINTER) && (menu_level==1))
+    if ((BAR_POINTER) && (menu_level>0))  //==1
     {
+#ifdef ALLEGRO5
+        mouse_x0=mouse_x;
+        mouse_y0=mouse_y;
+#endif
         Save_Update_flex(0, &curr_h, &curr_v);
-        _free_mouse();
+        //_free_mouse();
         pointer_on(menu);
+    	_free_mouse();
     }
+	else if (BAR_POINTER) show_mouse(screen);
 
  return 1;
 }
@@ -4836,9 +5008,9 @@ unsigned Get_Menu_Image_Size (TMENU *menu)
  if (menu->flags&ICONS)
  {
 	 x1=(menu->xpcz-1)*WIDTH  * SKALA;
-	 y1=(menu->ypcz-1)*32+YP;
+	 y1=(menu->ypcz-1)*vfv(32)+YP;
 	 x2=x1+xr*WIDTH  * SKALA +2*(GR+1);
-	 y2=y1+yd*32 +2*GR;
+	 y2=y1+yd*vfv(32) +2*GR;
  }
  else
  {
@@ -4864,14 +5036,14 @@ if (BAR_POINTER) show_mouse(NULL);
 	 if (menu->flags&ICONS)
 	 {
 	 x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
-	 y1=(menu->ypcz-1)*32+YP;
+	 y1=(menu->ypcz-1)*vfv(32)+YP;
 	 }
 	 else
 	 {
 	 x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
 	 y1=(menu->ypcz-1)*HEIGHT * SKALA+YP;
 	 }
-	 putimage(x1, y1-18, menu->back, COPY_PUT);
+	 putimage(x1, y1-vfv(18), menu->back, COPY_PUT);
 	 menu->back=NULL;
    }
  if (BAR_POINTER) show_mouse(screen);
@@ -4882,6 +5054,9 @@ if (BAR_POINTER) show_mouse(NULL);
 
  void  popenw(PTMENU *menu)
  { int x0, y0, x00, y00;
+#ifdef ALLEGRO5
+     int WspX, WspY;
+#endif
 
      if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
      {
@@ -4893,8 +5068,8 @@ if (BAR_POINTER) show_mouse(NULL);
 
      if (dynamic_menu==TRUE)
      {
-         x00 = pikseleX0(X) +20;
-         y00 = pikseleY0(Y) +get_pYk() - 24;
+         x00 = pikseleX0(X) + vfv(20);
+         y00 = pikseleY0(Y) +get_pYk() - vfv(20) -vfv(4);
 
          if (menu->flags>=0)
          {
@@ -4908,9 +5083,9 @@ if (BAR_POINTER) show_mouse(NULL);
          if (menu->flags&ICONS)
          {
              if (menu->maxw==0)
-                 y0 = (y00 - menu->max*(32))/32;
+                 y0 = (y00 - menu->max*(vfv(32)))/vfv(32);
              else
-                 y0 = (y00 - menu->maxw*(32))/32;
+                 y0 = (y00 - menu->maxw*(vfv(32)))/vfv(32);
          }
          else
          {
@@ -4931,6 +5106,13 @@ if (BAR_POINTER) show_mouse(NULL);
 
 void  openw(TMENU *menu)
 { int x0, y0, x00, y00;
+#ifdef ALLEGRO5
+    int WspX, WspY;
+#endif
+
+
+	//if (menu_level == 0)
+	//	get_posXY(&X_, &Y_);
 
     if (menu->flags & FIXED)
     {
@@ -4938,7 +5120,7 @@ void  openw(TMENU *menu)
         return;
     }
 
- if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
+ if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
  {
 	Set_HEIGHT_high();
  }
@@ -4948,8 +5130,8 @@ void  openw(TMENU *menu)
  
   if (dynamic_menu==TRUE)
    {
-	  x00 = pikseleX0(X) +20;
-      y00 = pikseleY0(Y) +get_pYk() - 24;
+	  x00 = pikseleX0(X) + vfv(20);
+      y00 = pikseleY0(Y) +get_pYk() - vfv(20) -vfv(4);
 
     if (menu->flags>=0)
      {
@@ -4963,9 +5145,9 @@ void  openw(TMENU *menu)
 	if (menu->flags&ICONS)
 	{
     if (menu->maxw==0)
-           y0 = (y00 - menu->max*(32))/32;
+           y0 = (y00 - menu->max*(vfv(32)))/vfv(32);
        else
-           y0 = (y00 - menu->maxw*(32))/32;
+           y0 = (y00 - menu->maxw*(vfv(32)))/vfv(32);
 	}
 	else
     {
@@ -4986,37 +5168,68 @@ void  openw(TMENU *menu)
 }
 
 /*zgaszenie okna z odtworzeniem przeslanianego ekranu*/
-void  closew(TMENU *menu)
-{
-  int ret;
+void  closew(TMENU *menu) {
+	int ret;
+	int WspX_, WspY_;
 
-  if (set_slider[menu_level-1])
-  {
-      if (slider[menu_level-1].dp!=NULL)
-      {
-          destroy_bitmap(slider[menu_level - 1].dp);
-          slider[menu_level-1].dp=NULL;
-      }
-      set_slider[menu_level-1]=0;
-  }
+	if (set_slider[menu_level-1])
+	{
+		if (slider[menu_level-1].dp!=NULL)
+		{
+			destroy_bitmap(slider[menu_level - 1].dp);
+			slider[menu_level-1].dp=NULL;
+		}
+		set_slider[menu_level-1]=0;
+	}
 
-  menu_level--;
+#ifdef ALLEGRO5
+#ifdef MACOS
+	MoveOSXCursor(mouse_x_l[menu_level], mouse_y_l[menu_level]);
+#else
+	position_mouse(mouse_x_l[menu_level], mouse_y_l[menu_level]);
+#endif
+#else
+	position_mouse(mouse_x_l[menu_level], mouse_y_l[menu_level]);
+#endif
+	set_forget_mouse(mouse_x_l[menu_level], mouse_y_l[menu_level]);
+#ifdef LINUX
+	sleep(0);
+#else
+	_sleep(0);
+#endif
+	menu_level--;
 
-  if(menu->back)
-  {
-    closewh(menu);
-    deactiv(menu);
-  }
-  if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
-  {
-	  Set_HEIGHT_back();
-  }
+	if(menu->back)
+	{
+		closewh(menu);
+		deactiv(menu);
+	}
+	if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
+	{
+		Set_HEIGHT_back();
+	}
 
-  if ((BAR_POINTER) && (menu_level == 0))
-    {
-          lock_mouse();
-          Save_Update_flex(1, &curr_h, &curr_v);
-    }
+
+	if ((BAR_POINTER) && (menu_level == 0)) {
+		lock_mouse();
+		Save_Update_flex(1, &curr_h, &curr_v);
+
+#ifdef ALLEGRO5
+#ifdef MACOS
+		MoveOSXCursor(getmaxx()/2, getmaxy()/2);
+#else
+		position_mouse_xy(getmaxx()/2, getmaxy()/2);
+#endif
+#else
+		position_mouse(getmaxx()/2, getmaxy()/2);
+#endif
+		set_forget_mouse(getmaxx()/2, getmaxy()/2);
+		my_sleep(10);
+
+		set_posXY(X_, Y_);
+        CUR_ON(X,Y);
+		my_sleep(10);
+	}
 
     if (BAR_POINTER) enable_F11();
 }
@@ -5075,10 +5288,10 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
     if (menu->flags&ICONS)
     {
         x1 = xp * WIDTH /*8*/ * SKALA + GR + 1 ;
-        y1 = yp *32 + GR + YP ;
-        x2 = x1 + 64;
-        y2 = y1 + yd * 32 + 1;
-        b2 = 32 * SKALA / 3;
+        y1 = yp *vfv(32) + GR + YP ;
+        x2 = x1 + vfv(64);
+        y2 = y1 + yd * vfv(32) + 1;
+        b2 = vfv(32) * SKALA / 3;
 
     }
     else
@@ -5093,20 +5306,21 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
     if (bitmap_ptr!=NULL)
     {
 
+#ifndef ALLEGRO5
         setviewport(viewinfo[menu_level].left, viewinfo[menu_level].top, viewinfo[menu_level].right,viewinfo[menu_level].bottom, 1);
 
         x1-=viewinfo[menu_level].left;
         y1-=viewinfo[menu_level].top;
         x2-=viewinfo[menu_level].left;
         y2-=viewinfo[menu_level].top;
-
+#endif
         sz_ptr = (char *)bitmap_ptr;
 
         getimage(x1, y1, x2, y2, sz_ptr);
 
         if (menu->flags&ICONS)
         {
-            putimage(x1, y1 + ((b_next == TRUE) ? -32 : +32), sz_ptr, COPY_PUT);
+            putimage(x1, y1 + ((b_next == TRUE) ? -vfv(32) : +vfv(32)), sz_ptr, COPY_PUT);
         }
         else
         {
@@ -5120,7 +5334,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
         {
             if (menu->flags&ICONS)
             {
-                y_reg = y2 - 32;
+                y_reg = y2 - vfv(32);
             }
             else
             {
@@ -5129,7 +5343,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
         }
         if (menu->flags&ICONS)
         {
-            bar(x_reg, y_reg, x_reg + 32 * 2, y_reg + 32);
+            bar(x_reg, y_reg, x_reg + vfv(32) * 2, y_reg + vfv(32));
         }
         else
         {
@@ -5163,7 +5377,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
 
             if (menu->flags&ICONS)
             {
-                bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+                bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
             }
             else
             {
@@ -5210,7 +5424,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
 
                 if (menu->flags&ICONS)
                 {
-                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
                 }
                 else
                 {
@@ -5235,7 +5449,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
 
                 if (menu->flags&ICONS)
                 {
-                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+                    bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
                 }
                 else
                 {
@@ -5301,14 +5515,14 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
             else bmp = (BITMAP *)get_icons_p(ptrsz_iconno);
             if (bmp != NULL)
             {
-                if (bmp->w==32) blit(bmp, screen, 0, 0, xt - 1, yt - 2, 32, 32);
+                if (bmp->w==vfv(32)) blit(bmp, screen, 0, 0, xt - 1, yt - 2, vfv(32), vfv(32));
                 else
                 {
-                    buffer = create_bitmap_ex(32, 32, 32);
+                    buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                     if (buffer != NULL)
                     {
                         clear_to_color(buffer, bitmap_mask_color(buffer));
-                        rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp->w));
+                        rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp->w));
                         set_alpha_blender();
                         draw_trans_sprite(screen, buffer, xt - 1, yt - 2);
                         destroy_bitmap(buffer);
@@ -5322,16 +5536,16 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
                 bmp_aux = (BITMAP *)get_icons_aux_p(ptrsz_tcod);
                 if (bmp_aux != NULL)
                 {
-                    if (bmp_aux->w==32) blit(bmp_aux, screen, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+                    if (bmp_aux->w==vfv(32)) blit(bmp_aux, screen, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
                     else
                     {
-                        buffer = create_bitmap_ex(32, 32, 32);
+                        buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                         if (buffer != NULL)
                         {
                             clear_to_color(buffer, bitmap_mask_color(buffer));
-                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
                             set_alpha_blender();
-                            draw_trans_sprite(screen, buffer, xt - 1 + 32, yt - 2);
+                            draw_trans_sprite(screen, buffer, xt - 1 + vfv(32), yt - 2);
                             destroy_bitmap(buffer);
                             set_trans_blender(0, 0, 0, TRANSLUCENCY);
                             set_mode_solid();
@@ -5344,16 +5558,16 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
                 bmp_aux = (BITMAP *)get_icons_p(ptrsz_tcod-1920);
                 if (bmp_aux != NULL)
                 {
-                    if (bmp_aux->w == 32) blit(bmp_aux, screen, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+                    if (bmp_aux->w == vfv(32)) blit(bmp_aux, screen, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
                     else
                     {
-                        buffer = create_bitmap_ex(32, 32, 32);
+                        buffer = create_bitmap_ex(32, vfv(32), vfv(32));
                         if (buffer != NULL)
                         {
                             clear_to_color(buffer, bitmap_mask_color(buffer));
-                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+                            rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
                             set_alpha_blender();
-                            draw_trans_sprite(screen, buffer, xt - 1 + 32, yt - 2);
+                            draw_trans_sprite(screen, buffer, xt - 1 + vfv(32), yt - 2);
                             destroy_bitmap(buffer);
                             set_trans_blender(0, 0, 0, TRANSLUCENCY);
                             set_mode_solid();
@@ -5368,7 +5582,9 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
                 x = getx();
                 y = gety();
 
-                b = (int)(-HEIGHT*0.357 + 15);
+                //b = (int)(-HEIGHT*0.357 + vfv(15));
+                //b = vfv(16);
+                b=(int)(-HEIGHT*0.5 + vfv(15));
                 moveto(x + 34, y + b);
 
                 outtext_r_(screen, sz_temp);
@@ -5380,7 +5596,7 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
             {
                 x = getx();
                 y = gety();
-                HEIGHT1 = 28;
+                HEIGHT1 = vfv(28);
                 b = (int)(HEIGHT - (HEIGHT - HEIGHT1) / 2);
                 moveto(x, y + b);
 
@@ -5465,8 +5681,9 @@ static void pdraww_scroll (PTMENU *menu, BOOL b_next)
             moveto(xt+a,yt-YP0);
             outtext_r_(screen, st);
         }
-
+#ifndef ALLEGRO5
         setviewport(viewinfo[menu_level-1].left, viewinfo[menu_level-1].top, viewinfo[menu_level-1].right,viewinfo[menu_level-1].bottom, 1);
+#endif
     }
     else
     {
@@ -5532,10 +5749,10 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
    if (menu->flags&ICONS)
    {
 	   x1 = xp * WIDTH  * SKALA + GR + 1 ;
-	   y1 = yp *32 + GR + YP ;
-	   x2 = x1 + 64;
-	   y2 = y1 + yd * 32 + 1;
-	   b2 = 32 * SKALA / 3;
+	   y1 = yp *vfv(32) + GR + YP ;
+	   x2 = x1 + vfv(64);
+	   y2 = y1 + yd * vfv(32) + 1;
+	   b2 = vfv(32) * SKALA / 3;
 
    }
    else
@@ -5550,12 +5767,15 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
    bitmap_ptr = create_bitmap(x2 - x1 + 1, y2 - y1 + 1);
    if (bitmap_ptr!=NULL)
    {
+
+#ifndef ALLEGRO5
        setviewport(viewinfo[menu_level].left, viewinfo[menu_level].top, viewinfo[menu_level].right,viewinfo[menu_level].bottom, 1);
 
        x1-=viewinfo[menu_level].left;
        y1-=viewinfo[menu_level].top;
        x2-=viewinfo[menu_level].left;
        y2-=viewinfo[menu_level].top;
+#endif
 
 	   sz_ptr = (char *)bitmap_ptr;
 
@@ -5563,7 +5783,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 
 	   if (menu->flags&ICONS)
 	   {
-		   putimage(x1, y1 + ((b_next == TRUE) ? -32 : +32), sz_ptr, COPY_PUT);
+		   putimage(x1, y1 + ((b_next == TRUE) ? -vfv(32) : +vfv(32)), sz_ptr, COPY_PUT);
 	   }
 	   else
 	   {
@@ -5577,7 +5797,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 	   {
 		   if (menu->flags&ICONS)
 		   {
-			   y_reg = y2 - 32;
+			   y_reg = y2 - vfv(32);
 		   }
 		   else
 		   {
@@ -5586,7 +5806,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 	   }
 	   if (menu->flags&ICONS)
 	   {
-		   bar(x_reg, y_reg, x_reg + 32 * 2, y_reg + 32);
+		   bar(x_reg, y_reg, x_reg + vfv(32) * 2, y_reg + vfv(32));
 	   }
 	   else
 	   {
@@ -5621,7 +5841,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 		  
 		   if (menu->flags&ICONS)
 		   {
-			   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+			   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
 		   }
 		   else
 		   {
@@ -5668,7 +5888,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 			   
 			   if (menu->flags&ICONS)
 			   {
-				   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+				   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
 			   }
 			   else
 			   {
@@ -5693,7 +5913,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 
                if (menu->flags&ICONS)
                {
-                   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + 32 - 2);
+                   bar(x_reg, yt - 2, x_reg + (x2 - x1), yt + vfv(32) - 2);
                }
                else
                {
@@ -5738,7 +5958,7 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 				   else
 				   {  
 
-						if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
+						if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
 						{
 							typ_f = menu->foff + menu->poz;
 						}
@@ -5760,14 +5980,14 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 		   else bmp = (BITMAP *)get_icons_p(ptrsz_iconno);
 		   if (bmp != NULL)
 		   {   
-		    if (bmp->w==32) blit(bmp, screen, 0, 0, xt - 1, yt - 2, 32, 32);
+		    if (bmp->w==vfv(32)) blit(bmp, screen, 0, 0, xt - 1, yt - 2, vfv(32), vfv(32));
 			else
 			{
-				buffer = create_bitmap_ex(32, 32, 32);
+				buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 				if (buffer != NULL)
 				{
 					clear_to_color(buffer, bitmap_mask_color(buffer));
-					rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp->w));
+					rotate_scaled_sprite(buffer, bmp, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp->w));
 					set_alpha_blender();
 					draw_trans_sprite(screen, buffer, xt - 1, yt - 2);
 					destroy_bitmap(buffer);
@@ -5781,16 +6001,16 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 			   bmp_aux = (BITMAP *)get_icons_aux_p(ptrsz_tcod);
 			   if (bmp_aux != NULL)
 			   {	  
-				if (bmp_aux->w==32) blit(bmp_aux, screen, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+				if (bmp_aux->w==vfv(32)) blit(bmp_aux, screen, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
 				else
 				{
-					buffer = create_bitmap_ex(32, 32, 32);
+					buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 					if (buffer != NULL)
 					{
 						clear_to_color(buffer, bitmap_mask_color(buffer));
-						rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+						rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
 						set_alpha_blender();
-						draw_trans_sprite(screen, buffer, xt - 1 + 32, yt - 2);
+						draw_trans_sprite(screen, buffer, xt - 1 + vfv(32), yt - 2);
 						destroy_bitmap(buffer);
 						set_trans_blender(0, 0, 0, TRANSLUCENCY);
 						set_mode_solid();
@@ -5803,16 +6023,16 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 			   bmp_aux = (BITMAP *)get_icons_p(ptrsz_tcod-1920);
 			   if (bmp_aux != NULL)
 			   {
-				if (bmp_aux->w == 32) blit(bmp_aux, screen, 0, 0, xt - 1 + 32, yt - 2, 32, 32);
+				if (bmp_aux->w == vfv(32)) blit(bmp_aux, screen, 0, 0, xt - 1 + vfv(32), yt - 2, vfv(32), vfv(32));
 				else
 				{
-					buffer = create_bitmap_ex(32, 32, 32);
+					buffer = create_bitmap_ex(32, vfv(32), vfv(32));
 					if (buffer != NULL)
 					{
 						clear_to_color(buffer, bitmap_mask_color(buffer));
-						rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix(32.0 / (double)bmp_aux->w));
+						rotate_scaled_sprite(buffer, bmp_aux, 0, 0, ftofix(0.0), ftofix((double)vfv(32) / (double)bmp_aux->w));
 						set_alpha_blender();
-						draw_trans_sprite(screen, buffer, xt - 1 + 32, yt - 2);
+						draw_trans_sprite(screen, buffer, xt - 1 + vfv(32), yt - 2);
 						destroy_bitmap(buffer);
 						set_trans_blender(0, 0, 0, TRANSLUCENCY);
 						set_mode_solid();
@@ -5827,7 +6047,9 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 			   x = getx();
 			   y = gety();
 
-               b = (int)(-HEIGHT*0.357 + 15);
+               //b = (int)(-HEIGHT*0.357 + vfv(15));
+               //b = vfv(16);
+               b=(int)(-HEIGHT*0.5 + vfv(15));
                moveto(x + 34, y + b);
 
 			   outtext_r_(screen, sz_temp);
@@ -5835,11 +6057,11 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 	   }
 	   else
 	   {
-           if ((menu == &mCzcionka) || (menu == &mCzcionkaZ) || (menu == &mCzcionkaW))
+           if (((char*)menu == (char*)&mCzcionka) || ((char*)menu == (char*)&mCzcionkaZ) || ((char*)menu == (char*)&mCzcionkaW))
 		   {
 			   x = getx();
 			   y = gety();
-			   HEIGHT1 = 28;
+			   HEIGHT1 = vfv(28);
 			   b = (int)(HEIGHT - (HEIGHT - HEIGHT1) / 2);
 			   moveto(x, y + b);
 
@@ -5926,8 +6148,9 @@ static void draww_scroll (TMENU *menu, BOOL b_next)
 	  moveto(xt+a,yt-YP0);
 	  outtext_r_(screen, st);
       }
-
+#ifndef ALLEGRO5
       setviewport(viewinfo[menu_level-1].left, viewinfo[menu_level-1].top, viewinfo[menu_level-1].right,viewinfo[menu_level-1].bottom, 1);
+#endif
    }
    else
    {
@@ -5975,16 +6198,16 @@ static void shift_cursor(TMENU *menu)
     if (menu->flags&ICONS)
     {
 
-        menu->xdl = (int)(64 * SKALA);
+        menu->xdl = (int)(vfv(64) * SKALA);
 
         xr = ((menu->flags&NVERT) ? size * 2 : 2);
         yd=((menu->flags&NVERT)?1:size);
         x01=(menu->xpcz-1)*WIDTH /*8*/ * SKALA;
-        y01=(menu->ypcz-1)*32 + YP;
+        y01=(menu->ypcz-1)*vfv(32) + YP;
 
         x02 = x01 + xr * 32 * SKALA + 2 * (GR + 1);
-        y02=y01+yd*32  +2*GR;
-        //b2 = 32 * SKALA/ 3;
+        y02=y01+yd*vfv(32)  +2*GR;
+        //b2 = vfv(32) * SKALA/ 3;
     }
     else
     {
@@ -6001,11 +6224,32 @@ static void shift_cursor(TMENU *menu)
     mouse_y_=mouse_y;
     if ((mouse_x_ >= x01) && (mouse_x_ <= x02))
     {
-        if ((mouse_y_ >= y01) && (mouse_y_ <= y02))
-        {
-            if (menu->flags&NVERT)
-                position_mouse(bar_center.x, mouse_y_);
-            else position_mouse(mouse_x_, bar_center.y);
+        if ((mouse_y_ >= y01) && (mouse_y_ <= y02)) {
+	        if (menu->flags&NVERT)
+	        {
+#ifdef ALLEGRO5
+#ifdef MACOS
+        	MoveOSXCursor(bar_center.x, mouse_y_);
+#else
+        	position_mouse(bar_center.x, mouse_y_);
+#endif
+#else
+        	position_mouse(bar_center.x, mouse_y_);
+#endif
+        	set_forget_mouse(bar_center.x, mouse_y_);
+        }
+            else {
+#ifdef ALLEGRO5
+#ifdef MACOS
+            	MoveOSXCursor(mouse_x_, bar_center.y);
+#else
+            	position_mouse(mouse_x_, bar_center.y);
+#endif
+#else
+            	position_mouse(mouse_x_, bar_center.y);
+#endif
+            	set_forget_mouse(mouse_x_, bar_center.y);
+            }
         }
     }
     //if (menu->max > menu->maxw)
@@ -6435,6 +6679,9 @@ void unredcr_menu(void) {
 void  openmenu(TMENU *menu)
 {
  register TMENU *rmenu;
+
+	if (menu_level == 0)
+		get_posXY(&X_, &Y_);
  //przesuniecie okna do pozycji kursora
    if(!opwin)
      { rmenu=ACTW;
@@ -6593,14 +6840,16 @@ int Get_Dialog_Menu_Level(void)
 
 void set_mickey_hand(BITMAP *icon_mickey_s, BITMAP* icon_mickey)
 {
-	mickey_hand_s = create_bitmap_ex(32, 64, 64);
+	//mickey_hand_s = create_bitmap_ex(32, vfv(64), vfv(64));
+    mickey_hand_s = create_bitmap_ex(32, 64, 64);
 	if (mickey_hand_s != NULL)
 	{
 		clear_to_color(mickey_hand_s, bitmap_mask_color(mickey_hand_s));
 		rotate_scaled_sprite(mickey_hand_s, icon_mickey_s, 0, 0, ftofix(0.0), ftofix(1.0));
 	}
 
-	mickey_hand = create_bitmap_ex(32, 96, 96);
+	//mickey_hand = create_bitmap_ex(32, vfv(96), vfv(96));
+    mickey_hand = create_bitmap_ex(32, 96, 96);
 	if (mickey_hand != NULL)
 	{
 		clear_to_color(mickey_hand, bitmap_mask_color(mickey_hand));
@@ -6614,12 +6863,18 @@ void draw_mickey_hand(double x, double y)
 
     set_alpha_blender();
 
-	if (BIGCURSOR)
+	if (BIGCURSOR==2)
 	{
 		x_h = pikseleX(x) - 57;
 		y_h = pikseleY(y) - 1;
 		draw_trans_sprite(screen, mickey_hand, x_h, y_h);
 	}
+    else if (BIGCURSOR==1)
+    {
+        x_h = pikseleX(x) - 57;
+        y_h = pikseleY(y) - 1;
+        draw_trans_sprite(screen, mickey_hand, x_h, y_h);
+    }
 	else
 	{
 		x_h = pikseleX(x) - 38;
@@ -6650,17 +6905,17 @@ static void draw_keyimage(int keyimage, BOOL set_timer, BOOL silent, BOOL enforc
 	shiftkeyimage_back = keyimage;
 
     x1 = sec_screen->cl+2;
-    y1 = sec_screen->cb - 2 - 32 * demo_scale;
+    y1 = sec_screen->cb - 2 - vfv(32) * demo_scale;
 
     if (x1>sec_screen->cr) return;
 
-	x2 = 32*demo_scale;  //+pocz_x;
-	y2 = 32*demo_scale;  //+pocz_y;
+	x2 = vfv(32)*demo_scale;  //+pocz_x;
+	y2 = vfv(32)*demo_scale;  //+pocz_y;
 
     if (x2>sc_w - 2) x2=sc_w-2;
-    if (x2<(32*demo_scale)) return;
+    if (x2<(vfv(32)*demo_scale)) return;
     if (y2>sc_h - 2) y2=sc_h-2;
-    if (y2<(32*demo_scale)) return;
+    if (y2<(vfv(32)*demo_scale)) return;
 
 
 	if (keyimage > -1)
@@ -6692,7 +6947,7 @@ static void draw_keyimage(int keyimage, BOOL set_timer, BOOL silent, BOOL enforc
 
                 //beep(MB_ABORTRETRYIGNORE);
 
-                if (bmp->w == 32) {
+                if (bmp->w == vfv(32)) {
                     blit(bmp, sec_screen, 0, 0, x1, y1, x2, y2);
                 }
                 else {
@@ -6767,18 +7022,18 @@ static void draw_demokeyimage(int keyimage, int keyimage1, BOOL set_timer, BOOL 
 
 	keyimage_back = keyimage;
 
-	x1 = sec_screen->cl + 2 + 32 * demo_scale;
-    y1 = sec_screen->cb - 2 - 32 * demo_scale;
+	x1 = sec_screen->cl + 2 + vfv(32) * demo_scale;
+    y1 = sec_screen->cb - 2 - vfv(32) * demo_scale;
 
     if (x1>sec_screen->cr) return;
 
-	x2 = 32*demo_scale;  //+pocz_x;
-	y2 = 32*demo_scale;  //+pocz_y;
+	x2 = vfv(32)*demo_scale;  //+pocz_x;
+	y2 = vfv(32)*demo_scale;  //+pocz_y;
 
-    if (x2>sc_w - 2 - 32*demo_scale) x2=sc_w-2-32*demo_scale;
-    if (x2<(32*demo_scale)) return;
+    if (x2>sc_w - 2 - vfv(32)*demo_scale) x2=sc_w-2-vfv(32)*demo_scale;
+    if (x2<(vfv(32)*demo_scale)) return;
     if (y2>sc_h - 2) y2=sc_h-2;
-    if (y2<(32*demo_scale)) return;
+    if (y2<(vfv(32)*demo_scale)) return;
 
 
 	if (keyimage > -1)
@@ -6861,7 +7116,7 @@ static void draw_demokeyimage(int keyimage, int keyimage1, BOOL set_timer, BOOL 
 		shiftkeyimage_back_back = 0;
 	}
 
-	x1 += 32 * demo_scale;
+	x1 += vfv(32) * demo_scale;
 
 	if (keyimage1 > -1)
 	{
@@ -7122,10 +7377,12 @@ int inkeys(TMENU *menu, BOOL search_ok)
   char *ptr;
   static int a=0;
 
+  menu_ = menu;
+
     if (menu!=NULL) {
         if (menu->flags & 0x100)
         {
-            menu_ = menu;
+            //menu_ = menu;
             txt = &((*(menu_->pola))[0].txt[0]);
         }
         else txt = &((*(menu->pola))[0].txt[0]);
@@ -7174,7 +7431,13 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		       my_sleep(10);
 	   }
 
-	   if (DEMO_RECORDING)
+       if (hibernate==TRUE)
+       {
+           my_sleep(10);
+           continue;
+       }
+
+       if (DEMO_RECORDING)
 	   {  
 		   if (shiftkeyimage_back > 0)
 		   {
@@ -7195,7 +7458,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 	   
 	   if ((now_is_dialog==0) && ((menu == NULL) || (menu_level == 0)) && (key_shifts & (KB_ALT_FLAG | KB_SHIFT_FLAG | KB_CTRL_FLAG)) && (!keypressed()))
 	   {
-		   sleep_state = FALSE;
+		   set_sleep_state(FALSE);
 		   if (key[KEY_ALT])
 		   {   
 			   altkey_ = !altkey_;
@@ -7332,7 +7595,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
                        if (ptr != NULL) break;
                    }
                    if (i < menu_->max) {
-                       if (menu_->max == menu_->maxw) {
+                       if (menu_->max == menu_->maxw)
+                       	{
                            menu_->foff = 0;
                            menu_->poz = i;
                        }
@@ -7347,8 +7611,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
                                menu_->poz = i - menu_->foff;
                            }
                        }
-                       closew(menu_);
-                       openw(menu_);
+                       closew((TMENU*)menu_);
+                       openw((TMENU*)menu_);
                    }
                    lk = 1;
                }
@@ -7396,7 +7660,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 
 		   set_scrsave_time();
 
-		   sleep_state=FALSE;
+		   set_sleep_state(FALSE);
 
 		   mkeys = keys; keys = 0;
            if (((mkeys) & '\01') &&  ((mkeys) & '\02'))
@@ -7440,7 +7704,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
 	   Odczyt_licznikow();
 
 	   //odczytanie polozenia kolka myszy
-	   d_mouse_z = mouse_z - last_mouse_z;
+	   //d_mouse_z = mouse_z - last_mouse_z;
+       d_mouse_z = WHEELSIGN*(int)((float)((mouse_z - last_mouse_z)) * mouse_z_factor);
 	   if (d_mouse_z > mouse_dz)
 	   {
 		   if (DEMO_RECORDING)
@@ -7862,7 +8127,7 @@ int inukeys(TMENU *menu)
 		{ /*kasowanie czasu savera*/
 
 			set_scrsave_time();
-			sleep_state = FALSE;
+			set_sleep_state(FALSE);
 
 			mkeys = keys; keys = 0;
 			if ((mkeys)&'\01') return ucatch (MOUSEESC);
@@ -7878,6 +8143,9 @@ int inukeys(TMENU *menu)
 
 char  readmouse(void)
 {
+    int msx_, msy_;
+    int WspX_, WspY_;
+
   Test_przycisniec(&keys_int);
   if (keys_int > 0)
   {
@@ -7885,16 +8153,17 @@ char  readmouse(void)
 	  return 0;
   }
   msx=0;msy=0;
-  Odczyt_licznikow();
-  if (msx!=0 || msy!=0) 
-    { 
+  Odczyt_licznikow_simple();
+  //Odczyt_licznikow();
+  if (msx!=0 || msy!=0)
+  {
       if (labs (l_rX + msx) > l_krok_s ||
       labs (l_rY + msy) > l_krok_s)
        {
         mvcurb.mvc = 1 ;
        }
-   
-    }
+
+  }
   return 0;
 }
 
@@ -7971,7 +8240,7 @@ int  getcom(TMENU *menu)
         }
     }
 	
-	sleep_state=FALSE;
+	set_sleep_state(FALSE);
 
 	switch (zn)
 	{
@@ -9015,12 +9284,12 @@ void ch_color (void)
             size=mInfoAboutA.maxw?mInfoAboutA.maxw:mInfoAboutA.max;
 
             x1=(mInfoAboutA.xpcz-1) * WIDTH * SKALA + XP;
-            y1=(mInfoAboutA.ypcz-1)*32 + YP;
+            y1=(mInfoAboutA.ypcz-1)*vfv(32) + YP;
 
-            ytt = /*y1 + GR*/ - 2 * SKALA + MDY + (2 * 32);
+            ytt = /*y1 + GR*/ - 2 * SKALA + MDY + (2 * vfv(32));
             yt=(int) ytt;
 
-            bar(x1 + 32, y1 + yt, x1 + 64, y1 + yt + 32);
+            bar(x1 + vfv(32), y1 + yt, x1 + vfv(64), y1 + yt + vfv(32));
 
             if (kolor_m > 16)
             {
@@ -12143,8 +12412,8 @@ int Simple_Menu_Proc (TMENU *menu)
 
     if (dynamic_menu==TRUE)
     {
-        x00 = pikseleX0(X) +20;
-        y00 = pikseleY0(Y) +get_pYk() - 24;
+        x00 = pikseleX0(X) +vfv(20);
+        y00 = pikseleY0(Y) +get_pYk() - vfv(20) -vfv(4);
 
         if (menu->flags>=0)
         {
@@ -12158,9 +12427,9 @@ int Simple_Menu_Proc (TMENU *menu)
         if (menu->flags&ICONS)
         {
             if (menu->maxw==0)
-                y0 = (y00 - menu->max*(32))/32;
+                y0 = (y00 - menu->max*(vfv(32)))/vfv(32);
             else
-                y0 = (y00 - menu->maxw*(32))/32;
+                y0 = (y00 - menu->maxw*(vfv(32)))/vfv(32);
         }
         else
         {
@@ -12219,8 +12488,8 @@ int Simple_Menu_Proc_(TMENU *menu)
 	if (menu == NULL) return  (COMNDmnr-1);
 	if (dynamic_menu == TRUE)
 	{
-		x00 = pikseleX0(X) + 20;
-		y00 = pikseleY0(Y) - 24;
+		x00 = pikseleX0(X) +vfv(20);
+		y00 = pikseleY0(Y) -vfv(20) -vfv(4);
 
 		if (menu->flags >= 0)
 		{
@@ -12233,8 +12502,8 @@ int Simple_Menu_Proc_(TMENU *menu)
 		}
 		if (menu->flags&ICONS)
 		{
-			if (menu->maxw == 0) y0 = (y00 / (32)) - menu->max - 1;
-			else y0 = (y00 / (32)) - menu->maxw - 1;
+			if (menu->maxw == 0) y0 = (y00 / (vfv(32))) - menu->max - 1;
+			else y0 = (y00 / (vfv(32))) - menu->maxw - 1;
 		}
 		else
 		{

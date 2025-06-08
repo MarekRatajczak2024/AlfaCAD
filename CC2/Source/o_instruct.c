@@ -47,7 +47,7 @@
 #define  Xp1  5
 #define  Yp1  5
 #define  DXBox1  250
-#define  DYBox1  252
+#define  DYBox1  254 //252
 #define  DXBut1  45 //50 //54 //75
 #define  DYBut1  20
 #define  XpOK1  Xp1 + 160
@@ -57,11 +57,11 @@
 
 #define DXShift 102
 #define DXShiftOr1 40
-#define DXShiftOr2 65
-#define DXShiftOr3 49
+#define DXShiftOr2 67 //65
+#define DXShiftOr3 51 //49
 #define DXShiftOr4 24
-#define DXShiftOr5 33
-#define DXShiftOr6 17
+#define DXShiftOr5 35 //33
+#define DXShiftOr6 19 //17
 
 #define ID_OK             1
 #define ID_STAY         2
@@ -195,7 +195,7 @@ static IMAGE images_i [] =
 
 static TDIALOG instruct_dlg=
 {
-	XpBox1, YpBox1, DXBox1+10, DYBox1+10,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
+	XpBox1, YpBox1, DXBox1+10, DYBox1+14,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
 	instruction,
 	0, NULL, //&line_d_l,
 	27, (LABEL(*)[])&lab,
@@ -221,7 +221,7 @@ char *Get_instruct_dlg(void)
 static int proc_dlg_instruct( int n)
 /*------------------------------*/
 {
-  int ret = Dlg_Ret_Val_OK;
+  int ret = Dlg_Ret_Val_Continue;
 
   switch (n)
   {

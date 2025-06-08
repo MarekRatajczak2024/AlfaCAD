@@ -1126,6 +1126,10 @@ void SkalaZC(void)
 
   if(!snap_)krok_s=jednostkiY(1);
   redraw();
+#ifdef ALLEGRO5
+  flip_screen();
+  CUR_ON(X, Y);
+#endif
   Save_View();
 }
 

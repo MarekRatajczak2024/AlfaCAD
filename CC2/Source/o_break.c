@@ -1593,6 +1593,12 @@ void deduct_objects(void *b_src, void *b_dest)
                                     l2->kat1=l1->kat2;
                                     found=TRUE;
                                 }
+                                else if (l1->kat2==l2->kat2)
+                                {
+                                    //cutting arc
+                                    l2->kat2=l1->kat1;  //??? WARNING
+                                    found=TRUE;
+                                }
                             }
                             break;
                         default:

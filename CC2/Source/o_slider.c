@@ -379,8 +379,11 @@ int d_myslider_proc(int msg, void *d_, int c)
             break;
 */
         case MSG_CLICK:
-
+#ifndef ALLEGRO5
+#ifndef MACOS
             disable_hardware_cursor();
+#endif
+#endif
             /* track the mouse until it is released */
             mp = slp;
 
@@ -417,7 +420,11 @@ int d_myslider_proc(int msg, void *d_, int c)
                 /* let other objects continue to animate */
                 broadcast_dialog_message(MSG_IDLE, 0);
             }
+#ifndef ALLEGRO5
+#ifndef MACOS
             enable_hardware_cursor();
+#endif
+#endif
             break;
     }
 

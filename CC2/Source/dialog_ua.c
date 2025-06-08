@@ -206,7 +206,7 @@ static char* prn_ini_date_param_comment[] =
 #define image_pr_tips2 u8"Відображення"
 #define image_pr_tips3 u8"Друк у відтінках сірого"
 #define image_pr_tips4 u8"Чорно-білий друк"
-#define image_pr_tips5 u8"Друк растрових зображень у відтінках сірого"
+#define image_pr_tips5 u8"Друк растров у відтінках сірого"
 #define image_pr_tips6 u8"Друк на принтері"
 #define image_pr_tips7 u8"Зберегти у файлі зображення"
 #define image_pr_tips8 u8"Вікно друку"
@@ -226,7 +226,7 @@ static char* prn_ini_date_param_comment[] =
 #define image_pr_tips22 u8"Товстий"
 #define image_pr_tips23 u8"Дуже товстий"
 #define image_pr_tips24 u8"Екстра товсті"
-#define image_pr_tips25 u8"Зберегти у векторному PDF-файлі"
+#define image_pr_tips25 u8"Зберегти у векторному PDF"
 #define image_pr_tips26 u8"Формат паперу"
 #define image_pr_tips27 u8"Друк світлого фонового кольору"
 
@@ -451,12 +451,12 @@ char plt_dlg_buttons[][64] = {
 
 #define _IMAGE_FILE_IMPORT_ u8"Параметри імпорту графічного файлу";
 
-#define pcx_tips0 u8"@Горизонтальна щільність у точках на дюйм"
-#define pcx_tips1 u8"Вертикальна щільність у точках на дюйм"
+#define pcx_tips0 u8"@Горизонтальна щільність"
+#define pcx_tips1 u8"Вертикальна щільність"
 #define pcx_tips2 u8"Горизонтальний розмір у мм"
 #define pcx_tips3 u8"Вертикальний розмір у мм"
-#define pcx_tips4 u8"Масштабований горизонтальний розмір у мм"
-#define pcx_tips5 u8"Масштабований вертикальний розмір у мм"
+#define pcx_tips4 u8"Масштабовано по горизонталі"
+#define pcx_tips5 u8"Масштабовано по вертикалі"
 #define pcx_tips6 u8"Горизонтальний масштаб"
 #define pcx_tips7 u8"Вертикальний масштаб"
 #define pcx_tips8 u8"Заповнений фон"
@@ -489,10 +489,10 @@ char header_dxf[] = u8"Заголовок";
 char setup_dxf[] = u8"Налаштування";
 char setup_format[] = u8"Формат";
 
-#define images_dxf_tips0 u8"@Горизонтальні діапазон [одиниць]"
-#define images_dxf_tips1 u8"Вертикальні діапазон [одиниць]"
-#define images_dxf_tips2 u8"Горизонтальні межі [одиниць]"
-#define images_dxf_tips3 u8"Вертикальні межі [одиниць]"
+#define images_dxf_tips0 u8"@Горизонтальні діапазон"
+#define images_dxf_tips1 u8"Вертикальні діапазон"
+#define images_dxf_tips2 u8"Горизонтальні межі"
+#define images_dxf_tips3 u8"Вертикальні межі"
 #define images_dxf_tips4 u8"Горизонтальний розмір [мм]"
 #define images_dxf_tips5 u8"Вертикальний розмір [мм]"
 #define images_dxf_tips6 u8"Ліве поле [мм]"
@@ -500,7 +500,7 @@ char setup_format[] = u8"Формат";
 #define images_dxf_tips8 u8"Одиниці"
 #define images_dxf_tips9 u8"Масштаб"
 #define images_dxf_tips10 u8"Формат креслення"
-#define images_dxf_tips11 u8"Автоматично коректувати розміри креслення"
+#define images_dxf_tips11 u8"Автоматично коректувати розміри"
 
 #endif
 

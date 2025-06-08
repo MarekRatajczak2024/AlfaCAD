@@ -71,7 +71,7 @@ extern "C" {
 extern void GetTextLen (TEXT *t, double *tdl) ;
 extern void Get_Limits (long off, long offk, int atrybut,
 	double *xmin, double *xmax, double *ymin, double *ymax) ;
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern int32_t utf8_to_ucs2(const uint8_t * input, const uint8_t ** end_ptr);
 extern int dxf_encoding;
 extern int utf82unicode(unsigned char *utf8text, unsigned char *unicodetext);
@@ -571,10 +571,10 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 {
 	char image_file[MAXPATH], image_file_pcx[MAXPATH];
 	char image_name[MAXPATH];
-	char dir__[MAXPATH];
-	char drive__[MAXDRIVE];
-	char file__[MAXFILE];
-	char ext__[MAXEXT];
+	char dir__[MAXPATH]="";
+	char drive__[MAXDRIVE]="";
+	char file__[MAXFILE]="";
+	char ext__[MAXEXT]="";
 	int flags;
 	char ext_[5], ext_1[5];
 	FILE *fp;
@@ -636,7 +636,7 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 				{
 					return ErrorWeWy;
 				}
-				if (__file_exists(image_file_pcx)) ret=unlink(image_file_pcx);
+				if (my_file_exists(image_file_pcx)) ret=unlink(image_file_pcx);
 
 			}
 			else if (b_pcx->kod_obiektu == 2)
@@ -6193,7 +6193,7 @@ void DxfOut(int acad_version)
 #ifndef LINUX
   /*
   //sprawdzenie czy zbior juz istnieje
-  if (__file_exists(sk))
+  if (my_file_exists(sk))
   {
 	  strcpy(st1, _FILE_);
 	  strcat(st1, sk);

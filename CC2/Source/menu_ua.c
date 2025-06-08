@@ -35,6 +35,7 @@ char __HIDDEN__[]=u8"Прихований";
 char __COPY_TEXT__[]=u8"Копіювати текст із буфера обміну";
 
 char _EDIT_TEXT_[]=u8"Редагування тексту";
+char _EDIT_FILE_[]=u8"Редагування файла";
 
 #endif
 
@@ -508,7 +509,7 @@ static POLE pmCzcionkaEkranTTF[] = {
    {u8"Коефіцієнт ширини\0\0", L'К',230,NULL},
 };
 
-TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };  //26
+TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,30,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };  //26
 
 static POLE pmWindow[] = {
    {u8"розгорнути по Горизонталі",L'Г',467,NULL},
@@ -518,24 +519,26 @@ static POLE pmWindow[] = {
    {u8"відновити Останній",L'О',471,NULL},
 };
 
-static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };  //9
+static TMENU mWindow = { 5,0,0,16,22,9,ICONS,CMNU,CMBR,CMTX,0,12,0,0,0,(POLE(*)[]) &pmWindow,NULL,NULL };  //9
 
 static POLE pmDialogCursor[] = {
    {u8"Маленький",L'М',591,NULL},
    {u8"Великий",L'В',592,NULL},
+   {u8"Колосальний",L'К',592,NULL},
 };
 
-static TMENU mDialogCursor = { 2,0,0,8,23,9,ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL }; //22
+static TMENU mDialogCursor = { 3,0,0,8,23,9,ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL }; //22
 
 #define smallcursor u8"Маленький"
 #define bigcursor u8"Великий"
+#define hugecursor u8"Колосальний"
 
 static POLE pmMenuCursor[] = {
    {u8"Брус",L'Б',821,NULL},
    {u8"Курсор",L'К',822,NULL},
 };
 
-static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };  //22
+static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,35,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };  //22
 
 #define barstyle u8"Брус"
 #define cursorstyle u8"Курсор"
@@ -551,25 +554,36 @@ static POLE pmTranslucency[] = {
    {u8"30%",'3',539,NULL},
 };
 
-static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };  //14
+static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };  //14
 
-static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };  //24
+static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };  //24
 
-static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,31,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };  //new
+static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };  //new
+
+static POLE pmMouseWheel[] = {
+   {u8"Натуральне",L'Н',834,NULL},
+   {u8"Звичайне",L'З',835,NULL},
+};
+
+static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };  //22
 
 POLE pmOpcje[] = {
-   {u8"Конфігурація кольорів\0",L'Д',109,NULL},
+   {u8"конфігурація Кольорів\0",L'К',109,NULL},
    {u8"авто-Панорамування\0Т\0",L'П',145, &mAutoPan},  //PAN
-   {u8"Коефіцієнт Авто-панорами\0",L'А',110,NULL},
+   {u8"приріст Авто-панорами\0",L'А',110,NULL},
    {u8"Непрозорість заливок\0",L'Н',542,&mTranslucency},
    {u8"Шрифт меню\0",L'Ш',111,&mCzcionkaEkranTTF},
    {u8"Фон\0",L'Ф',527,NULL},
-   {u8"діалоговий Курсор\0",L'К',590,&mDialogCursor},
+   {u8"Діалоговий Курсор\0",L'Д',590,&mDialogCursor},
    {u8"стиль Меню\0",L'М',820,&mMenuCursor},
+   {u8"колесо миші\0",L'Х',833,&mMouseWheel},
    {u8"демо Режим\0Н\0",L'Р',661,&mDemoSelect},
    {u8"Зберегти налаштування вікна\0",L'З',530,NULL},
    {u8"налаштування Вікна\0",L'В',478,&mWindow},
 };
+
+#define _NATURAL__ u8"Натуральне"
+#define _REGULAR__ u8"Звичайне"
 
 #define _FILE_ u8"Файл "
 #define _FILE_EXISTS_ u8" існує. Перезаписати це? (Так/Ні/Esc):"
@@ -1200,7 +1214,7 @@ static char* type_line_txt_L[NoTypeLines + 1] = {
 #define layer_tip1 u8"Можливість редагування"
 #define layer_tip2 u8"Локалізація"
 #define layer_tip3 u8"Видимість усіх шарів"
-#define layer_tip4 u8"Можливість редагування всіх шарів"
+#define layer_tip4 u8"Редагувати всіх шарів"
 #define layer_tip5 u8"Локалізація всіх шарів"
 #define layer_tip6 u8"Колір"
 #define layer_tip7 u8"Ширина лінії"
@@ -1361,7 +1375,7 @@ static char* translucency_txt[20 + 1] = {
 #define chprop_tips7 u8"Вирівнювання тексту"
 #define chprop_tips8 u8"Висота шрифту"
 #define chprop_tips9 u8"Ширина шрифту"
-#define chprop_tips10 u8"Кививий шрифт"
+#define chprop_tips10 u8"Курсив шрифт"
 #define chprop_tips11 u8"Жирний шрифт"
 #define chprop_tips12 u8"Підкреслений текст"
 #define chprop_tips13 u8"Так"
@@ -1369,7 +1383,7 @@ static char* translucency_txt[20 + 1] = {
 #define chprop_tips15 u8"Перевернути по горизонталі"
 #define chprop_tips16 u8"Перевернути вертикально"
 #define chprop_tips17 u8"Зверху"
-#define chprop_tips18 u8"Непрозорість солідов, слідів і штрихування суцільним кольором"
+#define chprop_tips18 u8"Непрозорість кольорового заповнення"
 
 char* add_new_font_c = u8"додати новий шрифт";
 
@@ -1429,7 +1443,7 @@ char* dlg_name[] =
    u8"Зберегти файл результатів статичного аналізу",
 };
 
-#define nameplate_tip u8"@Шильдик креслення (ідентифікатор креслення)"
+#define nameplate_tip u8"@Шильдик креслення"
 #define  edit_table u8"Редагувати таблицю"
 
 #define _BLOCK_DESCRIPTION_ u8"Опис блоку:"
@@ -1578,6 +1592,7 @@ static char* desktop_data_param[] =
   (char*)u8"Динамічне меню",
   (char*)u8"Курсор",
   (char*)u8"Стиль меню",
+  (char*)u8"Стиль колеса",
   (char*)u8"Інструкція",
 };
 
@@ -1589,8 +1604,9 @@ static char* desktop_data_param_comment[] =
 	//";Screen saver delay in min or 0 (off)",
 	(char*)u8";коефіцієнт авторозгортання робочого столу",
 	(char*)u8";",
-	(char*)u8"; маленький 0, великий 1",
+	(char*)u8"; маленький 0, великий 1, величезний 2",
     (char*)u8"; рамка 0, курсор 1",
+    (char*)u8"; 0-натуральний, 1-звичайний",
     (char*)u8"; показ коротких інструкцій при запуску",
 };
 
@@ -2063,7 +2079,7 @@ static POLE pmFillTyp[] = {
 		{u8"Товста\0", L'Т', 279, NULL},
 		{u8"дуже товстА\0", L'А', 280, NULL},
 		{u8"Супер товста\0", L'С', 281, NULL},
-		{u8"Імідж\0", L'І', 617, &mSolidPattern},
+		{u8"Імідж\0", L'І', 836, &mSolidPattern},
 	   //  {u8"- wyłącz obszar",'-',0,NULL},
 	   //  {u8"+ Aktywny obszar",'+',0,NULL},
 };
@@ -2153,7 +2169,7 @@ static POLE pmFillTyp[] = {
 		{u8"Товста", L'Т', 291, NULL},
 		{u8"дуже товстА", L'А', 292, NULL},
 		{u8"Супер товста", L'С', 293, NULL},
-		{u8"Імідж", L'І', 617, &mTracePattern},
+		{u8"Імідж", L'І', 836, &mTracePattern},
 };
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
@@ -2474,7 +2490,7 @@ POLE pmHatch[] = {
 	 {u8"вкажіть Базову Точку\0\0", L'Б', 438,NULL},
 	 {u8"відстань Лінії/відрізок\01\0", L'Л', 439,NULL},
 	 {u8"Термоізоляція\0\0",L'Т',679, &mSelect_Ins},
-	 {u8"Імідж візерунок\0\0",L'І',617,&mSolidHatchPattern}
+	 {u8"Імідж візерунок\0\0",L'І',836,&mSolidHatchPattern}
 };
 
 #define _HATCHING_ u8"Хетчінг"

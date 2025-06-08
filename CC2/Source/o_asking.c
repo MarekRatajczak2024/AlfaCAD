@@ -48,6 +48,7 @@
 #define  DXBox1  250 //350
 #define  DXBox1as  296 //350
 #define  DYBox1  50 //70
+#define  DYBox2  54 //70
 #define  DXBut1  45 //50 //54 //75
 #define  DYBut1  20
 #define  XpOK1  Xp1 + 160
@@ -183,14 +184,14 @@ static LISTBOX listbox_as [2] =
 
 static COMBOBOX combobox_as [2] =
         {
-                { 0, Yp1 + 5, 20, 8, &listbox_as [0]},
-                { 0, Yp1 + 5 - 30, 20, 8, &listbox_as [1]},
+                { 0, YpESCAPE1,     12, 8, &listbox_as [0]},
+                { 0, YpESCAPE1 - 20, 12 , 8, &listbox_as [1]},
         } ;
 
 
 static TDIALOG asking_dlg=
 {
-	XpBox1, YpBox1, DXBox1+10, DYBox1+10,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
+	XpBox1, YpBox1, DXBox1+10, DYBox1+14,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
 	notice,
 	0, NULL, //&line_d_l,
 	2, (LABEL(*)[])&lab,
@@ -210,7 +211,7 @@ static TDIALOG asking_dlg=
 
 static TDIALOG asking_dlg_static=
         {
-                XpBox1, YpBox1, DXBox1+10, DYBox1+10,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
+                XpBox1, YpBox1, DXBox1+10, DYBox2+14,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,  0,0, //XpBox1+(DXBox1/2),YpBox1+(DYBox1/2),
                 notice,
                 0, NULL, //&line_d_l,
                 2, (LABEL(*)[])&lab,
@@ -338,7 +339,7 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
   static int curr_h, curr_v;
 
   asking_dlg.SizeLabT=2;
-  asking_dlg.dy=DYBox1+10;
+  asking_dlg.dy=DYBox1+14;
   (*asking_dlg.Groups)[0].dy=DYBox1;
   (*asking_dlg.Buttons)[0].y=(*asking_dlg.Buttons)[1].y=(*asking_dlg.Buttons)[2].y=YpOK1;
 
@@ -472,8 +473,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
     static int curr_h, curr_v;
 
     asking_dlg_static.SizeLabT=2;
-    asking_dlg_static.dy=DYBox1+10;
-    (*asking_dlg.Groups)[0].dy=DYBox1;
+    asking_dlg_static.dy=DYBox2+14;
+    (*asking_dlg.Groups)[0].dy=DYBox2;
     (*asking_dlg.Buttons)[0].y=(*asking_dlg.Buttons)[1].y=(*asking_dlg.Buttons)[2].y=YpOK1;
 
     dt1 = (double)my_text_length(font, comment_string);
@@ -542,16 +543,18 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
             images_as[7].y1=images_as[6].y1-20;
 
-            combobox_as [0].y=images_as[4].y1+6-(HEIGHT-18)/4;
-            combobox_as [1].y=images_as[7].y1+6-(HEIGHT-18)/4;
+
+            combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
+            combobox_as [1].y=images_as[7].y1+HEIGHT/(wsp_y);
+
 
             buttons[3].y=buttons[4].y=buttons[5].y=buttons[6].y=buttons[7].y=buttons[0].y-15;
             buttons[3].x=images_as[1].x1+13/wsp_x;
             buttons[4].x=images_as[2].x1+13/wsp_x;
             buttons[5].x=images_as[3].x1+13/wsp_x;
             images_as[4].x1=images_as[7].x1=DXBox1_-25;
-            combobox_as [0].x=DXBox1_-50;
-            combobox_as [1].x=DXBox1_-50;
+            combobox_as [0].x=DXBox1_-42;
+            combobox_as [1].x=DXBox1_-42;
 
             int del=(WIDTH-7)*2;
             if (del>4) del=4;
@@ -655,7 +658,7 @@ int ask_question_in_dialog (int n_buttons, char *esc_string, char *ok_string, ch
     int lab_n=2;
 
     asking_dlg.SizeLabT=2;
-    asking_dlg.dy=DYBox1+10;
+    asking_dlg.dy=DYBox1+14;
     (*asking_dlg.Groups)[0].dy=DYBox1;
     (*asking_dlg.Buttons)[0].y=(*asking_dlg.Buttons)[1].y=(*asking_dlg.Buttons)[2].y=YpOK1;
 

@@ -106,16 +106,15 @@ void Free_Mem_Mouse_Cur (void)
   GrMouseUnInit();	      
 }
 
-void Hide_Mouse (int x, int y)
+void Hide_Mouse ()
 /*---------------------------*/
 {
   GrMouseEraseCursor();
 }
 
-void Show_Mouse (int x, int y)
+void Show_Mouse (void)
 /*-------------------------*/
 {
-  //int i ;
   GrMouseDisplayCursor();
 }
 

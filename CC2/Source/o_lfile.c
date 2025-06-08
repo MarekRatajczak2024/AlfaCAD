@@ -113,7 +113,7 @@ char *Set_Full_File_Name (char *ptrsz_dest, char *ptrsz_src)
 //------------------------------------------------------------
 {
   int flags;
-  char drive [MAXDRIVE], dir [MAXDIR], name [MAXFILE], ext [MAXEXT];
+  char drive [MAXDRIVE]="", dir [MAXDIR]="", name [MAXFILE]="", ext [MAXEXT]="";
   int i_drive ;
 
   //strupr (ptrsz_src);  //TO CHECK
@@ -362,7 +362,7 @@ char *File_Tmp(char *fn, char *fext)
 /*---------------------------------*/
 {
   int flags;
-  char drive [MAXDRIVE], dir [MAXDIR], name [MAXFILE], ext [MAXEXT];
+  char drive [MAXDRIVE]="", dir [MAXDIR]="", name [MAXFILE]="", ext [MAXEXT]="";
 
   flags = fnsplit (fn, drive, dir, name, ext);
   fnmerge (fn, drive, dir, name, fext);
@@ -374,7 +374,7 @@ char *File_Ext(char *fn, char *fext)
 /*---------------------------------*/
 {
   int flags;
-  char drive [MAXDRIVE], dir [MAXDIR], name [MAXFILE], ext [MAXEXT];
+  char drive [MAXDRIVE]="", dir [MAXDIR]="", name [MAXFILE]="", ext [MAXEXT]="";
 
   flags = fnsplit (fn, drive, dir, name, ext);
   if (flags & EXTENSION)
@@ -389,7 +389,7 @@ char *Get_File_Ext(char *fn)
 /*--------------------------*/
 {
 	int flags;
-	char drive[MAXDRIVE], dir[MAXDIR], name[MAXFILE], ext[MAXEXT];
+	char drive[MAXDRIVE]="", dir[MAXDIR]="", name[MAXFILE]="", ext[MAXEXT]="";
 
 	flags = fnsplit(fn, drive, dir, name, ext);
 	if (flags & EXTENSION)
@@ -403,7 +403,7 @@ char *Get_File_Ext(char *fn)
 char *File_New_Ext (char *fn, char *fext)
 /*--------------------------------------*/
 {
-  char drive [MAXDRIVE], dir [MAXDIR], name [MAXFILE], ext [MAXEXT];
+  char drive [MAXDRIVE]="", dir [MAXDIR]="", name [MAXFILE]="", ext [MAXEXT]="";
 
   fnsplit (fn, drive, dir, name, ext);
   fnmerge (fn, drive, dir, name, fext);

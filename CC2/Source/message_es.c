@@ -961,6 +961,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _thermal_load_inside_element_ u8"no en todo el elemento con coordenadas de nodos:"
 #define _unknown_standard_ u8"Estándar desconocido"
 #define _element_graph_data_failed_ u8"No se pudo crear el bloque de datos de las fuerzas resultantes para el elemento"
+#define _cannot_create_folder_ u8"No se puede crear el directorio de archivos"
 
 #define _FRAME3DD_ "%FRAME:"
 #define _FRAME3DD_PL "%RAMA:"

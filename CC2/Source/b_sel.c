@@ -547,12 +547,19 @@ int okrag_w_prostokacie(OKRAG *ad)
   return  (X1sel<=x-r && X2sel>=x+r &&
 	   Y1sel<=y-r && Y2sel>=y+r); }
 
-
+/*
 int qsort_by_val(double *e1, double *e2)
  { int delta;
   delta=(*e1) - (*e2);
   return delta;
  }
+*/
+
+int qsort_by_val(const void *e1, const void *e2)
+{ int delta;
+    delta=(*(const double*)e1) - (*(const double*)e2);
+    return delta;
+}
 
 int pcx_w_prostokacie(B_PCX *ad)
 { double x_[4],y_[4];
@@ -614,8 +621,13 @@ int pcx_w_prostokacie(B_PCX *ad)
     //qsort(x_, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
     //qsort(y_, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
 #else
+#ifndef MACOS
       qsort(x_, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
       qsort(y_, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+      qsort(x_, 4, sizeof(double),  qsort_by_val);
+       qsort(y_, 4, sizeof(double),  qsort_by_val);
+#endif
 #endif
 
     x_min=x_[0];
@@ -3524,8 +3536,13 @@ int Pcx_in_Rectangle (B_PCX *pcx, int dwc)
        //qsort(x_, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
        //qsort(y_, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
 #else
+#ifndef MACOS
        qsort(x_, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
        qsort(y_, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
+#else
+       qsort(x_, 4, sizeof(double), qsort_by_val);
+       qsort(y_, 4, sizeof(double), qsort_by_val);
+#endif
 #endif
 
 	   x1 = x_[0];

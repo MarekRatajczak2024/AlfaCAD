@@ -112,6 +112,14 @@ extern int Reverse_VectorP(void);
 extern void set_global_set_stretch(BOOL v_s_s);
 extern void orto_l(LINIA *L, int *Orto_Dir);
 
+#ifdef ALLEGRO5
+extern void flip_screen_sd(BITMAP * src_screen, BITMAP * dst_screen);
+extern void Set_Screenplay(BITMAP *ctx_bitmap);
+extern GrContext *get_second_screen(void);
+extern void okno_r_bitmap(BITMAP *bitmap);
+extern void okno_all_bitmap(BITMAP *bitmap);
+#endif
+
 enum OBIEKTT3C	  { NoAblokC,AblokC};
 #define def67 67
 #define def68 68
@@ -178,7 +186,7 @@ extern int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(
 extern char *find_block_atrybut(char *adrp, char *adrk, char atrybut);
 extern int Rotate_ProcXZ (void);
 extern int Rotate_ProcYZ (void);
-extern int __file_exists(char *name);
+extern int my_file_exists(char *name);
 extern void blok_special(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void));
 extern void get_base_point(double *x_origin, double *y_origin);
 extern void put_base_point(double *x_origin, double *y_origin);
@@ -6416,7 +6424,7 @@ void Export(void)
   {
 #ifndef LINUX
 	 /*
-	if	(__file_exists(fn)) 
+	if	(my_file_exists(fn))
 	 {
 	  strcpy(st1, _FILE_);
 	  strcat(st1,fn);
