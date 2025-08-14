@@ -49,7 +49,7 @@
 #define spline_CommandP_end -7
 #define spline_CommandP_del -5
 
-#define TEMPN 200
+#define TEMPN 1024 //200
 
 #define GMENU_MAX 15
 
@@ -68,6 +68,8 @@ static float mouse_z_factor=0.5;
 static float mouse_speed = 1.0;
 static float mouse_z_factor = 1.0;
 #endif
+
+static double CRTL_DELAY = 1.5;
 
 static double X_, Y_, X__, Y__;
 
@@ -1123,6 +1125,8 @@ extern char* icon_offset_smooth;
 extern char* icon_trace_close_p;
 extern char* icon_trace_break_p;
 
+extern char* icon_hourglass_p;
+
 extern char* icon_UA_B_p;
 extern char* icon_UA_D_p;
 extern char* icon_UA_E_p;
@@ -1134,6 +1138,9 @@ extern char* icon_UA_R_p;
 extern char* icon_UA_S_p;
 extern char* icon_UA_T_p;
 extern char* icon_UA_C_p;
+extern char* icon_UA_JA_p;
+extern char* icon_UA_I_p;
+extern char* icon_UA_O_p;
 
 extern char* icon_spline_points_p;
 extern char* icon_spline_control_points_p;
@@ -1339,6 +1346,8 @@ extern char *icon_QPSLS_p;
 extern char *icon_mousewheel_p;
 extern char *icon_mousewheelnatural_p;
 extern char *icon_mousewheelregular_p;
+
+extern char *icon_pin_to_flex_d48_p;
 
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
@@ -2445,10 +2454,10 @@ void show_hide_tip(TMENU * menu, BOOL show)
   int i, sp;
   char *ptrsz_temp0;
   char *ptrsz_temp_tadd;
-  char ptrsz_temp_[128];
+  char ptrsz_temp_[1024]; //[128];
   int s_len, i_len;
   BITMAP *menu_tip_back;
-#define TEMPN 200
+////#define TEMPN 1024 //200
   char sz_temp[TEMPN];
   int old_color;
   char *ptr;
@@ -2614,6 +2623,29 @@ void show_hide_tip(TMENU * menu, BOOL show)
 
 	if (show == TRUE)
 	{
+        strcpy(sz_temp, ptrsz_temp);
+        char *psz_temp=sz_temp;
+        int ic = 0;
+        int max_l=0;
+        char *pch=strchr(psz_temp,'\n');
+        while (pch!=NULL) {
+            ic++;
+            *pch='\0';
+            i_len = TTF_text_len(psz_temp);
+            if (i_len>max_l) max_l=i_len;
+            pch=strchr(pch+1,'\n');
+        }
+        i_len = TTF_text_len(psz_temp);
+        if (i_len>max_l) max_l=i_len;
+
+        y2=y1+((ic)*HEIGHT) + 2  * (HEIGHT-2) * SKALA;
+        x2 = x1 + max_l + 6;
+        if (x2 > maxX)
+        {
+            x1 = x0 - max_l - 14;
+            x2 = x0 - 8;
+        }
+
 		if ((menu_tip_back = create_bitmap(x2 - x1 + 1, y2 - y1 + 1)) == NULL) return;
 		menu->tip_back = menu_tip_back;
 
@@ -2633,10 +2665,26 @@ void show_hide_tip(TMENU * menu, BOOL show)
 		LINE(x2 - 1, y2 -1, x1 + 1, y2 -1);
 		LINE(x1 + 1, y2 -1 , x1 + 1, y1 + 1);
 
-		moveto(x1 + 3, y1 + 0.6  * (HEIGHT-2) * SKALA);
+        int y=y1 + 0.6  * (HEIGHT-2) * SKALA;
+		moveto(x1 + 3, y);
 		setcolor(kolory.inkm);
 		strcpy(sz_temp, ptrsz_temp);
-		outtext_r(sz_temp);
+
+		////outtext_r(sz_temp);
+
+        psz_temp=sz_temp;
+        ptr= strchr(psz_temp,'\n');
+        while (ptr!=NULL)
+        {
+            *ptr='\0';
+            outtext_r(psz_temp);
+            y+=HEIGHT;
+            moveto(x1 + 3,y);
+            psz_temp=ptr+1;
+            ptr= strchr(psz_temp,'\n');
+        }
+        outtext_r(psz_temp);
+
 		setcolor(old_color);
 	}
 	else
@@ -3384,7 +3432,8 @@ static char *get_icons_p(int number)
         /*812*/   icon_AlfaCAD48_p, icon_Pdelta_d48_p, icon_dynamics_p, icon_vibrations_d48_p, icon_inertia_d48_p, icon_dynamics_run_p, icon_fixed_rotation_p,
         /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
         /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p, icon_CN_Flag_p,
-        /*832*/   icon_cursor_extrabig_p, icon_mousewheel_p, icon_mousewheelnatural_p, icon_mousewheelregular_p, icon_stonewall_p
+        /*832*/   icon_cursor_extrabig_p, icon_mousewheel_p, icon_mousewheelnatural_p, icon_mousewheelregular_p, icon_stonewall_p,
+        /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p
     };
    
 	if (number>1999)
@@ -7376,6 +7425,8 @@ int inkeys(TMENU *menu, BOOL search_ok)
   char txt_[2]=" ";
   char *ptr;
   static int a=0;
+  int key_p=0;
+  time_t ctrl_time1, ctrl_time2;
 
   menu_ = menu;
 
@@ -7453,6 +7504,33 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		   }
 	   }
 
+   	   if (key[KEY_MODIFIERS]) {
+	   	   int a=0;
+   	   }
+
+   	   if (key_shifts & (KB_INALTSEQ_FLAG)) {
+   			int b=0;
+   	   }
+
+
+   	  /*
+   	  if ((key_shifts & (KB_CTRL_FLAG))  && (key[KEY_TAB]))
+   		{
+   			ctrlkey_ = FALSE;
+   			shiftkey_ = FALSE;
+   			altkey_ = FALSE;
+   			keyimage = -1;
+   			draw_keyimage(keyimage, TRUE, FALSE, FALSE);
+   			if (key_shifts)
+   				while ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) || (key[KEY_LSHIFT] || key[KEY_RSHIFT]) && (!keypressed()))
+   				{
+   					my_sleep(0);
+   					my_poll_keyboard();
+   				}
+   			return 9997;
+   		}
+       */
+
        if (key_shifts & (KB_CTRL_FLAG) && (key[KEY_END]))
            return 9998;
 	   
@@ -7511,13 +7589,33 @@ int inkeys(TMENU *menu, BOOL search_ok)
 			   keyimage = (ctrlkey_) ? 353 : -1;
 			   draw_keyimage(keyimage, TRUE, FALSE, FALSE);
 			   if (key_shifts)
+			   	{
+			   	ctrl_time1 = time(NULL);
 				   //while ((key_shifts & KB_CTRL_FLAG) && (key_shifts & !KB_SHIFT_FLAG) && (!keypressed()))
-				   while ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && (!key[KEY_LSHIFT] && !key[KEY_RSHIFT] && !key[KEY_ALT])  && (!keypressed()))
-			   {
-				   my_sleep(0);
-				   my_poll_keyboard();
+			   	while ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && (!key[KEY_LSHIFT] && !key[KEY_RSHIFT] && !key[KEY_ALT])  && (!keypressed()))
+			   		{
+			   			my_sleep(0);
+			   			my_poll_keyboard();
+
+						ctrl_time2 = time(NULL);
+			   			if (difftime(ctrl_time2, ctrl_time1) > CRTL_DELAY)
+						  {
+					  		ctrlkey_ = FALSE;
+					  		shiftkey_ = FALSE;
+					  		altkey_ = FALSE;
+					  		keyimage = -1;
+					  		draw_keyimage(keyimage, TRUE, FALSE, FALSE);
+					  		//if (key_shifts)
+					  		//	while ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) || (key[KEY_LSHIFT] || key[KEY_RSHIFT]) && (!keypressed()))
+					  		//	{
+					  				my_sleep(0);
+					  				my_poll_keyboard();
+					  		//	}
+					  		return 9997;
+						  }
+			   		}
 			   }
-			   else  my_poll_keyboard();
+			   else my_poll_keyboard();
 			   if ((ctrlkey_) && (key[KEY_LSHIFT] || key[KEY_RSHIFT]))
 				{
 					ctrlkey_ = FALSE;
@@ -7568,7 +7666,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
                    komunikat_str_short("", FALSE, FALSE);
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_high();
                }
-               else if (((lk > 0x1F) && (lk < 0x80)) || (lk == 8))
+               else if ((now_is_dialog==0) && (((lk > 0x1F) && (lk < 0x80)) || (lk == 8)))
                {
                    if ((menu_ == &mCzcionka) || (menu_ == &mCzcionkaZ) || (menu_ == &mCzcionkaW)) Set_HEIGHT_back();
                    if (lk == 8) {
@@ -8302,13 +8400,24 @@ int  getcom(TMENU *menu)
             n = KeyFun(menu);
         n = 0;
         continue;
+    case 9997:
+        KeyFun = (int(*)(TMENU *))SERV[69];
+        if (KeyFun != NULL)
+            n = KeyFun(menu);
+        n = 0;
+        //continue;
 	case '\10':  //Backspace
 		if ((menu_level == 0) && (Get_Global_Dialog_Flag() == 0))
 		{
+
 			KeyFun = (void*)(void(*)(TMENU*))LASTFUN;
 			if (KeyFun != NULL)
             {
-                if (Semaphore == TRUE) KeyFun(menu);
+                if (Semaphore == TRUE) {
+                    Semaphore = FALSE;
+                    KeyFun(menu);
+                    Semaphore = TRUE;
+                }
                 else if (Cust_Semaphore == TRUE) {
                     Cust_Semaphore = FALSE;
                     KeyFun(menu);
@@ -8347,7 +8456,7 @@ int  getcom(TMENU *menu)
             }
         }
 
-    case '\27':  //Ctrl-W
+    case '\27':  //Ctrl-W  also Ctrl-L replacing 14 with 2
             if ((menu_level == 0) && (Get_Global_Dialog_Flag() == 0))
             {
                 KeyFun = (int (*)(TMENU *)) SERV[70];
@@ -8470,7 +8579,8 @@ int  getcom(TMENU *menu)
 	case '\56':  //.
 		if ((lock_functions == FALSE) && (opwin == 0) && (opwin_s == 0) && (0 != (n = TABFUN1(zn)))) break;
 	case '\32':  //Ctrl-Z
-	case '\30':  //Ctrl-X
+	//case '\30':  //Ctrl-X
+	case '\23':  //Ctrl-S
 		if (zn == '\32')
 		{
 			if ((lock_functions == FALSE) && (opwin == 0) && (opwin_s == 0) && (0 != (n = Skala_In_()))) break;
@@ -9709,6 +9819,7 @@ void ch_stype (void) {
             }
             break;
         default:
+            menu_level--;
             n=0;
             break;
     }
@@ -9833,6 +9944,8 @@ int choose_object(int type_address_no, TYPE_ADDRESS *type_address)
 
     mObjectSelected.maxw=0;
     mObjectSelected.maxw0=mObjectSelected.max;
+
+
 
     n = Simple_Menu_Proc(&mObjectSelected);
 
@@ -12410,6 +12523,9 @@ int Simple_Menu_Proc (TMENU *menu)
   EVENT *ev ;
   int x0, y0, x00, y00;
 
+    ////if (menu_level == 0)
+    get_posXY(&X_, &Y_);
+
     if (dynamic_menu==TRUE)
     {
         x00 = pikseleX0(X) +vfv(20);
@@ -12474,6 +12590,9 @@ int Simple_Menu_Proc (TMENU *menu)
           set_cursor_edit();
       }
 
+      set_posXY(X_, Y_);
+      CUR_ON(X,Y);
+
       return  ev->Number == 0 ? 0 : menu->foff + menu->poz + 1 ;
   }
 }
@@ -12534,6 +12653,7 @@ int Simple_Menu_Proc_(TMENU *menu)
 int GET_CONTROL_KEYS(int key)
 {
 	if (key < 32) return CONTROL_KEYS[key];
+	else if (key == 64)   return 9997; //Tab
 	else return key;
 }
 

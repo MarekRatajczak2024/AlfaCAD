@@ -36,10 +36,13 @@
 #include "alf_res.h"
 #include "o_luk.h"
 
+extern BOOL Semaphore;
+
 
  #include "bibwym_b.c"
 void Wymiarowanie(void)
   {
+    Semaphore = FALSE;
     wymiarowanie();
     CUR_OFF(X, Y);
     CUR_ON(X,Y);

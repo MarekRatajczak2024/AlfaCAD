@@ -120,6 +120,8 @@ int GetShmpPtr_1(struct shmseg **shmp_);
 BOOL clip_cursor(RECT *lpRect);
 #endif
 
+extern BOOL wayland;
+
 int GetPrintPageWidth(void);
 int GetPrintPageHeight(void);
 int GetPrintHorzres(void);
@@ -314,8 +316,11 @@ void Initial_Message(char file_name[255])
 #ifndef MACOS
     char logoandquote[512] = u8"AlfaCAD for Linux (x64) © Marek Ratajczak, 2020-2025";
 #else
+#ifdef ARM64
+	char logoandquote[512] = u8"AlfaCAD for MacOS (arm64)\n © Marek Ratajczak, 2020-2025";
+#else
     char logoandquote[512] = u8"AlfaCAD for MacOS (x64)\n © Marek Ratajczak, 2020-2025";
-    //char logoandquote[512] = u8"AlfaCAD for MacOS (arm64)\n © Marek Ratajczak, 2020-2025";
+#endif
 #endif
 #endif
 
@@ -393,6 +398,27 @@ if (ret == IDCANCEL) exit(0);
 	}
 
     free(buf);
+
+    ///////////////////
+#ifdef LINUX
+    char *session_type = getenv("XDG_SESSION_TYPE");
+
+    if (session_type != NULL) {
+        if (strcmp(session_type, "wayland") == 0) {
+            printf("Running under Wayland\n");
+            strcat(str_linux,"\nunder Wayland\n");
+            wayland=TRUE;
+        } else if (strcmp(session_type, "x11") == 0) {
+            printf("Running under Xorg (X11)\n");
+            strcat(str_linux,"\nunder Xorg (X11)\n");
+        } else {
+            printf("Unknown session type: %s\n", session_type);
+        }
+    } else {
+        printf("XDG_SESSION_TYPE environment variable not set. Cannot determine session type.\n");
+    }
+#endif
+    //////////////////
 
     strcat(logoandquote,str_linux);
 

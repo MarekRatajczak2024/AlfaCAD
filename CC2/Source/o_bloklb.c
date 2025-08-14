@@ -1352,6 +1352,18 @@ static void *obiekt_wybrany (void)
   return select_w(&typ,&adr);
 }
 
+static void *obiekt_wybrany_select (int Bobjects)
+/*----------------------------------------------*/
+{ unsigned typ;
+    void *adr;
+    //if (global_no_pcx) typ = Blinia | Bluk | Bokrag | Bkolo | Btekst | Bwwielokat | Bspline | Bpoint | Bellipse | Bfilledellipse | Bellipticalarc | Bsolidarc | Bvector;
+    //if (global_only_pcx) typ = Bpcx;
+    //else if (global_only_solid) typ = Bwwielokat | Bsolidarc;
+    //else typ=Blinia | Bluk | Bokrag | Bkolo | Btekst | Bwwielokat | Bspline | Bpoint | Bpcx | Bellipse | Bfilledellipse |Bellipticalarc | Bsolidarc | Bvector;
+    typ = Bobjects;
+    return select_w(&typ,&adr);
+}
+
 static void *obiekt_wybrany_info (void)
 /*------------------------------*/
 { unsigned typ;
@@ -1521,7 +1533,7 @@ int blok_single(int (*DZI)(void *), int (*ODZI)(void *),
             if (ev->Number == ENTER)
             {
                 alert_on_object=FALSE;
-                if ((ad = obiekt_wybrany()) != NULL)
+                if ((ad = obiekt_wybrany_select(Bvector)) != NULL)
                 {
                     adrem_obiekt(ad, DZI, ODZI, FALSE);
                     if (!alert_on_object)

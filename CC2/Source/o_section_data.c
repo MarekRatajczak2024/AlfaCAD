@@ -121,6 +121,8 @@ extern TEXT TextG;
 static int last_property_no=0;
 static unsigned char hidden_last=0;
 
+extern BOOL Semaphore;
+
 #ifdef LINUX
 char *directory="Elements/";
 #else
@@ -727,6 +729,8 @@ void SteelUS(void)
     char *ptrsz_temp_tadd;
     char *manufacturer;
 
+    Semaphore = FALSE;
+
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
     if (!get_string (property_no_str, "1234567890", 16, 0, 211))
@@ -803,6 +807,8 @@ void SteelCA(void)
     char *ptrsz_temp0;
     char *ptrsz_temp_tadd;
     char *manufacturer;
+
+    Semaphore = FALSE;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -881,6 +887,8 @@ void TimberUS(void)
     char *ptrsz_temp0;
     char *ptrsz_temp_tadd;
     char *manufacturer;
+
+    Semaphore = FALSE;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -963,6 +971,8 @@ void TimberCA(void)
     char *ptrsz_temp_tadd;
     char *manufacturer;
 
+    Semaphore = FALSE;
+
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
     if (!get_string (property_no_str, "1234567890", 16, 0, 211))
@@ -1031,6 +1041,8 @@ void SteelEU(void)
     char *ptrsz_temp0;
     char *ptrsz_temp_tadd;
     char *manufacturer;
+
+    Semaphore = FALSE;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -1111,6 +1123,8 @@ void SteelUK(void)
 
     //get property no
 
+    Semaphore = FALSE;
+
     sprintf(property_no_str,"%d",last_property_no+1);
     if (!get_string (property_no_str, "1234567890", 16, 0, 211))
     {
@@ -1185,6 +1199,8 @@ void SteelAU(void)
     char *ptrsz_temp0;
     char *ptrsz_temp_tadd;
     char *manufacturer;
+
+    Semaphore = FALSE;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);
@@ -1261,6 +1277,8 @@ void SteelCN(void)
     char *ptrsz_temp0;
     char *ptrsz_temp_tadd;
     char *manufacturer;
+
+    Semaphore = FALSE;
 
     //get property no
     sprintf(property_no_str,"%d",last_property_no+1);

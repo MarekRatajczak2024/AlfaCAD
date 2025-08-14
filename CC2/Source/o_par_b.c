@@ -141,6 +141,8 @@ extern void Restore_Pointer(void);
 extern int get_menu_level(void);
 extern void set_menu_level(int menu_l);
 
+extern BOOL Semaphore;
+
 static TMENU mSektory_Arkusza = { 15,0,0,31,1,3,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmSektory_Arkusza,NULL,NULL };
 
 static TMENU mParametry = { 10,0,0,30,1,3,ICONS | TADD | 0x2,CMNU,CMBR,CMTX,0,0,0,0,0,&pmParametry,NULL,NULL };
@@ -1974,6 +1976,7 @@ void Parametry(void)
   int l_kr;
     int m_level;
 
+	Semaphore = FALSE;
 
     go_refresh=FALSE;
   vector_refresh=FALSE;

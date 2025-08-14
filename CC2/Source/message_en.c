@@ -1206,6 +1206,8 @@ char *frame3dd[]={
     /*204*/ u8"error in opening an output data file saving a matrix of 'doubles'",
     /*205*/ u8"error in opening an output data file saving a symmetric matrix of 'floats'",
     /*206*/ u8"error in opening an output data file saving a symmetric matrix of 'doubles'",
+    /*207*/ u8"equilibrium test error",
+    /*208*/ u8"error opening error log file .err",
     };
 
 #define _ERROR_FREE_COMPLETION_ u8"error-free completion"
@@ -1220,5 +1222,12 @@ char *frame3dd[]={
 #ifdef __O_ANIMATE_DYN__
 
 #define _ANIMATE_ u8"ESC: exit, BackSpace: previous, any other: next"
+
+#endif
+
+#ifdef __O_SEL__
+
+#define _FIRST_  "FIRST"
+#define _SECOND_ "SECOND"
 
 #endif

@@ -28,6 +28,8 @@
 static int nomouse_init(void) { return 0; }
 static void nomouse_exit(void) { }
 
+extern int RETINA;
+
 MOUSE_DRIVER mousedrv_none =
 {
    MOUSEDRV_NONE,
@@ -148,8 +150,6 @@ static int scared_size = 0;
 static int mouse_polled = FALSE;       /* are we in polling mode? */
 
 static int mouse_semaphore = FALSE;    /* reentrant interrupt? */
-
-
 
 /* draw_mouse_doublebuffer:
  *  Eliminates mouse-cursor flicker by using an off-screen buffer for
@@ -800,6 +800,9 @@ void position_mouse(int x, int y)
    if (!mouse_driver)
       return;
 
+   x*=(RETINA+1);
+   y*=(RETINA+1);
+
    if (_mouse_screen)
       show_mouse(NULL);
 
@@ -824,6 +827,9 @@ void position_mouse_xy(int x, int y)
     if (!mouse_driver)
         return;
 
+    x*=(RETINA+1);
+    y*=(RETINA+1);
+
     if (_mouse_screen)
         show_mouse(NULL);
 
@@ -843,19 +849,22 @@ void position_mouse_xy(int x, int y)
 
 void position_mouse_(int x, int y)
 {
+    x*=(RETINA+1);
+    y*=(RETINA+1);
+
     al_set_mouse_xy(_a5_display, x, y);
     ////al_set_mouse_axis(0,x);
     ////al_set_mouse_axis(1,y);
+    mouse_x=_mouse_x;
+    mouse_y=_mouse_y;
 }
-
 
 void get_mouse_cursor_position(int *ret_x, int *ret_y)
 {
-    //al_get_mouse_cursor_position(ret_x, ret_y);  it's global
-    *ret_x=_mouse_x;
-    *ret_y=_mouse_y;
+   //al_get_mouse_cursor_position(ret_x, ret_y) //it's global
+   *ret_x=_mouse_x;
+   *ret_y=_mouse_y;
 }
-
 
 /* position_mouse_z:
  *  Sets the mouse third axis to position z.
@@ -1276,7 +1285,6 @@ void _mouse_constructor(void)
 {
    _al_linker_mouse = &mouse_linker;
 }
-
 
 //void disable_mouse_hardware_cursor()
 //{

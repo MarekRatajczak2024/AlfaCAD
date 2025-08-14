@@ -36,7 +36,7 @@ void GetEsc(void)
    }
 }
 
-TMENU mHelp={90,32,32,30,20,4,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmHelp,NULL,NULL};
+TMENU mHelp={96,32,32,30,20,4,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmHelp,NULL,NULL};
 
 
 int Lastfun()
@@ -289,16 +289,16 @@ int Desktop_instruction()
 }
 
 static int(*COMNDh[])(void) = {
-	nooph,menupoz,menupoz,Lastfun,Tabfun,KeyPgUp,KeyPgDn,Expand_flex /*Free_Mouse*/,Expand_flex /*Free_Mouse*/,Expand_flex /*Free_Mouse*/, circle_and_rectangle_proc,nooph,
+	nooph,menupoz,menupoz,Lastfun,Tabfun,KeyPgUp,KeyPgDn,Expand_flex /*Free_Mouse*/,Expand_flex /*Free_Mouse*/,Expand_flex /*Free_Mouse*/,Expand_flex /*Free_Mouse*/, circle_and_rectangle_proc,nooph,
 	Change_Orto, Kopiuj_Ctrl_R, Set_Layers_, nooph,Edit_Text_Tab_F2,Edit_Text_F3,Usun_F5,undo_blok_F6,Change_Orto,KeyF9,KeyF10,nooph,
 	nooph,Pan_Shift,Pan_Shift,SkalaW_,last_view_,SkalaE_,SkalaZC_,SkalaZ1_,SkalaZ05_,SkalaZ02_,SkalaZ01_,SkalaR_,
-	skala_format_,nooph,kolorL_,typ_linii_,grubosc_linii_,Set_Layers_,Wez_kolor_,Wez_typ_,Wez_warstwe_,Hide_Layers_,
+	skala_format_,Skala_In_, Skala_Out_, nooph,kolorL_,typ_linii_,grubosc_linii_,Set_Layers_,Wez_kolor_,Wez_typ_,Wez_warstwe_,Hide_Layers_,
 	nooph,Point_Measure_,Dist_Measure_,Angle_Measure1_,nooph,Choose_Layer_1,Choose_Layer_2,Choose_Layer_10,Inc_Layer,Dec_Layer,
 	All_Layers_On_,Reverse_Layers_,nooph,
 	small_large_step,nooph,
 	KeyE,KeyN,KeyM,KeyI,KeyC,KeyP,KeyT,KeyA,KeyO,
 	KeyE,KeyN,KeyM,KeyI,KeyC,KeyP,KeyT,KeyA,KeyO,//KeyX,KeyY,KeyL,
-	KeyCtrlE,KeyCtrlN,KeyCtrlM,KeyCtrlI,KeyCtrlC,KeyCtrlP,KeyCtrlT,KeyCtrlA,KeyCtrlO,KeyCtrlX, Desktop_instruction,
+	KeyCtrlE,KeyCtrlN,KeyCtrlM,KeyCtrlI,KeyCtrlC,KeyCtrlP,KeyCtrlT,KeyCtrlA,KeyCtrlO,KeyCtrlX, Kopiuj_Ctrl_R, Set_Layers_, Set_Layers_,Desktop_instruction,
 };
 
 int help(TMENU *menu)

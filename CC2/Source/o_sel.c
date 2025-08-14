@@ -14,6 +14,8 @@
 *
 */
 
+#define __O_SEL__
+
 #include<forwin.h>
 #include<stddef.h>
 #define ALLEGWIN
@@ -24,6 +26,8 @@
 #include "bib_e.h"
 #include "rysuj_e.h"
 #include "b_textw.h"
+
+#include "message.h"
 
 static int wyj1;
 static int kom;
@@ -1674,6 +1678,17 @@ int GetObjectColor(char *PTR__Sel_Adr, int *layer)
 
 #define MAX_TYPE_ADDRESS_NO 32
 
+void delete_element(TYPE_ADDRESS *arr, int *n, int index_to_delete) {
+    if (index_to_delete < 0 || index_to_delete >= *n) {
+        return;
+    }
+
+    for (int i = index_to_delete; i < *n - 1; i++) {
+        memmove(&arr[i],&arr[i + 1],sizeof(TYPE_ADDRESS)); // Shift elements left
+    }
+    (*n)--; // Decrement logical size
+}
+
 void wskaz(int info)
 { double dx,dy;
   NAGLOWEK *ad;
@@ -1737,7 +1752,7 @@ void wskaz(int info)
       else
       {
 	PTR__Sel_Adr=((void *) ad);
-	if(!(typL & Bprzeciecie) && !(typL & Bwymiarowanie))
+	if(/*!(typL & Bprzeciecie) &&*/ !(typL & Bwymiarowanie))
     {
         if ((info1) && (PTR__Sel_Adr!=NULL))
         {
@@ -1765,9 +1780,11 @@ void wskaz(int info)
     }
     obiekt_tok(NULL,adh,(char**)&ad,ONieOkreslony);
   }
+  if ((typL & Bprzeciecie) && (type_address_no==2))
+      goto koniec;
   if ((info1) && (type_address_no>0))
   {
-      if (type_address_no==1)
+      if ((type_address_no==1)/* || ((typL & Bprzeciecie) && (type_address_no==2))*/)
       {
           PTR__Sel_Adr=type_address[0].address;
           TYP=type_address[0].TYP;
@@ -1775,12 +1792,34 @@ void wskaz(int info)
       }
       else
       {
+          if (typL & Bprzeciecie) {
+              komunikat_str_short_reset();
+              komunikat_str_short(_FIRST_, FALSE, TRUE);
+          }
           int ret_n=choose_object(type_address_no, type_address);
           if (ret_n==-1) PTR__Sel_Adr=NULL;
           else {
               PTR__Sel_Adr = type_address[ret_n].address;
               TYP = type_address[ret_n].TYP;
           }
+          if (typL & Bprzeciecie) {
+              komunikat_str_short_mask(TRUE);
+              if (ret_n > -1)
+              {
+                  //removing already chosen object
+                  delete_element(type_address, &type_address_no, ret_n);
+                  //komunikat_str_mask(TRUE);
+                  komunikat_str_short(_SECOND_, FALSE, TRUE);
+                  ret_n = choose_object(type_address_no, type_address);
+                  if (ret_n == -1) PTR__Sel_Adr1 = NULL;
+                  else {
+                      PTR__Sel_Adr1 = type_address[ret_n].address;
+                      TYP |= type_address[ret_n].TYP;
+                  }
+                  komunikat_str_short_mask(TRUE);
+              }
+          }
+
           goto koniec;
       }
   }
@@ -1856,8 +1895,9 @@ void  *select_n(unsigned *typ, void **adr, int nr_kom_)
 { int n;
   if (!sel.akt || sel.akw) return NULL;
   redcr(0);
-  kom=Komunikat_R;
+  //kom=Komunikat_R;
   komunikat(nr_kom_);
+  komunikat_len(nr_kom_);  //to give space for short message of choice
   typL=*typ;
   TYP=0;
   PTR__Sel_Adr=NULL;PTR__Sel_Adr1 =NULL;
@@ -1868,7 +1908,7 @@ void  *select_n(unsigned *typ, void **adr, int nr_kom_)
 	 return NULL;
        }
      if (n== ENTER)
-      { wskaz(0);
+      { wskaz(1);   //0
 	if (wyj1)
 	 { redcr(1);
 	   *typ=TYP;
@@ -1879,3 +1919,4 @@ void  *select_n(unsigned *typ, void **adr, int nr_kom_)
    }
 }
 
+#undef __O_SEL__

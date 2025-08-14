@@ -983,7 +983,6 @@ static int window_move_resize (Display *disp, Window win, char *arg) {/*{{{*/
    
     p_verbose("grflags: %lu\n", grflags);
 
-
     ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
    
     if (wm_supports(disp, "_NET_MOVERESIZE_WINDOW")){

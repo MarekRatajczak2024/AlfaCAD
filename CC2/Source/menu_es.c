@@ -654,6 +654,7 @@ POLE pmOpcje[] = {
 #define _GEOM_STIFFNESS_ u8"Rigidez geométrica"
 #define _INERTIA_ u8"Incluir carga muerta (DL) en las vibraciones"
 #define _VIBRATIONS_ u8"Número de modos dinámicos de vibración"
+#define _PINNABLE_ u8"Utilice sustitutos de uniones articuladas como miembros virtuales con rigidez cercana a cero \n(alternativa de cálculo segura, especialmente para análisis dinámicos)"
 
 #define _INSTALATION_ u8"Instalación"
 
@@ -1100,7 +1101,7 @@ static POLE pmenup[] = {
 	{u8"Vista\01\0",L'V',53, &mSkala},
 	{u8"pArámetros\0\0",L'A',54,&mParametrym},
 	{u8"Capas\0\0",L'C',55,NULL},
-	{u8"Medida\0\0", L'M',56, &mMeasure},
+	{u8"Medida, información y cambios\0\0", L'M',56, &mMeasure},
 	{u8"Buscar\0\0",L'B',3,NULL},
     {u8"complementos\0\0",L'U',534,&mInsetAux},
 	{u8"\0\0",L' ',0,NULL} };
@@ -2344,26 +2345,27 @@ static POLE pmGraph[] = {
 #define _CTRL_9_ _CTRL_INTERSECTION_
 #define _CTRL_10_ 10
 #define _CTRL_11_ 11
-#define _CTRL_12_ 12
+#define _CTRL_12_ 23  //L Layers
 #define _CTRL_13_ _CTRL_MIDDLE_
 #define _CTRL_14_ _CTRL_NEAREST_
 #define _CTRL_15_ _CTRL_POINT_
 #define _CTRL_16_ _CTRL_PERPENDICULAR_
 #define _CTRL_17_ 17
 #define _CTRL_18_ 18
-#define _CTRL_19_ 19
+#define _CTRL_19_ 19  //S scale down
 #define _CTRL_20_ _CTRL_TANGENTIAL_
 #define _CTRL_21_ 21
 #define _CTRL_22_ 22
-#define _CTRL_23_ 23
+#define _CTRL_23_ 23  //W Warstwy-layers
 #define _CTRL_24_ _CTRL_NOPE_
 #define _CTRL_25_ 25
-#define _CTRL_26_ 26
+#define _CTRL_26_ 26  //Z  scale up
 #define _CTRL_27_ 27
 #define _CTRL_28_ 28
 #define _CTRL_29_ 29
 #define _CTRL_30_ 30
 #define _CTRL_31_ 31
+
 
                          //@,A,B,C,D,E,F,G,H,I,J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 //int CONTROL_KEYS[32] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 }
@@ -2918,8 +2920,14 @@ POLE pmHelp[] = {
 	 {u8"Editar valores numéricos",' ',363,NULL},
 	 {u8"Aumentar el tamaño del puntero",' ',361,NULL},
 	 {u8"Reducir el tamaño del puntero",' ',360,NULL},
+#ifdef MACOS
+     {u8"Libera el mouse",' ',387,NULL},
+#else
 	 {u8"Libera el mouse",' ',386,NULL},
-	 {u8"Libera el mouse",24,353,NULL},
+#endif
+	 //{u8"Libera el mouse",24,353,NULL},
+     {u8"Libera el mouse",840 + _1920_,353,NULL},
+     {u8"Libera el mouse (Linux)",363 + _1920_,353,NULL},
      {u8"Libera el mouse (mantenga presionado el derecho 0,5 s)",819 + _1920_, 658,NULL},
 	 {u8"Cambiar el tamaño y la posición de la ventana",25,353,NULL},
 	 {u8"Detener la grabación de macros",28,353,NULL},
@@ -2950,6 +2958,10 @@ POLE pmHelp[] = {
 	 {u8"Vista: escala 0.1",19,353,NULL},
 	 {u8"Redibujar",20,353,NULL},
 	 {u8"Vista: dibujo completo",21,353,NULL},
+
+     {u8"Acercar",574 + _1920_,353,NULL},
+     {u8"Reducir",567 + _1920_,353,NULL},
+
 	 {u8"CARACTERÍSTICAS",31,352,NULL},
 	 {u8"Color",12,354,NULL},
 	 {u8"Tipo de línea",13,354,NULL},
@@ -3005,6 +3017,11 @@ POLE pmHelp[] = {
 	 {u8"Modo adyacente",549+1920,353,NULL},
 	 {u8"Mode punto",563+1920,353,NULL},
 	 {u8"Modo ninguno",572 + 1920,353,NULL},
+
+     {u8"Copiar objeto bajo el cursor",566 + _1920_,353,NULL},
+     {u8"Ajuste de capas",560 + _1920_,353,NULL},
+     {u8"Ajuste de capas (optional)",571 + _1920_,353,NULL},
+
      {u8"Instrucción breve",702 + 1920,534,NULL},
 };
 

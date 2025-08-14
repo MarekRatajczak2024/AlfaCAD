@@ -61,6 +61,8 @@ extern void dialog_cursor(int on);
 extern void set_posXY(double pozx, double pozy);
 extern void get_posXY(double *pozx, double *pozy);
 
+extern BOOL Semaphore;
+
 #ifndef LINUX
 int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #endif
@@ -158,6 +160,8 @@ void Animate_dynamics(void)
     int ret;
     int *i_len;
     int i_len0;
+
+    Semaphore = FALSE;
 
 //searching for visible blocks flag!=2
     adp=(char*)dane;

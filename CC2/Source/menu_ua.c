@@ -648,6 +648,7 @@ POLE pmOpcje[] = {
 #define _GEOM_STIFFNESS_ u8"Геометрична жорсткість"
 #define _INERTIA_ u8"Включити постійне навантаження (DL) у вібрації"
 #define _VIBRATIONS_ u8"Кількість динамічних режимів вібрації"
+#define _PINNABLE_ u8"Використовуйте замінники штифтових з'єднань як віртуальні елементи з майже нульовою жорсткістю \n(безпечна альтернатива обчисленням, особливо для динамічних аналізів)"
 
 #define _INSTALATION_ u8"Установка"
 
@@ -1100,7 +1101,7 @@ static POLE pmenup[] = {
 	{u8"Вид\01\0",L'В',53, &mSkala},
 	{u8"Налаштування\0\0",L'Н',54,&mParametrym},
 	{u8"Шари\0\0",L'Ш',55,NULL},
-	{u8"Міряти\0\0", L'М',56, &mMeasure},
+	{u8"Міряти, інформація та зміни\0\0", L'М',56, &mMeasure},
 	{u8"Знайти\0\0",L'З',3,NULL},
     {u8"Плагіни\0\0",L'П',534,&mInsetAux},
 	{u8"\0\0",L' ',0,NULL} };
@@ -2337,33 +2338,33 @@ static POLE pmGraph[] = {
 
 #define _CTRL_NOPE_ 1924 //D 4
 
-#define _CTRL_0_ 0
-#define _CTRL_1_ 23 //1
-#define _CTRL_2_ 2
-#define _CTRL_3_ _CTRL_ADJACENT_
-#define _CTRL_4_ _CTRL_NOPE_
-#define _CTRL_5_ 5
-#define _CTRL_6_ 6
-#define _CTRL_7_ _CTRL_INTERSECTION_
-#define _CTRL_8_ _CTRL_EDIT_
-#define _CTRL_9_ 9
-#define _CTRL_10_ 10
-#define _CTRL_11_ 11
-#define _CTRL_12_ _CTRL_TANGENTIAL_
-#define _CTRL_13_ 13
-#define _CTRL_14_ _CTRL_POINT_
-#define _CTRL_15_ 15
-#define _CTRL_16_ 16
-#define _CTRL_17_ 17
-#define _CTRL_18_ _CTRL_ENDPOINT_
-#define _CTRL_19_ 19
-#define _CTRL_20_ _CTRL_PERPENDICULAR_
-#define _CTRL_21_ 21
-#define _CTRL_22_ _CTRL_MIDDLE_
-#define _CTRL_23_ _CTRL_CENTER_
-#define _CTRL_24_ 24
-#define _CTRL_25_ _CTRL_NEAREST_
-#define _CTRL_26_ 18 //26 CTRL Z Copy Object
+#define _CTRL_0_ 0  //SPC
+#define _CTRL_1_ 23 //1  //A
+#define _CTRL_2_ 2   //B
+#define _CTRL_3_ _CTRL_ADJACENT_  //C
+#define _CTRL_4_ _CTRL_NOPE_   //D
+#define _CTRL_5_ 5  //E
+#define _CTRL_6_ 6  //F
+#define _CTRL_7_ _CTRL_INTERSECTION_  //G
+#define _CTRL_8_ _CTRL_EDIT_  //H
+#define _CTRL_9_ 23  //I  Ш   Layers
+#define _CTRL_10_ 18   //J Останній Copy Object
+#define _CTRL_11_ 11  //K
+#define _CTRL_12_ _CTRL_TANGENTIAL_  //L
+#define _CTRL_13_ 13  //M
+#define _CTRL_14_ _CTRL_POINT_  //N
+#define _CTRL_15_ 15  //O
+#define _CTRL_16_ 16  //P
+#define _CTRL_17_ 17  //Q
+#define _CTRL_18_ _CTRL_ENDPOINT_  //R
+#define _CTRL_19_ 19  //S scale down
+#define _CTRL_20_ _CTRL_PERPENDICULAR_  //T
+#define _CTRL_21_ 21  //U
+#define _CTRL_22_ _CTRL_MIDDLE_  //V
+#define _CTRL_23_ _CTRL_CENTER_  //W
+#define _CTRL_24_ 24  //X
+#define _CTRL_25_ _CTRL_NEAREST_  //Y
+#define _CTRL_26_ 26  //Z  scale up
 #define _CTRL_27_ 27
 #define _CTRL_28_ 28
 #define _CTRL_29_ 29
@@ -2922,8 +2923,14 @@ POLE pmHelp[] = {
 {u8"Редагувати числові значення",' ',363,NULL},
 {u8"Збільшити розмір указателя",' ',361,NULL},
 {u8"Зменшити розмір указателя",' ',360,NULL},
-{u8"Звільнити мишку",' ',386,NULL},
-{u8"Звільнити мишку",24,353,NULL},
+#ifdef MACOS
+	{u8"Звільнити мишку",' ',387,NULL},
+#else
+	{u8"Звільнити мишку",' ',386,NULL},
+#endif
+//{u8"Звільнити мишку",24,353,NULL},
+{u8"Звільнити мишку",840 + _1920_,353,NULL},
+{u8"Звільнити мишку (Linux)",363 + _1920_,353,NULL},
 {u8"Звільнити мишку (утримуйте П 0,5c)",819 + _1920_, 658,NULL},
 {u8"Розмір і положення вікна",25,353,NULL},
 {u8"Зупинити запис макросу",28,353,NULL},
@@ -2954,6 +2961,10 @@ POLE pmHelp[] = {
 {u8"Масштаб перегляду 0,1",19,353,NULL},
 {u8"Перемалювати",20,353,NULL},
 {u8"Переглянути повний малюнок",21,353,NULL},
+
+{u8"Збільшити масштаб",837 + _1920_,353,NULL},
+{u8"Зменшити масштаб",838 + _1920_,353,NULL},
+
 {u8"ОСОБЛИВОСТІ",31,352,NULL},
 {u8"Колір",12,354,NULL},
 {u8"Тип лінії",13,354,NULL},
@@ -3009,6 +3020,11 @@ POLE pmHelp[] = {
 {u8"Суміжний режим",643+1920,353,NULL},
 {u8"Точка режим",644+1920,353,NULL},
 {u8"Видалити режим",550+1920,353,NULL},
+
+{u8"Копіювати об'єкт під курсором",839 + _1920_,353,NULL},
+{u8"Налаштування шарів",636 + _1920_,353,NULL},
+{u8"Налаштування шарів (варіант)",645 + _1920_,353,NULL},
+
 {u8"Коротка інструкція",702 + 1920,534,NULL},
 
 };

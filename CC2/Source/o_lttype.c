@@ -621,9 +621,13 @@ static T_Font_Header *read_font_old(char *ptrsz_file)
 
 #ifdef BIT64
 #ifndef LINUX
-  poz_widths = lseek(f, -12, SEEK_CUR);  //-12
+  poz_widths = lseek(f, -12, SEEK_CUR);
 #else
-    poz_widths = lseek(f, -16, SEEK_CUR);  //-12
+#ifdef ARM64
+	poz_widths = lseek(f, -24, SEEK_CUR);
+#else
+    poz_widths = lseek(f, -16, SEEK_CUR);
+#endif
 #endif
 #endif
     header_old_size = sizeof(T_Font_Header_Old);
@@ -832,7 +836,10 @@ static T_Font_Header *read_font (char *ptrsz_file)
 #ifdef LINUX
     lseek(f, -2, SEEK_CUR);
 #endif
-  
+#ifdef ARM64
+	lseek(f, -4, SEEK_CUR);
+#endif
+
    
   if (read (f, (void*)(ptrs_header->ptrsz_widths), (unsigned)l_alloc) != l_alloc)
   {

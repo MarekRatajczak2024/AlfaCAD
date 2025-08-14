@@ -104,12 +104,18 @@ static int zakonczenie_inicjacji_makra(void)
 
 void test_aktmakro(void)
 /*-------------------------*/
-{ if (aktmakro==mkbuf_end)
-   if (Demo==1) aktmakro=bufor_makra;
-   else
-   {
-       aktmakro=NULL;LASTFUN=WykonanieMakra;
-   }
+{
+    if (aktmakro!=NULL)
+    {
+        if (aktmakro == mkbuf_end)
+        {
+            if (Demo == 1) aktmakro = bufor_makra;
+            else {
+                aktmakro = NULL;
+                LASTFUN = WykonanieMakra;
+            }
+        }
+    }
 }
 
 void makro_esc(void)

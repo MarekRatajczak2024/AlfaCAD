@@ -97,6 +97,8 @@ double x01,y01,x02,y02,dx,dy,dx1,dy1;
 static PRIV_PRN_WINDOW priv_prn_window={0,0,0,0};
 static BOOL close_button_pressed=FALSE;
 
+extern BOOL wayland;
+
 extern int DRAWING_NUMBER;
 extern BOOL  Change ;
 static  OKNO O;
@@ -338,6 +340,8 @@ extern int edit_text_flag;
 extern void reset_editbox_geometry_set(void);
 extern int Get_Mouse_Wheel(void);
 extern void Set_Mouse_Wheel(int wheel);
+
+extern void  Odczyt_licznikow(void);
 #ifdef MACOS
 extern int send_AppleScript_Exit(pid_t pid);
 extern pid_t get_e_pid(void);
@@ -397,6 +401,8 @@ extern void reload_client_bitmaps(void);
 extern void Set_Mem_Bitmaps(int tier_);
 extern void Set_Mem_Cursors(int tier_);
 extern void save_mouse_wheel(void);
+
+extern BOOL Semaphore;
 
 
 static BITMAP *second_screen_bak_=NULL;
@@ -1952,6 +1958,9 @@ char* icon_folder_bd24_p;
  BITMAP* icon_UA_S;
  BITMAP* icon_UA_T;
  BITMAP* icon_UA_C;
+ BITMAP* icon_UA_JA;
+ BITMAP* icon_UA_I;
+ BITMAP* icon_UA_O;
 
  char* icon_UA_B_p;
  char* icon_UA_D_p;
@@ -1964,6 +1973,9 @@ char* icon_folder_bd24_p;
  char* icon_UA_S_p;
  char* icon_UA_T_p;
  char* icon_UA_C_p;
+ char* icon_UA_JA_p;
+ char* icon_UA_I_p;
+ char* icon_UA_O_p;
 
  BITMAP* icon_spline_points;
  char* icon_spline_points_p;
@@ -2342,6 +2354,8 @@ char *icon_cross_section_forces_p;
 BITMAP *icon_resilience;
 char *icon_resilience_p;
 
+BITMAP *icon_hourglass;
+char *icon_hourglass_p;
 BITMAP *icon_hourglass_mem;
 BITMAP *icon_hourglassx1_5_mem;
 BITMAP *icon_hourglassx2_mem;
@@ -2375,6 +2389,9 @@ BITMAP *icon_mousewheelnatural;
 char *icon_mousewheelnatural_p;
 BITMAP *icon_mousewheelregular;
 char *icon_mousewheelregular_p;
+
+BITMAP *icon_pin_to_flex_d48;
+char *icon_pin_to_flex_d48_p;
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -2492,7 +2509,10 @@ void load_file_to_history(char *sk)
 		{
 			if ((strlen(Previous_File[i]) > 0) && (strcmp(sk, Previous_File[i]) == 0))
 			{
-				strcpy(Previous_File[i], Previous_File[0]);
+#ifdef MACOS
+				if (i!=0)
+#endif
+				 strcpy(Previous_File[i], Previous_File[0]);  //(i!=0) condition has to be on Mac, if not it's crashing, Windows and Linux tolerate it
 				strcpy(Previous_File[0], sk);
 				mLastFiles.poz = 0;
 				return;
@@ -4645,7 +4665,7 @@ void New_window_empty(void) //open another drawing in another window
 	i = 0;
 	while (i < MAX_NUMBER_OF_WINDOWS)
 	{
-		if (Get_dane0_DATA(i) == (int) NULL)
+		if (Get_dane0_DATA(i) == NULL)
 		{
 			NEW_DRAWING_NUMBER = i;
 			break;
@@ -4872,7 +4892,10 @@ void Save_Last_Window_Settings(void)
 
 	ret = get_window_origin_and_size(&x_win_orig, &y_win_orig, &win_width, &win_height);
 #ifdef LINUX
-    win_height -= Get_X11_SCREEN_SHIFT();
+#ifndef MACOS //ARM64
+    if (!wayland)
+        win_height -= Get_X11_SCREEN_SHIFT();
+#endif
 #endif
 
 		/*zapis pliku WINSET.DAT*/
@@ -4960,6 +4983,7 @@ void Close_window(void)
 	char exit_str[72];
 	int i_drawings;
 
+ Semaphore=FALSE;
 	//checking how many drawings are opened
 	i_drawings = 0;
 	for (i = 0; i < MAX_NUMBER_OF_WINDOWS; i++)
@@ -5063,6 +5087,8 @@ void Koniec(void)
   char byebye[80];
 
   char str_zapis[48]= _SAVING_CONF_;
+
+  Semaphore = FALSE;
 
   exit_alf=FALSE;
 
@@ -5712,6 +5738,7 @@ int Expand_flex(void)
 	long mouse_curx, mouse_cury;
     int WspX_, WspY_;
     double X_,Y_;
+    BOOL go_A_Screen=FALSE;
 
     get_posXY(&X_, &Y_);
 
@@ -5727,13 +5754,26 @@ int Expand_flex(void)
     enable_hardware_cursor();
     show_os_cursor(MOUSE_CURSOR_ARROW);
 
+ if (MacOS15==TRUE) go_A_Screen=TRUE;
+ #ifdef ARM64
+ go_A_Screen=FALSE;
+ #endif
+
     //opening transparent dialogbox
-    if (MacOS15==TRUE) {
+    if (go_A_Screen==TRUE) {
+        //set_semaphore(0); ////arm64
         ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
+        //set_semaphore(1); ////arm64
     }
     else {
         //or just waiting
         //enable_hardware_cursor();
+#ifdef MACOS  //ARM64
+        set_semaphore(0); ////arm64
+#endif
+
+        position_mouse_xy((int)mouse_curx, (int)mouse_cury);
+
         free_mouse();
         int keys_;
 
@@ -5749,6 +5789,9 @@ int Expand_flex(void)
             }
             my_sleep(10);
         }
+#ifdef MACOS //ARM64
+        set_semaphore(1); ////arm64
+#endif
 
         lock_mouse();
         position_mouse(getmaxx()/2, getmaxy()/2);
@@ -5759,7 +5802,44 @@ int Expand_flex(void)
     //show_os_cursor(MOUSE_CURSOR_NONE);
     disable_hardware_cursor();
 #else
+#ifdef ALLEGRO5
+    enable_hardware_cursor();
+    show_os_cursor(MOUSE_CURSOR_ARROW);
+
+    //or just waiting
+    //enable_hardware_cursor();
+    set_semaphore(0);
+    position_mouse_xy((int)mouse_curx, (int)mouse_cury);
+
+    free_mouse();
+    int keys_;
+
+    mouse_b=0;
+
+    while (1)
+    {
+        keys_=mouse_b;
+        if (keys_>0)
+        {
+            while (mouse_b) my_sleep(10);
+            break;
+        }
+        my_sleep(10);
+    }
+
+    set_semaphore(1);
+
+    lock_mouse();
+    position_mouse(getmaxx()/2, getmaxy()/2);
+    set_forget_mouse(getmaxx()/2, getmaxy()/2);
+
+    //disable_hardware_cursor();
+
+    //show_os_cursor(MOUSE_CURSOR_NONE);
+    disable_hardware_cursor();
+#else
     ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
+#endif
 #endif
 
 #else
@@ -5793,7 +5873,9 @@ int Expand_flex(void)
 #ifdef LINUX
 
         expand_dim(curr_x01, curr_y01, curr_h1, curr_v1);
-        //enable_hardware_cursor();
+#ifdef ARM64
+        enable_hardware_cursor();
+#endif
         //sleep(0);
         //disable_hardware_cursor();
 #else
@@ -5829,7 +5911,16 @@ int Expand_flex(void)
     set_forget_mouse(getmaxx()/2, getmaxy()/2);
     my_sleep(10);
 
+    //// ????
+    do {
+        get_mouse_mickeys(&WspX_, &WspY_);
+    } while ((WspX_!=0) || (WspY_!=0));
+    ////
+    //Odczyt_licznikow();
     set_posXY(X_, Y_);
+    //Odczyt_licznikow();
+    //CUR_ON(X_,Y_);
+    my_sleep(10);
     CUR_ON(X,Y);
     my_sleep(10);
 
@@ -6253,6 +6344,8 @@ void Opcje(void)
   char file[MAXFILE]="";
   char ext[MAXEXT]="";
   int flags;
+
+  Semaphore = FALSE;
 
   if (Auto_Pan) menu_par_new((*mOpcje.pola)[1].txt, YES);
   else menu_par_new((*mOpcje.pola)[1].txt, NO);

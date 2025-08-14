@@ -1824,12 +1824,25 @@ int vector_w_prostokacie(AVECTOR *ad)
 {
     double x0,y0;
     double n;
-    LINIA L=Ldef, L1=Ldef, Lth=Ldef;
+    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef;
     LUK l;
     OKRAG O;
+    TEXT Vtxt=Tdef, Vtxt1;
     PLINIA PL, PLth;
     double kat, kos, koc, koc1th, kos1th;
+    double ra;
     int ret;
+
+#define arrowf 1.0
+
+    Vtxt.warstwa = ad->warstwa;
+    Vtxt.atrybut=ad->atrybut;
+    Vtxt.czcionka=zmwym.czcionka;
+    Vtxt.wysokosc=zmwym.wysokosc;
+    Vtxt.width_factor=zmwym.width_factor;
+    memcpy(&Vtxt1, &Vtxt, sizeof(TEXT));
+
+    ra=Get_Point_Size () / arrowf;
 
     switch (ad->style)
     {
@@ -2011,13 +2024,59 @@ int vector_w_prostokacie(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2)) !=3) return 0;
 
-            if(ad->r==0) return 0;
+            ////if(ad->r==0) return 0;
 
             O.x=ad->x1;
             O.y=ad->y1;
             O.r=ad->r;
 
             ret=okrag_w_prostokacie(&O);
+            if (ret==0) return 0;
+
+            Vtxt.warstwa = ad->warstwa;
+            Vtxt.atrybut=ad->atrybut;
+            Vtxt.czcionka=zmwym.czcionka;
+            Vtxt.wysokosc=zmwym.wysokosc*0.75;
+            Vtxt.width_factor=zmwym.width_factor;
+
+            Vtxt.x=ad->x2;
+            Vtxt.y=ad->y2;
+            Vtxt.kat=0;
+
+            Vtxt.justowanie=j_do_lewej;
+
+            set_decimal_format(&Vtxt1.text, ad->magnitude1, dim_precision);
+            sprintf(&Vtxt.text,"R%s",Vtxt1.text);
+
+            double t_len_mm = Get_TextLen(&Vtxt, Vtxt.text);
+            double direction=ad->x2-ad->x1;
+
+            Lt.warstwa=ad->warstwa;
+            Lt.x1=ad->x2;
+            Lt.y1=ad->y2;
+            Lt.y2=Lt.y1;
+
+            if (direction > 0) //to the right
+            {
+                Vtxt.x = ad->x2 + Vtxt.wysokosc / 4.0;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.justowanie = j_do_lewej;
+
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 + 0.01;
+                else Lt.x2 = ad->x2 + t_len_mm + Vtxt.wysokosc / 2.5;
+            } else  //to the left
+            {
+                Vtxt.x = ad->x2 - Vtxt.wysokosc / 4.0;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.justowanie = j_do_prawej;
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 - 0.01;
+                else Lt.x2 = ad->x2 - t_len_mm - Vtxt.wysokosc / 2.0;
+            }
+            ret = tekst_w_prostokacie(&Vtxt);
+            if (ret==0) return 0;
+
+            ret = linia_wybrana(&Lt);
+
             if (ret==0) return 0;
 
             return 1;

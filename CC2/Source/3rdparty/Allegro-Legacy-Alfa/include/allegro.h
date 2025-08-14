@@ -24,9 +24,9 @@
 
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_audio.h>
-
-#include <allegro5/allegro_x.h>  //by MAREK
-
+#ifndef __APPLE__
+#include <allegro5/allegro_x.h>  //by MAREK this is just for linux
+#endif
 #include "allegro/base.h"
 
 #include "allegro/system.h"

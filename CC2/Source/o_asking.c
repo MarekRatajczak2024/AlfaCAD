@@ -69,10 +69,11 @@
 #define ID_EUROCODE       4
 #define ID_ASCE           5
 #define ID_ICC            6
-#define ID_COMBINATION    7
-#define ID_GEOM_STIFFNESS 8
-#define ID_INERTIA        9
-#define ID_MODES_NUMBER  10
+#define ID_GEOM_STIFFNESS 7
+#define ID_INERTIA        8
+#define ID_PINNABLE       9
+#define ID_COMBINATION   10
+#define ID_MODES_NUMBER  11
 
 #define MaxComLen 120
 
@@ -139,6 +140,9 @@ static BUTTON buttons [] =
                 { XpESCAPE1+100, YpESCAPE1, 20, 20, COLOR_NULL,
                         COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 0,B_CHECKBOX, 0, 1,0, ID_INERTIA, 0, 0,
                 },
+                { XpESCAPE1+500, YpESCAPE1+20, 20, 20, COLOR_NULL,
+                        COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 0,B_CHECKBOX, 0, 1,0, ID_PINNABLE, 0, 0,
+                },
         };
 
 
@@ -163,6 +167,7 @@ static IMAGE images_as [] =
             { Xp1+5+64, Yp1 + 5, 64, 64, 201, _GEOM_STIFFNESS_},
             { Xp1+5+64, Yp1 + 5, 64, 64, 205, _INERTIA_},
             { Xp1+5+64, Yp1 + 5 - 30, 64, 64, 204, _VIBRATIONS_},
+            { Xp1+5+94, Yp1 + 5 - 30, 64, 64, 210, _PINNABLE_},
 };
 
 static LISTBOX listbox_as [2] =
@@ -217,8 +222,8 @@ static TDIALOG asking_dlg_static=
                 2, (LABEL(*)[])&lab,
                 1, (GROUP_BOX(*)[])&gr_box,
                 0, NULL, //&edit,
-                8, (IMAGE(*)[])&images_as,
-                8, (BUTTON(*)[])&buttons,
+                9, (IMAGE(*)[])&images_as,
+                9, (BUTTON(*)[])&buttons,
                 0, NULL, /*listbox*/
                 2, (COMBOBOX(*)[])&combobox_as,
                 0,NULL, //Sliders
@@ -300,6 +305,7 @@ static int proc_dlg_asking_static( int n)
             break;
         case ID_COMBINATION:
         case ID_GEOM_STIFFNESS:
+        case ID_PINNABLE:
             ret = Dlg_Ret_Val_Continue;
             break;
         default:
@@ -458,8 +464,8 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
 
 }
 
-int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image, int *combination, int *geometric_stiffness, int *inertia, int *st_dynamic_no)
-/*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image, int *combination, int *geometric_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE)
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 { int Ret_Val;
     char sk[MAXPATH]="";
     char st[MAXPATH]="";
@@ -493,8 +499,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
     if (DXBox1_ < DXBox1as) DXBox1_ = DXBox1as;
 
-    asking_dlg_static.dx = DXBox1_+10;
-    gr_box->dx = DXBox1_;
+    asking_dlg_static.dx = DXBox1_+40; //10
+    gr_box->dx = DXBox1_+30;  //+0
 
     DXBox2 = (DXBox1_ / 2);
 
@@ -528,7 +534,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[2].name2 = 101;
             buttons[2].flags &= ~BUTTON_HIDDEN;
             break;
-        case 8:
+
+        case 9:
 
             buttons[0].x = DXBox1_/2 - (DXBut1) + DXShift + Xp1 - 3;
             buttons[0].name2 = 100;
@@ -541,7 +548,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
             images_as[1].y1=images_as[2].y1=images_as[3].y1=images_as[4].y1=images_as[5].y1=images_as[6].y1=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y);
 
-            images_as[7].y1=images_as[6].y1-20;
+            images_as[7].y1=images_as[8].y1=images_as[6].y1-20;
 
 
             combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
@@ -553,6 +560,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[4].x=images_as[2].x1+13/wsp_x;
             buttons[5].x=images_as[3].x1+13/wsp_x;
             images_as[4].x1=images_as[7].x1=DXBox1_-25;
+            images_as[8].x1=DXBox1_+5;
             combobox_as [0].x=DXBox1_-42;
             combobox_as [1].x=DXBox1_-42;
 
@@ -568,6 +576,10 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             images_as[6].x1=buttons[1].x+DXBut1 + WIDTH/4+18 + del; // - abs(WIDTH-12)/wsp_x;
             buttons[7].x=images_as[6].x1+15/wsp_x-del1;
             buttons[7].check=*inertia;
+
+            buttons[8].x=images_as[8].x1+15/wsp_x-del1;
+            buttons[8].y=images_as[8].y1+40/wsp_y-del1;
+            buttons[8].check=!(*PINNABLE);
 
             break;
         default:
@@ -626,6 +638,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
     {
         *geometric_stiffness=Get_Check_Button(&asking_dlg_static, ID_GEOM_STIFFNESS);
         *inertia=Get_Check_Button(&asking_dlg_static, ID_INERTIA);
+        *PINNABLE=!Get_Check_Button(&asking_dlg_static, ID_PINNABLE);
         *combination= listbox_as [0].poz + listbox_as [0].foff + 1;
         *st_dynamic_no= listbox_as [1].poz + listbox_as [1].foff;
         if (Get_Check_Button(&asking_dlg_static, ID_EUROCODE))

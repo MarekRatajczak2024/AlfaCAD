@@ -60,7 +60,7 @@ static void (*mv)(int x, int y);
 static int (*tab_fun)(void);
 static void (*CUR)(int ,int);
 
-static TMENU *cur_tipsmenu=NULL;
+static PTMENU *cur_tipsmenu=NULL;
 
 static int xmousex, ymousey;
 static p_point bar_center;
@@ -232,6 +232,8 @@ extern void MoveOSXCursor(int x, int y);
 extern int vfv(int v);
 
 BOOL NO_POINTER=FALSE;
+
+extern char *icon_empty_p;
 
 extern char *qmark_p;
 extern char *eymark_p;
@@ -497,11 +499,14 @@ extern char *icon_Pdelta_d48_p;
 extern char *icon_vibrations_d48_p;
 extern char *icon_inertia_d48_p;
 
+extern char *icon_hourglass_p;
+extern char *icon_pin_to_flex_d48_p;
+
 /////////////////////////////
 
 extern FORTIPS_MAP fortips_map;
 
-static void init(char typ, TDIALOG* Dlg, TMENU* tipsmenu);
+static void init(char typ, TDIALOG* Dlg, PTMENU* tipsmenu);
 static void draw_check_box(BUTTON *Button);
 
 static TDIALOG dlg0;
@@ -599,14 +604,14 @@ extern int SkalaZ_Plus(int sclfct);
 		 /*126*/ icon_trans50_d_p, icon_refresh_d_p,
          /*128*/ icon_ctrl_p, icon_alt_p, icon_shift_p, icon_f1_p, icon_f2_p, icon_f3_p, icon_f4_p, icon_f5_p, icon_f6_p, icon_f7_p, icon_f8_p, icon_f9_p, icon_f10_p, icon_f11_p,icon_f12_p,
          /*143*/ icon_space128_p, icon_backspace128_p, icon_enter128_p, icon_esc_p, icon_mouse1b_p, icon_mouse2b_p, icon_mouse3b_p, icon_mouseRb_p, icon_ins_p,
-         /*151*/ icon_A_p, icon_B_p, icon_C_p, icon_D_p, icon_E_p, icon_F_p, icon_G_p, icon_H_p, icon_I_p, icon_J_p, icon_K_p, icon_L_p,
-         /*163*/ icon_M_p, icon_N_p, icon_O_p, icon_P_p, icon_Q_p, icon_R_p, icon_S_p, icon_T_p, icon_U_p, icon_V_p,
-         /*173*/ icon_W_p, icon_X_p, icon_Y_p, icon_Z_p,
+         /*152*/ icon_A_p, icon_B_p, icon_C_p, icon_D_p, icon_E_p, icon_F_p, icon_G_p, icon_H_p, icon_I_p, icon_J_p, icon_K_p, icon_L_p,
+         /*164*/ icon_M_p, icon_N_p, icon_O_p, icon_P_p, icon_Q_p, icon_R_p, icon_S_p, icon_T_p, icon_U_p, icon_V_p,
+         /*174*/ icon_W_p, icon_X_p, icon_Y_p, icon_Z_p,
          /*178*/ icon_UA_B_p, icon_UA_D_p, icon_UA_E_p, icon_UA_J_p, icon_UA_K_p, icon_UA_N_p, icon_UA_P_p, icon_UA_R_p, icon_UA_S_p, icon_UA_T_p, icon_UA_C_p,
          /*189*/ icon_tab_p, icon_arrow_down_end_d48_p, icon_alpha_sorting_d32_p, icon_time_lapse_d32_p, icon_no_d_12_p,
          /*194*/ icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p,
          /*200*/ icon_mark_d_12_p, icon_Pdelta_d48_p, icon_upgrademark_pmem, icon_noupgrademark_pmem, icon_vibrations_d48_p, icon_inertia_d48_p,
-         /*206*/ icon_mouse1b2b_p, icon_paper_size_d_p
+         /*206*/ icon_mouse1b2b_p, icon_paper_size_d_p, icon_empty_p, icon_hourglass_p, icon_pin_to_flex_d48_p
      };
 
 	 return icons[iconno];
@@ -1100,7 +1105,7 @@ static void mvwindow (int dx, int dy)
     }
 }
 
-static int find_header(TDIALOG *dlg, TMENU *tipsmenu, int typ)
+static int find_header(TDIALOG *dlg, PTMENU *tipsmenu, int typ)
 /*----------------------------------------------------------*/
 {
     int ret = -1;
@@ -4027,7 +4032,7 @@ static void draw_sliders(SLIDER *Slider,int SizeSliderT, BITMAP *dialog_screen) 
     }
 }
 
-static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
+static void draw_images(IMAGE *Images,int SizeImageT, PTMENU *tipsmenu)
 /*------------------------------------------------------------------*/
 { 
   int i,x01,y01,x1,y1,x2,y2;
@@ -4089,8 +4094,10 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
 	  {
 		  ////sprintf(fortip, "@%d;%d$%s", x1 + Images[i].x2, y1 + Images[i].y2, Images[i].txt);
 		  ////strcpy((*(tipsmenu->pola))[i].txt, fortip);
-		  strncpy((*(tipsmenu->pola))[i].txt, Images[i].txt, POLE_TXT_MAX-1);
-	  	  (*(tipsmenu->pola))[i].txt[POLE_TXT_MAX-1]='\0';
+
+		  //strncpy((*(tipsmenu->pola))[i].txt, Images[i].txt, POLE_TXT_MAX-1);
+	  	  //(*(tipsmenu->pola))[i].txt[POLE_TXT_MAX-1]='\0';
+          (*(tipsmenu->pola))[i].txt=Images[i].txt;
 		  fortips_map.x1[i] = x01;
 		  fortips_map.y1[i] = y01;
 		  fortips_map.x2[i] = x01 + Images[i].x2;
@@ -4101,7 +4108,7 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
 
 } 
 
- void draw_dlg(TDIALOG *dlg, int typ, TMENU *tipsmenu, BITMAP *dialog_screen, RECT *dialog_rect)
+ void draw_dlg(TDIALOG *dlg, int typ, PTMENU *tipsmenu, BITMAP *dialog_screen, RECT *dialog_rect)
 /*-----------------------------------------------------------------------------------*/
 {
 	////show_mouse(NULL);
@@ -4142,7 +4149,7 @@ static void draw_images(IMAGE *Images,int SizeImageT, TMENU *tipsmenu)
   if (dlg->Groups != NULL) draw_groups(*(dlg->Groups), dlg->SizeGroupT, dlg, TRUE);
 }
 
-void draw_transparent_dlg(TDIALOG *dlg, int typ, TMENU *tipsmenu, RECT *dialog_rect)
+void draw_transparent_dlg(TDIALOG *dlg, int typ, PTMENU *tipsmenu, RECT *dialog_rect)
 /*-----------------------------------------------------------------------------------*/
 {
     if(dlg->Images != NULL) draw_images(*(dlg->Images),dlg->SizeImageT, tipsmenu);
@@ -4535,7 +4542,7 @@ void dialog_cursor(int on) {
     }
 }
 
-static void init(char typ, TDIALOG *Dlg, TMENU *tipsmenu)
+static void init(char typ, TDIALOG *Dlg, PTMENU *tipsmenu)
 /*-----------------------------------------------------*/
 {
   RECT dialog_rect;
@@ -4769,12 +4776,12 @@ int Dialog_in_dialog(TDIALOG *dlg)
     pocz_y1=pocz_y;
 
 
-    POLE	pmTipsMenu[] = {
+    PPOLE	pmTipsMenu[] = {
             {u8"@",' ',0,NULL},
             {u8"",' ',0,NULL},
     };
 
-    TMENU tipsmenu = { 1, 0, 0, 32, 0, 0, 0, CMNU, CMBR, CMTX, 0, 0, 0,0,0,(POLE(*)[])&pmTipsMenu, NULL, NULL };
+    PTMENU tipsmenu = { 1, 0, 0, 32, 0, 0, 0x100, CMNU, CMBR, CMTX, 0, 0, 0,0,0,(PPOLE(*)[])&pmTipsMenu, NULL, NULL };
 
     tipsmenu.poz = 0;
     tipsmenu.max = dlg->SizeImageT;
@@ -4783,7 +4790,9 @@ int Dialog_in_dialog(TDIALOG *dlg)
 	mx = mouse_x;
 	my = mouse_y;
 	
+#ifndef LINUX
     select_mouse_cursor(MOUSE_CURSOR_NONE);
+#endif
 	show_mouse(NULL);
 
     Get_Dlg_Rect(dlg, &x1, &y1, &x2, &y2);
@@ -4800,7 +4809,9 @@ int Dialog_in_dialog(TDIALOG *dlg)
 
     Redraw_Dlg(dlg);
 
+#ifndef LINUX
     select_mouse_cursor(MOUSE_CURSOR_ALLEGRO);
+#endif
 	show_mouse(screen);
 
     int ended=0;
@@ -4950,7 +4961,8 @@ continue2:
 	//m = m;
 	dlg_kolory = kolory;
 
-	POLE	pmTipsMenu[] = {
+	//POLE	pmTipsMenu[] = {
+    PPOLE pmTipsMenu[] = {
 	{u8"",' ',0,NULL},
 	{u8"",' ',0,NULL},
 	{u8"",' ',0,NULL},
@@ -4991,7 +5003,8 @@ continue2:
     {u8"",' ',0,NULL},
 	};
 
-	TMENU tipsmenu = { 1, 0, 0, 32, 0, 0, 0, CMNU, CMBR, CMTX, 0, 0, 0,0,0,(POLE(*)[])&pmTipsMenu, NULL, NULL };
+	////TMENU tipsmenu = { 1, 0, 0, 32, 0, 0, 0, CMNU, CMBR, CMTX, 0, 0, 0,0,0,(POLE(*)[])&pmTipsMenu, NULL, NULL };
+    PTMENU tipsmenu = { 1, 0, 0, 32, 0, 0, 0x100, CMNU, CMBR, CMTX, 0, 0, 0,0,0,(PPOLE(*)[])&pmTipsMenu, NULL, NULL };
 
 	tipsmenu.poz = 0;
 	tipsmenu.max = dlg->SizeImageT;
@@ -5047,7 +5060,7 @@ continue2:
 
   while(1)
   {
-	ev = GetEvent(&tipsmenu); //NULL &dialog
+	ev = GetEvent((TMENU*)&tipsmenu); //NULL &dialog
     switch(ev->What)
     {
       case evKeyDown  :

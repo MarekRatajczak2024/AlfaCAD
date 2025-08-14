@@ -112,6 +112,8 @@ extern int Reverse_VectorP(void);
 extern void set_global_set_stretch(BOOL v_s_s);
 extern void orto_l(LINIA *L, int *Orto_Dir);
 
+extern BOOL Semaphore;
+
 #ifdef ALLEGRO5
 extern void flip_screen_sd(BITMAP * src_screen, BITMAP * dst_screen);
 extern void Set_Screenplay(BITMAP *ctx_bitmap);
@@ -6817,6 +6819,7 @@ static void	redcr_pcx (char typ)
 void Change_Properties (void)
 /*---------------------------*/
 {
+  Semaphore = FALSE;
   redcr_chp	(0);
   blok (dzi, odzi, Redraw_Block,	COMNDmb_chp) ;
   if (check_if_obiekt(dane, dane+dane_size, Ablok, ONieOkreslony)) Change_Properties_dlg();
@@ -7789,6 +7792,8 @@ void Hatch (void)
 /*---------------*/
 {
 	int ret;
+
+  Semaphore = FALSE;
   add_zbior_2=0;
   comput_area = 0	;
   out_pole_ignore=FALSE;

@@ -304,8 +304,8 @@ set(Source_Files
     "../../../CC2/Source/colors.c"
     "../../../CC2/Source/dxfdlg.c"
     "../../../CC2/Source/EndianSwap.cpp"
-    "../../../CC2/Source/Fleditor.cpp"
-    "../../../CC2/Source/FLTKeditor.cpp"
+    #"../../../CC2/Source/Fleditor.cpp"
+    #"../../../CC2/Source/FLTKeditor.cpp"
     "../../../CC2/Source/fnmerge.c"
     "../../../CC2/Source/fnsplit.c"
     "../../../CC2/Source/forlinux.c"
@@ -13674,7 +13674,7 @@ target_link_libraries(${PROJECT_NAME}
         ncurses
         Xm
         Xt
-        fltk
+        #fltk
         cups
         xcb
         curl

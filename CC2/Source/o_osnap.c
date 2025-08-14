@@ -98,6 +98,88 @@ void *get_vector_s(void)
     return VectorS;
 }
 
+#include <stdbool.h>
+#include <math.h>
+
+// Function to check if point (x, y) lies on the line segment from (x1, y1) to (x2, y2)
+// with epsilon tolerance to exclude points near the endpoints.
+BOOL CheckIsPointOnLineSegment_(float x, float y, float x1, float y1, float x2, float y2, float epsilon) {
+    // Compute vectors: P - P1 and P2 - P1
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float px = x - x1;
+    float py = y - y1;
+
+    // Check if the segment is a point (degenerate case)
+    if (fabs(dx) < epsilon && fabs(dy) < epsilon) {
+        return FALSE; // Degenerate segment (P1 == P2)
+    }
+
+    // Compute the cross product to find the distance from point to line
+    // Cross product: |(P - P1) x (P2 - P1)| / |P2 - P1|
+    float cross = fabs(px * dy - py * dx);
+    float len = sqrt(dx * dx + dy * dy); // Length of segment
+    float distance = cross / len;
+
+    // Check if the point is collinear (distance to line is nearly zero)
+    if (distance > epsilon) { // Use small tolerance for floating-point comparison
+        return FALSE; // Point is not on the line
+    }
+
+    // Compute the projection parameter t = [(P - P1) . (P2 - P1)] / |P2 - P1|^2
+    float dot = px * dx + py * dy;
+    float t = dot / (len * len);
+
+    // Check if the point lies within the segment (excluding endpoints)
+    if (t <= 0.0f || t >= 1.0f) {
+        return FALSE; // Point lies on or beyond endpoints
+    }
+
+    // Check distances from the point to both endpoints to enforce epsilon tolerance
+    float dist_to_p1 = sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+    float dist_to_p2 = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
+
+    if (dist_to_p1 <= epsilon || dist_to_p2 <= epsilon) {
+        return FALSE; // Point is too close to an endpoint
+    }
+
+    return TRUE; // Point lies on the segment interior
+}
+
+BOOL CheckIsPointOnLineSegment__(float x, float y, float x1, float y1, float x2, float y2, float epsilon)
+{
+
+    float minX = min(x1, x2);
+    float maxX = max(x1, x2);
+
+    float minY = min(y1, y2);
+    float maxY = max(y1, y2);
+
+    if (!(minX <= x) || !(x <= maxX) || !(minY <= y) || !(y <= maxY))
+    {
+        return FALSE;
+    }
+
+    if (fabs(x1 - x2) < epsilon)
+    {
+        return fabs(x1 - x) < epsilon || fabs(x2 - x) < epsilon;
+    }
+
+    if (fabs(y1 - y2) < epsilon)
+    {
+        return fabs(y1 - y) < epsilon || fabs(y2 - y) < epsilon;
+    }
+
+    if (fabs((x - x1) / (x2 - x1) - (y - y1) / (y2 - y1)) < epsilon)
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
 BOOL CheckIsPointOnLineSegment(double x, double y, double x1, double y1, double x2, double y2, double epsilon)
 {
 
@@ -1339,9 +1421,16 @@ int przeciecieLO_older (double *x, double *y, void *adr, void *adr1)
 {
   double x1, x2, y1, y2, t1, t2, t0, x0, y0, l ;
 
-  if (0 == przeciecieLO_tt (&x1, &y1, &t1, &x2, &y2, &t2, adr, adr1))
+  if (((NAGLOWEK*)adr)->obiekt==Ookrag) {
+      if (0 == przeciecieLO_tt(&x1, &y1, &t1, &x2, &y2, &t2, adr1, adr)) {
+          return 0;
+      }
+  }
+  else
   {
-    return 0 ;
+      if (0 == przeciecieLO_tt(&x1, &y1, &t1, &x2, &y2, &t2, adr, adr1)) {
+          return 0;
+      }
   }
   if (dP1P2   (X, Y, x1, y1) <= dP1P2   (X, Y, x2, y2))
   {
@@ -1370,10 +1459,17 @@ int przeciecieLO_ (double *x, double *y, void *adr, void *adr1)
 {
     double x1, x2, y1, y2, t1, t2;
 
-    if (0 == przeciecieLO_tt (&x1, &y1, &t1, &x2, &y2, &t2, adr, adr1))
-    {
-        return 0 ;
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag) {
+        if (0 == przeciecieLO_tt(&x1, &y1, &t1, &x2, &y2, &t2, adr1, adr)) {
+            return 0;
+        }
     }
+    else {
+        if (0 == przeciecieLO_tt(&x1, &y1, &t1, &x2, &y2, &t2, adr, adr1)) {
+            return 0;
+        }
+    }
+
     //priority for closer point
     if ((dP1P2  (X, Y, x1, y1) <= dP1P2   (X, Y, x2, y2)) && (t1 >= 0 - o_male_p && t1 <= 1 + o_male_p))
     {
@@ -1417,8 +1513,16 @@ int przeciecieLl_(double *x, double *y, void *adr, void *adr1)
   LINIA *L;
   double a,b,c,d2,d,t,t1,t2,x1,x2,y1,y2,x0,y0;
   int l;
-  L=(LINIA*)adr;
-  luk=(LUK*)adr1;
+
+  if (((NAGLOWEK*)adr)->obiekt==Oluk)
+  {
+      L = (LINIA*)adr1;
+      luk = (LUK*)adr;
+  }
+  else {
+      L = (LINIA *) adr;
+      luk = (LUK *) adr1;
+  }
   a=(L->x2-L->x1)*(L->x2-L->x1)+(L->y2-L->y1)*(L->y2-L->y1);
   if (TRUE == Check_if_Equal (a, 0))
   {
@@ -2151,8 +2255,17 @@ int przeciecielO_(double *x, double *y, void *adr, void *adr1)
   LUK * luk;
   double l,Lx,Ly,si,co,e,x0,y0,x1,y1,Xk,Yk;
 
-  luk = (LUK*)adr ;
-  O2 = (OKRAG*)adr1 ;
+if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+    {
+        luk = (LUK *) adr1;
+        O2 = (OKRAG *) adr;
+    }
+    else
+    {
+        luk = (LUK *) adr;
+        O2 = (OKRAG *) adr1;
+    }
+
   Lx = O2->x - luk->x ;
   Ly = O2->y - luk->y ;
   if (TRUE == Check_if_Equal (Lx,0) && TRUE == Check_if_Equal (Ly, 0))
@@ -2605,72 +2718,101 @@ int ellipse_przec(double *x, double *y, void *adr, void *adr1,
 
 int przeciecieLW_(double *x, double *y, void *adr, void *adr1)
 {
-  return wielokat_przec (x, y, adr1, adr, przeciecieLL_) ;
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return wielokat_przec (x, y, adr, adr1, przeciecieLL_) ;
+    else return wielokat_przec (x, y, adr1, adr, przeciecieLL_) ;
 }
 
 int przeciecieLW_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecieLW_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return przeciecieLW_(x, y, adr, adr1);
+    else return przeciecieLW_(x, y, adr1, adr);
 }
 
 int przeciecieLSA_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
+    if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
+        return solidarc_przec (x, y, adr, adr1, przeciecieLL_, przeciecieLl_) ;
+    else return solidarc_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
 }
 
 int przeciecieLV_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
+    if (((NAGLOWEK*)adr1)->obiekt==Olinia)
+        return vector_przec (x, y, adr, adr1, przeciecieLL_, przeciecieLl_) ;
+    else
+        return vector_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
 }
 
 int przeciecieLSA_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecieLSA_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
+        return przeciecieLSA_(x, y, adr, adr1);
+    else return przeciecieLSA_(x, y, adr1, adr);
 }
 
 int przeciecieLS_(double *x, double *y, void *adr, void *adr1)
 {
+    if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        return spline_przec(x, y, adr, adr1, przeciecieLL_);
 	return spline_przec(x, y, adr1, adr, przeciecieLL_);
 }
 
 int przeciecielW_(double *x, double *y, void *adr, void *adr1)
 {
-  return wielokat_przec (x, y, adr1, adr, przeciecieLl_) ;
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return wielokat_przec (x, y, adr, adr1, przeciecieLl_) ;
+  else return wielokat_przec (x, y, adr1, adr, przeciecieLl_) ;
 }
 
 int przeciecielW_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecielW_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return przeciecielW_(x, y, adr, adr1);
+    else return przeciecielW_(x, y, adr1, adr);
 }
 
 int przeciecieSAW_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return solidarc_przec (x, y, adr1, adr, przeciecieLW_, przeciecielW_r);
+    else return solidarc_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
 }
 
 int przeciecieVW_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
+    if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
+        return vector_przec (x, y, adr1, adr, przeciecieLW_, przeciecielW_r);
+    else return vector_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
 }
 
 int przeciecielSA_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
+    if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
+        return solidarc_przec (x, y, adr, adr1, przeciecieLl_, przecieciell_) ;
+    else solidarc_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
 }
 
 int przeciecielV_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
+    if (((NAGLOWEK*)adr1)->obiekt==Oluk)
+        return vector_przec (x, y, adr, adr1, przeciecieLl_, przecieciell_) ;
+    else return vector_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
 }
 
 int przeciecielV_r(double *x, double *y, void *adr, void *adr1)
 {
+    if (((NAGLOWEK*)adr1)->obiekt==Oluk)
+        return przeciecielV_(x, y, adr, adr1);
     return przeciecielV_(x, y, adr1, adr);
 }
 
 int przeciecielSA_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecielSA_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
+        return przeciecielSA_(x, y, adr, adr1);
+    else return przeciecielSA_(x, y, adr1, adr);
 }
 
 int przeciecieSASA_(double *x, double *y, void *adr, void *adr1)
@@ -2685,47 +2827,65 @@ int przeciecieVV_(double *x, double *y, void *adr, void *adr1)
 
 int przeciecielS_(double *x, double *y, void *adr, void *adr1)
 {
-	return spline_przec(x, y, adr1, adr, przeciecieLl_);
+    if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        return spline_przec(x, y, adr, adr1, przeciecieLl_);
+	else return spline_przec(x, y, adr1, adr, przeciecieLl_);
 }
 
 int przeciecielS_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecielS_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        return przeciecielS_(x, y, adr, adr1);
+    else return przeciecielS_(x, y, adr1, adr);
 }
 
 int przeciecieSAS_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
+    if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        return solidarc_przec(x, y, adr1, adr, przeciecieLS_, przeciecielS_r);
+    else return solidarc_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
 }
 
 int przeciecieVS_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
+    if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        return vector_przec(x, y, adr1, adr, przeciecieLS_, przeciecielS_r);
+    else return vector_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
 }
 
 int przeciecieWO_(double *x, double *y, void *adr, void *adr1)
 {
-  return wielokat_przec (x, y, adr, adr1, przeciecieLO_) ;
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+        return wielokat_przec (x, y, adr1, adr, przeciecieLO_) ;
+    else return wielokat_przec (x, y, adr, adr1, przeciecieLO_) ;
 }
 
 int przeciecieSAO_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+        return solidarc_przec (x, y, adr1, adr, przeciecieLO_, przeciecielO_r) ;
+    else return solidarc_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
 }
 
 int przeciecieVO_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+        return vector_przec (x, y, adr1, adr, przeciecieLO_, przeciecielO_r) ;
+    else return vector_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
 }
 
 int przeciecieSO_(double *x, double *y, void *adr, void *adr1)
 {
-	return spline_przec(x, y, adr, adr1, przeciecieLO_);
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+        return spline_przec(x, y, adr1, adr, przeciecieLO_);
+	else return spline_przec(x, y, adr, adr1, przeciecieLO_);
 }
 
 int przeciecieSE_(double *x, double *y, void *adr, void *adr1)
 {
-    return spline_przec(x, y, adr, adr1, przeciecieLE_);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return spline_przec(x, y, adr1, adr, przeciecieLE_);
+    else return spline_przec(x, y, adr, adr1, przeciecieLE_);
 }
 
 int przeciecieEE_(double *x, double *y, void *adr, void *adr1)
@@ -2817,8 +2977,16 @@ int przeciecieWS_(double *x, double *y, void *adr, void *adr1)
         int node_count;
 
 		b_ret = FALSE;
-		w = (WIELOKAT*)adr;
-		s = (SPLINE*)adr1;
+
+        if (((NAGLOWEK*)adr)->obiekt==Ospline)
+        {
+            w = (WIELOKAT*)adr1;
+            s = (SPLINE*)adr;
+        }
+        else {
+            w = (WIELOKAT *) adr;
+            s = (SPLINE *) adr1;
+        }
 
 #define Npts 90  //for more precission
         if (s->npts < 5)
@@ -3587,37 +3755,51 @@ int przeciecieLEA_tt_prec_(double *x1, double *y1, double *x2, double *y2, void 
 
 int przeciecieLE_(double *x, double *y, void *adr, void *adr1)
 {
-    return ellipse_przec(x, y, adr1, adr, przeciecieLL_);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return ellipse_przec(x, y, adr, adr1, przeciecieLL_);
+    else return ellipse_przec(x, y, adr1, adr, przeciecieLL_);
 }
 
 int przeciecielE_(double *x, double *y, void *adr, void *adr1)
 {
-    return ellipse_przec(x, y, adr1, adr, przeciecieLl_);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return ellipse_przec(x, y, adr, adr1, przeciecieLl_);
+    else return ellipse_przec(x, y, adr1, adr, przeciecieLl_);
 }
 
 int przeciecielE_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecielE_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return przeciecielE_(x, y, adr, adr1);
+    else return przeciecielE_(x, y, adr1, adr);
 }
 
 int przeciecieSAE_(double *x, double *y, void *adr, void *adr1)
 {
-    return solidarc_przec(x, y, adr, adr1, przeciecieLE_, przeciecielE_r);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return solidarc_przec(x, y, adr1, adr, przeciecieLE_, przeciecielE_r);
+    else return solidarc_przec(x, y, adr, adr1, przeciecieLE_, przeciecielE_r);
 }
 
 int przeciecieVE_(double *x, double *y, void *adr, void *adr1)
 {
-    return vector_przec(x, y, adr, adr1, przeciecieLE_, przeciecielE_r);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return vector_przec(x, y, adr1, adr, przeciecieLE_, przeciecielE_r);
+    else return vector_przec(x, y, adr, adr1, przeciecieLE_, przeciecielE_r);
 }
 
 int przeciecieEO_(double *x, double *y, void *adr, void *adr1)
 {
-    return ellipse_przec(x, y, adr, adr1, przeciecieLO_);
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag)
+        return ellipse_przec(x, y, adr1, adr, przeciecieLO_);
+    else return ellipse_przec(x, y, adr, adr1, przeciecieLO_);
 }
 
 int przeciecieWE_(double *x, double *y, void *adr, void *adr1)
 {
-    return ellipse_przec(x, y, adr1, adr, przeciecieLW_);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipse)
+        return ellipse_przec(x, y, adr, adr1, przeciecieLW_);
+    else return ellipse_przec(x, y, adr1, adr, przeciecieLW_);
 }
 
 int przeciecieLEA_prec_(double *x, double *y, void *adr, void *adr1)
@@ -3743,45 +3925,74 @@ int przeciecieLEA_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
 
-    b_ret=ellipse_przec(x, y, adr1, adr, przeciecieLL_);
-
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc) {
+        b_ret = ellipse_przec(x, y, adr, adr1, przeciecieLL_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
+    else {
+        b_ret = ellipse_przec(x, y, adr1, adr, przeciecieLL_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
 }
 
 int przeciecieEAO_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
 
-    b_ret=ellipse_przec(x, y, adr, adr1, przeciecieLO_);
-
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Ookrag) {
+        b_ret = ellipse_przec(x, y, adr1, adr, przeciecieLO_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
+    else
+    {
+        b_ret = ellipse_przec(x, y, adr, adr1, przeciecieLO_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
 }
 
 int przeciecieWEA_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
 
-    b_ret=ellipse_przec(x, y, adr1, adr, przeciecieLW_);
-
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc) {
+        b_ret = ellipse_przec(x, y, adr, adr1, przeciecieLW_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
+    else
+    {
+        b_ret = ellipse_przec(x, y, adr1, adr, przeciecieLW_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
 }
 
 int przeciecieSEA_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
 
-    b_ret=spline_przec(x, y, adr1, adr, przeciecieLE_);
-
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc) {
+        b_ret = spline_przec(x, y, adr, adr1, przeciecieLE_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
+    else
+    {
+        b_ret = spline_przec(x, y, adr1, adr, przeciecieLE_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
 }
 
 int przeciecieEEA_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
 
-    b_ret=ellipse_przec(x, y, adr1, adr, przeciecieLE_);
-
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc) {
+        b_ret = ellipse_przec(x, y, adr, adr1, przeciecieLE_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
+    else
+    {
+        b_ret = ellipse_przec(x, y, adr1, adr, przeciecieLE_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
 }
 
 int przeciecieEAEA_(double *x, double *y, void *adr, void *adr1)
@@ -3798,24 +4009,38 @@ int przeciecieEAEA_(double *x, double *y, void *adr, void *adr1)
 int przeciecielEA_(double *x, double *y, void *adr, void *adr1)
 {
     int b_ret;
-    b_ret=ellipse_przec(x, y, adr1, adr, przeciecieLl_);
 
-    return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc) {
+        b_ret = ellipse_przec(x, y, adr, adr1, przeciecieLl_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr);
+    }
+    else
+    {
+        b_ret = ellipse_przec(x, y, adr1, adr, przeciecieLl_);
+        return Check_EllipticalArc_Inter(b_ret, x, y, adr1);
+    }
 }
 
 int przeciecielEA_r(double *x, double *y, void *adr, void *adr1)
 {
-    return przeciecielEA_(x, y, adr1, adr);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc)
+        return przeciecielEA_(x, y, adr, adr1);
+    else return przeciecielEA_(x, y, adr1, adr);
+
 }
 
 int przeciecieSAEA_(double *x, double *y, void *adr, void *adr1)
 {
-     return  solidarc_przec(x, y, adr, adr1, przeciecieLEA_, przeciecielEA_r);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc)
+     return  solidarc_przec(x, y, adr1, adr, przeciecieLEA_, przeciecielEA_r);
+    else return  solidarc_przec(x, y, adr, adr1, przeciecieLEA_, przeciecielEA_r);
 }
 
 int przeciecieVEA_(double *x, double *y, void *adr, void *adr1)
 {
-    return  vector_przec(x, y, adr, adr1, przeciecieLEA_, przeciecielEA_r);
+    if (((NAGLOWEK*)adr)->obiekt==Oellipticalarc)
+    return  vector_przec(x, y, adr1, adr, przeciecieLEA_, przeciecielEA_r);
+    else return  vector_przec(x, y, adr, adr1, przeciecieLEA_, przeciecielEA_r);
 }
 /*------------------------------------------------------------*/
 

@@ -650,7 +650,7 @@ POLE pmOpcje[] = {
 #define _GEOM_STIFFNESS_ u8"Sztywność geometryczna"
 #define _INERTIA_ u8"Uwzględnić obciążenie stałe (DL) w drganiach"
 #define _VIBRATIONS_ u8"Liczba trybów drgań własnych"
-
+#define _PINNABLE_ u8"Użyj zamienników połączeń przegubowych jako wirtualnych prętów o niemal zerowej sztywności \n(bezpieczna alternatywa obliczeniowa, szczególnie w przypadku analiz dynamicznych)"
 #define _INSTALATION_ u8"Instalacja"
 
 static char* combination_txt[8] = {
@@ -1104,7 +1104,7 @@ static POLE pmenup[] = {
 	{u8"Ekran\0 1\0    ",L'E',53,&mSkala},
 	{u8"pArametry\0\0 ",L'A',54,&mParametrym},
 	{u8"Warstwy\0\0 ",L'W',55,NULL},
-	{u8"Miara\0\0 ", L'M',56,&mMeasure},
+	{u8"Miara, informacje i zmiany\0\0 ", L'M',56,&mMeasure},
 	{u8"Znajdź\0\0 ",L'Z',3,NULL},
     {u8"wtYczki\0\0",L'Y',534,&mInsetAux},
 	{u8"\0               \0 ",L' ',0,NULL} };
@@ -2341,38 +2341,38 @@ static POLE pmGraph[] = {
 
 #define _CTRL_NOPE_ 1944 //24
 
-#define _CTRL_0_ 0
-#define _CTRL_1_ 1
-#define _CTRL_2_ _CTRL_NEAREST_
-#define _CTRL_3_ _CTRL_CENTER_
-#define _CTRL_4_ 4
-#define _CTRL_5_ _CTRL_ENDPOINT_
-#define _CTRL_6_ 6
-#define _CTRL_7_ 7
-#define _CTRL_8_ 8
-#define _CTRL_9_ 9
-#define _CTRL_10_ 10
-#define _CTRL_11_ _CTRL_ENDPOINT_
-#define _CTRL_12_ 12
-#define _CTRL_13_ 13
-#define _CTRL_14_ _CTRL_ADJACENT_
-#define _CTRL_15_ 15
-#define _CTRL_16_ _CTRL_INTERSECTION_
-#define _CTRL_17_ 17
-#define _CTRL_18_ _CTRL_PERPENDICULAR_
-#define _CTRL_19_ _CTRL_MIDDLE_
-#define _CTRL_20_ _CTRL_TANGENTIAL_
-#define _CTRL_21_ _CTRL_POINT_
-#define _CTRL_22_ 22
-#define _CTRL_23_ 23
-#define _CTRL_24_ _CTRL_NOPE_
-#define _CTRL_25_ 25
-#define _CTRL_26_ 18 //26  CTRL Z  Copy Object
-#define _CTRL_27_ 27
-#define _CTRL_28_ 28
-#define _CTRL_29_ 29
-#define _CTRL_30_ 30
-#define _CTRL_31_ 31
+#define _CTRL_0_ 0   //SPC
+#define _CTRL_1_ 19   //A   Scale Down
+#define _CTRL_2_ _CTRL_NEAREST_  //B
+#define _CTRL_3_ _CTRL_CENTER_  //C
+#define _CTRL_4_ 18  //4  //Duplikuj
+#define _CTRL_5_ _CTRL_ENDPOINT_  //E
+#define _CTRL_6_ 6  //F
+#define _CTRL_7_ 7  //G
+#define _CTRL_8_ 8  //H
+#define _CTRL_9_ 9  //I
+#define _CTRL_10_ 10  //J
+#define _CTRL_11_ _CTRL_ENDPOINT_  //K
+#define _CTRL_12_ 23  //Layers
+#define _CTRL_13_ 13  //M
+#define _CTRL_14_ _CTRL_ADJACENT_  //N
+#define _CTRL_15_ 15  //O
+#define _CTRL_16_ _CTRL_INTERSECTION_  //P
+#define _CTRL_17_ 17  //Q
+#define _CTRL_18_ _CTRL_PERPENDICULAR_  //R
+#define _CTRL_19_ _CTRL_MIDDLE_  //S
+#define _CTRL_20_ _CTRL_TANGENTIAL_  //T
+#define _CTRL_21_ _CTRL_POINT_  //U
+#define _CTRL_22_ 22  //V
+#define _CTRL_23_ 23  //W  Warstwy - Layers
+#define _CTRL_24_ _CTRL_NOPE_    //X
+#define _CTRL_25_ 25  //Y
+#define _CTRL_26_ 26  //CTRL Z  Scale Up
+#define _CTRL_27_ 27  //0
+#define _CTRL_28_ 28   //1
+#define _CTRL_29_ 29  //2
+#define _CTRL_30_ 30  //3
+#define _CTRL_31_ 31  //4
 
 #define _PRINTING__ u8"Wydruk"
 
@@ -2925,8 +2925,14 @@ POLE pmHelp[] = {
 	 {u8"Edycja wartości numerycznych",' ',363,NULL},
 	 {u8"Zwiększ rozmiar celownika",' ',361,NULL},
 	 {u8"Pomniejsz rozmiar celownika",' ',360,NULL},
-	 {u8"Uwolnij myszkę",' ',386,NULL},
-	 {u8"Uwolnij myszkę",24,353,NULL},
+#ifdef MACOS
+	 {u8"Uwolnij myszkę",' ',387,NULL},
+#else
+     {u8"Uwolnij myszkę",' ',386,NULL},
+#endif
+	 //{u8"Uwolnij myszkę",24,353,NULL},
+     {u8"Uwolnij myszkę",840 + _1920_,353,NULL},
+     {u8"Uwolnij myszkę (Linux)",363 + _1920_,353,NULL},
      {u8"Uwolnij myszkę (przytrzymaj prawy przycisk przez 0,5 s)",819 + _1920_, 658,NULL},
 	 {u8"Zmień rozmiar i położenie okna",25,353,NULL},
 	 {u8"Zakończ zapis makra",28,353,NULL},
@@ -2957,6 +2963,10 @@ POLE pmHelp[] = {
 	 {u8"Skala 0.1",19,353,NULL},
 	 {u8"Przerysuj",20,353,NULL},
 	 {u8"Cały rysunek",21,353,NULL},
+
+     {u8"Powiększ",574 + _1920_,353,NULL},
+     {u8"Zmniejsz",549 + _1920_,353,NULL},
+
 	 {u8"CECHY",' ',352,NULL},
 	 {u8"Kolor",12,354,NULL},
 	 {u8"Typ linii",13,354,NULL},
@@ -3012,6 +3022,11 @@ POLE pmHelp[] = {
 	 {u8"Tryb Najbliższy",562+1920,353,NULL},
 	 {u8"Tryb pUnkt",569+1920,353,NULL},
 	 {u8"Tryb żaden",572+1920,353,NULL},
+
+     {u8"Kopiuj obiekt pod kursorem",552 + _1920_,353,NULL},
+     {u8"Ustawienia warst",571 + _1920_,353,NULL},
+     {u8"Ustawienia warst (opcionalnie)",560 + _1920_,353,NULL},
+
      {u8"Krótka instrukcja",702 + 1920,534,NULL},
 
 };

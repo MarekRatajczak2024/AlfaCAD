@@ -36,6 +36,7 @@ static int a5_sys_init(void) {
 
 static void a5_sys_exit(void)
 {
+    al_shutdown_native_dialog_addon();
     al_uninstall_system();
 }
 

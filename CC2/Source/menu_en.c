@@ -650,6 +650,7 @@ POLE pmOpcje[] = {
 #define _GEOM_STIFFNESS_ u8"Geometric stiffness"
 #define _INERTIA_ u8"Include Dead Load (DL) in vibrations"
 #define _VIBRATIONS_ u8"Number of dynamic modes of vibration"
+#define _PINNABLE_ u8"Use pinned joint substitutes as virtual, near-zero stiffness members \n(safe computation alternative, especially for dynamic analyses)"
 
 #define _INSTALATION_ u8"Installation"
 
@@ -1099,7 +1100,7 @@ static POLE pmenup[] = {
 	{u8"View\0 1\0    ",    L'V',53, &mSkala},
 	{u8"pArameters\0\0 ",   L'A',54,&mParametrym},
 	{u8"Layers\0\0 ",       L'L',55,NULL},
-	{u8"Measure\0\0 ",      L'M',56, &mMeasure},
+	{u8"Measure, info & changes\0\0 ",      L'M',56, &mMeasure},
 	{u8"Find\0\0 ",         L'F',3,NULL},
     {u8"plUgins\0\0",       'U',534,&mInsetAux},
 	{u8"\0              \0 ",L' ',0,NULL} };
@@ -2335,38 +2336,44 @@ static POLE pmGraph[] = {
 
 #define _CTRL_NOPE_ 1944 //24
 
-#define _CTRL_0_ 0
-#define _CTRL_1_ _CTRL_ADJACENT_
-#define _CTRL_2_ 2
-#define _CTRL_3_ _CTRL_CENTER_
-#define _CTRL_4_ 4
-#define _CTRL_5_ _CTRL_ENDPOINT_
-#define _CTRL_6_ 6
-#define _CTRL_7_ 7
-#define _CTRL_8_ 8
-#define _CTRL_9_ _CTRL_INTERSECTION_
-#define _CTRL_10_ 10
-#define _CTRL_11_ 11
-#define _CTRL_12_ 12
-#define _CTRL_13_ _CTRL_MIDDLE_
-#define _CTRL_14_ _CTRL_NEAREST_
-#define _CTRL_15_ _CTRL_POINT_
-#define _CTRL_16_ _CTRL_PERPENDICULAR_
-#define _CTRL_17_ 17
-#define _CTRL_18_ 18
-#define _CTRL_19_ 19
-#define _CTRL_20_ _CTRL_TANGENTIAL_
-#define _CTRL_21_ 21
-#define _CTRL_22_ 22
-#define _CTRL_23_ 23
-#define _CTRL_24_ _CTRL_NOPE_
-#define _CTRL_25_ 25
-#define _CTRL_26_ 26
-#define _CTRL_27_ 27
-#define _CTRL_28_ 28
-#define _CTRL_29_ 29
-#define _CTRL_30_ 30
-#define _CTRL_31_ 31
+#define _CTRL_0_ 0    //SPC
+#define _CTRL_1_ _CTRL_ADJACENT_  //A
+#define _CTRL_2_ 2  //B
+#define _CTRL_3_ _CTRL_CENTER_  //C
+#define _CTRL_4_ 4  //D
+#define _CTRL_5_ _CTRL_ENDPOINT_  //E
+#define _CTRL_6_ 6  //F
+#define _CTRL_7_ 7  //G
+#define _CTRL_8_ 8  //H
+#define _CTRL_9_ _CTRL_INTERSECTION_  //I
+#define _CTRL_10_ 10  //J
+#define _CTRL_11_ 11  //K
+#define _CTRL_12_ 23 // Warstwy=Layesr12  //L->W
+#define _CTRL_13_ _CTRL_MIDDLE_  //M
+#define _CTRL_14_ _CTRL_NEAREST_  //N
+#define _CTRL_15_ _CTRL_POINT_  //O
+#define _CTRL_16_ _CTRL_PERPENDICULAR_  //P
+#define _CTRL_17_ 17  //Q
+#define _CTRL_18_ 18  //R
+#define _CTRL_19_ 19  //S scale down
+#define _CTRL_20_ _CTRL_TANGENTIAL_  //T
+#define _CTRL_21_ 21  //U
+#define _CTRL_22_ 22  //V
+#define _CTRL_23_ 23  //W
+#define _CTRL_24_ _CTRL_NOPE_    //X  or 24 scale down
+#define _CTRL_25_ 25  //Y
+#define _CTRL_26_ 26             //Z  scale up
+#define _CTRL_27_ 27  //0
+#define _CTRL_28_ 28  //1
+#define _CTRL_29_ 29  //2
+#define _CTRL_30_ 30  //3
+#define _CTRL_31_ 31  //4
+//#define _CTRL_32_ 32  //5
+//#define _CTRL_33_ 33  //6
+//#define _CTRL_34_ 34  //7
+//#define _CTRL_35_ 35  //8
+//#define _CTRL_36_ 36  //9
+
 
 
                          //@,A,B,C,D,E,F,G,H,I,J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
@@ -2924,8 +2931,14 @@ POLE pmHelp[] = {
 	 {u8"Edit numeric values",' ',363,NULL},
 	 {u8"Increase pointfinder size",' ',361,NULL},
 	 {u8"Decrease pointfinder size",' ',360,NULL},
+#ifdef MACOS
+     {u8"Free mouse",' ',387,NULL},
+#else
 	 {u8"Free mouse",' ',386,NULL},
-	 {u8"Free mouse",24,353,NULL},
+#endif
+	 //{u8"Free mouse",24,353,NULL},
+	 {u8"Free mouse",840 + _1920_,353,NULL},
+     {u8"Free mouse (Linux)",363 + _1920_,353,NULL},
      {u8"Free mouse (hold the right button for 0,5 s)",819 + _1920_, 658,NULL},
 	 {u8"Resize and position the window",25,353,NULL},
 	 {u8"Stop macro recording",28,353,NULL},
@@ -2956,6 +2969,10 @@ POLE pmHelp[] = {
 	 {u8"View scale 0.1",19,353,NULL},
 	 {u8"Redraw",20,353,NULL},
 	 {u8"View full drawing",21,353,NULL},
+
+     {u8"Zoom in",574 + _1920_,353,NULL},
+     {u8"Zoom out",567 + _1920_,353,NULL},
+
 	 {u8"FEATURES",31,352,NULL},
 	 {u8"Color",12,354,NULL},
 	 {u8"Line type",13,354,NULL},
@@ -3011,6 +3028,11 @@ POLE pmHelp[] = {
 	 {u8"Adjacent mode",549+1920,353,NULL},
 	 {u8"Point mode",563+1920,353,NULL},
 	 {u8"None mode",572 + 1920,353,NULL},
+
+     {u8"Copy object under cursor",566 + _1920_,353,NULL},
+     {u8"Layers setting",560 + _1920_,353,NULL},
+     {u8"Layers setting (optional)",571 + _1920_,353,NULL},
+
      {u8"Short instruction",702 + 1920,534,NULL},
 
 };

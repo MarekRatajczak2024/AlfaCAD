@@ -24,13 +24,22 @@
 #include <allegro5/allegro_native_dialog.h>
 
 //just or Linux
+#ifndef __APPLE__
 #include "xdnd.h"  //by MAREK
+#endif
 
 #ifdef __APPLE__
 #include <ApplicationServices/ApplicationServices.h> //by MAREK
 #endif
 
 #include "allegro5/allegro_native_dialog.h"
+
+typedef struct OSX_ALLEGRO_COLOR {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
+}  OSX_ALLEGRO_COLOR;
 
 void all_render_screen(void);
 
@@ -39,6 +48,8 @@ void all_render_screen(void);
 BITMAP *screen_back=NULL;
 static int screen_no=0;
 static char al_filepath[255]="";
+
+int RETINA=0;
 
 #define ALLEGRO_LEGACY_PIXEL_FORMAT_8888  0
 #define ALLEGRO_LEGACY_PIXEL_FORMAT_OTHER 1
@@ -67,12 +78,16 @@ static ALLEGRO_EVENT_QUEUE * _a5_display_vsync_event_queue = NULL;
 static bool semaphore=1;  //by MAREK
 int drop_x = -1;  //by MAREK
 int drop_y = -1;  //by MAREK
+#ifndef __APPLE__
 _xdnd_struct xdnd_buf; //by MAREK
+#endif
 static ALLEGRO_LOCKED_REGION * lr; //MAREK
 static int file_no=0;
 
 static bool state_change_flag=0;
 static bool state_change_hidden=0;
+
+extern void reset_mx_my(void);
 
 //void reset_state_change_flag(void)
 //{
@@ -98,7 +113,7 @@ bool get_semaphore(void)   //by MAREK
 {
     return semaphore;
 }
-
+#ifndef __APPLE__
 void empty_dropped_fill_buf(void)  //by MAREK
 {
     xdnd_buf.mflag=0;
@@ -123,7 +138,7 @@ void file_dropped_fill_buf(char *fn)  //by MAREK
     xdnd_buf.iflag=0;
     //xdnd_buf.mflag=1;
 }
-
+#endif
 static bool _a5_setup_screen(int w, int h)
 {
   ALLEGRO_STATE old_state;
@@ -132,6 +147,9 @@ static bool _a5_setup_screen(int w, int h)
   //al_set_new_display_option(ALLEGRO_SINGLE_BUFFER, false, ALLEGRO_REQUIRE); //by MAREK
   //al_set_new_display_option(ALLEGRO_SWAP_METHOD, 1, ALLEGRO_REQUIRE); //by MAREK
   //al_set_new_display_option(ALLEGRO_RENDER_METHOD, 0, ALLEGRO_REQUIRE); //by MAREK
+#ifdef __APPLE__
+  al_set_new_display_option(ALLEGRO_WINDOWED, true, ALLEGRO_REQUIRE); //by MAREK   //maybe just for __APPLE_
+#endif
   _a5_display = al_create_display(w, h);
   if(!_a5_display)
   {
@@ -241,7 +259,6 @@ static void * _a5_display_thread(ALLEGRO_THREAD * thread, void * data)
   {
     al_wait_for_event(_a5_display_thread_event_queue, &event);
     //if (! semaphore) continue;//by MAREK
-
     switch(event.type)
     {
       //printf("EVENT:%d\n",event.type);
@@ -278,7 +295,7 @@ static void * _a5_display_thread(ALLEGRO_THREAD * thread, void * data)
       case ALLEGRO_EVENT_DROP: //by MAREK
 
              //printf("DROP\n");
-
+#ifndef __APPLE__
             drop_x = event.drop.x;
             drop_y = event.drop.y;
             if (event.drop.row == 0)
@@ -300,6 +317,7 @@ static void * _a5_display_thread(ALLEGRO_THREAD * thread, void * data)
                 }
             }
             if (event.drop.is_complete) dropped_fill_buf_activate();
+#endif
           break;
     }
     if(al_event_queue_is_empty(_a5_display_thread_event_queue))
@@ -635,16 +653,21 @@ static void render_other_24(BITMAP * bp)
     }
 }
 
-
 static void render_other_32(BITMAP * bp)
 {
     uint32_t * line_32;
     int i, j;
     //ALLEGRO_COLOR col;
     RGB col;
+#ifdef __APPLE__
+    //uint32_t col_32;
+    struct ALLEGRO_COLOR col32;
+    OSX_ALLEGRO_COLOR col32i;
+#else
     uint32_t col_32;
     //struct ALLEGRO_COLOR col32;
     unsigned int col32i;
+#endif
 
     //method line by pixel with color conversion
     for(i = 0; i < bp->h; i++)
@@ -654,6 +677,16 @@ static void render_other_32(BITMAP * bp)
         {
             ////line_32 = (uint32_t *)(bp->line[i]); ////
             ////al_put_pixel(j, i, a5_get_color(32, line_32[j]));
+#ifdef __APPLE__
+            col32i.r =getr32(line_32[j]);
+            col32i.g =getg32(line_32[j]);
+            col32i.b =getb32(line_32[j]);
+            ////col32i.a = geta32(line_32[j]);
+            col32i.a =0xFF;
+
+            al_put_pixel(j, i, al_map_rgba(col32i.r, col32i.g, col32i.b, col32i.a));
+            //al_put_pixel(j, i, col32i);
+#else
 /*
             col.r = (float)getr32(line_32[j]);
             col.g = (float)getg32(line_32[j]);
@@ -661,14 +694,11 @@ static void render_other_32(BITMAP * bp)
             ////col.a = (float)geta32(line_32[j]);
             col.a = (float)0xFF;
 */
-
             col.r = getr32(line_32[j]);
             col.g = getg32(line_32[j]);
             col.b = getb32(line_32[j]);
             ////col.a = geta32(line_32[j]);
             col.filler = 0xFF;
-
-
             ////col32i=line_32[j] |= 0xFF;
             ////memmove(&col, &col32i, 4);
 /*
@@ -680,11 +710,10 @@ static void render_other_32(BITMAP * bp)
 */
             al_put_pixel(j, i, al_map_rgba(col.r, col.g, col.b, col.filler));
             //al_put_pixel(j, i, col32);
-
+#endif
             ////col_32=line_32[j]>>8;
             ////col_32=(col_32<<8) + 0xFF;
             ////al_put_pixel(j, i, &col_32);
-
         }
     }
 }
@@ -972,7 +1001,96 @@ void set_window_position(int x, int y)
 {
     al_set_window_position(_a5_display, x, y);
 }
+#ifdef __APPLE__
+pid_t al_getpid(void)
+{
+    return getpid();
+}
 
+void set_osx_window_position(pid_t pid, int x, int y, bool relative)
+{
+    int win=0;
+    if (relative==true) win=1;
+    //pid_t pid=getpid();
+    printf("pid=%d\n",pid);
+    AXUIElementRef appRef = AXUIElementCreateApplication(pid);
+    // Get the windows
+    CFArrayRef windowList;
+    AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute, (CFTypeRef *)&windowList);
+    //NSLog("WindowList = %@", windowList);
+    //if ((!windowList) || CFArrayGetCount(windowList)<1)
+    //    continue;
+    // get just the first window for now
+    AXUIElementRef windowRef = (AXUIElementRef) CFArrayGetValueAtIndex( windowList, 0);
+    CFTypeRef role;
+    AXUIElementCopyAttributeValue(windowRef, kAXRoleAttribute, (CFTypeRef *)&role);
+    CFTypeRef position;
+    CGPoint point;
+    AXUIElementCopyAttributeValue(windowRef, kAXPositionAttribute, (CFTypeRef *)&position);
+    AXValueGetValue(position, kAXValueCGPointType, &point);
+    CGPoint newPoint;
+    if (relative==true)
+    {
+        newPoint.x = x + point.x;
+        newPoint.y = y + point.y;
+    }
+    else
+    {
+        newPoint.x = x;
+        newPoint.y = y;
+    }
+    position = (CFTypeRef)(AXValueCreate(kAXValueCGPointType, (const void *)&newPoint));
+    AXUIElementSetAttributeValue(windowRef, kAXPositionAttribute, position);
+}
+
+/*
+void set_osx_window_position(int x, int y)
+{
+    // Get all the windows
+    CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+    NSArray* arr = CFBridgingRelease(windowList);
+
+    // Loop through the windows
+    for (NSMutableDictionary* entry in arr)
+    {
+        // Get window PID
+        pid_t pid = [[entry objectForKey:(id)kCGWindowOwnerPID] intValue];
+        // Get AXUIElement using PID
+        AXUIElementRef appRef = AXUIElementCreateApplication(pid);
+        NSLog(@"Ref = %@",appRef);
+
+        // Get the windows
+        CFArrayRef windowList;
+        AXUIElementCopyAttributeValue(appRef, kAXWindowsAttribute, (CFTypeRef *)&windowList);
+        NSLog(@"WindowList = %@", windowList);
+        if ((!windowList) || CFArrayGetCount(windowList)<1)
+            continue;
+
+        // get just the first window for now
+        AXUIElementRef windowRef = (AXUIElementRef) CFArrayGetValueAtIndex( windowList, 0);
+        CFTypeRef role;
+        AXUIElementCopyAttributeValue(windowRef, kAXRoleAttribute, (CFTypeRef *)&role);
+        CFTypeRef position;
+        CGPoint point;
+
+        // Get the position attribute of the window (maybe something is wrong?)
+        AXUIElementCopyAttributeValue(windowRef, kAXPositionAttribute, (CFTypeRef *)&position);
+        AXValueGetValue(position, kAXValueCGPointType, &point);
+        // Debugging (always zeros?)
+        NSLog(@"point=%f,%f", point.x,point.y);
+        // Create a point
+        CGPoint newPoint;
+        newPoint.x = x;
+        newPoint.y = y;
+        NSLog(@"Create");
+        position = (CFTypeRef)(AXValueCreate(kAXValueCGPointType, (const void *)&newPoint));
+        // Set the position attribute of the window (runtime error over here)
+        NSLog(@"SetAttribute");
+        AXUIElementSetAttributeValue(windowRef, kAXPositionAttribute, position);
+        sleep(0);
+}
+*/
+#endif
 #ifndef __APPLE__
 int get_x_window_id(void) //by MAREK just for Linux X11
 {
@@ -1005,13 +1123,15 @@ void set_timer_speed(int speed)
 #ifdef __APPLE__
 bool al_get_monitor_dims( int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret_bottom_y)
 {  bool ret;
-   ALLEGRO_MONITOR_INFO info;
+    int adapter = 0;
+    ALLEGRO_MONITOR_INFO info;
+    ret = al_get_monitor_info(adapter, &info);
 
-   ret=al_get_monitor_info(0, &info);
-   *ret_left_x=info.x1;
-   *ret_right_x=info.x2;
-   *ret_top_y=info.y1;
-   *ret_bottom_y=info.y2;
+    *ret_left_x=info.x1;
+    *ret_right_x=info.x2;
+    *ret_top_y=info.y1;
+    *ret_bottom_y=info.y2;
+
    return ret;
 }
 
@@ -1057,7 +1177,7 @@ char *al_FileNameDialog(
     if (in_out==0) flag=0;
     else if (in_out==1) flag=ALLEGRO_FILECHOOSER_SAVE;
     else flag=ALLEGRO_FILECHOOSER_FOLDER;
-    printf("%s %s %s\n", aTitle, aDefaultPathAndFile, aFilterPatterns0);
+    //printf("%s %s %s\n", aTitle, aDefaultPathAndFile, aFilterPatterns0);
     ALLEGRO_FILECHOOSER *filechooser = al_create_native_file_dialog(aDefaultPathAndFile, aTitle, aFilterPatterns0, flag);
     ret=al_show_native_file_dialog(_a5_display, filechooser);
     int counter=al_get_native_file_dialog_count(filechooser);
@@ -1084,18 +1204,57 @@ int show_native_message_box(char *title, char *heading, char *text)
 return al_show_native_message_box(_a5_display, title, heading, text, NULL, ALLEGRO_MESSAGEBOX_OK_CANCEL);
 }
 
-
 int MoveOSXCursor(int x, int y)
 {
-    CGPoint newPosition;
-    newPosition.x=x;
-    newPosition.y=y;
-    CGError error = CGWarpMouseCursorPosition(newPosition);
-    CGAssociateMouseAndMouseCursorPosition(true);
+    int x_win_orig, y_win_orig;
+    float h_off=25.f;
 
-    if (error != kCGErrorSuccess) return 0;
+    al_get_window_position(_a5_display, &x_win_orig, &y_win_orig);
+
+    CGPoint point = CGPointMake((float)(x+x_win_orig)/(float)(RETINA+1), (float)(y+y_win_orig)/(float)(RETINA+1)+h_off);
+    CGDisplayMoveCursorToPoint(kCGDirectMainDisplay,point);
+
+    CGEventRef theEvent = CGEventCreateMouseEvent(NULL, kCGEventMouseMoved, point, kCGMouseButtonLeft);
+    CGEventSetType(theEvent, kCGEventMouseMoved);
+    CGEventPost(kCGHIDEventTap, theEvent);
+    CFRelease(theEvent);
 
     return 1;
 }
 
+int MoveOSXCursor_(int x, int y)
+{
+    int x_win_orig, y_win_orig;
+    float h_off=25.f;
+    //int h_off;
+    //h_off=ih_off/(RETINA+1);
+    al_get_window_position(_a5_display, &x_win_orig, &y_win_orig);
+
+    CGPoint newPosition;
+    newPosition.x=(float)(x+x_win_orig)/(float)(RETINA+1);
+    newPosition.y=(float)(y+y_win_orig+h_off)/(float)(RETINA+1)+h_off;
+    CGError error = CGWarpMouseCursorPosition(newPosition);
+    CGAssociateMouseAndMouseCursorPosition(true);
+
+    if (error != kCGErrorSuccess) return 0;
+    printf("SUCCESS\n");
+    return 1;
+}
+
+
+//#include <ApplicationServices/ApplicationServices.h>
+//#include <CoreFoundation/CoreFoundation.h>
+
+bool isRetinaOSXDisplay(void) {
+    int adapter = 0;
+
+    ALLEGRO_MONITOR_INFO info;
+    bool ret = al_get_monitor_info(adapter, &info);
+    if ((info.y2-info.y1)>1600)
+        {
+        RETINA=1;
+        return 1;
+    }
+    return 0;
+}
 #endif

@@ -662,7 +662,9 @@ static void* obiekt_wybrany(unsigned* typ)
 
 #define SELECT_ENTITY 1
 void Change_Vectors(void)
-{   int cur_selection=get_selection();
+{
+    Semaphore = FALSE;
+    int cur_selection=get_selection();
     set_selection(SELECT_ENTITY);
     ciagnij();
     set_selection(cur_selection);
@@ -678,7 +680,7 @@ void Spline_Amendment(void)
     SPLINE* S;
     double delX;
 
-
+    Semaphore = FALSE;
     redcr_amd(0);
     while (1)
     {

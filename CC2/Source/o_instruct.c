@@ -145,9 +145,13 @@ static IMAGE images_i [] =
 { Xp1+5, Yp1 + 18, 32, 32, 146, ""},  //Close menu / Escape
 { Xp1+68, Yp1 + 18, 32, 32, 148, ""},
 
+#ifdef MACOS
+{ Xp1+5, Yp1 + 32, 32, 32, 142, ""},  //Freeing the mouse
+#else
  { Xp1+5, Yp1 + 32, 32, 32, 141, ""},  //Freeing the mouse
+#endif
  { Xp1+37, Yp1 + 32, 32, 32, 128, ""},
- { Xp1+53, Yp1 + 32, 32, 32, 151, ""},
+ { Xp1+53, Yp1 + 32, 32, 32, 209, ""},  //189 //151
 
  { Xp1+82, Yp1 + 32, 32, 32, 148, ""},  //mouse buttons
  { Xp1+92, Yp1 + 32, 32, 32, 206, ""},
@@ -182,7 +186,11 @@ static IMAGE images_i [] =
 { Xp1+85, Yp1 + 130, 32, 32, osnap_icon5, ""},
 
  { Xp1+5, Yp1 + 144, 32, 32, 131, ""},  //Helping hand (all hotkeys)
+#ifdef MACOS
+{ Xp1+53, Yp1 + 144, 32, 32, 208, ""},  //empty
+#else
  { Xp1+53, Yp1 + 144, 32, 32, 142, ""},
+#endif
 
 { Xp1+5, Yp1 + 158, 32, 32, 129, ""},  //Alf shift for Greek
 

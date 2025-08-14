@@ -379,6 +379,51 @@ void komunikat(int n)
   
 }
 
+void komunikat_len(int n)
+/*-------------------*/
+{ char *komunikat1;
+    char komunikat01[256];
+
+    struct viewporttype viewinfo;
+    int len_pxl;
+
+    Komunikat_R=n;
+
+    if (n==255) len_pxl=TTF_text_len(global_kom);
+    else len_pxl=TTF_text_len(get_komunikat_ptr(n));
+
+    getviewsettings (&viewinfo);
+    setviewport(0, 0, getmaxx(),getmaxy(), 1);
+    if (n) setfillstyle_(SOLID_FILL,kolory.paperk);
+    else
+        setfillstyle_(SOLID_FILL, BKCOLOR) ;
+
+    //bar2_margin();
+    bar2_margin_pxl(min(max(len_pxl+20,maxX/3) , maxX/2 - 10*WIDTH));
+    if (n)
+    {
+        moveto(1,ED_INF_HEIGHT + y3 /*1*/);  //y2
+        setcolor(kolory.inkk);
+
+        if (n==255) outtext_r (global_kom);
+        else
+        {
+            komunikat1=get_komunikat_ptr(n);
+            strcpy(komunikat01,komunikat1);
+            outtext_r (komunikat01);
+        }
+    }
+    if (!n)
+    {
+        layer_info ();
+        view_scale ();
+    }
+    i__x = getx () ;
+    i__y = gety () ;
+    setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
+
+}
+
 BOOL Add_String_To_List1 (char *ptr_string)
 {
 Add_String_To_List ( ptr_string ) ;
@@ -422,6 +467,21 @@ void remove_short_notice(void)
 {
     short_notice=FALSE;
     layer_info();
+}
+
+void komunikat_str_short_reset(void)
+{
+    len_pxl_bak=0;
+}
+
+void komunikat_str_short_mask(BOOL center)
+{
+    struct viewporttype viewinfo;
+
+    getviewsettings(&viewinfo);
+    setviewport(0, 0, getmaxx(), getmaxy(), 1);
+    setfillstyle_(SOLID_FILL, kolory.paperk);
+    bar2_short_pxl(len_pxl_bak, center);
 }
 
 void komunikat_str_short(char *st, BOOL stay, BOOL center)

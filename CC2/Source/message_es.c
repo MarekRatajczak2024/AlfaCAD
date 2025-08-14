@@ -1204,6 +1204,8 @@ char *frame3dd[]={
  /*204*/ u8"error al abrir un archivo de datos de salida guardando una matriz de 'dobles'",
  /*205*/ u8"error al abrir un archivo de datos de salida al guardar una matriz simétrica de 'flotantes'",
  /*206*/ u8"error al abrir un archivo de datos de salida guardando una matriz simétrica de 'dobles'",
+ /*207*/ u8"error de prueba de equilibrio",
+ /*208*/ u8"error al abrir el archivo de registro de errores .err",
  };
 
 
@@ -1218,5 +1220,12 @@ char *frame3dd[]={
 #ifdef __O_ANIMATE_DYN__
 
 #define _ANIMATE_ u8"ESC: exit, BackSpace: previous, any other: next"
+
+#endif
+
+#ifdef __O_SEL__
+
+#define _FIRST_  u8"PRIMERO"
+#define _SECOND_ u8"SEGUNDO"
 
 #endif

@@ -97,7 +97,7 @@ int RETINA=0;
 static char *Client_Bitmaps[MAX_CLIENT_BITMAP]={NULL};
 static char fsuffix[3][16]={"", "PNG48/", "PNG64/"};
 
-char Window_Name[32]="\x00";
+char Window_Name[64]="\x00";   //32
 
 static char *XDG_CURRENT_DESKTOP;
 
@@ -139,6 +139,8 @@ extern BOOL TTF_redraw;
 extern int empty_dlg();
 
 extern void Check_ConfigureNotify(void);
+
+extern BOOL ConfigureNotifySemaphore;
 
 extern void set_sleep_state(BOOL state);
 extern void _free_mouse(void);
@@ -1842,6 +1844,9 @@ extern BITMAP* icon_UA_R;
 extern BITMAP* icon_UA_S;
 extern BITMAP* icon_UA_T;
 extern BITMAP* icon_UA_C;
+extern BITMAP* icon_UA_JA;
+extern BITMAP* icon_UA_I;
+extern BITMAP* icon_UA_O;
 
 extern char* icon_UA_B_p;
 extern char* icon_UA_D_p;
@@ -1854,6 +1859,9 @@ extern char* icon_UA_R_p;
 extern char* icon_UA_S_p;
 extern char* icon_UA_T_p;
 extern char* icon_UA_C_p;
+extern char* icon_UA_JA_p;
+extern char* icon_UA_I_p;
+extern char* icon_UA_O_p;
 
 extern BITMAP* icon_spline_points;
 extern char* icon_spline_points_p;
@@ -2231,6 +2239,9 @@ extern BITMAP *icon_hourglass_mem;
 extern BITMAP *icon_hourglassx1_5_mem;
 extern BITMAP *icon_hourglassx2_mem;
 
+extern BITMAP *icon_hourglass;
+extern char *icon_hourglass_p;
+
 extern BITMAP *icon_cursor_12x16_mem;
 extern BITMAP *icon_cursor_18x24_mem;
 extern BITMAP *icon_cursor_24x32_mem;
@@ -2260,6 +2271,9 @@ extern BITMAP *icon_mousewheelnatural;
 extern char *icon_mousewheelnatural_p;
 extern BITMAP *icon_mousewheelregular;
 extern char *icon_mousewheelregular_p;
+
+extern BITMAP *icon_pin_to_flex_d48;
+extern char *icon_pin_to_flex_d48_p;
 
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
@@ -2961,6 +2975,9 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_UA_S,u8"С",&icon_UA_S_p},
         {&icon_UA_T,u8"Т",&icon_UA_T_p},
         {&icon_UA_C,u8"Ц",&icon_UA_C_p},
+        {&icon_UA_JA,u8"Я",&icon_UA_JA_p},
+        {&icon_UA_I,u8"І",&icon_UA_I_p},
+        {&icon_UA_O,u8"О",&icon_UA_O_p},
         {&icon_spline_points,"spline_points",&icon_spline_points_p},
         {&icon_spline_control_points,"spline_control_points",&icon_spline_control_points_p },
         {&icon_spline_points_close,"spline_points_close",&icon_spline_points_close_p },
@@ -3122,6 +3139,8 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_mousewheel,"mousewheel",&icon_mousewheel_p },
         {&icon_mousewheelnatural,"mousewheelnatural",&icon_mousewheelnatural_p },
         {&icon_mousewheelregular,"mousewheelregular",&icon_mousewheelregular_p },
+        {&icon_hourglass,"hourglass",&icon_hourglass_p },
+        {&icon_pin_to_flex_d48,"pin_to_flex_d48",&icon_pin_to_flex_d48_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -3644,6 +3663,9 @@ void set_increased(int x, int y)
   int ret;
   int k;
 
+
+  ConfigureNotifySemaphore=FALSE;
+
   if (graphic_drv==DRV_MASTER)
   {
     c_depth=drv_master.gfx_bpp;
@@ -3677,6 +3699,8 @@ void set_increased(int x, int y)
   redraw();  
   k = my_poll_keyboard();
 
+ ConfigureNotifySemaphore=TRUE;
+
   return;
 }
 
@@ -3686,7 +3710,9 @@ void set_resized_window(int dx, int dy)
   int k;
   int drv_ok;
   double Xpos, Ypos;
-    int WspX_, WspY_;
+  int WspX_, WspY_;
+
+  BOOL ConfigureNotifySemaphore=FALSE;
 
   get_posXY(&Xpos, &Ypos);
 
@@ -3737,12 +3763,17 @@ void set_resized_window(int dx, int dy)
     //    get_mouse_mickeys(&WspX_, &WspY_);
     //} while ((WspX_!=0) || (WspY_!=0));
 
+
+  ConfigureNotifySemaphore=TRUE;
+
 }
 
 void set_original_window(void)
 { int c_256;
   int ret;
   int k;
+
+  ConfigureNotifySemaphore=FALSE;
 
   if (graphic_drv==DRV_MASTER)
   {
@@ -3776,13 +3807,19 @@ void set_original_window(void)
   redraw();
   k=my_poll_keyboard();
 
+  ConfigureNotifySemaphore=TRUE;
+
   simulate_keypress(21504);
+
+
 }
 
 void set_last_window(void)
 { int c_256;
   int ret;
   int k;
+
+  ConfigureNotifySemaphore=FALSE;
 
   if (graphic_drv==DRV_MASTER)
   {
@@ -3816,6 +3853,8 @@ void set_last_window(void)
 
   redraw();
   k = my_poll_keyboard();
+
+  ConfigureNotifySemaphore=TRUE;
 
 }
 

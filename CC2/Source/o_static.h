@@ -40,14 +40,21 @@ typedef struct
 {
     double x;
     double y;
+    ////float x;
+    ////float y;
+
     double radius;
     int real;
+    int restraint;
 } ST_NODE;
 
 typedef struct
 {
     double x;
     double y;
+    ////float x;
+    ////float y;
+
     double radius;
     int flag;
 } ST_NODE_PRE;
@@ -72,6 +79,10 @@ typedef struct
     int node2r;
     int property_no;
     double length;
+    int n1z;
+    int n2z;
+    double koc;
+    double kos;
 } ST_ELEMENT;
 
 typedef struct

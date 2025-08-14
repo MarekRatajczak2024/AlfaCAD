@@ -12627,7 +12627,7 @@ void standard_func(void)
   SERV[68] = nooop1;  /*F10*/
   SERV[69] = (int (*)(void)) Expand_flex; //Free_Mouse; /*F11*/
 
-  SERV[70] = (int (*)(void)) Set_Layers; /*Ctrl_W*/
+  SERV[70] = (int (*)(void)) Set_Layers; /*Ctrl-L or Ctrl_W*/
 
   SERV[84] = small_large_step; //osnap_; //Write_screen_pcx; /*Ctrl PrintScreen*/  //nooop1; //osnap_;		  /*Shift-F1*/
   SERV[85] = koniecS_;  // nooop1;  /*Shift-F2*/

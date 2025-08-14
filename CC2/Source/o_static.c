@@ -56,7 +56,7 @@ extern void FreeMouse(void);
 extern void select_blok(void);
 extern void redcrsb(char typ, int n);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
-extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no);
+extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE);
 extern BOOL Check_if_Equal (double x, double y);
 extern BOOL Check_if_Equal2(double x, double y);
 extern BOOL Check_if_Equal3(double x, double y);
@@ -66,6 +66,7 @@ extern BOOL Check_if_GE (double x, double y);
 extern BOOL Check_if_GE02 (double x, double y);
 extern int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab);
 extern double Angle_Normal (double angle);
+extern BOOL CheckIsPointOnLineSegment_(float x, float y, float x1, float y1, float x2, float y2, float epsilon);
 extern BOOL CheckIsPointOnLineSegment(double x, double y, double x1, double y1, double x2, double y2, double epsilon);
 extern void set_decimal_format(char *text, double l, double precision);
 extern DWORD RunSilent(char* strFunct, char* strstrParams);
@@ -122,6 +123,8 @@ extern void set_cursor_busy(void);
 extern void disable_F11(void);
 extern void enable_F11(void);
 
+extern BOOL Semaphore;
+
 extern double thermal_precision;
 extern double force_precision;
 extern double moment_precision;
@@ -134,6 +137,8 @@ extern double force_magnitude;
 extern double moment_magnitude;
 extern double displacement_magnitude;
 extern double load_magnitude;
+
+BOOL PINNABLE=TRUE;
 
 double n_magnitude=1.0; //10;
 double v_magnitude=0.1; //10;
@@ -174,7 +179,7 @@ double t_precision=0.001;
 double r_precision=0.001;
 double rm_precision=0.001;
 
-double m0999 = 0.9999;
+double m0999 = 1.0; //0.99999;
 
 extern TMENU mVector;
 
@@ -238,10 +243,10 @@ char T_text[64];
 
 unsigned char st_layers[256];
 unsigned int st_layer[8];
-char st_title[MaxTextLen];
+char st_title[MaxTextLen * 2];
 char title_id[MaxTextLen];
 char *ptr_id, *ptr_id_short;
-char par[13][MaxTextLen]={"","","","","","","","","","","","",""};
+char par[14][MaxTextLen]={"","","","","","","","","","","","","",""};
 ST_PROPERTY *st_property;
 ST_NODE_PRE *st_node_pre;
 ST_NODE *st_node;
@@ -283,7 +288,8 @@ double Rn=0;
 
 static double cskos=0, cskoc=0;
 //static float ex1, ey1, ex2, ey2;
-static ALL_SECTION_GRAPH_DATA *all_section_graph_data_p=NULL;
+static ALL_SECTION_GRAPH_DATA *all_section_graph_data_p[2]={NULL, NULL};
+static int mpair0;
 
 static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
 static char section_params_st[128];
@@ -298,6 +304,10 @@ STATIC_STRESS_COLORS static_stress_colors0={9,13,11};
 ST_PROPERTY prt_def={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0};
 
 BOOL qpslsLC_Layer=FALSE;
+
+char *UNITS;
+char *SI="SI";
+char *IMP="IMP";
 
 //load;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
 //variant;  //0 undefined, 1..255 number of load character with different factors
@@ -862,6 +872,7 @@ void add_node(void)
         ST_NODE_MAX+=100;
         st_node=realloc(st_node, ST_NODE_MAX * sizeof(ST_NODE));
     }
+    st_node[st_node_no].restraint=0;
     st_node[st_node_no].radius=Rn;
 }
 
@@ -1874,6 +1885,12 @@ void Static_analysis(void) {
     int check;
 
     int rep_element_no = 0;
+    double Xpos, Ypos;
+    int WspX_, WspY_;
+
+    BOOL no_hinged_hinged=FALSE;
+
+    Semaphore = FALSE;
 
     st_property_no = 0;
     st_node_pre_no = 0;
@@ -1917,6 +1934,7 @@ void Static_analysis(void) {
     st_load_factors = (ST_LOAD_FACTORS *) malloc(ST_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS));
 
     st_node[st_node_no].radius = Rn;
+    st_node[st_node_no].restraint = 0;
 
     redcrsb(0, 167);
     select_blok();
@@ -1928,8 +1946,8 @@ void Static_analysis(void) {
     gY = 0;
     gZ = 0;
 
-    ret_standard = ask_question_static(8, _No_, _Yes_, "", _PROCEED_STATIC_, 12, "", 11, 1, 0, &combination_no,
-                                       &geometric_tiffness, &inertia, &st_dynamic_no);
+    ret_standard = ask_question_static(9, _No_, _Yes_, "", _PROCEED_STATIC_, 12, "", 11, 1, 0, &combination_no,
+                                       &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE);
     //0 - rezygnuj; 1 - Eurocode, 2 - ASCE, 3 - ICC
     if (ret_standard > 0) key = _YES_;
     else if (ret_standard == 0) key = _NO_;
@@ -1962,6 +1980,8 @@ void Static_analysis(void) {
             break;
     }
 
+    if (st_dynamic_no>0) no_hinged_hinged=TRUE;
+
     memmove(&st_load_factors[st_load_factors_no], &load_factors[0], sizeof(ST_LOAD_FACTORS));  //TEMPORARY for EUROCODE
 
     //STATIC ANALYSIS
@@ -1974,6 +1994,7 @@ void Static_analysis(void) {
         axis_increment = 250.0;
         unit_factors = &unit_factors_si;
         prop_precisions = &SI_precisions;
+        UNITS=SI;
     } else if (Jednostki == 10) //cm
     {
         units_factor = 10.0;
@@ -1981,6 +2002,7 @@ void Static_analysis(void) {
         axis_increment = 250.0;
         unit_factors = &unit_factors_si;
         prop_precisions = &SI_precisions;
+        UNITS=SI;
     } else if (Jednostki == 1000)  //m
     {
         units_factor = 1000.0;
@@ -1988,6 +2010,7 @@ void Static_analysis(void) {
         axis_increment = 250.0;
         unit_factors = &unit_factors_si;
         prop_precisions = &SI_precisions;
+        UNITS=SI;
     } else if (Jednostki == 1000000) //km
     {
         units_factor = 1000000.0;
@@ -1995,6 +2018,7 @@ void Static_analysis(void) {
         axis_increment = 250.0;
         unit_factors = &unit_factors_si;
         prop_precisions = &SI_precisions;
+        UNITS=SI;
     } else if (Jednostki == 25.4) //"
     {
         units_factor = 1.0;  //imperial
@@ -2002,6 +2026,7 @@ void Static_analysis(void) {
         axis_increment = 10.0;
         unit_factors = &unit_factors_imp;
         prop_precisions = &IMP_precisions;
+        UNITS=IMP;
     } else if (Jednostki == 304.8) //'
     {
         units_factor = 12.0;  //inti inches
@@ -2009,6 +2034,7 @@ void Static_analysis(void) {
         axis_increment = 10.0;
         unit_factors = &unit_factors_imp;
         prop_precisions = &IMP_precisions;
+        UNITS=IMP;
     } else if (Jednostki == 914.4) //yd
     {
         units_factor = 36.0;  //into inches
@@ -2016,6 +2042,7 @@ void Static_analysis(void) {
         axis_increment = 10.0;
         unit_factors = &unit_factors_imp;
         prop_precisions = &IMP_precisions;
+        UNITS=IMP;
     } else if (Jednostki == 1609344) //mi
     {
         units_factor = 63360.0;  //into inches
@@ -2023,12 +2050,14 @@ void Static_analysis(void) {
         axis_increment = 10.0;
         unit_factors = &unit_factors_imp;
         prop_precisions = &IMP_precisions;
+        UNITS=IMP;
     } else {
         units_factor = 1.0;
         m_units_factor = 1000.0;
         axis_increment = 250.0;
         unit_factors = &unit_factors_si;
         prop_precisions = &SI_precisions;
+        UNITS=SI;
     }
 
     df_node_size = 5 / Jednostki;  //5 mm
@@ -2063,7 +2092,7 @@ void Static_analysis(void) {
                 if (ptr == NULL) ptr = strstr(t->text, _FRAME3DD_UA);  //title
                 if (ptr == NULL) ptr = strstr(t->text, _FRAME3DD_ES);  //title
                 if (ptr != NULL) {
-                    strncpy(st_title, ptr + 1, MaxTextLen - 1);
+                    strncpy(st_title, ptr + 1, MaxTextLen*2 - 12);
                     strncpy(title_id, ptr + 1, MaxTextLen - 1);
                     ptr = strchr(title_id, ':');  //title_id
                     if (ptr != NULL) {
@@ -2437,8 +2466,110 @@ void Static_analysis(void) {
                 x2 = v->x2 - (jednostkiOb(node_radius2 + df_node_size)) * koc;
                 y2 = v->y2 - (jednostkiOb(node_radius2 + df_node_size)) * kos;
 
-                switch (v->style) {
-                    case 0: //rigid rigid
+                if (PINNABLE)  //real pinned joints are applied but pinned-pinned members are optionally (no_hinged_hinged value) substituted with pair pinned-fixed and fixed-pinned of the length of each equal a half total length,
+                                 //otherwise short members are added on each pinned side, of the Iz close to 0, but not zero
+                {
+                    if ((v->style==3) && (no_hinged_hinged)) //hinged-hinged
+                    {
+                        //Part A
+                        //searching for nodes
+                        st_element[st_element_no].node1 = -1;
+                        st_element[st_element_no].node1r = -1;
+                        st_element[st_element_no].node2 = -1;
+                        st_element[st_element_no].node2r = -1;
+                        st_element[st_element_no].property_no = v->property_no;
+                        for (i = 0; i < st_node_no; i++)  //node1
+                        {
+                            if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
+                                st_element[st_element_no].node1 = i;
+                                st_element[st_element_no].node1r = i;
+                                break;
+                            }
+                        }
+                        if (st_element[st_element_no].node1 == -1) {  //not found
+                            st_node[st_node_no].radius = node_radius1;
+                            st_node[st_node_no].x = v->x1;
+                            st_node[st_node_no].y = v->y1;
+                            st_node[st_node_no].real = 1;
+                            st_element[st_element_no].node1 = st_node_no;
+                            st_element[st_element_no].node1r = st_node_no;
+                            add_node();
+                        }
+                        //create interior point
+                        st_node[st_node_no].radius = 0.0;
+                        st_node[st_node_no].x = (v->x1+v->x2)/2.;
+                        st_node[st_node_no].y = (v->y1+v->y2)/2.;
+                        st_node[st_node_no].real = 1;
+                        st_node[st_node_no].restraint = 1;  //this is fixed end
+                        st_element[st_element_no].node2 = st_node_no;
+                        st_element[st_element_no].node2r = st_node_no;
+                        add_node();
+
+                        st_element[st_element_no].length = sqrt(
+                                ((st_node[st_element[st_element_no].node2].x -
+                                  st_node[st_element[st_element_no].node1].x) *
+                                 (st_node[st_element[st_element_no].node2].x -
+                                  st_node[st_element[st_element_no].node1].x)) +
+                                ((st_node[st_element[st_element_no].node2].y -
+                                  st_node[st_element[st_element_no].node1].y) *
+                                 (st_node[st_element[st_element_no].node2].y -
+                                  st_node[st_element[st_element_no].node1].y)));
+
+                        st_element[st_element_no].n1z = 0;
+                        st_element[st_element_no].n2z = 1;
+
+                        st_element[st_element_no].kos=kos;
+                        st_element[st_element_no].koc=koc;
+
+                        add_element();
+
+                        //Part B
+                        //searching for nodes
+                        st_element[st_element_no].node1 = st_element[st_element_no-1].node2;
+                        st_element[st_element_no].node1r = st_element[st_element_no-1].node2r;
+                        st_element[st_element_no].node2 = -1;
+                        st_element[st_element_no].node2r = -1;
+                        st_element[st_element_no].property_no = v->property_no;
+
+                        for (i = 0; i < st_node_no; i++)  //node2
+                        {
+                            if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
+                                st_element[st_element_no].node2 = i;
+                                st_element[st_element_no].node2r = i;
+                                break;
+                            }
+                        }
+
+                        if (st_element[st_element_no].node2 == -1) {  //not found
+                            st_node[st_node_no].radius = node_radius2;
+                            st_node[st_node_no].x = v->x2;
+                            st_node[st_node_no].y = v->y2;
+                            st_node[st_node_no].real = 1;
+                            st_element[st_element_no].node2 = st_node_no;
+                            st_element[st_element_no].node2r = st_node_no;
+                            add_node();
+                        }
+
+                        st_element[st_element_no].length = sqrt(
+                                ((st_node[st_element[st_element_no].node2].x -
+                                  st_node[st_element[st_element_no].node1].x) *
+                                 (st_node[st_element[st_element_no].node2].x -
+                                  st_node[st_element[st_element_no].node1].x)) +
+                                ((st_node[st_element[st_element_no].node2].y -
+                                  st_node[st_element[st_element_no].node1].y) *
+                                 (st_node[st_element[st_element_no].node2].y -
+                                  st_node[st_element[st_element_no].node1].y)));
+
+                        st_element[st_element_no].n1z = 1;
+                        st_element[st_element_no].n2z = 0;
+
+                        st_element[st_element_no].kos=kos;
+                        st_element[st_element_no].koc=koc;
+
+                        add_element();
+
+                    }
+                    else {
                         //searching for nodes
                         st_element[st_element_no].node1 = -1;
                         st_element[st_element_no].node1r = -1;
@@ -2488,280 +2619,406 @@ void Static_analysis(void) {
                                   st_node[st_element[st_element_no].node1].y) *
                                  (st_node[st_element[st_element_no].node2].y -
                                   st_node[st_element[st_element_no].node1].y)));
-                        add_element();
-                        break;
-                    case 1: //rigid hinged
-                        //rigid
-                        st_element[st_element_no].node1 = -1;
-                        st_element[st_element_no].node1r = -1;
-                        st_element[st_element_no].node2 = -1;
-                        st_element[st_element_no].node2r = -1;
-                        st_element[st_element_no].property_no = v->property_no;
 
-                        for (i = 0; i < st_node_no; i++)  //node1 rigid
-                        {
-                            if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
-                                st_element[st_element_no].node1 = i;
-                                st_element[st_element_no].node1r = i;
+                        switch (v->style) {
+                            case 0: //rigid rigid
+                                st_element[st_element_no].n1z = 1;
+                                st_element[st_element_no].n2z = 1;
+
+                                ///restraint
+                                st_node[st_element[st_element_no].node1].restraint=1;
+                                st_node[st_element[st_element_no].node2].restraint=1;
                                 break;
-                            }
-                        }
-                        if (st_element[st_element_no].node1 == -1) {
-                            st_node[st_node_no].radius = node_radius1;
-                            st_node[st_node_no].x = v->x1;
-                            st_node[st_node_no].y = v->y1;
-                            st_node[st_node_no].real = 1;
-                            st_element[st_element_no].node1 = st_node_no;
-                            st_element[st_element_no].node1r = st_node_no;
-                            add_node();
-                        }
-                        //hinged side
+                            case 1: //rigid hinged
+                                st_element[st_element_no].n1z = 1;
+                                st_element[st_element_no].n2z = 0;
 
-                        st_node[st_node_no].radius = 0; //node_radius2;
-                        st_node[st_node_no].x = x2;
-                        st_node[st_node_no].y = y2;
-                        st_node[st_node_no].real = 0;
-                        st_element[st_element_no].node2 = st_node_no;
-                        add_node();
-
-                        for (i = 0; i < st_node_no; i++)  //node2 hinged element
-                        {
-                            if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
-                                st_element[st_element_no].node2r = i;
+                                ///restraint
+                                st_node[st_element[st_element_no].node1].restraint=1;
                                 break;
-                            }
-                        }
-                        if (st_element[st_element_no].node2 == -1) {
-                            st_node[st_node_no].radius = node_radius2;
-                            st_node[st_node_no].x = v->x2;
-                            st_node[st_node_no].y = v->y2;
-                            st_node[st_node_no].real = 1;
-                            st_element[st_element_no].node2r = st_node_no;
-                            add_node();
+                            case 2: //hinged rigid
+                                st_element[st_element_no].n1z = 0;
+                                st_element[st_element_no].n2z = 1;
+
+                                ///restraint
+                                st_node[st_element[st_element_no].node2].restraint=1;
+                                break;
+                            case 3: //hinged hinged - this is created seperately as a pair of members hinged-fixed and fixed-hinged
+                                st_element[st_element_no].n1z = 0;
+                                st_element[st_element_no].n2z = 0;
+                                break;
                         }
 
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
+                        st_element[st_element_no].kos=kos;
+                        st_element[st_element_no].koc=koc;
 
                         add_element();
-
-                        st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
-                        st_element[st_element_no].node1r = -1;
-                        st_element[st_element_no].node2 = st_element[st_element_no - 1].node2r;
-                        st_element[st_element_no].node2r = st_element[st_element_no].node2;
-                        st_element[st_element_no].property_no = -v->property_no;
-
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
-
-                        add_element();
-
-                        break;
-                    case 2: //hinged rigid
-                        //hinged side
-                        st_element[st_element_no].node1 = -1;
-                        st_element[st_element_no].node1r = -1;
-                        st_element[st_element_no].node2 = -1;
-                        st_element[st_element_no].node2r = -1;
-                        st_element[st_element_no].property_no = -v->property_no;
-
-                        for (i = 0; i < st_node_no; i++)  //node1 hinged
-                        {
-                            if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
-                                st_element[st_element_no].node1 = i;
-                                st_element[st_element_no].node1r = i;
-                                break;
+                    }
+                }
+                else {
+                    switch (v->style) {
+                        case 0: //rigid rigid
+                            //searching for nodes
+                            st_element[st_element_no].node1 = -1;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = -1;
+                            st_element[st_element_no].node2r = -1;
+                            st_element[st_element_no].property_no = v->property_no;
+                            for (i = 0; i < st_node_no; i++)  //node1
+                            {
+                                if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
+                                    st_element[st_element_no].node1 = i;
+                                    st_element[st_element_no].node1r = i;
+                                    break;
+                                }
                             }
-                        }
-                        if (st_element[st_element_no].node1 == -1) {
-                            st_node[st_node_no].radius = node_radius1;
-                            st_node[st_node_no].x = v->x1;
-                            st_node[st_node_no].y = v->y1;
-                            st_node[st_node_no].real = 1;
-                            st_element[st_element_no].node1 = st_node_no;
-                            st_element[st_element_no].node1r = st_node_no;
-                            add_node();
-                        }
-
-                        st_node[st_node_no].radius = 0; //node_radius1;
-                        st_node[st_node_no].x = x1;
-                        st_node[st_node_no].y = y1;
-                        st_node[st_node_no].real = 0;
-                        st_element[st_element_no].node2 = st_node_no;
-                        st_element[st_element_no].node2r = -1;
-                        add_node();
-
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
-
-                        add_element();
-
-                        st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
-                        st_element[st_element_no].node1r = st_element[st_element_no - 1].node1r;
-                        st_element[st_element_no].property_no = v->property_no;
-                        st_element[st_element_no].node2 = -1;
-                        st_element[st_element_no].node2r = -1;
-
-                        for (i = 0; i < st_node_no; i++)  //node2 hinged element
-                        {
-                            if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
-                                st_element[st_element_no].node2 = i;
-                                st_element[st_element_no].node2r = i;
-                                break;
+                            for (i = 0; i < st_node_no; i++)  //node2
+                            {
+                                if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
+                                    st_element[st_element_no].node2 = i;
+                                    st_element[st_element_no].node2r = i;
+                                    break;
+                                }
                             }
-                        }
-                        if (st_element[st_element_no].node2 == -1) {
-                            st_node[st_node_no].radius = node_radius2;
-                            st_node[st_node_no].x = v->x2;
-                            st_node[st_node_no].y = v->y2;
-                            st_node[st_node_no].real = 1;
+                            if (st_element[st_element_no].node1 == -1) {
+                                st_node[st_node_no].radius = node_radius1;
+                                st_node[st_node_no].x = v->x1;
+                                st_node[st_node_no].y = v->y1;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node1 = st_node_no;
+                                st_element[st_element_no].node1r = st_node_no;
+                                add_node();
+                            }
+                            if (st_element[st_element_no].node2 == -1) {
+                                st_node[st_node_no].radius = node_radius2;
+                                st_node[st_node_no].x = v->x2;
+                                st_node[st_node_no].y = v->y2;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node2 = st_node_no;
+                                st_element[st_element_no].node2r = st_node_no;
+                                add_node();
+                            }
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+                            break;
+                        case 1: //rigid hinged
+                            //rigid
+                            st_element[st_element_no].node1 = -1;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = -1;
+                            st_element[st_element_no].node2r = -1;
+                            st_element[st_element_no].property_no = v->property_no;
+
+                            for (i = 0; i < st_node_no; i++)  //node1 rigid
+                            {
+                                if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
+                                    st_element[st_element_no].node1 = i;
+                                    st_element[st_element_no].node1r = i;
+                                    break;
+                                }
+                            }
+                            if (st_element[st_element_no].node1 == -1) {
+                                st_node[st_node_no].radius = node_radius1;
+                                st_node[st_node_no].x = v->x1;
+                                st_node[st_node_no].y = v->y1;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node1 = st_node_no;
+                                st_element[st_element_no].node1r = st_node_no;
+                                add_node();
+                            }
+                            //hinged side
+
+                            st_node[st_node_no].radius = 0; //node_radius2;
+                            st_node[st_node_no].x = x2;
+                            st_node[st_node_no].y = y2;
+                            st_node[st_node_no].real = 0;
+                            st_node[st_node_no].restraint=1;
                             st_element[st_element_no].node2 = st_node_no;
-                            st_element[st_element_no].node2r = st_node_no;
                             add_node();
-                        }
 
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
-
-                        add_element();
-
-                        break;
-                    case 3: //hinged hinged
-                        //hinged first side
-                        st_element[st_element_no].node1 = -1;
-                        st_element[st_element_no].node1r = -1;
-                        st_element[st_element_no].node2 = -1;
-                        st_element[st_element_no].node2r = -1;
-                        st_element[st_element_no].property_no = -v->property_no;
-
-                        for (i = 0; i < st_node_no; i++)  //node1 rigid
-                        {
-                            if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
-                                st_element[st_element_no].node1 = i;
-                                st_element[st_element_no].node1r = i;
-                                break;
+                            for (i = 0; i < st_node_no; i++)  //node2 hinged element
+                            {
+                                if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
+                                    st_element[st_element_no].node2r = i;
+                                    break;
+                                }
                             }
-                        }
-                        if (st_element[st_element_no].node1 == -1) {
-                            st_node[st_node_no].radius = node_radius1;
-                            st_node[st_node_no].x = v->x1;
-                            st_node[st_node_no].y = v->y1;
-                            st_node[st_node_no].real = 1;
-                            st_element[st_element_no].node1 = st_node_no;
-                            st_element[st_element_no].node1r = st_node_no;
-                            add_node();
-                        }
-
-                        st_node[st_node_no].radius = 0; //node_radius1;
-                        st_node[st_node_no].x = x1;
-                        st_node[st_node_no].y = y1;
-                        st_node[st_node_no].real = 0;
-                        st_element[st_element_no].node2 = st_node_no;
-                        st_element[st_element_no].node2r = -1;
-                        add_node();
-
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
-
-                        add_element();
-                        //hinged middle
-                        st_element[st_element_no].node2r = -1;
-                        st_element[st_element_no].property_no = v->property_no;
-
-                        st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
-                        st_element[st_element_no].node1r = st_element[st_element_no - 1].node1r;
-
-                        st_node[st_node_no].radius = 0; //node_radius2;
-                        st_node[st_node_no].x = x2;
-                        st_node[st_node_no].y = y2;
-                        st_node[st_node_no].real = 0;
-                        st_element[st_element_no].node2 = st_node_no;
-                        add_node();
-
-                        for (i = 0; i < st_node_no; i++)  //node2 hinged element
-                        {
-                            if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
-                                st_element[st_element_no].node2r = i;
-                                break;
+                            if (st_element[st_element_no].node2r == -1) {
+                                st_node[st_node_no].radius = node_radius2;
+                                st_node[st_node_no].x = v->x2;
+                                st_node[st_node_no].y = v->y2;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node2r = st_node_no;
+                                add_node();
                             }
-                        }
-                        if (st_element[st_element_no].node2r == -1) {
-                            st_node[st_node_no].radius = node_radius2;
-                            st_node[st_node_no].x = v->x2;
-                            st_node[st_node_no].y = v->y2;
-                            st_node[st_node_no].real = 1;
-                            st_element[st_element_no].node2r = st_node_no;
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+
+                            st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = st_element[st_element_no - 1].node2r;
+                            st_element[st_element_no].node2r = st_element[st_element_no].node2;
+                            st_element[st_element_no].property_no = -v->property_no;
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+
+                            break;
+                        case 2: //hinged rigid
+                            //hinged side
+                            st_element[st_element_no].node1 = -1;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = -1;
+                            st_element[st_element_no].node2r = -1;
+                            st_element[st_element_no].property_no = -v->property_no;
+
+                            for (i = 0; i < st_node_no; i++)  //node1 hinged
+                            {
+                                if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
+                                    st_element[st_element_no].node1 = i;
+                                    st_element[st_element_no].node1r = i;
+                                    break;
+                                }
+                            }
+                            if (st_element[st_element_no].node1 == -1) {
+                                st_node[st_node_no].radius = node_radius1;
+                                st_node[st_node_no].x = v->x1;
+                                st_node[st_node_no].y = v->y1;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node1 = st_node_no;
+                                st_element[st_element_no].node1r = st_node_no;
+                                add_node();
+                            }
+
+                            st_node[st_node_no].radius = 0; //node_radius1;
+                            st_node[st_node_no].x = x1;
+                            st_node[st_node_no].y = y1;
+                            st_node[st_node_no].real = 0;
+                            st_node[st_node_no].restraint=1;
+                            st_element[st_element_no].node2 = st_node_no;
+                            st_element[st_element_no].node2r = -1;
                             add_node();
-                        }
 
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
 
-                        add_element();
-                        //hinged second side
-                        st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
-                        st_element[st_element_no].node1r = -1;
-                        st_element[st_element_no].node2 = st_element[st_element_no - 1].node2r;
-                        st_element[st_element_no].node2r = st_element[st_element_no].node2;
-                        st_element[st_element_no].property_no = -v->property_no;
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
 
-                        st_element[st_element_no].length = sqrt(
-                                ((st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x) *
-                                 (st_node[st_element[st_element_no].node2].x -
-                                  st_node[st_element[st_element_no].node1].x)) +
-                                ((st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y) *
-                                 (st_node[st_element[st_element_no].node2].y -
-                                  st_node[st_element[st_element_no].node1].y)));
+                            add_element();
 
-                        add_element();
+                            st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
+                            st_element[st_element_no].node1r = st_element[st_element_no - 1].node1r;
+                            st_element[st_element_no].property_no = v->property_no;
+                            st_element[st_element_no].node2 = -1;
+                            st_element[st_element_no].node2r = -1;
 
-                        break;
-                    default:
-                        break;
+                            for (i = 0; i < st_node_no; i++)  //node2 hinged element
+                            {
+                                if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
+                                    st_element[st_element_no].node2 = i;
+                                    st_element[st_element_no].node2r = i;
+                                    break;
+                                }
+                            }
+                            if (st_element[st_element_no].node2 == -1) {
+                                st_node[st_node_no].radius = node_radius2;
+                                st_node[st_node_no].x = v->x2;
+                                st_node[st_node_no].y = v->y2;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node2 = st_node_no;
+                                st_element[st_element_no].node2r = st_node_no;
+                                add_node();
+                            }
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+
+                            break;
+                        case 3: //hinged hinged
+                            //hinged first side
+                            st_element[st_element_no].node1 = -1;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = -1;
+                            st_element[st_element_no].node2r = -1;
+                            st_element[st_element_no].property_no = -v->property_no;
+
+                            for (i = 0; i < st_node_no; i++)  //node1 rigid
+                            {
+                                if ((Check_if_Equal(v->x1, st_node[i].x)) && (Check_if_Equal(v->y1, st_node[i].y))) {
+                                    st_element[st_element_no].node1 = i;
+                                    st_element[st_element_no].node1r = i;
+                                    break;
+                                }
+                            }
+                            if (st_element[st_element_no].node1 == -1) {
+                                st_node[st_node_no].radius = node_radius1;
+                                st_node[st_node_no].x = v->x1;
+                                st_node[st_node_no].y = v->y1;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node1 = st_node_no;
+                                st_element[st_element_no].node1r = st_node_no;
+                                add_node();
+                            }
+
+                            st_node[st_node_no].radius = 0; //node_radius1;
+                            st_node[st_node_no].x = x1;
+                            st_node[st_node_no].y = y1;
+                            st_node[st_node_no].real = 0;
+                            st_node[st_node_no].restraint=1;
+                            st_element[st_element_no].node2 = st_node_no;
+                            st_element[st_element_no].node2r = -1;
+                            add_node();
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+                            //hinged middle
+                            st_element[st_element_no].node2r = -1;
+                            st_element[st_element_no].property_no = v->property_no;
+
+                            st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
+                            st_element[st_element_no].node1r = st_element[st_element_no - 1].node1r;
+
+                            st_node[st_node_no].radius = 0; //node_radius2;
+                            st_node[st_node_no].x = x2;
+                            st_node[st_node_no].y = y2;
+                            st_node[st_node_no].real = 0;
+                            st_node[st_node_no].restraint=1;
+                            st_element[st_element_no].node2 = st_node_no;
+                            add_node();
+
+                            for (i = 0; i < st_node_no; i++)  //node2 hinged element
+                            {
+                                if ((Check_if_Equal(v->x2, st_node[i].x)) && (Check_if_Equal(v->y2, st_node[i].y))) {
+                                    st_element[st_element_no].node2r = i;
+                                    break;
+                                }
+                            }
+                            if (st_element[st_element_no].node2r == -1) {
+                                st_node[st_node_no].radius = node_radius2;
+                                st_node[st_node_no].x = v->x2;
+                                st_node[st_node_no].y = v->y2;
+                                st_node[st_node_no].real = 1;
+                                st_node[st_node_no].restraint=1;
+                                st_element[st_element_no].node2r = st_node_no;
+                                add_node();
+                            }
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+                            //hinged second side
+                            st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
+                            st_element[st_element_no].node1r = -1;
+                            st_element[st_element_no].node2 = st_element[st_element_no - 1].node2r;
+                            st_element[st_element_no].node2r = st_element[st_element_no].node2;
+                            st_element[st_element_no].property_no = -v->property_no;
+
+                            st_element[st_element_no].length = sqrt(
+                                    ((st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x) *
+                                     (st_node[st_element[st_element_no].node2].x -
+                                      st_node[st_element[st_element_no].node1].x)) +
+                                    ((st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y) *
+                                     (st_node[st_element[st_element_no].node2].y -
+                                      st_node[st_element[st_element_no].node1].y)));
+
+                            st_element[st_element_no].kos=kos;
+                            st_element[st_element_no].koc=koc;
+
+                            add_element();
+
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
@@ -2849,6 +3106,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
                                 break;
                             case 16:  //hinged
                             case 17:
@@ -2871,6 +3131,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
                                 break;
                             case 21:  //rigid with Y roll
                             case 22:
@@ -2880,6 +3143,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
                                 break;
                             case 24:  //hinged with X roll
                             case 27:
@@ -2909,6 +3175,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
                                 break;
                         }
                         //add_reaction();
@@ -2923,6 +3192,17 @@ void Static_analysis(void) {
             }
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Opoint);
+    }
+
+    //checking if all nodes are restrained - st_node[i].restraint==1
+    //if not, extra support is activated to restrain in zz rotation
+    for (int iii=0; iii<st_node_no; iii++)
+    {
+        if (st_node[iii].restraint==0)
+        {
+            st_reaction[iii].active = 1;
+            st_reaction[iii].zz = 1;
+        }
     }
 
     //REACTION
@@ -3038,6 +3318,10 @@ void Static_analysis(void) {
     //creating data file
     sprintf(params, "%salfacad.3dd", _STATIC_);
     f = fopen(params, "wt");
+
+    ////09-08-2025
+    strcat(st_title, " @UNITS=");
+    strcat(st_title,UNITS);
     fprintf(f, "%s\n", st_title);
     fprintf(f, "\n# node data ...\n");
     fprintf(f, "%d\t\t # number of nodes\n", st_node_no);
@@ -3067,9 +3351,9 @@ void Static_analysis(void) {
 
     fprintf(f, "\n# frame element data ...\n");
     fprintf(f, "%d\t\t # number of frame elements\n", st_element_no);
-    fprintf(f, "#e n1 n2 Ax    Asy     Asz     Jxx     Iyy     Izz     E     G    roll  density\n");
-    fprintf(f, "#. .  .  in^2  in^2    in^2    in^4    in^4    in^4    ksi   ksi  deg  kip/in^3/g\n");
-    fprintf(f, "#. .  .  mm^2   mm^2    mm^2    mm^4   mm^4    mm^4    MPa   MPa  deg  tonne/mm^3\n\n");
+    fprintf(f, "#e n1 n2 Ax    Asy     Asz     Jxx     Iyy     Izz     E     G    roll  density n1y n1z n2y n2z\n");
+    fprintf(f, "#. .  .  in^2  in^2    in^2    in^4    in^4    in^4    ksi   ksi  deg  kip/in^3/g . . . .\n");
+    fprintf(f, "#. .  .  mm^2   mm^2    mm^2    mm^4   mm^4    mm^4    MPa   MPa  deg  tonne/mm^3 . . . . \n\n");
     for (i = 0; i < st_element_no; i++) {
         //searching for property
         hinged = 0;
@@ -3103,8 +3387,21 @@ void Static_analysis(void) {
         set_decimal_format(par[8], st_property[j].r, prop_precisions->p_precision);
         sprintf(par[9], "%g", st_property[j].d);
 
-        fprintf(f, "%d %d %d %s %s %s %s %s %s %s %s %s %s\n", i + 1, st_element[i].node1 + 1, st_element[i].node2 + 1,
-                par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9]);
+        if (PINNABLE) {
+            sprintf(par[10], " 1");
+            sprintf(par[11], " %d", st_element[i].n1z);
+            sprintf(par[12], " 1");
+            sprintf(par[13], " %d", st_element[i].n2z);
+        }
+        else {
+            sprintf(par[10], "");
+            sprintf(par[11], "");
+            sprintf(par[12], "");
+            sprintf(par[13], "");
+        }
+
+        fprintf(f, "%d %d %d %s %s %s %s %s %s %s %s %s %s%s%s%s%s\n", i + 1, st_element[i].node1 + 1, st_element[i].node2 + 1,
+                par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9],par[10],par[11],par[12],par[13]);
     }
 
     fprintf(f, "\n%d\t\t# 1: include shear deformation\n", shear_deformation);
@@ -3269,12 +3566,26 @@ void Static_analysis(void) {
                                                           st_node[st_element[i].node2].y, 0.0001)) {
 
                                 parametry_lini((LINIA*)v, &PL);
-                                kos = sin(Angle_Normal(PL.kat * Pi / 180));
-                                koc = cos(Angle_Normal(PL.kat * Pi / 180));
+                                kos = sin(Angle_Normal(PL.kat * Pi / 180.));
+                                koc = cos(Angle_Normal(PL.kat * Pi / 180.));
 
                                 st_element_force[st_element_force_no].element = i;
+
+
                                 st_element_force[st_element_force_no].fx = -v->magnitude1 * koc;
                                 st_element_force[st_element_force_no].fy = -v->magnitude1 * kos;
+
+                                //changing for element local coordinates
+
+                                double kos_e=st_element[st_element_force[st_element_force_no].element].kos;
+                                double koc_e=st_element[st_element_force[st_element_force_no].element].koc;
+
+                                double Fx = st_element_force[st_element_force_no].fx;
+                                double Fy = st_element_force[st_element_force_no].fy;
+
+                                st_element_force[st_element_force_no].fx = Fx*koc_e + Fy*kos_e;
+                                st_element_force[st_element_force_no].fy = -Fx*kos_e + Fy*koc_e;
+
                                 st_element_force[st_element_force_no].dlx = sqrt(
                                         ((v->x1 - st_node[st_element[i].node1].x) *  //node1r node2r
                                          (v->x1 - st_node[st_element[i].node1].x)) +
@@ -3298,11 +3609,15 @@ void Static_analysis(void) {
                     } else if (v->style == 5) //moment +
                     {
                         //should be report about error
-                        ;
+                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
+                                (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
+                        strcat(report, report_row);
                     } else if (v->style == 6) //moment -
                     {
                         //should be report about error
-                        ;
+                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
+                                (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
+                        strcat(report, report_row);
                     }
                 }
 
@@ -3476,8 +3791,8 @@ void Static_analysis(void) {
 
                                     dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
                                     dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
-                                    st_load[st_load_no].magnitude1 = v->magnitude1 + dmag * dl1 * nm;
-                                    st_load[st_load_no].magnitude2 = v->magnitude1 + dmag * dl2 * nm;
+                                    st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                    st_load[st_load_no].magnitude2 = (v->magnitude1 + dmag * dl2) * nm;
 
                                     st_load[st_load_no].distance1 = 0;
                                     st_load[st_load_no].distance2 = PL1.dl * m0999;
@@ -3490,7 +3805,7 @@ void Static_analysis(void) {
                                 if (Check_if_LE2(partial_length, 0.0)) break;
 
                             }
-                                //load spread over first node of the element and beginning of load inside element
+                                //load spread over first node of the element and end of load inside element
                             else if ((CheckIsPointOnLineSegment(st_node[st_element[i].node1].x,
                                                                 st_node[st_element[i].node1].y,
                                                                 v->x1, v->y1, v->x2, v->y2, 0.0001)) &&
@@ -3508,10 +3823,18 @@ void Static_analysis(void) {
                                 L.x2 = st_node[st_element[i].node2].x;
                                 L.y2 = st_node[st_element[i].node2].y;
                                 parametry_lini(&L, &PL1);
-                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180);
-                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180);
-                                double kat2_ = Angle_Normal(Pi_ * PL1.kat + 180 / 180);
+                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180.);
+                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180.);
+                                double kat2_ = Angle_Normal(Pi_ * (PL1.kat + 180.) / 180.);
+                                if (TRUE == Check_if_Equal (kat2_, Pi2)) kat2_=0.0;
+
                                 if ((Check_if_Equal2(kat1, kat2)) || (Check_if_Equal2(kat1, kat2_))) {
+
+                                    st_load[st_load_no].distance1 = 0.0;  //starting from the point 1
+                                    st_load[st_load_no].distance2 = sqrt((v->x2 - L.x1) * (v->x2 - L.x1) + (v->y2 - L.y1) * (v->y2 - L.y1));
+
+                                    ////if (Check_if_Equal(st_load[st_load_no].distance1, 0.0)) continue;  //load vector is at the second end  ////TEMPORARY
+
                                     st_load[st_load_no].element = i;
                                     st_load[st_load_no].spread = 0;
                                     st_load[st_load_no].partial = 1;
@@ -3523,12 +3846,17 @@ void Static_analysis(void) {
                                     double dl1, dl2;
 
                                     dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
-                                    st_load[st_load_no].magnitude1 = v->magnitude1 + dmag * dl1 * nm;
-                                    st_load[st_load_no].magnitude2 = v->magnitude2 * nm;
-
-                                    st_load[st_load_no].distance1 = 0;
-                                    st_load[st_load_no].distance2 = sqrt(
-                                            (v->x2 - L.x1) * (v->x2 - L.x1) + (v->y2 - L.y1) * (v->y2 - L.y1));
+                                    st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                    if (st_load[st_load_no].reversed ==0)
+                                    {
+                                        st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                        st_load[st_load_no].magnitude2 = v->magnitude2 * nm;
+                                    }
+                                    else
+                                    {
+                                        st_load[st_load_no].magnitude1 = v->magnitude1;
+                                        st_load[st_load_no].magnitude2 = (v->magnitude1 + dmag * dl1) * nm;
+                                    }
 
                                     if (!Check_if_Equal(st_load[st_load_no].distance2, 0.0)) {
                                         partial_length -= st_load[st_load_no].distance2;
@@ -3556,10 +3884,16 @@ void Static_analysis(void) {
                                 L.x2 = st_node[st_element[i].node2].x;
                                 L.y2 = st_node[st_element[i].node2].y;
                                 parametry_lini(&L, &PL1);
-                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180);
-                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180);
-                                double kat2_ = Angle_Normal(Pi_ * PL1.kat + 180 / 180);
+                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180.);
+                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180.);
+                                double kat2_ = Angle_Normal(Pi_ * (PL1.kat + 180.) / 180.);
+                                if (TRUE == Check_if_Equal (kat2_, Pi2)) kat2_=0.0;
+
                                 if ((Check_if_Equal2(kat1, kat2)) || (Check_if_Equal2(kat1, kat2_))) {
+
+                                    //st_load[st_load_no].distance1 = sqrt((v->x1 - L.x1) * (v->x1 - L.x1) + (v->y1 - L.y1) * (v->y1 - L.y1));
+                                    ////if (Check_if_Equal(st_load[st_load_no].distance1, PL1.dl)) continue;  //load vector is at the second end   ////TEMPORARY
+
                                     st_load[st_load_no].element = i;
                                     st_load[st_load_no].spread = 0;
                                     st_load[st_load_no].partial = 1;
@@ -3570,14 +3904,29 @@ void Static_analysis(void) {
                                     double dmag = (v->magnitude2 - v->magnitude1) / PL.dl;
                                     double dl1, dl2;
 
-                                    dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
-                                    dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
-                                    st_load[st_load_no].magnitude1 = v->magnitude1 * nm;
-                                    st_load[st_load_no].magnitude2 = v->magnitude1 + dmag * dl2 * nm;
+                                    if (st_load[st_load_no].reversed == 0) {
+                                        dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
+                                        dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
+                                        st_load[st_load_no].magnitude1 = v->magnitude1 * nm;
+                                        st_load[st_load_no].magnitude2 = (v->magnitude1 + dmag * dl2) * nm;
 
-                                    st_load[st_load_no].distance1 = sqrt(
-                                            (v->x1 - L.x1) * (v->x1 - L.x1) + (v->y1 - L.y1) * (v->y1 - L.y1));
-                                    st_load[st_load_no].distance2 = PL1.dl * m0999;
+                                        st_load[st_load_no].distance1=dl1;
+                                        st_load[st_load_no].distance2=PL1.dl; //dl2;
+                                    }
+                                    else
+                                    {
+                                        dl1 = sqrt((L.x1 - v->x2) * (L.x1 - v->x2) + (L.y1 - v->y2) * (L.y1 - v->y2));
+                                        dl2 = sqrt((L.x2 - v->x2) * (L.x2 - v->x2) + (L.y2 - v->y2) * (L.y2 - v->y2));
+                                        st_load[st_load_no].magnitude2 =  v->magnitude2 * nm;
+                                        st_load[st_load_no].magnitude1 =  (v->magnitude2 - dmag * dl2 * nm);
+                                        //st_load[st_load_no].reversed = 0;
+
+                                        st_load[st_load_no].distance1=dl1;
+                                        st_load[st_load_no].distance2=PL1.dl; //dl2;
+                                    }
+
+                                    ////st_load[st_load_no].distance1 = sqrt((v->x1 - L.x1) * (v->x1 - L.x1) + (v->y1 - L.y1) * (v->y1 - L.y1));
+                                    ////st_load[st_load_no].distance2 = PL1.dl * m0999;
 
                                     if (!Check_if_Equal(st_load[st_load_no].distance2,
                                                         st_load[st_load_no].distance1)) {
@@ -3972,8 +4321,8 @@ void Static_analysis(void) {
                             break;
                         }
                             //load spread over first node of the element and beginning of load inside element
-                        else if ((Check_if_Equal2(fabs(PL.kat - PL1.kat), 0) ||
-                                  Check_if_Equal2(fabs(PL.kat - PL1.kat), 180)) &&
+                        else if ((Check_if_Equal2(fabs(PL.kat - PL1.kat), 0.) ||
+                                  Check_if_Equal2(fabs(PL.kat - PL1.kat), 180.)) &&
                                  (CheckIsPointOnLineSegment(st_node[st_element[i].node1].x,  //node1r node2r
                                                             st_node[st_element[i].node1].y,
                                                             v->x1, v->y1, v->x2, v->y2, 0.0001)) &&
@@ -3981,6 +4330,7 @@ void Static_analysis(void) {
                                                              st_node[st_element[i].node2].y,
                                                              v->x1, v->y1, v->x2, v->y2, 0.0001))) {
                             //it's bad
+                            /*TEMPORARY
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
                                     milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
@@ -3992,8 +4342,11 @@ void Static_analysis(void) {
                             strcat(report, report_row);
                             th_load_el++;
                             break;
-                        } else if ((Check_if_Equal2(fabs(PL.kat - PL1.kat), 0) ||
-                                    Check_if_Equal2(fabs(PL.kat - PL1.kat), 180)) &&
+                             */
+                        }
+                            //load spread over second node of the element and beginning of load inside element
+                        else if ((Check_if_Equal2(fabs(PL.kat - PL1.kat), 0.) ||
+                                    Check_if_Equal2(fabs(PL.kat - PL1.kat), 180.)) &&
                                    (CheckIsPointOnLineSegment(st_node[st_element[i].node2].x,   //node1r node2r
                                                               st_node[st_element[i].node2].y,
                                                               v->x1, v->y1, v->x2, v->y2, 0.0001)) &&
@@ -4001,6 +4354,7 @@ void Static_analysis(void) {
                                                                st_node[st_element[i].node1].y,
                                                                v->x1, v->y1, v->x2, v->y2, 0.0001))) {
                             //it's bad
+                            /*  TEMPORARY
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
                                     milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
@@ -4010,12 +4364,14 @@ void Static_analysis(void) {
                                     milimetryobx(st_node[st_element[i].node2].x),
                                     milimetryoby(st_node[st_element[i].node2].y),rn);
                             strcat(report, report_row);
+
                             th_load_el++;
                             break;
+                             */
                         }
                         if (found == TRUE) {
-                            kos = sin(Angle_Normal(PL.kat * Pi / 180));
-                            koc = cos(Angle_Normal(PL.kat * Pi / 180));
+                            kos = sin(Angle_Normal(PL.kat * Pi / 180.));
+                            koc = cos(Angle_Normal(PL.kat * Pi / 180.));
 
                             st_thermal_load[st_thermal_load_no].ydepth = 0.0; //!!!!!!!!!!  h can be zero just in case of symmetrical thermal load
 
@@ -4653,7 +5009,7 @@ void Static_analysis(void) {
         }
     }
 
-    //tenperature loads
+    //temperature loads
     stl_thermal_load_no = 0;
     for (i = 0; i < st_thermal_load_no; i++) {
         if (TestBit(st_layer, st_thermal_load[i].layer)) stl_thermal_load_no++;
@@ -5066,7 +5422,6 @@ void Static_analysis(void) {
 
                     gamma_l = 1.0;
                     if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                    if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
                     if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
                     if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
                     if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
@@ -5475,7 +5830,6 @@ void Static_analysis(void) {
 
                     gamma_l = 1.0;
                     if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                    if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
                     if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
                     if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
                     if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
@@ -5883,7 +6237,6 @@ void Static_analysis(void) {
 
                     gamma_l = 1.0;
                     if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                    if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
                     if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
                     if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
                     if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
@@ -6157,7 +6510,7 @@ void Static_analysis(void) {
         runcode_short = runcode;
 #endif
 
-        if ((runcode_short > 206) && (runcode_short < 1500))  runcode_short = 1;  //????
+        if ((runcode_short > 208) && (runcode_short < 1500))  runcode_short = 1;  //????
         if ((runcode_short < 0) || (runcode_short > 1500)) runcode_short = 0; //?????
 
         
@@ -6469,12 +6822,12 @@ void Static_analysis(void) {
                             }
 
                             if (active) {
-                                double Fx_min;
-                                double Fx_max;
-                                double Fy_min;
-                                double Fy_max;
-                                double Mzz_min;
-                                double Mzz_max;
+                                double Fx_min = 0.0;
+                                double Fx_max = 0.0;
+                                double Fy_min = 0.0;
+                                double Fy_max = 0.0;
+                                double Mzz_min = 0.0;
+                                double Mzz_max = 0.0;
 
                                 if (combi_total_numbers[layer - 1].combi > 1)  //combi
                                 {
@@ -7207,6 +7560,8 @@ void Static_analysis(void) {
                                         Dl = dr[inx].Dx * dr[inx].Dx + dr[inx].Dy * dr[inx].Dy;
                                         Dlm = fd[inx].Dx_min * fd[inx].Dx_min + fd[inx].Dy_min * fd[inx].Dy_min;
                                         DlM = fd[inx].Dx_max * fd[inx].Dx_max + fd[inx].Dy_max * fd[inx].Dy_max;
+
+                                        /*
                                         if (Dl < Dlm) {
                                             fd[inx].Dx_min = dr[inx].Dx;
                                             fd[inx].Dy_min = dr[inx].Dy;
@@ -7215,6 +7570,14 @@ void Static_analysis(void) {
                                             fd[inx].Dx_max = dr[inx].Dx;
                                             fd[inx].Dy_max = dr[inx].Dy;
                                         }
+                                        */
+
+                                        fd[inx].Dx_min = min(fd[inx].Dx_min, dr[inx].Dx);
+                                        fd[inx].Dx_max = max(fd[inx].Dx_max, dr[inx].Dx);
+
+                                        fd[inx].Dy_min = min(fd[inx].Dy_min, dr[inx].Dy);
+                                        fd[inx].Dy_max = max(fd[inx].Dy_max, dr[inx].Dy);
+
 
 
                                         Nxm = dr[inx].Nx / unit_factors->F_f;
@@ -7264,6 +7627,9 @@ void Static_analysis(void) {
                                         Dl = dr[inx].Dx * dr[inx].Dx + dr[inx].Dy * dr[inx].Dy;
                                         Dlm = fd[inx].Dx_min * fd[inx].Dx_min + fd[inx].Dy_min * fd[inx].Dy_min;
                                         DlM = fd[inx].Dx_max * fd[inx].Dx_max + fd[inx].Dy_max * fd[inx].Dy_max;
+
+
+                                        /*
                                         if (Dl < Dlm) {
                                             fd[inx].Dx_min = dr[inx].Dx;
                                             fd[inx].Dy_min = dr[inx].Dy;
@@ -7272,6 +7638,14 @@ void Static_analysis(void) {
                                             fd[inx].Dx_max = dr[inx].Dx;
                                             fd[inx].Dy_max = dr[inx].Dy;
                                         }
+                                        */
+
+                                        fd[inx].Dx_min = min(fd[inx].Dx_min, dr[inx].Dx);
+                                        fd[inx].Dx_max = max(fd[inx].Dx_max, dr[inx].Dx);
+
+                                        fd[inx].Dy_min = min(fd[inx].Dy_min, dr[inx].Dy);
+                                        fd[inx].Dy_max = max(fd[inx].Dy_max, dr[inx].Dy);
+
 
                                         Nxm = dr[inx].Nx / unit_factors->F_f;
                                         Vym = dr[inx].Vy / unit_factors->F_f;
@@ -7300,6 +7674,8 @@ void Static_analysis(void) {
                                         Dl = dr[inx].Dx * dr[inx].Dx + dr[inx].Dy * dr[inx].Dy;
                                         Dlm = fd[inx].Dx_min * fd[inx].Dx_min + fd[inx].Dy_min * fd[inx].Dy_min;
                                         DlM = fd[inx].Dx_max * fd[inx].Dx_max + fd[inx].Dy_max * fd[inx].Dy_max;
+
+                                        /*
                                         if (Dl < Dlm) {
                                             fd[inx].Dx_min = dr[inx].Dx;
                                             fd[inx].Dy_min = dr[inx].Dy;
@@ -7308,6 +7684,13 @@ void Static_analysis(void) {
                                             fd[inx].Dx_max = dr[inx].Dx;
                                             fd[inx].Dy_max = dr[inx].Dy;
                                         }
+                                        */
+
+                                        fd[inx].Dx_min = min(fd[inx].Dx_min, dr[inx].Dx);
+                                        fd[inx].Dx_max = max(fd[inx].Dx_max, dr[inx].Dx);
+
+                                        fd[inx].Dy_min = min(fd[inx].Dy_min, dr[inx].Dy);
+                                        fd[inx].Dy_max = max(fd[inx].Dy_max, dr[inx].Dy);
 
                                         Nxm = dr[inx].Nx / unit_factors->F_f;
                                         Vym = dr[inx].Vy / unit_factors->F_f;
@@ -9162,6 +9545,10 @@ void Static_analysis(void) {
                                 double r1 = st_node[n1].radius;
                                 double r2 = st_node[n2].radius;
 
+                                //eliminates radius for pinned joint
+                                if (st_element[rep_element_no - 1].n1z==0) r1=0;
+                                if (st_element[rep_element_no - 1].n2z==0) r2=0;
+
                                 double lb = r1 * units_factor;
                                 double le = (milimetryob(st_element[rep_element_no - 1].length) - r2) * units_factor;
 
@@ -9226,11 +9613,10 @@ void Static_analysis(void) {
                                                 Sm = dr[inx].Sm;
                                             }
 
-
-                                            if (rep_element_no==15)
-                                            {
-                                                int aaa=0;
-                                            }
+                                            //if (rep_element_no==15)
+                                            //{
+                                            //    int aaa=0;
+                                            //}
 
                                             ignore_Sm=FALSE;
                                             if (Check_if_Equal3(Sp, Sm))
@@ -9275,8 +9661,8 @@ void Static_analysis(void) {
 
                                                 ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                 if (!Check_if_Equal(Sp, 0.0) &&
-                                                    (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                       Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                    ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                       ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                       (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
                                                        Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9297,8 +9683,8 @@ void Static_analysis(void) {
                                                 Ldsp1_.blok = 1;
                                                 ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                 if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
-                                                    (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                       Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                    ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                       ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                       (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
                                                        Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9329,8 +9715,8 @@ void Static_analysis(void) {
                                                 ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                 if (!Check_if_Equal(Sp, 0.0) &&
-                                                    (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                       Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                    ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                       ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                       (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
                                                        Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9371,8 +9757,8 @@ void Static_analysis(void) {
                                                 ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                 if (!Check_if_Equal(Sm, 0.0) &&
-                                                    (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                       Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                    ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                       ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                       (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                       (Check_if_Equal(x, 0.0) ||
                                                        Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9448,8 +9834,8 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     if (!Check_if_Equal(Sp, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                           ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9470,8 +9856,8 @@ void Static_analysis(void) {
                                                     Ldsp1_.blok = 1;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                     if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                           ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9502,8 +9888,8 @@ void Static_analysis(void) {
                                                     ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                     if (!Check_if_Equal(Sp, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                           ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9545,8 +9931,8 @@ void Static_analysis(void) {
                                                     ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                     if (!Check_if_Equal(Sm, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                          //// Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9700,8 +10086,8 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     if (!Check_if_Equal(Sp, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                          //// Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9722,8 +10108,8 @@ void Static_analysis(void) {
                                                     Ldsp1_.blok = 1;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                     if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                           ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9754,8 +10140,8 @@ void Static_analysis(void) {
                                                     ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                     if (!Check_if_Equal(Sp, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                           ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9796,8 +10182,8 @@ void Static_analysis(void) {
                                                     ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                     if (!Check_if_Equal(Sm, 0.0) &&
-                                                        (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                           Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                        ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                          //// Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                           (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                           (Check_if_Equal(x, 0.0) ||
                                                            Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9893,8 +10279,8 @@ void Static_analysis(void) {
 
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         if (!Check_if_Equal(Sp, 0.0) &&
-                                                            (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                               Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                            ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                              //// Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                               (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                               (Check_if_Equal(x, 0.0) ||
                                                                Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9915,8 +10301,8 @@ void Static_analysis(void) {
                                                         Ldsp1_.blok = 1;
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
                                                         if (!ignore_Sm && !Check_if_Equal(Sm, 0.0) &&
-                                                            (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                               Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                            ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                               ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                               (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                               (Check_if_Equal(x, 0.0) ||
                                                                Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -9947,8 +10333,8 @@ void Static_analysis(void) {
                                                         ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
 
                                                         if (!Check_if_Equal(Sp, 0.0) &&
-                                                            (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                               Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                            ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                              //// Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                               (Check_if_Equal(Sp, SpM) || Check_if_Equal(Sp, Spm)) ||
                                                               (Check_if_Equal(x, 0.0) ||
                                                                Check_if_Equal(jednostkiOb(x), PL.dl))) ||
@@ -9990,8 +10376,8 @@ void Static_analysis(void) {
                                                         ptr_l_ = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1_);
 
                                                         if (!Check_if_Equal(Sm, 0.0) &&
-                                                            (((Check_if_Equal(dr[inx].Mz, MzM) ||
-                                                               Check_if_Equal(dr[inx].Mz, Mzm)) ||
+                                                            ((////(Check_if_Equal(dr[inx].Mz/unit_factors->M_f, MzM) ||
+                                                               ////Check_if_Equal(dr[inx].Mz/unit_factors->M_f, Mzm)) ||
                                                               (Check_if_Equal(Sm, SmM) || Check_if_Equal(Sm, Smm)) ||
                                                               (Check_if_Equal(x, 0.0) ||
                                                                Check_if_Equal(jednostkiOb(x), PL.dl)))) ||
@@ -10285,6 +10671,10 @@ void Static_analysis(void) {
                                 n2 = st_element[rep_element_no - 1].node2;
                                 double r1 = st_node[n1].radius;
                                 double r2 = st_node[n2].radius;
+
+                                //eliminates radius for pinned joint
+                                if (st_element[rep_element_no - 1].n1z==0) r1=0;
+                                if (st_element[rep_element_no - 1].n2z==0) r2=0;
 
                                 double lb = r1 * units_factor;
                                 double le = (milimetryob(st_element[rep_element_no - 1].length) - r2) * units_factor;
@@ -10766,6 +11156,8 @@ void Static_analysis(void) {
 
     redraw();
 
+    my_sleep(10);
+
     //showing execution report
     if (strlen(report) > 0) {
         int edit_params = 0;
@@ -10773,6 +11165,8 @@ void Static_analysis(void) {
         int single = 0;
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0]='\0';
+
+        return;
     };
 
     //showing text file
@@ -10879,10 +11273,27 @@ void Static_analysis(void) {
                 else runcode = SystemSilent("./mupdf-x11 -I -A 8 -r 150", params);
                 printf("%lu", runcode);
 
+                get_posXY(&Xpos, &Ypos);
                 ret = Expand_flex();
+                //set_posXY(Xpos, Ypos);
+
 
                 _free_mouse();
                 lock_mouse();
+
+                /*
+                do {
+                    get_mouse_mickeys(&WspX_, &WspY_);
+                } while ((WspX_!=0) || (WspY_!=0));
+                 */
+
+                my_sleep(10);
+
+                set_posXY(Xpos, Ypos);
+
+                do {
+                    get_mouse_mickeys(&WspX_, &WspY_);
+                } while ((WspX_!=0) || (WspY_!=0));
 
                 runcode = 255;
 
@@ -10920,10 +11331,9 @@ void Static_analysis(void) {
                     runcode = SystemSilent("open", params);
                 }
 
-                 printf("%lu", runcode);
+                 printf("%lu\n", runcode);
 
                  ret = Expand_flex();
-
 
                 runcode = 255;
 
@@ -11407,26 +11817,32 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
 {
     int ret;
     char f_text[MaxTextLen];
-    SECTION_GRAPH_DATA *section_graph_data;
-    GRAPH_DATA *graph_data;
+    SECTION_GRAPH_DATA *section_graph_data[2];
+    GRAPH_DATA *graph_data[2];
     SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int width, width_m = 0, height_m = 0;
-    float rdf, rdb;
+    float rdf[2], rdb[2];
+    double l01;
 
-    graph_data = (GRAPH_DATA *) all_section_graph_data_p->graph_data;
-    rdf=graph_data->rdf;
-    rdb=graph_data->rdb;
+    for (int i=0; i<mpair0; i++) {
+        graph_data[i] = (GRAPH_DATA *) all_section_graph_data_p[i]->graph_data;
+        rdf[i] = graph_data[i]->rdf;
+        rdb[i] = graph_data[i]->rdb;
 
-    switch (limit_state)
-    {
-        case 0: section_graph_data = &all_section_graph_data_p->ULS;
-        break;
-        case 1: section_graph_data=&all_section_graph_data_p->SLS;
-        break;
-        case 2: section_graph_data=&all_section_graph_data_p->QPSLS;
-        break;
-        default: section_graph_data = &all_section_graph_data_p->ULS;
-        break;
+        switch (limit_state) {
+            case 0:
+                section_graph_data[i] = &all_section_graph_data_p[i]->ULS;
+                break;
+            case 1:
+                section_graph_data[i] = &all_section_graph_data_p[i]->SLS;
+                break;
+            case 2:
+                section_graph_data[i] = &all_section_graph_data_p[i]->QPSLS;
+                break;
+            default:
+                section_graph_data[i] = &all_section_graph_data_p[i]->ULS;
+                break;
+        }
     }
 
 
@@ -11439,9 +11855,18 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
     //zeroing
     memmove(&section_forces, &section_forces0, sizeof(SECTION_FORCES));
     //l1 is a distance from first node
-    ret = get_force_at_x(l1, l, rdf, rdb, section_graph_data, &section_forces);
+    l01=l1;
+    if (mpair0==1) ret = get_force_at_x(l1, l, rdf[0], rdb[0], section_graph_data[0], &section_forces);
+    else {
+        if (l1 <= l/2.) ret = get_force_at_x(l1, l/2., rdf[0], rdb[0], section_graph_data[0], &section_forces);
+        else
+        {
+            l1-=(l/2.);
+            ret = get_force_at_x(l1, l/2., rdf[1], rdb[1], section_graph_data[1], &section_forces);
+        }
+    }
     //showing data on screen
-    sprintf(force_text,"x=%.4f%s",milimetryob(l1), lend);
+    sprintf(force_text,"x=%.4f%s",milimetryob(l01), lend);
     width=TTF_text_len(force_text);
     if (width>width_m) width_m=width;
     height_m+=HEIGHT;
@@ -11622,15 +12047,24 @@ static void  cur_section_on(double x,double y)
     float rdf, rdb;
     int orto_;
 
-    if (all_section_graph_data_p->element_line == NULL) {
+    if (all_section_graph_data_p[0]->element_line == NULL) {
         cursel_on(x, y);
         return;
     }
 
-    eL.x1 = all_section_graph_data_p->x1;
-    eL.y1 = all_section_graph_data_p->y1;
-    eL.x2 = all_section_graph_data_p->x2;
-    eL.y2 = all_section_graph_data_p->y2;
+    if (mpair0==1) {
+        eL.x1 = all_section_graph_data_p[0]->x1;
+        eL.y1 = all_section_graph_data_p[0]->y1;
+        eL.x2 = all_section_graph_data_p[0]->x2;
+        eL.y2 = all_section_graph_data_p[0]->y2;
+    }
+    else
+    {
+        eL.x1 = all_section_graph_data_p[0]->x1;
+        eL.y1 = all_section_graph_data_p[0]->y1;
+        eL.x2 = all_section_graph_data_p[1]->x2;
+        eL.y2 = all_section_graph_data_p[1]->y2;
+    }
 
     xx = x;
     yy = y;
@@ -11743,8 +12177,8 @@ void do_state (int lstate)
     CUR_ON(X,Y);
 }
 
-void Show_Cross_Section (ALL_SECTION_GRAPH_DATA *all_section_graph_data)
-/*--------------------------------------------------------------------*/
+void Show_Cross_Section (void) //ALL_SECTION_GRAPH_DATA *all_section_graph_data)
+/*---------------------------------------------------------------------*/
 {
     EVENT *ev;
     double X0, Y0;
@@ -11803,18 +12237,21 @@ void Cross_section_forces(void)
     AVECTOR* V;
     double delX;
     int vf;
-    float ex1, ey1, ex2, ey2;
+    float ex1, ey1, ex2, ey2, ex12, ey12;
+    int mpair;
     double ex11, ey11, ex22, ey22;
     int element_no;
     unsigned char data_type;
     NAGLOWEK *nag;
     LINIA *L;
-    PLINIA PL;
+    PLINIA PL[2];
     GRAPH_DATA *graph_data;
     float dlf, dlb;
-    ALL_SECTION_GRAPH_DATA all_section_graph_data;
-    SECTION_GRAPH_DATA *section_data, section_data0={0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL};
-    SECTION_DATA *section_params;
+    ALL_SECTION_GRAPH_DATA all_section_graph_data[2];
+    SECTION_GRAPH_DATA *section_data[2], section_data0[2]={{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL},{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL}};
+    SECTION_DATA *section_params[2];
+
+    Semaphore = FALSE;
 
     redcr_ele(0);
 
@@ -11841,16 +12278,27 @@ void Cross_section_forces(void)
                 typ = Bvector;
 
                 //zeroing
-                all_section_graph_data.element_line=NULL;
-                all_section_graph_data.section_data=NULL;
-                section_data=&all_section_graph_data.ULS;
-                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
-                section_data=&all_section_graph_data.SLS;
-                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
-                section_data=&all_section_graph_data.QPSLS;
-                memmove(section_data, &section_data0, sizeof(SECTION_GRAPH_DATA));
+                all_section_graph_data[0].element_line=NULL;
+                all_section_graph_data[0].section_data=NULL;
+                section_data[0]=&all_section_graph_data[0].ULS;
+                memmove(section_data[0], &section_data0[0], sizeof(SECTION_GRAPH_DATA));
+                section_data[0]=&all_section_graph_data[0].SLS;
+                memmove(section_data[0], &section_data0[0], sizeof(SECTION_GRAPH_DATA));
+                section_data[0]=&all_section_graph_data[0].QPSLS;
+                memmove(section_data[0], &section_data0[0], sizeof(SECTION_GRAPH_DATA));
 
-                all_section_graph_data_p=&all_section_graph_data;
+                all_section_graph_data_p[0]=&all_section_graph_data[0];
+
+                all_section_graph_data[1].element_line=NULL;
+                all_section_graph_data[1].section_data=NULL;
+                section_data[1]=&all_section_graph_data[1].ULS;
+                memmove(section_data[1], &section_data0[1], sizeof(SECTION_GRAPH_DATA));
+                section_data[1]=&all_section_graph_data[1].SLS;
+                memmove(section_data[1], &section_data0[1], sizeof(SECTION_GRAPH_DATA));
+                section_data[1]=&all_section_graph_data[1].QPSLS;
+                memmove(section_data[1], &section_data0[1], sizeof(SECTION_GRAPH_DATA));
+
+                all_section_graph_data_p[1]=&all_section_graph_data[1];
 
                 if ((ad = obiekt_wybrany(&typ)) != NULL)
                 {
@@ -11863,72 +12311,141 @@ void Cross_section_forces(void)
                                 if (V->style<4) //ELEMENT
                                 {
                                     //printf("Bingo\n");
-                                    ex1=V->x1;
-                                    ey1=V->y1;
-                                    ex2=V->x2;
-                                    ey2=V->y2;
+                                    ex1 = V->x1;
+                                    ey1 = V->y1;
+                                    ex2 = V->x2;
+                                    ey2 = V->y2;
+
+                                    if (V->style == 3) //hinged-hinged
+                                    {
+                                        ex12 = (ex1 + ex2) / 2.f;
+                                        ey12 = (ey1 + ey2) / 2.f;
+                                        mpair0 = mpair = 2;
+                                    } else {
+                                        ex12 = ex2;
+                                        ey12 = ey2;
+                                        mpair0 = mpair = 1;
+                                    }
+
+
                                     //searching for element data lines;
                                     //lines with ->n==sizeof(LINIA)+sizeof(GRAPH_DATA))
                                     //where ->x1==ex1, ->y1==ey1, ->x2==ex2, ->y2==ey2
                                     //once found, element_no=graph_data->enr
 
                                     set_global_hidden_blocks_visibility(TRUE);
-                                    obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
-                                    while (nag != NULL)
+                                    while (mpair>0)
                                     {
-                                        if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony))
+                                        obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
+                                        while (nag != NULL)
                                         {
-                                            L = (LINIA *) nag;
-                                            if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA))
-                                            {
-                                                if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
-                                                    Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
-                                                {
-                                                    graph_data = (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
-                                                    if (graph_data->flags == 45) //element description
+                                            if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony)) {
+                                                L = (LINIA *) nag;
+                                                if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA)) {
+                                                    /*
+                                                    if ((Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&  //entire member
+                                                        Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)) ||
+
+                                                        (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&  //part 1
+                                                         Check_if_Equal(L->x2, ex12) && Check_if_Equal(L->y2, ey12)) ||
+
+                                                        (Check_if_Equal(L->x1, ex12) && Check_if_Equal(L->y1, ey12) &&  //part 2
+                                                         Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)))
+                                                    */
+                                                    if (((Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                           Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)) && (mpair >= 1)) ||
+
+                                                            ((Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                           Check_if_Equal(L->x2, ex12) && Check_if_Equal(L->y2, ey12)) && (mpair == 1)) ||
+
+                                                            ((Check_if_Equal(L->x1, ex12) && Check_if_Equal(L->y1, ey12) &&
+                                                           Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)) && (mpair == 2)))
                                                     {
-                                                        all_section_graph_data.enr = graph_data->enr;
-                                                        all_section_graph_data.element_line = (char *) L;
-                                                        all_section_graph_data.graph_data = (char *) L + sizeof(LINIA);
-                                                        all_section_graph_data.section_data = (char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                        dlf=graph_data->dlf;
-                                                        dlb=graph_data->dlb;
-                                                        element_RC_flag=graph_data->material;
-                                                        //correction of searching coordinates
-                                                        parametry_lini(L, &PL);
-                                                        Rotate_Point(PL.sin, PL.cos, ex1, ey1, ex1+dlf, ey1, &ex11, &ey11);
-                                                        Rotate_Point(PL.sin, PL.cos, ex2, ey2, ex2-dlb, ey2, &ex22, &ey22);
-                                                        ex1=(float)ex11;
-                                                        ey1=(float)ey11;
-                                                        ex2=(float)ex22;
-                                                        ey2=(float)ey22;
-                                                        all_section_graph_data.x1=ex1;
-                                                        all_section_graph_data.y1=ey1;
-                                                        all_section_graph_data.x2=ex2;
-                                                        all_section_graph_data.y2=ey2;
+                                                        if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                         Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
+                                                        {
+                                                            //if it was hinged-hinged, there was no division for halves
+                                                            if (mpair0 == 2) mpair0=1;
+                                                            if (mpair == 2) mpair=1;
+                                                        }
 
-                                                        section_params=(SECTION_DATA*)all_section_graph_data.section_data;
+                                                        graph_data = (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
+                                                        if (graph_data->flags == 45) //element description
+                                                        {
+                                                            all_section_graph_data[mpair - 1].enr = graph_data->enr;
+                                                            all_section_graph_data[mpair - 1].element_line = (char *) L;
+                                                            all_section_graph_data[mpair - 1].graph_data =
+                                                                    (char *) L + sizeof(LINIA);
+                                                            all_section_graph_data[mpair - 1].section_data =
+                                                                    (char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
+                                                            dlf = graph_data->dlf;
+                                                            dlb = graph_data->dlb;
+                                                            element_RC_flag = graph_data->material;
+                                                            //correction of searching coordinates
+                                                            parametry_lini(L, &PL[mpair - 1]);
+                                                            Rotate_Point(PL[mpair - 1].sin, PL[mpair - 1].cos, ex1, ey1, ex1 + dlf, ey1,
+                                                                         &ex11,
+                                                                         &ey11);
+                                                            Rotate_Point(PL[mpair - 1].sin, PL[mpair - 1].cos, ex2, ey2, ex2 - dlb, ey2,
+                                                                         &ex22,
+                                                                         &ey22);
+                                                            ex1 = (float) ex11;
+                                                            ey1 = (float) ey11;
+                                                            ex2 = (float) ex22;
+                                                            ey2 = (float) ey22;
+                                                            all_section_graph_data[mpair - 1].x1 = ex1;
+                                                            all_section_graph_data[mpair - 1].y1 = ey1;
+                                                            all_section_graph_data[mpair - 1].x2 = ex2;
+                                                            all_section_graph_data[mpair - 1].y2 = ey2;
 
-                                                        const char *RC_str=element_RC_flag==0 ? "" : " RC";
+                                                            section_params[mpair -
+                                                                           1] = (SECTION_DATA *) all_section_graph_data[
+                                                                    mpair - 1].section_data;
 
-                                                        sprintf(section_params_st,"(%d%s) l=%.5g H=%.5g B=%.5g A=%.5g Asy=%.5g Asz=%.5g Iy=%.5g Iz=%.5g Wy=%.5g Wz=%.5g",all_section_graph_data.enr, RC_str,
-                                                                milimetryob(PL.dl),
-                                                                section_params->H, section_params->B,
-                                                                section_params->A,section_params->Asy,section_params->Asz,
-                                                                section_params->Iy,section_params->Iz,
-                                                                section_params->Wy,section_params->Wz);
-                                                        komunikat_str_short(section_params_st, TRUE, TRUE);
+                                                            const char *RC_str = element_RC_flag == 0 ? "" : " RC";
 
-                                                        strcat(section_params_st,"\n");
-                                                        Put_Str_To_Clip(section_params_st);
+                                                            char EL_str[32];
+                                                            double dl_dl;
+                                                            if (mpair0==2)
+                                                            {
+                                                                sprintf(EL_str,"%d-%d",all_section_graph_data[0].enr,all_section_graph_data[1].enr);
+                                                                dl_dl=PL[0].dl+PL[1].dl;
+                                                            }
+                                                            else
+                                                            {
+                                                                sprintf(EL_str,"%d",all_section_graph_data[0].enr);
+                                                                dl_dl=PL[0].dl;
+                                                            }
 
-                                                        break;
+                                                            sprintf(section_params_st,
+                                                                    "(%s%s) l=%.5g H=%.5g B=%.5g A=%.5g Asy=%.5g Asz=%.5g Iy=%.5g Iz=%.5g Wy=%.5g Wz=%.5g",
+                                                                    EL_str, RC_str,
+                                                                    milimetryob(dl_dl),
+                                                                    section_params[mpair - 1]->H,
+                                                                    section_params[mpair - 1]->B,
+                                                                    section_params[mpair - 1]->A,
+                                                                    section_params[mpair - 1]->Asy,
+                                                                    section_params[mpair - 1]->Asz,
+                                                                    section_params[mpair - 1]->Iy,
+                                                                    section_params[mpair - 1]->Iz,
+                                                                    section_params[mpair - 1]->Wy,
+                                                                    section_params[mpair - 1]->Wz);
+                                                            komunikat_str_short(section_params_st, TRUE, TRUE);
+
+                                                            strcat(section_params_st, "\n");
+                                                            Put_Str_To_Clip(section_params_st);
+
+                                                            //break;
+                                                            //mpair--;
+                                                        }
                                                     }
                                                 }
                                             }
+                                            obiekt_tok_all(NULL, dane + dane_size, (char **) &nag, Olinia);
                                         }
-                                        obiekt_tok_all(NULL, ADK, (char **) &nag, Olinia);
+                                        mpair--;
                                     }
+
                                     set_global_hidden_blocks_visibility(FALSE);
 
                                     //searching for forces data line
@@ -11936,76 +12453,105 @@ void Cross_section_forces(void)
                                     //where ->x1==ex1, ->y1==ey1, ->x2==ex2, ->y2==ey2
                                     //once found, data_type=graph_data->dt
                                     //searching for nodes size
+
+                                    mpair=mpair0;
+
                                     set_global_hidden_blocks_visibility(TRUE);
-                                    obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
-                                    while (nag != NULL)
+                                    while (mpair>0)
                                     {
-                                        if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony))
+                                        obiekt_tok_all(dane, dane + dane_size, (char **) &nag, Olinia);
+                                        while (nag != NULL)
                                         {
-                                            L = (LINIA *) nag;
-                                            if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
-                                            {
-                                                if (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) && Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))
-                                                {
-                                                    graph_data= (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
-                                                    /*
-                                                    if (graph_data->flags==45) //element description
-                                                    {
-                                                        all_section_graph_data.enr=graph_data->enr;
-                                                        all_section_graph_data.element_line=(char*)L;
-                                                        all_section_graph_data.section_data=(char*)L+sizeof(LINIA)+sizeof(GRAPH_DATA);
-                                                    }
-                                                    else
-                                                     */
-                                                    if (graph_data->flags==71) //force data
-                                                    {
-                                                        element_no=graph_data->enr;
-                                                        //data_state=graph_data->st;
-                                                        switch (graph_data->st)
+                                            if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony)) {
+                                                L = (LINIA *) nag;
+                                                if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA)) {
+                                                    if ((((Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                         Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)) ||
+                                                        (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
+                                                         Check_if_Equal(L->x2, ex12) && Check_if_Equal(L->y2, ey12))) && (mpair==1))  ||
+
+                                                        (((Check_if_Equal(L->x1, ex12) && Check_if_Equal(L->y1, ey12) &&
+                                                         Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2))) && (mpair==2)))
+                                                         {
+                                                        graph_data = (GRAPH_DATA *) ((char *) L + sizeof(LINIA));
+                                                        /*
+                                                        if (graph_data->flags==45) //element description
                                                         {
-                                                            case 2: section_data=&all_section_graph_data.ULS;
-                                                                break;
-                                                            case 3: section_data=&all_section_graph_data.SLS;
-                                                                break;
-                                                            case 4: section_data=&all_section_graph_data.QPSLS;
-                                                                break;
+                                                            all_section_graph_data.enr=graph_data->enr;
+                                                            all_section_graph_data.element_line=(char*)L;
+                                                            all_section_graph_data.section_data=(char*)L+sizeof(LINIA)+sizeof(GRAPH_DATA);
                                                         }
-                                                        switch (graph_data->dt)
+                                                        else
+                                                         */
+                                                        if (graph_data->flags == 71) //force data
                                                         {
-                                                            case 0: //Dy
-                                                            section_data->Dy_no = graph_data->nx;
-                                                            section_data->Dy_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 1: //Dx
-                                                            section_data->Dx_no = graph_data->nx;
-                                                            section_data->Dx_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 2: //Nx
-                                                            section_data->Nx_no = graph_data->nx;
-                                                            section_data->Nx_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 3: //Vy
-                                                            section_data->Vy_no = graph_data->nx;
-                                                            section_data->Vy_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 4: //Mz
-                                                            section_data->Mz_no = graph_data->nx;
-                                                            section_data->Mz_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 5: //S
-                                                            section_data->S_no = graph_data->nx;
-                                                            section_data->S_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
-                                                            case 6: //Ss
-                                                            section_data->Ss_no = graph_data->nx;
-                                                            section_data->Ss_data=(char *) L + sizeof(LINIA) + sizeof(GRAPH_DATA);
-                                                            break;
+                                                            element_no = graph_data->enr;
+                                                            //data_state=graph_data->st;
+                                                            switch (graph_data->st) {
+                                                                case 2:
+                                                                    section_data[mpair - 1] = &all_section_graph_data[
+                                                                            mpair - 1].ULS;
+                                                                    break;
+                                                                case 3:
+                                                                    section_data[mpair - 1] = &all_section_graph_data[
+                                                                            mpair - 1].SLS;
+                                                                    break;
+                                                                case 4:
+                                                                    section_data[mpair - 1] = &all_section_graph_data[
+                                                                            mpair - 1].QPSLS;
+                                                                    break;
+                                                            }
+                                                            switch (graph_data->dt) {
+                                                                case 0: //Dy
+                                                                    section_data[mpair - 1]->Dy_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Dy_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 1: //Dx
+                                                                    section_data[mpair - 1]->Dx_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Dx_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 2: //Nx
+                                                                    section_data[mpair - 1]->Nx_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Nx_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 3: //Vy
+                                                                    section_data[mpair - 1]->Vy_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Vy_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 4: //Mz
+                                                                    section_data[mpair - 1]->Mz_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Mz_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 5: //S
+                                                                    section_data[mpair - 1]->S_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->S_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 6: //Ss
+                                                                    section_data[mpair - 1]->Ss_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Ss_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
+                                            obiekt_tok_all(NULL, dane + dane_size, (char **) &nag, Olinia);
                                         }
-                                        obiekt_tok_all(NULL, ADK, (char **) &nag, Olinia);
+                                        mpair--;
                                     }
                                     set_global_hidden_blocks_visibility(FALSE);
                                     break;
@@ -12016,13 +12562,13 @@ void Cross_section_forces(void)
                             break;
                     }
                 }
-                if (all_section_graph_data.element_line!=NULL)
+                if (all_section_graph_data[0].element_line!=NULL)
                 {
                     //selecting cross section of the element
-                    parametry_lini((LINIA *)all_section_graph_data.element_line, &PL);
-                    cskos=sin(Pi*(PL.kat+90)/180);
-                    cskoc=cos(Pi*(PL.kat+90)/180);
-                    Show_Cross_Section(&all_section_graph_data);
+                    parametry_lini((LINIA *)all_section_graph_data[0].element_line, &PL[0]);
+                    cskos=sin(Pi*(PL[0].kat+90)/180);
+                    cskoc=cos(Pi*(PL[0].kat+90)/180);
+                    Show_Cross_Section(); //&all_section_graph_data);
                     komunikat_str_short("", FALSE, TRUE);
                     remove_short_notice();
                 }

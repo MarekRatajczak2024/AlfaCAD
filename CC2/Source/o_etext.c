@@ -41,6 +41,8 @@ extern BOOL TTF_redraw;
 extern T_Font_Header *PTRS__Text_Style [MaxNumberTextStyle] ;
 extern void DF_to_String (char *, char *, double, int) ;
 
+extern BOOL Semaphore;
+
 void  Edit_Text(void  *ad);
 static int  nooop1 (void)
 {return 0;}
@@ -462,6 +464,8 @@ void Find_Text (void)
   BOOL once_again;
   char *p1;
 
+  Semaphore=FALSE;
+
   strcpy(st_source,find_text);
   if (!get_string (&st_source, "", MaxTextLen, 0, 102))
    {
@@ -596,6 +600,7 @@ void Find_and_Change_Text (void)
   BOOL founded;
   char *p1;
 
+  Semaphore=FALSE;
 
   Mark_Texts(0);
   komunikat0 (0) ;
@@ -859,6 +864,8 @@ void Automatic_numbering (void)
   char st_dest_numer[MaxTextLen];
   
   char tekst1[MaxTextLen];
+
+  Semaphore = FALSE;
   
   int st_dest_numer_i, ii, end_char;
   BOOL b_retval;

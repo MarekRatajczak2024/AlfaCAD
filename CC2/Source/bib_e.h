@@ -331,14 +331,19 @@ typedef struct {
     struct tmn *menu;      /*adres opisu pod-menu*/
 } PPOLE;
 
+#ifdef ARM64
 typedef struct tmn {
              int max;                   /*liczba pozycji menu*/
              int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
 			 int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
-	     int xdl;                   /*wymiary menu*/
-	     int xpcz, ypcz;            /*pozycja menu*/
-             unsigned short flags;      //unsigned char /*rozne opcje*/
-	     char border,ink,paper;     /*kolory w menu*/
+		     int xdl;                   /*wymiary menu*/
+		     int xpcz, ypcz;            /*pozycja menu*/
+			 unsigned int flags;         //unsigned short unsigned char       /*rozne opcje*/
+
+			 char border;
+			 char ink;
+	         int paper;     /*kolory w menu*/
+
              int poz,off;               /*pozycja kursora i offset*/
              int foff;                  /*pierwsza pozycja w okienku*/
 			 int xtip;
@@ -351,22 +356,66 @@ typedef struct tmn {
 	   } TMENU;
 
 typedef struct ptmn {
-    int max;                   /*liczba pozycji menu*/
-    int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
-    int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
-    int xdl;                   /*wymiary menu*/
-    int xpcz, ypcz;            /*pozycja menu*/
-    unsigned short flags;         //unsigned char       /*rozne opcje*/
-    char border,ink,paper;     /*kolory w menu*/
-    int poz,off;               /*pozycja kursora i offset*/
-    int foff;                  /*pierwsza pozycja w okienku*/
-    int xtip;
-    int ytip;
-    PPOLE (*pola)[];        /*tablica opisow pozycji w menu*/
-    void  *back;            /*zawartosc tla*/
-    struct tmn  *next;      /*kolejne menu aktywne-lista*/
-    void  *tip_back;  /*zawartosc tla tip*/
+            int max;                   /*liczba pozycji menu*/
+            int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
+            int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
+            int xdl;                   /*wymiary menu*/
+            int xpcz, ypcz;            /*pozycja menu*/
+            unsigned int flags;         //unsigned short unsigned char       /*rozne opcje*/
+            char border;
+            char ink;
+            int paper;     /*kolory w menu*/
+
+            int poz,off;               /*pozycja kursora i offset*/
+            int foff;                  /*pierwsza pozycja w okienku*/
+            int xtip;
+            int ytip;
+            PPOLE (*pola)[];        /*tablica opisow pozycji w menu*/
+            void  *back;            /*zawartosc tla*/
+            struct tmn  *next;      /*kolejne menu aktywne-lista*/
+            void  *tip_back;  /*zawartosc tla tip*/
 } PTMENU;
+
+#else
+typedef struct tmn {
+             int max;                   /*liczba pozycji menu*/
+             int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
+			 int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
+	         int xdl;                   /*wymiary menu*/
+	         int xpcz, ypcz;            /*pozycja menu*/
+
+             unsigned short flags;      //unsigned char /*rozne opcje*/
+	         char border,ink,paper;     /*kolory w menu*/
+             int poz,off;               /*pozycja kursora i offset*/
+             int foff;                  /*pierwsza pozycja w okienku*/
+			 int xtip;
+			 int ytip;
+	     POLE (*pola)[];        /*tablica opisow pozycji w menu*/
+             void  *back;            /*zawartosc tla*/
+             struct tmn  *next;      /*kolejne menu aktywne-lista*/
+			 void  *tip_back;  /*zawartosc tla tip*/
+             //unsigned char flags2;
+	   } TMENU;
+
+typedef struct ptmn {
+            int max;                   /*liczba pozycji menu*/
+            int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
+            int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
+            int xdl;                   /*wymiary menu*/
+            int xpcz, ypcz;            /*pozycja menu*/
+            unsigned short flags;         //unsigned char       /*rozne opcje*/
+            char border,ink,paper;     /*kolory w menu*/
+            int poz,off;               /*pozycja kursora i offset*/
+            int foff;                  /*pierwsza pozycja w okienku*/
+            int xtip;
+            int ytip;
+            PPOLE (*pola)[];        /*tablica opisow pozycji w menu*/
+            void  *back;            /*zawartosc tla*/
+            struct tmn  *next;      /*kolejne menu aktywne-lista*/
+            void  *tip_back;  /*zawartosc tla tip*/
+} PTMENU;
+
+#endif
 
 typedef struct {
 	int x1[MAX_IMAGES];
@@ -2215,7 +2264,11 @@ typedef struct
 
 typedef struct
  { int       x, y ;
+#ifdef ARM64
+long      flag;
+#else
    char      flag;
+#endif
    int       np;
    int       extend;
    int       lmax ;
@@ -2593,7 +2646,7 @@ typedef struct tagRECT {
 #define S4def {Anormalny,Owwielokat,0,0,0,1,0,0, 40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/
 #define S43Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 56, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0,0,0,0,0} /*czworokat 3D*/
 //#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0, 8,0,0,0,0,0,0,0,0} /*Bezier spline 4 points*/
-#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no ultiple, Bezier spline 4 points*/
+#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
 #define Defzmwym {7,7,3,1,.01,10,0,0,1,0,0,0,0 }
 #define Defzvector {3,1,0,0,0,0,0,0,0,0.01,0.01,0.01,0.001}
 #define Defsel {0,0,0,0,0,0,0,0,7}  //5
@@ -3211,5 +3264,6 @@ typedef struct
 DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];
 */
 
-
-//#pragma pack()
+#ifdef ARM64
+#pragma pack(8)
+#endif

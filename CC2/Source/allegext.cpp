@@ -184,6 +184,7 @@ static int attr_x=0,attr_y=0;
 static BOOL is_hidden=FALSE;
 
 extern BOOL RETINA;
+BOOL wayland=FALSE;
 
 int hidden_dy=3000;
 
@@ -289,14 +290,16 @@ static AWIdnd dnd;
 
     Window *winlist (Display *disp, unsigned long *len);
     char *winame (Display *disp, Window win);
-    int getprop (Display *disp, char *name, Window win, Window root_window);
+    int getprop (Display *disp, char *name, Window win, Window root_window, XWindowAttributes &attr, int *is_hidden);
     char *atomtype (Atom x);
 #else
-	extern int send_AppleScript(pid_t pid, int x, int y);
+	extern int send_AppleScript(pid_t pid, int x, int y, BOOL relative);
 #endif
 #endif
 
     void Check_ConfigureNotify(void);
+
+    BOOL ConfigureNotifySemaphore=TRUE;
 
     int GoRegRedraw(void(*ptr)(void));
 	int TestRedraw(void);
@@ -2916,7 +2919,8 @@ int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width,
         *win_height = h;  //client
 
 #ifdef ALLEGRO5
-        *y_win_orig+= X11_SCREEN_SHIFT;
+    if (!wayland)
+            *y_win_orig+= X11_SCREEN_SHIFT;
 #endif
 #else
         ret_ref=al_get_window_origin_and_size(x_win_orig, y_win_orig, win_width, win_height);
@@ -3278,16 +3282,19 @@ void Check_ConfigureNotify(void)
         edit_text_flag=0;
     }
 
+
+if (ConfigureNotifySemaphore) {
 #ifdef ALLEGRO5
     display = XOpenDisplay(0);
-    focus=get_x_window_id();
+    focus = get_x_window_id();
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);  //_xwin.display, _xwin.window
-    ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);  //_xwin.display
+    ret = XGetWindowAttributes(display, toplevel_parent_of_focus, &attr);  //_xwin.display
     XCloseDisplay(display);
 #else
     toplevel_parent_of_focus = get_toplevel_parent(_xwin.display, _xwin.window);
     ret = XGetWindowAttributes(_xwin.display,  toplevel_parent_of_focus, &attr);
 #endif
+}
 
     if ((attr.x!=attr_x) || (attr.y!=attr_y)) {
         printf("origin %d %d\n",attr.x-attr_x,attr.y-attr_y);
@@ -3416,7 +3423,7 @@ void Check_ConfigureNotify(void)
 				//version with ApplicationServices by Allegro-Legacy
 				set_osx_window_position(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1), TRUE);
 			    //version with Apple script
-				////ret=send_AppleScript(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1));
+				////ret=send_AppleScript(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1), TRUE);
 
 				attr_x=attr.x;
 				attr_y=attr.y;
@@ -3675,6 +3682,9 @@ int set_window_origin(int x_win_orig, int y_win_orig)
     int revert;
     int ret;
 
+    char params1[128];
+    char params2[128];
+
     XWindowAttributes attr;
 
     display = XOpenDisplay(0);
@@ -3683,24 +3693,75 @@ int set_window_origin(int x_win_orig, int y_win_orig)
     //focus=root_window;
  #ifndef ALLEGRO5
     focus=_xwin.window;
- #else
-    focus=get_x_window_id();
- #endif
 
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
 
     ret = XGetWindowAttributes(display,  toplevel_parent_of_focus, &attr);
 
-    ret = XMoveWindow(display,toplevel_parent_of_focus, x_win_orig,  y_win_orig);
+    ////this doesn't work since X.Org version: 21.1.18
+    ////ret = XMoveWindow(display,toplevel_parent_of_focus, x_win_orig,  y_win_orig);
+    ////XFlush(display); // or XSync(display, False);
+
+    Window root, parent, *children = NULL;
+    unsigned int num_children;
+
+    if(!XQueryTree(display, focus, &root, &parent, &children, &num_children))
+        parent = focus-2;
+
+    if (children)
+        XFree((char *)children);
+
+    ////iot actually works since X.Org version: 21.1.18 but with parent not with focuse
+    ret = XMoveWindow(display,parent, x_win_orig + 1,  y_win_orig + 1 - (wayland==1 ? X11_SCREEN_SHIFT : 0));   //added 1 due to frame of 1 pxl each side
+    XFlush(display); // or XSync(display, False);
 
     XCloseDisplay(display);
 
- #ifdef ALLEGRO5
+    ////////////////////////
+    my_sleep(10);
+
+    /*  ////Alternative using wmctrl
+
+    if ((attr.x!=x_win_orig) || (attr.y!=y_win_orig)) {
+        printf("origin %d %d\n",attr.x-attr_x,attr.y-attr_y);
+
+        sprintf(params1, "%d", parent);  //recuded by 2 to catch proper window  focus-2
+        sprintf(params2, "0,%d,%d,-1,-1", x_win_orig-attr.x, y_win_orig-attr.y);  //added 1 to mode to make space for frame
+        char *args[] = {
+                "wmctrl",
+                //(char*)"-r",
+                //params1,
+                (char*)"-ir",
+                params1,
+                (char*)"-e",
+                params2,
+                NULL
+        };
+        ret=wmctrl(5, args);
+
+        my_sleep(100);
+
+        attr.x=x_win_orig;
+        attr.y=y_win_orig;
+
+        attr_x=attr.x;
+        attr_y=attr.y;
+    }
+     */
+    /////////////////////////
+ #else
+    focus=get_x_window_id();
     set_window_position(x_win_orig, y_win_orig);
  #endif
 #else
     pid_t pid=al_getpid();
+#ifdef ARM64
+	send_AppleScript(pid, x_win_orig/(RETINA+1), y_win_orig/(RETINA+1), FALSE);
+#else
 	set_osx_window_position(pid, x_win_orig/(RETINA+1), y_win_orig/(RETINA+1), FALSE);
+#endif
+
+
 	//set_window_origin(x_win_orig, y_win_orig);
 #endif
 #endif
@@ -4294,6 +4355,15 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
     char *name;
     unsigned long len;
     int ret;
+    XWindowAttributes attr;
+    int w_is_hidden;
+
+    typedef struct CrtRECT
+    {
+        int		    x, y;
+        unsigned int    width, height;
+    } CrtRECT;
+    CrtRECT crt_0;
 
     if (!(display = XOpenDisplay(0))) { return ERR_COULDNT_OPEN_X_DISPLAY; }
 
@@ -4318,7 +4388,8 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
             if ((j==mon) || (mon<0))
             {
                 XRRCrtcInfo *crt_info = XRRGetCrtcInfo(display, screenr, out_info->crtc);
-                printf("%s\t%dx%d+%d+%d\n", out_info->name, crt_info->width, crt_info->height - X11_SCREEN_SHIFT, crt_info->x, crt_info->y);
+                //printf("%s\t%dx%d+%d+%d\n", out_info->name, crt_info->width, crt_info->height - X11_SCREEN_SHIFT, crt_info->x, crt_info->y);
+                printf("%s\t<%d,%d><%d,%d>\n", out_info->name, crt_info->x, crt_info->y, crt_info->width, crt_info->height);
                 if (crt_info->x < ret_left_x_)
                     ret_left_x_ = crt_info->x;
                 if ((crt_info->x + crt_info->width) > ret_right_x_)
@@ -4327,6 +4398,13 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
                     ret_top_y_ = crt_info->y;
                 if ((crt_info->y + crt_info->height - X11_SCREEN_SHIFT) > ret_bottom_y_)
                     ret_bottom_y_ = (crt_info->y + crt_info->height - X11_SCREEN_SHIFT);
+                if (mon==0)
+                {
+                    crt_0.x=crt_info->x;
+                    crt_0.y=crt_info->y;
+                    crt_0.width=crt_info->width;
+                    crt_0.height=crt_info->height;
+                }
                 XRRFreeCrtcInfo(crt_info);
             }
             j++;
@@ -4339,9 +4417,47 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
 
     for (i=0;i<(int)len;i++) {
         name = winame(display,list[i]);
-        printf("-->%s<--\n",name);
-
-        ret = getprop (display, name, list[i], window);
+        ret = XGetWindowAttributes(display,  list[i], &attr);
+        ret = getprop (display, name, list[i], window, attr, &w_is_hidden);
+        printf("-->%s<--   <%d,%d><%d,%d>\n",name,attr.x,attr.y,attr.x+attr.width,attr.y+attr.height);
+        if (mon==0)  //default
+        {
+            if  ((!w_is_hidden) && (
+                        (strcmp(name,"plasmashell")==0) ||
+                        (strcmp(name,"gnome-shell")==0) ||
+                        (strcmp(name,"xfce4-panel")==0) ||
+                        (strcmp(name,"lxpanel")==0) ||
+                        (strcmp(name,"lxqt-panel")==0) ||
+                        (strcmp(name,"mate-panel")==0) ||
+                        (strcmp(name,"cinnamon")==0) ||
+                        (strcmp(name,"i3bar")==0) ||
+                        (strcmp(name,"tint2")==0) ||
+                        (strcmp(name,"lxpanel")==0) ||
+                        (strcmp(name,"polybar")==0) ||
+                        (strcmp(name,"lemonbar")==0) ||
+                        (strcmp(name,"dwmblocks")==0) ))
+            {
+                //// DisplayPort-0	    <0,0><2560x1440>
+                ////-->plasmashell<--   <0,0><3440,1440>
+                ////-->plasmashell<--   <0,0><2560,44>
+                ////-->plasmashell<--   <0,0><2560,1440>
+                if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
+                {
+                    ////if at the bottom
+                    if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y>crt_0.y) && ((attr.y+attr.height)==(crt_0.y+crt_0.height)))
+                        ret_bottom_y_-=attr.height;
+                    else ////if at the top
+                    if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y==crt_0.y) && ((attr.y+attr.height)<(crt_0.y+crt_0.height)))
+                        ret_top_y_+=attr.height;
+                    else ////if on the left
+                    if ((attr.x==crt_0.x) && ((attr.x+attr.width)<(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
+                        ret_left_x_+=attr.width;
+                    else ////if on the right
+                    if ((attr.x>crt_0.x) && ((attr.x+attr.width)==(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
+                        ret_right_x_-=attr.width;
+                }
+            }
+        }
         free(name);
     }
 
@@ -4356,7 +4472,6 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
     *ret_bottom_y = ret_bottom_y_;
 
     //printf(">>> %d, %d, %d, %d\n", ret_left_x_, ret_top_y_, ret_right_x_, ret_bottom_y_);
-
     return 0;
 }
 
@@ -4392,20 +4507,54 @@ char *winame (Display *disp, Window win) {
     return (char*)list;
 }
 
-int getprop (Display *disp, char *name, Window win, Window root_window) {
+int getprop (Display *disp, char *name, Window win, Window root_window, XWindowAttributes &attr, int *is_hidden) {
     Atom prop = XInternAtom(disp,name,False), type;
     int form, r = 0;
     unsigned long len, remain;
     unsigned char *list;
     char *tname;
-    XWindowAttributes attr;
+    XWindowAttributes attr0;
     int ret;
     int x, y;
     Window child;
+    Atom actual_type;
+    int actual_format;
+    unsigned long num_items;
+    unsigned long bytes_after;
+    unsigned char *prop_data = NULL;
+
 
     ret = XTranslateCoordinates( disp, win, root_window, 0, 0, &x, &y, &child);
-    ret = XGetWindowAttributes(disp,  win, &attr);
+    ret = XGetWindowAttributes(disp,  win, &attr0);
+    attr.x=x - attr0.x;
+    attr.y=y - attr0.y;
+    attr.width=attr0.width;
+    attr.height=attr0.height;
+
     ////printf("%dx%d+%d+%d\n", attr.width, attr.height, x - attr.x, y - attr.y);
+
+    Atom wm_state_atom = XInternAtom(disp, "_NET_WM_STATE", False);
+    Atom wm_hidden_atom = XInternAtom(disp, "_NET_WM_STATE_HIDDEN", False);
+
+    *is_hidden = 0;
+
+    if (XGetWindowProperty(disp, win, wm_state_atom, 0L, ~0L, False, XA_ATOM,
+                           &actual_type, &actual_format, &num_items, &bytes_after,
+                           &prop_data) == Success && prop_data != NULL)
+    {
+        Atom *states = (Atom *)prop_data;
+        for (unsigned long i = 0; i < num_items; ++i) {
+            if (states[i] == wm_hidden_atom) {
+                *is_hidden = 1;
+                break;
+            }
+        }
+        XFree(prop_data);
+
+        ////if (is_hidden) printf("Window is hidden (minimized).\n");
+        ////else printf("Window is not hidden.\n");
+    }
+    ////else fprintf(stderr, "Failed to get _NET_WM_STATE property or no data.\n");
 
     return r;
 }
@@ -4560,17 +4709,26 @@ void change_mode_gr(DRIVER_STRUCT *drv)
     dx_new0 = ret_right_x0 - ret_left_x0;
     dy_new0 = ret_bottom_y0 - ret_top_y0; // - dh + dw / 2 - e_h;
 
+    dx_new -= 2;  //due to the frame
+    dy_new -=1;
+
 #endif
    if (GFX_WIN==1) 
    {
 	   ret1=Load_Last_Window_Settings(&X_WIN_ORIG_, &Y_WIN_ORIG_, &WIN_WIDTH_, &WIN_HEIGHT_);
        if (ret1)
 	   {
+           WIN_WIDTH_-=2;  //It's necessary due to 1 pxl frame each side
+           WIN_HEIGHT_-=1;
+
 		   drv->gfx_width=WIN_WIDTH_;
 		   drv->gfx_height=WIN_HEIGHT_;
-	   }
+           //dx_new = X_WIN_ORIG_;
+           //dy_new = Y_WIN_ORIG_;
+       }
        else
        {
+           /*
            X_WIN_ORIG_ = x0_new0;
            Y_WIN_ORIG_ = y0_new0;
            WIN_WIDTH_ = dx_new0;
@@ -4580,6 +4738,18 @@ void change_mode_gr(DRIVER_STRUCT *drv)
            dy_new=dy_new0;
            x0_new=x0_new0;
            y0_new=y0_new0;
+            */
+
+           ////this is for all monitors
+           X_WIN_ORIG_ = x0_new;
+           Y_WIN_ORIG_ = y0_new;
+           WIN_WIDTH_ = dx_new;
+           WIN_HEIGHT_ = dy_new;
+
+           dx_new=dx_new;
+           dy_new=dy_new;
+           x0_new=x0_new;
+           y0_new=y0_new;
        }
    }
    else
@@ -5587,7 +5757,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     if ((!curl) || (!unzip) || (!sed)) {
                         char tools_to_install[72]="";
                         tools_ok = FALSE;
-                        sprintf(tools_to_install, "%s %s %s %s", ((curl == 0) ? "curl" : ""),
+                        snprintf(tools_to_install, sizeof(tools_to_install), "%s %s %s %s", ((curl == 0) ? "curl" : ""),
                                 ((unzip == 0) ? "unzip" : ""), ((sed == 0) ? "sed" : ""), _TOOLS_TO_INSTALL_);
                         ret = ask_question(1, (char *) _No_, (char *) _Yes_, "Upgrade", tools_to_install, 12,
                                            (char *) _INSTALL_TOOLS_, 11, 1, 203);
@@ -5692,7 +5862,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                 {
                     //this should be done when image on the screen
 #ifdef LINUX
-                    ret = My_GetFiles("ads", &n_list, "\\*.png", "\\*.jpg", NULL, NULL, TRUE);
+                    ret = My_GetFiles((char*)"ads", &n_list, (char*)"\\*.png", (char*)"\\*.jpg", NULL, NULL, TRUE);
 #endif
 #ifndef LINUX
                     ret = My_GetFiles((char*)"ads", &n_list, (char*)"\\*.png", (char*)"\\*.jpg", NULL, NULL, -1);
@@ -5724,7 +5894,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     runcode = SystemSilent("./adslist.sh", params);
 #else
                 	//sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/ads\" --connect-timeout 5 -m 5 --user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out");
-                	sprintf(params, "curl %s --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out", cloud_ads_url, cloud_user, cloud_password);
+                	snprintf(params, sizeof(params), "curl %s --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out", cloud_ads_url, cloud_user, cloud_password);
 
                 	printf("%s\n", params);
                 	//runcode = RunSilent("curl", params);
@@ -5733,7 +5903,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                 	{
                         char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
                 		char file_prefix[MaxTextLen]="";
-                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_ads0);
+                		snprintf(file_prefix, sizeof(file_prefix), "/remote.php/webdav/%s/", cloud_ads0);
 
                 		ret=extract_files_from_stream((char*)"list.out", (char*)"list.out", markers, file_prefix);
                 	}
@@ -5831,7 +6001,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                 for (int i = 0; i < n_list; i++) {
                                     if (strcmp(strarray[i], row_file_name) == 0) //file exists
                                     {
-                                        sprintf(ad_name, "ads/%s", strarray[i]);
+                                        snprintf(ad_name, sizeof(ad_name), "ads/%s", strarray[i]);
                                         stat(ad_name, &file_info);
                                         if (file_info.st_size == row_size) {
                                             go_download = FALSE;
@@ -5844,7 +6014,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     flip_full_screen(second_screen);
                                     extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name);
 
-                                    sprintf(params, "--connect-timeout 5 -m 20 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
+                                    snprintf(params, sizeof(params), "--connect-timeout 5 -m 20 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
                                             cloud_user, cloud_password, cloud_ads0_url, row_file, cloud_ads0,
                                             row_file_name);
 #ifdef LINUX
@@ -5873,7 +6043,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                         }
                                     }
                                     if (j == strcount1) {
-                                        sprintf(row_file_name, "ads/%s", strarray[i]);
+                                        snprintf(row_file_name, sizeof(row_file_name), "ads/%s", strarray[i]);
                                         unlink(row_file_name);
                                     }
                                 }
@@ -5914,8 +6084,8 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #if defined(__x86_64__) || defined(_M_X64)
     				// Code for x64 architecture
     				printf("x64 Architecture\n");
-                	sprintf(ad_name, "AlfaCAD3%sx.app/Contents/MacOS/AlfaCAD3%sx", lang_sufix[language],lang_sufix[language]);
-                	sprintf(ad_name_zip, "AlfaCAD3%sx.zip", lang_sufix[language]);
+                	snprintf(ad_name, sizeof(ad_name), "AlfaCAD3%sx.app/Contents/MacOS/AlfaCAD3%sx", lang_sufix[language],lang_sufix[language]);
+                	snprintf(ad_name_zip, sizeof(ad_name_zip), "AlfaCAD3%sx.zip", lang_sufix[language]);
 #elif defined(__aarch64__) || defined(_M_ARM64)
     				// Code for arm64 architecture
 					printf("ARM64 Architecture\n");
@@ -5949,7 +6119,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
                     //downloading zip list
                     ////////////////////////////////////////
-                    if (my_file_exists("upgdslist.out"))
+                    if (my_file_exists((char*)"upgdslist.out"))
                         unlink("upgdslist.out");
                     flip_full_screen(second_screen);
                     extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 3, "");
@@ -5977,7 +6147,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     runcode = SystemSilent("./upgdslist.sh", params);
 #else
 
-                	sprintf(params, "curl --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" %s/remote.php/webdav/%s > upgdslist.out", cloud_user, cloud_password, cloud_share0_url, cloud_upgrade0);
+                	snprintf(params, sizeof(params), "curl --connect-timeout 5 --max-time 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" %s/remote.php/webdav/%s > upgdslist.out", cloud_user, cloud_password, cloud_share0_url, cloud_upgrade0);
 
                 	printf("%s\n", params);
                 	//runcode = RunSilent("curl", params);
@@ -5986,7 +6156,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                 	{
                 		char *markers[]={(char*)"<d:href>",(char*)"</d:href>",(char*)"<d:getlastmodified>",(char*)"</d:getlastmodified>",(char*)"<d:getcontentlength>",(char*)"</d:getcontentlength>",(char*)"<d:getcontenttype>",(char*)"</d:getcontenttype>"};
                 		char file_prefix[MaxTextLen]="";
-                		sprintf(file_prefix, "/remote.php/webdav/%s/", cloud_upgrade0);
+                		snprintf(file_prefix, sizeof(file_prefix), "/remote.php/webdav/%s/", cloud_upgrade0);
 
                 		ret=extract_files_from_stream((char*)"upgdslist.out", (char*)"upgdslist.out", markers, file_prefix);
                 	}
@@ -6123,7 +6293,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             was_download_upgds = TRUE;
                             flip_full_screen(second_screen);
                             extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name_upgds);
-                            sprintf(params, "--connect-timeout 5 -m 120 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
+                            snprintf(params, sizeof(params), "--connect-timeout 5 -m 120 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
                                     cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds, cloud_upgrade0,
                                     row_file_name_upgds);
 #ifdef LINUX
@@ -6134,8 +6304,58 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #endif
                             //upgrading
 #ifdef LINUX
+#ifndef MACOS
                             sprintf(params, "-o upgds/%s", row_file_name_upgds);
                             runcode = (int)SystemSilent((char*)"unzip", params);
+
+                        	sprintf(params, "+x %s", ad_name);
+                        	runcode = (int)SystemSilent((char*)"chmod", params);
+#else
+                        	char *cwd;
+							cwd = getcwd(NULL, 0);
+						    if (cwd != NULL)
+						    {
+								printf("Current working directory: %s\n", cwd);
+
+						    	runcode=mkdir("/tmp/ALFACAD3XXx", S_IWUSR);
+						    	snprintf(params,sizeof(params), "chmod 700 /tmp/ALFACAD3XXx");
+						    	runcode = (int)SystemSilentS(params);
+
+						    	if (runcode==0)
+						    		{
+						    			snprintf(params, sizeof(params), "-o upgds/%s -d %s", row_file_name_upgds, "/tmp/ALFACAD3XXx");
+						    			runcode = (int)SystemSilent((char*)"unzip", params);
+
+						    			// sudo chown -R $USER ~/tmp/ALFACAD3XXx
+						    			snprintf(params, sizeof(params), "chown -R $USER /tmp/ALFACAD3XXx");  //sudo
+						    			runcode = (int)SystemSilentS(params);
+						    			if (runcode==0)
+						    			{
+						    				snprintf(params, sizeof(params), "chgrp -R staff /tmp/ALFACAD3XXx");  //sudo
+						    				runcode = (int)SystemSilentS(params);
+						    				if (runcode==0)
+						    					{
+						    					// sudo chmod -R go-w ~/tmp/ALFACAD3XXx
+						    					snprintf(params,sizeof(params), "chmod -R 755 /tmp/ALFACAD3XXx");  //sudo
+						    					runcode = (int)SystemSilentS(params);
+
+						    					if (runcode==0)
+						    					{
+						    						// rsync -av /tmp/ALFACAD3XXx/ ~/ALFACAD3
+						    						snprintf(params,sizeof(params), "rsync -av /tmp/ALFACAD3XXx/ %s",cwd);
+						    						runcode = (int)SystemSilentS(params);
+						    					}
+						    				}
+						    			}
+
+						    			snprintf(params, sizeof(params), "-r /tmp/ALFACAD3XXx");
+						    			runcode = (int)SystemSilent((char*)"rm", params);
+						    		}
+
+						      free(cwd);
+						    }
+
+#endif
 #endif
 #ifndef LINUX
                             //sprintf(params, "-xf upgds/%s > abc.log", row_file_name_upgds);
@@ -7160,18 +7380,44 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
     ret = get_monitor_dims(&ret_left_x, &ret_right_x, &ret_top_y, &ret_bottom_y, -1);
 
 #ifdef LINUX
-    dx_new = w_width;
-    dy_new = w_height - X11_SCREEN_SHIFT;
+    //dx_new = w_width;
+    //dy_new = w_height - X11_SCREEN_SHIFT;
 
 	x0_new = max(w_x0, ret_left_x);
 	y0_new = max(w_y0, ret_top_y);
 
 	dx_new = w_width;
-	dy_new = w_height - X11_SCREEN_SHIFT;
+#ifdef MACOS //ARM64
+	dy_new = w_height;
+#else
+
+
+    /*
+    char *session_type = getenv("XDG_SESSION_TYPE");
+    //BOOL wayland=FALSE;
+
+    if (session_type != NULL) {
+        if (strcmp(session_type, "wayland") == 0) {
+            printf("Running under Wayland\n");
+            wayland=TRUE;
+        } else if (strcmp(session_type, "x11") == 0) {
+            printf("Running under Xorg (X11)\n");
+        } else {
+            printf("Unknown session type: %s\n", session_type);
+        }
+    } else {
+        printf("XDG_SESSION_TYPE environment variable not set. Cannot determine session type.\n");
+    }
+     */
+
+    if (wayland)  dy_new = w_height;
+    else dy_new = w_height - X11_SCREEN_SHIFT;
+#endif
 
     set_origins(x0_new, y0_new);
 	set_resized_window(dx_new, dy_new);
-    ret = set_window_origin(x0_new, y0_new);
+	my_sleep(10);
+    ret = set_window_origin(x0_new, y0_new);  ////arm64
 #else
     dx_new = w_width;
     dy_new = w_height; // -X11_SCREEN_SHIFT;

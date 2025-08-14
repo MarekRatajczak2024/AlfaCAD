@@ -1203,6 +1203,8 @@ char *frame3dd[]={
  /*204*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisującego macierz 'podwójnych'",
  /*205*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisującego symetryczną macierz 'zmiennoprzecinkową'",
  /*206*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisując symetryczną macierz 'podwójną'",
+ /*207*/ u8"błąd testu równowagi",
+ /*208*/ u8"błąd podczas otwierania pliku zapisu błędów .err",
 };
 
 #define _ERROR_FREE_COMPLETION_ u8"zakończenie bez błędów"
@@ -1216,5 +1218,12 @@ char *frame3dd[]={
 #ifdef __O_ANIMATE_DYN__
 
 #define _ANIMATE_ u8"ESC: exit, BackSpace: previous, any other: next"
+
+#endif
+
+#ifdef __O_SEL__
+
+#define _FIRST_  "PIERWSZY"
+#define _SECOND_ "DRUGI"
 
 #endif
