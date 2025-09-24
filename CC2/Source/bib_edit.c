@@ -261,6 +261,11 @@ static int read_estr(void)
   justowanie=TextG.justowanie;
   underline=TextG.underline;
 
+  if (et[np]->st==NULL) {
+      Internal_Error(__LINE__, __FILE__);
+      return 0;
+  }
+
   for (ptr = et[np]->st; ptr [0] == ' '; ptr++) ;
   strcpy (buf, ptr) ;
 

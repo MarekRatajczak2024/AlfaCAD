@@ -61,8 +61,8 @@ extern int Open_TracePatterns(void);
 extern int przeciecieLL_tt (double *x, double *y, void *adr, void *adr1, double *t1, double *t2);
 extern void set_np(int np0);
 
-extern int Pline_Arc (double df_xbeg, double df_ybeg);
-extern int Pline_Line (double df_xbeg, double df_ybeg);
+extern int Pline_Arc (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode);
+extern int Pline_Line (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode);
 extern int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_strace_line, BOOL b_line, int d_line);
 extern void Usun_Object (void *ad, BOOL b_simple);
 extern void type_arc_pl (int ev_nr);
@@ -328,9 +328,9 @@ static void width_trace (void)
     return ;
   }
   d = buf_ret [0] ;
-  if (d <= 0)
+  if (d < 0)  //<=  width of the trace can be actually 0
   {
-    ErrList (30) ;
+    ErrList (216) ;
     return ;
   }
   s_trace.width = jednostkiOb (d) ;
@@ -398,10 +398,9 @@ static int edit_width_trace (BOOL b_graph_value)
   char sk [MaxTextLen] = "", *str ;
 
   b_graph_value = b_graph_value ;
-  if (e_trace_width.val_no < 1 ||
-      fabs (e_trace_width.values [0]) <= 0)
+  if (e_trace_width.val_no < 1 || e_trace_width.values [0] < 0)   //<=  width of the trace can be actually 0
   {
-    ErrList (30) ;
+    ErrList (216) ;
     return 0 ;
   }
   s_trace.width = jednostkiOb (e_trace_width.values [0]) ;
@@ -759,8 +758,8 @@ static void set_next_solid (BOOL b_solid, BOOL b_end)
     df_sx1 = 0 ;
     df_sx2 = 0 ;
     
-    df_sy1 = (s_trace.width1 / 2) - s_trace.axis;
-    df_sy2 = (-s_trace.width1 / 2) - s_trace.axis;
+    df_sy1 = (s_trace.width1 / 2) - s_trace.axis1;   //s_trace.axis
+    df_sy2 = (-s_trace.width1 / 2) - s_trace.axis1;  //s_trace.axis
       
     obrd (si_r, co_r, df_sx1, df_sy1, &df_sx1, &df_sy1) ;
     obrd (si_r, co_r, df_sx2, df_sy2, &df_sx2, &df_sy2) ;
@@ -3273,12 +3272,27 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             break;
         case ID_CLOSE:  //6
             CUR_OFF(X, Y);
-            if (add_trace_line_close())
+            if (pline_mode==PL_MODE_LINE)
             {
-                block_added = FALSE;
-                Tbreak = 0;
-                komunikat_str_short("", FALSE, TRUE);
-                remove_short_notice();
+                if (add_trace_line_close())
+                {
+                    block_added = FALSE;
+                    Tbreak = 0;
+                    komunikat_str_short("", FALSE, TRUE);
+                    remove_short_notice();
+                }
+            }
+            else
+            {
+                /*
+                if (add_trace_arc_close())   //TO DO
+                 {
+                    block_added = FALSE;
+                    Tbreak = 0;
+                    komunikat_str_short("", FALSE, TRUE);
+                    remove_short_notice();
+                }
+                 */
             }
             CUR_ON(X, Y);
             break;

@@ -1645,6 +1645,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             luk_place (&l, xmin, ymin, xmax, ymax) ;
             break;
         case 10:
+        case 17:
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->x1<V->x2) n=1;
@@ -3252,9 +3253,9 @@ static void uaktualnij_pola_mp(void)
 /*--------------------------------*/
 {
   int i, i_menu_color, i_line_type ;
-  char st[6], sk[48], *sk1;
+  char st[8], sk[48], *sk1;
   char sz_temp [MaxTextLen + 1] ;
-  static char stY [2]=YES, stN [2]=NO;
+  static char stY [8]=YES, stN [8]=NO;
   double d ;
 
   i_line_type = (Layers[Current_Layer].line_type & 31);

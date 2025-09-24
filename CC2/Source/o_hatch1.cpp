@@ -1127,6 +1127,7 @@ BOOL hatch_proc_test (long_long l_offb0, long_long l_offe0,
     return FALSE;
   }
   sort_nodes_table (l_offb, l_offe) ;
+
   if (FALSE == Test_areas (l_offb, l_offe,
 			   df_pointx, df_pointy,
 			   i__objects_no,

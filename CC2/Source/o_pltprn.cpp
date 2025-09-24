@@ -77,6 +77,7 @@ extern unsigned char *GetBMPpallete(void);
 extern void Draw_Solid_Pattern(int numpoints, double* xy, char* s_pattern, int t_printer, int bw, int grey, float origin_x, float origin_y);
 extern void Draw_Solidarc_Pattern(int numpoints, double* xy, char* s_pattern, int t_printer, int bw, int grey, float origin_x, float origin_y);
 extern BOOL Draw_Line_To_Prn_Pattern(double x1, double y1, double x2, double y2);
+extern void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print);
 
 
 extern double get_matrix_head_xp(void);
@@ -95,6 +96,7 @@ extern void line_prn_translucent(double x01, double y01, double x02, double y02,
 extern int get_Allegro_color(int kolor256, BOOL bw, BOOL grey);
 
 extern void jednostki_to_prn_xy(int numpoints, double *xy, int* pxy);
+extern void jednostki_to_prn_xy_l(int numpoints, double *xy, long* pxy);
 extern BOOL draw_lined_solid_to_drive(double* xy);
 
 extern void line_prn_trans(double x01, double y01, double x02, double y02, int kolor256, double text_line_width, BOOL bw, BOOL grey);
@@ -117,7 +119,12 @@ extern int Solid_Line_Width (int solid_width_style);
 
 extern "C" {
 
-	extern void getimage(int left, int top, int right, int bottom, BITMAP* bitmap);
+    extern void Clip_Solid (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
+    extern BOOL Clip_Solid0 (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
+    extern void clipPolygonWithColors(long *xy, unsigned int *colors, int n_vertices, int xmin, int ymin, int xmax, int ymax, int *new_xy, unsigned int *new_colors, int *outCount);
+
+
+    extern void getimage(int left, int top, int right, int bottom, BITMAP* bitmap);
 	
 	void oknoS_(double x1, double y1, double x2, double y2);
 	BOOL draw_rectangle_to_drive(double* xy, double dist, int kolor0, BOOL bw, BOOL grey, int translucency, int colorB);
@@ -252,6 +259,7 @@ extern "C" {
     extern double rotation_magnitude; //units per mm  default 0.001 rad desplacement per 1 mm radius on drawing paper
     extern void create_solid_on_line (LINIA *L, WIELOKAT *s, double width1, double width2, double axis);
     extern double measure_vector (float x1, float y1, float x2, float y2, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
+    extern double measure_arcvector (LUK *ptrs_arc, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
     extern point intersectionPoint(point a1,point a2,point b1,point b2);
     extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
 
@@ -1521,6 +1529,310 @@ BOOL draw_polygon_to_drive_pattern(int numpoints, double* xy0)
     return TRUE;
 }
 
+
+BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print)
+{
+    int kolorA, kolorB;
+
+    //T_PixelTVal lpxy[256];
+    long pxy[256], pxy1[256]; //, pxy2[256];
+    double ppxy[256];
+    int found;
+    BOOL ignore_p;
+    int i;
+    WIELOKAT w = S4def;
+    BOOL ret;
+    V3D_f v_f[8];
+    GRADIENT8 gradient8;
+    int num_wy, num_we ;
+    int *poly_wy;
+    int wl, wg, wp, wd;
+    int ik;
+#define MaxNumPolygonPoints 200
+
+    if (print_inversion == TRUE)
+    {
+        if (print_rotation == TRUE)
+        {
+
+            for (i=0; i<numpoints; i+=2)
+            {
+                ppxy[i] = FormatX_S - xy[i];
+                ppxy[i+1] = FormatY_S - xy[i+1];
+            }
+
+        }
+        else
+        {
+            for (i=0; i<numpoints; i+=2)
+            {
+                ppxy[i] = FormatX_S - xy[i] + FormatX_S0;
+                ppxy[i+1] = FormatY_S + FormatY_S0 - xy[i+1];
+            }
+
+        }
+    }
+    else
+    {
+        if (print_rotation == TRUE)
+        {
+            for (i=0; i<numpoints; i+=2)
+            {
+                ppxy[i] = xy[i];
+                ppxy[i+1] = xy[i+1];
+            }
+
+        }
+        else
+        {
+            for (i=0; i<numpoints; i+=2)
+            {
+                ppxy[i] = xy[i];
+                ppxy[i+1] = xy[i+1];
+            }
+
+        }
+    }
+
+    jednostki_to_prn_xy_l(numpoints, ppxy, pxy);
+
+    if (NULL == (poly_wy = (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(poly_wy[0]))))
+    {
+        return TRUE;
+    }
+
+    if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT));
+
+    for (int k=0; k<numpoints; k++)
+    {
+       poly_wy[k]=(int)pxy[k];
+    }
+    num_wy=numpoints/2;
+
+    //if (FALSE == Clip_Solid0 (numpoints/2, pxy, &num_wy, poly_wy))
+    //{
+        /*
+        int ik=0;
+        for (int k=0; k<num_wy; k++)
+        {
+            if (pxy1[k] != poly_wy[k])
+                ik++;
+        }
+        num_we=num_wy;
+         */
+
+        if (gradient==NULL)
+            Clip_Solid (numpoints/2, pxy, &num_wy, poly_wy) ;
+        else
+        {
+            //Get_View_Coord(&wl, &wg, &wp, &wd);
+            wl=allegro_prn_bmp->cl;
+            wg=allegro_prn_bmp->ct;
+            wp=allegro_prn_bmp->cr;
+            wd=allegro_prn_bmp->cb;
+
+            clipPolygonWithColors(pxy, (unsigned int *) gradient, numpoints/2, wl, wg, wp, wd, poly_wy,(unsigned int *) &gradient8, &num_wy);
+        }
+    //}
+
+    //kolorA = 0xFFFFFF;
+    //kolorB = 0xFFFFFFFF;
+    //kolorA = 0x000000;
+    //kolorB = 0x000000FF;
+    //my_soft_polygon(allegro_prn_bmp, numpoints/2, pxy, kolorA, 255, kolorB);
+
+    v_f[0].x=(float)poly_wy[0];
+    v_f[0].y=(float)poly_wy[1];
+    v_f[0].z=0.0f;
+    v_f[0].u=0;
+    v_f[0].v=0;
+    v_f[0].c=gradient8.c1;
+
+    v_f[1].x=(float)poly_wy[2];
+    v_f[1].y=(float)poly_wy[3];
+    v_f[1].z=0.0f;  //0
+    v_f[1].u=0;
+    v_f[1].v=0;
+    v_f[1].c=gradient8.c2;
+
+    v_f[2].x=(float)poly_wy[4];
+    v_f[2].y=(float)poly_wy[5];
+    v_f[2].z=0.0f;
+    v_f[2].u=0;
+    v_f[2].v=0;
+    v_f[2].c=gradient8.c3;
+
+    if (num_wy>3)
+    {
+        v_f[3].x = (float)poly_wy[6];
+        v_f[3].y = (float)poly_wy[7];
+        v_f[3].z = 0.0f;  //0
+        v_f[3].u = 0;
+        v_f[3].v = 0;
+        v_f[3].c = gradient8.c4;
+
+        if (num_wy>4)
+        {
+            v_f[4].x = (float)poly_wy[8];
+            v_f[4].y = (float)poly_wy[9];
+            v_f[4].z = 0.0f;  //0
+            v_f[4].u = 0;
+            v_f[4].v = 0;
+            v_f[4].c = gradient8.c5;
+
+            if (num_wy>5)
+            {
+                v_f[5].x = (float)poly_wy[10];
+                v_f[5].y = (float)poly_wy[11];
+                v_f[5].z = 0.0f;  //0
+                v_f[5].u = 0;
+                v_f[5].v = 0;
+                v_f[5].c = gradient8.c6;
+            }
+            if (num_wy>6)
+            {
+                v_f[6].x = (float)poly_wy[12];
+                v_f[6].y = (float)poly_wy[13];
+                v_f[6].z = 0.0f;  //0
+                v_f[6].u = 0;
+                v_f[6].v = 0;
+                v_f[6].c = gradient8.c7;
+            }
+            if (num_wy>7)
+            {
+                v_f[7].x = (float)poly_wy[14];
+                v_f[7].y = (float)poly_wy[15];
+                v_f[7].z = 0.0f;  //0
+                v_f[7].u = 0;
+                v_f[7].v = 0;
+                v_f[7].c = gradient8.c8;
+            }
+
+            ////polygon3d_f(screenplay, POLYTYPE_GRGB, NULL, num_wy, (V3D_f **)v_f);   //this is crashing
+            ////temporary removed due to crash, instead is using quad3d_f
+            quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[0], &v_f[1], &v_f[2], &v_f[3]);
+            if (num_wy==8)
+            {
+                quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[3], &v_f[4], &v_f[5], &v_f[0]);
+                quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[5], &v_f[6], &v_f[7], &v_f[0]);
+            }
+            else if (num_wy==7)
+            {
+                quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[3], &v_f[4], &v_f[5], &v_f[0]);
+                triangle3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[5], &v_f[6], &v_f[0]);
+            }
+            else if (num_wy==6)
+            {
+                quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[3], &v_f[4], &v_f[5], &v_f[0]);
+                //triangle3d_f(screenplay, POLYTYPE_GRGB, NULL, &v_f[5], &v_f[6], &v_f[0]);
+            }
+            else if (num_wy==5)
+            {
+                triangle3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[3], &v_f[4], &v_f[0]);
+            }
+        }
+        else quad3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[0], &v_f[1], &v_f[2], &v_f[3]);
+    }
+    else {
+        triangle3d_f(allegro_prn_bmp, POLYTYPE_GRGB, NULL, &v_f[0], &v_f[1], &v_f[2]);
+    }
+
+        free(poly_wy);
+        solid_mode();
+
+    return TRUE;
+}
+
+
+BOOL draw_rectangle_to_drive_gradient(double* xy0)
+{
+    int kolorA, kolorB;
+
+    T_PixelTVal lpxy[8];
+    int pxy[8], pxy1[8], pxy2[8];
+    double ppxy[8];
+    int found;
+    BOOL ignore_p;
+    int i;
+    double xy[8];
+    WIELOKAT w = S4def;
+    BOOL ret;
+
+    memcpy(&xy, xy0, sizeof(double) * 8);
+
+    if (print_inversion == TRUE)
+    {
+        if (print_rotation == TRUE)
+        {
+
+
+            ppxy[0] = FormatX_S - xy[0];
+            ppxy[2] = FormatX_S - xy[2];
+            ppxy[4] = FormatX_S - xy[4];
+            ppxy[6] = FormatX_S - xy[6];
+            ppxy[1] = FormatY_S - xy[1];
+            ppxy[3] = FormatY_S - xy[3];
+            ppxy[5] = FormatY_S - xy[5];
+            ppxy[7] = FormatY_S - xy[7];
+
+        }
+        else
+        {
+
+
+            ppxy[0] = FormatX_S - xy[0] + FormatX_S0;
+            ppxy[2] = FormatX_S - xy[2] + FormatX_S0;
+            ppxy[4] = FormatX_S - xy[4] + FormatX_S0;
+            ppxy[6] = FormatX_S - xy[6] + FormatX_S0;
+            ppxy[1] = FormatY_S + FormatY_S0 - xy[1];
+            ppxy[3] = FormatY_S + FormatY_S0 - xy[3];
+            ppxy[5] = FormatY_S + FormatY_S0 - xy[5];
+            ppxy[7] = FormatY_S + FormatY_S0 - xy[7];
+        }
+    }
+    else
+    {
+        if (print_rotation == TRUE)
+        {
+
+
+            ppxy[0] = xy[0];
+            ppxy[2] = xy[2];
+            ppxy[4] = xy[4];
+            ppxy[6] = xy[6];
+            ppxy[1] = xy[1];
+            ppxy[3] = xy[3];
+            ppxy[5] = xy[5];
+            ppxy[7] = xy[7];
+
+        }
+        else
+        {
+            ppxy[0] = xy[0];
+            ppxy[2] = xy[2];
+            ppxy[4] = xy[4];
+            ppxy[6] = xy[6];
+            ppxy[1] = xy[1];
+            ppxy[3] = xy[3];
+            ppxy[5] = xy[5];
+            ppxy[7] = xy[7];
+        }
+    }
+
+    jednostki_to_prn_xy(8, ppxy, pxy);
+
+    kolorA = 0xFFFFFF;
+
+    kolorB = 0xFFFFFFFF;
+
+    my_soft_polygon(allegro_prn_bmp, 4, pxy, kolorA, 255, kolorB);
+
+    solid_mode();
+
+    return TRUE;
+}
+
+
 BOOL draw_rectangle_to_drive_pattern(double* xy0)
 {
 	int kolorA, kolorB;
@@ -1693,6 +2005,11 @@ BOOL draw_rectangle_to_drive_pattern(double* xy0)
  }
 
 
+ void do_nothing(void)
+ {
+    return;
+ }
+
 BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 /*---------------------------------------------------------------------*/
 {
@@ -1773,6 +2090,22 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
   int sum_signs;
   int concave_no;
 
+ if ((type__drive == PRN_DRIVE) && (ptr_w->empty_typ == 0) && (ptr_w->gradient == 1))
+ {
+     unsigned char translucency = 255;
+     char *gradient_ptr=NULL;
+
+     translucency_ptr = (char *) ptr_w->xy;
+     translucency_ptr += (ptr_w->lp * sizeof(float));
+     memmove(&translucency, translucency_ptr, sizeof(unsigned char));
+
+     gradient_ptr=translucency_ptr+sizeof(unsigned char);
+
+     Draw_Solid_Gradient(ptr_w->lp, ptr_w->xy, Layers[ptr_w->warstwa].bw, Layers[ptr_w->warstwa].grey, translucency, (GRADIENT*)gradient_ptr, window_to_print);
+
+    return TRUE;
+ }
+
  if ((type__drive == PRN_DRIVE) &&  ((*ptrs__prn_ini_date_)->prn_type == PRN_PDF) && (ptr_w->empty_typ == 0) && (ptr_w->pattern == 0) && (ptr_w->translucent == 1))
  {
     unsigned char translucency = 255;
@@ -1823,7 +2156,8 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
          if ((sum_signs != 3) && (sum_signs != -3)) concave = TRUE;
      }
 
-     if ((ptr_w->lp == 8 && ptr_w->obiektt1 != SIMPW) || (concave == TRUE)) {
+     if ((ptr_w->lp == 8 && ptr_w->obiektt1 != SIMPW) || (concave == TRUE))
+     {
          WIELOKAT w1 = Stdef, w2 = Stdef;
 
          if (ptr_w->obiektt1 != SIMPW) Get_Rec_2TrAngle(ptr_w, &w1, &w2);
@@ -2002,7 +2336,8 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
              }
 
              if (ptr_w->empty_typ == 0) {
-                 if (ptr_w->pattern == 0) {
+                 if (ptr_w->pattern == 0)
+                 {
                      if (ptr_w->translucent == 1) {
                          translucency_ptr = (char *) ptr_w->xy;
                          translucency_ptr += (ptr_w->lp * sizeof(float));
@@ -2011,6 +2346,7 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
                      if (FALSE == draw_rectangle_to_drive(xy, df_dist, kolor, Layers[ptr_w->warstwa].bw,
                                                           Layers[ptr_w->warstwa].grey, (int) translucency, colorB))
                          return FALSE;
+
                  } else if (type__drive == PRN_DRIVE) {
                      if (((*ptrs__prn_ini_date_)->bitmap_only == TRUE) || (*ptrs__prn_ini_date_)->prn_type != PRN_PDF) {
 
@@ -2217,23 +2553,40 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
     L.y2=y2;
     L.warstwa=w.warstwa=v->warstwa;
     L.kolor=w.kolor=v->kolor;
-    L.typ=64;
 
-    line_width_type = Line_Width (L.typ);
-    ret=Draw_Line_To_Drive(&L);
+    if (v->style<V_EDGE_SIMPLE) {
+        L.typ = 64;
 
-    w.xy[2]=x0;
-    w.xy[3]=y0;
-    w.xy[0]=x0+psize*koc1;
-    w.xy[1]=y0-psize*kos1;
-    w.xy[4]=x0+psize*koc2;
-    w.xy[5]=y0-psize*kos2;
+        line_width_type = Line_Width(L.typ);
+        ret = Draw_Line_To_Drive(&L);
+    }
 
-    w.lp=6;
-    w.n=32;
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV) || (v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
+    {
+        L.typ = V_FIXED_LINE; //128;
+        L.x1 = x0;
+        L.y1 = y0;
+        L.x2 = x0 + psize * koc1;
+        L.y2= y0 - psize * kos1;
 
-    line_width_type = Solid_Line_Width (w.empty_typ);
-    ret=Draw_Wielokat_To_Drive(&w, NULL);
+        line_width_type = Line_Width(L.typ);
+        ret = Draw_Line_To_Drive(&L);
+    }
+
+    else {
+        w.xy[2] = x0;
+        w.xy[3] = y0;
+        w.xy[0] = x0 + psize * koc1;
+        w.xy[1] = y0 - psize * kos1;
+        w.xy[4] = x0 + psize * koc2;
+        w.xy[5] = y0 - psize * kos2;
+
+        w.lp = 6;
+        w.n = 32;
+
+        line_width_type = Solid_Line_Width(w.empty_typ);
+        ret = Draw_Wielokat_To_Drive(&w, NULL);
+    }
 
 }
 
@@ -2317,6 +2670,87 @@ void draw_wave_to_drive(double x0, double y0, double x1, double y1, double x2, d
 }
 
 
+void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
+{
+    int i;
+    double df_line_rem;
+    double df_l0;
+    double df_psize;
+    double df_seg_len, df_seg_len_dens;
+    BOOL b_first_end=TRUE;
+    double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
+    point p;
+    float n, n1;
+    double koc, kos;
+    double koc1, kos1, koc2, kos2;
+    double ra, ra1;
+    PLINIA PL1;
+    LINIA Lt1;
+    double del_angle;
+    double angle;
+    double katS=Pi_*25.0/180;
+
+    //T_Point P;
+
+    df_psize = Get_Point_Size ();
+    df_seg_len=df_psize;
+
+    ra=df_seg_len / 2;
+    ra1=0.9*ra;
+
+    if ((v->style==24) || (v->style==25))
+    {
+        katS = Pi_ * 45.0 / 180;
+        df_seg_len_dens = df_seg_len / 2.0;
+    }
+    else df_seg_len_dens = df_seg_len;
+
+    i = 0 ;
+    df_l0 = -df_seg_len_dens/2; //0 ;
+    do
+    {
+        df_line_rem = measure_arcvector(l, b_first_end, df_l0, df_seg_len_dens, &df_x, &df_y);
+
+        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
+        {
+
+            Lt1.x1 = df_x;
+            Lt1.y1 = df_y;
+            Lt1.x2 = l->x;
+            Lt1.y2 = l->y;
+            parametry_lini(&Lt1, &PL1);
+
+            //angle=Angle_Normal(PL1.kat*Pi2/180);
+            //koc=cos(angle);
+            //kos=sin(angle);
+
+            if ((v->style==23) || (v->style==25)) PL1.kat+=180;
+
+            angle = Angle_Normal(-(PL1.kat) * Pi / 180);
+            if (fabs(angle - Pi2) < 0.00001) angle = 0;
+            if (fabs(angle) < 0.00001) angle = 0;
+            koc1 = cos(angle - katS);
+            koc2 = cos(angle + katS);
+            kos1 = sin(angle - katS);
+            kos2 = sin(angle + katS);
+
+            n1 = -1;
+
+            draw_arrow_to_drive(df_x, df_y, df_x, df_y, df_x, df_y, koc1, kos1, koc2, kos2, n1 * ra, v);
+        }
+
+        //P.x=df_x;
+        //P.y=df_y;
+        //P.kolor=7;
+        //rysuj_punkt_(&P, COPY_PUT, 1);
+
+        df_l0 += df_seg_len_dens ;
+        i++ ;
+    }
+    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
+
+}
+
 
 void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat)
 {
@@ -2325,7 +2759,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     double df_l0;
     double df_line_rem;
     BOOL b_first_end=TRUE;
-    double df_seg_len;
+    double df_seg_len,df_seg_len_dens;
     double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
     double df_psize;
     point a1, a2, b1, b2, p;
@@ -2346,6 +2780,9 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     if (v->style!=15) df_seg_len=df_psize;
     else df_seg_len=df_psize*0.66;  //THERMAL
 
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        katS = Pi_ * 45.0 / 180;
+
     angle=Angle_Normal(angle0);
 
     koc=cos(angle);
@@ -2357,12 +2794,21 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     switch (v->style)
     {
         case 10:
+        case 17:
             if (x1<=x2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 11:
             if (y1<=y2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 12:
+            angle=Angle_Normal(-angle0);
+            if (fabs(angle-Pi2)<0.00001) angle=0;
+            if (fabs(angle)<0.00001) angle=0;
+            break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
             angle=Angle_Normal(-angle0);
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
@@ -2390,11 +2836,17 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     angle_rev=Angle_Normal(angle+Pi_);
 
     i = 0 ;
+
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        df_seg_len_dens=df_seg_len/2.0;
+    else df_seg_len_dens=df_seg_len;
+
     df_l0 = -df_seg_len/2;
     do
     {
-        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len, &df_x, &df_y) ;
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/))
+
+        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len_dens, &df_x, &df_y) ;
+        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4 /*0*/))
         {
 
             if ((Check_if_Equal(angle, Pi_/2))   || (Check_if_Equal(angle, Pi_*3/2)))  //vertical
@@ -2438,6 +2890,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             switch (v->style)
             {
                 case 10:
+                case 17:
                     if (v->flags & 1)
                     {
                         df_x0 = p.x;
@@ -2515,6 +2968,10 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                     }
                     break;
                 case 12:
+                case V_EDGE_SIMPLE:  //simple supported edge
+                case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+                case V_EDGE_FIXED:  //fixed edge
+                case V_EDGE_FIXED_INV:  //fixed edge reversed
                     if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
@@ -2681,7 +3138,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
 
             if (v->style!=15) draw_arrow_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc1, kos1, koc2, kos2, n1*ra, v);
             else draw_wave_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v);
-            df_l0 += df_seg_len ;
+            df_l0 += df_seg_len_dens ;
             i++ ;
         }
     }
@@ -2720,6 +3177,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
     double Kp2sn;
 
     double kat0=10;
+    ELLIPSE load_ellipse=FEdef;
 
 #define arrowf 1.0
 
@@ -2839,6 +3297,15 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             normalize_txt(&Vltxt);
 
             break;
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+            if (ptrs_vector->angle2<ptrs_vector->angle1)
+                kata2=ptrs_vector->angle2+Pi2;
+            else kata2=ptrs_vector->angle2;
+            kats=Angle_Normal((ptrs_vector->angle1+kata2)/2);
+            break;
         case 8:
         case 9:
             if (ptrs_vector->angle2<ptrs_vector->angle1)
@@ -2863,6 +3330,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             normalize_txt(&Vltxt);
             break;
         case 10:  //trapezium Y
+        case 17:  //trapezium Y slab
 
             if (Check_if_Equal(L1.x1, L1.x2))
             {
@@ -3146,6 +3614,33 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+            if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
+                ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.01;  //just to simulate
+            else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.01;  //just to simulate
+            kos1=sin(Pi*(PL.kat+90)/180);
+            koc1=cos(Pi*(PL.kat+90)/180);
+
+            n=1;
+
+            if (ptrs_vector->flags & 1) n*=-1;
+
+            Lt.x1 = L1.x1 + n*(ptrs_vector->magnitude1/load_magnitude)*koc1;
+            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude)*kos1;
+            Lt.x2 = L1.x2 + n*(ptrs_vector->magnitude2/load_magnitude)*koc1;
+            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude)*kos1;
+
+            Ltx=(Lt.x1 + Lt.x2)/2;
+            Lty=(Lt.y1 + Lt.y2)/2;
+
+            parametry_lini(&Lt, &PL1);
+            kos2=sin(Pi*(PL1.kat+90)/180);
+            koc2=cos(Pi*(PL1.kat+90)/180);
+            break;
+
         case 13:  //trapezium H
             if (L1.x1<L1.x2)
             {
@@ -3624,6 +4119,11 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case 6:
         case 8:  //rotation
         case 9:
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+
             if (ptrs_vector->style==5)
             {
                 linestyle(ptrs_vector->typ);
@@ -3706,6 +4206,33 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 line_width_type = Line_Width (l.typ);
                 if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
             }
+            else if ((ptrs_vector->style==V_EDGE_ARC_SIMPLE) ||  //simple supported edge
+                     (ptrs_vector->style==V_EDGE_ARC_SIMPLE_INV) ||  //simple supported edge flipped
+                     (ptrs_vector->style==V_EDGE_ARC_FIXED) ||  //fixed edge
+                     (ptrs_vector->style==V_EDGE_ARC_FIXED_INV))  //fixed edge flipped
+            {
+                grubosc = (ptrs_vector->typ & 224) / 32;
+                linestyle(grubosc * 32 + 1);
+                kats=ptrs_vector->angle2-Pi_/2;
+                n=+1;
+                s=1;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                l.typ=ptrs_vector->typ;
+                line_width_type = Line_Width (l.typ);
+                if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+                //triangles or dashes
+                make_arcarrows_to_drive(&l, ptrs_vector, PL.kat);
+
+                break;
+            }
+            else return FALSE;
 
             dx = Get_Point_Size() / arrowf * cos(kats);
             dy = Get_Point_Size() / arrowf * sin(kats);
@@ -3745,6 +4272,22 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             break;
             case 10:  //trapezium Y
+            case 17:  //trapezium Y slab
+
+                if (ptrs_vector->style==17)  //slab load
+                {
+                    load_ellipse.kolor=ptrs_vector->kolor;
+                    load_ellipse.warstwa=ptrs_vector->warstwa;
+                    load_ellipse.widoczny=ptrs_vector->widoczny;
+                    load_ellipse.translucency=51;
+                    load_ellipse.typ=64;
+                    load_ellipse.x=(float)((ptrs_vector->x1+ptrs_vector->x2)/2.);
+                    load_ellipse.y=(float)((ptrs_vector->y1+ptrs_vector->y2)/2.);
+                    load_ellipse.angle=(float)(PL.kat*Pi/180);
+                    load_ellipse.rx=(float)(PL.dl/2.);
+                    load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                    Draw_Ellipse_To_Drive(&load_ellipse);
+                }
 
             L1.typ = 64;
             line_width_type = Line_Width (L1.typ);
@@ -3920,6 +4463,61 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
             if (Draw_Tekst_To_Drive(&Vtxt1, 0, 1, 1) == FALSE) return FALSE;
             if (Draw_Tekst_To_Drive(&Vltxt, 0, 1, 1) == FALSE) return FALSE;
+
+            break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+            L1.typ=ptrs_vector->typ; //64;
+            line_width_type = Line_Width (L1.typ);
+            if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
+
+            w.empty_typ=0;
+
+            w.xy[0]=L1.x1;
+            w.xy[1]=L1.y1;
+            w.xy[2]=L1.x2;
+            w.xy[3]=L1.y2;
+
+            w.xy[4]=Lt.x2;
+            w.xy[5]=Lt.y2;
+            w.xy[6]=Lt.x1;
+            w.xy[7]=Lt.y1;
+            w.lp=8;
+            w.n=40;
+
+            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
+            /*
+            L1.typ=64;
+            L1.x1=w.xy[2];
+            L1.y1=w.xy[3];
+            L1.x2=w.xy[4];
+            L1.y2=w.xy[5];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            L1.x1=w.xy[6];
+            L1.y1=w.xy[7];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            L1.x2=w.xy[0];
+            L1.y2=w.xy[1];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            w.translucent=1;
+            translucency=TRANS;
+
+            translucency_ptr = w.xy;
+            translucency_ptr += (w.lp * sizeof(float));
+            memmove(translucency_ptr, &translucency, sizeof(unsigned char));
+
+            rysuj_obiekt_(&w, mode, kolor);
+
+            if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
+            */
+            set_mode_solid();
+
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat);
 
             break;
         case 13:  //trapezium H

@@ -1,3 +1,4 @@
+
 #ifdef ENGLISH
 #ifdef UKRAINIAN
 #define FILENAME_INI "ALFACADUA.INI"

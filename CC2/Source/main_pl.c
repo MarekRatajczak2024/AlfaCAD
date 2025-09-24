@@ -71,11 +71,17 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 4, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
+POLE pmStatic[] = {
+        {u8"Rama i kratownica",L'R',733, NULL},
+        {u8"Płyta",L'P',855, NULL},
+};
+
+TMENU mStatic = { 2, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Statyka i dynamika",L'S',733, NULL},
+        {u8"Statyka i dynamika",L'S',854, &mStatic},
         {u8"siły wynikowe w Przekrojach poprzecznych",L'P',824, NULL},
         {u8"Animuj dynamikę",L'A',817, NULL},
         {u8"Wybór przekrojów elementów",L'W',775, &mRegion},

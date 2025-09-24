@@ -59,8 +59,8 @@ extern BOOL add_block_ (void) ;
 extern BOOL add_trace_ (void) ;
 extern BOOL get_start_pline_ (double *X0, double *Y0);
 extern void erase_pline_ (void);
-extern int Pline_Line (double df_xbeg, double df_ybeg);
-extern int Pline_Arc (double df_xbeg, double df_ybeg);
+extern int Pline_Line (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode);
+extern int Pline_Arc (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode);
 extern void Wymiarowanie_polilinii1(char *adr0, int opcja);
 extern BOOL group_block_with_type (long dane_size000, double x, double y, char *blok_type0, char obiektt2, char *prefix, char kod_obiektu);
 extern BOOL Check_if_Equal (double x, double y);
@@ -205,6 +205,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
     static double *p2_;
     static double p1;
     static double p2;
+    static int ret_i;
 
     switch (plug_function) {
         case REDRAW:
@@ -282,7 +283,9 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p2_=(double*)param2;
             p1=*p1_;
             p2=*p2_;
-            return (int*)Pline_Line(p1, p2);
+            //return (int*)Pline_Line(p1, p2, (BLOK**)dane);
+            ret_i=Pline_Line(p1, p2, &dane, 0);
+            return (int*)ret_i;
         }
         break;
         case PLINE_ARC:
@@ -291,7 +294,9 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p2_=(double*)param2;
             p1=*p1_;
             p2=*p2_;
-            return (int*)Pline_Arc((double)p1, (double)p2);
+            //return (int*)Pline_Arc((double)p1, (double)p2, dane);
+            ret_i=Pline_Arc(p1, p2, &dane, 0);
+            return (int*)ret_i;
         }
         break;
         case DIMENSIONING_POLYLINE:

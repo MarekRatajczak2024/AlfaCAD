@@ -777,11 +777,12 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
 
             Vtxt.wysokosc=zmwym.wysokosc;
         case 10: //trapezium Y
+        case 17: //trapezium Y slab
         case 11: //trapezium X
         case 12: //trapezium N
         case 13:  //trapezium H
         case 14: //trapezium V
-            if (0 != linia_wybrana(v))
+             if (0 != linia_wybrana(v))
             {
                 funL(x, y, v);
                 if (punkt_w_prostokacie(*x, *y))
@@ -799,6 +800,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             {
                 switch (v->style)
                 {  case 10: //trapezium Y
+                   case 17: //trapezium Y slab
                         LL.x1=v->x1;
                         LL.x2=v->x2;
                         LL.y1=v->y1;
@@ -2511,6 +2513,7 @@ BOOL vector_przec (double *x, double *y, void *adr, void *adr1,
         case 9:
             break;
         case 10:
+        case 17:
             break;
         default:
             break;
@@ -4573,6 +4576,27 @@ void centrum(void)
    }
 }
 
+
+BLOK *koniecP(double *xsel, double *ysel)
+{ unsigned typ;
+    void *adr;
+    int ret;
+
+    typ=Blinia | Bluk;
+    if ((adr=select_n(&typ,NULL,67))!=NULL)
+    { *xsel=X;*ysel=Y;
+        switch(typ)
+        {
+            case Blinia :     koniecL_ (&xsel, &ysel, adr) ;
+                break;
+            case Bluk   :     koniecl_ (&xsel, &ysel, adr) ;
+                break;
+            default     :     break;
+        }
+        return FIRSTB(adr);
+    }
+    return NULL;
+}
 
 void koniec(void)
 { unsigned typ;

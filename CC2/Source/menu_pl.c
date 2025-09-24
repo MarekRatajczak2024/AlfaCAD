@@ -1481,7 +1481,7 @@ char* vector_style_tab[] = { u8"sztywny-sztywny",u8"sztywny-przegubowy",u8"przeg
                             u8"rzut pionowy obciążenia poziomego",
                             u8"obciążenie termiczne",
                             u8"rozmiar węzła (promień)",
-                            u8"?","?","?","?","?","?","?","?",
+                            u8"obciążenie płyty","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
@@ -1505,6 +1505,8 @@ static POLE pmInfoAbout[] = {
 	 {u8"֎Kolor\0 ",'K',158,NULL},      //2
 	 {u8"Typ linii\0 ",'T',160,NULL},      //3
 	 {u8"Grubość linii\0 ",'G',159,NULL},      //4
+     {u8"podparcie krawędzi\0",'F',850,NULL},      //4
+     {u8"inversja podparcia\0",'A',853,NULL},      //4
      {u8"typ punktu\0 ",'.',27,NULL},       //5
      {u8"typ wektora\0",'V',770,NULL},      //6
 	 {u8"X1 \0",'1',306,NULL},      //7
@@ -1550,7 +1552,7 @@ static POLE pmInfoAbout[] = {
      {u8"wielkość punktu dx \0",'Q',689,NULL},      //44
      {u8"wielkość punktu dy \0",'Z',690,NULL},      //45
 	 {u8"Nazwa bloku wewn.\0",'N',318,NULL},      //46
-	 {u8"Nazwa bloku zewn.\0",'B',319,NULL},      //47
+	 {u8"Nazwa bloku zewn.\0",'M',319,NULL},      //47
 };
 TMENU mInfoAbout = { 47,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
 
@@ -1571,10 +1573,15 @@ TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[
 
 char* objects[] = { u8"Linia",u8"Linia 3D",u8"Tekst",u8"Łuk",u8"Okrąg",u8"Koło",u8"Wielokąt/Obszar",u8"Obszar 3D",u8"Punkt",u8"Spline",u8"Obraz",u8"Polilinia",u8"Ślad",u8"Kreskowanie",u8"Łuk Eliptyczny",u8"Elipsa",u8"Dysk Elliptyczny", u8"Obszar łukowy", u8"Wektor"};
 
+#define __PLATE__ u8" (PŁYTA)"
+#define __HOLE__  u8" (OTWÓR)"
+#define __WALL__  u8" (ŚCIANA)"
+#define __ZONE__  u8" (STREFA)"
+
 #define _FILLING_ u8"wypełnienie"
 
 char *vector_txt[]={u8"Wektor: sztywno-sztywny",u8"Wektor: sztywno-przegubowy",u8"Wektor: przegubowo-sztywny",u8"Wektor: przegubowo-przegubowy",u8"Wektor: Siła",u8"Wektor: Moment" ,u8"Wektor: -Moment",
- u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)"};
+ u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)", u8"obciążenie płyty"};
 
 //char *point_txt[]={u8"Normalny",u8"punkt Bazowy",'','','','','',u8"połączenie",u8"Zacisk",'','','',u8"Utwierdzenie",u8"utwierdzenie L",u8"utwierdzenie P",u8"utwierdzenie G",u8"Przegubowe",
  //    u8"przegubowe L",u8"przegubowe P",u8"przegubowe G",u8"utwierdzenie przesuwne poziomo",u8"utwierdzenie przesuwne pionowo L",u8"utwierdzenie przesuwne pionowo P",u8"utwierdzenie przesuwne poziomo G",
@@ -1655,7 +1662,19 @@ static POLE pmPLine[] = {
 		  {u8"Zamknij\0",'Z',217,NULL},
 		  {u8"Usuń\0Del\0",'U',218,NULL},
 		  {u8"Długość\0             0\0",'D',219,NULL},
-		  {u8"Łuk\0", 'L', 15,NULL} };
+		  {u8"Łuk\0", 'L', 15,NULL},
+          {u8"Brak podpory\0", L'B', 851,NULL},
+          {u8"podpora Przegubowa\0", L'P', 850,NULL},
+          {u8"podpora Sztywna\0", L'S', 852,NULL},
+          //{u8"podpora ruchoma\0", L'R', 849,NULL},
+          {u8"Odwróć podporę\0", L'O', 853,NULL},
+};
+
+POLE pmEdgeType[] = {
+          {u8"Brak podpory\0", L'B', 851,NULL},
+          {u8"podpora Przegubowa\0", L'P', 850,NULL},
+          {u8"podpora Sztywna\0", L'S', 852,NULL}
+          };
 
 static POLE pmLine_Con[] = {
 		  {u8"Kontynuacja",'K',220,NULL} };
@@ -1780,6 +1799,12 @@ static POLE pmVector[] = {
           {u8"obciażenie trapezowe V\0\0",L'V',737,&mLoad_Char},
           {u8"obciążenie Termiczne\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"Rozmiar węzła (promień)\0\0",L'0',786,NULL},
+
+          {u8"Kontur płyty\0\0",L'K',846,NULL},
+          {u8"otwór w płycie\0\0",L'L',844,NULL},
+          {u8"ściana pod płytą\0\0",L'W',843,NULL},
+          {u8"strefa płyty\0\0",L'Z',842,NULL},
+          {u8"obciążenie płyty\0\0",L'Q',845,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -1827,7 +1852,7 @@ static POLE pmLoad_style[] = {
 #define _YES_ "T"
 #define _NO_ "N"
 
-static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 16 /*14*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 
 static POLE pmLukm[] = {
@@ -1853,7 +1878,14 @@ static POLE pmPLukm[] = {
           {u8"odwrócony kierunek łuku",L'0',729,&mArcReversed},
 		  {u8"Zamknij",'Z',247,NULL},
 		  {u8"Usuń: Del",'U',248,NULL},
-		  {u8"Linia", 'L',13,NULL} };
+		  {u8"Linia", 'L',13,NULL},
+
+          {u8"Brak podpory\0", L'B', 851,NULL},
+          {u8"podpora Przegubowa\0", L'P', 850,NULL},
+          {u8"podpora Sztywna\0", L'S', 852,NULL},
+          //{u8"podpora ruchoma\0", L'R', 849,NULL},
+          {u8"Odwróć podporę\0", L'O', 853,NULL},
+};
 
 static POLE pmPLukmObrys[] = {
 		  {u8"[1] trzy punkty\0",'1',221,NULL},
@@ -1983,6 +2015,29 @@ static char* EllipticalAngle[] = {u8"Localny",u8"Globalny"};
 #endif
 
 #ifdef __O_PLINE__
+
+static POLE pmPLine_Con[] = {
+		  {u8"Kontynuacja",L'K',220,NULL} };
+
+extern TMENU mVector;
+
+static POLE pmPLine_Con_Slab[] = {
+		  {u8"Kontynuacja",L'K',220,NULL},
+          {u8"Wektory",L'W',722,&mVector},
+};
+
+#define _POLYLINE_ u8"Polilinia"
+#define _POLYLINE_C_ L'P'
+
+#define _Yes_ u8"Tak"
+#define _No_ u8"Nie"
+
+#define _CHANGE_POLYLINE_TYPE_ u8"Wybrano inny typ polilinii. Czy powinniśmy zmienić typ na: "
+
+#define __PLATE__ u8"PŁYTA"
+#define __HOLE__  u8"OTWÓR"
+#define __WALL__  u8"ŚCIANA"
+#define __ZONE__  u8"STREFA"
 
 #endif
 
@@ -2181,7 +2236,7 @@ static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(P
 #define _YES_ "T"
 #define _NO_ "N"
 
-static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 14 /*11*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 static POLE pmPTLukm[] = {
           {u8"[0] kontynuacja łukiem",'0',714,NULL},
@@ -3396,6 +3451,10 @@ char error_message_background[64] = u8"Brak wzorców w tym katalogu";
 #ifdef __BIB_E__
 
 char* view_width_tab[] = { u8"B.C.",u8"C.",u8"G.",u8"B.G.",u8"NG.", "", "", u8"ukryta " };
+
+char* view_edge_tab[] = {u8"Brak podpory", u8"", u8"", u8"", u8"", u8"Brak podpory", u8"podpora Przegubowa", u8"podpora Sztywna"};
+char* view_edgeinverted_tab[] = {u8"Regularna", u8"Odwrócona"};
+
 char* view_type_tab[] = {
 			   u8"Ciągła",
 			   u8"Kreskowa",

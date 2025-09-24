@@ -5,6 +5,9 @@ set(CMAKE_SYSTEM_VERSION 10.0.22621.0 CACHE STRING "" FORCE)
 #set(CMAKE_GENERATOR_PLATFORM x64)
 #set(CMAKE_GENERATOR_PLATFORM win32)
 
+SET(CMAKE_CXX_FLAGS "-O0")
+SET(CMAKE_C_FLAGS "-O0")
+
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -414,6 +417,8 @@ set(Source_Files
     "../../../CC2/Source/o_slider.c"
     "../../../CC2/Source/o_section_block.c"
     "../../../CC2/Source/o_section_block.h"
+    "../../../CC2/Source/o_plate.c"
+    "../../../CC2/Source/o_plate.h"
     "../../../CC2/Source/2L_section_US_si.c"
     "../../../CC2/Source/U_section_EU_si.c"
     "../../../CC2/Source/U_section_UK_si.c"

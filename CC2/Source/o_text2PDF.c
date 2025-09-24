@@ -23,6 +23,7 @@
 #include "forwin.h"
 #include "hpdf.h"
 #include "hpdf_utils.h"
+#include "hpdf_pdfa.h"
 #ifndef LINUX
 #include "hpdf_errorcodes.h"
 #endif

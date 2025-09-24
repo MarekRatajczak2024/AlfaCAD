@@ -300,10 +300,12 @@ extern unsigned short vector_wcod[];
 extern unsigned short point_wcod[];
 
 extern char* typ_punktu_inf[];
+extern int point_icon[];
+extern char* view_edge_tab[];
+extern int edge_icon[];
 extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
 extern char *load_symbol[];
 
-extern char* typ_punktu_inf[];
 extern int d_myslider_proc(int msg, void *d_, int c);
 extern void Draw_Slider(SLIDER *Slider);
 extern int get_palette_color(int color);
@@ -1349,6 +1351,21 @@ extern char *icon_mousewheelregular_p;
 
 extern char *icon_pin_to_flex_d48_p;
 
+extern char *icon_slab_zone_p;
+extern char *icon_slab_wall_p;
+extern char *icon_slab_space_p;
+extern char *icon_slab_load_p;
+extern char *icon_slab_geo_red_p;
+extern char *icon_slab_geo_black_p;
+extern char *icon_slab_fem_p;
+extern char *icon_slab_edge_rolled_p;
+extern char *icon_slab_edge_hinged_p;
+extern char *icon_slab_edge_free_p;
+extern char *icon_slab_edge_fixed_p;
+extern char *icon_flip_support_p;
+extern char *icon_static_p;
+extern char *icon_slab_fem_a_p;
+
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
 extern TMENU mInfoAboutA;
@@ -1527,6 +1544,7 @@ POLE pmTypTekstuI[] = {
 TMENU mTypTekstuI = { 16,0,0,16,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstuI,NULL,NULL };
 
 extern TMENU mTyp_punktu;
+extern TMENU mEdgeType;
 extern TMENU mMember_style;
 extern TMENU mForce_Displacement_style;
 extern TMENU mMoment_Rotation_style;
@@ -3433,7 +3451,9 @@ static char *get_icons_p(int number)
         /*819*/   icon_mouse1b2b_p, icon_menustyle_p, icon_barstyle_p, icon_cursorstyle_p, icon_perc_mag_p, icon_cross_section_forces_p,
         /*825*/   icon_ULS_p, icon_SLS_p, icon_QPSLS_p, icon_resilience_p, icon_CA_Flag_p, icon_AU_Flag_p, icon_CN_Flag_p,
         /*832*/   icon_cursor_extrabig_p, icon_mousewheel_p, icon_mousewheelnatural_p, icon_mousewheelregular_p, icon_stonewall_p,
-        /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p
+        /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p,
+        /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
+        /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p
     };
    
 	if (number>1999)
@@ -9717,6 +9737,40 @@ void ch_lwidth (void)
     return;
 }
 
+void ch_edge_inversion(void)
+{
+    rysuj_obiekt(object_info_ad, COPY_PUT, 0);
+    ((LINIA *) object_info_ad)->obiektt3  = !((LINIA *) object_info_ad)->obiektt3;
+    rysuj_obiekt(object_info_ad, COPY_PUT, 1);
+    Change = TRUE;
+    return;
+}
+
+int edge_type[]={5,6,7};
+
+void ch_edge (void)
+{
+    int n;
+
+    frame_off(&mInfoAboutA);
+    menu_level++;
+    menu_address[menu_level-1]=&mEdgeType;
+    n = Simple_Menu_Proc(&mEdgeType);
+    if (n)
+    {
+        rysuj_obiekt(object_info_ad, COPY_PUT, 0);
+        ((LINIA *) object_info_ad)->obiektt2  = edge_type[n-1];
+        rysuj_obiekt(object_info_ad, COPY_PUT, 1);
+        //menu update
+        menu_par_new((*mInfoAboutA.pola)[menu_n].txt, view_edge_tab[((LINIA *)object_info_ad)->obiektt2]);
+        (*mInfoAbout.pola)[menu_n].iconno=edge_icon[((LINIA *)ad)->obiektt2];
+        Change = TRUE;
+    }
+    baronoff_(&mInfoAboutA);
+    baronoff(&mInfoAboutA);
+    return;
+}
+
 int point_type[]={0, 1, 8, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void ch_ptype (void) {
@@ -9734,12 +9788,12 @@ void ch_ptype (void) {
         rysuj_obiekt(object_info_ad, COPY_PUT, 1);
         //menu update
         menu_par_new((*mInfoAboutA.pola)[menu_n].txt, typ_punktu_inf[((T_Point *)object_info_ad)->typ]);
+        (*mInfoAbout.pola)[menu_n].iconno=point_icon[((T_Point *)ad)->typ];
         Change = TRUE;
     }
     baronoff_(&mInfoAboutA);
     baronoff(&mInfoAboutA);
     return;
-
 }
 
 void ch_stype (void) {
@@ -9876,8 +9930,9 @@ static POLE pmObjectSelected[] = {
 
 static TMENU mObjectSelected = { 0,0,0,10,30,7,ICONS,CMNU,CMBR,CMTX,0,19,0,0,0,(POLE(*)[]) &pmObjectSelected,NULL,NULL };
 
-int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786};
+int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845};
 
+int edge_icon[]={0, 0, 0, 0, 0, 851, 850, 852};
 int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818};
 extern char *vector_txt[];
 extern char *point_txt[];
@@ -10818,8 +10873,8 @@ void ch_y_ (int nr)
             break;
         case Owwielokat:
 
-            x0 = ((WIELOKAT *) object_info_ad)->xy[nr*2+1];
-            y0 = ((WIELOKAT *) object_info_ad)->xy[nr*2];
+            x0 = ((WIELOKAT *) object_info_ad)->xy[nr*2];
+            y0 = ((WIELOKAT *) object_info_ad)->xy[nr*2+1];
 
             x1 = milimetryobxl(x0, y0);
             sprintf(sk_info, "%-12.9f",y1);
@@ -10833,8 +10888,8 @@ void ch_y_ (int nr)
             break;
         case Ospline:
 
-            x0 = ((SPLINE *) object_info_ad)->xy[nr*2+1];
-            y0 = ((SPLINE *) object_info_ad)->xy[nr*2];
+            x0 = ((SPLINE *) object_info_ad)->xy[nr*2];
+            y0 = ((SPLINE *) object_info_ad)->xy[nr*2+1];
 
             x1 = milimetryobxl(x0, y0);
             sprintf(sk_info, "%-12.9f",y1);
@@ -12348,11 +12403,11 @@ void ch_spacing_t (void)
 }
 
 
-BOOL edit_param_no0[48] = { 0,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1, 1,1,1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
+BOOL edit_param_no0[49] = { 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1, 1,1,1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
 
-BOOL edit_param_no[48] = { 0,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1, 1,1,1, 1, 1, 1, 1,1, 1, 1, 1,1, 1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
+BOOL edit_param_no[49]  = { 0,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1, 1,1,1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
 
-static void (* COMNDInfo[])(void)={nooop_, ch_layer, ch_color, ch_ltype, ch_lwidth, ch_ptype, ch_stype,ch_x1, ch_y1, ch_x2, ch_y2, ch_x3, ch_y3, ch_x4, ch_y4,
+static void (* COMNDInfo[])(void)={nooop_, ch_layer, ch_color, ch_ltype, ch_lwidth, ch_edge, ch_edge_inversion, ch_ptype, ch_stype,ch_x1, ch_y1, ch_x2, ch_y2, ch_x3, ch_y3, ch_x4, ch_y4,
                                    ch_radius, ch_radiusy, ch_angle, ch_angle1, ch_angle2, ch_width1, ch_width2, ch_magnitude1, ch_magnitude1, ch_magnitude2,ch_axis1, ch_axis2, ch_load_ch,  ch_opacity,
                                    nooop_, ch_dx, ch_dy, nooop_, ch_font_t, ch_type_t, ch_hidden_t, ch_adjust_t, ch_heigh_t,
                                    ch_width_t, ch_italic_t, ch_bold_t, ch_underline_t, ch_spacing_t, ch_dx_pcx, ch_dy_pcx, nooop_, nooop_};
@@ -12591,7 +12646,7 @@ int Simple_Menu_Proc (TMENU *menu)
       }
 
       set_posXY(X_, Y_);
-      CUR_ON(X,Y);
+      ////CUR_ON(X,Y);
 
       return  ev->Number == 0 ? 0 : menu->foff + menu->poz + 1 ;
   }

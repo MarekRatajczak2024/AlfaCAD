@@ -261,6 +261,7 @@ static char* errors_kom[] =
 /*213*/u8"Значення за межами діапазону 1024 .. 2000000 [КБ]",
 /*214*/u8"Номер шару за межами діапазону 1...256",
 /*215*/u8"Жодна з півосей еліпса не може мати довжину менше 0.",
+/*216*/u8"Неправильний формат для невід'ємного дійсного числа",
 };
 
 static char* komunikaty_kom[] =
@@ -665,6 +666,7 @@ static char* komunikaty0[] =
 /*168*/u8"Визначення розмірів (щоб почати нанесення розмірів кута, торкніться будь-якої лінії)",
 /*169*/u8"Вкажіть елемент каркаса або ферми",
 /*170*/u8"Розташуйте лінію перетину за потрібними координатами елемента. Натисніть, щоб зберегти значення в буфер обміну",
+/*171*/u8"Вкажіть схему плити для статичного розрахунку (МКЕ)",
 };
 
 static char* messages_str[] =
@@ -997,10 +999,10 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _element_graph_data_failed_ u8"Не вдалося створити кінцевий блок даних сил для елемента"
 #define _cannot_create_folder_ u8"Не вдається створити каталог файлів"
 
-#define _FRAME3DD_ "%FRAME:"
-#define _FRAME3DD_PL "%RAMA:"
-#define _FRAME3DD_UA "%КАРКАС:"
-#define _FRAME3DD_ES "%MARCO:"
+#define _FRAME3DD_ u8"%FRAME:"
+#define _FRAME3DD_PL u8"%RAMA:"
+#define _FRAME3DD_UA u8"%КАРКАС:"
+#define _FRAME3DD_ES u8"%MARCO:"
 
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
@@ -1243,6 +1245,51 @@ char *frame3dd[]={
 };
 
 #define _ERROR_FREE_COMPLETION_ u8"завершення без помилок"
+
+#endif
+
+#ifdef __O_PLATE__
+
+#define _PLATE_ u8"%PLATE:"
+#define _PLATE_PL u8"%PŁYTA:"
+#define _PLATE_UA u8"%ПЛИТА:"
+#define _PLATE_ES u8"%LOSA:"
+
+#define _cannot_create_folder_ u8"Не вдається створити каталог файлів"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Неможливо відкрити файл результатів"
+static char confirm[] = u8"Підтвердьте";
+
+#define _gmsh_error_ u8"Помилка gmsh"
+#define _ElmerGrid_error_ u8"Помилка ElmerGrid"
+#define _ElmerSolver_error_ u8"Помилка ElmerSolver"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Не вдається відкрити файл результатів"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Не вдалося прочитати файл результатів"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Неможливо створити новий шар. Для багатьох уже створених шарів"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Неможливо створити блок вузлів і елементів"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Неможливо створити блок відхилення"
+
+#define _PROCEED_PLATE_FEM_ u8"Продовжити статичний розрахунок зазначеної плити?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"полілінія не замкнута"
+#define _THE_PLATE_ u8"Плита"
+#define _THE_HOLE_ u8"Отвір"
+#define _THE_WALL_ u8"Стіна"
+#define _THE_ZONE_ u8"Зона"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Кількість поліліній пластини дорівнює 0"
+#define _NO_LOAD_ASSIGNED_ u8"Навантаження не призначено, і для власної ваги не заявлено значення «%g»"
+
+#define _Yes_ u8"Так"
+#define _No_ u8"Ні"
+#define _YES_NO_ESC_ u8"ТНтн\033"
+#define _YES_ L'Т'
+#define _yes_ L'т'
+#define _NO_ L'Н'
+#define _no_ L'н'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Плата виглядає нормально, але обчислювальний модуль Elmer FEM не працює в 32-бітній системі"
+#define _BUY_NEW_COMPUTER_  u8"Купіть новий комп'ютер"
 
 #endif
 

@@ -182,7 +182,9 @@ extern void set_sleep_state(BOOL state);
 
 #ifndef LINUX
 __declspec(dllexport) int testCall(int val);
+bool Is64BitOperatingSystem(void);
 #endif
+
 int testCall(int val);
 int GoRegtestCall(int(*ptr)(int));
 bool Copy_File(char *ptrsz_fnd, char *ptrsz_fns);
@@ -217,7 +219,7 @@ void mouseMove(int dx, int dy);
 void get_tens_value(char* st, double tens);
 
 void Put_Str_To_Clip(char *ptrsz_buf);
-bool Get_Str_From_Clip(char *ptrsz_buf,
+int Get_Str_From_Clip(char *ptrsz_buf,
                        int i_poz,
                        int i_buflen,
                        int xpcz,
@@ -394,6 +396,28 @@ HINSTANCE my_hInstance;
 
 static int on_header = 0;
 
+#ifndef LINU
+bool Is64BitOperatingSystem(void)
+{
+	BOOL isWow64 = FALSE;
+	// IsWow64Process requires a process handle.
+	// GetCurrentProcess() gets a pseudo-handle for the current process.
+	if (IsWow64Process(GetCurrentProcess(), &isWow64)) {
+		if (isWow64) {
+			//printf("This 32-bit application is running on a 64-bit OS.");
+			return true;
+		} else {
+			//printf("This 32-bit application is running on a 32-bit OS.");
+			return false;
+		}
+	} else {
+		// Handle error, e.g., if the function call failed.
+		//printf("Failed to call IsWow64Process.");
+	}
+	return false;
+}
+#endif
+
 HWND get_editor_hWnd(void)
 {
 	return editor_hWnd;
@@ -416,15 +440,6 @@ int get_cursor_info(void)
 	//BOOL ret = DestroyCursor(ci.hCursor);
 	ci.hCursor = NULL;
 	ShowCursor(FALSE);
-		//ShowCursor(FALSE);
-		//ShowCursor(FALSE);
-		//ShowCursor(FALSE);
-		//ShowCursor(FALSE);
-		//ShowCursor(FALSE);
-
-		//SetWindowsHookEx(WH_MOUSE_LL, );
-	//remove_mouse();
-	//install_mouse();
 
 	return 1;
 }
@@ -2947,7 +2962,7 @@ void Put_Str_To_Clip(char *ptrsz_buf)
 #endif
 }
 
-bool Get_Str_From_Clip(char *ptrsz_buf,
+int Get_Str_From_Clip(char *ptrsz_buf,
                        int i_poz,
                        int i_buflen,
                        int xpcz,
@@ -2976,7 +2991,7 @@ bool Get_Str_From_Clip(char *ptrsz_buf,
         p[l1+l2]='\0';
     }
 #endif
-    return TRUE;
+    return 1;
 }
 
 #endif

@@ -69,10 +69,17 @@ POLE pmRegion[] = {
         {u8"Китай", L'К',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6, 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 4, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+
+POLE pmStatic[] = {
+        {u8"Каркас і ферма",L'К',733, NULL},
+        {u8"Плита",L'П',855, NULL},
+};
+
+TMENU mStatic = { 2, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Статичний і динамічний аналіз",L'С',733, NULL},
+        {u8"Статичний і динамічний аналіз",L'С',854, &mStatic},
         {u8"Результатні сили в поперечних перерізах",L'Р',824, NULL},
         {u8"Анімувати динаміку",L'А',817, NULL},
         {u8"Вибір перерізу елемента",L'В',775, &mRegion},

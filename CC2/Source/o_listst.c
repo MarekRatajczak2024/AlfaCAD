@@ -327,7 +327,7 @@ void Put_Str_To_Clip(char *ptrsz_buf)
 }
 */
 
-BOOL Get_Str_From_Clip(char *ptrsz_buf,
+int Get_Str_From_Clip(char *ptrsz_buf,
 	int i_poz,
 	int i_buflen,
 	int xpcz,
@@ -341,7 +341,7 @@ BOOL Get_Str_From_Clip(char *ptrsz_buf,
 	char ptrsz_sz_tmp[MaxMultitextLen];  //MaxTextLen
     int valid;
 
-	b_ret = FALSE;
+	b_ret = 0;
 	
 	ptrsz_tmp= GetStringFromClipboard();
 
@@ -360,7 +360,7 @@ BOOL Get_Str_From_Clip(char *ptrsz_buf,
 	strncat(ptrsz_buf, sz_tmp, i_buflen - i_poz - i_len);
 	ptrsz_buf[i_buflen - 1] = '\0';
 
-	b_ret = TRUE;
+	b_ret = 1;
 	
 	return b_ret;
 }

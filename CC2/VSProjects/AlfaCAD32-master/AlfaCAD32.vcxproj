@@ -4266,6 +4266,7 @@
     <ClCompile Include="..\..\Source\IH_section_CN_si.c" />
     <ClCompile Include="..\..\Source\L_section_CA_si.c" />
     <ClCompile Include="..\..\Source\L_section_CN_si.c" />
+    <ClCompile Include="..\..\Source\o_plate.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />

@@ -154,11 +154,17 @@ BOOL enforce_redraw = FALSE;
 
 extern BOOL glb_silent;
 
+
+extern void rysuj_punkt_ (T_Point *ad,int mode,int kolor);
+
 extern char* punits[];
 extern char *upunits[];
 extern int(*SW2[13])(void);
 extern char readmouse(void);
 extern void _free_mouse(void);
+
+extern int get_komunikat_arc_bak(void);
+extern BOOL kom_arc_bak(void);
 
 #ifdef ALLEGRO5
 extern void position_mouse_(int x, int y);
@@ -351,6 +357,7 @@ extern void setviewport(int left, int top, int right, int bottom, int clip);
 extern void setviewport_second(BITMAP *second_screen,int left, int top, int right, int bottom, int clip);
 extern void setcolor(int kolor);
 extern void myline(int x1, int y1, int x2, int y2);
+extern void mycircle(int x, int y, int radius);
 extern int linestyle_xor(int typ);
 extern void putpixel_(int x, int y, int color);
 extern void rectangle(int left, int top, int right, int bottom);
@@ -1235,7 +1242,7 @@ int getupattern(void)
 extern void Clear_View (void) ;
 extern void Image_Free (void) ;
 extern void Save_View (void) ;
-extern void Draw_Solid (int numpoints, T_PixelTVal* polypoints, unsigned pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency) ;
+extern void Draw_Solid (int numpoints, T_PixelTVal* polypoints, unsigned pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT *gradient) ;
 extern void Draw_Kolo (long_long xr,long_long yr,long_long R) ;
 extern BOOL Point_in_Solid (WIELOKAT *ptr_w, double x, double y) ;
 extern BOOL Check_DArea_in_Last_Solid (void) ;
@@ -1543,6 +1550,12 @@ double jednostkiOb(double mmob)     /*mm (ob) -> jednostki */
 {return  mmob*Jednostki/SkalaF;}
 
 
+float jednostkiObXm(double mob)     /*m (ob) local -> jednostki global*/
+{return  (float)(mob*1000.0/SkalaF + localx);}
+
+float jednostkiObYm(double mob)     /*m (ob) local -> jednostki global*/
+{return  (float)(mob*1000.0/SkalaF + localy);}
+
 double get_skala_profilu_x(void)    //mnoznik skali
 { return skala_p_x; }
 
@@ -1695,7 +1708,6 @@ double milimetryobx(double jednostki)   /* jednostki -> mm (ob) */
 
 double milimetryoby(double jednostki)   /* jednostki -> mm (ob) */
 {return  ((jednostki - localy) *SkalaF/Jednostki);}
-
 
 double milimetryobxl (double x0, double y0)
 /*-------------------------------------------*/
@@ -1972,6 +1984,7 @@ static int skokBW (BOOL b_graph_value)
   double sina, cosa;
 
   b_graph_value = b_graph_value ;
+
   if (e.val_no < 1 || e.st == NULL) return 0;
   if (options1.uklad_geodezyjny==0)
    {
@@ -2080,7 +2093,8 @@ BOOL INTL_CURSOR = TRUE; // FALSE;
 BOOL INTL_CURSOR = TRUE;
 #endif
 
-void out_cur_on(double X, double Y)
+
+void out_cur_on_factory(double X, double Y, int circle)
 {
 	int x0, y0, x1, y1, kursor05, kursor01;
 	float f_x, f_y;
@@ -2103,6 +2117,14 @@ void out_cur_on(double X, double Y)
     int w2, h2;
     BITMAP *sec_screen;
 	int d30, d10;
+	int A5pYk;
+
+#ifdef ALLEGRO5
+	A5pYk = (int)pYk;
+#else
+	A5pYk = 0;
+#endif
+
 
 	d30=30*(RETINA+1);
 	d10=10*(RETINA+1);
@@ -2112,17 +2134,19 @@ void out_cur_on(double X, double Y)
     pYp1=get_pYp();
     pYk1=get_pYk();
 
-    background_r = 0.0;
-    background_g = 0.0;
-    background_b = 0.0;
+    background_r = 0.0f;
+    background_g = 0.0f;
+    background_b = 0.0f;
 
-	f_x = X;
-	f_y = Y;
-	x0 = pikseleX0(f_x);
-	y0 = pikseleY0(f_y);
+	f_x = (float)X;
+	f_y = (float)Y;
+	//x0 = pikseleX0(f_x);
+	//y0 = pikseleY0(f_y);
+	x0 = (int)pikseleX0(X);
+	y0 = (int)pikseleY0(Y);
 
-    x1 = pikseleX(f_x);
-    y1 = pikseleY(f_y);
+    x1 = (int)pikseleX(X);
+    y1 = (int)pikseleY(Y);
 
 	setcolor(kolory.cur);
 	cursor_color = palette_color[kolory.cur];
@@ -2180,7 +2204,9 @@ void out_cur_on(double X, double Y)
 				copy_cursor_pattern_fx = current_cursor_fx;
 			}
 
-			putimage_preserve(x0 + d10, y0 + d10, cursor_pattern_bitmap, COPY_PUT);
+			//putimage_preserve(x0 + d10, y0 + d10 + A5pYk , cursor_pattern_bitmap, COPY_PUT);
+			//draw_trans_sprite(screen, cursor_pattern_bitmap, x0 + d10, y0 + d10 + A5pYk);  //this could be used when patterns would get transparency, what is possible using SOLID_PATTERN.flag
+			draw_sprite(screen, cursor_pattern_bitmap, x0 + d10, y0 + d10 + A5pYk);
 		}
 	}
 	else if ((SolidHatch == 1) && (hatch_cursor == TRUE))
@@ -2216,7 +2242,7 @@ void out_cur_on(double X, double Y)
 
 		set_trans_blender(0, 0, 0, (int)SolidHatchTranslucency);
 
-		draw_trans_sprite(screen, cursor_fill_bitmap, x0 + d10, y0 + d10);
+		draw_trans_sprite(screen, cursor_fill_bitmap, x0 + d10, y0 + d10 + A5pYk);
 		set_mode_solid();
 	}
 
@@ -2229,7 +2255,7 @@ void out_cur_on(double X, double Y)
         A1=0;
 
 
-        for (int xx = x1 - (cur_d*sk_x); xx < x1 + (cur_d*sk_x); xx++)
+        for (int xx = x1 - (int)(cur_d*sk_x); xx < x1 + (int)(cur_d*sk_x); xx++)
 		{
 			int yy = y1;
             //check if bitmap pixel is visible
@@ -2240,10 +2266,10 @@ void out_cur_on(double X, double Y)
                 g = getg(color);
                 b = getb(color);
 
-                A1 += 1.0;
-                background_r = (background_r * A + r) / A1;
-                background_g = (background_g * A + g) / A1;
-                background_b = (background_b * A + b) / A1;
+                A1 += 1.0f;
+                background_r = (background_r * A + (float)r) / A1;
+                background_g = (background_g * A + (float)g) / A1;
+                background_b = (background_b * A + (float)b) / A1;
                 A = A1;
             }
 		}
@@ -2261,10 +2287,10 @@ void out_cur_on(double X, double Y)
                 g = getg(color);
                 b = getb(color);
 
-                A1 += 1.0;
-                background_r = (background_r * A + r) / A1;
-                background_g = (background_g * A + g) / A1;
-                background_b = (background_b * A + b) / A1;
+                A1 += 1.0f;
+                background_r = (background_r * A + (float)r) / A1;
+                background_g = (background_g * A + (float)g) / A1;
+                background_b = (background_b * A + (float)b) / A1;
                 A = A1;
             }
 		}
@@ -2278,13 +2304,13 @@ void out_cur_on(double X, double Y)
 	{
 		if (INTL_CURSOR)
 		{
-			brightness_b = 0.299 * background_r + 0.587 * background_g + 0.114 * background_b;
+			brightness_b = 0.299f * background_r + 0.587f * background_g + 0.114f * background_b;
 			color_r = getr(cursor_color);
 			color_g = getg(cursor_color);
 			color_b = getb(cursor_color);
-			brightness_c = 0.299 * color_r + 0.587 * color_g + 0.114 * color_b;
+			brightness_c = 0.299f * (float)color_r + 0.587f * (float)color_g + 0.114f * (float)color_b;
 
-			if (fabs(brightness_c - brightness_b) < BRIGHTNESS_DIFF)
+			if (fabsf(brightness_c - brightness_b) < BRIGHTNESS_DIFF)
 			{
 
 				set_cur_color(0xFFFFFF - palette_color[kolory.cur]);
@@ -2370,11 +2396,11 @@ void out_cur_on(double X, double Y)
 
 		if (INTL_CURSOR)
 		{
-			brightness_b = 0.299 * background_r + 0.587 * background_g + 0.114 * background_b;
+			brightness_b = 0.299f * background_r + 0.587f * background_g + 0.114f * background_b;
 			color_r = getr(cursor_color);
 			color_g = getg(cursor_color);
 			color_b = getb(cursor_color);
-			brightness_c = 0.299 * color_r + 0.587 * color_g + 0.114 * color_b;
+			brightness_c = 0.299f * (float)color_r + 0.587f * color_g + 0.114f * color_b;
 
 			if ((fabs(brightness_c - brightness_b) < BRIGHTNESS_DIFF))
 			{
@@ -2407,11 +2433,23 @@ void out_cur_on(double X, double Y)
 		setwritemode(COPY_PUT);
 	}
 
+    if (circle)  mycircle(x0, y0, 16);
+
     if (sel.akt && sel.gor) out_sel_on(X,Y);
 
 	okno_all();
 
  }
+
+void out_cur_on(double X, double Y)
+{
+    out_cur_on_factory(X, Y, 0);
+}
+
+void out_circle_cur_on(double X, double Y)
+{
+    out_cur_on_factory(X, Y, 1);
+}
 
 
 static void cur_off(double x, double y)
@@ -5153,6 +5191,39 @@ double Dist_PP_f (float x1, float y1, float x2, float y2)
     return sqrt ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) ;
 }
 
+
+double measure_arcvector (LUK *ptrs_arc,
+                           BOOL b_first_end,
+                           double df_l0, double df_dl,
+                           double *df_x, double *df_y)
+/*----------------------------------------------------*/
+{
+    double df_line_len ;
+    double df_d_angle, df_angle ;
+    double df_angle1, df_angle2 ;
+
+    df_angle1 = Angle_Normal (ptrs_arc->kat1) ;
+    df_angle2 = Angle_Normal (ptrs_arc->kat2) ;
+    if (df_angle1 > df_angle2)
+    {
+        df_angle2 += Pi2 ;
+    }
+    df_line_len = fabs (df_angle2 - df_angle1) * ptrs_arc->r ;
+    if (df_line_len >= df_l0 + df_dl &&
+        FALSE == Check_if_Equal (df_line_len, 0))
+    {
+        df_d_angle = (df_l0 + df_dl) / ptrs_arc->r ;
+        df_angle = ptrs_arc->kat1 + df_d_angle ;
+        if (b_first_end == FALSE)
+        {
+            df_angle = ptrs_arc->kat2 - df_d_angle ;
+        }
+        *df_x = ptrs_arc->x + ptrs_arc->r * cos (df_angle) ;
+        *df_y = ptrs_arc->y + ptrs_arc->r * sin (df_angle) ;
+    }
+    return df_line_len - df_l0 - df_dl ;
+}
+
 double measure_vector (float x1, float y1, float x2, float y2, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y)
 /*----------------------------------------------------------------------------------------------------------------------------------------*/
 {
@@ -5188,29 +5259,47 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
     LINIA L=Ldef;
     WIELOKAT w=Stdef;
 
-    L.x1=x1;
-    L.y1=y1;
-    L.x2=x2;
-    L.y2=y2;
-    L.warstwa=w.warstwa=v->warstwa;
-    L.kolor=w.kolor=vkolor; //v->kolor;
-    L.typ=64;
+    L.warstwa = w.warstwa = v->warstwa;
+    L.kolor = w.kolor = vkolor; //v->kolor;
 
-    if (linia_visible(&L))
-        rysuj_obiekt_(&L, mode, kolor);
+    if (v->style<V_EDGE_SIMPLE)
+    {
+        L.x1 = x1;
+        L.y1 = y1;
+        L.x2 = x2;
+        L.y2 = y2;
+        L.typ = 64;
 
-    w.xy[2]=x0;
-    w.xy[3]=y0;
-    w.xy[0]=x0+psize*koc1;
-    w.xy[1]=y0-psize*kos1;
-    w.xy[4]=x0+psize*koc2;
-    w.xy[5]=y0-psize*kos2;
+        if (linia_visible(&L))
+            rysuj_obiekt_(&L, mode, kolor);
+    }
 
-    w.lp=6;
-    w.n=32;
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV) || (v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
+    {
+       L.typ = V_FIXED_LINE; //128;
+       L.x1 = x0;
+       L.y1 = y0;
+       L.x2 = x0 + psize * koc1;
+       L.y2= y0 - psize * kos1;
 
-    if (wielokat_visible(&w))
-       rysuj_obiekt_(&w, mode, kolor);
+        if (linia_visible(&L))
+            rysuj_obiekt_(&L, mode, kolor);
+    }
+    else
+    {
+        w.xy[2] = x0;
+        w.xy[3] = y0;
+        w.xy[0] = x0 + psize * koc1;
+        w.xy[1] = y0 - psize * kos1;
+        w.xy[4] = x0 + psize * koc2;
+        w.xy[5] = y0 - psize * kos2;
+
+        w.lp = 6;
+        w.n = 32;
+
+        if (wielokat_visible(&w))
+            rysuj_obiekt_(&w, mode, kolor);
+    }
 
 }
 
@@ -5298,6 +5387,102 @@ void draw_wave(double x0, double y0, double x1, double y1, double x2, double y2,
 }
 
 
+int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkolor, int redraw_obj)
+{
+    int i;
+    double df_line_rem;
+    double df_l0;
+    double df_psize;
+    double df_seg_len, df_seg_len_dens;
+    BOOL b_first_end=TRUE;
+    double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
+    point p;
+    float n, n1;
+    double koc, kos;
+    double koc1, kos1, koc2, kos2;
+    double ra, ra1;
+    PLINIA PL1;
+    LINIA Lt1;
+    double del_angle;
+    double angle;
+    double katS=Pi_*25.0/180;
+    char keym;
+
+    //T_Point P;
+
+    df_psize = Get_Point_Size () *view_vector_scale;
+    df_seg_len=df_psize;
+
+    ra=df_seg_len / 2;
+    ra1=0.9*ra;
+
+    if ((v->style==24) || (v->style==25))
+    {
+        katS = Pi_ * 45.0 / 180;
+        df_seg_len_dens = df_seg_len / 2.0;
+    }
+    else df_seg_len_dens = df_seg_len;
+
+    i = 0 ;
+    df_l0 = -df_seg_len_dens/2; //0 ;
+    do
+    {
+        if (!redraw_obj)
+        {
+            keym = readmouse();
+
+            if (mvcurb.akton && mvcurb.mvc)
+                goto ending;
+            if (mvcurb.aktoff && !mvcurb.L && !mvcurb.T && !mvcurb.K &&
+                !mvcurb.O && !mvcurb.l && !mvcurb.W && !mvcurb.P)
+                goto ending;
+        }
+
+        df_line_rem = measure_arcvector(l, b_first_end, df_l0, df_seg_len_dens, &df_x, &df_y);
+
+        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
+        {
+
+            Lt1.x1 = df_x;
+            Lt1.y1 = df_y;
+            Lt1.x2 = l->x;
+            Lt1.y2 = l->y;
+            parametry_lini(&Lt1, &PL1);
+
+            //angle=Angle_Normal(PL1.kat*Pi2/180);
+            //koc=cos(angle);
+            //kos=sin(angle);
+
+            if ((v->style==23) || (v->style==25)) PL1.kat+=180;
+
+            angle = Angle_Normal(-(PL1.kat) * Pi / 180);
+            if (fabs(angle - Pi2) < 0.00001) angle = 0;
+            if (fabs(angle) < 0.00001) angle = 0;
+            koc1 = cos(angle - katS);
+            koc2 = cos(angle + katS);
+            kos1 = sin(angle - katS);
+            kos2 = sin(angle + katS);
+
+            n1 = -1;
+
+            draw_arrow(df_x, df_y, df_x, df_y, df_x, df_y, koc1, kos1, koc2, kos2, n1 * ra, v, mode, kolor, vkolor);
+        }
+
+        //P.x=df_x;
+        //P.y=df_y;
+        //P.kolor=7;
+        //rysuj_punkt_(&P, COPY_PUT, 1);
+
+        df_l0 += df_seg_len_dens ;
+        i++ ;
+    }
+    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
+
+    return 1;
+ending:
+    return 0;
+}
+
 int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat, int mode, int kolor, int vkolor, int redraw_obj)
 {
     //arrows
@@ -5305,7 +5490,7 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     double df_l0;
     double df_line_rem;
     BOOL b_first_end=TRUE;
-    double df_seg_len;
+    double df_seg_len, df_seg_len_dens;
     double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
     double df_psize;
     point a1, a2, b1, b2, p;
@@ -5325,6 +5510,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     if (v->style!=15) df_seg_len=df_psize;
     else df_seg_len=df_psize*0.66;  //THERMAL
 
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        katS = Pi_ * 45.0 / 180;
+
     angle=Angle_Normal(angle0);
 
     koc=cos(angle);
@@ -5336,12 +5524,17 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     switch (v->style)
     {
         case 10:
+        case 17:  //slab load
             if (x1<=x2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 11:
             if (y1<=y2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 12:
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
             angle=Angle_Normal(-angle0);
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
@@ -5369,7 +5562,12 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     angle_rev=Angle_Normal(angle+Pi_);
 
     i = 0 ;
-    df_l0 = -df_seg_len/2; //0 ;
+
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        df_seg_len_dens=df_seg_len/2.0;
+    else df_seg_len_dens=df_seg_len;
+
+    df_l0 = -df_seg_len_dens/2; //0 ;
     do
     {
 		if (!redraw_obj)
@@ -5383,59 +5581,65 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
 				goto ending;
 		}
 
-
-        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len, &df_x, &df_y) ;
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/))
+        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len_dens, &df_x, &df_y) ;
+        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
         {
 
-            if ((Check_if_Equal(angle, Pi_/2))  || (Check_if_Equal(angle, Pi_*3/2))) //vertical
+            if ((Check_if_Equal(angle, Pi_ / 2)) || (Check_if_Equal(angle, Pi_ * 3 / 2))) //vertical
             {
-                a1.x=df_x; a1.y=-100.0;
-                a2.x=df_x; a2.y=100.0;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
+                a1.x = df_x;
+                a1.y = -100.0;
+                a2.x = df_x;
+                a2.y = 100.0;
+                b1.x = (double) x11;
+                b1.y = (double) y11;
+                b2.x = (double) x12;
+                b2.y = (double) y12;
 
-                if (b1.x==b2.x) b2.x+=0.0001;
+                if (b1.x == b2.x) b2.x += 0.0001;
 
-                p=intersectionPoint(a1,a2,b1,b2);
+                p = intersectionPoint(a1, a2, b1, b2);
 
-                if (isnan(p.x))
-                {
+                if (isnan(p.x)) {
                     p.x = b2.x;
                     p.y = b2.y;
                 }
-            }
-            else if ((Check_if_Equal(angle, 0))  || (Check_if_Equal(angle, Pi_))) //horizontal
+            } else if ((Check_if_Equal(angle, 0)) || (Check_if_Equal(angle, Pi_))) //horizontal
             {
-                a1.x=-100.0; a1.y=df_y;
-                a2.x=100.0; a2.y=df_y;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
-                p=intersectionPoint(a1,a2,b1,b2);
+                a1.x = -100.0;
+                a1.y = df_y;
+                a2.x = 100.0;
+                a2.y = df_y;
+                b1.x = (double) x11;
+                b1.y = (double) y11;
+                b2.x = (double) x12;
+                b2.y = (double) y12;
+                p = intersectionPoint(a1, a2, b1, b2);
 
                 if (isnan(p.x)) {
                     p.x = b1.x;
                     p.y = b1.y;
                 }
-            }
-            else
-            {
-                a1.x=df_x-100.0*koc; a1.y=df_y-100.0*kos;
-                a2.x=df_x+100.0*koc; a2.y=df_y+100.0*kos;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
-                p=intersectionPoint(a1,a2,b1,b2);
+            } else {
+                a1.x = df_x - 100.0 * koc;
+                a1.y = df_y - 100.0 * kos;
+                a2.x = df_x + 100.0 * koc;
+                a2.y = df_y + 100.0 * kos;
+                b1.x = (double) x11;
+                b1.y = (double) y11;
+                b2.x = (double) x12;
+                b2.y = (double) y12;
+                p = intersectionPoint(a1, a2, b1, b2);
             }
 
             if (isnan(p.x)) return 1;
 
-            n1=1;
+            n1 = 1;
 
-            switch (v->style)
-            {
+            switch (v->style) {
                 case 10:
-                    if (v->flags & 1)
-                    {
+                case 17: //slab load
+                    if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
 
@@ -5444,41 +5648,34 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
 
                         df_x1 = df_x;
 
-                        if ((p.y - df_y) > -0.001)
-                        {
+                        if ((p.y - df_y) > -0.001) {
                             df_y1 = p.y - ra1 * kos;
                             if (x1 > x2) n1 = -1;
-                        } else
-                        {
+                        } else {
                             df_y1 = p.y + ra1 * kos;
                             if (x1 < x2) n1 = -1;
                         }
-                        n1*=-1;
-                    }
-                    else
-                    {
-                        df_x0=df_x;
-                        df_y0=df_y;
+                        n1 *= -1;
+                    } else {
+                        df_x0 = df_x;
+                        df_y0 = df_y;
 
                         df_x2 = p.x;
                         df_y2 = p.y;
 
                         df_x1 = df_x;
 
-                        if ((p.y - df_y) > -0.001)
-                        {
+                        if ((p.y - df_y) > -0.001) {
                             df_y1 = df_y + ra1 * kos;
                             if (x1 > x2) n1 = -1;
-                        } else
-                        {
+                        } else {
                             df_y1 = df_y - ra1 * kos;
                             if (x1 < x2) n1 = -1;
                         }
                     }
-                break;
+                    break;
                 case 11:
-                    if (v->flags & 1)
-                    {
+                    if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
 
@@ -5486,18 +5683,15 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                         df_y2 = df_y;
 
                         df_y1 = df_y;
-                        if ((p.x - df_x) > 0.001)
-                        {
+                        if ((p.x - df_x) > 0.001) {
                             df_x1 = p.x - ra1 * koc;
                             if (y1 < y2) n1 = -1;
-                        } else
-                        {
-                            df_x1 =p.x + ra1 * koc;
+                        } else {
+                            df_x1 = p.x + ra1 * koc;
                             if (y1 > y2) n1 = -1;
                         }
-                        n1*=-1;
-                    }
-                    else {
+                        n1 *= -1;
+                    } else {
                         df_x0 = df_x;
                         df_y0 = df_y;
 
@@ -5505,20 +5699,21 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                         df_y2 = p.y;
 
                         df_y1 = df_y;
-                        if ((p.x - df_x) > 0.001)
-                        {
+                        if ((p.x - df_x) > 0.001) {
                             df_x1 = df_x + ra1 * koc;
                             if (y1 < y2) n1 = -1;
-                        } else
-                        {
+                        } else {
                             df_x1 = df_x - ra1 * koc;
                             if (y1 > y2) n1 = -1;
                         }
                     }
-                break;
+                    break;
                 case 12:
-                    if (v->flags & 1)
-                    {
+                case V_EDGE_SIMPLE:  //simple supported edge
+                case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+                case V_EDGE_FIXED:  //fixed edge
+                case V_EDGE_FIXED_INV:  //fixed edge reversed
+                    if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
 
@@ -5543,10 +5738,8 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                         df_x1 = p.x - n1 * ra1 * koc;
                         df_y1 = p.y - n1 * ra1 * kos;
 
-                        n1*=-1;
-                    }
-                    else
-                    {
+                        n1 *= -1;
+                    } else {
                         df_x0 = df_x;
                         df_y0 = df_y;
 
@@ -5571,10 +5764,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                         df_x1 = df_x + n1 * ra1 * koc;
                         df_y1 = df_y + n1 * ra1 * kos;
                     }
-                break;
+                    break;
                 case 13:
-                    if (v->flags & 1)
-                    {
+                    if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
 
@@ -5589,10 +5781,8 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                             if (p.y > df_y) n1 = -1;
                             df_y1 = p.y + n1 * ra1 * kos;
                         }
-                        n1*=-1;
-                    }
-                    else
-                    {
+                        n1 *= -1;
+                    } else {
                         df_x0 = df_x;
                         df_y0 = df_y;
 
@@ -5608,10 +5798,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                             df_y1 = df_y - n1 * ra1 * kos;
                         }
                     }
-                break;
+                    break;
                 case 14:
-                    if (v->flags & 1)
-                    {
+                    if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
 
@@ -5627,9 +5816,8 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                             if (p.x < df_x) n1 = -1;
                             df_x1 = p.x - n1 * ra1 * koc;
                         }
-                        n1*=-1;
-                    }
-                    else {
+                        n1 *= -1;
+                    } else {
                         df_x0 = df_x;
                         df_y0 = df_y;
 
@@ -5647,54 +5835,55 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                         }
                     }
 
-                break;
+                    break;
                 case 15:
 
-                    df_x0=df_x;
-                    df_y0=df_y;
+                    df_x0 = df_x;
+                    df_y0 = df_y;
 
-                    n1=1;
+                    n1 = 1;
 
-                    Lt1.x1=df_x;
-                    Lt1.y1=df_y;
-                    Lt1.x2=p.x;
-                    Lt1.y2=p.y;
+                    Lt1.x1 = df_x;
+                    Lt1.y1 = df_y;
+                    Lt1.x2 = p.x;
+                    Lt1.y2 = p.y;
 
                     parametry_lini(&Lt1, &PL1);
-                    if (PL1.dl>0)
-                    {
+                    if (PL1.dl > 0) {
                         if (PL1.kat < kat) PL1.kat += 360;
                         del_angle = PL1.kat - kat;
 
                         if (fabs(del_angle - 90) > 1.0) n1 = -1;
                     }
 
-                    df_x1 = df_x + n1*ra1*0.5 * koc;
-                    df_y1 = df_y + n1*ra1*0.5 * kos;
+                    df_x1 = df_x + n1 * ra1 * 0.5 * koc;
+                    df_y1 = df_y + n1 * ra1 * 0.5 * kos;
 
-                    df_x2 = p.x - n1*ra1*0.5 * koc;
-                    df_y2 = p.y - n1*ra1*0.5 * kos;
+                    df_x2 = p.x - n1 * ra1 * 0.5 * koc;
+                    df_y2 = p.y - n1 * ra1 * 0.5 * kos;
 
                     break;
                 default:
-                    df_x0=df_x;
-                    df_y0=df_y;
+                    df_x0 = df_x;
+                    df_y0 = df_y;
 
                     df_x2 = p.x;
                     df_y2 = p.y;
 
                     df_x1 = df_x;
-                    if (x1<x2) df_y1 = df_y - ra1 * kos;
+                    if (x1 < x2) df_y1 = df_y - ra1 * kos;
                     else df_y1 = df_y + ra1 * kos;
                     break;
             }
 
-            if (v->style!=15) draw_arrow(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc1, kos1, koc2, kos2, n1*ra, v, mode, kolor, vkolor);
+            if (v->style != 15)
+                draw_arrow(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc1, kos1, koc2, kos2, n1 * ra, v, mode, kolor, vkolor);
             else draw_wave(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v, mode, kolor, vkolor);
-
-            df_l0 += df_seg_len ;
-            i++ ;
         }
+
+        df_l0 += df_seg_len_dens ;
+        i++ ;
+
     }
     while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
 
@@ -5823,10 +6012,11 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
     int translucency;
     int vkolor;
     double x2, y2;
+    ELLIPSE load_ellipse=FEdef;
 
 #define arrowf 1.0
 
-    if ((ptrs_vector->style > 9) && (ptrs_vector->style < 16) && (kolor)) bitmap_vector_exist = TRUE;
+    if ((ptrs_vector->style > 9) && ((ptrs_vector->style < 16) || (ptrs_vector->style > 16)) && (kolor)) bitmap_vector_exist = TRUE;
 
     if (redraw_obj)
     {
@@ -5936,17 +6126,17 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             if (L1.x1<=L1.x2) n=1; else n=-1;
 
-            Vtxt.x=(L1.x1+L1.x2)/2-((n*ra/4)*koc1);
-            Vtxt.y=(L1.y1+L1.y2)/2-((n*ra/4)*kos1);
+            Vtxt.x=(float)(L1.x1+L1.x2)/2.f-((n*ra/4)*koc1);
+            Vtxt.y=(float)(L1.y1+L1.y2)/2.f-((n*ra/4)*kos1);
             set_decimal_format(&Vtxt.text, ptrs_vector->magnitude1, displacement_precision);
             normalize_txt(&Vtxt);
 
-            Vltxt.x=(L1.x1+L1.x2)/2+n*((Vltxt.wysokosc+ra/4)*koc1);
-            Vltxt.y=(L1.y1+L1.y2)/2+n*((Vltxt.wysokosc+ra/4)*kos1);
+            Vltxt.x=(float)(L1.x1+L1.x2)/2.f+n*((Vltxt.wysokosc+ra/4)*koc1);
+            Vltxt.y=(float)(L1.y1+L1.y2)/2.f+n*((Vltxt.wysokosc+ra/4)*kos1);
 
             if (ptrs_vector->variant>0)
-                sprintf(&Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
-            else sprintf(&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
+                sprintf((char*)&Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
+            else sprintf((char*)&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
         case 5:
@@ -5961,16 +6151,25 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             Vltxt.x=ptrs_vector->x1+(ptrs_vector->r - Vltxt.wysokosc - 0.5)*cos(kats);
             Vltxt.y=ptrs_vector->y1+(ptrs_vector->r - Vltxt.wysokosc - 0.5)*sin(kats);
 
-            Vtxt.kat=Vltxt.kat=Angle_Normal(kats-Pi_/2);
+            Vtxt.kat=Vltxt.kat=(float)Angle_Normal(kats-Pi_/2);
             Vtxt.justowanie=Vltxt.justowanie=j_srodkowo;
             set_decimal_format(&Vtxt.text, ptrs_vector->magnitude1, moment_precision);
             normalize_txt(&Vtxt);
 
 
             if (ptrs_vector->variant>0)
-               sprintf(&Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
-            else sprintf(&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
+               sprintf((char*)&Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
+            else sprintf((char*)&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
+            break;
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+            if (ptrs_vector->angle2<ptrs_vector->angle1)
+                kata2=ptrs_vector->angle2+Pi2;
+            else kata2=ptrs_vector->angle2;
+            kats=Angle_Normal((ptrs_vector->angle1+kata2)/2);
             break;
         case 8:
         case 9:
@@ -5996,7 +6195,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             normalize_txt(&Vltxt);
             break;
         case 10:  //trapezium Y
-
+        case 17:  ////trapezium Y slab
 
             if (Check_if_Equal(L1.x1, L1.x2))
             {
@@ -6293,6 +6492,33 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             else sprintf(&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+            if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
+               ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.1;  //just to simulate
+               else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.1;  //just to simulate
+            kos1=sin(Pi*(PL.kat+90)/180);
+            koc1=cos(Pi*(PL.kat+90)/180);
+
+            n=view_vector_scale;
+
+            if (ptrs_vector->flags & 1) n*=-1;
+
+            Lt.x1 = L1.x1 + n*(ptrs_vector->magnitude1/load_magnitude)*koc1;
+            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude)*kos1;
+            Lt.x2 = L1.x2 + n*(ptrs_vector->magnitude2/load_magnitude)*koc1;
+            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude)*kos1;
+
+            Ltx=(Lt.x1 + Lt.x2)/2;
+            Lty=(Lt.y1 + Lt.y2)/2;
+
+            parametry_lini(&Lt, &PL1);
+            kos2=sin(Pi*(PL1.kat+90)/180);
+            koc2=cos(Pi*(PL1.kat+90)/180);
+            break;
+
         case 13:  //trapezium H
             if (L1.x1<L1.x2)
             {
@@ -6817,6 +7043,10 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case 6:
         case 8:  //rotation
         case 9:
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
 
             switch (ptrs_vector->style)
             {
@@ -6894,6 +7124,32 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     l.typ=grubosc * 32 + 1;
                     rysuj_obiekt_(&l, mode, kolor);
                     break;
+                case V_EDGE_ARC_SIMPLE:  //simple supported edge
+                case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+                case V_EDGE_ARC_FIXED:  //fixed edge
+                case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+                    grubosc = (ptrs_vector->typ & 224) / 32;
+                    linestyle(grubosc * 32 + 1);
+                    kats=ptrs_vector->angle2-Pi_/2;
+                    n=+1;
+                    s=1;
+                    xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                    ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+
+                    l.x=ptrs_vector->x1;
+                    l.y=ptrs_vector->y1;
+                    l.r=ptrs_vector->r;
+                    l.kat1=ptrs_vector->angle1;
+                    l.kat2=ptrs_vector->angle2;
+                    l.typ=ptrs_vector->typ;
+                    rysuj_obiekt_(&l, mode, kolor);
+
+                    //triangles or dashes
+                    if (!make_arcarrows(&l, ptrs_vector, PL.kat, mode, kolor, vkolor, redraw_obj))
+                        return;
+
+                    return;
+                    break;
             }
 
             double dx=Get_Point_Size () *view_vector_scale / arrowf * cos(kats);
@@ -6944,6 +7200,21 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             }
             break;
         case 10:  //trapezium Y
+        case 17:  //trapezium Y slab
+            if (ptrs_vector->style==17)  //slab load
+            {
+                load_ellipse.kolor=ptrs_vector->kolor;
+                load_ellipse.warstwa=ptrs_vector->warstwa;
+                load_ellipse.widoczny=ptrs_vector->widoczny;
+                load_ellipse.translucency=51;
+                load_ellipse.typ=64;
+                load_ellipse.x=(float)((ptrs_vector->x1+ptrs_vector->x2)/2.);
+                load_ellipse.y=(float)((ptrs_vector->y1+ptrs_vector->y2)/2.);
+                load_ellipse.angle=PL.kat*Pi/180;
+                load_ellipse.rx=(float)(PL.dl/2.);
+                load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                rysuj_obiekt_((void*)&load_ellipse, mode, kolor);
+            }
 
             L1.typ=64;
             rysuj_obiekt_(&L1, mode, kolor);
@@ -7009,6 +7280,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 outtextxy_w(&Vltxt, mode);
             }
             break;
+
         case 11:  //trapezium X
             L1.typ=64;
             rysuj_obiekt_(&L1, mode, kolor);
@@ -7135,6 +7407,64 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 outtextxy_w(&Vltxt, mode);
             }
             break;
+
+            //////////////////
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+            L1.typ=ptrs_vector->typ; //64;
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            w.empty_typ=0;
+
+            w.xy[0]=L1.x1;
+            w.xy[1]=L1.y1;
+            w.xy[2]=L1.x2;
+            w.xy[3]=L1.y2;
+
+            w.xy[4]=Lt.x2;
+            w.xy[5]=Lt.y2;
+            w.xy[6]=Lt.x1;
+            w.xy[7]=Lt.y1;
+            w.lp=8;
+            w.n=40;
+
+            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
+            /*
+            L1.typ=64;
+            L1.x1=w.xy[2];
+            L1.y1=w.xy[3];
+            L1.x2=w.xy[4];
+            L1.y2=w.xy[5];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            L1.x1=w.xy[6];
+            L1.y1=w.xy[7];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            L1.x2=w.xy[0];
+            L1.y2=w.xy[1];
+            rysuj_obiekt_(&L1, mode, kolor);
+
+            w.translucent=1;
+            translucency=TRANS;
+
+            translucency_ptr = w.xy;
+            translucency_ptr += (w.lp * sizeof(float));
+            memmove(translucency_ptr, &translucency, sizeof(unsigned char));
+
+            rysuj_obiekt_(&w, mode, kolor);
+
+            if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
+            */
+            set_mode_solid();
+
+            if (!make_arrows(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat, mode, kolor, vkolor, redraw_obj))
+                return;
+
+            break;
+            //////////////////
         case 13:  //trapezium H
             L1.typ=64;
             rysuj_obiekt_(&L1, mode, kolor);
@@ -7842,7 +8172,11 @@ static void rysuj_bitmapy(void)
   char* dy_ptr;
   char* name_ptr;
   T_PixelTVal PolyPoints[MaxNumPoints];
+  int PolyPointsMon[8] ;
   int NumPoints, i;
+  char *translucency_ptr, *gradient_ptr=NULL;
+  unsigned char translucency;
+  BOOL ignore_p=FALSE;
 
 
 if (options1.ignore_buffering_pcx==0)
@@ -8540,7 +8874,7 @@ if (ctx_ok==TRUE)
 							 memmove(&solid_pattern.angle, angle_ptr, sizeof(short int));
 							 memmove(&solid_pattern.dy, dy_ptr, sizeof(short int));
 							 strcpy(&solid_pattern.pattern, name_ptr);
-							 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), &solid_pattern, TRANSLUCENCY);
+							 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), &solid_pattern, TRANSLUCENCY, NULL);
 
 
                              ///////////////  if Ablok
@@ -8553,7 +8887,7 @@ if (ctx_ok==TRUE)
                                  set_trans_blender(0, 0, 0, (int) HALFTRANSLUCENCY);
                                  set_mode_trans();
 
-                                 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, HALFTRANSLUCENCY);
+                                 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, HALFTRANSLUCENCY, NULL);
 
                                  reset_trans_blender();
                              }
@@ -8561,6 +8895,200 @@ if (ctx_ok==TRUE)
 
 							 set_mode_solid();
 						 }
+                         else if ((w->empty_typ == 0) && (w->gradient == 1))
+                         {
+                             if (w->n == (w->lp * sizeof(float) + 8))
+                                 w->translucent = 0;
+
+                             if (w->translucent == 1) {
+                                 translucency_ptr = (char *) w->xy;
+                                 translucency_ptr += (w->lp * sizeof(float));
+                                 memmove(&translucency, translucency_ptr, sizeof(unsigned char));
+                                 if (translucency < 255) solid_translucent_exist = TRUE;
+                             }
+
+                             //GRADIENT  - this part now is ommited due to moving to rysuj_bitmapy();
+                             if (w->n == (w->lp * sizeof(float) + 8))
+                                 w->gradient = 0;
+
+                             if (w->gradient == 1) {
+
+                                 translucency_ptr = (char*)w->xy;
+                                 translucency_ptr += (w->lp * sizeof(float));
+
+                                 //gradient_ptr = (char *) w->xy;
+                                 //gradient_ptr += (w->lp * sizeof(float));
+                                 gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                                 //memmove(&gradient, gradient_ptr, sizeof(GRADIENT));
+                                 solid_translucent_exist = TRUE;
+                             }
+
+                             if(!(w->widoczny=wielokat_wybrany(w)))
+                             {
+                                 if (TRUE == Point_in_Solid (w, xs, ys))
+                                 {
+                                     if ((w->empty_typ==0) && (w->pattern == 0))
+                                     {
+
+                                         translucency = 255;
+
+                                         if ((w->warstwa==Current_Layer) || (options1.view_only_current_layer==0))
+                                         {
+                                             if ((w->atrybut == Ablok) ||
+                                                 ((dragging_quad_move == TRUE) && (w->atrybut == Aoblok)))
+                                             {
+                                                 setfillstyle_(SOLID_FILL,kolory.blok);
+                                                 setcolor(kolory.blok);
+                                             } else {
+                                                 setfillstyle_(SOLID_FILL, GetColorAC(w->kolor));
+                                                 SetColorAC(w->kolor);
+                                             }
+                                         }
+                                         else setfillstyle_ (SOLID_FILL, GetColorAC (8)) ;
+
+
+                                         if ((w->translucent == 1) || (TRANSLUCENCY<255))
+                                         {
+                                             if (w->translucent == 1)
+                                             {
+                                                 translucency_ptr = w->xy;
+                                                 translucency_ptr += (w->lp * sizeof(float));
+                                                 memmove(&translucency, translucency_ptr, sizeof(unsigned char));
+
+                                             }
+                                             else translucency = 255;
+                                             if (translucency > TRANSLUCENCY) translucency = TRANSLUCENCY;
+                                             set_trans_blender(0, 0, 0, (int)translucency);
+                                             set_mode_trans();
+                                         }
+                                         else set_mode_solid();
+
+                                         PolyPointsMon[0] = pXp; PolyPointsMon[1] = /*pYk*/ 0; PolyPointsMon[2] = pXk; PolyPointsMon[3] = /*pYk*/ 0;
+                                         PolyPointsMon[4] = pXk; PolyPointsMon[5] = pYp; PolyPointsMon[6] = pXp; PolyPointsMon[7] = pYp;
+
+                                         if (!w->gradient) my_fillpoly(4, PolyPointsMon, translucency, kolory.paper);
+                                         else {
+                                             NumPoints=w->lp/2;
+                                             Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+                                         }
+
+
+                                         if (w->translucent == 1)
+                                         {
+                                             reset_trans_blender();
+                                         }
+
+                                         set_mode_solid();
+
+                                         goto aaa;
+
+                                     }
+                                 }
+                                 goto aaa;
+                             }
+                             for(i=0; i<(int)w->lp && i<MaxNumPoints; i++) {
+                                 if ((i % 2) == 0) {
+                                     j = i / 2;
+                                     PolyPoints[i] = pikseleX0(w->xy[i]);
+                                     //if (nag->obiekt==Owwielokat3D) PolyPoints_Z[j]=w->xy[w->lp+j];
+                                 } else PolyPoints[i] = pikseleY0(w->xy[i]);
+                             }
+                             PolyPoints[8] = PolyPoints[0];
+                             PolyPoints[9] = PolyPoints[1];
+
+                             NumPoints=i/2;
+
+                             translucency = 255;
+
+                             if ((w->warstwa==Current_Layer) || (options1.view_only_current_layer==0))
+                             {
+                                 if ((w->atrybut==Ablok) ||
+                                     ((dragging_quad_move == TRUE) && (w->atrybut == Aoblok)))
+                                 {
+                                     setcolor(kolory.blok);
+                                     setfillstyle_(SOLID_FILL,kolory.blok);
+                                 }
+                                 else
+                                 {
+                                     SetColorAC(w->kolor);
+                                     setfillstyle_(SOLID_FILL,GetColorAC(w->kolor));
+                                 }
+                             }
+                             else
+                             {
+                                 SetColorAC(8);
+                                 setfillstyle_(SOLID_FILL,GetColorAC(8));
+                             }
+                             if (w->empty_typ==0)
+                             {
+                                 if ((w->warstwa==Current_Layer) || (options1.view_only_current_layer==0))
+                                 {
+                                     if ((w->atrybut==Ablok) ||
+                                         ((dragging_quad_move == TRUE) && (w->atrybut == Aoblok)))
+                                     {
+                                         setcolor(kolory.blok);
+                                         setfillstyle_(SOLID_FILL,kolory.blok);
+                                     }
+                                     else
+                                     {
+                                         SetColorAC(w->kolor);
+                                         setfillstyle_(SOLID_FILL,GetColorAC(w->kolor));
+                                     }
+                                 }
+                                 else
+                                 {
+                                     SetColorAC(8);
+                                     setfillstyle_(SOLID_FILL,GetColorAC(8));
+                                 }
+
+                                 setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
+
+                                 ignore_p = FALSE;
+
+                                 if ((w->translucent == 1) || (TRANSLUCENCY < 255))
+                                 {
+
+                                     if (w->translucent == 1)
+                                     {
+                                         translucency_ptr = w->xy;
+                                         translucency_ptr += (w->lp * sizeof(float));
+                                         memmove(&translucency, translucency_ptr, sizeof(unsigned char));
+
+                                     }
+                                     else translucency = 255;
+
+                                     if (translucency > TRANSLUCENCY) translucency = TRANSLUCENCY;
+                                     set_trans_blender(0, 0, 0, (int)translucency);
+                                     set_mode_trans();
+                                 }
+                                 else set_mode_solid();
+                                 //GRADIENT
+                                 gradient_ptr=NULL;
+                                 if ((w->empty_typ == 0) && (w->gradient == 1)) {
+                                     if (w->n == (w->lp*sizeof(float)+8))
+                                         w->gradient=0;
+
+                                     if (w->gradient == 1)
+                                     {
+                                         translucency_ptr = (char*)w->xy;
+                                         translucency_ptr += (w->lp * sizeof(float));
+
+                                         gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                                         solid_translucent_exist = TRUE;
+                                     }
+                                 }
+
+                                 if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+
+                                 if (w->translucent == 1)
+                                 {
+                                     reset_trans_blender();
+                                     set_mode_solid();
+                                 }
+                             }
+                             set_mode_solid();
+                             ///////////////////////////
+                         }
 
 					 }
 				 }
@@ -9535,6 +10063,7 @@ static void rysuj_obiekty(void)
   SPLINE  *s;
   T_Point *ptrs_point ;
   AVECTOR *ptrs_vector ;
+  AVECTOR V;
   NAGLOWEK *nag, *nag1;
   B_PCX *b_pcx;
   ELLIPSE *e, *fe;
@@ -9562,8 +10091,9 @@ static void rysuj_obiekty(void)
   char *trace_block_begin = NULL, *trace_block_end=NULL;
   BOOL trace_block=FALSE;
   POINTF last_trace_point[2], next_trace_point[2];
-  char *translucency_ptr;
+  char *translucency_ptr, *gradient_ptr=NULL;
   unsigned char translucency;
+  //GRADIENT gradient;
   int found;
   BOOL ignore_p=FALSE;
   BOOL ret_move;
@@ -9841,7 +10371,26 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 				break;
 			}
 		}
-		L->widoczny=lineC (pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        //L->widoczny=lineC (pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        switch (L->obiektt2) {
+           case 6:
+               memmove(&V, L, sizeof(LINIA));
+                if (L->obiektt3==0)  V.style = V_EDGE_SIMPLE;
+                else V.style = V_EDGE_SIMPLE_INV;
+               if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
+                   Draw_Vector(&V, COPY_PUT, 1, 0);
+               break;
+           case 7:
+               memmove(&V, L, sizeof(LINIA));
+                if (L->obiektt3==0)  V.style = V_EDGE_FIXED;
+                else V.style = V_EDGE_FIXED_INV;
+               if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
+                   Draw_Vector(&V, COPY_PUT, 1, 0);
+               break;
+           default:
+               L->widoczny=lineC (pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+               break;
+       }
 	    break;
 	  case Otekst :
 		licznik_obiektow++;
@@ -10087,16 +10636,21 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 	   licznik_obiektow+=2;
 	   w=(WIELOKAT*)nag;
 
+       gradient_ptr=NULL;
+
 	   SetColorAC(w->kolor);
 
 	   if ((w->atrybut != Ausuniety) &&
 		   (w->atrybut != Abad))
 	   {
-		   if ((w->empty_typ == 0) && (w->pattern == 1))
+		   if ((w->empty_typ == 0) && ((w->pattern == 1) || (w->gradient == 1)))
 		   {
                //checking if it's really pattern
                if (w->n == (w->lp*sizeof(float)+8))
-                   w->pattern=0;
+               {
+                   w->pattern = 0;
+                   w->gradient = 0;
+               }
                else {
                    if (bitmap_pattern_exist_o == FALSE) {
                        redraw_again = TRUE;
@@ -10107,16 +10661,34 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                    break;
                }
 		   }
-		   else if ((w->empty_typ == 0) && (w->translucent == 1)) {
-               if (w->n == (w->lp*sizeof(float)+8))
-                   w->translucent=0;
+		   else {
+               if ((w->empty_typ == 0) && (w->translucent == 1)) {
+                   if (w->n == (w->lp * sizeof(float) + 8))
+                       w->translucent = 0;
 
-               if (w->translucent == 1)
-               {
-                   translucency_ptr = w->xy;
-                   translucency_ptr += (w->lp * sizeof(float));
-                   memmove(&translucency, translucency_ptr, sizeof(unsigned char));
-                   if (translucency<255) solid_translucent_exist = TRUE;
+                   if (w->translucent == 1) {
+                       translucency_ptr = (char *) w->xy;
+                       translucency_ptr += (w->lp * sizeof(float));
+                       memmove(&translucency, translucency_ptr, sizeof(unsigned char));
+                       if (translucency < 255) solid_translucent_exist = TRUE;
+                   }
+               }
+               //GRADIENT  - this part now is ommited due to moving to rysuj_bitmapy();
+               if ((w->empty_typ == 0) && (w->gradient == 1)) {
+                   if (w->n == (w->lp * sizeof(float) + 8))
+                       w->gradient = 0;
+
+                   if (w->gradient == 1) {
+
+                       translucency_ptr = (char*)w->xy;
+                       translucency_ptr += (w->lp * sizeof(float));
+
+                       //gradient_ptr = (char *) w->xy;
+                       //gradient_ptr += (w->lp * sizeof(float));
+                       gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                       //memmove(&gradient, gradient_ptr, sizeof(GRADIENT));
+                       solid_translucent_exist = TRUE;
+                   }
                }
            }
 	   }
@@ -10164,7 +10736,12 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 
 		   PolyPointsMon[0] = pXp; PolyPointsMon[1] = /*pYk*/ 0; PolyPointsMon[2] = pXk; PolyPointsMon[3] = /*pYk*/ 0;
 		   PolyPointsMon[4] = pXk; PolyPointsMon[5] = pYp; PolyPointsMon[6] = pXp; PolyPointsMon[7] = pYp;
-		   my_fillpoly(4, PolyPointsMon, translucency, kolory.paper);
+
+           if (!w->gradient) my_fillpoly(4, PolyPointsMon, translucency, kolory.paper);
+           else {
+               NumPoints=w->lp/2;
+               Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+           }
 
 
           if (w->translucent == 1)
@@ -10191,6 +10768,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 	     }
 		 else break ;
 	   }
+       //if widoczny
 	   for(i=0; i<(int)w->lp && i<MaxNumPoints; i++)
 		if ((i % 2) == 0)
 		{
@@ -10269,12 +10847,29 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 			  set_trans_blender(0, 0, 0, (int)translucency);
 			  set_mode_trans();
 		  }
+          else set_mode_solid();
+          //GRADIENT
+          gradient_ptr=NULL;
+          if ((w->empty_typ == 0) && (w->gradient == 1)) {
+              if (w->n == (w->lp*sizeof(float)+8))
+                  w->gradient=0;
 
-		  else set_mode_solid();
+              if (w->gradient == 1)
+              {
+                  translucency_ptr = (char*)w->xy;
+                  translucency_ptr += (w->lp * sizeof(float));
+
+                  //gradient_ptr = (char*)w->xy;
+                  //gradient_ptr += (w->lp * sizeof(float));
+                  gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                  //memmove(&gradient, gradient_ptr, sizeof(GRADIENT));
+                  solid_translucent_exist = TRUE;
+              }
+          }
 
 		  if (w->pattern == 0)
 		  {
-			if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency);
+			if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
               //set_mode_solid();
 		  }
 		   else
@@ -10311,7 +10906,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                 setfillstyle_(MY_DOT_FILL,GetColorAC(8));
             }
 
-	       Draw_Solid (NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, TRANSLUCENCY);
+	       Draw_Solid (NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, TRANSLUCENCY, NULL);
         }
         else if (w->empty_typ==7)
         {
@@ -10495,7 +11090,41 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                break;
            }
        }
-	   DrawArc(pikseleX0(l->x),pikseleY0(l->y),l->kat1,l->kat2,pikseleDX(l->r), mode);
+	   //DrawArc(pikseleX0(l->x),pikseleY0(l->y),l->kat1,l->kat2,pikseleDX(l->r), mode);
+       switch (l->obiektt2)
+       {
+           case 6:
+               V.warstwa=l->warstwa;
+               V.kolor=l->kolor;
+               V.typ=l->typ;
+               V.x1=l->x;
+               V.y1=l->y;
+               V.r=l->r;
+               V.angle1=l->kat1;
+               V.angle2=l->kat2;
+               V.magnitude1=0.0f;
+               if (l->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+               else V.style = V_EDGE_ARC_SIMPLE_INV;
+               Draw_Vector(&V, COPY_PUT, 1, 0);
+           break;
+           case 7:
+               V.warstwa=l->warstwa;
+               V.kolor=l->kolor;
+               V.typ=l->typ;
+               V.x1=l->x;
+               V.y1=l->y;
+               V.r=l->r;
+               V.angle1=l->kat1;
+               V.angle2=l->kat2;
+               V.magnitude1=0.0f;
+               if (l->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+               else V.style = V_EDGE_ARC_FIXED_INV;
+               Draw_Vector(&V, COPY_PUT, 1, 0);
+           break;
+           default:
+               DrawArc(pikseleX0(l->x),pikseleY0(l->y),l->kat1,l->kat2,pikseleDX(l->r), mode);
+           break;
+       }
 	   pattern_count = FALSE;
 	   pattern_offset = 0;
 	   break;
@@ -10536,7 +11165,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                if ((ptrs_vector->atrybut != Ausuniety) &&
                    (ptrs_vector->atrybut != Abad))
                {
-                   if ((ptrs_vector->style > 9) && (ptrs_vector->style < 16)) bitmap_vector_exist = TRUE;
+                   if ((ptrs_vector->style > 9) && ((ptrs_vector->style < 16) || (ptrs_vector->style == 17))) bitmap_vector_exist = TRUE;
 
                    if (!(ptrs_vector->widoczny = Vector_Selected(ptrs_vector))) break;
 
@@ -10939,8 +11568,13 @@ void  redraw_cur(BOOL cur)
 	mvcurb.akton = 1;
 	if (Error == 0) komunikat(komunikat_R);
 	if (komunikat_R0>0) komunikat0(komunikat_R0);
-	Komunikat_R0 = komunikat_R0;
+	else if (get_komunikat_arc_bak()>=0)
+	{
+		komunikat0(0);
+		ret = kom_arc_bak();
+	}
 
+	Komunikat_R0 = komunikat_R0;
 
 	if ((cur == TRUE) && (do_not_draw_cur == FALSE))
 	{
@@ -13082,7 +13716,6 @@ void ini_cursor_busy(void)
     SERV [i] = nooop1 ;
   }
   setbkcolor(BKCOLOR/*kolory.paper*/);
-  
 
   e.x=maxX-PKu130x;
   e.format = "%#12.9lg\0%#12.9lg;%#12.9lg" ;

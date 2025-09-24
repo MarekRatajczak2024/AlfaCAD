@@ -158,7 +158,7 @@ extern void rectangle(int left, int top, int right, int bottom);
 extern void setfillpattern_(char *pattern, int color);
 extern void setviewport(int left, int top, int right, int bottom, int clip);
 extern int get_window_origin_and_size(int *x_win_orig, int *y_win_orig, int *win_width, int *win_height);
-extern void set_resized_window(int dx, int dy);
+extern void set_resized_window(int dx, int dy, int option);
 extern int centre_window(void);
 extern int set_window_origin(int x_win_orig, int y_win_orig);
 extern int __gr_White(void);
@@ -3614,6 +3614,7 @@ static void draw_check_box(BUTTON *Button)
   int paper, ink;
   int x1,x2,y1,y2, x0, y0;
 
+  //if (Button->flags & BUTTON_HIDDEN) return;
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setwritemode(COPY_PUT);
   paper = Button->paper == COLOR_NULL ? dlg_kolory->dlg_button_paper : Button->paper ;
@@ -3664,6 +3665,7 @@ static void draw_round_radio_button(BUTTON *Button)
 int paper, ink, col;
 int x0, y0;
 
+if (Button->flags & BUTTON_HIDDEN) return;
 setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 setwritemode(COPY_PUT);
 paper = Button->paper == COLOR_NULL ? dlg_kolory->dlg_button_paper : Button->paper;
@@ -3719,6 +3721,7 @@ static void draw_radio_button(BUTTON *Button)
   int polypoints [ 8 ];
   float skl;
 
+  if (Button->flags & BUTTON_HIDDEN) return;
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setwritemode(COPY_PUT);
   paper = Button->paper == COLOR_NULL ? dlg_kolory->dlg_button_paper : Button->paper ;
@@ -3863,6 +3866,11 @@ static int find_button(BUTTON *Buttons,int SizeButtonT, int *ib)
     if(Buttons [i].enable == FALSE)
     {
 	continue;
+    }
+
+    if(Buttons [i].flags & BUTTON_HIDDEN)
+    {
+      continue;
     }
 	if (Buttons[i].type == B_ROUNDRADIOBUTTON) 
 	{ 
@@ -4155,6 +4163,14 @@ void draw_transparent_dlg(TDIALOG *dlg, int typ, PTMENU *tipsmenu, RECT *dialog_
     if(dlg->Images != NULL) draw_images(*(dlg->Images),dlg->SizeImageT, tipsmenu);
     if (dlg->Groups != NULL) draw_groups(*(dlg->Groups), dlg->SizeGroupT, dlg, TRUE);
     if (dlg->Buttons != NULL) draw_buttons(*(dlg->Buttons), dlg->SizeButtonT);
+
+    ////form MacOS aa64 22-08-2025
+	acquire_screen();
+#ifdef LINUX
+	show_x_cursor();
+#endif
+	show_mouse(screen); ////
+	release_screen();
 }
 
  void draw_dlg_lab(TDIALOG *dlg)
@@ -5077,7 +5093,7 @@ continue2:
 		  {
 		    if (dialog_window_was_resized==TRUE)
 				{
-					set_resized_window(win_width, win_height);
+					set_resized_window(win_width, win_height, 1);
 					kk=set_window_origin(x_win_orig, y_win_orig);
 				}
 		  }
@@ -5123,7 +5139,7 @@ continue2:
 		  {
 		    if (dialog_window_was_resized==TRUE)
 				{
-					set_resized_window(win_width, win_height);
+					set_resized_window(win_width, win_height, 1);
 					kk=set_window_origin(x_win_orig, y_win_orig);
 				}
 		  }
@@ -5155,7 +5171,8 @@ continue2:
 		else if (((strcmp(dlg->txt, u8"Uwaga")==0) && ((ev->Number == 'N') || (ev->Number == 'n'))) ||
 			     ((strcmp(dlg->txt, u8"Notice") == 0) && ((ev->Number == 'N') || (ev->Number == 'n'))) ||
 			     ((strcmp(dlg->txt, u8"La noticia") == 0) && ((ev->Number == 'N') || (ev->Number == 'n'))) ||
-			     ((strcmp(dlg->txt, u8"Увага") == 0) && ((ev->Number == L'Н') || (ev->Number == L'н'))))
+			     ((strcmp(dlg->txt, u8"Увага") == 0) && ((ev->Number == L'Н') || (ev->Number == L'н'))) ||
+			     ((strcmp(dlg->txt, u8"Dim") == 0) && ((ev->Number == 0) || (ev->Number == ENTER))))
         { 
         if((dlg->SizeGroupT == 1) &&(dlg->SizeInLinT == 0))
         {
@@ -5168,7 +5185,7 @@ continue2:
 		  {
 		    if (dialog_window_was_resized==TRUE)
 				{
-					set_resized_window(win_width, win_height);
+					set_resized_window(win_width, win_height, 1);
 					kk=set_window_origin(x_win_orig, y_win_orig);
 				}
 		  }
@@ -5291,7 +5308,7 @@ continue_lb:
 			  {
 				if (dialog_window_was_resized==TRUE)
 					{
-						set_resized_window(win_width, win_height);
+						set_resized_window(win_width, win_height, 1);
 						kk=set_window_origin(x_win_orig, y_win_orig);
 					}
 			  }

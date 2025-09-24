@@ -70,10 +70,17 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 4, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+
+POLE pmStatic[] = {
+        {u8"Frame and truss",L'F',733, NULL},
+        {u8"Plate",L'P',855, NULL},
+};
+
+TMENU mStatic = { 2, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Static and dynamic analysis",L'S',733, NULL},
+        {u8"Static and dynamic analysis",L'S',854, &mStatic},
         {u8"Result forces in cross sections",L'R',824, NULL},
         {u8"Animate the dynamics",L'A',817, NULL},
         {u8"Element cross-section selection",L'E',775, &mRegion},

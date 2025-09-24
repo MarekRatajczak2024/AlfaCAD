@@ -1884,10 +1884,7 @@ BOOL Test_areas (long_long l_offb, long_long l_offe,
   }
   b_ret = compare_area_object();
   free(ptrs__areas);
+  free_area_mem();
 
-  if (b_ret == FALSE)
-  {
-	  free_area_mem();
-  }
  return TRUE;  //obszar jest zamkniety i punkt lezy w tym obszarze
 }

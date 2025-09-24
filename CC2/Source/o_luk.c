@@ -75,6 +75,8 @@ extern int get_pline_mode(void);
 extern int pline_trace;
 
 extern double get_d__luk(void);
+extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outarcvectoror (LUK *l, AVECTOR *V, int mode,int pl);
 
 //extern void redraw_trace (void);
 
@@ -84,7 +86,7 @@ enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
 
 enum DRAW_ARC_TYPE
 { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
-	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE, ARC_rev_Y, ARC_rev_N } ;
+	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_FLIP_SUPPORT, /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/ ARC_rev_Y, ARC_rev_N } ;
 
 extern int last_pline_delete (void) ;
 static int last_parc_delete (void) ;
@@ -105,6 +107,11 @@ static int el_lc(BOOL b_graph_value);
 static BOOL arc_reversed=FALSE;
 static BOOL global_ra=FALSE;
 
+static KOM_BAK komunikat_arc_bak={-1,0,0,0};
+static char stp[30],*stp0;
+static int l_pxl, k_pxl;
+
+static BLOK *BLK_ADR;
 
 typedef struct SA_BREAK {
     SOLIDARC sa;
@@ -148,7 +155,7 @@ static PLUK pl;
 
 static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed);
 static void redcr(char ) ;
-int PLine_Arc_Command_Proc (int ev_nr) ;
+int PLine_Arc_Command_Proc (int ev_nr, BLOK *blk_adr) ;
 static BOOL set_arc_continue_param (void) ;
 
 
@@ -158,6 +165,7 @@ static BOOL set_arc_continue_param (void) ;
 static TMENU mLukm={9, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLukm,NULL,NULL};
 
 static TMENU mPLukm={12, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
+static TMENU mPLukmSlab={16, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
 
 static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
 
@@ -206,46 +214,94 @@ static void out_luk (LUK *l, int mode)
   okno_all();
 }
 
-void kom (char *str, int ch, int d, int i)
+void kom_bak (int ns_arc /*char *str*/, int ch, int d, int i)
+{
+    komunikat_arc_bak.ns_arc=ns_arc;
+    komunikat_arc_bak.ch=ch;
+    komunikat_arc_bak.d=d;
+    komunikat_arc_bak.i=i;
+}
+
+void kom (int ns_arc /*char *str*/, int ch, int d, int i)
 /*---------------------------------------*/
-{ char *st,*st0;
-  static char stp[30],*stp0;
-  static int l,k, l_pxl, k_pxl;
+{ char *str, *st,*st0;
+  //static char stp[30],*stp0;
+  static int l,k; // l_pxl, k_pxl;
   int len_st, len_st0, len_str, len_st_pxl, len_st0_pxl, len_str_pxl;
- 
-  //example of use:  kom (komunikaty_arc[ns], '-', r6, 0) ;
 
-  if(i)
+  str=komunikaty_arc [ns_arc];
+
+  if (i>=0)
   {
-     setfillstyle_(SOLID_FILL, BKCOLOR) ;
-     bar(l_pxl,1,k_pxl+l_pxl,HEIGHT-1);
-     setcolor(kolory.ink);
-     moveto(l_pxl+1,1);
-     outtext_r(stp);
-     st0=strchr(stp0,ch)+1;
-  }
-  else st0=&str[d];
-  st=strchr(st0,ch);
+      if (i) {
+          setfillstyle_(SOLID_FILL, BKCOLOR);
+          bar(l_pxl, 1, k_pxl + l_pxl, HEIGHT - 1);
+          setcolor(kolory.ink);
+          moveto(l_pxl + 1, 1);
+          outtext_r(stp);
+          st0 = strchr(stp0, ch);
+          if (st0 != NULL) st0 += 1;
+          else st0 = stp0 + strlen(stp0);
+      } else st0 = &str[d];
 
-  if (st0 != NULL) {len_st0 = strlen(st0); len_st0_pxl = TTF_text_len(st0);}
-  else {len_st0 = 0; len_st0_pxl = 0;}
-  if (st != NULL) { len_st = strlen(st); len_st_pxl = TTF_text_len(st); }
-  else { len_st = 0; len_st_pxl = 0; }
-  if (str != NULL) { len_str = strlen(str); len_str_pxl = TTF_text_len(str); }
-  else { len_str = 0; len_str_pxl = 0; }
-   
-  k=len_st0-len_st;
-  l=len_str-len_st0;
-  k_pxl = len_st0_pxl - len_st_pxl;
-  l_pxl = len_str_pxl - len_st0_pxl;
-  stp0=st0;
-  memmove(stp,st0,k);
-  stp[k]=0;
-  setfillstyle_(SOLID_FILL,kolory.paperk);
-  bar(l_pxl,1,k_pxl+l_pxl,HEIGHT-1);
-  setcolor(kolory.inkk);
-  moveto(l_pxl+1,1);
-  outtext_r(stp);
+
+      if (strlen(st0)>0)
+      {
+          st=strchr(st0,ch);
+          if (st==NULL) st=st0+strlen(st0);
+      }
+      else
+      {
+          st0=stp0;
+          st=st0+strlen(st0);
+      }
+
+      if (st0 != NULL) {len_st0 = strlen(st0); len_st0_pxl = TTF_text_len(st0);}
+      else {len_st0 = 0; len_st0_pxl = 0;}
+      if (st != NULL) { len_st = strlen(st); len_st_pxl = TTF_text_len(st); }
+      else { len_st = 0; len_st_pxl = 0; }
+      if (str != NULL) { len_str = strlen(str); len_str_pxl = TTF_text_len(str); }
+      else { len_str = 0; len_str_pxl = 0; }
+
+      k=len_st0-len_st;
+      l=len_str-len_st0;
+      k_pxl = len_st0_pxl - len_st_pxl;
+      l_pxl = len_str_pxl - len_st0_pxl;
+      stp0=st0;
+      memmove(stp,st0,k);
+      stp[k]=0;
+      setfillstyle_(SOLID_FILL,kolory.paperk);
+      bar(l_pxl,1,k_pxl+l_pxl,HEIGHT-1);
+      setcolor(kolory.inkk);
+      moveto(l_pxl+1,1);
+      outtext_r(stp);
+
+  }
+  else
+  {
+      setfillstyle_(SOLID_FILL,kolory.paperk);
+      bar(l_pxl,1,k_pxl+l_pxl,HEIGHT-1);
+      setcolor(kolory.inkk);
+      moveto(l_pxl+1,1);
+      outtext_r(stp);
+  }
+
+
+  kom_bak(ns_arc, ch, d, i);
+}
+
+BOOL kom_arc_bak(void)
+{
+    if (komunikat_arc_bak.ns_arc < 0) return FALSE;
+
+    komunikat0_str (komunikat_arc_bak.ns_arc, u8"") ;
+    kom(komunikat_arc_bak.ns_arc, komunikat_arc_bak.ch, komunikat_arc_bak.d, -1 /*komunikat_arc_bak.i*/);
+    return TRUE;
+}
+
+int get_komunikat_arc_bak(void)
+{
+    return komunikat_arc_bak.ns_arc;
 }
 
 void type_arc_pl (int ev_nr)
@@ -276,10 +332,10 @@ void type_arc_pl (int ev_nr)
     ////redcr (0) ;
   }
   komunikat0_str (ns_arc, u8"") ;
-  kom (komunikaty_arc[ns_arc], '-', r6, 0) ;
+  kom (ns_arc, '-', r6, 0) ;
   if (ns_arc != ARC_Con)
   {
-    kom (komunikaty_arc[ns_arc], '-', r6, 1) ;
+    kom (ns_arc, '-', r6, 1) ;
   }
 
   switch (ns_arc) {
@@ -330,7 +386,7 @@ static int type_arc (int ev_nr)
   {
     ns_arc = ev_nr ;
     komunikat0_str (ns_arc, u8"") ;
-    kom (komunikaty_arc[ns_arc], '-', r6, 0) ;
+    kom (ns_arc, '-', r6, 0) ;
   }
   ret = PL_MODE_CONTINUE ;
   if (ns_arc == ARC_Con)
@@ -447,7 +503,24 @@ static void  cur_on(double x,double y)
     }
     if(fabs(LukG.kat1-LukG.kat2)>OZero)
     { mvcurb.mvc=0;
-        out_luk (&LukG, COPY_PUT) ;
+        switch (LukG.obiektt2)
+        {
+            case 6:
+                if (LiniaG.obiektt3 == 0) VectorG.style = 22;
+                else VectorG.style = 23;
+                VectorG.typ=LiniaG.typ;
+                outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
+                break;
+            case 7:
+                if (LiniaG.obiektt3 == 0) VectorG.style = 24;
+                else VectorG.style = 25;
+                VectorG.typ=LiniaG.typ;
+                outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
+                break;
+            default:
+                out_luk(&LukG, COPY_PUT);
+                break;
+        }
         out_parametry_luku1 (ns_arc) ;
     }
 
@@ -514,7 +587,7 @@ int getwsp_pl (double *X0, double *Y0)
      {
 		 if (ev->Number >= 0)
 		 {
-			 if (PL_MODE_CONTINUE != (ret_command = PLine_Arc_Command_Proc(ev->Number)))
+			 if (PL_MODE_CONTINUE != (ret_command = PLine_Arc_Command_Proc(ev->Number, BLK_ADR)))
 			 {
 				 break;
 			 }
@@ -525,7 +598,7 @@ int getwsp_pl (double *X0, double *Y0)
 }
 
 
-int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_rev, IDM_LINE};
+int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_rev, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_FLIP_SUPPORT, ARC_rev_Y, ARC_rev_N};
 
 int getwsp_tr (double *X0, double *Y0, int d_line)
 /*----------------------------------------------*/
@@ -577,7 +650,7 @@ int getwsp_tr (double *X0, double *Y0, int d_line)
                         break ;
                     }
                 }
-                else if (PL_MODE_CONTINUE != (ret_command = PLine_Arc_Command_Proc(arc_command[ev->Number-ID_ARC_CONT])))
+                else if (PL_MODE_CONTINUE != (ret_command = PLine_Arc_Command_Proc(arc_command[ev->Number-ID_ARC_CONT], BLK_ADR)))
                 {
                     break;
                 }
@@ -665,12 +738,15 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
      ErrList (66) ;
      return FALSE ;
   }
-  if (FALSE == Check_if_Equal (LukG.r, 0) &&
-      NULL != dodaj_obiekt (((b__pline == TRUE) ? (BLOK*)dane : NULL), (void *)&LukG))
+    PTR__GTMPBLOCK=(char*)BLK_ADR;
+    if (FALSE == Check_if_Equal (LukG.r, 0) &&
+      NULL != dodaj_obiekt (((b__pline == TRUE) ? BLK_ADR /*(BLOK*)dane*/ : NULL), (void *)&LukG))
   {
     b_ret = TRUE ;
       rysuj_obiekt(&LukG, COPY_PUT, 1) ;
   }
+
+    BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
 
   return b_ret ;
 }
@@ -899,7 +975,7 @@ static const void near SER(double X0, double Y0)  /*poczatek koniec promien*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
   np=dodajstr(&el);
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
   usunstr(np);
 }
@@ -923,7 +999,7 @@ static const void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
     np=dodajstr(&el);
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
     usunstr(np);
 }
@@ -1009,7 +1085,7 @@ static const void near SEA(double X0, double Y0)  /*poczatek koniec kat*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
   np=dodajstr(&el);
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
   usunstr(np);
 }
@@ -1031,7 +1107,7 @@ static const void near tSEA(double X0, double Y0)  /*poczatek koniec kat*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
     np=dodajstr(&el);
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
     usunstr(np);
 }
@@ -1233,7 +1309,7 @@ static const void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
   np=dodajstr(&el);
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
   usunstr(np);
 }
@@ -1255,7 +1331,7 @@ static const void near tSED(double X0, double Y0)  /*poczatek koniec kierunek*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
     np=dodajstr(&el);
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
     usunstr(np);
 }
@@ -1396,7 +1472,7 @@ static const void near P3(double X0, double Y0)  /*trzy punkty*/
   L.y1=pl.ys;
   L.x2=pl.xs;
   L.y2=pl.ys;
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
 }
 /*---------------*/
@@ -1411,7 +1487,7 @@ static const void near tP3(double X0, double Y0)  /*trzy punkty*/
     L.y1=pl.ys;
     L.x2=pl.xs;
     L.y2=pl.ys;
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
 }
 /*---------------*/
@@ -1553,7 +1629,7 @@ static const void near SCE(double X0, double Y0)  /* poczatek srodek koniec */
   L.y1=LukG.y;
   L.x2=X;
   L.y2=X;
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
 }
 
@@ -1569,7 +1645,7 @@ static const void near tSCE(double X0, double Y0)  /* poczatek srodek koniec */
     L.y1=LukG.y;
     L.x2=X;
     L.y2=X;
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
 }
 /*---------------*/
@@ -1645,7 +1721,7 @@ static const void near SCA(double X0, double Y0)  /*poczatek srodek kat*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
   np=dodajstr(&el);
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
   usunstr(np);
 }
@@ -1669,7 +1745,7 @@ static const void near tSCA(double X0, double Y0)  /*poczatek srodek kat*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
     np=dodajstr(&el);
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
     usunstr(np);
 }
@@ -1834,7 +1910,7 @@ static const void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
   np=dodajstr(&el);
-  kom(komunikaty_arc[ns_arc],'-',r6,1);
+  kom(ns_arc,'-',r6,1);
   Getwsp1();
   usunstr(np);
 }
@@ -1858,7 +1934,7 @@ static const void near tSCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*
     el.val_no_max = 1 ;
     el.format = "%#12.9lg" ;
     np=dodajstr(&el);
-    kom(komunikaty_arc[ns_arc],'-',r6,1);
+    kom(ns_arc,'-',r6,1);
     tGetwsp1();
     usunstr(np);
 }
@@ -2431,6 +2507,7 @@ static void redcr0 (char typ)
      menupini (NULL,"",' ',0) ;
      komunikat (0) ;
      komunikat0 (0) ;
+     komunikat_arc_bak.ns_arc=-1;
      if (b__pline == FALSE)
      {
        ns__arc = ns_arc ;
@@ -2455,6 +2532,7 @@ static void redcr0 (char typ)
       CUR_ON(X, Y);
       komunikat (0) ;
       komunikat0 (0) ;
+      komunikat_arc_bak.ns_arc=-1;
       if (b__pline == FALSE)
       {
           ns__arc = ns_arc ;
@@ -2491,13 +2569,13 @@ void Luk (void)
      menupini (&mLukm, _ARC_, _ARC_C_, 15) ;
      menu_par_new ((*mLukm.pola)[8].txt, st);
      komunikat0_str (ns_arc, u8"") ;
-     kom (komunikaty_arc [ns_arc], '-', r6, 0) ;
+     kom (ns_arc, '-', r6, 0) ;
      if (ns_arc == ARC_Con)
      {
        if (TRUE == set_arc_continue_param ())
        {
 	 komunikat0_str (ns_arc, u8"") ;
-	 kom (komunikaty_arc[ns_arc], '-', r6, 0) ;
+	 kom (ns_arc, '-', r6, 0) ;
 	 X0 = X ;
 	 Y0 = Y ;
        }
@@ -2522,7 +2600,7 @@ void Luk (void)
 	 pl.xs = X0 ;
 	 pl.ys = Y0 ;
 	 out_krz (pl.xs, pl.ys) ;
-	 kom (komunikaty_arc [ns_arc], '-', r6, 1) ;
+	 kom (ns_arc, '-', r6, 1) ;
 	 if (PL_MODE_ARC_ESC == getwsp_arc (&X0, &Y0))
 	 {
 	   continue ;
@@ -2535,13 +2613,16 @@ void Luk (void)
 }
 
 
-int PLine_Arc_Command_Proc (int ev_nr)
-/*-----------------------------------*/
+int PLine_Arc_Command_Proc (int ev_nr, BLOK *blk_adr)
+/*-------------------------------------------------*/
 {
   int ret_val ;
   double df_xend, df_yend ;
   void *ptr_temp, *ptr_ob ;
   BOOL b_first_end ;
+  int ret;
+
+  BLK_ADR=blk_adr;
 
     if (ev_nr == ARC_rev_Y) {
         Set_reversed(TRUE);
@@ -2564,7 +2645,10 @@ int PLine_Arc_Command_Proc (int ev_nr)
   switch (ev_nr)
   {
     case IDM_CLOSE :
-      if (ns_arc != ARC_Con || FALSE == Get_End_Pline ((void*)dane,  &ptr_ob, &b_first_end,
+
+      ret=Get_Begin_Pline (BLK_ADR, &ptr_ob, &b_first_end, &df__xbeg, &df__ybeg);
+
+      if (ns_arc != ARC_Con || FALSE == Get_End_Pline (BLK_ADR /*(void*)dane*/,  &ptr_ob, &b_first_end,
       df__xbeg, df__ybeg, &df_xend, &df_yend))
       {
 	ret_val = PL_MODE_CONTINUE ;
@@ -2578,7 +2662,7 @@ int PLine_Arc_Command_Proc (int ev_nr)
       }
       break ;
     case IDM_UNDO :
-      if (NULL == (ptr_temp = Get_Pline_Last_Ob ((void*)dane)))
+      if (NULL == (ptr_temp = Get_Pline_Last_Ob (BLK_ADR /*(void*)dane*/)))
       {
 	ret_val = PL_MODE_UNDO ;
       }
@@ -2587,7 +2671,7 @@ int PLine_Arc_Command_Proc (int ev_nr)
 	Cur_offd(X,Y);
 	rysuj_obiekt ((char*)ptr_temp, COPY_PUT, 0) ;
 	Usun_Object (ptr_temp, FALSE) ;
-	Get_End_Pline ((void*)dane, &ptr_ob, &b_first_end,
+	Get_End_Pline (BLK_ADR /*(void*)dane*/, &ptr_ob, &b_first_end,
 		df__xbeg, df__ybeg, &df_xend, &df_yend) ;
 	pl.xs = df_xend ;
 	pl.ys = df_yend ;
@@ -2599,6 +2683,7 @@ int PLine_Arc_Command_Proc (int ev_nr)
     case IDM_LINE :
       ret_val = PL_MODE_LINE ;
       break ;
+      /*
     case IDM_CONTINUOUS_LINE :
       Cur_offd (X, Y) ;
       LiniaG.typ=LukG.typ=96;
@@ -2613,6 +2698,33 @@ int PLine_Arc_Command_Proc (int ev_nr)
       Cur_ond (X, Y) ;
       ret_val = PL_MODE_CONTINUE ;
       break;
+       */
+      case IDM_FREE_EDGE:
+          LiniaG.obiektt2=O2FREE_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2FREE_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_PINNED_EDGE:
+          LiniaG.obiektt2=O2HINGED_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2HINGED_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_FIXED_EDGE:
+          LiniaG.obiektt2=O2FIXED_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2FIXED_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_FLIP_SUPPORT:
+          LiniaG.obiektt3=!LiniaG.obiektt3;
+          LukG.obiektt3=!LukG.obiektt3;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
     default :
       ret_val = PL_MODE_CONTINUE ;
       break ;
@@ -2623,13 +2735,13 @@ int PLine_Arc_Command_Proc (int ev_nr)
 static int last_parc_delete (void)
 /*-----------------------------*/
 {
-  PLine_Arc_Command_Proc (IDM_UNDO);
+  PLine_Arc_Command_Proc (IDM_UNDO, BLK_ADR);
   return -83;
 }
 
 
-int Pline_Arc (double df_xbeg, double df_ybeg)
-/*------------------------------------------*/
+int Pline_Arc (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode)
+/*-------------------------------------------------------------------*/
 {
   double X0, Y0, df_xend, df_yend ;
   BOOL b_first_end, b_second_pl_seg ;
@@ -2637,7 +2749,9 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
   int ret_command ;
   char st[6];
   static char stY [2]=YES, stN [2]=NO;
-  
+
+  BLK_ADR=*blk_adr;
+
   b__pline = TRUE ;
   redcr0 (0) ;
   df__xbeg = df_xbeg ;
@@ -2653,12 +2767,14 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
      }
        else
      {
-           menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
+           if (mode==1) menupini (&mPLukmSlab, _ARC_, _ARC_C_, 15) ;
+           else menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
            menu_par_new ((*mPLukm.pola)[8].txt, st);
      }
      komunikat0_str (ns_arc, u8"") ;
-     kom (komunikaty_arc [ns_arc], '-', r6, 0) ;
-     b_second_pl_seg = Get_End_Pline ((void*)dane, &ptr_ob, &b_first_end,
+     kom (ns_arc, '-', r6, 0) ;
+     BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
+     b_second_pl_seg = Get_End_Pline (BLK_ADR /*(void*)dane*/, &ptr_ob, &b_first_end,
      df_xbeg, df_ybeg, &df_xend, &df_yend) ;
      pl.xs = df_xend ;
      pl.ys = df_yend ;
@@ -2676,7 +2792,7 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
      }
      else
      {
-       kom (komunikaty_arc [ns_arc], '-', r6, 1) ;
+       kom (ns_arc, '-', r6, 1) ;
      }
      ret_command = getwsp_pl (&X0, &Y0) ;
 
@@ -2706,6 +2822,9 @@ int Pline_Arc (double df_xbeg, double df_ybeg)
      }
   }
   redcr0 (1) ;
+
+  *blk_adr=BLK_ADR;
+
   return ret_command ;
 }
 
@@ -2725,7 +2844,7 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
     while (1)
     {
         komunikat0_str (ns_arc, u8"") ;
-        kom (komunikaty_arc [ns_arc], '-', r6, 0) ;
+        kom (ns_arc, '-', r6, 0) ;
 
         if(get_AfterTbreak())
         {
@@ -2781,7 +2900,7 @@ int start_trace_arc (double df_xbeg, double df_ybeg, LINIA *s_trace_line, BOOL b
         }
         else
         {
-            kom (komunikaty_arc [ns_arc], '-', r6, 1) ;
+            kom (ns_arc, '-', r6, 1) ;
         }
         ret_command = getwsp_tr (&X0, &Y0, d_line) ;
 

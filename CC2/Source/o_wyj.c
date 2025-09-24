@@ -99,6 +99,9 @@ static BOOL close_button_pressed=FALSE;
 
 extern BOOL wayland;
 
+extern void Check_XNextEvent(void);
+extern BOOL hibernate;
+
 extern int DRAWING_NUMBER;
 extern BOOL  Change ;
 static  OKNO O;
@@ -108,7 +111,7 @@ extern int ask_question (int n_buttons, char *esc_string, char *ok_string, char 
 extern int get_graphic_drv(void);
 extern BOOL Semaphore;
 extern BOOL Cust_Semaphore;
-
+extern void dialog_cursor(int on);
 
 extern void get_posXY(double *pozx, double *pozy);
 extern void set_posXY(double pozx, double pozy);
@@ -403,6 +406,7 @@ extern void Set_Mem_Cursors(int tier_);
 extern void save_mouse_wheel(void);
 
 extern BOOL Semaphore;
+extern BOOL check_file_buffer(void);
 
 
 static BITMAP *second_screen_bak_=NULL;
@@ -2392,6 +2396,36 @@ char *icon_mousewheelregular_p;
 
 BITMAP *icon_pin_to_flex_d48;
 char *icon_pin_to_flex_d48_p;
+
+BITMAP *icon_slab_zone;
+char *icon_slab_zone_p;
+BITMAP *icon_slab_wall;
+char *icon_slab_wall_p;
+BITMAP *icon_slab_space;
+char *icon_slab_space_p;
+BITMAP *icon_slab_load;
+char *icon_slab_load_p;
+BITMAP *icon_slab_geo_red;
+char *icon_slab_geo_red_p;
+BITMAP *icon_slab_geo_black;
+char *icon_slab_geo_black_p;
+BITMAP *icon_slab_fem;
+char *icon_slab_fem_p;
+BITMAP *icon_slab_edge_rolled;
+char *icon_slab_edge_rolled_p;
+BITMAP *icon_slab_edge_hinged;
+char *icon_slab_edge_hinged_p;
+BITMAP *icon_slab_edge_free;
+char *icon_slab_edge_free_p;
+BITMAP *icon_slab_edge_fixed;
+char *icon_slab_edge_fixed_p;
+BITMAP *icon_flip_support;
+char *icon_flip_support_p;
+BITMAP *icon_static;
+char *icon_static_p;
+BITMAP *icon_slab_fem_a;
+char *icon_slab_fem_a_p;
+
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -5071,6 +5105,8 @@ void Close_window(void)
 	Ini_Place_Marker();
 	Ini_Layers_Dlg();
 
+    flip_screen();
+
 }
 
 void Koniec(void)
@@ -5264,6 +5300,11 @@ void Koniec(void)
    Delete_All_Dump_bitmap();
    strcpy(byebye, u8"See you soon! Na razie! Побачимося ! Hasta luego !");
    komunikat_str(byebye);
+
+#ifdef ALLEGRO5
+   my_sleep(100);  ////  15-09-2025
+   set_semaphore(0);  ////  15-09-2025
+#endif
 
    ret = alfaplugins_off();
 
@@ -5601,7 +5642,6 @@ void closebutton (void)
 {
     close_button_pressed=TRUE;
     simulate_keypress ((KEY_ESC << 8) | scancode_to_ascii (KEY_ESC));
-
     return;
 
 }
@@ -5740,6 +5780,8 @@ int Expand_flex(void)
     double X_,Y_;
     BOOL go_A_Screen=FALSE;
 
+    struct shmbuf* bufptr;
+
     get_posXY(&X_, &Y_);
 
     ret_ref = get_window_origin_and_size(&curr_x0, &curr_y0, &curr_h, &curr_v);
@@ -5754,27 +5796,25 @@ int Expand_flex(void)
     enable_hardware_cursor();
     show_os_cursor(MOUSE_CURSOR_ARROW);
 
- if (MacOS15==TRUE) go_A_Screen=TRUE;
+ if (MacOS15==TRUE) go_A_Screen=FALSE; //TRUE;
  #ifdef ARM64
  go_A_Screen=FALSE;
  #endif
 
     //opening transparent dialogbox
     if (go_A_Screen==TRUE) {
-        //set_semaphore(0); ////arm64
         ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
-        //set_semaphore(1); ////arm64
     }
     else {
         //or just waiting
-        //enable_hardware_cursor();
+
+        hibernate = TRUE;
 #ifdef MACOS  //ARM64
         set_semaphore(0); ////arm64
 #endif
 
         position_mouse_xy((int)mouse_curx, (int)mouse_cury);
 
-        free_mouse();
         int keys_;
 
         mouse_b=0;
@@ -5785,9 +5825,19 @@ int Expand_flex(void)
             if (keys_>0)
             {
                 while (mouse_b) my_sleep(10);
+                hibernate = FALSE;
                 break;
             }
-            my_sleep(10);
+            Check_XNextEvent();
+            /////
+            if (check_file_buffer())
+            {
+#ifdef MACOS
+             enable_hardware_cursor();
+             show_os_cursor(MOUSE_CURSOR_ARROW);
+#endif
+            }
+            /////
         }
 #ifdef MACOS //ARM64
         set_semaphore(1); ////arm64
@@ -5797,9 +5847,7 @@ int Expand_flex(void)
         position_mouse(getmaxx()/2, getmaxy()/2);
         set_forget_mouse(getmaxx()/2, getmaxy()/2);
     }
-    //disable_hardware_cursor();
 
-    //show_os_cursor(MOUSE_CURSOR_NONE);
     disable_hardware_cursor();
 #else
 #ifdef ALLEGRO5
@@ -5808,6 +5856,7 @@ int Expand_flex(void)
 
     //or just waiting
     //enable_hardware_cursor();
+    hibernate = TRUE;
     set_semaphore(0);
     position_mouse_xy((int)mouse_curx, (int)mouse_cury);
 
@@ -5822,9 +5871,19 @@ int Expand_flex(void)
         if (keys_>0)
         {
             while (mouse_b) my_sleep(10);
+            hibernate = FALSE;
             break;
         }
-        my_sleep(10);
+        Check_XNextEvent();
+        /////
+        if (check_file_buffer())
+        {
+#ifdef MACOS
+            enable_hardware_cursor();
+             show_os_cursor(MOUSE_CURSOR_ARROW);
+#endif
+        }
+        /////
     }
 
     set_semaphore(1);
@@ -5833,9 +5892,6 @@ int Expand_flex(void)
     position_mouse(getmaxx()/2, getmaxy()/2);
     set_forget_mouse(getmaxx()/2, getmaxy()/2);
 
-    //disable_hardware_cursor();
-
-    //show_os_cursor(MOUSE_CURSOR_NONE);
     disable_hardware_cursor();
 #else
     ret=Get_A_Screen(ret_left_x, ret_right_x, ret_top_y, ret_bottom_y, (int)mouse_curx, (int)mouse_cury);
@@ -5873,23 +5929,13 @@ int Expand_flex(void)
 #ifdef LINUX
 
         expand_dim(curr_x01, curr_y01, curr_h1, curr_v1);
-#ifdef ARM64
-        enable_hardware_cursor();
-#endif
-        //sleep(0);
-        //disable_hardware_cursor();
 #else
 		expand_dim(curr_x01, curr_y01, curr_h1, curr_v1);
 #endif
     }
-
     //cleaning the keyboard
     clean_key_buffer();
     clear_keybuf();
-
-    //show_os_cursor(MOUSE_CURSOR_NONE);
-    //disable_hardware_cursor();
-
 
     if (close_button_pressed) Koniec();
     close_button_pressed=FALSE;
@@ -5916,10 +5962,7 @@ int Expand_flex(void)
         get_mouse_mickeys(&WspX_, &WspY_);
     } while ((WspX_!=0) || (WspY_!=0));
     ////
-    //Odczyt_licznikow();
     set_posXY(X_, Y_);
-    //Odczyt_licznikow();
-    //CUR_ON(X_,Y_);
     my_sleep(10);
     CUR_ON(X,Y);
     my_sleep(10);
@@ -6626,6 +6669,10 @@ void Desktop(void)
 	view_scale();
 	no_break = FALSE;
 	preview_blocked = FALSE;
+
+#ifdef ALLEGRO5
+ flip_screen();
+#endif
 
 	if (Ret_Val != Dlg_Ret_Val_Cancel)
 	{

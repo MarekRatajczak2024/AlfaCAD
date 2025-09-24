@@ -118,7 +118,7 @@ char s_hatch_param_df_name_bak [MAXPATH];
 /*----------------------------------------------------------------------*/
 
 #define HATCH_HEAD_NAME_LEN 20
-#define MaxNumberSegPattern 24 //6
+#define MaxNumberSegPattern 12 //24 //6
 
 typedef struct
 {

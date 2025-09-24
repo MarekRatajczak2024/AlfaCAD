@@ -1787,6 +1787,9 @@ osascript -e 'tell application "Finder" to set position of window 1 of process "
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "o_inigfx.h"
+
 #define DWORD  		unsigned int //long    int for 64 bit, long for 32 bit
 extern DWORD SystemSilent(char* strFunct, char* strstrParams);
 /*
@@ -1804,6 +1807,8 @@ if (result == -1) {
     // Handle success
 */
 
+
+/*
 int send_AppleScript(pid_t pid, int x, int y) {
     char script[1024]="";
     char subscript[1024]="";
@@ -1815,6 +1820,38 @@ int send_AppleScript(pid_t pid, int x, int y) {
 
     sprintf(subscript,"'set thePID to %d\ntell application \"System Events\"\nset frontmost of every process whose unix id is thePID to true --bring it to the front\ntell (first process whose unix id is thePID)\nset |position| to position of window 1\nset position of window 1 to {((item 1 of |position|) + %d), ((item 2 of |position|) + %d)}\nend tell\nend tell'",pid,x,y);
 
+    //sprintf(script, "-e %s", subscript);
+    //DWORD retD=SystemSilent("osascript" ,script);
+
+    sprintf(script, "osascript -e %s", subscript);
+    FILE *pipe = popen(script, "r");
+    if (!pipe) {
+        perror("popen");
+        return 1;
+    }
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        printf("%s\n", buffer);
+    }
+    pclose(pipe);
+
+
+    return 1;
+}
+*/
+
+int send_AppleScript(pid_t pid, int x, int y, BOOL relative) {
+    char script[1024]="";
+    char subscript[1024]="";
+    char buffer[128]="";
+
+    //sprintf(subscript,"tell application \"Finder\" to set position of window 1 of process \"Python\" to {%d, %d}", x, y);
+
+    //sprintf(subscript,"'tell application \"Finder\"\n set |position| to position of window 1 of process \"Python\"\n set position of window 1 of process \"Python\" to {((item 1 of |position|) + %d), ((item 2 of |position|) + %d)}\n end tell'", x, y);
+
+    if (relative)
+        sprintf(subscript,"'set thePID to %d\ntell application \"System Events\"\nset frontmost of every process whose unix id is thePID to true --bring it to the front\ntell (first process whose unix id is thePID)\nset |position| to position of window 1\nset position of window 1 to {((item 1 of |position|) + %d), ((item 2 of |position|) + %d)}\nend tell\nend tell'",pid,x,y);
+    else
+        sprintf(subscript,"'set thePID to %d\ntell application \"System Events\"\nset frontmost of every process whose unix id is thePID to true --bring it to the front\ntell (first process whose unix id is thePID)\nset |position| to position of window 1\nset position of window 1 to {%d, %d}\nend tell\nend tell'",pid,x,y);
     //sprintf(script, "-e %s", subscript);
     //DWORD retD=SystemSilent("osascript" ,script);
 

@@ -39,6 +39,7 @@
 #else
 #endif
 #include <allegro.h>
+#include <iostream>
 #include "bib_e.h"
 #include "rysuj_e.h"
 #include "alffont.h"
@@ -52,6 +53,7 @@
 #include "bgiext.h"
 #include "o_protec.h"
 #include "hpdf.h"
+//#include "hpdf_utils.h"
 #ifndef LINUX
 //#include "hpdf_image.h"
 #endif
@@ -93,6 +95,8 @@ typedef unsigned long       DWORD;
 #define bitmap_Image "bitmapImage" //"bitmapImage.bmp"
 
 extern "C" {
+
+extern BOOL wielokat_visible_in_frame(WIELOKAT *w, RECTD *rect);
 
 extern int my_kbhit(void);
 extern int my_getch(void);
@@ -167,6 +171,7 @@ extern void reset_last_polygon_vectors(void);
 
 extern BOOL draw_polygon_to_drive_pattern(int numpoints, double* xy0);
 extern BOOL draw_rectangle_to_drive_pattern(double* xy0);
+extern BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy0, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print);
 
 extern BITMAP* load_memory_pcx(AL_CONST void* buffer, PALETTE* pal);
 extern BITMAP* load_memory_png(AL_CONST void* buffer, int bufsize, RGB* pal);
@@ -1841,9 +1846,13 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
           int b_color;
           int tmpR, tmpG, tmpB, tmpA;
           b_color = get_palette_color(kolory.paper);
-          tmpB = b_color & 0xFF; b_color >>= 8;
-          tmpG = b_color & 0xFF; b_color >>= 8;
+          //tmpB = b_color & 0xFF; b_color >>= 8;  //it was before, but now is changed
+          //tmpG = b_color & 0xFF; b_color >>= 8;
+          //tmpR = b_color & 0xFF; b_color >>= 8;
           tmpR = b_color & 0xFF; b_color >>= 8;
+          tmpG = b_color & 0xFF; b_color >>= 8;
+          tmpB = b_color & 0xFF; b_color >>= 8;
+
           tmpA = b_color & 0xFF; /* dwColor >>= 8; */
 
           b_color24 = ((tmpR & 0xff) << 16) + ((tmpG & 0xff) << 8) + (tmpB & 0xff);
@@ -2149,8 +2158,11 @@ BOOL StartPDFPage(void)
 
 	pdf_page = HPDF_AddPage(pdf_doc);
 	hpdf_status = HPDF_Page_SetWidth(pdf_page, (float)ptrs__prn_ini_date->width_paper / 25.4f * 72.0f);
+    if (hpdf_status) return FALSE;
 	hpdf_status = HPDF_Page_SetHeight(pdf_page, (float)ptrs__prn_ini_date->height_paper / 25.4f * 72.f);
-	HPDF_Page_Concat(pdf_page, 72.0f / (float)matrix_head.vertical_density, 0, 0, 72.0f / (float)matrix_head.vertical_density, 0, 0);
+    if (hpdf_status) return FALSE;
+    hpdf_status = HPDF_Page_Concat(pdf_page, 72.0f / (float)matrix_head.vertical_density, 0, 0, 72.0f / (float)matrix_head.vertical_density, 0, 0);
+    if (hpdf_status) return FALSE;
 	pdf_left_margin = (int)(((float)ptrs__prn_ini_date->left_margin / 25.4f * (float)matrix_head.horizontal_density)+0.5);
 	pdf_top_margin = (int)(((float)ptrs__prn_ini_date->top_margin / 25.4f * (float)matrix_head.vertical_density)+0.5);
     pdf_right_margin = (int)(((float)ptrs__prn_ini_date->right_margin / 25.4f * (float)matrix_head.horizontal_density)+0.5);
@@ -2174,20 +2186,21 @@ BOOL StartPDFPage(void)
 			iw = HPDF_Image_GetWidth(image[pdf_page_no]);
 			ih = HPDF_Image_GetHeight(image[pdf_page_no]);
 
-			HPDF_Page_DrawImage(pdf_page, image[pdf_page_no], pdf_x_insert, pdf_y_insert /*pdf_page_height*/, iw, ih);
+            hpdf_status = HPDF_Page_DrawImage(pdf_page, image[pdf_page_no], pdf_x_insert, pdf_y_insert /*pdf_page_height*/, iw, ih);
+            if (hpdf_status) return FALSE;
 			////unlink(png_file);
 		}
 	}
 #endif
 
-    HPDF_Page_SetLineWidth(pdf_page, 0);
-    HPDF_Page_SetRGBStroke(pdf_page, 1.0, 1.0, 1.0);
-    HPDF_Page_SetLineCap(pdf_page, HPDF_BUTT_END);
+    hpdf_status = HPDF_Page_SetLineWidth(pdf_page, 0);
+    hpdf_status = HPDF_Page_SetRGBStroke(pdf_page, 1.0, 1.0, 1.0);
+    hpdf_status = HPDF_Page_SetLineCap(pdf_page, HPDF_BUTT_END);
 
-    HPDF_Page_GSave (pdf_page);  /* Save the current graphic state */
+    hpdf_status = HPDF_Page_GSave (pdf_page);  /* Save the current graphic state */
     draw_rect (pdf_page, pdf_left_margin, pdf_bottom_margin);
-    HPDF_Page_Clip (pdf_page);
-    HPDF_Page_Stroke (pdf_page);
+    hpdf_status = HPDF_Page_Clip (pdf_page);
+    hpdf_status = HPDF_Page_Stroke (pdf_page);
 
 	pdf_page_no++;
 	return TRUE;
@@ -2283,9 +2296,11 @@ void FilledEllipsePDF(int x0, int y0, int rx, int ry, double angle, COLOR_ color
     HPDF_Page_GRestore (pdf_page);  ////
 }
 
+///////////////////////////////////
 void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsigned char translucency)
 {
 
+    HPDF_STATUS hpdf_status;
 
     HPDF_Page_GSave (pdf_page);  // Save the current graphic state ////
 
@@ -2296,7 +2311,7 @@ void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsi
     HPDF_Page_SetRGBFill(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
     HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
     HPDF_ExtGState_SetAlphaFill(gstate, ((float)translucency)/255.0); // Set the opacity  ////
-    HPDF_Page_SetExtGState(pdf_page, gstate); // Apply the gstate property to the page  ////
+    hpdf_status = HPDF_Page_SetExtGState(pdf_page, gstate); // Apply the gstate property to the page  ////
 
     HPDF_Page_MoveTo(pdf_page, xy[0], xy[1]);
     for (int i = 2; i < numpoints; i+=2) {
@@ -2307,6 +2322,7 @@ void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsi
 
     HPDF_Page_GRestore (pdf_page);  ////
 }
+
 
 
 BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
@@ -2472,13 +2488,13 @@ BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
 		for (i = 0; i < height; i++)
 			for (j = 0; j < width; j++) {
 				rgb_buffer[((i * width) + j) * 3] =
-					img_buffer[((i * width) + j) * 4];
+					img_buffer[((i * width) + j) * 4 + 2];  //+0 corrected Linux, TO CHECK on W&M
 
 				rgb_buffer[(((i * width) + j) * 3) + 1] =
 					img_buffer[((i * width) + j) * 4 + 1];
 
 				rgb_buffer[(((i * width) + j) * 3) + 2] =
-					img_buffer[((i * width) + j) * 4 + 2];
+					img_buffer[((i * width) + j) * 4 + 0];  //+2 corrected  Linux, TO CHECK on W&M
 
 				alpha_buffer[(i * width) + j] =
 					img_buffer[((i * width) + j) * 4 + 3];
@@ -3628,19 +3644,20 @@ static BOOL draw_to_matrix(Print_Rect window_to_print)
 
     pdf_error = 0;  //in case there is PDF printing
 
-	if ((bitmap_exist) || (ptrs__prn_ini_date->background))
-	{
-		ret_pcx = draw_to_matrix_entities(window_to_print, ENT_PCX, ALL_LAYERS);
-	}
-	Set_Draw_Window(window_to_print.x_min, window_to_print.y_min, window_to_print.x_max, window_to_print.y_max);
-	if (bitmap_pattern_exist)
-	{
-		ret_solid_pattern = draw_to_matrix_entities(window_to_print, ENT_SOLID_PATTERN, NOTFROZEN);
-	}
+    if (ptrs__prn_ini_date->print_translucent_solids == TRUE)  //just patterned and translucent
+    {
+        if ((bitmap_exist) || (ptrs__prn_ini_date->background))
+        {
+            ret_pcx = draw_to_matrix_entities(window_to_print, ENT_PCX, ALL_LAYERS);
+        }
+        Set_Draw_Window(window_to_print.x_min, window_to_print.y_min, window_to_print.x_max, window_to_print.y_max);
+        if (bitmap_pattern_exist)
+        {
+            ret_solid_pattern = draw_to_matrix_entities(window_to_print, ENT_SOLID_PATTERN, NOTFROZEN);
+        }
 
-
-	if (ptrs__prn_ini_date->print_translucent_solids == TRUE)  //just patterned and translucent
-	{
+	//if (ptrs__prn_ini_date->print_translucent_solids == TRUE)  //just patterned and translucent
+	//{
 		Set_Draw_Window(window_to_print.x_min, window_to_print.y_min, window_to_print.x_max, window_to_print.y_max);
 		ret_solid_frozen = draw_to_matrix_entities(window_to_print, ENT_SOLID_TRANSLUCENT, FROZEN);
 		if (!ret_solid_frozen) return FALSE;
@@ -3953,6 +3970,7 @@ static BOOL draw_to_matrix_entities(Print_Rect window_to_print, int entities, ch
  LUK l = ldef, l1, l_tmp, l_tmp1;
  LINIA L = Ldef, L_tmp, L_tmp1;
  SPLINE S = Splinedef;
+ AVECTOR V;
  T_Point *point;
  long_long off, offk, ad;
  int k;
@@ -4157,6 +4175,12 @@ if (draw_logo==TRUE)
       if ((long_long)nag>(long_long)block_adr) BLOK_SIEC=FALSE;
      }
 
+    if ((nag->obiekt!=OdBLOK) && (nag->widoczny==0))   //// 19-09-2025  due to gradient solids
+    {
+        ObiektTok(&off, offk, &ad, ONieOkreslony);
+        continue;
+    }
+
     switch(nag->obiekt)
     {
        case OdBLOK :
@@ -4187,6 +4211,22 @@ if (draw_logo==TRUE)
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!linia_frozen((LINIA *)nag, frozen-1)) break; }
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
+
+      //edges
+      if (((LINIA*)nag)->obiektt2==6) {
+          memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+          if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+          else V.style = V_EDGE_SIMPLE_INV;
+          Draw_Vector_To_Drive(&V, &window_to_print);
+          break;
+      }
+       else if (((LINIA*)nag)->obiektt2==7) {
+          memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+          if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+          else V.style = V_EDGE_FIXED_INV;
+          Draw_Vector_To_Drive(&V, &window_to_print);
+          break;
+      }
 
 	  line_width_type = Line_Width (((LINIA*)nag)->typ);
       if (check_dim_line((LINIA*)nag)==0) {if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;}
@@ -4337,12 +4377,16 @@ if (draw_logo==TRUE)
 		   if ((entities == ENT_SOLID_NULL) && ((((WIELOKAT*)nag)->empty_typ) != 6) && ((((WIELOKAT*)nag)->empty_typ) != 7)) break;
            if ((entities == ENT_SOLID_TRANSLUCENT) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || ((((WIELOKAT*)nag)->translucent) == 0) || (transluc==255))) break;
 		   if ((entities == ENT_SOLID) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || (((((WIELOKAT*)nag)->translucent) == 1) && (transluc<255)))) break;
-		   if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+           //if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+           if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || (((((WIELOKAT*)nag)->pattern) != 1) && ((((WIELOKAT*)nag)->gradient) != 1)))) break;
 		   if ((entities == ENT_ENTITIES) && (((((WIELOKAT*)nag)->empty_typ) == 0))) break;
 		   if ((entities != ENT_ENTITIES) && (entities != ENT_SOLID_NULL) && (entities != ENT_SOLID) && (entities != ENT_SOLID_TRANSLUCENT) && (entities != ENT_SOLID_PATTERN)) break;
+           if ((entities != ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) == 0) && ((((WIELOKAT*)nag)->gradient) == 1))) break;
 
 	  if (frozen) { if (!wielokat_frozen((WIELOKAT *)nag, frozen-1)) break; }
-	  if (!wielokat_wybrany((WIELOKAT*)nag)) break;
+
+	  //if (!wielokat_wybrany((WIELOKAT*)nag)) break;
+     if (!wielokat_visible_in_frame((WIELOKAT*)nag, (RECTD*)&window_to_print)) break;
 	  
 	  if (((WIELOKAT*)nag)->empty_typ==0) line_width_type = LINE_MIN_WIDTH ;
        else  line_width_type = Solid_Line_Width (((WIELOKAT*)nag)->empty_typ);
@@ -4413,6 +4457,39 @@ if (draw_logo==TRUE)
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!luk_frozen((LUK *)nag, frozen-1)) break; }
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
+
+        //edges
+        if (((LUK*)nag)->obiektt2==6) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+            else V.style = V_EDGE_ARC_SIMPLE_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LUK*)nag)->obiektt2==7) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+            else V.style = V_EDGE_ARC_FIXED_INV;
+
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
 	  
 	  line_width_type = Line_Width (((LUK*)nag)->typ);
 
@@ -4521,6 +4598,12 @@ if (draw_logo==TRUE)
       if ((long_long)nag>(long_long)block_adr) BLOK_SIEC=FALSE;
      }
 
+      if ((nag->obiekt!=OdBLOK) && (nag->widoczny==0))  //// 19-09-2025  due to gradient solids
+      {
+          ObiektTok(&off, offk, &ad, ONieOkreslony);
+          continue;
+      }
+
     switch(nag->obiekt)
     {
        case OdBLOK :
@@ -4551,6 +4634,22 @@ if (draw_logo==TRUE)
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!linia_frozen((LINIA *)nag, frozen-1)) break; }
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
+
+        //edges
+        if (((LINIA*)nag)->obiektt2==6) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+            else V.style = V_EDGE_SIMPLE_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==7) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+            else V.style = V_EDGE_FIXED_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
 	  
 	  line_width_type = Line_Width (((LINIA*)nag)->typ);
 
@@ -4705,12 +4804,16 @@ if (draw_logo==TRUE)
             if ((entities == ENT_SOLID_NULL) && ((((WIELOKAT*)nag)->empty_typ) != 6) && ((((WIELOKAT*)nag)->empty_typ) != 7)) break;
             if ((entities == ENT_SOLID_TRANSLUCENT) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || ((((WIELOKAT*)nag)->translucent) == 0) || (transluc==255))) break;
             if ((entities == ENT_SOLID) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || (((((WIELOKAT*)nag)->translucent) == 1) && (transluc<255)))) break;
-            if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+            //if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+            if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || (((((WIELOKAT*)nag)->pattern) != 1) && ((((WIELOKAT*)nag)->gradient) != 1)))) break;
             if ((entities == ENT_ENTITIES) && (((((WIELOKAT*)nag)->empty_typ) == 0))) break;
             if ((entities != ENT_ENTITIES) && (entities != ENT_SOLID_NULL) && (entities != ENT_SOLID) && (entities != ENT_SOLID_TRANSLUCENT) && (entities != ENT_SOLID_PATTERN)) break;
+            if ((entities != ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) == 0) && ((((WIELOKAT*)nag)->gradient) == 1))) break;
 
             if (frozen) { if (!wielokat_frozen((WIELOKAT *)nag, frozen-1)) break; }
-	  if (!wielokat_wybrany((WIELOKAT*)nag)) break;
+
+	  //if (!wielokat_wybrany((WIELOKAT*)nag)) break;
+      if (!wielokat_visible_in_frame((WIELOKAT*)nag, (RECTD*)&window_to_print)) break;
 	  
 	  if (((WIELOKAT*)nag)->empty_typ==0) line_width_type = LINE_MIN_WIDTH ;
        else  line_width_type = Solid_Line_Width (((WIELOKAT*)nag)->empty_typ);
@@ -4778,6 +4881,39 @@ if (draw_logo==TRUE)
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!luk_frozen((LUK *)nag, frozen-1)) break; }
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
+
+            //edges
+            if (((LUK*)nag)->obiektt2==6) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                else V.style = V_EDGE_ARC_SIMPLE_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==7) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                else V.style = V_EDGE_ARC_FIXED_INV;
+
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
 	  
 	  line_width_type = Line_Width (((LUK*)nag)->typ);
 
@@ -4854,6 +4990,12 @@ if (draw_logo==TRUE)
       if ((long_long)nag>(long_long)block_adr) BLOK_SIEC=FALSE;
      }
 
+      if ((nag->obiekt!=OdBLOK) && (nag->widoczny==0))  //// 19-09-2025  due to gradient solids
+      {
+          ObiektTok(&off, offk, &ad, ONieOkreslony);
+          continue;
+      }
+
     switch(nag->obiekt)
     {
        case OdBLOK :
@@ -4883,6 +5025,22 @@ if (draw_logo==TRUE)
        case Olinia :
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!linia_frozen((LINIA *)nag, frozen-1)) break; }
+
+        //edges
+        if (((LINIA*)nag)->obiektt2==6) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+            else V.style = V_EDGE_SIMPLE_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==7) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+            else V.style = V_EDGE_FIXED_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
 
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
 
@@ -5035,13 +5193,17 @@ if (draw_logo==TRUE)
             if ((entities == ENT_SOLID_NULL) && ((((WIELOKAT*)nag)->empty_typ) != 6) && ((((WIELOKAT*)nag)->empty_typ) != 7)) break;
             if ((entities == ENT_SOLID_TRANSLUCENT) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || ((((WIELOKAT*)nag)->translucent) == 0) || (transluc==255))) break;
             if ((entities == ENT_SOLID) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) == 1) || (((((WIELOKAT*)nag)->translucent) == 1) && (transluc<255)))) break;
-            if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+            //if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || ((((WIELOKAT*)nag)->pattern) != 1))) break;
+            if ((entities == ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) != 0) || (((((WIELOKAT*)nag)->pattern) != 1) && ((((WIELOKAT*)nag)->gradient) != 1)))) break;
             if ((entities == ENT_ENTITIES) && (((((WIELOKAT*)nag)->empty_typ) == 0))) break;
             if ((entities != ENT_ENTITIES) && (entities != ENT_SOLID_NULL) && (entities != ENT_SOLID) && (entities != ENT_SOLID_TRANSLUCENT) && (entities != ENT_SOLID_PATTERN)) break;
+            if ((entities != ENT_SOLID_PATTERN) && (((((WIELOKAT*)nag)->empty_typ) == 0) && ((((WIELOKAT*)nag)->gradient) == 1))) break;
 
             if (frozen) { if (!wielokat_frozen((WIELOKAT *)nag, frozen-1)) break; }
-	  if (!wielokat_wybrany((WIELOKAT*)nag)) break;
-	  
+
+	  //if (!wielokat_wybrany((WIELOKAT*)nag)) break;
+      if (!wielokat_visible_in_frame((WIELOKAT*)nag, (RECTD*)&window_to_print)) break;
+
 	  if (((WIELOKAT*)nag)->empty_typ==0) line_width_type = LINE_MIN_WIDTH ;
        else  line_width_type = Solid_Line_Width (((WIELOKAT*)nag)->empty_typ);
 
@@ -5119,6 +5281,39 @@ if (draw_logo==TRUE)
 	  if (entities!=ENT_ENTITIES) break;
 	  if (frozen) { if (!luk_frozen((LUK *)nag, frozen-1)) break; }
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
+
+            //edges
+            if (((LUK*)nag)->obiektt2==6) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                else V.style = V_EDGE_ARC_SIMPLE_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==7) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                else V.style = V_EDGE_ARC_FIXED_INV;
+
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
 	  
 	  line_width_type = Line_Width (((LUK*)nag)->typ);
 
@@ -5181,7 +5376,8 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
  char *block_adr;
  BLOK *b1;
  T_Desc_Ex_Block *ptrs_desc_bl1;
- double width_s0, width_s1; 
+ double width_s0, width_s1;
+ AVECTOR V;
 
  BLOK_SIEC=FALSE;
 
@@ -5250,6 +5446,13 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
       }
       return FALSE;
     }
+
+     if ((nag->obiekt!=OdBLOK) && (nag->widoczny==0))  //// 19-09-2025  due to gradient solids
+     {
+         ObiektTok(&off, offk, &ad, ONieOkreslony);
+         continue;
+     }
+
     switch(nag->obiekt)
     {
       case OdBLOK :
@@ -5277,6 +5480,22 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
      break;
        case Olinia :
 	   if (!linia_wybrana ((LINIA *)nag)) break ;   //!!!!!!!!!!!!!
+
+        //edges
+        if (((LINIA*)nag)->obiektt2==6) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+            else V.style = V_EDGE_SIMPLE_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==7) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+            else V.style = V_EDGE_FIXED_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
 	  
 	  line_width_type = Line_Width (((LINIA*)nag)->typ);
 	  if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
@@ -5390,6 +5609,40 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
             break;
        case Oluk :
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
+
+            //edges
+            if (((LUK*)nag)->obiektt2==6) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                else V.style = V_EDGE_ARC_SIMPLE_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==7) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                else V.style = V_EDGE_ARC_FIXED_INV;
+
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+
      if (BLOK_SIEC==TRUE)
       {
         memmove(&l1,nag,sizeof(LUK));
@@ -7787,6 +8040,17 @@ void jednostki_to_prn_xy(int numpoints, double *xy, int* pxy)
     }
 }
 
+void jednostki_to_prn_xy_l(int numpoints, double *xy, long* pxy)
+{
+    int i;
+
+    for (i=0; i<numpoints; i+=2)
+    {
+        pxy[i] = (long)(jednostki_to_prn_x(xy[i], xy[i+1]) + matrix_head.left_margin);
+        pxy[i+1] = (long)(jednostki_to_prn_y(xy[i], xy[i+1]));
+    }
+}
+
 
 BOOL Draw_to_Prn_Proc_Exe (char *ptrsz_file,
                        T_PTR_Prn_Config ptrs_config,
@@ -8431,5 +8695,18 @@ void Draw_Solid_Pattern(int numpoints, double* xy0, char* s_pattern, int t_print
 	
 	destroy_bitmap(pattern_bitmap_scaled_prn);
 }
+
+//void Draw_Solid_Pattern(int numpoints, double* xy0, char* s_pattern, int t_printer, int bw, int grey, float origin_x_, float origin_y_)
+
+void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print)
+{
+    int ret;
+    int fgray_saturation=0;
+
+    if ((grey) || (bw) || (ptrs__prn_ini_date->gray_print == 1) || (ptrs__prn_ini_date->color_print == 0)) fgray_saturation = ptrs__prn_ini_date->gray_saturation;
+    ret=draw_polygon_to_drive_gradient(numpoints, xy, translucency, gradient, window_to_print);
+
+}
+
 
 #undef __O_PRNFUN__

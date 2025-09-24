@@ -261,6 +261,7 @@ static char* errors_kom[] =
 /*213*/u8"Value out of range 1024 .. 2000000 [KB]",
 /*214*/u8"Layer number out of the range of 1...256",
 /*215*/u8"None of the semi-axes of the ellipse can have a length less than 0.",
+/*216*/u8"Incorrect format of non-negative real number",
 };
 
 static char* komunikaty_kom[] =
@@ -664,6 +665,7 @@ static char* komunikaty0[] =
 /*168*/u8"Dimensioning (to start dimensioning an angle, touch any line)",
 /*169*/u8"Indicate frame or truss element",
 /*170*/u8"Place the section line at the desired element coordinates. Click to save the values to the clipboard",
+/*171*/u8"Indicate the plate diagram for static analysis (FEM)",
 };
 
 static char* messages_str[] =
@@ -963,10 +965,10 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _element_graph_data_failed_ u8"It was unabled to create resulting forces data block for element"
 #define _cannot_create_folder_ u8"Cannot create file directory"
 
-#define _FRAME3DD_ "%FRAME:"
-#define _FRAME3DD_PL "%RAMA:"
-#define _FRAME3DD_UA "%КАРКАС:"
-#define _FRAME3DD_ES "%MARCO:"
+#define _FRAME3DD_ u8"%FRAME:"
+#define _FRAME3DD_PL u8"%RAMA:"
+#define _FRAME3DD_UA u8"%КАРКАС:"
+#define _FRAME3DD_ES u8"%MARCO:"
 
 
 #define _Yes_ "Yes"
@@ -1211,6 +1213,52 @@ char *frame3dd[]={
     };
 
 #define _ERROR_FREE_COMPLETION_ u8"error-free completion"
+
+#endif
+
+#ifdef __O_PLATE__
+
+#define _PLATE_ u8"%PLATE:"
+#define _PLATE_PL u8"%PŁYTA:"
+#define _PLATE_UA u8"%ПЛИТА:"
+#define _PLATE_ES u8"%LOSA:"
+
+#define _cannot_create_folder_ u8"Cannot create file directory"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
+static char confirm[] = u8"Confirm";
+
+#define _gmsh_error_ u8"gmsh error"
+#define _ElmerGrid_error_ u8"ElmerGrid error"
+#define _ElmerSolver_error_ u8"ElmerSolver error"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Cannot open results file"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Unable to read results file"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Unable to create new layer. To many layers already created"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Unable to create nodes and elements block"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Unable to create deflection block"
+
+#define _PROCEED_PLATE_FEM_ u8"Proceed static analysis of the plate?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"polyline is not closed"
+#define _THE_PLATE_ u8"The plate"
+#define _THE_HOLE_ u8"The hole"
+#define _THE_WALL_ u8"The wall"
+#define _THE_ZONE_ u8"The zone"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"The number of plate polylines is equal 0"
+#define _NO_LOAD_ASSIGNED_ u8"No load assigned and no '%g' declared for self weight load"
+
+
+#define _Yes_ "Yes"
+#define _No_ "No"
+#define _YES_NO_ESC_ u8"YNyn\033"
+#define _YES_ 'Y'
+#define _yes_ 'y'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"The plate looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
+#define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
 
 #endif
 

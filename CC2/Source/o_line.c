@@ -46,6 +46,8 @@
 extern void Get_Graph_Values_Cur_Pos (double *, double *) ;
 extern void view_line_type(LINIA *L);
 extern void orto_l(LINIA *L, int *Orto_Dir);
+extern BOOL Set_Beginning_Pline_Factory (BLOK *blk_adr, double *df_x_pl_beg, double *df_y_pl_beg);
+extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
 
 static void redcr(char);
 
@@ -59,6 +61,8 @@ static BOOL add_line (BOOL b_strwyj) ;
 static BOOL add_line3D (BOOL b_strwyj) ;
 static double Z3D;
 
+TMENU mEdgeType= {3, 0,0, 12,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmEdgeType, NULL,NULL} ;
+
 static TMENU mAxis1000={1,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmAxis1000,NULL,NULL} ;
 
 static TMENU mAxis50={1,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmAxis50,NULL,NULL} ;
@@ -66,6 +70,7 @@ static TMENU mAxis50={1,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0
 static TMENU mLine={3,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLine,NULL,NULL} ;
 
 static TMENU mPLine={4,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLine,NULL,NULL} ;
+static TMENU mPLineSlab={8,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLine,NULL,NULL} ;
 
 static TMENU mLine_Con={1,0,0,15,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLine_Con,NULL,NULL} ;
 
@@ -74,9 +79,11 @@ static TMENU mPLineObrys={6,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0
 static TMENU mLine_ConObrys={3,0,0,15,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLine_ConObrys,NULL,NULL} ;
 
 
-enum MENU_ID {IDM_CLOSE = 0, IDM_UNDO, IDM_LEN, IDM_ARC, IDM_CONTINUOUS_LINE, IDM_DASHED_LINE } ;
+enum MENU_ID {IDM_CLOSE = 0, IDM_UNDO, IDM_LEN, IDM_ARC, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_FLIP_SUPPORT /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/ } ;
 
 enum MENU_ID1 {IDM_NEW_LEN = 0};
+
+static BLOK *BLK_ADR;
 
 /*-----------------------------------------------------------------------*/
 
@@ -98,7 +105,23 @@ static void  cur_on(double x,double y)
 /*----------------------------------------*/
 {
     LiniaG.x2=x; LiniaG.y2=y;
-    outlineor (&LiniaG, COPY_PUT, 1) ;
+    switch (LiniaG.obiektt2) {
+        case 6:
+            if (LiniaG.obiektt3==0)  VectorG.style = 18;
+            else VectorG.style = 19;
+            VectorG.typ=LiniaG.typ;
+            outvectoror(&LiniaG, &VectorG, COPY_PUT, 1);
+            break;
+        case 7:
+            if (LiniaG.obiektt3==0)  VectorG.style = 20;
+            else VectorG.style = 21;
+            VectorG.typ=LiniaG.typ;
+            outvectoror(&LiniaG, &VectorG, COPY_PUT, 1);
+            break;
+        default:
+            outlineor(&LiniaG, COPY_PUT, 1);
+        break;
+    }
     cursor_on(x, y);
 }
 
@@ -116,8 +139,9 @@ static void  cur_on__(double x,double y)
 static int strwyj;
 static double Lx2,Ly2,Lz2 ;
 static BOOL b__pline ;
-static double df__xbeg, df__ybeg ;
-static double df__len = 0 ;
+//static
+double df__xbeg=0.0, df__ybeg=0.0 ;
+static double df__len = 0.0 ;
 
 static void set_axis_len (void)
 /*---------------------------*/
@@ -390,6 +414,15 @@ static int line_command_proc (int ev_nr)
   return ret_val ;
 }
 
+BOOL Set_Beginning_Pline (BLOK *blk_adr, double *X0, double *Y0)
+{
+    BOOL ret;
+    ret=Set_Beginning_Pline_Factory (blk_adr, &df__xbeg, &df__ybeg);
+    BLK_ADR=blk_adr;
+    *X0=df__xbeg;
+    *Y0=df__ybeg;
+    return ret;
+}
 
 int PLine_Line_Command_Proc (int ev_nr)
 /*-----------------------------------*/
@@ -399,11 +432,14 @@ int PLine_Line_Command_Proc (int ev_nr)
   double df_xend, df_yend ;
   void *ptr_temp, *ptr_ob ;
   BOOL b_first_end ;
+  int ret;
 
   switch (ev_nr)
   {
     case IDM_CLOSE :
-      if (FALSE == Get_End_Pline ((void*)dane,  &ptr_ob, &b_first_end,
+      ret=Get_Begin_Pline (BLK_ADR, &ptr_ob, &b_first_end, &df__xbeg, &df__ybeg);
+
+      if (FALSE == Get_End_Pline (BLK_ADR /*(void*)dane*/,  &ptr_ob, &b_first_end,
       df__xbeg, df__ybeg, &df_xend, &df_yend))
       {
 	ret_val = PL_MODE_CONTINUE ;
@@ -415,14 +451,18 @@ int PLine_Line_Command_Proc (int ev_nr)
 	orto = 0 ;
 	Lx2 = df__xbeg ;
 	Ly2 = df__ybeg ;
+
+    PTR__GTMPBLOCK=(char*)BLK_ADR;
 	add_line (TRUE) ;
+    BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
+
 	orto = orto_temp ;
 	ret_val = PL_MODE_END ;
 	CUR_ON (X, Y) ;
       }
       break ;
     case IDM_UNDO :
-      if (NULL == (ptr_temp = Get_Pline_Last_Ob ((void*)dane)))
+      if (NULL == (ptr_temp = Get_Pline_Last_Ob (BLK_ADR /*(void*)dane*/)))
       {
 	ret_val = PL_MODE_UNDO ;
       }
@@ -430,8 +470,10 @@ int PLine_Line_Command_Proc (int ev_nr)
       {
 	rysuj_obiekt ((char*)ptr_temp, COPY_PUT, 0) ;
     CUR_OFF (X, Y) ;
+    PTR__GTMPBLOCK=(char*)BLK_ADR;
 	Usun_Object (ptr_temp, FALSE) ;
-	Get_End_Pline ((void*)dane, &ptr_ob, &b_first_end,
+    BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
+	Get_End_Pline (BLK_ADR/*(void*)dane*/, &ptr_ob, &b_first_end,
 		df__xbeg, df__ybeg, &df_xend, &df_yend) ;
 	LiniaG.x1 = df_xend ;
 	LiniaG.y1 = df_yend ;
@@ -441,7 +483,8 @@ int PLine_Line_Command_Proc (int ev_nr)
       }
       break ;
     case IDM_LEN :
-      if (FALSE == Get_End_Pline ((void*)dane,  &ptr_ob, &b_first_end,
+      PTR__GTMPBLOCK=(char*)BLK_ADR;
+      if (FALSE == Get_End_Pline (BLK_ADR/*(void*)dane*/,  &ptr_ob, &b_first_end,
       df__xbeg, df__ybeg, &df_xend, &df_yend))
       {
 	ret_val = PL_MODE_CONTINUE ;
@@ -479,6 +522,7 @@ int PLine_Line_Command_Proc (int ev_nr)
 	Lx2 = x2 ;
 	Ly2 = y2 ;
 	add_line (TRUE) ;
+    BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
 	orto = orto_temp ;
 	ret_val = PL_MODE_END ;
 	CUR_ON (X, Y) ;
@@ -488,6 +532,7 @@ int PLine_Line_Command_Proc (int ev_nr)
     case IDM_ARC :
       ret_val = PL_MODE_ARC ;
       break ;
+      /*
     case IDM_CONTINUOUS_LINE :
       CUR_OFF (X, Y) ;
       LiniaG.typ=LukG.typ=96;
@@ -504,6 +549,41 @@ int PLine_Line_Command_Proc (int ev_nr)
       CUR_ON (X, Y) ;
       ret_val = PL_MODE_CONTINUE ;
       break;
+       */
+      case IDM_FREE_EDGE:
+          LiniaG.obiektt2=O2FREE_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2FREE_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_PINNED_EDGE:
+          LiniaG.obiektt2=O2HINGED_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2HINGED_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_FIXED_EDGE:
+          LiniaG.obiektt2=O2FIXED_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2FIXED_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_FLIP_SUPPORT:
+          LiniaG.obiektt3=!LiniaG.obiektt3;
+          LukG.obiektt3=!LukG.obiektt3;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+          /*
+      case IDM_ROLLED_EDGE:
+          LiniaG.obiektt2=O2FREE_EDGE;
+          LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2FREE_EDGE;
+          LukG.obiektt3=O3REGULAR_EDGE;
+          break;
+           */
     default :
       ret_val = PL_MODE_CONTINUE ;
       break ;
@@ -556,7 +636,7 @@ static BOOL add_line_OLD (BOOL b_strwyj)
 }
 
 static BOOL add_line (BOOL b_strwyj)
-/*--------------------------------*/
+/*---------------------------------*/
 { float Lx3,Ly3,Lx4,Ly4;
   BOOL b_ret = FALSE ;
   LINIA LiniaGG;
@@ -696,7 +776,7 @@ static BOOL add_line (BOOL b_strwyj)
     return TRUE ;
   }
   
-  if (NULL != dodaj_obiekt (((b__pline == TRUE) ? (BLOK*)dane : NULL), &LiniaG))
+  if (NULL != dodaj_obiekt (((b__pline == TRUE) ? BLK_ADR /*(BLOK*)dane*/ : NULL), &LiniaG))
   {
     
     rysuj_obiekt ((char*)&LiniaG, COPY_PUT, 1) ;
@@ -932,8 +1012,8 @@ static void poczatekL (double X0, double Y0)
   }
 }
 
-static int poczatekPL (double X0, double Y0)
-/*-----------------------------------------*/
+static int poczatekPL (double X0, double Y0, BLOK **blk_adr)
+/*-------------------------------------------------------*/
 {
   EVENT *ev ;
   int ret_command ;
@@ -947,6 +1027,8 @@ static int poczatekPL (double X0, double Y0)
   while (1)
   {
     strwyj = 0 ;
+      ////PTR__GTMPBLOCK=(char*)*blk_adr; ////
+      BLK_ADR = *blk_adr; ////
     ev = Get_Event_Point (NULL, &X0, &Y0) ;
     if (ev -> Number == -83)
      {
@@ -954,7 +1036,11 @@ static int poczatekPL (double X0, double Y0)
      }
     if (strwyj == 1)
     {
+      PTR__GTMPBLOCK=(char*)*blk_adr;
+      BLK_ADR = *blk_adr;
       add_line (TRUE) ;
+      *blk_adr=(BLOK*)PTR__GTMPBLOCK;
+      BLK_ADR = *blk_adr;
       CUR_OFF (X, Y) ;
       CUR_ON (X, Y) ;
       continue ;
@@ -964,7 +1050,8 @@ static int poczatekPL (double X0, double Y0)
       case evKeyDown :
 	 if(ev->Number == 0)
 	 {
-      if ((PLYTA==TRUE) || (OTWOR_P==TRUE))
+         /*
+      if ((PLATE==TRUE) || (HOLE==TRUE) || (WALL==TRUE) || (ZONE==TRUE))
        {
         if (PL_MODE_CONTINUE != (ret_command = PLine_Line_Command_Proc (IDM_CLOSE)))
 	      {
@@ -978,14 +1065,19 @@ static int poczatekPL (double X0, double Y0)
 	         }
        }
         else
-          {
+          */
+          //{
       	   redcr (1) ;
 	         return PL_MODE_END ;
-          }
+          //}
 	 }
 	 if (ev->Number == ENTER)
 	 {
+       PTR__GTMPBLOCK=(char*)*blk_adr;
+       BLK_ADR = *blk_adr;
 	   add_line (FALSE) ;
+       *blk_adr = (BLOK*)PTR__GTMPBLOCK;
+       BLK_ADR = *blk_adr;
        CUR_OFF (X, Y) ;
 	   CUR_ON (X, Y) ;
 	   break ;
@@ -996,6 +1088,7 @@ static int poczatekPL (double X0, double Y0)
 	   redcr (1) ;
 	   return ret_command ;
 	 }
+        *blk_adr = BLK_ADR;
 	 break ;
       default :
 	 break ;
@@ -1004,8 +1097,8 @@ static int poczatekPL (double X0, double Y0)
 }
 
 
-static void redcr0(char typ)
-/*-------------------------*/
+static void redcr0(char typ, int mode)
+/*----------------------------------*/
 {
   static void (*CUR_oN)(double ,double);
   static void (*CUR_oFF)(double ,double);
@@ -1025,7 +1118,11 @@ static void redcr0(char typ)
      {
        komunikat0 (110) ;
        if (OBRYS==TRUE) menupini (&mPLineObrys, _POLYLINE_, _POLYLINE_C_,20) ;
-         else menupini (&mPLine, _POLYLINE_, _POLYLINE_C_,20) ;
+         else
+       {
+             if (mode==1) menupini (&mPLineSlab, _POLYLINE_, _POLYLINE_C_,20) ;
+             else menupini (&mPLine, _POLYLINE_, _POLYLINE_C_,20) ;
+       }
        LiniaG.blok = ElemBlok ;
      }
 
@@ -1109,7 +1206,7 @@ void Linia (void)
    }
   b__pline = FALSE ;
   dane_size0 = dane_size ;
-  redcr0 (0) ;
+  redcr0 (0, 0) ;
 
   while (1)
   {
@@ -1122,7 +1219,7 @@ void Linia (void)
 	case evKeyDown  :
 	     if(ev->Number==0)
 	      {
-		redcr0(1);
+		redcr0(1, 0);
 		return;
 	      }
 	     if(ev->Number== ENTER)
@@ -1142,8 +1239,8 @@ void Linia (void)
    }
 }
 
-int Pline_Line (double df_xbeg, double df_ybeg)
-/*-------------------------------------------*/
+int Pline_Line (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode)
+/*---------------------------------------------------------------------*/
 {
   int ret ;
   double df_xend, df_yend ;
@@ -1151,13 +1248,16 @@ int Pline_Line (double df_xbeg, double df_ybeg)
   void *ptr_ob ;
 
   b__pline = TRUE ;
-  df__xbeg = df_xbeg ;
-  df__ybeg = df_ybeg ;
-  redcr0 (0) ;
-  Get_End_Pline ((void*)dane, &ptr_ob, &b_first_end,
+  if (*blk_adr==(BLOK*)dane)
+  {
+      df__xbeg = df_xbeg;
+      df__ybeg = df_ybeg;
+  }
+  redcr0 (0, mode) ;
+  Get_End_Pline (*blk_adr /*(void*)dane*/, &ptr_ob, &b_first_end,
 	df_xbeg, df_ybeg, &df_xend, &df_yend) ;
-  ret = poczatekPL (df_xend, df_yend) ;
-  redcr0 (1) ;
+  ret = poczatekPL (df_xend, df_yend, blk_adr) ;
+  redcr0 (1, mode) ;
   redcr(2);
   return ret ;
 }

@@ -1485,7 +1485,7 @@ char* vector_style_tab[] = { u8"rigid-rigid",u8"rigid-pin",u8"pin-rigid",u8"pin-
                              u8"vertical projection of a horizontal load",
                              u8"thermal load",
                              u8"node size (radius)",
-                             u8"?","?","?","?","?","?","?","?",
+                             u8"slab Load","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
@@ -1507,6 +1507,8 @@ static POLE pmInfoAbout[] = {
 	 {u8"֎Color\0",'C',158,NULL},      //2
 	 {u8"line Type\0 ",'T',160,NULL},      //3
 	 {u8"line Width\0",'W',159,NULL},      //4
+     {u8"edge support type\0",'J',850,NULL},      //4
+     {u8"edge support invertion\0",'K',853,NULL},      //4
      {u8"Point type\0",'P',27,NULL},       //5
      {u8"Vector type\0 ",'V',770,NULL},      //6
 	 {u8"X1 \0 ",'1',306,NULL},      //7
@@ -1552,9 +1554,9 @@ static POLE pmInfoAbout[] = {
      {u8"pixel size dx \0",'Q',689,NULL},      //44
      {u8"pixel size dy \0",'Z',690,NULL},      //45
 	 {u8"Inner block name\0",'N',318,NULL},      //46
-	 {u8"Outer block name\0",'B',319,NULL},      //47
+	 {u8"Outer block name\0",'G',319,NULL},      //47
 };
-TMENU mInfoAbout = { 47,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
+TMENU mInfoAbout = { 49,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
 
 static POLE pmInfo[] = {
 	 {u8"memory Size for drawing/default [KB] \0 ",'S',297,NULL},
@@ -1573,15 +1575,20 @@ TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[
 
 char* objects[] = { u8"Line",u8"Line 3D",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Polygon/Solid",u8"Solid 3D",u8"Point",u8"Spline",u8"Image",u8"Polyline",u8"Trace",u8"Hatch",u8"Elliptical Arc",u8"Ellipse", u8"Elliptical Disc", u8"Solid Arc", u8"Vector"};
 
+#define __PLATE__ u8" (PLATE)"
+#define __HOLE__  u8" (HOLE)"
+#define __WALL__  u8" (WALL)"
+#define __ZONE__  u8" (ZONE)"
+
 #define _FILLING_ u8"filling"
 
 char *vector_txt[]={u8"Vector: rigid-rigid",u8"Vector: rigid-pin",u8"Vector: pin-rigid",u8"Vector: pin-pin",u8"Vector: Force",u8"Vector: Moment",u8"Vector: -Moment",
-                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)"};
+                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)", u8"slab Load"};
 
 //char *point_txt[]={"Simple","Base point",'','','','','',"Junction","pin point",'','','',"Fixed","fixed L","fixed R","fixed U","Pinned","pinned L","pinned R","pinned U","fixed Roller","fixed roller L","fixed roller R","fixed roller U",
 //     "pinned rOller","pinned roller L","pinned roller R","pinned roller U"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'V', L'H', L'Q', L'R'};
+unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'V', L'H', L'Q', L'R', 'S'};
 unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'C', ' ', ' ', ' ',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', L'B', L'V', ' '};
 char *object_txt[]={u8"Image",u8"Line",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Solid",u8"Point",u8"Block",u8"Solid Arc",u8"Elliptical Arc",u8"Ellipse",u8"Filled Ellipse",u8"Bezier Spline",u8"Vector",""};
@@ -1654,7 +1661,19 @@ static POLE pmPLine[] = {
 		  {u8"Close\0",L'C',217,NULL},
 		  {u8"Remove\0Del\0",L'R',218,NULL},
 		  {u8"Length\0             0\0",L'L',219,NULL},
-		  {u8"Arc\0", L'A', 15,NULL} };
+		  {u8"Arc\0", L'A', 15,NULL},
+          {u8"No support edge\0", L'N', 851,NULL},
+          {u8"Pinned support edge\0", L'P', 850,NULL},
+          {u8"Fixed support edge\0", L'F', 852,NULL},
+          //{u8"Movable support edge\0", L'M', 849,NULL},
+          {u8"flip Support\0", L'S', 853,NULL},
+};
+
+POLE pmEdgeType[] = {
+            {u8"No support edge\0", L'N', 851,NULL},
+            {u8"Pinned support edge\0", L'P', 850,NULL},
+            {u8"Fixed support edge\0", L'F', 852,NULL}
+          };
 
 static POLE pmLine_Con[] = {
 		  {u8"Continuation",L'C',220,NULL} };
@@ -1777,6 +1796,12 @@ static POLE pmVector[] = {
           {u8"trapezium V load\0\0",L'V',737,&mLoad_Char},
           {u8"Thermal load\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"node size (radius)\0\0",L'0',786,NULL},
+
+          {u8"slab Plate\0\0",L'P',846,NULL},
+          {u8"slab Space\0\0",L'S',844,NULL},
+          {u8"slab Wall\0\0",L'W',843,NULL},
+          {u8"slab Zone\0\0",L'Z',842,NULL},
+          {u8"slab Load\0\0",L'L',845,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -1823,7 +1848,7 @@ static POLE pmLoad_style[] = {
 #define _YES_ "Y"
 #define _NO_ "N"
 
-static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 16 /*14*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 static POLE pmLukm[] = {
 		  {u8"[1] three points",L'1',221,NULL},
@@ -1848,7 +1873,14 @@ static POLE pmPLukm[] = {
           {u8"reversed arc direction",L'0',729,&mArcReversed},
 		  {u8"Close",L'C',247,NULL},
 		  {u8"Remove: Del",L'R',248,NULL},
-		  {u8"Line", L'L',13,NULL} };
+		  {u8"Line", L'L',13,NULL},
+
+          {u8"No support edge\0", L'N', 851,NULL},
+          {u8"Pinned support edge\0", L'P', 850,NULL},
+          {u8"Fixed support edge\0", L'F', 852,NULL},
+          //{u8"Movable support edge\0", L'M', 849,NULL},
+          {u8"flip Support\0", L'S', 853,NULL},
+};
 
 static POLE pmPLukmObrys[] = {
 
@@ -1979,6 +2011,29 @@ static char* EllipticalAngle[] = {u8"Local",u8"Global"};
 
 #ifdef __O_PLINE__
 
+static POLE pmPLine_Con[] = {
+		  {u8"Continuation",L'C',220,NULL} };
+
+extern TMENU mVector;
+
+static POLE pmPLine_Con_Slab[] = {
+		  {u8"Continuation",L'C',220,NULL},
+          {u8"Vectors",L'V',722,&mVector},
+};
+
+#define _POLYLINE_ u8"Polyline"
+#define _POLYLINE_C_ L'P'
+
+#define _Yes_ u8"Yes"
+#define _No_ u8"No"
+
+#define _CHANGE_POLYLINE_TYPE_ u8"Selected different type of the polyline. Shall we change type to: "
+
+#define __PLATE__ u8"PLATE"
+#define __HOLE__  u8"HOLE"
+#define __WALL__  u8"WALL"
+#define __ZONE__  u8"ZONE"
+
 #endif
 
 #ifdef __O_SOLID__
@@ -2077,7 +2132,7 @@ static POLE pmFillTyp[] = {
 	   {u8"tHick\0",'H',279,NULL},
 	   {u8"very thicK\0",'K',280,NULL},
 	   {u8"Extra thick\0",'E',281,NULL},
-	   {u8"Pattern\0",'P',837, &mSolidPattern},
+	   {u8"Pattern\0",'P',836, &mSolidPattern},
 	   //  {u8"- wyłącz obszar",'-',0,NULL},
 	   //  {u8"+ Aktywny obszar",'+',0,NULL},
 };
@@ -2176,7 +2231,7 @@ static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,10,0,0,0,(
 #define _YES_ "Y"
 #define _NO_ "N"
 
-static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 14 /*11*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 static POLE pmPTLukm[] = {
           {u8"[0] continuation with arc",L'0',714,NULL},
@@ -2498,7 +2553,7 @@ POLE pmHatch[] = {
 	 {u8"Scale\0 1\0     ", 'S', 436,NULL},
 	 {u8"base point Coordinates\0 0,0\0              ", 'C', 437,NULL},
 	 {u8"indicate Base point\0 \0", 'B', 438,NULL},
-	 {u8"pattern line Distance / spline segment length\0 1\0             ", 'D', 439,NULL},
+	 {u8"pattern line Distance / spline segment length\0 1\0", 'D', 439,NULL},
 	 {u8"Thermal insulation\0 \0", 'T', 679,&mSelect_Ins},
 	 {u8"Image pattern\0 \0",'I',836,&mSolidHatchPattern}
 	  };
@@ -3406,6 +3461,9 @@ char error_message_background[64] = u8"No background files in this folder";
 
 char* view_width_tab[] = { u8"v.t.",u8"t.",u8"T.",u8"v.T.",u8"e.T.", "", "", u8"hidden " };
 
+char* view_edge_tab[] = {u8"No support edge", u8"", u8"", u8"", u8"", u8"No support edge", u8"Pinned support edge", u8"Fixed support edge"};
+char* view_edgeinverted_tab[] = {u8"Regular", u8"Inverted"};
+
 char* view_type_tab[] = {
 			   u8"continuous",
 			   u8"dashed",
@@ -3454,6 +3512,8 @@ char* typ_punktu_inf[] = { u8"Simple",u8"Base point","","","","","",u8"Junction"
                            u8"Fixed",u8"Fixed L",u8"Fixed R",u8"Fixed U",u8"Pinned", u8"Pinned L", u8"Pinned R", u8"Pinned U",
                            u8"Fixed Roller", u8"Fixed Roller L", u8"Fixed Roller R", u8"Fixed Roller U", u8"Pinned Roller", u8"Pinned Roller L", u8"Pinned Roller R", u8"Pinned Roller U", u8"no rotation Z",
                            "","","","","","","","",
+
+
 };
 
 #endif

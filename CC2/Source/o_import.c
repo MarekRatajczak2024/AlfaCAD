@@ -251,7 +251,7 @@ enum HATCH {
 	ID_END = 49
 };
 
-static double DX,DY,Px,Py ;
+static double DX,DY,Px=0,Py=0 ;
 static BOOL b_check_arc ;
 static int w__object_no ;
 char symbol_name[MAXPATH];
@@ -313,7 +313,8 @@ void change_properties_h
 		   {
 		   if (lps_change_param->b_drawpoly)
 			   obw = (WIELOKAT *)ob;
-		       obw->drawpoly = 1;
+		       ////obw->drawpoly = 1;   //this is not necessary
+
 		   }
     }
     obiekt_tok_all (NULL, adk, (char **)&ob, ONieOkreslony) ;
@@ -4905,7 +4906,6 @@ int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double *ptrdf_
   redcrH (0);
 
   redcrH (1);
- 
 
       if(ReadBlock_(hatch_path,&X0,&Y0,&ADP,&ADK, &blok_name [strlen(blok_name)], MaxLen - 12, &w__object_no, TRUE))
       {   
@@ -4918,7 +4918,6 @@ int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double *ptrdf_
       }
        else
         {
-
 		 s__change_param_h.b_layer = 1;
          s__change_param_h.layer=Current_Layer;
 

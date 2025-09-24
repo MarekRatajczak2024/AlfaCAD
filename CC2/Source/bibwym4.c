@@ -444,6 +444,8 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 
               wy=linia_wybrana(adr);
 
+              if (wy==4)  wy=1;  //that is enough to rotate leader; touching end of lines let stretch reference line or move block
+
               if (wy)
               {
                   switch(wy)

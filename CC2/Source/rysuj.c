@@ -71,6 +71,7 @@
 #include <glyph.h>
 #include "main.h"
 #include "o_static.h"
+#include "o_plate.h"
 #include "o_animate_dynamics.h"
 
 #include "icon_yes_d.h"
@@ -130,6 +131,11 @@ int TTF_bold_factor = 140;
 double TTF_width_factor = 1.25;
 double TTF_height_factor = 1.4;
 
+
+extern  BITMAP *screenplay;
+extern unsigned int getRGB(double m, double max_m);
+extern unsigned int getRGBgreen(double m, double max_m);
+
 extern BOOL isRetinaDisplay(void);
 extern double getBackingScaleFactor(void);
 
@@ -180,7 +186,7 @@ static int graphic_drv;
 static char font_file_name[12]="font.ini";
 static char font_name[MAXPATH];
 static char font_name1[MAXPATH];
-static char sk1[12];
+static char sk1[32];
 FILE *stru_ini;
 static BOOL music_avail;
 
@@ -210,7 +216,7 @@ extern void change_second_screen(void);
 extern void cleardevice(void);
 extern void increase_window(DRIVER_STRUCT *drv, int x, int y);
 extern void free_mouse(void);
-extern void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy);
+extern void set_resized_window_GFX(DRIVER_STRUCT *drv, int *dx, int *dy, int option);
 extern void set_original_window_GFX(DRIVER_STRUCT *drv);
 extern void set_last_window_GFX(DRIVER_STRUCT *drv);
 extern void Initial_Message(char file_name[255]);
@@ -2275,6 +2281,35 @@ extern char *icon_mousewheelregular_p;
 extern BITMAP *icon_pin_to_flex_d48;
 extern char *icon_pin_to_flex_d48_p;
 
+extern BITMAP *icon_slab_zone;
+extern char *icon_slab_zone_p;
+extern BITMAP *icon_slab_wall;
+extern char *icon_slab_wall_p;
+extern BITMAP *icon_slab_space;
+extern char *icon_slab_space_p;
+extern BITMAP *icon_slab_load;
+extern char *icon_slab_load_p;
+extern BITMAP *icon_slab_geo_red;
+extern char *icon_slab_geo_red_p;
+extern BITMAP *icon_slab_geo_black;
+extern char *icon_slab_geo_black_p;
+extern BITMAP *icon_slab_fem;
+extern char *icon_slab_fem_p;
+extern BITMAP *icon_slab_edge_rolled;
+extern char *icon_slab_edge_rolled_p;
+extern BITMAP *icon_slab_edge_hinged;
+extern char *icon_slab_edge_hinged_p;
+extern BITMAP *icon_slab_edge_free;
+extern char *icon_slab_edge_free_p;
+extern BITMAP *icon_slab_edge_fixed;
+extern char *icon_slab_edge_fixed_p;
+extern BITMAP *icon_flip_support;
+extern char *icon_flip_support_p;
+extern BITMAP *icon_static;
+extern char *icon_static_p;
+extern BITMAP *icon_slab_fem_a;
+extern char *icon_slab_fem_a_p;
+
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
 extern BITMAP *icon_yes_dx2_mem;
@@ -2290,6 +2325,7 @@ extern char* icon_noupgrademark_pmem;
 
 #ifdef ALLEGRO5
 extern BITMAP* icon_alfacad_mem;
+extern void al_resize_screen(int w, int h);
 #endif
 
 BITMAP_LOAD bitmap_load[] = {
@@ -3141,6 +3177,21 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_mousewheelregular,"mousewheelregular",&icon_mousewheelregular_p },
         {&icon_hourglass,"hourglass",&icon_hourglass_p },
         {&icon_pin_to_flex_d48,"pin_to_flex_d48",&icon_pin_to_flex_d48_p },
+
+        {&icon_slab_zone,"slab_zone",&icon_slab_zone_p },
+        {&icon_slab_wall,"slab_wall",&icon_slab_wall_p },
+        {&icon_slab_space,"slab_space",&icon_slab_space_p },
+        {&icon_slab_load,"slab_load",&icon_slab_load_p },
+        {&icon_slab_geo_red,"slab_geo_red",&icon_slab_geo_red_p },
+        {&icon_slab_geo_black,"slab_geo_black",&icon_slab_geo_black_p },
+        {&icon_slab_fem,"slab_fem",&icon_slab_fem_p },
+        {&icon_slab_edge_rolled,"slab_edge_rolled",&icon_slab_edge_rolled_p },
+        {&icon_slab_edge_hinged,"slab_edge_hinged",&icon_slab_edge_hinged_p },
+        {&icon_slab_edge_free,"slab_edge_free",&icon_slab_edge_free_p },
+        {&icon_slab_edge_fixed,"slab_edge_fixed",&icon_slab_edge_fixed_p },
+        {&icon_flip_support,"flip_support",&icon_flip_support_p },
+        {&icon_static,"static",&icon_static_p },
+        {&icon_slab_fem_a,"slab_fem_a",&icon_slab_fem_a_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -3211,7 +3262,7 @@ extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
 
 //#define WOOD 28 //26   //the number of function for wood choice
 int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);
@@ -3227,6 +3278,19 @@ extern void makro_esc(void);
 #define BUF_SIZE 1024
 #define SHM_KEY 0x414C4641 //0x1234
 #define FILENO 16
+
+#ifndef LINUX
+int setenv(const char *name, const char *value, int overwrite)
+{
+    int errcode = 0;
+    if(!overwrite) {
+        size_t envsize = 0;
+        errcode = getenv_s(&envsize, NULL, 0, name);
+        if(errcode || envsize) return errcode;
+    }
+    return _putenv_s(name, value);
+}
+#endif
 
 void Free_alft(void)
 {
@@ -3249,8 +3313,10 @@ struct shmseg {
     struct shmbuf buf;
 };
 
-static struct shmseg *shmp;
-static struct shmseg shmp_private;
+//static
+struct shmseg *shmp;
+//static
+struct shmseg shmp_private;
 
 static int tier=0;
 
@@ -3333,6 +3399,7 @@ int Test_App_Shm(int doit, char *file_name)
                 }
                 if (i<FILENO)  //still one of slots is free
                 {
+                    memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
                     strcpy(bufptr->file_name[i], file_name);
                     bufptr->flag[i] = 1;
                     bufptr->mflag = 1;
@@ -3423,6 +3490,7 @@ int Test_App_Shm(int doit, char *file_name)
             }
             if (i<FILENO)  //still one of slots is free
             {
+                memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
                 strcpy(bufptr->file_name[i], file_name);
                 bufptr->flag[i] = 1;
                 bufptr->mflag = 1;
@@ -3704,13 +3772,19 @@ void set_increased(int x, int y)
   return;
 }
 
-void set_resized_window(int dx, int dy)
+void set_resized_window(int dx, int dy, int option)
 { int c_256;
   int ret;
   int k;
   int drv_ok;
   double Xpos, Ypos;
   int WspX_, WspY_;
+
+
+#ifdef ALLEGRO5
+    set_semaphore(0);
+    my_sleep(100);
+#endif
 
   BOOL ConfigureNotifySemaphore=FALSE;
 
@@ -3722,15 +3796,21 @@ void set_resized_window(int dx, int dy)
   {
     c_depth=drv_master.gfx_bpp;
     c_256=pow(2,c_depth);
-    
-    set_resized_window_GFX(&drv_master, dx, dy);
+
+//#ifndef ALLEGRO5
+    set_resized_window_GFX(&drv_master, &dx, &dy, option);
+//#else
+//    set_semaphore(0);
+//    al_resize_screen(dx, dy);
+//    set_semaphore(1);
+//#endif
   }
   else
   {
 	c_depth=drv_slave.gfx_bpp;
     c_256=pow(2,c_depth);
     
-    set_resized_window_GFX(&drv_slave, dx, dy);
+    set_resized_window_GFX(&drv_slave, &dx, &dy, option);
   }
   lock_mouse();
   Copy_screen();
@@ -3743,14 +3823,21 @@ void set_resized_window(int dx, int dy)
   destroy_parent();
   change_second_screen();
   
-  cleardevice();
+  ////cleardevice();  //MAREK 22-08-2025
   re_set_params();
+
+    ////my_sleep(10);
 
   if (dane_size>0)
       redraw();
   ////k=my_poll_keyboard();
 
+    ////my_sleep(10);
+
   flip_screen();
+
+    ////my_sleep(10);
+
   //do {
   //  get_mouse_mickeys(&WspX_, &WspY_);
   //} while ((WspX_!=0) || (WspY_!=0));
@@ -3766,12 +3853,22 @@ void set_resized_window(int dx, int dy)
 
   ConfigureNotifySemaphore=TRUE;
 
+
+#ifdef ALLEGRO5
+    set_semaphore(1);
+#endif
+
 }
 
 void set_original_window(void)
 { int c_256;
   int ret;
   int k;
+
+#ifdef ALLEGRO5
+    set_semaphore(0);
+    my_sleep(100);
+#endif
 
   ConfigureNotifySemaphore=FALSE;
 
@@ -3811,6 +3908,10 @@ void set_original_window(void)
 
   simulate_keypress(21504);
 
+
+#ifdef ALLEGRO5
+    set_semaphore(1);
+#endif
 
 }
 
@@ -4684,8 +4785,43 @@ void Load_New_Files(struct shmbuf *bufptr)
                 bufptr->flag[ii]=0; //ignored
             }
         }
-        if (bufptr->mflag==0) Expand_flex();
+       //// if (bufptr->mflag==0) Expand_flex();  //this is probably not necessary
     }
+}
+
+BOOL check_file_buffer(void)
+{
+    BOOL ret=FALSE;
+    struct shmbuf *bufptr;
+
+    //checking file buffer
+    bufptr = &shmp_private.buf;
+    if (bufptr->mflag==1) {
+#ifdef ALLEGRO5 //MACOS
+        set_semaphore(1);
+#endif
+        Load_New_Files(bufptr);
+        my_sleep(100);
+        ret=TRUE;
+#ifdef ALLEGRO5 //MACOS
+        set_semaphore(0);
+#endif
+    }
+    else {
+        bufptr = &shmp->buf;
+        if (bufptr->mflag == 1) {
+#ifdef ALLEGRO5 //MACOS
+            set_semaphore(1);
+#endif
+            Load_New_Files(bufptr);
+            my_sleep(10);
+            ret=TRUE;
+#ifdef ALLEGRO5 //MACOS
+            set_semaphore(0);
+#endif
+        }
+    }
+    return ret;
 }
 
 int load_client_bitmap(char *bitmap_file) {
@@ -5265,6 +5401,44 @@ int _al_mangled_main(int argc, char *argv[])
    Set_XWindow_header_height();
 #endif
 
+
+#ifdef LINUX
+#define _ELMER_ "/Elmer"
+#define _SHARE_ "/share/elmersolver/lib"
+#else
+#define _ELMER_ "\\Elmer"
+#define _SHARE_ "\\share\\elmersolver\\lib"
+#endif
+
+    ////setting up Elmer envs
+    //getting current folder
+    char cwd[MAXPATH];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Current working dir: %s\n", cwd);
+    } else {
+        perror("getcwd() error");
+        return 1;
+    }
+    strcat(cwd, _ELMER_);
+
+    // Set an environment variable named "MY_VARIABLE" with the value "my_value"
+    // The third argument (1) indicates that if the variable already exists, its value should be overwritten.
+    if (setenv("ELMER_HOME", cwd, 1) != 0) {
+        perror("setenv failed");
+        return 1;
+    }
+
+    strcat(cwd, _SHARE_);
+    if (setenv("ELMER_LIB", cwd, 1) != 0) {
+        perror("setenv failed");
+        return 1;
+    }
+
+    //Scope:
+    //Environment variables set using setenv() or putenv() only affect the current process and any child processes it subsequently creates.
+    // They do not affect the parent process (e.g., the shell from which your C program was launched) or other unrelated processes.
+
+
 mynCmdShow = nCmdShow;
 
 disk = getdisk();
@@ -5701,6 +5875,125 @@ if (child==0)
   flip_screen();
 #endif
   CUR_ON(X,Y);
+
+//////////////////////TEST OF GRADIENT
+////#define GRADIENT_TEST
+
+#ifdef GRADIENT_TEST
+    WIELOKAT t_solid=Stdef;
+    GRADIENT gradient;
+    WIELOKAT *nag;
+    char *gradient_ptr;
+    char *translucency_ptr;
+    unsigned char HalfTranslucency=128;
+    FE_DATA fe_data;
+    char *fe_data_ptr;
+
+    Set_Second_Screen();
+
+    ////moments blue-red
+
+    t_solid.xy[0]=10.0f;
+    t_solid.xy[1]=20.0f;
+
+    t_solid.xy[2]=20.0f;
+    t_solid.xy[3]=10.0f;
+
+    t_solid.xy[4]=30.0f;
+    t_solid.xy[5]=30.0f;
+
+    gradient.c1=getRGB(-1000, 1000);
+    gradient.c2=getRGB(+1000, 1000);
+    gradient.c3=getRGB(0, 1000);
+    gradient.c4=getRGB(+0, 1000);
+
+    fe_data.el_number=0;
+    fe_data.f1=-1000.0f;
+    fe_data.f2=1000.0f;
+    fe_data.f3=0.0f;
+    fe_data.f4=0.f;
+
+    t_solid.warstwa=0;
+    t_solid.kolor=7;
+    t_solid.lp=6;
+    t_solid.gradient=1;
+
+    t_solid.translucent=1;
+
+    translucency_ptr = (char*)t_solid.xy;
+    translucency_ptr += (t_solid.lp * sizeof(float));
+    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+    gradient_ptr=translucency_ptr+sizeof(unsigned char);
+    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+    fe_data_ptr=gradient_ptr+sizeof(GRADIENT);
+    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+    t_solid.n = 8 + t_solid.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+    nag=dodaj_obiekt(NULL, &t_solid);
+    rysuj_obiekt(nag, COPY_PUT, 1);
+
+    t_solid.xy[0]=20.0f;
+    t_solid.xy[1]=10.0f;
+
+    t_solid.xy[2]=30.0f;
+    t_solid.xy[3]=10.0f;
+
+    t_solid.xy[4]=30.0f;
+    t_solid.xy[5]=30.0f;
+
+    gradient.c1=getRGB(+1000, 1000);
+    gradient.c2=getRGB(-1000, 1000);
+    gradient.c3=getRGB(0, 1000);
+    gradient.c4=getRGB(0, 1000);
+
+    fe_data.el_number=0;
+    fe_data.f1=1000.0f;
+    fe_data.f2=-1000.0f;
+    fe_data.f3=0.0f;
+    fe_data.f4=0.0f;
+
+    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+    t_solid.n = 8 + t_solid.lp * sizeof(float) +sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+    nag=dodaj_obiekt(NULL, &t_solid);
+    rysuj_obiekt(nag, COPY_PUT, 1);
+
+    ////shear - grean
+
+    t_solid.xy[0]=30.0f;
+    t_solid.xy[1]=30.0f;
+
+    t_solid.xy[2]=30.0f;
+    t_solid.xy[3]=10.0f;
+
+    t_solid.xy[4]=40.0f;
+    t_solid.xy[5]=15.0f;
+
+    gradient.c1=getRGBgreen(+1000, 1000);
+    gradient.c2=getRGBgreen(-1000, 1000);
+    gradient.c3=getRGBgreen(0, 1000);
+    gradient.c4=getRGBgreen(0, 1000);
+
+    fe_data.el_number=0;
+    fe_data.f1=1000.0f;
+    fe_data.f2=-1000.0f;
+    fe_data.f3=0.0f;
+    fe_data.f4=0.0f;
+
+    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+    t_solid.n = 8 + t_solid.lp * sizeof(float) +sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+    nag=dodaj_obiekt(NULL, &t_solid);
+    rysuj_obiekt(nag, COPY_PUT, 1);
+
+    Set_Screen();
+    flip_screen();
+#endif
+/////////////
   //MAIN LOOP
 
   while(1)
@@ -5711,12 +6004,32 @@ if (child==0)
        //checking file buffer
       bufptr = &shmp_private.buf;
       if (bufptr->mflag==1) {
+#ifdef MACOS
+          set_semaphore(1);
+#endif
           Load_New_Files(bufptr);
+          my_sleep(100);
+#ifdef MACOS
+          set_semaphore(0);
+#endif
+#ifndef LINUX
+          continue;
+#endif
       }
       else {
           bufptr = &shmp->buf;
           if (bufptr->mflag == 1) {
+#ifdef MACOS
+              set_semaphore(1);
+#endif
               Load_New_Files(bufptr);
+              my_sleep(100);
+#ifdef MACOS
+              set_semaphore(0);
+#endif
+#ifndef LINUX
+              continue;
+#endif
           }
       }
 

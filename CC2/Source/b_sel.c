@@ -739,6 +739,7 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
     
     switch (v->style) {
         case 10:   //trapezium Y
+        case 17:   //trapezium Y slab
             if (L->x1<L->x2) n=1;
             else n=-1;
 
@@ -1187,6 +1188,7 @@ int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)
 
     switch (v->style) {
         case 10:   //trapezium Y
+        case 17:   //trapezium Y slab
         if (L->x1 < L->x2) {
             if (L->y2 < v->y2)
             {
@@ -1451,6 +1453,7 @@ int vector_wybrany(AVECTOR *ad)
             return 0;
             break;
         case 10:
+        case 17:
 
             LL.x1=ad->x1;
             LL.x2=ad->x2;
@@ -1870,6 +1873,7 @@ int vector_w_prostokacie(AVECTOR *ad)
             return 1;
             break;
         case 10:
+        case 17:
             if (linia_wybrana((LINIA*)ad)!=3) return 0;
 
             L.x1=ad->x1;
@@ -2130,6 +2134,7 @@ int vector_drag_wybrany(AVECTOR *ad)
             return 0;
             break;
         case 10:
+        case 17:
         case 11:
         case 12:
         case 13:
@@ -3281,6 +3286,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             //arrow
             break;
         case 10:
+        case 17:
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
             if (ptrs_vector->x1<ptrs_vector->x2) n=1;
@@ -3928,6 +3934,28 @@ BOOL wielokat_visible(WIELOKAT *w)
     if (Xp > maxx || Xk < minx ||
         Yp >  maxy || Yk <  miny) return 0;
 
+    return 1;
+}
+
+BOOL wielokat_visible_in_frame(WIELOKAT *w, RECTD *rect)
+{
+    double minx = BIGNOF;
+    double miny = BIGNOF;
+    double maxx = -BIGNOF;
+    double maxy = -BIGNOF;
+    int i;
+
+    for (i = 0 ; i < (int)(w->lp - 1) ; i += 2)
+    {
+        if (w->xy[i] < minx) minx = w->xy[i];
+        if (w->xy[i] > maxx) maxx = w->xy[i];
+
+        if (w->xy[i+1] < miny) miny = w->xy[i+1];
+        if (w->xy[i+1] > maxy) maxy = w->xy[i+1];
+    }
+
+    if (rect->xp > maxx || rect->xk < minx ||
+            rect->yp >  maxy || rect->yk <  miny) return 0;
     return 1;
 }
 

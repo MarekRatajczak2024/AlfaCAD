@@ -3545,7 +3545,8 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 
     strcpy(&script, strFunct);
     ptr_str=strstr(script, ".exe");
-    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0))
+    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
+    || (strcmp(strFunct, "gmsh.exe")==0) || (strcmp(strFunct, "ElmerGrid.exe")==0) || (strcmp(strFunct, "ElmerSolver.exe")==0))
     {
         if (ptr_str != NULL) {
             *ptr_str = '\0';

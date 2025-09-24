@@ -491,6 +491,8 @@ set(Source_Files
     "../../../CC2/Source/o_wmctrl.c"
     "../../../CC2/Source/o_section_block.c"
     "../../../CC2/Source/o_section_block.h"
+    "../../../CC2/Source/o_plate.c"
+    "../../../CC2/Source/o_plate.h"
 
     "../../../allegro5-4.4.3/addons/jpgalleg/src/jpgalleg.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/decode.c"
@@ -499,7 +501,8 @@ set(Source_Files
     "../../../allegro5-4.4.3/addons/jpgalleg/src/init.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/io.c"
 
-        #"../../../CC2/Source/present_window.cpp"
+
+    #"../../../CC2/Source/present_window.cpp"
     #"../../../CC2/Source/present_window.h"
 )
 source_group("Source Files" FILES ${Source_Files})
@@ -13683,7 +13686,8 @@ target_link_libraries(${PROJECT_NAME}
         "${CMAKE_CURRENT_SOURCE_DIR}/../../clip/cmake-build-release/libclip.a"
 
         "${CMAKE_CURRENT_SOURCE_DIR}/../../glyph-keeper/obj/libglyph-allegs.a"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../libharu-master/cmake-build-release/src/libhpdfs.a"
+        #"${CMAKE_CURRENT_SOURCE_DIR}/../../libharu-master/cmake-build-release/src/libhpdfs.a"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../libharu-master/build/src/libhpdf.a" #this is bit newer version
         "${CMAKE_CURRENT_SOURCE_DIR}/../../libpng1637/cmake-build-release/libpng.a"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../allegro5-4.4.3/lib/liballeg.so"
 

@@ -69,10 +69,17 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6, 0, 0, 12, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 2, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mRegion = { 6, 0, 0, 12, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 4, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+
+POLE pmStatic[] = {
+        {u8"Marco y cercha",L'M',733, NULL},
+        {u8"Losa",L'L',855, NULL},
+};
+
+TMENU mStatic = { 2, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Análisis estático y dinámico",L'A',733, NULL},
+        {u8"Análisis estático y dinámico",L'A',854, &mStatic},
         {u8"Fuerzas resultantes en secciones transversales",L'F',824, NULL},
         {u8"animar la Dinámica",L'D',817, NULL},
         {u8"Selección de sección transversal del elemento",L'S',775, &mRegion},

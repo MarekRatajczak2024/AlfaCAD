@@ -88,8 +88,23 @@ static int MaxNoBlock=1000;
 #define MAX_CLIENT_BITMAP 64
 #define FIRST_CLIENT_BITMAP_NO 1000
 
-#pragma pack(4)
+#define V_EDGE_SIMPLE 18
+#define V_EDGE_SIMPLE_INV 19
+#define V_EDGE_FIXED 20
+#define V_EDGE_FIXED_INV 21
+#define V_EDGE_ARC_SIMPLE 22
+#define V_EDGE_ARC_SIMPLE_INV 23
+#define V_EDGE_ARC_FIXED 24
+#define V_EDGE_ARC_FIXED_INV 25
 
+#define V_SLAB_PLATE 21
+#define V_SLAB_SPACE 22
+#define V_SLAB_WALL 23
+#define V_SLAB_ZONE 24
+
+#define V_FIXED_LINE 96
+
+#pragma pack(4)
 
 #ifdef FORWIN32
 typedef struct 
@@ -495,7 +510,9 @@ enum OBIEKTT1BL { OB1NOCHANGE = 0 , OB1CHANGE_SCALE= 1, OB1CHANGE_DRAG = 2,
 
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 enum OBIEKTT2        { O2NieOkreslony=-1, O2NoBlockS,O2BlockDim, O2BlockPline, O2BlockAparat, O2BlockDXF, O2BlockSpecial, O2BlockHatch25, O2BlockHatch50} ;
+enum OBIEKTT2_PLATE  { O2FREE_EDGE=5, O2HINGED_EDGE=6, O2FIXED_EDGE=7};
 
+enum OBIEKTT3_PLATE  {O3REGULAR_EDGE=0, O3INVERTED_EDGE=1};
 /*----------------------------------------------------------------------------------------------------------------------------------*/
 enum OBIEKTT3Wym  { O3NoWymRoz,O3WymRoz}; /*wykorzystywane tylko w bloku wymiarowania*/
 					  /*O3WymRoz   - linia rozszerzenia*/
@@ -536,7 +553,7 @@ enum Block_Type { B_DIM = 'W', B_DIM1 = '\01', B_DIM2 = '2', B_DIM3 = '3', B_EXP
 
 enum Pline_Type { PL_OTHER = 0, PL_PLINE = 1, PL_POLYGON = 'P', PL_RECTANGLE = 'R', PL_HATCH = 'H',
                 PL_ELLIPSE = 'E', PL_SKETCH = 'S', PL_TRACE = 'T', PL_CURVE = 'C',
-                PL_ELLIPSE_FILL = 2, PL_ELLIPSE_ARC = 3, PL_PLYTA  = 'A', PL_OTWOR = 'B', PL_SIEC = 'n', PL_SHADOW = 13, PL_SOLIDARC=14} ;
+                PL_ELLIPSE_FILL = 2, PL_ELLIPSE_ARC = 3, PL_PLATE  = 'A', PL_HOLE = 'B', PL_WALL = 'W', PL_ZONE = 'Z', PL_SIEC = 'n', PL_SHADOW = 13, PL_SOLIDARC=14} ;
                 
 
 
@@ -1462,7 +1479,8 @@ typedef
        unsigned pattern  : 1;  //0-color  1-patter
        unsigned temp1    : 1;
        unsigned translucent : 1;
-	   unsigned drawpoly : 1;
+	   //unsigned drawpoly : 1;
+       unsigned gradient : 1;
        unsigned pcx_solid: 1; /*!!!!!*/
        unsigned empty_typ: 3;
        unsigned lp       : 16;
@@ -1608,6 +1626,20 @@ struct
     SECTION_GRAPH_DATA QPSLS;
 } ALL_SECTION_GRAPH_DATA;
 typedef  ALL_SECTION_GRAPH_DATA  *ALL_SECTION_GRAPH_DATA_;
+
+
+typedef
+struct
+{
+  char *b;
+  char *adp;
+  char *adk;
+  char *plate_name;
+  char *component_name;
+  double xminp, xmaxp, yminp, ymaxp;
+  float factor;
+} PLATE_GRAPH_DATA;
+
 
 /*
 typedef
@@ -2707,7 +2739,7 @@ enum OKNOTYP {Cross=0,Dragg,Windoww};
 
 #define COMNDmnr_base 173
 #define COMNDmnr_Insets 32
-#define COMNDmnr COMNDmnr_base + COMNDmnr_Insets //173+32 //maksymalny numer funkcji w menu poziomym - (max number of the function in auxiliary menu)
+#define COMNDmnr (COMNDmnr_base + COMNDmnr_Insets) //173+32 //maksymalny numer funkcji w menu poziomym - (max number of the function in auxiliary menu)
 #define ENTER 0x0d
 #define MOUSEENTER 2132
 #define SPC 0x20
@@ -3155,6 +3187,41 @@ typedef struct{
     int layer;
     char *address;
 }TYPE_ADDRESS;
+
+typedef struct{
+    //char *str;
+    int ns_arc;
+    int ch;
+    int d;
+    int i;
+} KOM_BAK;
+
+typedef struct {
+    unsigned int c1;
+    unsigned int c2;
+    unsigned int c3;
+    unsigned int c4;
+} GRADIENT;
+
+typedef struct {
+    unsigned int c1;
+    unsigned int c2;
+    unsigned int c3;
+    unsigned int c4;
+    unsigned int c5;
+    unsigned int c6;
+    unsigned int c7;
+    unsigned int c8;
+} GRADIENT8;
+
+typedef struct
+{
+    int el_number;
+    float f1;
+    float f2;
+    float f3;
+    float f4;
+} FE_DATA;
 
 /*
 typedef struct

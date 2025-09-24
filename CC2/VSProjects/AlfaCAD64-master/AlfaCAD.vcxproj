@@ -71,7 +71,7 @@
     <SccLocalPath />
     <Keyword>MFCProj</Keyword>
     <ProjectGuid>{A526BEBE-1DCA-537D-F8B2-EB678EF97883}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>AlfaCAD</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -464,8 +464,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug/AlfaCAD4Win64.exe</OutputFile>
@@ -801,7 +801,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAsManaged>false</CompileAsManaged>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <LanguageStandard_C>Default</LanguageStandard_C>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
       <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
@@ -5336,6 +5336,7 @@
     <ClCompile Include="..\..\Source\IH_section_CN_si.c" />
     <ClCompile Include="..\..\Source\L_section_CA_si.c" />
     <ClCompile Include="..\..\Source\L_section_CN_si.c" />
+    <ClCompile Include="..\..\Source\o_plate.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />

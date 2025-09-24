@@ -188,7 +188,7 @@ T_Area, * T_PTR_Area ;
 
 
 #define BANK_S	sizeof(T_AArc)
-#define MaxNumberSegPattern 12 //6
+#define MaxNumberSegPattern 12 //24 //6
 
 typedef struct
 {

@@ -52,6 +52,8 @@ extern BOOL Semaphore;
 extern BOOL Cust_Semaphore;
 
 extern char * view_type_tab[];
+extern char * view_edge_tab[];
+extern char *view_edgeinverted_tab[];
 
 extern int Get_Key (void) ;
 extern int openwh(TMENU *menu) ;
@@ -73,6 +75,7 @@ extern BOOL edit_param_no[46];
 
 extern char* typ_punktu_inf[];
 extern int point_icon[];
+extern int edge_icon[];
 extern char *load_symbol[];
 
 extern void alfacad_logo_info(void);
@@ -82,7 +85,7 @@ static void nooph(void)
 #define noooph (void ( *)(int x,int y))nooph
 
 
-enum info {iObject=0, iLayer, iColor, iLType, iLWidth, iPType, iVstyle, iX1, iY1, iX2, iY2, iX3, iY3, iX4, iY4,
+enum info {iObject=0, iLayer, iColor, iLType, iLWidth, iEdge, iEdgeInverted, iPType, iVstyle, iX1, iY1, iX2, iY2, iX3, iY3, iX4, iY4,
         iRadius, iRadiusY, iAngle, iAngle1, iAngle2, iWidth1, iWidth2, iMagnitude, iMagnitude1, iMagnitude2, iAxisOffset1, iAxisOffset2, iLoadCharacter, iOpacity, iLenght,  iDX, iDY, iArea, iFont,
         iFType, iHidden, iAllign, iHeight, iWidthFactor, iItalic, iBold, iUnderlined, iLineSpacing,
         iPxlDx, iPxlDy, iInnerBlockName, iOuterBlockName};
@@ -308,7 +311,14 @@ static void nazwa_bloku_first(char *ad1,char *sk)
              else strcpy(sk,u8"");
           }
            else {
-               if (ptrs_block->kod_obiektu==B_PLINE) strcpy(sk, u8"*PLINE");
+               if (ptrs_block->kod_obiektu==B_PLINE)
+               {
+                   strcpy(sk, u8"*PLINE");
+                   if (ptrs_block->opis_obiektu [0] == PL_PLATE) strcat(sk,__PLATE__);
+                   else if (ptrs_block->opis_obiektu [0] == PL_HOLE) strcat(sk,__HOLE__);
+                   else if (ptrs_block->opis_obiektu [0] == PL_WALL) strcat(sk,__WALL__);
+                   else if (ptrs_block->opis_obiektu [0] == PL_ZONE) strcat(sk,__ZONE__);
+               }
                else if (ptrs_block->kod_obiektu==B_HATCH) strcpy(sk, u8"*HATCH");
                else if ((ptrs_block->kod_obiektu==B_DIM) || (ptrs_block->kod_obiektu==B_DIM1) ||(ptrs_block->kod_obiektu==B_DIM2) ||(ptrs_block->kod_obiektu==B_DIM3)) strcpy(sk, u8"*DIM");
                else strcpy(sk, u8"");
@@ -339,7 +349,14 @@ static void nazwa_bloku(char *ad1,char *sk)
              else strcpy(sk,u8"");
           }
           else {
-             if (ptrs_block->kod_obiektu==B_PLINE) strcpy(sk, u8"*PLINE");
+             if (ptrs_block->kod_obiektu==B_PLINE)
+             {
+                 strcpy(sk, u8"*PLINE");
+                 if (ptrs_block->opis_obiektu [0] == PL_PLATE) strcat(sk,__PLATE__);
+                 else if (ptrs_block->opis_obiektu [0] == PL_HOLE) strcat(sk,__HOLE__);
+                 else if (ptrs_block->opis_obiektu [0] == PL_WALL) strcat(sk,__WALL__);
+                 else if (ptrs_block->opis_obiektu [0] == PL_ZONE) strcat(sk,__ZONE__);
+             }
              else if (ptrs_block->kod_obiektu==B_HATCH) strcpy(sk, u8"*HATCH");
              else if ((ptrs_block->kod_obiektu==B_DIM) || (ptrs_block->kod_obiektu==B_DIM1) ||(ptrs_block->kod_obiektu==B_DIM2) ||(ptrs_block->kod_obiektu==B_DIM3)) strcpy(sk, u8"*DIM");
              else if (ptrs_block->kod_obiektu==B_WIRE) strcpy(sk, u8"*WIRE");
@@ -437,6 +454,18 @@ void Info_about_object(char *ad)
 	 menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
 
+     if (((LINIA *)ad)->obiektt2>4)
+     {
+        strcpy(sk,view_edge_tab[((LINIA *)ad)->obiektt2]);
+        menu_par_new((*mInfoAbout.pola)[iEdge].txt, sk) ;
+        (*mInfoAbout.pola)[iEdge].iconno=edge_icon[((T_Point *)ad)->obiektt2];
+        act(iEdge);
+
+        strcpy(sk,view_edgeinverted_tab[((LINIA *)ad)->obiektt3]);
+        menu_par_new((*mInfoAbout.pola)[iEdgeInverted].txt, sk) ;
+        act(iEdgeInverted);
+     }
+
      lx1 =  milimetryobxl(((LINIA *)ad)->x1, (((LINIA *)ad)->y1)) ;
      sprintf (sk, "%13.9lf", lx1) ;
 	 menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
@@ -497,6 +526,14 @@ void Info_about_object(char *ad)
             else ob_no=11;
         }
         strcpy(sk, objects[ob_no]);
+
+        if (((BLOK *)ad)->kod_obiektu==B_PLINE) {
+            if (((BLOK *)ad)->opis_obiektu[0] == PL_PLATE) strcat(sk, __PLATE__);
+            else if (((BLOK *)ad)->opis_obiektu[0] == PL_HOLE) strcat(sk, __HOLE__);
+            else if (((BLOK *)ad)->opis_obiektu[0] == PL_WALL) strcat(sk, __WALL__);
+            else if (((BLOK *)ad)->opis_obiektu[0] == PL_ZONE) strcat(sk, __ZONE__);
+        }
+
         menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
         act(iObject);
 
@@ -720,6 +757,18 @@ void Info_about_object(char *ad)
      strcpy(sk,view_width_tab1[grubosc_l]);
      menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
+
+     if (((LINIA *)ad)->obiektt2>4)
+     {
+         strcpy(sk,view_edge_tab[((LINIA *)ad)->obiektt2]);
+         menu_par_new((*mInfoAbout.pola)[iEdge].txt, sk) ;
+         (*mInfoAbout.pola)[iEdge].iconno=edge_icon[((T_Point *)ad)->obiektt2];
+         act(iEdge);
+
+         strcpy(sk,view_edgeinverted_tab[((LINIA *)ad)->obiektt3]);
+         menu_par_new((*mInfoAbout.pola)[iEdgeInverted].txt, sk) ;
+         act(iEdgeInverted);
+     }
 
      lx1 =  milimetryobxl(((LUK *)ad)->x, (((LUK *)ad)->y)) ;
      sprintf (sk, "%13.9lf", lx1) ;

@@ -261,6 +261,7 @@ static char* errors_kom[] =
 /*213*/u8"Wartość poza zakresem 1024 .. 2000000 [KB]",
 /*214*/u8"Numer warstwy poza zakresem 1...256",
 /*215*/u8"Żadna z półosi elipsy nie może mieć długość mniejszą od 0.",
+/*216*/u8"Zły format nieujemnej liczby rzeczywistej",
 };
 
 static char* komunikaty_kom[] =
@@ -665,6 +666,7 @@ static char* komunikaty0[] =
 /*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii)",
 /*169*/u8"Wskaż element ramy lub kratownicy",
 /*170*/u8"Umieść linię przekrojową w żądanych współrzędnych elementu. Kliknij aby zapisać wartości w schowku",
+/*171*/u8"Wskaż schemat płyty do analizy statycznej (MES)",
 };
 
 static char* messages_str[] =
@@ -962,10 +964,10 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _element_graph_data_failed_ u8"Nie udało się utworzyć bloku danych sił wynikowych dla elementu"
 #define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
 
-#define _FRAME3DD_ "%FRAME:"
-#define _FRAME3DD_PL "%RAMA:"
-#define _FRAME3DD_UA "%КАРКАС:"
-#define _FRAME3DD_ES "%MARCO:"
+#define _FRAME3DD_ u8"%FRAME:"
+#define _FRAME3DD_PL u8"%RAMA:"
+#define _FRAME3DD_UA u8"%КАРКАС:"
+#define _FRAME3DD_ES u8"%MARCO:"
 
 #define _Yes_ "Tak"
 #define _No_ "Nie"
@@ -1208,6 +1210,51 @@ char *frame3dd[]={
 };
 
 #define _ERROR_FREE_COMPLETION_ u8"zakończenie bez błędów"
+
+#endif
+
+#ifdef __O_PLATE__
+
+#define _PLATE_ u8"%PLATE:"
+#define _PLATE_PL u8"%PŁYTA:"
+#define _PLATE_UA u8"%ПЛИТА:"
+#define _PLATE_ES u8"%LOSA:"
+
+#define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
+static char confirm[] = u8"Potwierdź";
+
+#define _gmsh_error_ u8"Błąd gmsh"
+#define _ElmerGrid_error_ u8"Błąd ElmerGrid"
+#define _ElmerSolver_error_ u8"Błąd ElmerSolver"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Nie można otworzyć pliku z wynikami"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Nie można odczytać pliku wyników"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Nie można utworzyć nowej warstwy. Utworzono już zbyt wiele warstw"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Nie można utworzyć bloku węzłów i elementów"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Nie można utworzyć bloku odkształceń"
+
+#define _PROCEED_PLATE_FEM_ u8"Przeprowadzić analizę statyczną wskazanej płyty?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"polilinia nie jest zamknięta"
+#define _THE_PLATE_ u8"Płyta"
+#define _THE_HOLE_ u8"Otwór"
+#define _THE_WALL_ u8"Sciana"
+#define _THE_ZONE_ u8"Strefa"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Liczba polilinii płyt jest równa 0"
+#define _NO_LOAD_ASSIGNED_ u8"Nie przypisano obciążenia i nie zadeklarowano „%g” dla obciażenia ciężarem własnym"
+
+#define _Yes_ "Tak"
+#define _No_ "Nie"
+#define _YES_NO_ESC_ u8"TNtn\033"
+#define _YES_ 'T'
+#define _yes_ 't'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym"
+#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer"
 
 #endif
 

@@ -62,6 +62,8 @@ extern void Out_Edited_Draw_Param (ESTR *lps_et, BOOL out);
 extern void *get_vector_c(void);
 extern void *get_vector_s(void);
 
+extern int Pline_Slab (void);
+
 static void redcr(char);
 static int last_vector_style=-1;
 
@@ -71,7 +73,7 @@ static void (*cursor_on)(double ,double)=out_cur_on;
 static void (*cursor_off)(double ,double)=out_cur_off;
 static BOOL add_vector (BOOL b_strwyj) ;
 
-TMENU mVector={18,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector,NULL,NULL} ;
+TMENU mVector={23,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector,NULL,NULL} ;
 
 static TMENU mVector_Con={1,0,0,15,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector_Con,NULL,NULL} ;
 
@@ -80,7 +82,7 @@ TMENU mForce_Displacement_style= {2, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmn
 TMENU mMoment_Rotation_style= {4, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmMoment_Rotation_style, NULL,NULL} ;
 TMENU mLoad_style= {5, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLoad_style, NULL,NULL} ;
 
-ESTR eVe, eVf, eVm, eVd, eVr, eVt, eVn;
+ESTR eVe, eVf, eVm, eVd, eVr, eVt, eVt1, eVn;
 
 double radius_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double depth_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
@@ -110,7 +112,8 @@ static char *format2_float2="%#9.4lf\0%#9.4lf;%#9.4lf";
 
 
 enum MENU_ID {IDM_UNDO = 0, IDM_RIGID_RIGID, IDM_RIGID_PIN, IDM_PIN_RIGID, IDM_PIN_PIN, IDM_FORCE, IDM_MOMENT, IDM_MOMENT_REV,
-        IDM_DISPLACEMENT, IDM_ROTATION, IDM_ROTATION_REV, IDM_TRAPEZIUM_Y, IDM_TRAPEZIUM_X, IDM_TRAPEZIUM_N, IDM_TRAPEZIUM_H, IDM_TRAPEZIUM_V, IDM_THERMAL, IDM_NODE} ;
+        IDM_DISPLACEMENT, IDM_ROTATION, IDM_ROTATION_REV, IDM_TRAPEZIUM_Y, IDM_TRAPEZIUM_X, IDM_TRAPEZIUM_N, IDM_TRAPEZIUM_H, IDM_TRAPEZIUM_V, IDM_THERMAL, IDM_NODE,
+        IDM_SLAB_PLATE, IDM_SLAB_SPACE, IDM_SLAB_WALL, IDM_SLAB_ZONE, IDM_SLAB_LOAD} ;
 
 /*-----------------------------------------------------------------------*/
 double line2len(AVECTOR *V)
@@ -221,6 +224,9 @@ void set_magnitude(AVECTOR *V)
         case 15:
             eVa=&eVt;
             break;
+        case 17:
+            eVa=&eVt1;
+            break;
         case 16:
             eVa=&eVn;
             break;
@@ -262,6 +268,9 @@ void set_length_angle2(AVECTOR *V)
         case 14:
         case 15:
             eVa=&eVt;
+            break;
+        case 17:
+            eVa=&eVt1;
             break;
         case 16:
             eVa=&eVn;
@@ -362,6 +371,38 @@ void out_parametry_vector (LINIA *L, AVECTOR *V)
 
 }
 
+void outarcvectoror (LUK *l, AVECTOR *V, int mode,int pl)
+{
+    if (l == NULL)
+    {
+        Internal_Error (__LINE__,__FILE__);
+        return;
+    }
+    okno_r();
+    setwritemode(mode);
+    linestyle(l->typ);
+
+    if (l->kolor == 0)
+    {
+        setfillstyle_(SOLID_FILL, kolory.paper);
+        setcolor(kolory.paper);
+        set_mode_solid();
+    }
+    else
+    {
+        SetColorAC(l->kolor);
+        setfillstyle_(SOLID_FILL, GetColorAC(l->kolor));
+    }
+
+    V->x1=l->x;
+    V->y1=l->y;
+    V->r=l->r;
+    V->angle1=l->kat1;
+    V->angle2=l->kat2;
+    //set_magnitude(V);
+    V->magnitude1=0.0f;
+    Draw_Vector(V, COPY_PUT, 1, 0);
+}
 
 void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
 /*---------------------------------------------------*/
@@ -567,6 +608,15 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     if (V->flags & 1) n*=-1;
                     V->magnitude1=n*PL.dy*load_magnitude;
                     break;
+                case 17:
+                    if (Check_if_Equal(LL.x1, LL.x2))
+                    {
+                        LL.x2 += 0.001;
+                    }
+                    n=(LL.x1<LL.x2) ? 1 : -1;
+                    if (V->flags & 1) n*=-1;
+                    V->magnitude1=V->magnitude2=n*PL.dy*load_magnitude;
+                    break;
                 case 11:
                     if (Check_if_Equal(LL.y1, LL.y2))
                     {
@@ -633,6 +683,15 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     if (V->flags & 1) n*=-1;
                     V->magnitude1=n*PL.dy*load_magnitude;
                     break;
+                case 17:
+                    if (Check_if_Equal(LL.x1, LL.x2))
+                    {
+                        LL.x2 += 0.001;
+                    }
+                    n=(LL.x1<LL.x2) ? 1 : -1;
+                    if (V->flags & 1) n*=-1;
+                    V->magnitude1=V->magnitude2=n*PL.dy*load_magnitude;
+                    break;
                 case 11:
                     if (Check_if_Equal(LL.y1, LL.y2))
                     {
@@ -680,6 +739,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
         switch (V->style)
         {
             case 10:
+            case 17:
             case 11:
             case 12:
             case 13:
@@ -750,6 +810,15 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 if (V->flags & 1) n*=-1;
                 V->magnitude2=n*PL.dy*load_magnitude;
                 break;
+            case 17:
+                if (Check_if_Equal(LL.x1, LL.x2))
+                {
+                    LL.x2 += 0.001;
+                }
+                n=(LL.x1<LL.x2) ? 1 : -1;
+                if (V->flags & 1) n*=-1;
+                V->magnitude2=V->magnitude1=n*PL.dy*load_magnitude;
+                break;
             case 11:
                 if (Check_if_Equal(LL.y1, LL.y2))
                 {
@@ -816,6 +885,15 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 if (V->flags & 1) n*=-1;
                 V->magnitude2=n*PL.dy*load_magnitude;
                 break;
+            case 17:
+                if (Check_if_Equal(LL.x1, LL.x2))
+                {
+                    LL.x2 += 0.001;
+                }
+                n=(LL.x1<LL.x2) ? 1 : -1;
+                if (V->flags & 1) n*=-1;
+                V->magnitude2=V->magnitude1=n*PL.dy*load_magnitude;
+                break;
             case 11:
                 if (Check_if_Equal(LL.y1, LL.y2))
                 {
@@ -863,6 +941,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
     switch (V->style)
     {
         case 10:
+        case 17:
         case 11:
         case 12:
         case 13:
@@ -1203,7 +1282,8 @@ static BOOL check_if_break_vector (void *ptr_data, AVECTOR **ptrs_begin_vector, 
 }
 
 
-static int vector_command_proc (int ev_nr)
+//static
+int vector_command_proc (int ev_nr)
 /*--------------------------------------*/
 {
   int ret_val ;
@@ -1340,6 +1420,26 @@ static int vector_command_proc (int ev_nr)
 
           ret_val = PL_MODE_END ;
           break;
+      case IDM_SLAB_PLATE:
+          VectorG.style=V_SLAB_PLATE;  //fictional
+          ret_val = PL_MODE_END ;
+          break;
+      case IDM_SLAB_SPACE:
+          VectorG.style=V_SLAB_SPACE;  //fictional
+          ret_val = PL_MODE_END ;
+          break;
+      case IDM_SLAB_WALL:
+          VectorG.style=V_SLAB_WALL;  //fictional
+          ret_val = PL_MODE_END ;
+          break;
+      case IDM_SLAB_ZONE:
+          VectorG.style=V_SLAB_ZONE;  //fictional
+          ret_val = PL_MODE_END ;
+          break;
+      case IDM_SLAB_LOAD:
+          VectorG.style=17;  //real
+          ret_val = PL_MODE_END ;
+          break;
     default :
       ret_val = PL_MODE_CONTINUE ;
       break ;
@@ -1406,6 +1506,7 @@ static BOOL add_vector (BOOL b_strwyj)
             case 9:  //rotation
                 break;
             case 10:
+            case 17:
             case 11:
             case 12:
             case 13:
@@ -1435,6 +1536,7 @@ static BOOL add_vector (BOOL b_strwyj)
         case 9:
             break;
         case 10:
+        case 17:
         case 11:
         case 12:
         case 13:
@@ -2033,6 +2135,51 @@ static int Vt_n (BOOL b_graph_value)
     return 1;
 }
 
+static int Vt_n1 (BOOL b_graph_value)
+/*--------------------------------*/
+{
+    double m1, m2;
+
+    b_graph_value = b_graph_value ;
+    if (eVt1.val_no < 1)
+    {
+        return 0 ;
+    }
+    m1 = eVt1.values [0] ;
+    if (m1 > -3.4E38 && m1 < 3.4E38)
+    {
+        VectorG.magnitude1 = VectorG.magnitude2 = (float)m1 ;
+    }
+    else
+    {
+        ErrList (2) ;
+        return 0 ;
+    }
+    /*
+    if (eVt1.val_no > 1)
+    {
+        m2 = eVt1.values [1] ;
+        if (m2 > -3.4E38 && m2 < 3.4E38)
+        {
+            VectorG.magnitude2 = (float)m2;
+            CUR_OFF(X,Y);
+            CUR_ON(X,Y);
+            return 1;
+        } else
+        {
+            ErrList(2);
+            return 0;
+        }
+    }
+    else
+     */
+    VectorG.magnitude2 = VectorG.magnitude1 = (float)m1;
+    CUR_OFF(X,Y);
+    CUR_ON(X,Y);
+    return 1;
+}
+
+
 void ini_vector_estr(void)
 {
     eVe.x=maxX/2 - (6*WIDTH) ;
@@ -2088,6 +2235,15 @@ void ini_vector_estr(void)
     eVt.format = format2_float2 ;  //g g f
     eVt.ESTRF=Vt_n;
     eVt.extend = 0;
+
+    eVt1.x=maxX/2 - (16*WIDTH) ;
+    eVt1.y= ESTR_Y;
+    eVt1.lmax=16;
+    eVt1.val_no_max	= 1 ;
+    eVt1.mode	= GV_DIST	;
+    eVt1.format = format_floatd ;  //g g f
+    eVt1.ESTRF=Vt_n1;
+    eVt1.extend = 0;
 
     eVn.x=maxX/2 + 5 ;
     eVn.y= ESTR_Y;
@@ -2221,6 +2377,14 @@ static void redcr(char typ)
              npv=dodajstr(&eVt);
              sprintf (eVt.st, format_float2, VectorG.magnitude1,VectorG.magnitude2);
              Out_Edited_Draw_Param ((ESTR *)&eVt, TRUE) ;
+             break;
+         case 17:  //trapezoid load plate
+             SERV[71]=Inverse_Vector;
+             SERV[79]=Reverse_Vector;
+             np=dodajstr(&eL);
+             npv=dodajstr(&eVt1);
+             sprintf (eVt1.st, format_floatd, VectorG.magnitude1);
+             Out_Edited_Draw_Param ((ESTR *)&eVt1, TRUE) ;
              break;
          case 15:  //thermal
              VectorG.r=thermal_axis_size;
@@ -2513,6 +2677,8 @@ void Vector (void)
     char sk [MaxTextLen], *str ;
     int ret;
 
+beginning:
+
     ini_vector_estr();
 
     dane_size0 = dane_size ;
@@ -2520,33 +2686,90 @@ void Vector (void)
 
     while (1)
     {
-        view_line_type(&LiniaG);
-        ev=Get_Event_Point(NULL, &X0, &Y0);
-        Last_GX=X0;
-        Last_GY=Y0;
-        switch(ev->What)
+        if (VectorG.style==V_SLAB_PLATE)  //plate
         {
-            case evKeyDown  :
-                if(ev->Number==0)
-                {
-                    redcr0(1);
-                    return;
-                }
-                if(ev->Number== ENTER)
-                {
-                    poczatekV (X0, Y0);
-                }
-                break;
-            case evCommandP :
-                ret= vector_command_proc (ev->Number);
-                if ((ret != PL_MODE_CONTINUE) && (ret != PL_MODE_END))
-                {
-                    redcr (1) ;
-                    return ;
-                }
-                break;
-            default :
-                break;
+            redcr0 (1) ;
+            LiniaG.obiektt2=O2FREE_EDGE;
+            LiniaG.obiektt3=O3REGULAR_EDGE;
+            PLATE=1;
+            HOLE=0;
+            WALL=0;
+            ZONE=0;
+            ret=Pline_Slab();
+            if (ret==2) goto beginning;
+            return;
+        }
+        else if (VectorG.style==V_SLAB_SPACE)  //space
+        {
+            redcr0 (1) ;
+            LiniaG.obiektt2=O2FREE_EDGE;
+            LiniaG.obiektt3=O3REGULAR_EDGE;
+            LukG.obiektt2=O2FREE_EDGE;
+            LukG.obiektt3=O3REGULAR_EDGE;
+            PLATE=0;
+            HOLE=1;
+            WALL=0;
+            ZONE=0;
+            ret=Pline_Slab();
+            if (ret==2) goto beginning;
+            return;
+        }
+        else if (VectorG.style==V_SLAB_WALL)  //Wall
+        {
+            redcr0 (1) ;
+            LiniaG.obiektt2=O2FREE_EDGE;
+            LiniaG.obiektt3=O3REGULAR_EDGE;
+            LukG.obiektt2=O2FREE_EDGE;
+            LukG.obiektt3=O3REGULAR_EDGE;
+            PLATE=0;
+            HOLE=0;
+            WALL=1;
+            ZONE=0;
+            ret=Pline_Slab();
+            if (ret==2) goto beginning;
+            return;
+        }
+        else if (VectorG.style==V_SLAB_ZONE)  //zone
+        {
+            redcr0 (1) ;
+            LiniaG.obiektt2=O2FREE_EDGE;
+            LiniaG.obiektt3=O3REGULAR_EDGE;
+            LukG.obiektt2=O2FREE_EDGE;
+            LukG.obiektt3=O3REGULAR_EDGE;
+            PLATE=0;
+            HOLE=0;
+            WALL=0;
+            ZONE=1;
+            ret=Pline_Slab();
+            if (ret==2) goto beginning;
+            return;
+        }
+        else
+        {
+            view_line_type(&LiniaG);
+            ev = Get_Event_Point(NULL, &X0, &Y0);
+            Last_GX = X0;
+            Last_GY = Y0;
+            switch (ev->What) {
+                case evKeyDown  :
+                    if (ev->Number == 0) {
+                        redcr0(1);
+                        return;
+                    }
+                    if (ev->Number == ENTER) {
+                        poczatekV(X0, Y0);
+                    }
+                    break;
+                case evCommandP :
+                    ret = vector_command_proc(ev->Number);
+                    if ((ret != PL_MODE_CONTINUE) && (ret != PL_MODE_END)) {
+                        redcr(1);
+                        return;
+                    }
+                    break;
+                default :
+                    break;
+            }
         }
     }
 }

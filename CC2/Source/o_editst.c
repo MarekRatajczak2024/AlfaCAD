@@ -64,7 +64,7 @@ extern int inukeys(TMENU *menu);
 
 extern void take_altkey_away(void);
 extern int Expand_flex(void);
-extern BOOL Get_Str_From_Clip(char *ptrsz_buf, int i_poz, int i_buflen, int xpcz, int ypcz);
+extern int Get_Str_From_Clip(char *ptrsz_buf, int i_poz, int i_buflen, int xpcz, int ypcz);
 extern void Put_Str_To_Clip(char *ptrsz_buf);
 
 extern void lock_mouse(void);
@@ -76,7 +76,7 @@ extern void my_unscare_mouse(void);
 
 #ifdef LINUX
 extern void Put_Str_To_Clip(char *ptrsz_buf);
-extern BOOL Get_Str_From_Clip(char *ptrsz_buf,
+extern int Get_Str_From_Clip(char *ptrsz_buf,
                        int i_poz,
                        int i_buflen,
                        int xpcz,
@@ -839,7 +839,7 @@ if (last_edit==TRUE)
 
       if((c == BS) || (c == ENTER) || (c == F11) || (c == F10) || (c == F9) || (c == ESC) || (c == SHTAB) || (c == HOMEKEY) ||
      (c == ENDKEY) || (c == LEFTKEY) || (c == INSKEY) || (c == INSKEY1) || (c == RIGHTKEY) ||
-     (c == MIDDLE_BUTTON) || (c == DOWNKEY)  || (c == COPYCLIP)  || (c == MOUSEENTER))
+     (c == MIDDLE_BUTTON) || (c == DOWNKEY)  || (c == COPYCLIP) || (c == PASTECLIP) || (c == MOUSEENTER))
    {
 	 if (fwlen < (width - 1)) m_len = (len - fpos);
 	 else m_len = (width - 1);
@@ -962,7 +962,7 @@ do
         }
 		break;
 	case PASTECLIP:
-		if (TRUE == Get_Str_From_Clip(s, pos, maxlength, x0, y0 - (y0 * 0.25)))
+		if (1 == Get_Str_From_Clip(s, pos, maxlength, x0, y0 - (y0 * 0.25)))
 		{
 			goto aa;
 		}

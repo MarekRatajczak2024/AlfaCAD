@@ -500,6 +500,8 @@ set(Source_Files
     "../../../CC2/Source/o_wmctrl.c"  #this is LINUX stuff only, not MACOS
     "../../../CC2/Source/o_section_block.c"
     "../../../CC2/Source/o_section_block.h"
+    "../../../CC2/Source/o_plate.c"
+    "../../../CC2/Source/o_plate.h"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/jpgalleg.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/decode.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/encode.c"

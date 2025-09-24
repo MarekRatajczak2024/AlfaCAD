@@ -1479,7 +1479,7 @@ char* vector_style_tab[] = { u8"rígido-rígido",u8"rígido-con bisagras",u8"con
                             u8"proyección vertical de una carga horizontal",
                             u8"carga térmica",
                             u8"tamaño del nodo (radio)",
-                            u8"?","?","?","?","?","?","?","?",
+                            u8"carga de losa","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
@@ -1501,6 +1501,8 @@ static POLE pmInfoAbout[] = {
 	 {u8"֎Color\0 ",'C',158,NULL},      //2
 	 {u8"Tipo de línea\0 ",'T',160,NULL},      //3
 	 {u8"ancho de Línea\0",'L',159,NULL},      //4
+     {u8"tipo de soporte de borde\0",'K',850,NULL},      //4
+     {u8"inversión del soporte de borde\0",'M',853,NULL},      //4
      {u8"tipo de Punto\0",'P',27,NULL},       //5
      {u8"tipe de vector\0 ",'V',770,NULL},      //6
 	 {u8"X1 \0",'1',306,NULL},      //7
@@ -1545,8 +1547,8 @@ static POLE pmInfoAbout[] = {
 	 {u8"espaciado entre líneas\0",'#',410,NULL},      //43
      {u8"tamaño de píxel dx \0",'Q',689,NULL},      //44
      {u8"tamaño de píxel dy \0",'Z',690,NULL},      //45
-	 {u8"Nombre del bloque interno\0",'N',318,NULL},      //46
-	 {u8"nombre del Bloque exterior\0",'B',319,NULL},      //47
+	 {u8"nombre del bloque Interno\0",'I',318,NULL},      //46
+	 {u8"nombre del bloque exterior\0",'G',319,NULL},      //47
 };
 TMENU mInfoAbout = { 47,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
 
@@ -1567,10 +1569,15 @@ TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[
 
 char* objects[] = { u8"Línea", u8"Línea 3D", u8"Texto", u8"Arco", u8"Círculo", u8"Disco", u8"Polígono/Sólido", u8"Sólido 3D", u8"Punto", u8"Spline", u8"Imagen",u8"Polilínea",u8"Rastro",u8"Sombreado", u8"Arco elíptico",u8"Elipse", u8"Disco elíptico", u8"Arco sólido", u8"Vector"};
 
+#define __PLATE__ u8" (PLACA)"
+#define __HOLE__  u8" (AGUJERO)"
+#define __WALL__  u8" (PARED)"
+#define __ZONE__  u8" (ZONA)"
+
 #define _FILLING_ u8"relleno"
 
 char *vector_txt[]={u8"Vector: rígido-rígido",u8"Vector: rígido-pasador",u8"Vector: pasador-rígido",u8"Vector: pasador-pasador",u8"Vector: Fuerza",u8"Vector: Momento" ,u8"Vector: -Momento",
- u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)"};
+ u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)", u8"carga de losa"};
 
 //char *point_txt[]={u8"Simple",u8"punto Base",'','','','','',u8"Unión",u8"Pasador",'','','',u8"apoyo Empotrado",u8"apoyo empotrado I",u8"apoyo empotrado D",u8"apoyo empotrado A",u8"apoyo Articulado fijo",
 // u8"apoyo articulado fijo I",u8"apoyo articulado fijo D",u8"apoyo articulado fijo A",u8"apoyo Deslizadera horizontalmente",u8"apoyo deslizadera verticalmente I",u8"apoyo deslizadera verticalmente D",
@@ -1649,7 +1656,20 @@ static POLE pmPLine[] = {
 		  {u8"Cerrar\0",L'C',217,NULL},
 		  {u8"Eliminar\0Del\0",L'E',218,NULL},
 		  {u8"Longitud\0 0\0",L'L',219,NULL},
-		  {u8"Arco\0", L'A', 15,NULL} };
+		  {u8"Arco\0", L'A', 15,NULL},
+          {u8"Sin soporte\0", L'S', 851,NULL},
+          {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
+          {u8"Soporte rígida\0", L'P', 852,NULL},
+          //{u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
+          {u8"Voltear el soporte\0", L'V', 853,NULL},
+};
+
+POLE pmEdgeType[] = {
+          {u8"Sin soporte\0", L'S', 851,NULL},
+          {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
+          {u8"Soporte rígida\0", L'P', 852,NULL},
+          };
+
 
 static POLE pmLine_Con[] = {
 		  {u8"Continuación",L'C',220,NULL} };
@@ -1763,7 +1783,7 @@ static POLE pmVector[] = {
           {u8"Fuerza\0\0",L'F',727,&mLoad_Char},
           {u8"Momento\0\0",L'M',728,&mLoad_Char},
           {u8"-momento\0\0",L'-',729,&mLoad_Char},
-          {u8"desplazamiento\0\0",L'Z',730,NULL}, //&mLoad_Char}, //NULL
+          {u8"desplazamiento\0\0",L'U',730,NULL}, //&mLoad_Char}, //NULL
           {u8"Rotación\0\0",L'R',731,NULL}, //&mLoad_Char},  //NULL
           {u8"-rotación\0\0",L'O',732,NULL}, //&mLoad_Char},  //NULL
           {u8"carga trapezoidal Y\0\0",L'Y',733,&mLoad_Char},
@@ -1773,6 +1793,12 @@ static POLE pmVector[] = {
           {u8"carga trapezoidal V\0\0",L'V',737,&mLoad_Char},
           {u8"carga Térmica\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"tamaño del nodo (radio)\0\0",L'0',786,NULL},
+
+          {u8"Placa de losa\0\0",L'P',846,NULL},
+          {u8"apertura de Losa\0\0",L'L',844,NULL},
+          {u8"La pared debajo de la losa\0\0",L'W',843,NULL},
+          {u8"Zona de losa\0\0",L'Z',842,NULL},
+          {u8"carga de losa\0\0",L'Q',845,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -1819,7 +1845,7 @@ static POLE pmLoad_style[] = {
 #define _YES_ "S"
 #define _NO_ "N"
 
-static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,14,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 16 /*14*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 static POLE pmLukm[] = {
 		{u8"[1] tres puntos", L'1', 221, NULL},
@@ -1844,7 +1870,14 @@ static POLE pmPLukm[] = {
         {u8"dirección del arco invertida",L'0',729,&mArcReversed},
 		{u8"Cerrar",L'C',247,NULL},
 		{u8"Remover: Del",L'R',248,NULL},
-		{u8"Línea", L'L',13,NULL} };
+		{u8"Línea", L'L',13,NULL},
+
+        {u8"Sin soporte\0", L'S', 851,NULL},
+        {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
+        {u8"Soporte rígida\0", L'P', 852,NULL},
+        //{u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
+        {u8"Voltear el soporte\0", L'V', 853,NULL},
+        };
 
 static POLE pmPLukmObrys[] = {
 
@@ -1975,6 +2008,29 @@ static char* EllipticalAngle[] = {u8"Local",u8"Global"};
 #endif
 
 #ifdef __O_PLINE__
+
+static POLE pmPLine_Con[] = {
+		  {u8"Continuación",L'C',220,NULL} };
+
+extern TMENU mVector;
+
+static POLE pmPLine_Con_Slab[] = {
+		  {u8"Continuación",L'C',220,NULL},
+          {u8"Vectores",L'V',722,&mVector},
+};
+
+#define _POLYLINE_ u8"Polilínea"
+#define _POLYLINE_C_ L'P'
+
+#define _Yes_ u8"Sí"
+#define _No_ u8"No"
+
+#define _CHANGE_POLYLINE_TYPE_ u8"Se seleccionó un tipo de polilínea diferente. ¿Deberíamos cambiarlo a: "
+
+#define __PLATE__ u8"PLACA"
+#define __HOLE__  u8"AGUJERO"
+#define __WALL__  u8"PARED"
+#define __ZONE__  u8"ZONA"
 
 #endif
 
@@ -2165,7 +2221,7 @@ static POLE pmFillTyp[] = {
 	   {u8"Gruesa\0",'G',279,NULL},
 	   {u8"Muy gruesa\0",'M',280,NULL},
 	   {u8"Extra gruesa\0",'E',281,NULL},
-	   {u8"Patrón\0",'P',837, &mTracePattern},
+	   {u8"Patrón\0",'P',836, &mTracePattern},
 };
 
 static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmFillTyp,NULL,NULL };
@@ -2173,7 +2229,7 @@ static TMENU mFillTyp = { 7,0,0,15,79,6,ICONS | TADD,CMNU,CMBR,CMTX,0,9,0,0,0,(P
 #define _YES_ "S"
 #define _NO_ "N"
 
-static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
+static TMENU mTraceArcReversed = { 2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0, 14 /*11*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
 static POLE pmPTLukm[] = {
         {u8"[0] continuación con arco", L'0', 714, NULL},
@@ -2488,9 +2544,9 @@ POLE pmHatch[] = {
 	 {u8"Escala\0 1\0     ", 'E', 436,NULL},
 	 {u8"punto Base\0 0,0\0              ", 'B', 437,NULL},
 	 {u8"Mostrar punto base\0 \0", 'M', 438,NULL},
-	 {u8"Distancia de la línea del patrón/longitud del segmento spline\0 1\0             ", 'D', 439,NULL},
+	 {u8"Distancia entre líneas/segmentos de spline\0 1\0", 'D', 439,NULL},  //ó
 	 {u8"aislamiento Térmico\0 \0", 'T', 679, &mSelect_Ins},
-	 {u8"patrón de Imagen\0 \0",'I',836,&mSolidHatchPattern}
+	 {u8"patrón de Imagen\0 \0",'I',836,&mSolidHatchPattern}  //ó
 	  };
 
 #define _HATCHING_ u8"Sombreado"
@@ -3393,6 +3449,9 @@ char error_message_background[64] = u8"No hay archivos de fondo en esta carpeta"
 #ifdef __BIB_E__
 
 char* view_width_tab[] = { u8"m.d.",u8"d.",u8"G.",u8"M.G.",u8"E.G.", "", "", u8"escondida " };
+
+char* view_edge_tab[] = {u8"Sin soporte", u8"", u8"", u8"", u8"", u8"Sin soporte", u8"Soporte fijo con bisagras", u8"Soporte rígida"};
+char* view_edgeinverted_tab[] = {u8"Regular", u8"Invertido"};
 
 char* view_type_tab[] = {
 			    u8"sólida",

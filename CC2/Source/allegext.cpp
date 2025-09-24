@@ -84,8 +84,8 @@
 #include "../../Allegro-Legacy-Alfa/include/allegro/internal/aintern.h"
 #ifndef MACOS
 #include "../../Allegro-Legacy-Alfa/include/xalleg.h"
-#include "../../Allegro-Legacy-Alfa/include/xdnd.h"
 #endif
+#include "../../Allegro-Legacy-Alfa/include/xdnd.h"
 #else
 #include "../../allegro5-4.4.3/include/allegro/font.h"
 #include "../../allegro5-4.4.3/include/allegro/internal/aintern.h"
@@ -299,6 +299,8 @@ static AWIdnd dnd;
 
     void Check_ConfigureNotify(void);
 
+    void set_resized_window_GFX(DRIVER_STRUCT *drv, int *dx, int *dy, int option);
+
     BOOL ConfigureNotifySemaphore=TRUE;
 
     int GoRegRedraw(void(*ptr)(void));
@@ -307,7 +309,12 @@ static AWIdnd dnd;
 
     BOOL hibernate=FALSE;
 
-	extern void my_sleep(int sleepMs);
+    extern int Komunikat_R0;
+    extern void komunikat0(int n);
+    extern int get_komunikat_arc_bak(void);
+    extern BOOL kom_arc_bak(void);
+
+extern void my_sleep(int sleepMs);
 	extern void standard_func(void);
 
     extern int wmctrl (int argc, char **argv);
@@ -354,7 +361,7 @@ static AWIdnd dnd;
 	extern int dialog_active(void);
 	extern void my_rect(int x1, int y1, int x2, int y2);
 	extern void  Odczyt_licznikow_resize(long *dx, long *dy);
-	extern void set_resized_window(int dx, int dy);
+	extern void set_resized_window(int dx, int dy, int option);
 	extern void redraw(void);
 	extern void set_last_window(void);
 
@@ -522,6 +529,7 @@ extern int get_display_flags(void);
 extern void all_render_screen(void);
 extern void set_semaphore(bool sem);
 extern void set_timer_speed(int speed);
+extern void al_resize_screen(int w, int h);
 #endif
 #endif
 
@@ -780,7 +788,7 @@ void _xwin_set_hints(int w, int h)
         hints->x = origin_x;
         hints->y = origin_y;
         hints->min_width  = w; //100;
-        hints->max_width  = 6000;
+        hints->max_width  = 6880; //6000;
         hints->base_width  = w;
         hints->min_height = h; //350;
         hints->max_height = 3000;
@@ -938,7 +946,7 @@ void setviewport(int left, int top, int right, int bottom, int clip)
 #ifndef ALLEGRO5
     screen = parent_screen;
 #else
-    set_clip_rect(screen,left, top, right-left, bottom-top);
+    set_clip_rect(screen,left, top, right-left, bottom);  //bottom-top
 #endif
     screenplay = parent_screen;
 
@@ -1379,16 +1387,20 @@ void     my_fillpoly(int numpoints, AL_CONST int* polypoints, int translucency, 
 	//polygon(screenplay, numpoints, polypoints, cur_fillstyle_color);
 	kolor256 = GetColorAC(kolory_paper);
 
-	r = _dac_normal[kolor256][0] << 2;
-	g = _dac_normal[kolor256][1] << 2;
-	b = _dac_normal[kolor256][2] << 2;
+	//r = _dac_normal[kolor256][0] << 2;
+	//g = _dac_normal[kolor256][1] << 2;
+	//b = _dac_normal[kolor256][2] << 2;
+
+    r = 255;
+    g = 255;
+    b = 255;
 
 	colorB = makeacol32(r, g, b, 255);
 
     if ((screenplay->w < 0) || (screenplay->w > 9999)) return;  //????????
 
-	//polygon(screenplay, numpoints, polypoints, cur_fillstyle_color);
-	my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);
+	//polygon(screenplay, numpoints, polypoints, cur_fillstyle_color);  //this version can be used everywhere but not in hatching solids and trace solids
+	my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
 
     //if (TRANSLUCENCY!=translucency) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
 	return;
@@ -2752,7 +2764,7 @@ void reset_if_resized(void)
 		x0_new = wndRect.left;
 		y0_new = wndRect.top;
 
-		set_resized_window(dx_new, dy_new);
+		set_resized_window(dx_new, dy_new, 1);
 		ret1 = set_window_origin(x0_new, y0_new);
 	}
 
@@ -3566,14 +3578,37 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
 #endif
 }
 
+
+void trim_trailing_new_row(char *str) {
+	if (str == NULL || *str == '\0') {
+		return; // Handle null or empty strings
+	}
+
+	int i = strlen(str) - 1; // Start from the end of the string
+
+	// Iterate backwards, identifying trailing new row characters
+	while (i >= 0 && ((unsigned char)str[i])=='\n') {
+		i--;
+	}
+
+	// If 'i' is less than the original last index,
+	// it means trailing new row was found and skipped.
+	// Terminate the string at the new end.
+	if (i < strlen(str) - 1) {
+		str[i + 1] = '\0';
+	}
+}
+
 #define ALLEGRO5DND
 void Check_XNextEvent(void) {
 
-    char *fptr, *iptr, *bptr;
+    char *fptr, *iptr, *bptr, *eptr;;
     int ret;
+	int len;
+	int n;
 
 #ifdef LINUX
-#ifndef MACOS
+//#ifndef MACOS
     if (xdnd_buf.mflag==1)  //there is something new
     {
         CURL *curl = curl_easy_init();
@@ -3581,8 +3616,15 @@ void Check_XNextEvent(void) {
         {
             xdnd_buf.iflag=1;
             fptr=xdnd_buf.filebuf;
+        	len=strlen(xdnd_buf.filebuf);
+        	eptr=fptr+len;
             iptr=strchr(fptr, '\r');
-            while (iptr!=NULL)
+        	n=0;
+#ifdef ALLEGRO5
+            while ((iptr!=NULL) && (iptr<eptr) && (n<xdnd_buf.rows))
+#else
+            while ((iptr!=NULL) && (iptr<eptr))
+#endif
             {
                 *iptr='\0';
 
@@ -3591,21 +3633,31 @@ void Check_XNextEvent(void) {
 
                 char *decoded = curl_unescape(fptr, 0);
 
-                ret=Test_App_Shm(2, decoded);
+            	trim_trailing_new_row(decoded);
+
+            	if (strlen(decoded) > 0)
+            	{
+            		ret=Test_App_Shm(2, decoded);
+            		n++;
+            	}
                 curl_free(decoded);
 
                 fptr=iptr+2;
                 iptr=strchr(fptr, '\r');
+
+            	//n++;
             }
             xdnd_buf.iflag=0;
         }
         xdnd_buf.mflag=0;
 
         curl_easy_cleanup(curl);
-    }
-#else
 
-#endif
+    	////simulate_keypress(27);  //to push
+    }
+
+//#else
+//#endif
 #else
 	if ((xdnd_buf!=NULL) && (xdnd_buf->mflag == 1))  //there is something new
 	{
@@ -3692,7 +3744,17 @@ int set_window_origin(int x_win_orig, int y_win_orig)
     //root_window=DefaultRootWindow(display);
     //focus=root_window;
  #ifndef ALLEGRO5
+
+    root_window=DefaultRootWindow(display);
+
     focus=_xwin.window;
+
+    int x, y;
+    Window child;
+    XWindowAttributes xwa;
+    XTranslateCoordinates( display, focus, root_window, 0, 0, &x, &y, &child );
+    XGetWindowAttributes( display, focus, &xwa );
+    printf( "%d %d\n", x - xwa.x, y - xwa.y );
 
     toplevel_parent_of_focus = get_toplevel_parent(display, focus);
 
@@ -3810,7 +3872,7 @@ void get_cur_widt_height(int *cur_width, int *cur_height)
     XSizeHints size_hints;
     size_hints.min_width = 640;
     size_hints.min_height = 480;
-    size_hints.max_width = 6000; //2560;
+    size_hints.max_width = 6880; //6000; //2560;
     size_hints.max_height = 3000;//1440;
     XSetWMNormalHints(display, toplevel_parent_of_focus, &size_hints);
 
@@ -3962,7 +4024,15 @@ void increase_window(DRIVER_STRUCT *drv, int x, int y)
 }
 
 void set_original_window_GFX(DRIVER_STRUCT *drv)
-{  int draw_mode;
+{
+    int dx, dy;
+    dx=drv->gfx_width;
+    dy=drv->gfx_height;
+    set_resized_window_GFX(drv, &dx, &dy, 1) ;
+
+    return;
+
+   int draw_mode;
    int switch_callback_out, switch_callback_in;
   
    int gfx_width;
@@ -4020,7 +4090,14 @@ void set_original_window_GFX(DRIVER_STRUCT *drv)
 }
 
 void set_last_window_GFX(DRIVER_STRUCT *drv)
-{  int draw_mode;
+{  int dx, dy;
+    dx=h_increase_arch;
+    dy=v_increase_arch;
+    set_resized_window_GFX(drv, &dx, &dy, 1) ;
+
+   return;
+
+   int draw_mode;
    int switch_callback_out, switch_callback_in;
  
    int gfx_width;
@@ -4077,7 +4154,7 @@ void set_last_window_GFX(DRIVER_STRUCT *drv)
    return;
 }
 
-void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
+void set_resized_window_GFX(DRIVER_STRUCT *drv, int *dx, int *dy, int option)
 {
     int draw_mode;
    int switch_callback_out, switch_callback_in;
@@ -4154,23 +4231,78 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
 #endif
 
 
-   h_increase=dx;
-   v_increase=dy;
+   h_increase=*dx;
+   v_increase=*dy;
 
-   gfx_width=dx;
-   gfx_height=dy;
+   gfx_width=*dx;
+   gfx_height=*dy;
 
    if ((gfx_width == 0) || (gfx_height) == 0)  //it was minimalized
 	   return;
 
    window_was_resized=1;
 
+#ifndef ALLEGRO5
    if (set_gfx_mode(GFX_GDI, gfx_width, gfx_height, 0, 0) != 0)
    {
     set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
 	graphic_error(allegro_error);
     abort();
    }
+#else
+    if (option==1)
+    {
+#ifdef ALLEGRO5
+        set_semaphore(0);
+        my_sleep(100);
+#endif
+        if (set_gfx_mode(GFX_GDI, gfx_width, gfx_height, 0, 0) != 0) {
+            set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
+            graphic_error(allegro_error);
+            abort();
+        }
+
+        BOOL CORRECT_GFX=TRUE;
+
+#ifdef ALLEGRO5
+        int x0m, y0m, dxm, dym;
+#ifdef MACOS
+        BOOL ret3=acknowledge_resize();
+#endif
+        my_sleep(100);
+        ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
+#ifndef MACOS
+        dym-=X11_SCREEN_SHIFT;
+#endif
+        if (((drv->gfx_width!=dxm) || (drv->gfx_height!=dym))   && (CORRECT_GFX))
+        {
+            drv->gfx_width=dxm;
+            drv->gfx_height=dym;
+            if (set_gfx_mode(GFX_GDI, drv->gfx_width, drv->gfx_height, 0, 0) != 0)
+            {
+                set_gfx_mode(GFX_TEXT, 0, 0, 0, 0);
+                graphic_error(allegro_error);
+
+                exit(1);
+            }
+        }
+
+        *dx=drv->gfx_width;
+        *dy=drv->gfx_height;
+#endif
+
+#ifdef ALLEGRO5
+        set_semaphore(1);
+#endif
+    }
+    else {
+        ////set_semaphore(0);
+        my_sleep(10);
+        al_resize_screen(*dx, *dy);
+        drv->gfx_width = *dx;
+        drv->gfx_height = *dy;
+    }
+#endif
 
 #ifndef LINUX
         _sleep(0);
@@ -4182,6 +4314,8 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
    //set_display_icon(icon_alfacad_mem);
 #endif
 
+
+/*
 #ifdef ALLEGRO5
     int x0m, y0m, dxm, dym;
 #ifdef MACOS
@@ -4204,6 +4338,7 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
         }
     }
 #endif
+*/
 
     //if (gfx_capabilities & GFX_HW_MEM_BLIT)
     //    blit_hw = TRUE;
@@ -4219,7 +4354,8 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
    switch_callback_out=set_display_switch_callback(SWITCH_OUT, free_mouse_switch_callback);   ///probably not necessary
    switch_callback_in=set_display_switch_callback(SWITCH_IN , lock_mouse_switch_callback);
 
-#ifndef ALLEGRO4
+   my_sleep(10);
+
     if (GFX_WIN==1) get_cur_widt_height(&cur_width, &cur_height);
 	 else
 	{
@@ -4227,15 +4363,8 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
 		cur_height=drv->gfx_height;
 	}
 
-     cur_width=dx;
-     cur_height=dy;
-#else
-    cur_width=drv->gfx_width;
-    cur_height=drv->gfx_height;
-#endif
-
-    //cur_width=dx;  //???
-    //cur_height=dy;
+   cur_width=*dx;
+   cur_height=*dy;
 
    cur_colors=pow(2,drv->gfx_bpp);
    viewport_x=0;
@@ -4272,9 +4401,9 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
 #else
 
     curr_w = h_increase_arch;
-    curr_w_ = dx_new;
+    curr_w_ = *dx;
     curr_h = v_increase_arch;
-    curr_h_ = dy_new;
+    curr_h_ = *dy;
 
 #endif
 
@@ -4282,6 +4411,17 @@ void set_resized_window_GFX(DRIVER_STRUCT *drv, int dx, int dy, int option)
    sleep(0);
 #else
     _sleep(0);
+#endif
+
+#ifdef ALLEGRO5
+    //restoring the very first row
+    if (Komunikat_R0>0) komunikat0(Komunikat_R0);
+      else if (get_komunikat_arc_bak()>=0)
+      {
+        komunikat0(0);
+        ret = kom_arc_bak();
+      }
+        else komunikat0(0);
 #endif
 
    return;
@@ -4363,7 +4503,8 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
         int		    x, y;
         unsigned int    width, height;
     } CrtRECT;
-    CrtRECT crt_0;
+    CrtRECT **crt_0=NULL;
+    int crt_0_n=0;
 
     if (!(display = XOpenDisplay(0))) { return ERR_COULDNT_OPEN_X_DISPLAY; }
 
@@ -4381,6 +4522,9 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
     if (mon<0) printf("All display:\n");
     else printf("Display %d: \n",mon);
     j=0;
+
+    crt_0=(CrtRECT **)malloc(output*sizeof(char*));  //it's oversized
+    
     for (i = 0; i < output; ++i) {
         XRROutputInfo* out_info = XRRGetOutputInfo(display, screenr, screenr->outputs[i]);
 
@@ -4398,13 +4542,15 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
                     ret_top_y_ = crt_info->y;
                 if ((crt_info->y + crt_info->height - X11_SCREEN_SHIFT) > ret_bottom_y_)
                     ret_bottom_y_ = (crt_info->y + crt_info->height - X11_SCREEN_SHIFT);
-                if (mon==0)
-                {
-                    crt_0.x=crt_info->x;
-                    crt_0.y=crt_info->y;
-                    crt_0.width=crt_info->width;
-                    crt_0.height=crt_info->height;
-                }
+                //if (mon==0)
+                //{
+                    crt_0[crt_0_n]=(CrtRECT*)malloc(sizeof(CrtRECT));
+                    crt_0[crt_0_n]->x=crt_info->x;
+                    crt_0[crt_0_n]->y=crt_info->y;
+                    crt_0[crt_0_n]->width=crt_info->width;
+                    crt_0[crt_0_n]->height=crt_info->height;
+                    crt_0_n++;
+                //}
                 XRRFreeCrtcInfo(crt_info);
             }
             j++;
@@ -4420,46 +4566,55 @@ int get_monitor_dims(int *ret_left_x, int *ret_right_x, int *ret_top_y, int *ret
         ret = XGetWindowAttributes(display,  list[i], &attr);
         ret = getprop (display, name, list[i], window, attr, &w_is_hidden);
         printf("-->%s<--   <%d,%d><%d,%d>\n",name,attr.x,attr.y,attr.x+attr.width,attr.y+attr.height);
-        if (mon==0)  //default
+        for (j=0; j<crt_0_n; j++) 
         {
-            if  ((!w_is_hidden) && (
-                        (strcmp(name,"plasmashell")==0) ||
-                        (strcmp(name,"gnome-shell")==0) ||
-                        (strcmp(name,"xfce4-panel")==0) ||
-                        (strcmp(name,"lxpanel")==0) ||
-                        (strcmp(name,"lxqt-panel")==0) ||
-                        (strcmp(name,"mate-panel")==0) ||
-                        (strcmp(name,"cinnamon")==0) ||
-                        (strcmp(name,"i3bar")==0) ||
-                        (strcmp(name,"tint2")==0) ||
-                        (strcmp(name,"lxpanel")==0) ||
-                        (strcmp(name,"polybar")==0) ||
-                        (strcmp(name,"lemonbar")==0) ||
-                        (strcmp(name,"dwmblocks")==0) ))
+            if ((mon == 0) || (mon < 0)) //default and any
             {
-                //// DisplayPort-0	    <0,0><2560x1440>
-                ////-->plasmashell<--   <0,0><3440,1440>
-                ////-->plasmashell<--   <0,0><2560,44>
-                ////-->plasmashell<--   <0,0><2560,1440>
-                if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
-                {
-                    ////if at the bottom
-                    if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y>crt_0.y) && ((attr.y+attr.height)==(crt_0.y+crt_0.height)))
-                        ret_bottom_y_-=attr.height;
-                    else ////if at the top
-                    if ((attr.x>=crt_0.x) && ((attr.x+attr.width)<=(crt_0.x+crt_0.width)) && (attr.y==crt_0.y) && ((attr.y+attr.height)<(crt_0.y+crt_0.height)))
-                        ret_top_y_+=attr.height;
-                    else ////if on the left
-                    if ((attr.x==crt_0.x) && ((attr.x+attr.width)<(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
-                        ret_left_x_+=attr.width;
-                    else ////if on the right
-                    if ((attr.x>crt_0.x) && ((attr.x+attr.width)==(crt_0.x+crt_0.width)) && (attr.y>=crt_0.y) && ((attr.y+attr.height)<=(crt_0.y+crt_0.height)))
-                        ret_right_x_-=attr.width;
+                if ((!w_is_hidden) && (
+                        (strcmp(name, "plasmashell") == 0) ||
+                        (strcmp(name, "gnome-shell") == 0) ||
+                        (strcmp(name, "xfce4-panel") == 0) ||
+                        (strcmp(name, "lxpanel") == 0) ||
+                        (strcmp(name, "lxqt-panel") == 0) ||
+                        (strcmp(name, "mate-panel") == 0) ||
+                        (strcmp(name, "cinnamon") == 0) ||
+                        (strcmp(name, "i3bar") == 0) ||
+                        (strcmp(name, "tint2") == 0) ||
+                        (strcmp(name, "lxpanel") == 0) ||
+                        (strcmp(name, "polybar") == 0) ||
+                        (strcmp(name, "lemonbar") == 0) ||
+                        (strcmp(name, "dwmblocks") == 0))) {
+                    //// DisplayPort-0	    <0,0><2560x1440>
+                    ////-->plasmashell<--   <0,0><3440,1440>
+                    ////-->plasmashell<--   <0,0><2560,44>
+                    ////-->plasmashell<--   <0,0><2560,1440>
+                    if ((attr.x >= crt_0[j]->x) && ((attr.x + attr.width) <= (crt_0[j]->x + crt_0[j]->width)) &&
+                        (attr.y >= crt_0[j]->y) && ((attr.y + attr.height) <= (crt_0[j]->y + crt_0[j]->height))) {
+                        ////if at the bottom
+                        if ((attr.x >= crt_0[j]->x) && ((attr.x + attr.width) <= (crt_0[j]->x + crt_0[j]->width)) &&
+                            (attr.y > crt_0[j]->y) && ((attr.y + attr.height) == (crt_0[j]->y + crt_0[j]->height)))
+                            ret_bottom_y_ -= attr.height;
+                        else ////if at the top
+                        if ((attr.x >= crt_0[j]->x) && ((attr.x + attr.width) <= (crt_0[j]->x + crt_0[j]->width)) &&
+                            (attr.y == crt_0[j]->y) && ((attr.y + attr.height) < (crt_0[j]->y + crt_0[j]->height)))
+                            ret_top_y_ += attr.height;
+                        else ////if on the left
+                        if ((attr.x == crt_0[j]->x) && ((attr.x + attr.width) < (crt_0[j]->x + crt_0[j]->width)) &&
+                            (attr.y >= crt_0[j]->y) && ((attr.y + attr.height) <= (crt_0[j]->y + crt_0[j]->height)))
+                            ret_left_x_ += attr.width;
+                        else ////if on the right
+                        if ((attr.x > crt_0[j]->x) && ((attr.x + attr.width) == (crt_0[j]->x + crt_0[j]->width)) &&
+                            (attr.y >= crt_0[j]->y) && ((attr.y + attr.height) <= (crt_0[j]->y + crt_0[j]->height)))
+                            ret_right_x_ -= attr.width;
+                    }
                 }
             }
         }
         free(name);
     }
+
+    for (j=0; j<crt_0_n; j++) free(crt_0[j]);
+    if (crt_0) free(crt_0);
 
     XFree(list);
 
@@ -6827,7 +6982,7 @@ void expand_horizontally(void)
 	//dy_new = DskRect.bottom - DskRect.top - dh + dw / 2 - e_h;
 	dy_new = dy_back;
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 
 	wnd = win_get_window(); //WINDOWS
 
@@ -6870,7 +7025,7 @@ void expand_horizontally(void)
 	dx_new = DskRect.right - DskRect.left;
 	dy_new = h_;
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 	wnd = win_get_window(); //WINDOWS
 
 	//GetClientRect(wnd, &clnRect); //WINDOWS
@@ -6903,11 +7058,19 @@ void expand_horizontally(void)
 
     dx_new = ret_right_x - ret_left_x;
 
-    dy_new = curr_v-ret_top_y;
+    dy_new = min(curr_v - ret_top_y, ret_bottom_y - ret_top_y);
+
+    if (dx_new>5980) dx_new-=8;  //TEMPORARY
 
     set_origins(x0_new, y0_new);
-    set_resized_window(dx_new, dy_new);
+    set_resized_window(dx_new, dy_new, 1);
     ret = set_window_origin(x0_new, y0_new);
+
+#ifdef MACOS
+	enable_hardware_cursor();
+	show_os_cursor(MOUSE_CURSOR_ARROW);
+	disable_hardware_cursor();
+#endif
 
     //int p_mouse = my_poll_mouse();
     //int p_keyboard = my_poll_keyboard();
@@ -6994,7 +7157,7 @@ void expand_vertically(void)
 	//dy_new = dy_back;
 
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 
 	wnd = win_get_window(); //WINDOWS
 
@@ -7035,7 +7198,7 @@ void expand_vertically(void)
 	dx_new = w_;
 	dy_new = DskRect.bottom - DskRect.top - gfx_margins->t_btb - e_h;
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 	wnd = win_get_window(); //WINDOWS
 
 	//GetClientRect(wnd, &clnRect); //WINDOWS
@@ -7065,15 +7228,19 @@ void expand_vertically(void)
     x0_new = curr_x0-ret_left_x; //ret_left_x;
     y0_new = ret_top_y;
 
-
     dx_new = curr_h-ret_left_x;
 
     dy_new = ret_bottom_y - ret_top_y;
 
-
     set_origins(x0_new, y0_new);
-    set_resized_window(dx_new, dy_new);
+    set_resized_window(dx_new, dy_new, 1);
     ret = set_window_origin(x0_new, y0_new);
+
+#ifdef MACOS
+	enable_hardware_cursor();
+	show_os_cursor(MOUSE_CURSOR_ARROW);
+	disable_hardware_cursor();
+#endif
 
     //int p_mouse = my_poll_mouse();
     //int p_keyboard = my_poll_keyboard();
@@ -7280,7 +7447,7 @@ void expand_diagonally(void)
 	dx_new = DskRect.right - DskRect.left;
 	dy_new = DskRect.bottom - DskRect.top - dh + dw/2 - e_h;
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 
 	wnd = win_get_window(); //WINDOWS
 
@@ -7322,7 +7489,7 @@ void expand_diagonally(void)
 	dx_new = DskRect.right - DskRect.left;
 	dy_new = DskRect.bottom - DskRect.top - gfx_margins->t_btb - e_h;
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 1);
 	wnd = win_get_window(); //WINDOWS
 
 	//GetClientRect(wnd, &clnRect); //WINDOWS
@@ -7357,8 +7524,18 @@ void expand_diagonally(void)
 
     dy_new = ret_bottom_y - ret_top_y;
 
+    if (dx_new>5980) dx_new-=8;  //TEMPORARY
+
     set_origins(x0_new, y0_new);
-    set_resized_window(dx_new, dy_new);
+    set_resized_window(dx_new, dy_new, 1);
+
+    ret = set_window_origin(0, 0);
+
+#ifdef MACOS
+	enable_hardware_cursor();
+	show_os_cursor(MOUSE_CURSOR_ARROW);
+	disable_hardware_cursor();
+#endif
 
     //int p_mouse = my_poll_mouse();
     //int p_keyboard = my_poll_keyboard();
@@ -7374,6 +7551,11 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 	int ret, ret_ref;
 	int keys_;
 
+//#ifdef ALLEGRO5
+//    set_semaphore(0);
+//    my_sleep(100);
+//#endif
+
 	enable_hardware_cursor();
 
     //checking if doesn't exceed screen baundaries
@@ -7387,6 +7569,9 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 	y0_new = max(w_y0, ret_top_y);
 
 	dx_new = w_width;
+
+    if (dx_new>5980) dx_new-=8;  //TEMPORARY
+
 #ifdef MACOS //ARM64
 	dy_new = w_height;
 #else
@@ -7415,9 +7600,9 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 #endif
 
     set_origins(x0_new, y0_new);
-	set_resized_window(dx_new, dy_new);
-	my_sleep(10);
+	set_resized_window(dx_new, dy_new, 0);
     ret = set_window_origin(x0_new, y0_new);  ////arm64
+    ////my_sleep(10);
 #else
     dx_new = w_width;
     dy_new = w_height; // -X11_SCREEN_SHIFT;
@@ -7429,7 +7614,7 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
 	x0_new = max(w_x0, ret_left_x-gfx_margins->l_b);
 	y0_new = max(w_y0, ret_top_y);
 
-	set_resized_window(dx_new, dy_new);
+	set_resized_window(dx_new, dy_new, 0);
 	ret = set_window_origin(x0_new, y0_new);
 #endif
 
@@ -7442,12 +7627,19 @@ void expand_dim(int w_x0, int w_y0, int w_width, int w_height, BOOL redraw_scree
    ////global_resized=TRUE;
 	//simulate_keypress(27);
 	enable_hardware_cursor();
-	my_sleep(10);
+
+    flip_screen();  ////
+
+	////my_sleep(10);
 	disable_hardware_cursor();
 	standard_func();
 	//Test_przycisniec(&keys_);
 	//cur_mouse_b=-1;
 	//mouse_b=0;
+
+//#ifdef ALLEGRO5
+//    set_semaphore(1);
+//#endif
 } 
 
 void restore_last_window(void)
@@ -7488,7 +7680,7 @@ void restore_last_window(void)
 		x0_back = wndRect.left;
 		y0_back = wndRect.top;
 
-		set_resized_window(dx_new, dy_new);
+		set_resized_window(dx_new, dy_new, 1);
 
 		wnd = win_get_window();
 
@@ -7542,8 +7734,14 @@ void restore_last_window(void)
 
 
         set_origins(x0_new, y0_new);
-        set_resized_window(dx_new, dy_new);
+        set_resized_window(dx_new, dy_new, 1);
         ret = set_window_origin(x0_new, y0_new);
+
+#ifdef MACOS
+    	enable_hardware_cursor();
+    	show_os_cursor(MOUSE_CURSOR_ARROW);
+    	disable_hardware_cursor();
+#endif
 
         //int p_mouse = my_poll_mouse();
         //int p_keyboard = my_poll_keyboard();
@@ -7662,7 +7860,7 @@ int circle_and_rectangle_proc0(int untrap_mouse)
 	x0_new = wndRect.left;
 	y0_new = wndRect.top;
 	*/
-	 set_resized_window(dx_new, dy_new);
+	 set_resized_window(dx_new, dy_new, 1);
 	
 	 ret1=set_window_origin(x0_new, y0_new);
      //cleardevice();

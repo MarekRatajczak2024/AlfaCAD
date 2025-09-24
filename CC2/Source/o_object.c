@@ -1107,6 +1107,7 @@ void obiekt_tok(char  *adr,char  *adrk,char  **ad,int obiekt)
  else
  {
      if (dane0>=dane+dane_size)
+     //if (dane0>dane+dane_size)
          dane0=dane;
  }
 

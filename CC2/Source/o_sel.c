@@ -500,6 +500,7 @@ int qkoniecS(double *x, double *y)
                   if (punkt_w_prostokacie(*x, *y)) goto koniec;
                   break;
                   case 10:
+                  case 17:  //slab
                   case 11:
                   case 12:
                   case 13:

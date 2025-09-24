@@ -983,6 +983,7 @@ static int Vf1_n_(BOOL b_graph_value)
     int ret = Vf1_n(b_graph_value);
     strwyj=1;
     VectorC.magnitude1=VectorG.magnitude1;
+    if (VectorC.style==17) VectorC.magnitude2=VectorG.magnitude1;
     return ret;
 }
 
@@ -991,6 +992,7 @@ static int Vf2_n_(BOOL b_graph_value)
     int ret = Vf2_n(b_graph_value);
     strwyj=1;
     VectorC.magnitude2=VectorG.magnitude2;
+    if (VectorC.style==17) VectorC.magnitude1=VectorG.magnitude2;
     return ret;
 }
 
@@ -4951,6 +4953,7 @@ static void	redcrck(char typ)
              switch (VectorC.style)
              {
                  case 10:
+                 case 17:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
                      LiniaG.x1 = VectorC.x1;
@@ -5056,6 +5059,7 @@ static void	redcrck(char typ)
              switch (VectorC.style)
              {
                  case 10:
+                 case 17:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
                      LiniaG.x1 = VectorC.x2;

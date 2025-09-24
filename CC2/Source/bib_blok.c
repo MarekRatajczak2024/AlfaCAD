@@ -145,6 +145,8 @@ extern void Set_Screenplay(BITMAP *ctx_bitmap);
 extern int get_stretch_vector(void);
 extern void *get_vector_c(void);
 
+extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
+
 NODE bnodes[MAX_NODES];
 
 double curviness = 0.75;   //0.0 to 1.0  //parameter will be recorded at the end of xy points coordinates, default is 0.25
@@ -2761,6 +2763,7 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
   QUAD t_outline;
   int ret;
   LINIA L_tmp, L_tmp1;
+  AVECTOR V;
 
   if ((ad->typ == HATCH_OUTLINE_TYPE) && (Get_Point_View()==FALSE)) return;
 
@@ -2869,9 +2872,28 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
         }
 
     }
-   else
-      lineC (pikseleX0(ad->x1),pikseleY0(ad->y1),pikseleX0(ad->x2),pikseleY0(ad->y2));
-   
+    else {
+        //lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
+        switch (ad->obiektt2) {
+            case 6:
+                memmove(&V, ad, sizeof(LINIA));
+                if (ad->obiektt3==0)  V.style = 18;
+                else V.style = 19;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
+            case 7:
+                memmove(&V, ad, sizeof(LINIA));
+                if (ad->obiektt3==0)  V.style = 20;
+                else V.style = 21;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
+
+            default:
+                lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
+                break;
+        }
+    }
+
   if(mvcurb.akton) mvcurb.L++;
   if(mvcurb.aktoff) mvcurb.L--;
 }
@@ -3874,6 +3896,7 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
     QUAD t_outline;
     int ret;
     LUK l_tmp, l_tmp1;
+    AVECTOR V;
 
 
     if (Check_if_Equal2(ad->kat1, ad->kat2))
@@ -3984,8 +4007,43 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
             else DrawArc(pikseleX0(ad->x),pikseleY0(ad->y),ad->kat1,ad->kat2,pikseleDX(ad->r), COPY_PUT);
         }
     }
-    else
-        DrawArc(pikseleX0(ad->x),pikseleY0(ad->y),ad->kat1,ad->kat2,pikseleDX(ad->r), COPY_PUT);
+    else 
+    {
+        //DrawArc(pikseleX0(ad->x), pikseleY0(ad->y), ad->kat1, ad->kat2, pikseleDX(ad->r), COPY_PUT);
+        switch (ad->obiektt2) {
+            case 6:
+                V.warstwa = ad->warstwa;
+                V.kolor = ad->kolor;
+                V.typ = ad->typ;
+                V.x1 = ad->x;
+                V.y1 = ad->y;
+                V.r = ad->r;
+                V.angle1 = ad->kat1;
+                V.angle2 = ad->kat2;
+                V.magnitude1 = 0.0f;
+                if (ad->obiektt3 == 0) V.style = 22;
+                else V.style = 23;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
+            case 7:
+                V.warstwa = ad->warstwa;
+                V.kolor = ad->kolor;
+                V.typ = ad->typ;
+                V.x1 = ad->x;
+                V.y1 = ad->y;
+                V.r = ad->r;
+                V.angle1 = ad->kat1;
+                V.angle2 = ad->kat2;
+                V.magnitude1 = 0.0f;
+                if (ad->obiektt3 == 0) V.style = 24;
+                else V.style = 25;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
+            default:
+                DrawArc(pikseleX0(ad->x), pikseleY0(ad->y), ad->kat1, ad->kat2, pikseleDX(ad->r), COPY_PUT);
+                break;
+        }
+    }
 
   set_pattern_count(FALSE);
   set_pattern_offset(0);
@@ -4501,8 +4559,9 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
   char* angle_ptr;
   char* dy_ptr;
   char* name_ptr;
-  char* translucency_ptr;
+  char* translucency_ptr, *gradient_ptr=NULL;
   unsigned char translucency=255;
+  //GRADIENT gradient;
   int found;
   BOOL ignore_p;
   BOOL ret_move;
@@ -4562,7 +4621,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 
 		   set_mode_solid();
      
-		   Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, 255) ;
+		   Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, 255, NULL) ;
 
          }
         else
@@ -4587,7 +4646,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 
             if ((ad->pattern == 0) || (ad->n==(ad->lp*sizeof(float)+8)))
             {
-                //Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency);
+                //Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency, NULL);
                 if ((ad->warstwa == Current_Layer) || (options1.view_only_current_layer == 0)) setfillstyle_(SOLID_FILL, GetColorAC(ad->kolor));
                 else setfillstyle_(SOLID_FILL, GetColorAC(8));
 
@@ -4610,7 +4669,26 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
                     set_mode_trans();
                 }
 
-                if (!ignore_p) Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency);
+                //GRADIENT
+                gradient_ptr=NULL;
+                if ((ad->empty_typ == 0) && (ad->gradient == 1)) {
+                    if (ad->n == (ad->lp * sizeof(float) + 8))
+                        ad->gradient = 0;
+
+                    if (ad->gradient == 1) {
+
+                        translucency_ptr = (char*)ad->xy;
+                        translucency_ptr += (ad->lp * sizeof(float));
+
+                        //gradient_ptr = (char *) w->xy;
+                        //gradient_ptr += (w->lp * sizeof(float));
+                        gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                        //memmove(&gradient, gradient_ptr, sizeof(GRADIENT));
+                        solid_translucent_exist = TRUE;
+                    }
+                }
+
+                if (!ignore_p) Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
 
             }
             else
@@ -4631,7 +4709,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
                 memmove(&solid_pattern.angle, angle_ptr, sizeof(short int));
                 memmove(&solid_pattern.dy, dy_ptr, sizeof(short int));
                 strcpy(solid_pattern.pattern, name_ptr);
-                Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), &solid_pattern, translucency);
+                Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), &solid_pattern, translucency, NULL);
 
 
                 ////////////////  if Ablok
@@ -4644,7 +4722,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
                     set_trans_blender(0, 0, 0, (int) HALFTRANSLUCENCY);
                     set_mode_trans();
 
-                    Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, HALFTRANSLUCENCY);
+                    Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, HALFTRANSLUCENCY, NULL);
 
                     reset_trans_blender();
                     set_mode_solid();
@@ -4671,7 +4749,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 	             SetColorAC(8);
               }
          }
-        Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency) ;
+        Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency, NULL) ;
       }
       else if (ad->empty_typ==7)
       {
@@ -4725,11 +4803,12 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
        else SetColorAC(SolidG.kolor);
     }
 
-     PolyPoints[i++]=pikseleX0(ad->xy[0]);
-     PolyPoints[i]=pikseleY0(ad->xy[1]);
+     ////PolyPoints[i++]=pikseleX0(ad->xy[0]);  //06-09-2025   probably not necessary
+     ////PolyPoints[i]=pikseleY0(ad->xy[1]);    //06-09-2025   probably not necessary
+
      if (ad->empty_typ==0)
       {
-       NumPoints++;
+       ////NumPoints++;   //06-09-2025   probably not necessary
        for (i = 0; i < 2 * NumPoints; i++)
           PolyPoints_i [i] = (int)(PolyPoints [i] +0.5);
 
@@ -4750,7 +4829,27 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
               set_mode_trans();
           }
 
-          Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency) ;
+          //GRADIENT
+          gradient_ptr=NULL;
+          if ((ad->empty_typ == 0) && (ad->gradient == 1)) {
+              if (ad->n == (ad->lp * sizeof(float) + 8))
+                  ad->gradient = 0;
+
+              if (ad->gradient == 1) {
+
+                  translucency_ptr = (char*)ad->xy;
+                  translucency_ptr += (ad->lp * sizeof(float));
+
+                  //gradient_ptr = (char *) w->xy;
+                  //gradient_ptr += (w->lp * sizeof(float));
+                  gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                  //memmove(&gradient, gradient_ptr, sizeof(GRADIENT));
+                  solid_translucent_exist = TRUE;
+              }
+          }
+
+
+          Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency, (GRADIENT*)gradient_ptr) ;
 
 
       }
@@ -6130,7 +6229,7 @@ void out_blok2 (double x,double y,double k1,double k2,
 
              if  ((((NAGLOWEK*)buf)->obiekt==OdBLOK) || (((NAGLOWEK*)buf)->obiekt==Owwielokat) || ((((NAGLOWEK*)buf)->obiekt==Osolidarc)))
              {
-                 rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, ad);
+                rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, ad);
              }
              else  rysuj_obiekt_(buf,COPY_PUT,1);
 

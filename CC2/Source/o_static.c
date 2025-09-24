@@ -44,13 +44,18 @@
 #define COPY_PUT 0
 
 #ifdef LINUX
+#ifndef _STATIC_
 #define _STATIC_ "Static/"
+#endif
 #else
+#ifndef _STATIC_
 #define _STATIC_ "Static\\"
+#endif
 #endif
 
 typedef unsigned long DWORD;
 
+extern BOOL global_any_choice;
 extern void LockMouse(void);
 extern void FreeMouse(void);
 extern void select_blok(void);
@@ -122,6 +127,9 @@ extern void set_cursor_busy(void);
 
 extern void disable_F11(void);
 extern void enable_F11(void);
+
+extern void Get_Limits(long_long off, long_long offk, int atrybut, double *xmin, double *xmax, double *ymin, double *ymax);
+extern void out_circle_cur_on(double X, double Y);
 
 extern BOOL Semaphore;
 
@@ -290,6 +298,7 @@ static double cskos=0, cskoc=0;
 //static float ex1, ey1, ex2, ey2;
 static ALL_SECTION_GRAPH_DATA *all_section_graph_data_p[2]={NULL, NULL};
 static int mpair0;
+static PLATE_GRAPH_DATA plate_graph_data;
 
 static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
 static char section_params_st[128];
@@ -888,7 +897,7 @@ void add_element(void)
 void add_property(void)
 {
     st_property_no++;
-    if (st_element_no==ST_PROPERTY_MAX) {
+    if (st_property_no==ST_PROPERTY_MAX) {
         ST_PROPERTY_MAX+=100;
         st_property=realloc(st_property, ST_PROPERTY_MAX * sizeof(ST_PROPERTY));
     }
@@ -1222,14 +1231,14 @@ int draw_geo_label(LINIA *L, int no, BOOL italics, BOOL underline, int visible)
     double x, y;
     PLINIA PL;
     char *ptr_t;
-    int psize;
+    double psize;
 
     if ((Check_if_Equal(L->x1, L->x2)) && (Check_if_Equal(L->y1, L->y2)))
     {
         PL.kat=0;
         psize=Get_Point_Size()/2.0;
-        T.x = L->x1 + psize;
-        T.y = L->y1 + psize;
+        T.x = (float)(L->x1 + psize);
+        T.y = (float)(L->y1 + psize);
     }
     else
     {
@@ -1243,7 +1252,7 @@ int draw_geo_label(LINIA *L, int no, BOOL italics, BOOL underline, int visible)
     T.warstwa = L->warstwa;
     T.kolor = L->kolor;
     T.czcionka = zmwym.czcionka;
-    T.wysokosc = zmwym.wysokosc * 0.5;
+    T.wysokosc = (float)(zmwym.wysokosc * 0.5);
     T.italics = italics;
     T.underline = underline;
     T.ukryty = !visible;
@@ -1836,7 +1845,7 @@ BOOL check_if_not_virtual(double x, PLINIA PL, int rep_element_no)
 
 void Static_analysis(void) {
     int ret, ret_standard;
-    int key;
+    int key1;
     NAGLOWEK *nag;
     AVECTOR *v;
     TEXT *t;
@@ -1919,6 +1928,34 @@ void Static_analysis(void) {
     ST_DISPLACEMENT_MAX = 100;
     ST_LOAD_FACTORS_MAX = 100;
 
+    redcrsb(0, 167);
+    select_blok();
+    redcrsb(1, 167);
+
+    if ((ADP == NULL) && (ADK == NULL)) return;
+
+    gX = 0;
+    gY = 0;
+    gZ = 0;
+
+    ClearErr();
+    ClearInfo();
+
+    ret_standard = ask_question_static(9, _No_, _Yes_, "", _PROCEED_STATIC_, 12, "", 11, 1, 0, &combination_no,
+                                       &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE);
+    //0 - rezygnuj; 1 - Eurocode, 2 - ASCE, 3 - ICC
+    if (ret_standard > 0) key1 = _YES_;
+    else if (ret_standard == 0) key1 = _NO_;
+    else key1 = _NO_;
+
+    if (key1 != _YES_ && key1 != _yes_) {
+        zmien_atrybut_undo(dane, dane + dane_size);
+        blokzap(ADP, ADK, Ablok, COPY_PUT, 1);
+        zmien_atrybut(ADP, ADK, Ablok, Aoblok);
+        redcrsb(2, 167);
+        return;
+    }
+
     st_property = (ST_PROPERTY *) malloc(ST_PROPERTY_MAX * sizeof(ST_PROPERTY));
     st_node_pre = (ST_NODE_PRE *) malloc(ST_NODE_PRE_MAX * sizeof(ST_NODE_PRE));
     st_node = (ST_NODE *) malloc(ST_NODE_MAX * sizeof(ST_NODE));
@@ -1935,31 +1972,6 @@ void Static_analysis(void) {
 
     st_node[st_node_no].radius = Rn;
     st_node[st_node_no].restraint = 0;
-
-    redcrsb(0, 167);
-    select_blok();
-    redcrsb(1, 167);
-
-    if ((ADP == NULL) && (ADK == NULL)) return;
-
-    gX = 0;
-    gY = 0;
-    gZ = 0;
-
-    ret_standard = ask_question_static(9, _No_, _Yes_, "", _PROCEED_STATIC_, 12, "", 11, 1, 0, &combination_no,
-                                       &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE);
-    //0 - rezygnuj; 1 - Eurocode, 2 - ASCE, 3 - ICC
-    if (ret_standard > 0) key = _YES_;
-    else if (ret_standard == 0) key = _NO_;
-    else return;
-
-    if (key != _YES_ && key != _yes_) {
-        zmien_atrybut_undo(dane, dane + dane_size);
-        blokzap(ADP, ADK, Ablok, COPY_PUT, 1);
-        zmien_atrybut(ADP, ADK, Ablok, Aoblok);
-        redcrsb(2, 167);
-        return;
-    }
 
     switch (ret_standard) {
         case 1:
@@ -2099,6 +2111,7 @@ void Static_analysis(void) {
                         ptr++;
                         ptr_id_short = ptr;
                         while (*ptr == ' ') ptr++;
+                        //ptr_id_short = ptr;  //???
                         if (*ptr != '\0') {
                             while ((*ptr != ' ') && (*ptr != '\0')) ptr++;
                             if (*ptr != '\0') *ptr = '\0';
@@ -3670,6 +3683,7 @@ void Static_analysis(void) {
 
                 switch (v->style) {
                     case 10:
+                    case 17:
                         if (v->x1 >= v->x2) nm = -1;
                         break;
                     case 11:
@@ -3687,6 +3701,7 @@ void Static_analysis(void) {
 
                 switch (v->style) {
                     case 10:
+                    case 17:
                     case 11:
                     case 12:
                     case 13:
@@ -3951,6 +3966,7 @@ void Static_analysis(void) {
                                     st_uniform_load[st_uniform_load_no].layer = v->warstwa;
                                     switch (v->style) {
                                         case 10:
+                                        case 17:
                                             parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
@@ -4041,6 +4057,7 @@ void Static_analysis(void) {
                                     st_trapezoid_load[st_trapezoid_load_no].layer = v->warstwa;
                                     switch (v->style) {
                                         case 10:
+                                        case 17:
                                             parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
@@ -12027,6 +12044,97 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
     *height_=height_m;
 }
 
+// Area calculation function (as above)
+float area(POINTF *p1, POINTF *p2, POINTF *p3) {
+    return fabsf((p1->x * (p2->y - p3->y) + p2->x * (p3->y - p1->y) + p3->x * (p1->y - p2->y)) / 2.0f);
+}
+
+// Function to check if a point is inside the triangle
+int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma) {
+    // Calculate area of triangle ABC
+    float totalArea = area(A, B, C);
+
+    if (Check_if_Equal(totalArea, 0.0)==TRUE) return 0;
+
+    // Calculate areas of the three sub-triangles
+    float area1 = area(P, B, C);
+    float area2 = area(A, P, C);
+    float area3 = area(A, B, P);
+
+    // Calculate barycentric coordinates (alpha, beta, gamma)
+    *alpha = area1 / totalArea;
+    *beta = area2 / totalArea;
+    *gamma = area3 / totalArea;
+
+    // Check if the sum of sub-triangle areas equals the total area (with a small tolerance for float comparison)
+    return (fabsf(totalArea - (area1 + area2 + area3)) < 0.0001f); // Use a small epsilon for float comparison
+}
+
+static void  cur_point_on(double x,double y)
+{   NAGLOWEK *nag;
+    WIELOKAT *w;
+    char *adp, *adk;
+    POINTF *p1, *p2, *p3, p;
+    char force_text[MaxTextLen];
+    int width, height;
+    FE_DATA fe_data;
+    char *fe_data_ptr;
+    char *gradient_ptr;
+    char *translucency_ptr;
+    double alpha, beta, gamma;
+    double c_value;
+    long x0, y0;
+
+    if ((x>=plate_graph_data.xminp) && (x<=plate_graph_data.xmaxp) &&
+        (y>=plate_graph_data.yminp) && (y<=plate_graph_data.ymaxp))
+    {
+        //showing the circle of pointer
+        out_circle_cur_on(X, Y);
+
+        //searching for element
+        adp=plate_graph_data.adp;
+        adk=plate_graph_data.adk;
+        nag=(NAGLOWEK*)adp;
+        while (adp<adk)
+        {
+            if (nag->obiekt==Owwielokat)
+            {
+                w=(WIELOKAT*)nag;
+                if (w->gradient==1)
+                {
+                    //check if point lays inside triangle
+                    p.x=(float)x; p.y=(float)y;
+                    p1=(POINTF*)&w->xy[0];
+                    p2=(POINTF*)&w->xy[2];
+                    p3=(POINTF*)&w->xy[4];
+                    if (isInside(p1, p2, p3, &p, &alpha, &beta, &gamma))
+                    {
+                        //showing data on screen
+                        translucency_ptr = (char*)w->xy;
+                        translucency_ptr += (w->lp * sizeof(float));
+
+                        gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                        fe_data_ptr=gradient_ptr+sizeof(GRADIENT);
+
+                        if (((FE_DATA*)fe_data_ptr)->el_number>0)
+                        {
+                            // Calculate and return the weighted average value
+                            c_value = ((alpha * ((FE_DATA *) fe_data_ptr)->f1) + (beta * ((FE_DATA *) fe_data_ptr)->f2) + (gamma * ((FE_DATA *) fe_data_ptr)->f3)) * plate_graph_data.factor;
+                            sprintf(force_text, "value=%.4f", c_value);
+                            width = TTF_text_len(force_text);
+                            height = HEIGHT;
+                            show_forces(x, y, width, height, force_text);
+                        }
+                    }
+                }
+            }
+            adp+=(sizeof(NAGLOWEK)+nag->n);
+            nag=(NAGLOWEK*)adp;
+        }
+    }
+    //out_cur_on(x,y);
+}
+
 
 static void  cur_section_on(double x,double y)
 {
@@ -12124,6 +12232,41 @@ int Save_Forces(void)
     return 0;
 }
 
+static void redcr_point (char typ)
+/*--------------------------------*/
+{
+    static void (*CUR_oN)(double ,double);
+    static void (*CUR_oFF)(double ,double);
+    static int ( *SW[3])(), akt ;
+
+    if (typ == 0)
+    {
+        CUR_OFF(X, Y);
+        komunikat (0) ;
+        komunikat0 (170) ;
+        akt = sel.akt ; sel.akt = ASel ;
+        CUR_oFF = CUR_OFF ;  CUR_OFF = cur_section_off;
+        CUR_oN = CUR_ON ;   CUR_ON = cur_point_on;
+        SW[0] = SERV[73] ;  SERV[73] = sel_t ;
+        SW[1] = SERV[81] ;  SERV[81] = sel_d ;
+        menupini (&mSelect_State, _SELECT_STATE_, _SELECT_STATE_C_, 828) ;
+        CUR_ON (X, Y) ;
+    }
+    else
+    {
+        CUR_OFF (X, Y) ;
+        CUR_OFF = CUR_oFF ;
+        CUR_ON = CUR_oN ;
+        SERV[73] = SW[0] ;
+        SERV[81] = SW[1] ;
+        sel.akt = akt ;
+        menupini (NULL, "", ' ', 0) ;
+        CUR_ON (X, Y) ;
+        komunikat (0) ;
+        komunikat0 (0) ;
+    }
+}
+
 static void redcr_section (char typ)
 /*--------------------------------*/
 {
@@ -12175,6 +12318,55 @@ void do_state (int lstate)
     menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State.pola)[limit_state].txt);
     CUR_OFF(X,Y);
     CUR_ON(X,Y);
+}
+
+void  Show_Plate_Point(void)
+{
+    EVENT *ev;
+    double X0, Y0;
+    int ret;
+    redcr_point (0) ;
+    while (1)
+    {
+        //view_state(&State);
+        ev = Get_Event_Point (NULL, &X0, &Y0) ;
+        switch (ev->What)
+        {
+            case evKeyDown :
+                if(ev->Number==0)
+                {
+                    redcr_point (1) ;
+                    return ;
+                }
+                if(ev->Number == ENTER)
+                {
+                    ////ret=Save_Forces() ;  TO DO
+                    CUR_OFF (X,Y) ;
+                    CUR_ON (X,Y) ;
+                }
+                break;
+            case evCommandP:
+                if (ev->Number == SETULS)
+                {
+                    do_state (0) ;
+                }
+                else
+                if (ev->Number == SETSLS )
+                {
+                    do_state (1) ;
+                }
+                else if (ev->Number == SETQPSLS )
+                {
+                    do_state (2) ;
+                }
+                break;
+            default :
+                break ;
+        }
+    }
+    komunikat_str_short("", FALSE, TRUE);
+    remove_short_notice();
+    redcr_point (1) ;
 }
 
 void Show_Cross_Section (void) //ALL_SECTION_GRAPH_DATA *all_section_graph_data)
@@ -12250,6 +12442,12 @@ void Cross_section_forces(void)
     ALL_SECTION_GRAPH_DATA all_section_graph_data[2];
     SECTION_GRAPH_DATA *section_data[2], section_data0[2]={{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL},{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL}};
     SECTION_DATA *section_params[2];
+    WIELOKAT *wpl;
+    BLOK *ptrs_block ;
+    T_Desc_Ex_Block *ptrs_desc_bl ;
+    char block_name[64];
+    char *ptr;
+    //PLATE_GRAPH_DATA plate_graph_data;
 
     Semaphore = FALSE;
 
@@ -12275,7 +12473,7 @@ void Cross_section_forces(void)
             if (ev->Number == ENTER)
             {
                 redcr_ele(1);
-                typ = Bvector;
+                typ = Bvector | Bwwielokat;
 
                 //zeroing
                 all_section_graph_data[0].element_line=NULL;
@@ -12300,9 +12498,13 @@ void Cross_section_forces(void)
 
                 all_section_graph_data_p[1]=&all_section_graph_data[1];
 
+                plate_graph_data.b=NULL;
+
+                global_any_choice=TRUE;
+
                 if ((ad = obiekt_wybrany(&typ)) != NULL)
                 {
-                    switch (typ)
+                    switch (((NAGLOWEK*)ad)->obiekt)
                     {
                         case Bvector:
                             if (Layers[((AVECTOR*)ad)->warstwa].edit != 0)
@@ -12558,17 +12760,93 @@ void Cross_section_forces(void)
                                 }
                             }
                             break;
+                        case Owwielokat:
+                            if (Layers[((WIELOKAT*)ad)->warstwa].edit != 0) //we start from visible block
+                            {
+                                wpl = (WIELOKAT *) ad;
+                                //check if gradient
+                                if ((wpl->blok==1) && (wpl->gradient==1))  //this is potentially element of data block
+                                {
+                                    //searching for parent block
+                                    ptrs_block=FIRSTB((char*)wpl);
+                                    if (ptrs_block!=NULL)
+                                    {
+                                        if (ptrs_block->kod_obiektu == B_GRAPH)
+                                        {
+                                            if (ptrs_block->dlugosc_opisu_obiektu > 17)
+                                            {
+                                                ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
+                                                if (ptrs_desc_bl->sz_type [0] != '\0')
+                                                {
+                                                    strncpy(block_name,ptrs_desc_bl->sz_type,40);
+                                                    //checking block name syntax
+                                                    ptr=strchr(block_name,'$');
+                                                    if (ptr!=NULL)
+                                                    {
+                                                        *ptr='\0';
+                                                        plate_graph_data.b=(char*)ptrs_block;
+                                                        plate_graph_data.adp=(char*)ptrs_block+B3+sizeof(NAGLOWEK)+ptrs_block->dlugosc_opisu_obiektu;
+                                                        plate_graph_data.adk=(char*)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n;
+                                                        plate_graph_data.plate_name=block_name;
+                                                        plate_graph_data.component_name = (ptr + 1);
+                                                        plate_graph_data.xminp=plate_graph_data.xmaxp=plate_graph_data.yminp=plate_graph_data.ymaxp=0.0;
+                                                        Get_Limits(plate_graph_data.adp-dane, plate_graph_data.adk-dane, ANieOkreslony, &plate_graph_data.xminp, &plate_graph_data.xmaxp, &plate_graph_data.yminp, &plate_graph_data.ymaxp);
+
+                                                        if ((Jednostki == 1) ||   //mm
+                                                        (Jednostki == 10) || //cm
+                                                        (Jednostki == 1000) || //m
+                                                        (Jednostki == 1000000)) //km
+                                                        UNITS=SI;
+                                                        else UNITS=IMP;
+
+                                                        if (strstr(plate_graph_data.component_name, "deflection")!=NULL) {
+                                                            if ((strstr(plate_graph_data.component_name," 1")!=NULL) ||
+                                                               (strstr(plate_graph_data.component_name," 2")!=NULL) ||
+                                                               (strstr(plate_graph_data.component_name," 2")!=NULL))
+                                                               {  //in x,y,z axis
+                                                                if (UNITS == SI) plate_graph_data.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                                                                else plate_graph_data.factor = 1.0f;
+                                                               }
+                                                               //about x,y,z axis
+                                                               else plate_graph_data.factor = 1.0f;
+                                                        }
+                                                        else if (strstr(plate_graph_data.component_name, "stress")!=NULL) {
+                                                            if (UNITS == SI) plate_graph_data.factor = 0.000001f;
+                                                            else plate_graph_data.factor = 0.001f;
+                                                        }
+                                                        else if (strstr(plate_graph_data.component_name, "epsilon")!=NULL) {
+                                                            if (UNITS == SI) plate_graph_data.factor = 1.0f;
+                                                            else plate_graph_data.factor = 1.0f;
+                                                        }
+                                                        else plate_graph_data.factor = 1.0f;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            break;
                         default:
                             break;
                     }
                 }
-                if (all_section_graph_data[0].element_line!=NULL)
+                global_any_choice = FALSE;
+                if (all_section_graph_data[0].element_line!=NULL)  //for frame
                 {
                     //selecting cross section of the element
                     parametry_lini((LINIA *)all_section_graph_data[0].element_line, &PL[0]);
                     cskos=sin(Pi*(PL[0].kat+90)/180);
                     cskoc=cos(Pi*(PL[0].kat+90)/180);
                     Show_Cross_Section(); //&all_section_graph_data);
+                    komunikat_str_short("", FALSE, TRUE);
+                    remove_short_notice();
+                }
+                else if (plate_graph_data.b!=NULL)
+                {
+                    sprintf(block_name,"%s %s", plate_graph_data.plate_name, plate_graph_data.component_name);
+                    komunikat_str_short(block_name, TRUE, TRUE);
+                    Show_Plate_Point();
                     komunikat_str_short("", FALSE, TRUE);
                     remove_short_notice();
                 }

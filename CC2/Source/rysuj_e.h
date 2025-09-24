@@ -398,8 +398,10 @@ extern int KursorS;
 extern int AXIS; //os dla aplikacji STROPY
 extern int AXIS_DIV; //linia podzialu plyt w aplikacji STROPY
 extern int OBRYS; //obrys budynku;
-extern int PLYTA; //plyta nad pomieszczeniem
-extern int OTWOR_P; //otwor w plycie
+extern int PLATE; //slab plate
+extern int HOLE; //hole in plate
+extern int WALL;
+extern int ZONE;
 extern int SIEC_P; //siec na mapie
 extern double L50; //dlugosc osi pomocniczej podzialu plyty
 extern WARSTWY_STROPU Warstwy_Stropu;
@@ -509,6 +511,8 @@ extern double jednostkiY(long piksele);
 extern double jednostkiplt(double mmplt) ;
 extern double milimetryplt(double jednostki) ;
 extern double jednostkiOb(double mmob) ;
+extern float jednostkiObXm(double mob);
+extern float jednostkiObYm(double mob);
 extern double get_skala_profilu_x(void);
 extern double get_poziom_pp(void);
 extern double get_typ_profilu(void);
@@ -850,7 +854,7 @@ extern int help(TMENU *menu);
 /*o_loadf*/
 
 /*b_clip*/
-extern void Draw_Solid(int numpoints, T_PixelTVal* polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char* s_pattern, int translucency);
+extern void Draw_Solid(int numpoints, T_PixelTVal* polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char* s_pattern, int translucency, GRADIENT *gradient);
 
 /*o_calculator*/
 extern int calculator (char *buf, int *retval_no, double *buf_ret);

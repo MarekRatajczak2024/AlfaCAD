@@ -2314,6 +2314,68 @@ void shift_layer_numbers(int layer_no)
     return;
 }
 
+void get_blocks_setup(int layer_no, char *block_names[][65], int *block_names_no0, int max_no, int max_len)
+{
+    char  *adp,  *adk;
+    adp = dane ;
+    adk = dane + dane_size ;
+    NAGLOWEK *nag;
+    BLOK *b;
+    T_Desc_Ex_Block *ptrs_desc_bl ;
+    LINIA *L;
+    int block_names_no=*block_names_no0;
+
+    nag = (NAGLOWEK*)adp;
+    while ((nag->obiekt != Okoniec) && (adp < adk) && (block_names_no<max_no))
+    {
+        if ((nag->atrybut != Ausuniety) && (nag->atrybut != Abad))
+        {
+            if (nag->obiekt == OdBLOK)
+            {
+                b = (BLOK *) nag;
+                if ((B3+b->dlugosc_opisu_obiektu)!=b->n)
+                {
+                    if ((b->flag & 1) && (!(b->flag & 2))) //invisibility is set and on
+                    {
+                        if (nag->atrybut != Ausuniety)
+                        {
+                            L = (LINIA *) ((char *) nag + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu);
+                            if (L->obiekt != OdBLOK)
+                            {
+                                if (L->warstwa == layer_no)
+                                {
+                                    if (b->dlugosc_opisu_obiektu > 17)
+                                    {
+                                        if (block_names_no<max_no)
+                                        {
+                                            ptrs_desc_bl = (T_Desc_Ex_Block *) (&b->opis_obiektu[0]);
+                                            memmove(block_names[block_names_no], ptrs_desc_bl->sz_type, min(max_len,ptrs_desc_bl->len));
+                                            block_names[block_names_no][max_len]='\0';
+                                            block_names_no++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    adp += sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+                }
+                else adp += nag->n + sizeof(NAGLOWEK);
+            }
+            else
+            {
+                adp += nag->n + sizeof(NAGLOWEK);
+            }
+        }
+        else adp += nag->n + sizeof(NAGLOWEK);
+
+        nag = (NAGLOWEK*)adp;
+    }
+
+    *block_names_no0=block_names_no;
+
+}
+
 void delete_all_from_layer_atrybut (int layer_no, int atrybut)
 /*----------------------------------------------------------*/
 { /*deleting (permanently) all elements from selected layer*/

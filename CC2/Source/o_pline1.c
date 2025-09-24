@@ -37,7 +37,6 @@ static double check_angle (double, LUK *);
 static double check_elliptical_angle (double k, ELLIPTICALARC *el);
 static BOOL check_head_pline (BLOK *) ;
 
-
 BOOL Get_End_Pline (void 	*ptr_pl,
 		    void	**ptr_ob,	/*adres ostatniego  obiektu*/
 		    BOOL	*b_first_end,	/*ktory koniec objektu jest ostatni*/
@@ -320,6 +319,22 @@ BOOL Get_Begin_Pline (void 	*ptr_pl,
   }
   return TRUE ;
 }
+
+BOOL Set_Beginning_Pline_Factory (BLOK *blk_adr, double *df_x_pl_beg, double *df_y_pl_beg)
+{
+    void *ptr_ob ;
+    BOOL b_first_end ;
+    BOOL ret;
+    double df_x_pl_beg1, df_y_pl_beg1;
+
+    ret=Get_Begin_Pline (blk_adr, &ptr_ob, &b_first_end, &df_x_pl_beg1, &df_y_pl_beg1);
+    *df_x_pl_beg=df_x_pl_beg1;
+    *df_y_pl_beg=df_y_pl_beg1;
+
+    return ret;
+
+}
+
 
 int Check_Pline_to_Fillet (void *ptr_ob1, void *ptr_ob2)
 /*---------------------------------------------------*/
@@ -1304,9 +1319,11 @@ static BOOL check_head_pline (BLOK *ptrs_block)
 	   ptrs_block->opis_obiektu [0] == PL_RECTANGLE||
        ptrs_block->opis_obiektu [0] == PL_SKETCH||
        ptrs_block->opis_obiektu [0] == PL_ELLIPSE_ARC||
-       ptrs_block->opis_obiektu [0] == PL_PLYTA ||
+       ptrs_block->opis_obiektu [0] == PL_PLATE ||
        ptrs_block->opis_obiektu [0] == PL_SIEC ||
-       ptrs_block->opis_obiektu [0] == PL_OTWOR))
+       ptrs_block->opis_obiektu [0] == PL_HOLE ||
+       ptrs_block->opis_obiektu [0] == PL_WALL ||
+       ptrs_block->opis_obiektu [0] == PL_ZONE))
 
   {
     b_ret = TRUE ;

@@ -68,7 +68,7 @@ extern std::string cp2utf(std::string s);
 #pragma pack(1)
 
 #define PATERN_NAME_MAXLEN 36 //32
-#define MaxNumberSegPattern 12 //6
+#define MaxNumberSegPattern 12 //24 //6
 
 #define BOX_H_CORRECTION 0.93
 
@@ -11291,7 +11291,7 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 						sprintf(image_file_name_png, "%s%s%s%s", drive, dir, file, ext_1);
 
 						sprintf(params, "%s %s", image_file_name, image_file_name_png);
-						runcode = RunSilent("image2png.exe", params);  //can be also image2jpg.exe
+						runcode = RunSilent((char*)"image2png.exe", params);  //can be also image2jpg.exe
 						if (runcode > 0)
 						{
 							break;
@@ -13618,7 +13618,7 @@ if ((ADP!=NULL) && (ADK!=NULL))
     transformacja_blok(ADP,ADK,x_space,y_space,x_space_factor,y_space_factor,Tskala,0);
     double xminp, xmaxp, yminp, ymaxp;
     Get_Limits(ADP-dane, ADK-dane, Ablok, &xminp, &xmaxp, &yminp, &ymaxp);
-    Set_Block_Proc (xminp, yminp, "*Paper Space Block");
+    Set_Block_Proc (xminp, yminp, (char*)"*Paper Space Block");
 }
 
 ADP = dane;
