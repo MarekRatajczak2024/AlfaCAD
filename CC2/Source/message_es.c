@@ -484,10 +484,12 @@ static char* komunikaty_kom[] =
 /*216*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción de apoyo resultantes: ",
 /*217*/u8"Ingrese el factor de reescalado para los momentos de reacción de soporte resultantes: ",
 /*218*/u8"Ingrese el factor de reescalado de profundidad de la sección: ",
-/*219*/u8"Ingrese el factor de reescalado para las tensiones resultantes: ",
+/*219*/u8"Ingrese el factor de reescalado para las tensiones resultantes (acero, madera): ",
 /*220*/u8"Ingrese la precisión de la tensión: ",
 /*221*/u8"Ingrese el factor exagerado de la deformación de los modos de vibración modal: ",
 /*222*/u8"Ingrese el factor de reescalado para el porcentaje de refuerzo resultante: ",
+/*223*/u8"Ingrese el factor de reescalado de carga superficial: ",
+/*224*/u8"Enter the rescaling factor for the resulting stresses (hormigón armado): ",
 "",
 "",
 };
@@ -1237,6 +1239,8 @@ static char confirm[] = u8"Confirmar";
 #define _CANNOT_CREATE_NEW_LAYER_ u8"No se puede crear una nueva capa. Ya se han creado muchas capas"
 #define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pueden crear nodos y bloques de elementos"
 #define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"No se puede crear un bloque de deflexión"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se puede crear un bloque de tensión"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"No se puede crear un bloque de deformación cortante"
 
 #define _PROCEED_PLATE_FEM_ u8"¿Proceder a un análisis estático de losa?"
 
@@ -1245,7 +1249,8 @@ static char confirm[] = u8"Confirmar";
 #define _THE_HOLE_ u8"El agujero"
 #define _THE_WALL_ u8"La pared"
 #define _THE_ZONE_ u8"La zona"
-#define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"El número de polilíneas de placa es igual a 0"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"El número de polilíneas de losas es igual a 0"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"El número de polilíneas de losas es mayor que 1\n. Esta solución aún no se ha implementado."
 #define _NO_LOAD_ASSIGNED_ u8"No se ha asignado ninguna carga y no se ha declarado ningún '%g' para el peso propio"
 
 #define _Yes_ "Sí"
@@ -1258,6 +1263,7 @@ static char confirm[] = u8"Confirmar";
 
 #define _CANNOT_PROCEED_IN_32BIT_ u8"La losa parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
 #define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva"
+#define _unknown_standard_ u8"Estándar desconocido"
 
 #endif
 

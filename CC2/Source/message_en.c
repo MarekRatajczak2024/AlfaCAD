@@ -484,10 +484,12 @@ static char* komunikaty_kom[] =
 /*216*/u8"Enter the rescaling factor for the resulting support reaction forces: ",
 /*217*/u8"Enter the rescaling factor for the resulting support reaction moments: ",
 /*218*/u8"Enter section depth rescaling factor: ",
-/*219*/u8"Enter the rescaling factor for the resulting stresses: ",
+/*219*/u8"Enter the rescaling factor for the resulting stresses (steel, timber): ",
 /*220*/u8"Enter axial & shear stress precision: ",
 /*221*/u8"Enter the exaggerating factor of modal vibration modes deformation: ",
 /*222*/u8"Enter the rescaling factor for the resulting reinforcement percentage: ",
+/*223*/u8"Enter surface load rescaling factor: ",
+/*224*/u8"Enter the rescaling factor for the resulting stresses (RC): ",
 "",
 "",
 };
@@ -1237,6 +1239,8 @@ static char confirm[] = u8"Confirm";
 #define _CANNOT_CREATE_NEW_LAYER_ u8"Unable to create new layer. To many layers already created"
 #define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Unable to create nodes and elements block"
 #define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Unable to create deflection block"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Unable to create stress block"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Unable to create strain block"
 
 #define _PROCEED_PLATE_FEM_ u8"Proceed static analysis of the plate?"
 
@@ -1246,6 +1250,7 @@ static char confirm[] = u8"Confirm";
 #define _THE_WALL_ u8"The wall"
 #define _THE_ZONE_ u8"The zone"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"The number of plate polylines is equal 0"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"The number of plate polylines is greater than 1\n Such solution has not been implemented yet."
 #define _NO_LOAD_ASSIGNED_ u8"No load assigned and no '%g' declared for self weight load"
 
 
@@ -1259,6 +1264,7 @@ static char confirm[] = u8"Confirm";
 
 #define _CANNOT_PROCEED_IN_32BIT_ u8"The plate looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
 #define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
+#define _unknown_standard_ u8"Unknown standard"
 
 #endif
 

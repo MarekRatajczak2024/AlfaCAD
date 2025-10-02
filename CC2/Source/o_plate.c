@@ -76,6 +76,9 @@
 #endif
 #endif
 
+#define BIGNOD 1e200
+#define BIGNOF 1e20
+
 typedef unsigned long DWORD;
 extern DWORD RunSilent(char* strFunct, char* strstrParams);
 extern DWORD SystemSilent(char* strFunct, char* strstrParams);
@@ -105,7 +108,8 @@ extern BOOL Check_Attribute (int i_attribute, int i_check);
 extern unsigned char str2load(char *ptr);
 extern void get_blocks_setup(int layer_no, char **block_names, int *block_names_no, int max_no, int max_len);
 
-extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE);
+extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
+                               int *theta, int *sigma_eq, int *epsilon);
 extern int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
 
@@ -118,6 +122,14 @@ extern int mynCmdShow;
 extern ST_LOAD_FACTORS st_load_factors_EU_0[];
 extern ST_LOAD_FACTORS st_load_factors_ASCE_0[];
 extern ST_LOAD_FACTORS st_load_factors_ICC_0[];
+
+extern ST_LOAD_FACTORS *load_factors;
+
+extern int st_load_factors_no;
+//extern char *VALUE_NAME;
+//extern char *VALUE_NAME1;
+//ST_LOAD_FACTORS *st_load_factors;
+//extern ST_LOAD_FACTORS *load_factors;
 
 UNIT_FACTORS *unit_factors_pl;
 /*
@@ -168,6 +180,7 @@ extern double force_magnitude;
 extern double moment_magnitude;
 extern double displacement_magnitude;
 extern double load_magnitude;
+extern double flood_magnitude;
 
 double dim_precision_pl=0.0001;
 
@@ -193,7 +206,7 @@ int pl_property_no=0;
 
 static ST_PROPERTY prt_def_pl={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0};
 
-static ST_LOAD_FACTORS *load_factors_pl=NULL;
+//static ST_LOAD_FACTORS *load_factors_pl=NULL;
 
 static ST_LOAD_FACTORS *pl_load_factors=NULL;
 int pl_load_factors_no=0;
@@ -201,6 +214,7 @@ int pl_load_factors_no=0;
 static PL_NODE *pl_node=NULL;
 static PL_EDGE *pl_edge=NULL;
 static PL_LOAD *pl_load=NULL;
+static PL_LOAD *pl_point_load=NULL;
 static GEO_LINE *geo_line=NULL;
 LINIA Ldsp = Ldef;
 
@@ -210,7 +224,7 @@ static char block_names[MAX_L_BLOCKS][MAX_L_BLOCKS_LEN+1];
 
 
 static double pl_min_x, pl_min_y, pl_max_x, pl_max_y;
-
+int theta_=0, sigma_eq_=0, epsilon_=0;
 /*
  * typedef struct
 {
@@ -248,17 +262,23 @@ int plate_no=0;
 int hole_no=0;
 int wall_no=0;
 int zone_no=0;
-int pl_load_no=0;
+int pl_load_no=0;  //uniforme
+int pl_point_load_no=0;
 int mesh_node_no=0;
 int mesh_element_no=0;
 int mesh_boundary_no=0;
 int geo_line_no=0;
+
+
+int pllc_node_force_moment_no=0;
+int pllc_uniform_load_no=0;
 
 int PL_PROPERTY_MAX=10;
 int PL_LOAD_FACTORS_MAX=100;
 int PL_NODE_MAX=100;
 int PL_EDGE_MAX=100;
 int PL_LOAD_MAX=10;
+int PL_POINT_LOAD_MAX=10;
 int PL_PLATE_MAX=10;
 int PL_HOLE_MAX=10;
 int PL_WALL_MAX=10;
@@ -269,6 +289,84 @@ float dxl=0.1f;
 float dxr=0.25f;
 
 float dxl_min=0.1f;
+
+
+extern int combi_uls_no;
+extern int combi_sls_no;
+extern int combi_qpsls_no;
+
+extern int combi_total_numbers_no;
+extern COMBI_TOTAL_NUMBER combi_total_numbers[255*3];
+
+extern COMBINATION *ULSLC;
+extern COMBINATION *SLSLC;
+extern COMBINATION *QPSLSLC;
+extern int *MC_ULSLC;
+extern int *MC_SLSLC;
+extern int *MC_QPSLSLC;
+
+COMBINATION *ULS_SLS_LC;
+
+extern COMBINATION EUROCODE_ULSLC[];
+extern int EUROCODE_MC_ULSLC[];
+extern int EUROCODE_ULSLC_NO;
+
+extern COMBINATION EUROCODE_SLSLC[];
+extern int EUROCODE_MC_SLSLC[];
+extern int EUROCODE_SLSLC_NO;
+
+extern COMBINATION EUROCODE_QPSLSLC[];
+extern int EUROCODE_MC_QPSLSLC[];
+extern int EUROCODE_QPSLSLC_NO;
+
+
+extern COMBINATION ASCE_ULSLC[];
+extern int ASCE_MC_ULSLC[];
+extern int ASCE_ULSLC_NO;
+
+extern COMBINATION ASCE_SLSLC[];
+extern int ASCE_MC_SLSLC[];
+extern int ASCE_SLSLC_NO;
+
+extern COMBINATION ASCE_QPSLSLC[];
+extern int ASCE_MC_QPSLSLC[];
+extern int ASCE_QPSLSLC_NO;
+
+extern COMBINATION ICC_ULSLC[];
+extern int ICC_MC_ULSLC[];
+extern int ICC_ULSLC_NO;
+
+extern COMBINATION ICC_SLSLC[];
+extern int ICC_MC_SLSLC[];
+extern int ICC_SLSLC_NO;
+
+extern COMBINATION ICC_QPSLSLC[];
+extern int ICC_MC_QPSLSLC[];
+extern int ICC_QPSLSLC_NO;
+
+extern int eurocode_combi_factors_uls[28][11];
+extern int eurocode_combi_factors_sls[13][11];
+extern int eurocode_combi_factors_qpsls[8][11];
+
+extern int asce_combi_factors_uls[16][11];
+extern int asce_combi_factors_sls[16][11];
+extern int asce_combi_factors_qpsls[1][11];
+
+extern int icc_combi_factors_uls[16][11];
+extern int icc_combi_factors_sls[16][11];
+extern int icc_combi_factors_qpsls[8][11];
+
+//for EUROCODE
+extern int load_flag_EU[11];
+//for ASCE
+extern int load_flag_ASCE[11];
+//for ICC
+extern int load_flag_ICC[11];
+
+extern int load_flag_ALL[11];
+
+extern int *load_flag;
+
 //float dxr_min=0.1f;
 /*
 unsigned char str2load(char *ptr)
@@ -281,6 +379,9 @@ unsigned char str2load(char *ptr)
     return (unsigned char)0;
 }
 */
+#define Utf8Char unsigned char	// must be 1 byte, 8 bits, can be char, the UTF consortium specify unsigned
+extern Utf8Char* Utf8StrMakeUprUtf8Str(const Utf8Char* pUtf8);
+
 void add_load_factors_pl(void)
 {
     pl_load_factors_no++;
@@ -290,7 +391,7 @@ void add_load_factors_pl(void)
         pl_load_factors=realloc(pl_load_factors, PL_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS));
     }
 
-    memmove(&pl_load_factors[pl_load_factors_no], &load_factors_pl[0], sizeof(ST_LOAD_FACTORS));
+    memmove(&pl_load_factors[pl_load_factors_no], &load_factors[0], sizeof(ST_LOAD_FACTORS));
 }
 
 void add_property_pl(void)
@@ -301,8 +402,9 @@ void add_property_pl(void)
         pl_property=realloc(pl_property, PL_PROPERTY_MAX * sizeof(ST_PROPERTY));
     }
     memmove(&pl_property[pl_property_no], &prt_def_pl, sizeof(ST_PROPERTY));
-    if (prop_precisions_pl == &SI_precisions) pl_property[pl_property_no].c=35; //[mm]
-    else pl_property[pl_property_no].c=1.5; //[in]
+    //if (prop_precisions_pl == &SI_precisions)
+    if (UNITS==SI) pl_property[pl_property_no].c=0.03; //[m]
+    else pl_property[pl_property_no].c=1.18; //[in]
 }
 
 void add_node_pl(void)
@@ -365,6 +467,15 @@ void add_load_pl(void)
     if (pl_load_no==PL_LOAD_MAX) {
         PL_LOAD_MAX+=10;
         pl_load=realloc(pl_load, PL_LOAD_MAX * sizeof(PL_LOAD));
+    }
+}
+
+void add_point_load_pl(void)
+{
+    pl_point_load_no++;
+    if (pl_point_load_no==PL_POINT_LOAD_MAX) {
+        PL_POINT_LOAD_MAX+=10;
+        pl_point_load=realloc(pl_point_load, PL_POINT_LOAD_MAX * sizeof(PL_LOAD));
     }
 }
 
@@ -654,13 +765,64 @@ void my_free(void* adr)
     return;
 }
 
+static int factor_record(unsigned char load, unsigned char variant)
+{
+    for (int i=0; i<st_load_factors_no; i++)
+    {
+        if (pl_load_factors[i].load==load)
+        {
+            if (variant>0)
+            {
+                if (pl_load_factors[i].variant==variant)
+                    return i;
+            }
+        }
+    }
+    return -1;
+}
+
+extern BOOL rout;
+
+static void do_nothing(void)
+{
+    return;
+}
+
+char *chapters[]={u8"δ.x", u8"δ.y", u8"δ.z", u8"θ.xx", u8"θ.yy", u8"θ.zz", u8"σ.x", u8"σ.y", u8"σ.z", u8"τ.xy", u8"τ.xz", u8"τ.yz", u8"σ.eq",
+                  u8"ε.xx", u8"ε.yy", u8"ε.zz", u8"ε.xy", u8"ε.xz", u8"ε.yz"};
+
+void modify_chapter(char *chapter)
+{
+    //changing block name and colorbar description
+         if (strstr(chapter, "deflection 1")) strcpy(chapter, chapters[0]);else if (strstr(chapter, "deflection 2")) strcpy(chapter, chapters[1]);
+    else if (strstr(chapter, "deflection 3")) strcpy(chapter, chapters[2]);
+    else if (strstr(chapter, "deflection 4")) strcpy(chapter, chapters[3]);
+    else if (strstr(chapter, "deflection 5")) strcpy(chapter, chapters[4]);
+    else if (strstr(chapter, "deflection 6")) strcpy(chapter, chapters[5]);
+    else if (strstr(chapter, "stress.xx")) strcpy(chapter, chapters[6]);
+    else if (strstr(chapter, "stress.yy")) strcpy(chapter, chapters[7]);
+    else if (strstr(chapter, "stress.zz")) strcpy(chapter, chapters[8]);
+    else if (strstr(chapter, "stress.xy")) strcpy(chapter, chapters[9]);
+    else if (strstr(chapter, "stress.xz")) strcpy(chapter, chapters[10]);
+    else if (strstr(chapter, "stress.yz")) strcpy(chapter, chapters[11]);
+    else if (strstr(chapter, "stress.eq")) strcpy(chapter, chapters[12]);
+
+    else if (strstr(chapter, "epsilon.tot.xx")) strcpy(chapter, chapters[13]);
+    else if (strstr(chapter, "epsilon.tot.yy")) strcpy(chapter, chapters[14]);
+    else if (strstr(chapter, "epsilon.tot.zz")) strcpy(chapter, chapters[15]);
+    else if (strstr(chapter, "epsilon.tot.xy")) strcpy(chapter, chapters[16]);
+    else if (strstr(chapter, "epsilon.tot.xz")) strcpy(chapter, chapters[17]);
+    else if (strstr(chapter, "epsilon.tot.yz")) strcpy(chapter, chapters[18]);
+
+}
+
 void Plate_analysis(void) {
 
-    int i, j, k, ii;
+    int i, j, k, ii, li=0;
     int ret, ret1, ret2, ret_standard, ret_exp;
-    double units_factor=1.0;
-    double m_units_factor=1000.0;
-    double geo_units_factor=1000.0;
+    double units_factor = 1.0;
+    double m_units_factor = 1000.0;
+    double geo_units_factor = 1000.0;
     //double E_units_factor=1000000.0;
     //double h_units_factor=0.001;
     char st_title[MaxTextLen * 2];
@@ -673,12 +835,14 @@ void Plate_analysis(void) {
     LUK *l;
     BLOK *b;
     char *ptr, *ptrs, *ptrsy, *ptr1;
-    double gZ=0;
+    double gZ = 0;
+    double gamma_l = 1.0, gamma_li = 1.0, xi_l = 1.0;
+    int combinations_number, combination_no;
     GAMMAS gammas_EU = {1.35, 0, 0, 0, 0.85, 1.0};
     GAMMAS gammas_ASCE = {1.4, 0.9, 0.6, 0, 1.2, 0};
     GAMMAS gammas_ICC = {1.4, 0.9, 1.0, 0.6, 1.2, 0};
     GAMMAS *gammas;
-    double axis_increment=0.25;
+    double axis_increment = 0.25;
     char prop[MAXEXT];
     int body_number;
     BOOL is_closed;
@@ -688,9 +852,14 @@ void Plate_analysis(void) {
     char report_row[MaxTextLen];
     char program[MAXPATH];
     char params[MAXPATH];
-    FILE *f;
+#ifdef LINUX
+    char rn[3] = "\n";
+#else
+    char rn[3] = "\r\n";
+#endif
+    FILE *f, *f1;
     BOOL no_error = TRUE;
-    char par[14][MaxTextLen]={"","","","","","","","","","","","","",""};
+    char par[3][MaxTextLen] = {"", "", ""};
     int sif_body;
     int sif_material;
     int sif_body_force;
@@ -704,7 +873,7 @@ void Plate_analysis(void) {
     int runcode_short;
     char *data_row;
     char data_row_[2][MaxTextLen];
-    int i_row=0;
+    int i_row = 0;
     //char data_row2[MaxTextLen];
     char *line;
     int mesh_nodes_no, mesh_elements_no, mesh_boundaries_no;
@@ -722,74 +891,116 @@ void Plate_analysis(void) {
     //PERM *perm_d=NULL;
     //PERM *perm_s=NULL;
     //PERM *perm_e=NULL;
-    int *perm_d=NULL;
-    int *perm_s=NULL;
-    int *perm_e=NULL;
-    int perm_d_b=0;
-    int perm_s_b=0;
-    int perm_e_b=0;
-    double *deflection[DEFLECTION_NUMBER]={NULL, NULL, NULL, NULL, NULL, NULL};
-    double *stress[STRESS_NUMBER]={NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    double *epsilon[EPSILON_NUMBER]={NULL, NULL, NULL, NULL, NULL, NULL};
+    int *perm_d = NULL;
+    int *perm_s = NULL;
+    int *perm_s_bak = NULL;
+    int *perm_e = NULL;
+    int perm_d_b = 0;
+    int perm_s_b = 0;
+    int perm_e_b = 0;
+    double *deflection[DEFLECTION_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *min_deflection[DEFLECTION_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *max_deflection[DEFLECTION_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *stress[STRESS_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    double *min_stress[STRESS_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    double *max_stress[STRESS_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    double *min_stress_bak[STRESS_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    double *max_stress_bak[STRESS_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    double *epsilon[EPSILON_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *epsilon1[EPSILON_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *min_epsilon[EPSILON_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
+    double *max_epsilon[EPSILON_NUMBER] = {NULL, NULL, NULL, NULL, NULL, NULL};
     int node_number, index_number;
-    double deflection_min[DEFLECTION_NUMBER]={0,0,0,0,0,0}, deflection_max[DEFLECTION_NUMBER]={0,0,0,0,0,0};
-    double stress_min[STRESS_NUMBER]={0,0,0,0,0,0, 0}, stress_max[STRESS_NUMBER]={0,0,0,0,0,0, 0};
-    double epsilon_min[EPSILON_NUMBER]={0,0,0,0,0,0}, epsilon_max[EPSILON_NUMBER]={0,0,0,0,0,0};
+    double deflection_min[DEFLECTION_NUMBER] = {0, 0, 0, 0, 0, 0}, deflection_max[DEFLECTION_NUMBER] = {0, 0, 0, 0, 0,
+                                                                                                        0};
+    double min_deflection_min[DEFLECTION_NUMBER] = {0, 0, 0, 0, 0, 0}, max_deflection_max[DEFLECTION_NUMBER] = {0, 0, 0,
+                                                                                                                0, 0,
+                                                                                                                0};
+    double stress_min[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0}, stress_max[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0};
+    double min_stress_min[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0}, max_stress_max[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0};
+    double min_stress_min_bak[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0}, max_stress_max_bak[STRESS_NUMBER] = {0, 0, 0, 0, 0, 0, 0};
+    double epsilon_min[EPSILON_NUMBER] = {0, 0, 0, 0, 0, 0}, epsilon_max[EPSILON_NUMBER] = {0, 0, 0, 0, 0, 0};
+    double min_epsilon_min[EPSILON_NUMBER] = {0, 0, 0, 0, 0, 0}, max_epsilon_max[EPSILON_NUMBER] = {0, 0, 0, 0, 0, 0};
     double deflection_amax, stress_amax, epsilon_amax;
+    double stress_min_RC, stress_max_RC, stress_min_RC_rho, stress_max_RC_rho, ps;
+    BOOL RC_flag_exists=FALSE;
     char deflection_chapter[DEFLECTION_NUMBER][MaxTextLen];
     char stress_chapter[STRESS_NUMBER][MaxTextLen];
     char epsilon_chapter[EPSILON_NUMBER][MaxTextLen];
-    WIELOKAT w=Stdef;
+    WIELOKAT w = Stdef;
     GRADIENT gradient;
     FE_DATA fe_data;
+    FE_DATA_EX fe_data_ex;
     char *fe_data_ptr;
+    char *fe_data_ex_ptr;
     char *gradient_ptr;
     char *translucency_ptr;
-    unsigned char HalfTranslucency=128;
+    unsigned char HalfTranslucency = 128;
     char *adr;
-    TEXT T=Tdef;
+    TEXT T = Tdef;
     LINIA Lt;
     PLINIA PL;
     double psize;
     BOOL hiding;
-    char load_formula[MaxTextLen];
-    int block_names_no=0;
+    char load_formula[MaxMultitextLen];
+    char all_load_formula[MaxMultitextLen];
+    char all_formulas[2][MaxMultitextLen];
+    char *all_formula, *all_formula_bak;
+    int current = 0;
+    int block_names_no = 0;
     int key1;
-    double self_weight=0.0;
+    double self_weight = 0.0;
 
-    int geometric_tiffness=0;
-    int inertia=0;
-    int st_dynamic_no=0;
-    BOOL PINNABLE=TRUE;
-    int combinations_number, combination_no;
-    char SLS_ULS[12]="";
+    int geometric_tiffness = 0;
+    int inertia = 0;
+    int st_dynamic_no = 0;
+    BOOL PINNABLE = TRUE;
+    char SLS_ULS[12] = "";
     BOOL was_refreshed;
+    BOOL go_ahead;
+    int deflection_ini, stress_ini, epsilon_ini;
+    int file_no;
+    int sti_no;
+    int nom_max;
+    char *min_max;
+    char _min_[]="_min";
+    char _max_[]="_max";
+    char _nope_[]="";
+    int bim, bi;
+    double deflection_min_, deflection_max_, stress_min_, stress_max_;
+    int *body_property;
+    ST_PROPERTY *body_prop;
+    int body_prop_no;
+    BOOL ULSLC_flag[5];
 
-    was_refreshed=FALSE;
+    float (*jednostkiObX)(double mob);
+    float (*jednostkiObY)(double mob);
 
-    pl_node_no=0;
-    pl_edge_no=0;
-    pl_load_no=0;
-    plate_no=0;
-    hole_no=0;
-    wall_no=0;
-    zone_no=0;
+    was_refreshed = FALSE;
 
-    PL_PROPERTY_MAX=10;
-    PL_LOAD_FACTORS_MAX=100;
-    PL_NODE_MAX=100;
-    PL_EDGE_MAX=100;
-    PL_LOAD_MAX=100;
-    PL_PLATE_MAX=10;
-    PL_HOLE_MAX=10;
-    PL_WALL_MAX=10;
-    PL_ZONE_MAX=10;
+    pl_node_no = 0;
+    pl_edge_no = 0;
+    pl_load_no = 0;
+    plate_no = 0;
+    hole_no = 0;
+    wall_no = 0;
+    zone_no = 0;
 
-    plate_no=hole_no=wall_no=zone_no=pl_load_no=0;
+    PL_PROPERTY_MAX = 10;
+    PL_LOAD_FACTORS_MAX = 100;
+    PL_NODE_MAX = 100;
+    PL_EDGE_MAX = 100;
+    PL_LOAD_MAX = 100;
+    PL_PLATE_MAX = 10;
+    PL_HOLE_MAX = 10;
+    PL_WALL_MAX = 10;
+    PL_ZONE_MAX = 10;
+
+    plate_no = hole_no = wall_no = zone_no = pl_load_no = 0;
 
     pl_property_no = 0;
     pl_load_factors_no = 0;
-    gZ=0.0;
+    gZ = 0.0;
 
     redcrsb(0, 171);
     select_blok();
@@ -802,7 +1013,9 @@ void Plate_analysis(void) {
     ClearErr();
     ClearInfo();
 
-    ret_standard = ask_question_static(6, (char*)_No_, (char*)_Yes_, (char*)"", (char*)_PROCEED_PLATE_FEM_, 12, (char*)"", 11, 1, 0, &combination_no, &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE);
+    ret_standard = ask_question_static(6, (char *) _No_, (char *) _Yes_, (char *) "", (char *) _PROCEED_PLATE_FEM_, 12,
+                                       (char *) "", 11, 1, 0, &combination_no, &geometric_tiffness, &inertia,
+                                       &st_dynamic_no, &PINNABLE, &theta_, &sigma_eq_, &epsilon_);
     //0 - rezygnuj; 1 - Eurocode, 2 - ASCE, 3 - ICC
     if (ret_standard > 0) key1 = _YES_;
     else if (ret_standard == 0) key1 = _NO_;
@@ -822,30 +1035,34 @@ void Plate_analysis(void) {
     pl_edge = (PL_EDGE *) malloc(PL_EDGE_MAX * sizeof(PL_EDGE) + 100);
     pl_load = (PL_LOAD *) malloc(PL_LOAD_MAX * sizeof(PL_LOAD) + 100);
 
-    plate_property=(PLATE_PROPERTY *) malloc(PL_PLATE_MAX * sizeof(PLATE_PROPERTY) + 100);
-    hole_property=(PLATE_PROPERTY *) malloc(PL_HOLE_MAX * sizeof(PLATE_PROPERTY) + 100);
-    wall_property=(PLATE_PROPERTY *) malloc(PL_WALL_MAX * sizeof(PLATE_PROPERTY) + 100);
-    zone_property=(PLATE_PROPERTY *) malloc(PL_ZONE_MAX * sizeof(PLATE_PROPERTY) + 100);
+    plate_property = (PLATE_PROPERTY *) malloc(PL_PLATE_MAX * sizeof(PLATE_PROPERTY) + 100);
+    hole_property = (PLATE_PROPERTY *) malloc(PL_HOLE_MAX * sizeof(PLATE_PROPERTY) + 100);
+    wall_property = (PLATE_PROPERTY *) malloc(PL_WALL_MAX * sizeof(PLATE_PROPERTY) + 100);
+    zone_property = (PLATE_PROPERTY *) malloc(PL_ZONE_MAX * sizeof(PLATE_PROPERTY) + 100);
+
+    pl_load_factors = (ST_LOAD_FACTORS *) malloc(PL_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS));
 
 
     switch (ret_standard) {
         case 1:
-            load_factors_pl = st_load_factors_EU_0;
+            load_factors = st_load_factors_EU_0;
             gammas = &gammas_EU;
             break;
         case 2:
-            load_factors_pl = st_load_factors_ASCE_0;
+            load_factors = st_load_factors_ASCE_0;
             gammas = &gammas_ASCE;
             break;
         case 3:
-            load_factors_pl = st_load_factors_ICC_0;
+            load_factors = st_load_factors_ICC_0;
             gammas = &gammas_ICC;
             break;
         default:
-            load_factors_pl = st_load_factors_EU_0;
+            load_factors = st_load_factors_EU_0;
             gammas = &gammas_EU;
             break;
     }
+
+    memmove(&pl_load_factors[pl_load_factors_no], &load_factors[0], sizeof(ST_LOAD_FACTORS));  //TEMPORARY for EUROCODE
 
     ////properties
     /////////////////////////
@@ -859,7 +1076,7 @@ void Plate_analysis(void) {
         axis_increment = 0.25;
         unit_factors_pl = &unit_factors_pl_si;
         prop_precisions_pl = &SI_precisions;
-        UNITS=SI;
+        UNITS = SI;
     } else if (Jednostki == 10) //cm
     {
         units_factor = 10.0;
@@ -870,7 +1087,7 @@ void Plate_analysis(void) {
         axis_increment = 0.25;
         unit_factors_pl = &unit_factors_pl_si;
         prop_precisions_pl = &SI_precisions;
-        UNITS=SI;
+        UNITS = SI;
     } else if (Jednostki == 1000)  //m
     {
         units_factor = 1000.0;
@@ -881,7 +1098,7 @@ void Plate_analysis(void) {
         axis_increment = 0.25;
         unit_factors_pl = &unit_factors_pl_si;
         prop_precisions_pl = &SI_precisions;
-        UNITS=SI;
+        UNITS = SI;
     } else if (Jednostki == 1000000) //km
     {
         units_factor = 1000000.0;
@@ -892,7 +1109,7 @@ void Plate_analysis(void) {
         axis_increment = 0.25;
         unit_factors_pl = &unit_factors_pl_si;
         prop_precisions_pl = &SI_precisions;
-        UNITS=SI;
+        UNITS = SI;
     } else if (Jednostki == 25.4) //"
     {
         units_factor = 1.0;  //imperial
@@ -903,7 +1120,7 @@ void Plate_analysis(void) {
         axis_increment = 10.0;
         unit_factors_pl = &unit_factors_pl_imp;
         prop_precisions_pl = &IMP_precisions;
-        UNITS=IMP;
+        UNITS = IMP;
     } else if (Jednostki == 304.8) //'
     {
         units_factor = 12.0;  //inti inches
@@ -914,7 +1131,7 @@ void Plate_analysis(void) {
         axis_increment = 10.0;
         unit_factors_pl = &unit_factors_pl_imp;
         prop_precisions_pl = &IMP_precisions;
-        UNITS=IMP;
+        UNITS = IMP;
     } else if (Jednostki == 914.4) //yd
     {
         units_factor = 36.0;  //into inches
@@ -925,7 +1142,7 @@ void Plate_analysis(void) {
         axis_increment = 10.0;
         unit_factors_pl = &unit_factors_pl_imp;
         prop_precisions_pl = &IMP_precisions;
-        UNITS=IMP;
+        UNITS = IMP;
     } else if (Jednostki == 1609344) //mi
     {
         units_factor = 63360.0;  //into inches
@@ -936,7 +1153,7 @@ void Plate_analysis(void) {
         axis_increment = 10.0;
         unit_factors_pl = &unit_factors_pl_imp;
         prop_precisions_pl = &IMP_precisions;
-        UNITS=IMP;
+        UNITS = IMP;
     } else {
         units_factor = 1.0;
         m_units_factor = 1000.0;
@@ -946,8 +1163,11 @@ void Plate_analysis(void) {
         axis_increment = 10.0;
         unit_factors_pl = &unit_factors_pl_si;
         prop_precisions_pl = &SI_precisions;
-        UNITS=SI;
+        UNITS = SI;
     }
+
+    if (UNITS!=SI) dxl_min=4.0f;  //inches
+    else dxl_min=0.1f; //meters
 
     strcpy(title_id, "PLATE");
     ptr_id = title_id;
@@ -965,7 +1185,7 @@ void Plate_analysis(void) {
                 if (ptr == NULL) ptr = strstr(t->text, _PLATE_UA);  //title
                 if (ptr == NULL) ptr = strstr(t->text, _PLATE_ES);  //title
                 if (ptr != NULL) {
-                    strncpy(st_title, ptr + 1, MaxTextLen*2 - 12);
+                    strncpy(st_title, ptr + 1, MaxTextLen * 2 - 12);
                     strncpy(title_id, ptr + 1, MaxTextLen - 1);
                     ptr = strchr(title_id, ':');  //title_id
                     if (ptr != NULL) {
@@ -982,8 +1202,9 @@ void Plate_analysis(void) {
                 }
 
                 memmove(&pl_property[pl_property_no], &prt_def_pl, sizeof(ST_PROPERTY));
-                if (prop_precisions_pl == &SI_precisions) pl_property[pl_property_no].c=35; //[mm]
-                else pl_property[pl_property_no].c=1.5; //[in]
+                //if (prop_precisions_pl == &SI_precisions)
+                if (UNITS==SI) pl_property[pl_property_no].c = 0.03; //[m]
+                else pl_property[pl_property_no].c = 1.18; //[in]
                 //st_property[st_property_no].ok = 0;
 
                 //gravitational acceleration
@@ -994,6 +1215,8 @@ void Plate_analysis(void) {
                 if (ptr == NULL) ptr = strstr(t->text, "%G=");
                 if (ptr != NULL) {
                     gZ = atof(ptr + 3);
+
+                    //if (UNITS!=SI) gZ=1.0;  //Self-Weight (lb/in²) = Density (lb/in³) × Thickness (in)  in IMP  this is abandoned due to representing mass density divided by g
 
                     ptr1 = strstr(t->text, u8"γ=");
                     if (ptr1 == NULL) ptr1 = strstr(t->text, "Γ=");  //Gamma
@@ -1061,7 +1284,7 @@ void Plate_analysis(void) {
 
                     //"", LL", "LL", "Lr", "WL", "SL", "EL", "RL", "HL", "FL", "TL"};
                     memmove(&pl_load_factors[pl_load_factors_no],
-                            &load_factors_pl[pl_load_factors[pl_load_factors_no].load],
+                            &load_factors[pl_load_factors[pl_load_factors_no].load],
                             sizeof(ST_LOAD_FACTORS));  //temporary just for Eurocode
 
                     if (pl_load_factors[pl_load_factors_no].load > 0) {
@@ -1104,28 +1327,44 @@ void Plate_analysis(void) {
                 pl_property[pl_property_no].n = atoi(prop);
 
                 ptr = strstr(t->text, " RC ");  //should be separated with spaces
-                if (ptr != NULL) pl_property[pl_property_no].RC_flag = 1; //TEMPORARY: assumption that it's rectangular cross section
+                if (ptr != NULL)
+                    pl_property[pl_property_no].RC_flag = 1; //TEMPORARY: assumption that it's rectangular cross section
 
                 ptr = strstr(t->text, "h=");
                 if (ptr == NULL) break;
-                pl_property[pl_property_no].h = atof(ptr + 2) * unit_factors_pl->h_f;  //for RC in mm or in, same as steel and wood
+                pl_property[pl_property_no].h =
+                        atof(ptr + 2) * unit_factors_pl->h_f;  //for RC in mm or in, same as steel and wood
 
                 pl_property[pl_property_no].b = pl_property[pl_property_no].h;
 
                 ptr = strstr(t->text, "b=");
-                if (ptr != NULL)
-                {
-                    pl_property[pl_property_no].b = atof(ptr + 2) * unit_factors_pl->h_f;  //for RC in mm or in, same as steel and wood
+                if (ptr != NULL) {
+                    pl_property[pl_property_no].b =
+                            atof(ptr + 2) * unit_factors_pl->h_f;  //for RC in mm or in, same as steel and wood
                     if (pl_property[pl_property_no].RC_flag == 1) //it's RC and b is set
                     {
-                        pl_property[pl_property_no].A = pl_property[pl_property_no].h * pl_property[pl_property_no].b; //Cross-sectional area in mm^2
+                        pl_property[pl_property_no].A = pl_property[pl_property_no].h *
+                                                        pl_property[pl_property_no].b; //Cross-sectional area in mm^2
                         pl_property[pl_property_no].Asy = pl_property[pl_property_no].A; //Shear area in the local y-axis
                         pl_property[pl_property_no].Asz = pl_property[pl_property_no].A; //Shear area in the local z-axis
-                        pl_property[pl_property_no].Iy =  pl_property[pl_property_no].h * pow(pl_property[pl_property_no].b, 3) / 12; //Moment of inertia for bending about the local y axis in mm^4  or in^4:  h*b^3/12
-                        pl_property[pl_property_no].Iz =  pow(pl_property[pl_property_no].h,3) * pl_property[pl_property_no].b / 12; //Moment of inertia for bending about the local z axis in mm^4  or in^4:  h^3*b/12
-                        pl_property[pl_property_no].Wy =  pl_property[pl_property_no].h * pow(pl_property[pl_property_no].b, 2) * unit_factors_pl->Wmm_f / 6; //Elastic section modulus about y-axis in m^3  or in^3:  h*b^2/6
-                        pl_property[pl_property_no].Wz =  pow(pl_property[pl_property_no].h,2) * pl_property[pl_property_no].b * unit_factors_pl->Wmm_f / 6; //Elastic section modulus about z-axis  in m^3 or in^3:  h^2*b/6
-                        pl_property[pl_property_no].Jx =  ((pl_property[pl_property_no].h * pl_property[pl_property_no].b)/12)*(pow(pl_property[pl_property_no].h, 2)+ pow(pl_property[pl_property_no].b, 2)); //Torsional moment of inertia  h*b/12*(h^2+b^2)
+                        pl_property[pl_property_no].Iy =
+                                pl_property[pl_property_no].h * pow(pl_property[pl_property_no].b, 3) /
+                                12; //Moment of inertia for bending about the local y axis in mm^4  or in^4:  h*b^3/12
+                        pl_property[pl_property_no].Iz =
+                                pow(pl_property[pl_property_no].h, 3) * pl_property[pl_property_no].b /
+                                12; //Moment of inertia for bending about the local z axis in mm^4  or in^4:  h^3*b/12
+                        pl_property[pl_property_no].Wy =
+                                pl_property[pl_property_no].h * pow(pl_property[pl_property_no].b, 2) *
+                                unit_factors_pl->Wmm_f /
+                                6; //Elastic section modulus about y-axis in m^3  or in^3:  h*b^2/6
+                        pl_property[pl_property_no].Wz =
+                                pow(pl_property[pl_property_no].h, 2) * pl_property[pl_property_no].b *
+                                unit_factors_pl->Wmm_f /
+                                6; //Elastic section modulus about z-axis  in m^3 or in^3:  h^2*b/6
+                        pl_property[pl_property_no].Jx =
+                                ((pl_property[pl_property_no].h * pl_property[pl_property_no].b) / 12) *
+                                (pow(pl_property[pl_property_no].h, 2) +
+                                 pow(pl_property[pl_property_no].b, 2)); //Torsional moment of inertia  h*b/12*(h^2+b^2)
                     }
                 }
 
@@ -1221,7 +1460,7 @@ void Plate_analysis(void) {
 
                 ptr = strstr(t->text, "c=");  //concrete cover, default 35 mm
                 if (ptr != NULL) {
-                    pl_property[pl_property_no].c = atof(ptr + 2); // * unit_factors_pl->c_f;
+                    pl_property[pl_property_no].c = atof(ptr + 2) * unit_factors_pl->c_f;
                 }
 
                 ptr = strstr(t->text, "ζ=");  //zeta, default 0.85
@@ -1229,11 +1468,25 @@ void Plate_analysis(void) {
                     pl_property[pl_property_no].zeta = atof(ptr + 3);
                 }
 
+                ptr = strstr(t->text, "fck=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    pl_property[pl_property_no].fck = atof(ptr + 4); // * unit_factors_pl->E_f;
+                } ////else if (pl_property[pl_property_no].RC_flag == 1) break;
+
+                ptr = strstr(t->text, "fcd=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    pl_property[pl_property_no].fcd = atof(ptr + 4); // * unit_factors_pl->E_f;
+                } ////else if (pl_property[pl_property_no].RC_flag == 1) break;
+
+                ptr = strstr(t->text, "fyk=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    pl_property[pl_property_no].fyk = atof(ptr + 4); // * unit_factors_pl->E_f;
+                } ////else if (pl_property[pl_property_no].RC_flag == 1) break;
+
                 ptr = strstr(t->text, "fyd=");  //no default, in Mpa or kpsi
                 if (ptr != NULL) {
                     pl_property[pl_property_no].fyd = atof(ptr + 4); // * unit_factors_pl->E_f;
-                }
-                else if (pl_property[pl_property_no].RC_flag == 1) break;
+                } ////else if (pl_property[pl_property_no].RC_flag == 1) break;
 
                 ptr = strstr(t->text, u8"γ="); //gamma
                 if (ptr == NULL) ptr = strstr(t->text, "Γ=");  //Gamma
@@ -1302,23 +1555,20 @@ void Plate_analysis(void) {
     ////searching for plate, hole, wall and zone polyline
     //searching for nodes size
 
-    body_number=0;
+    body_number = 0;
     ////searching for plates
     obiekt_tok((char *) ADP, ADK, (char **) &nag, OdBLOK);
     while (nag != NULL) {
-        if (TRUE == Check_Attribute(nag->atrybut, Ablok))
-        {
+        if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             b = (BLOK *) nag;
-            if (b->kod_obiektu==B_PLINE)
-            {
-                if (b->opis_obiektu [0] == PL_PLATE) {
-                    pl_min_x=99999.;
-                    pl_min_y=99999.;
-                    pl_max_x=-99999.;
-                    pl_max_y=-99999.;
+            if (b->kod_obiektu == B_PLINE) {
+                if (b->opis_obiektu[0] == PL_PLATE) {
+                    pl_min_x = 99999.;
+                    pl_min_y = 99999.;
+                    pl_max_x = -99999.;
+                    pl_max_y = -99999.;
 
-                    if (create_plate(b, 0, plate_no, body_number, &first, &last, &property_number, &is_closed))
-                    {
+                    if (create_plate(b, 0, plate_no, body_number, &first, &last, &property_number, &is_closed)) {
                         if (is_closed) {
                             plate_property[plate_no].adr = b;
                             plate_property[plate_no].property_number = property_number;
@@ -1326,10 +1576,8 @@ void Plate_analysis(void) {
                             plate_property[plate_no].last_edge = last;
                             add_plate_property();
                             body_number++;
-                        }
-                        else
-                        {
-                            sprintf(report_row, "%s %d %s\n",_THE_PLATE_, plate_no+1, _POLYLINE_IS_NOT_CLOSED_);
+                        } else {
+                            sprintf(report_row, "%s %d %s\n", _THE_PLATE_, plate_no + 1, _POLYLINE_IS_NOT_CLOSED_);
                             strcat(report, report_row);
                         }
                     }
@@ -1342,14 +1590,11 @@ void Plate_analysis(void) {
     ////searching for holes
     obiekt_tok((char *) ADP, ADK, (char **) &nag, OdBLOK);
     while (nag != NULL) {
-        if (TRUE == Check_Attribute(nag->atrybut, Ablok))
-        {
+        if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             b = (BLOK *) nag;
-            if (b->kod_obiektu==B_PLINE)
-            {
-                if (b->opis_obiektu [0] == PL_HOLE) {
-                    if (create_plate(b, 1, hole_no, body_number, &first, &last, &property_number, &is_closed))
-                    {
+            if (b->kod_obiektu == B_PLINE) {
+                if (b->opis_obiektu[0] == PL_HOLE) {
+                    if (create_plate(b, 1, hole_no, body_number, &first, &last, &property_number, &is_closed)) {
                         if (is_closed) {
                             hole_property[hole_no].adr = b;
                             hole_property[hole_no].property_number = property_number;
@@ -1357,10 +1602,8 @@ void Plate_analysis(void) {
                             hole_property[hole_no].last_edge = last;
                             add_hole_property();
                             body_number++;
-                        }
-                        else
-                        {
-                            sprintf(report_row, "%s %d %s\n",_THE_HOLE_, hole_no+1, _POLYLINE_IS_NOT_CLOSED_);
+                        } else {
+                            sprintf(report_row, "%s %d %s\n", _THE_HOLE_, hole_no + 1, _POLYLINE_IS_NOT_CLOSED_);
                             strcat(report, report_row);
                         }
                     }
@@ -1373,25 +1616,22 @@ void Plate_analysis(void) {
     ////searching for walls
     obiekt_tok((char *) ADP, ADK, (char **) &nag, OdBLOK);
     while (nag != NULL) {
-        if (TRUE == Check_Attribute(nag->atrybut, Ablok))
-        {
+        if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             b = (BLOK *) nag;
-            if (b->kod_obiektu==B_PLINE)
-            {
-                if (b->opis_obiektu [0] == PL_WALL) {
-                    if (create_plate(b, 2, wall_no, body_number, &first, &last, &property_number, &is_closed))
-                    {
+            if (b->kod_obiektu == B_PLINE) {
+                if (b->opis_obiektu[0] == PL_WALL) {
+                    if (create_plate(b, 2, wall_no, body_number, &first, &last, &property_number, &is_closed)) {
                         if (is_closed) {
                             wall_property[wall_no].adr = b;
-                            wall_property[wall_no].property_number = property_number;
+                            //wall_property[wall_no].property_number = property_number;
+                            //inheriting property from plate
+                            wall_property[wall_no].property_number = plate_property[0].property_number;
                             wall_property[wall_no].first_edge = first;
                             wall_property[wall_no].last_edge = last;
                             add_wall_property();
                             body_number++;
-                        }
-                        else
-                        {
-                            sprintf(report_row, "%s %d %s\n",_THE_WALL_, wall_no+1, _POLYLINE_IS_NOT_CLOSED_);
+                        } else {
+                            sprintf(report_row, "%s %d %s\n", _THE_WALL_, wall_no + 1, _POLYLINE_IS_NOT_CLOSED_);
                             strcat(report, report_row);
                         }
                     }
@@ -1405,14 +1645,11 @@ void Plate_analysis(void) {
     ////searching for zones
     obiekt_tok((char *) ADP, ADK, (char **) &nag, OdBLOK);
     while (nag != NULL) {
-        if (TRUE == Check_Attribute(nag->atrybut, Ablok))
-        {
+        if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             b = (BLOK *) nag;
-            if (b->kod_obiektu==B_PLINE)
-            {
-                if (b->opis_obiektu [0] == PL_ZONE) {
-                    if (create_plate(b, 3, zone_no, body_number, &first, &last, &property_number, &is_closed))
-                    {
+            if (b->kod_obiektu == B_PLINE) {
+                if (b->opis_obiektu[0] == PL_ZONE) {
+                    if (create_plate(b, 3, zone_no, body_number, &first, &last, &property_number, &is_closed)) {
                         if (is_closed) {
                             zone_property[zone_no].adr = b;
                             zone_property[zone_no].property_number = property_number;
@@ -1420,10 +1657,8 @@ void Plate_analysis(void) {
                             zone_property[zone_no].last_edge = last;
                             add_zone_property();
                             body_number++;
-                        }
-                        else
-                        {
-                            sprintf(report_row, "%s %d %s\n",_THE_ZONE_, zone_no+1, _POLYLINE_IS_NOT_CLOSED_);
+                        } else {
+                            sprintf(report_row, "%s %d %s\n", _THE_ZONE_, zone_no + 1, _POLYLINE_IS_NOT_CLOSED_);
                             strcat(report, report_row);
                         }
                     }
@@ -1434,9 +1669,15 @@ void Plate_analysis(void) {
     }
 
     ////counting objects
-    if (plate_no==0)  //no plate
+    if (plate_no == 0)  //no plate
     {
-        sprintf(report_row, "%s\n",_THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_);
+        sprintf(report_row, "%s\n", _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_);
+        strcat(report, report_row);
+        goto pl_error;
+    }
+    else if (plate_no > 1)  //to many plates - TEMPORARY
+    {
+        sprintf(report_row, "%s\n", _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_);
         strcat(report, report_row);
         goto pl_error;
     }
@@ -1444,21 +1685,31 @@ void Plate_analysis(void) {
     ////searching for load
     obiekt_tok((char *) ADP, ADK, (char **) &nag, Ovector);
     while (nag != NULL) {
-        if (TRUE == Check_Attribute(nag->atrybut, Ablok))
-        {
+        if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             v = (AVECTOR *) nag;
-            if (v->style==17) {
-                pl_load[pl_load_no].adr=v;
-                pl_load[pl_load_no].x1=v->x1;
-                pl_load[pl_load_no].y1=v->y1;
-                pl_load[pl_load_no].x2=v->x2;
-                pl_load[pl_load_no].y2=v->y2;
-                pl_load[pl_load_no].magnitude1=v->magnitude1;
-                pl_load[pl_load_no].magnitude2=v->magnitude2;
-                pl_load[pl_load_no].load=v->load;
-                pl_load[pl_load_no].variant=v->variant;
-                pl_load[pl_load_no].body=-1;  //not yet assigned
-                pl_load[pl_load_no].body_no=-1;  //not yet assigned
+            if (v->style == 17) {
+                pl_load[pl_load_no].adr = v;
+                pl_load[pl_load_no].x1 = v->x1;
+                pl_load[pl_load_no].y1 = v->y1;
+                pl_load[pl_load_no].x2 = v->x2;
+                pl_load[pl_load_no].y2 = v->y2;
+                pl_load[pl_load_no].magnitude1 = v->magnitude1;
+                pl_load[pl_load_no].magnitude2 = v->magnitude2;
+                pl_load[pl_load_no].load = v->load;
+                pl_load[pl_load_no].variant = v->variant;
+                pl_load[pl_load_no].body = -1;  //not yet assigned
+                pl_load[pl_load_no].body_no = -1;  //not yet assigned
+
+
+                if (v->variant > 0)
+                    pl_load[pl_load_no].factor_record = factor_record(v->load, v->variant);
+                else
+                    pl_load[pl_load_no].factor_record = -(v->load == 0 ? 2
+                                                                       : v->load);  //if no load spec, is assumed to be LL, so load=2
+                pl_load[pl_load_no].take_it = 0;
+
+                int v_factor_record = pl_load[pl_load_no].factor_record;
+
                 add_load_pl();
             }
         }
@@ -1469,47 +1720,46 @@ void Plate_analysis(void) {
     zmien_atrybut_undo(dane, dane + dane_size);
     blokzap(ADP, ADK, Ablok, COPY_PUT, 1);
     zmien_atrybut(ADP, ADK, Ablok, Aoblok);
-    was_refreshed=TRUE;
+    was_refreshed = TRUE;
 
     ////LOAD assignement
-    for (i=0; i<pl_load_no; i++)
-    {
-        df_x1=pl_load[i].x1;
-        df_y1=pl_load[i].y1;
-        df_x2=pl_load[i].x2;
-        df_y2=pl_load[i].y2;
+    for (i = 0; i < pl_load_no; i++) {
+        df_x1 = pl_load[i].x1;
+        df_y1 = pl_load[i].y1;
+        df_x2 = pl_load[i].x2;
+        df_y2 = pl_load[i].y2;
         ////marking zone
-        for (j=0; j<zone_no; j++)
-        {
-            ADPB=(char*)zone_property[j].adr;
-            ADKB=ADPB+sizeof(NAGLOWEK)+zone_property[j].adr->n-1;
+        for (j = 0; j < zone_no; j++) {
+            ADPB = (char *) zone_property[j].adr;
+            ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
             zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
-            ret1 = hatch_proc_test((long_long)(ADPB-dane), (long_long)(ADKB-dane), df_x1, df_y1, &s_hatch_param, 1, 0, 0, 0, 0);
-            ret2 = hatch_proc_test((long_long)(ADPB-dane), (long_long)(ADKB-dane), df_x2, df_y2, &s_hatch_param, 1, 0, 0, 0, 0);
+            ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,
+                                   1, 0, 0, 0, 0);
+            ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,
+                                   1, 0, 0, 0, 0);
             zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
-            if ((ret1==1) && (ret2==1))
-            {
-                pl_load[i].body=1; //zone
-                pl_load[i].body_no=j;
+            if ((ret1 == 1) && (ret2 == 1)) {
+                pl_load[i].body = 1; //zone
+                pl_load[i].body_no = j;
                 break;
             }
         }
         //if assigned to zone, won't be assigned to plate
-        if (j==zone_no)  //not found in zones
+        if (j == zone_no)  //not found in zones
         {
             ////marking plate
-            for (j=0; j<plate_no; j++)
-            {
-                ADPB=(char*)plate_property[j].adr;
-                ADKB=ADPB+sizeof(NAGLOWEK)+plate_property[j].adr->n-1;
+            for (j = 0; j < plate_no; j++) {
+                ADPB = (char *) plate_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
                 zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
-                ret1 = hatch_proc_test((long_long)(ADPB-dane), (long_long)(ADKB-dane), df_x1, df_y1, &s_hatch_param, 1, 0, 0, 0, 0);
-                ret2 = hatch_proc_test((long_long)(ADPB-dane), (long_long)(ADKB-dane), df_x2, df_y2, &s_hatch_param, 1, 0, 0, 0, 0);
+                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                       &s_hatch_param, 1, 0, 0, 0, 0);
+                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                       &s_hatch_param, 1, 0, 0, 0, 0);
                 zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
-                if ((ret1==1) && (ret2==1))
-                {
-                    pl_load[i].body=0; //plate
-                    pl_load[i].body_no=j;
+                if ((ret1 == 1) && (ret2 == 1)) {
+                    pl_load[i].body = 0; //plate
+                    pl_load[i].body_no = j;
                     break;
                 }
             }
@@ -1529,9 +1779,9 @@ void Plate_analysis(void) {
 #endif
 #endif
 
-    if ((pl_load_no==0) && (gZ==0)) //no load, no self weight
+    if ((pl_load_no == 0) && (gZ == 0)) //no load, no self weight
     {
-        sprintf(report_row, "%s\n",_NO_LOAD_ASSIGNED_);
+        sprintf(report_row, "%s\n", _NO_LOAD_ASSIGNED_);
         strcat(report, report_row);
         goto pl_error;
     }
@@ -1550,12 +1800,12 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s",_cannot_create_folder_, _STATIC_);
+            sprintf(report_row, "%s %s", _cannot_create_folder_, _STATIC_);
             strcat(report, report_row);
         }
     }
 
-    sprintf(params, "%s%s", _STATIC_,_plate_);
+    sprintf(params, "%s%s", _STATIC_, _plate_);
     if (!my_directory_exists(params)) {
 #ifdef LINUX
         // Create a directory with read, write, and execute permissions for the owner
@@ -1567,7 +1817,7 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s%s",_cannot_create_folder_, _STATIC_,_plate_);
+            sprintf(report_row, "%s %s%s", _cannot_create_folder_, _STATIC_, _plate_);
             strcat(report, report_row);
         }
     }
@@ -1583,7 +1833,7 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s",_cannot_create_folder_, _plate_);
+            sprintf(report_row, "%s %s", _cannot_create_folder_, _plate_);
             strcat(report, report_row);
         }
     }
@@ -1591,22 +1841,42 @@ void Plate_analysis(void) {
     ////deleting old files
     sprintf(params, "%splate.geo", _STATIC_);
     if (my_file_exists(params)) unlink(params);
-    sprintf(params, "%s%splate.sif", _STATIC_,_plate_);
+    sprintf(params, "%s%splate.sif", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
     ////results
-    sprintf(params, "%s%splate.result", _STATIC_,_plate_);
+    sprintf(params, "%s%splate.result", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
     ////results in plate folder due to ElmerSolver error
-    sprintf(params, "%splate.result", _plate_);
+    sprintf(params, "%splate_sls.result", _plate_);
     if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%splate_uls.result", _plate_);
+    if (my_file_exists(params)) unlink(params);
+    sprintf(params, "%splate_ulslc.result", _plate_, i);
+    if (my_file_exists(params)) unlink(params);
+    for (i = 0; i < 28; i++) {
+        sprintf(params, "%splate_ulslc%d.result", _plate_, i);
+        if (my_file_exists(params)) unlink(params);
+    }
+    sprintf(params, "%splate_slslc.result", _plate_, i);
+    if (my_file_exists(params)) unlink(params);
+    for (i = 0; i < 13; i++) {
+        sprintf(params, "%splate_slslc%d.result", _plate_, i);
+        if (my_file_exists(params)) unlink(params);
+    }
+    sprintf(params, "%splate_qpslslc.result", _plate_, i);
+    if (my_file_exists(params)) unlink(params);
+    for (i = 0; i < 8; i++) {
+        sprintf(params, "%splate_qpslslc%d.result", _plate_, i);
+        if (my_file_exists(params)) unlink(params);
+    }
     ////mesh
-    sprintf(params, "%s%smesh.nodes", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.nodes", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
-    sprintf(params, "%s%smesh.header", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.header", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
-    sprintf(params, "%s%smesh.elements", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.elements", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
-    sprintf(params, "%s%smesh.boundary", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.boundary", _STATIC_, _plate_);
     if (my_file_exists(params)) unlink(params);
     ////
 
@@ -1615,59 +1885,56 @@ void Plate_analysis(void) {
     f = fopen(params, "wt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_RESULTS_FILE_, 12, (char*)"", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_RESULTS_FILE_, 12,
+                           (char *) "", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
     fprintf(f, "\n// NODES\n");
     //nodes
-    for (i=0; i<pl_node_no; i++)
-    {
+    for (i = 0; i < pl_node_no; i++) {
         set_decimal_format(par[0], milimetryobx(pl_node[i].x) * geo_units_factor, dim_precision_pl);
         set_decimal_format(par[1], milimetryoby(pl_node[i].y) * geo_units_factor, dim_precision_pl);
-        set_decimal_format(par[2], max(milimetryob((double)pl_node[i].d) * geo_units_factor, dxl_min), dim_precision_pl);
+        set_decimal_format(par[2], max(milimetryob((double) pl_node[i].d) * geo_units_factor, dxl_min),
+                           dim_precision_pl);
 
-        fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", i+1, par[0], par[1], par[2]);
+        fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", i + 1, par[0], par[1], par[2]);
     }
     //edges
     fprintf(f, "\n// EDGES\n");
-    k=0;
+    k = 0;
     //the first are plates
     fprintf(f, "\n// PLATES\n");
-    for (i=0; i<plate_no; i++)
-    {
-        for (j=plate_property[i].first_edge; j<plate_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].type==0)  //line
+    for (i = 0; i < plate_no; i++) {
+        for (j = plate_property[i].first_edge; j < plate_property[i].last_edge; j++) {
+            if (pl_edge[j].type == 0)  //line
             {
-                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1);
-                pl_edge[j].k=k;
-            }
-            else if (pl_edge[j].type==1)  //circle
+                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1);
+                pl_edge[j].k = k;
+            } else if (pl_edge[j].type == 1)  //circle
             {
-                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1, pl_edge[j].node3+1);
-                pl_edge[j].k=k;
+                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1,
+                        pl_edge[j].node3 + 1);
+                pl_edge[j].k = k;
             }
             k++;
         }
     }
     //the second are holes
     fprintf(f, "\n// HOLES\n");
-    for (i=0; i<hole_no; i++)
-    {
-        for (j=hole_property[i].first_edge; j<hole_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].type==0)  //line
+    for (i = 0; i < hole_no; i++) {
+        for (j = hole_property[i].first_edge; j < hole_property[i].last_edge; j++) {
+            if (pl_edge[j].type == 0)  //line
             {
-                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1);
-                pl_edge[j].k=k;
-            }
-            else if (pl_edge[j].type==1)  //circle
+                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1);
+                pl_edge[j].k = k;
+            } else if (pl_edge[j].type == 1)  //circle
             {
-                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1, pl_edge[j].node3+1);
-                pl_edge[j].k=k;
+                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1,
+                        pl_edge[j].node3 + 1);
+                pl_edge[j].k = k;
             }
             k++;
         }
@@ -1675,19 +1942,17 @@ void Plate_analysis(void) {
 
     //the third are walls
     fprintf(f, "\n// WALLS\n");
-    for (i=0; i<wall_no; i++)
-    {
-        for (j=wall_property[i].first_edge; j<wall_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].type==0)  //line
+    for (i = 0; i < wall_no; i++) {
+        for (j = wall_property[i].first_edge; j < wall_property[i].last_edge; j++) {
+            if (pl_edge[j].type == 0)  //line
             {
-                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1);
-                pl_edge[j].k=k;
-            }
-            else if (pl_edge[j].type==1)  //circle
+                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1);
+                pl_edge[j].k = k;
+            } else if (pl_edge[j].type == 1)  //circle
             {
-                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1, pl_edge[j].node3+1);
-                pl_edge[j].k=k;
+                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1,
+                        pl_edge[j].node3 + 1);
+                pl_edge[j].k = k;
             }
             k++;
         }
@@ -1695,19 +1960,17 @@ void Plate_analysis(void) {
 
     //the last are zones
     fprintf(f, "\n// ZONES\n");
-    for (i=0; i<zone_no; i++)
-    {
-        for (j=zone_property[i].first_edge; j<zone_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].type==0)  //line
+    for (i = 0; i < zone_no; i++) {
+        for (j = zone_property[i].first_edge; j < zone_property[i].last_edge; j++) {
+            if (pl_edge[j].type == 0)  //line
             {
-                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1);
-                pl_edge[j].k=k;
-            }
-            else if (pl_edge[j].type==1)  //circle
+                fprintf(f, "Line(%d) = {%d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1);
+                pl_edge[j].k = k;
+            } else if (pl_edge[j].type == 1)  //circle
             {
-                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1+1, pl_edge[j].node2+1, pl_edge[j].node3+1);
-                pl_edge[j].k=k;
+                fprintf(f, "Circle(%d) = {%d, %d, %d};\n", k + 1, pl_edge[j].node1 + 1, pl_edge[j].node2 + 1,
+                        pl_edge[j].node3 + 1);
+                pl_edge[j].k = k;
             }
             k++;
         }
@@ -1717,82 +1980,74 @@ void Plate_analysis(void) {
     fprintf(f, "\n// CURVES\n");
     //the first are holes
     fprintf(f, "\n// HOLES\n");
-    for (i=0; i<hole_no; i++)
-    {
-        fprintf(f, "Curve Loop (%d) = {",k+1);
+    for (i = 0; i < hole_no; i++) {
+        fprintf(f, "Curve Loop (%d) = {", k + 1);
 
-        for (j=hole_property[i].first_edge; j<hole_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].inverted==0) fprintf(f, "%d", pl_edge[j].k+1);
-            else fprintf(f, "-%d", pl_edge[j].k+1);
-            if (j<(hole_property[i].last_edge-1)) fprintf(f, ", ");
+        for (j = hole_property[i].first_edge; j < hole_property[i].last_edge; j++) {
+            if (pl_edge[j].inverted == 0) fprintf(f, "%d", pl_edge[j].k + 1);
+            else fprintf(f, "-%d", pl_edge[j].k + 1);
+            if (j < (hole_property[i].last_edge - 1)) fprintf(f, ", ");
         }
         fprintf(f, "};\n");
-        hole_property[i].k=k;
+        hole_property[i].k = k;
         k++;
     }
 
     //the second are walls
     fprintf(f, "\n// WALLS\n");
-    for (i=0; i<wall_no; i++)
-    {
-        fprintf(f, "Curve Loop (%d) = {",k+1);
+    for (i = 0; i < wall_no; i++) {
+        fprintf(f, "Curve Loop (%d) = {", k + 1);
 
-        for (j=wall_property[i].first_edge; j<wall_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].inverted==0) fprintf(f, "%d", pl_edge[j].k+1);
-            else fprintf(f, "-%d", pl_edge[j].k+1);
-            if (j<(wall_property[i].last_edge-1)) fprintf(f, ", ");
+        for (j = wall_property[i].first_edge; j < wall_property[i].last_edge; j++) {
+            if (pl_edge[j].inverted == 0) fprintf(f, "%d", pl_edge[j].k + 1);
+            else fprintf(f, "-%d", pl_edge[j].k + 1);
+            if (j < (wall_property[i].last_edge - 1)) fprintf(f, ", ");
         }
         fprintf(f, "};\n");
-        wall_property[i].k=k;
+        wall_property[i].k = k;
         k++;
-        fprintf(f, "Plane Surface(%d) = {%d};\n", k+1, k);
+        fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
         k++;
     }
 
     //the third are zones
     fprintf(f, "\n// ZONES\n");
-    for (i=0; i<zone_no; i++)
-    {
-        fprintf(f, "Curve Loop (%d) = {",k+1);
+    for (i = 0; i < zone_no; i++) {
+        fprintf(f, "Curve Loop (%d) = {", k + 1);
 
-        for (j=zone_property[i].first_edge; j<zone_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].inverted==0) fprintf(f, "%d", pl_edge[j].k+1);
-            else fprintf(f, "-%d", pl_edge[j].k+1);
-            if (j<(zone_property[i].last_edge-1)) fprintf(f, ", ");
+        for (j = zone_property[i].first_edge; j < zone_property[i].last_edge; j++) {
+            if (pl_edge[j].inverted == 0) fprintf(f, "%d", pl_edge[j].k + 1);
+            else fprintf(f, "-%d", pl_edge[j].k + 1);
+            if (j < (zone_property[i].last_edge - 1)) fprintf(f, ", ");
         }
         fprintf(f, "};\n");
-        zone_property[i].k=k;
+        zone_property[i].k = k;
         k++;
-        fprintf(f, "Plane Surface(%d) = {%d};\n", k+1, k);
+        fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
         k++;
     }
 
     //the last are plates
     //the third are zones
     fprintf(f, "\n// PLATES\n");
-    for (i=0; i<plate_no; i++)
-    {
-        fprintf(f, "Curve Loop (%d) = {",k+1);
+    for (i = 0; i < plate_no; i++) {
+        fprintf(f, "Curve Loop (%d) = {", k + 1);
 
-        for (j=plate_property[i].first_edge; j<plate_property[i].last_edge; j++)
-        {
-            if (pl_edge[j].inverted==0) fprintf(f, "%d", pl_edge[j].k+1);
-            else fprintf(f, "-%d", pl_edge[j].k+1);
-            if (j<(plate_property[i].last_edge-1)) fprintf(f, ", ");
+        for (j = plate_property[i].first_edge; j < plate_property[i].last_edge; j++) {
+            if (pl_edge[j].inverted == 0) fprintf(f, "%d", pl_edge[j].k + 1);
+            else fprintf(f, "-%d", pl_edge[j].k + 1);
+            if (j < (plate_property[i].last_edge - 1)) fprintf(f, ", ");
         }
         fprintf(f, "};\n");
-        plate_property[i].k=k;
+        plate_property[i].k = k;
         k++;
-        fprintf(f, "Plane Surface(%d) = {%d",k+1, k);
-        for (j=0; j<hole_no; j++)
-            fprintf(f, ", %d", hole_property[j].k+1);
-        for (j=0; j<wall_no; j++)
-            fprintf(f, ", %d", wall_property[j].k+1);
-        for (j=0; j<zone_no; j++)
-            fprintf(f, ", %d", zone_property[j].k+1);
+        fprintf(f, "Plane Surface(%d) = {%d", k + 1, k);
+        for (j = 0; j < hole_no; j++)
+            fprintf(f, ", %d", hole_property[j].k + 1);
+        for (j = 0; j < wall_no; j++)
+            fprintf(f, ", %d", wall_property[j].k + 1);
+        for (j = 0; j < zone_no; j++)
+            fprintf(f, ", %d", zone_property[j].k + 1);
         fprintf(f, "};\n");
         k++;
     }
@@ -1802,21 +2057,22 @@ void Plate_analysis(void) {
     fclose(f);
 
     //creating geo file
-    sprintf(params, "%s%splate.sif", _STATIC_,_plate_);
+    sprintf(params, "%s%splate.sif", _STATIC_, _plate_);
     f = fopen(params, "wt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_RESULTS_FILE_, 12, (char*)"", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_RESULTS_FILE_, 12,
+                           (char *) "", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
     fprintf(f, "Header\n");
     fprintf(f, "  CHECK KEYWORDS Warn\n");
-    fprintf(f, "  Mesh DB \"%s\" \"%s\"\n","Static","plate");
+    fprintf(f, "  Mesh DB \"%s\" \"%s\"\n", "Static", "plate");
     fprintf(f, "  Include Path \"\"\n");
-    fprintf(f, "  Results Directory \"%s%s\"\n",_STATIC_,"plate");
+    fprintf(f, "  Results Directory \"%s%s\"\n", _STATIC_, "plate");
     fprintf(f, "End\n\n");
 
     fprintf(f, "Simulation\n");
@@ -1827,7 +2083,7 @@ void Plate_analysis(void) {
     fprintf(f, "  Steady State Max Iterations = 1\n");
     fprintf(f, "  Output Intervals(1) = 1\n");
     fprintf(f, "  Solver Input File = plate.sif\n");
-    fprintf(f, "  Output File = \"plate.result\"\n");
+    fprintf(f, "  Output File = \"plate_sls.result\"\n");
     fprintf(f, "  Post File = plate.vtu\n");
     fprintf(f, "End\n\n");
 
@@ -1860,40 +2116,38 @@ void Plate_analysis(void) {
     fprintf(f, "  Drilling Stabilization Parameter = Real 1.0\n");
     fprintf(f, "  Calculate Stresses = Logical TRUE\n");
     fprintf(f, "  !Compute Membrane Stress = Logical TRUE\n");
-    fprintf(f, "  !Compute Bending Stress = Logical TRUE\n");
-    fprintf(f, "  Compute Total Stress = Logical TRUE\n");
+    fprintf(f, "  Compute Bending Stress = Logical FALSE\n");  //or TRUE
+    fprintf(f, "  Compute Total Stress = Logical TRUE\n");  //or FALSE
     fprintf(f, "  Bottom Side Stress = Logical TRUE\n");
     fprintf(f, "\n");
     fprintf(f, "  Membrane Only = Logical FALSE\n");
-    fprintf(f, "  Use DKT Triangle = Logical FALSE\n");
-    fprintf(f, "  Use RMITC3 Element = Logical FALSE\n");
-    fprintf(f, "  Use SMITC Element = Logical TRUE\n");
-    fprintf(f, "  Use MITC3 Element = Logical FALSE\n");
+    fprintf(f, "  Use DKT Triangle = Logical FALSE\n");    //no 2
+    fprintf(f, "  Use RMITC3 Element = Logical TRUE\n");   //no 1
+    fprintf(f, "  Use SMITC Element = Logical FALSE\n");   //no 3
+    fprintf(f, "  Use MITC3 Element = Logical FALSE\n");   //no 4
     fprintf(f, "  Integration Points = Integer 3\n");
     fprintf(f, "End\n\n");
 
-    sif_body=0;
+    sif_body = 0;
 
-    for (i=0; i<zone_no; i++)
-    {
-        fprintf(f, "Body %d\n", sif_body+1);
-        fprintf(f, "  Target Bodies(1) = %d\n",zone_property[i].k+1);
-        fprintf(f, "  Name = \"Body Property %d\"\n",sif_body+1);
+    for (i = 0; i < zone_no; i++) {
+        fprintf(f, "Body %d\n", sif_body + 1);
+        fprintf(f, "  Target Bodies(1) = %d\n", zone_property[i].k + 1);
+        fprintf(f, "  Name = \"Body Property %d\"\n", sif_body + 1);
         fprintf(f, "  Equation = 1\n");
-        fprintf(f, "  Material = %d\n",zone_property[i].property_number);
-        fprintf(f, "  Body Force = %d\n", sif_body+1); //TO DO
+        fprintf(f, "  Material = %d\n", zone_property[i].property_number);
+        fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
         fprintf(f, "End\n\n");
         sif_body++;
     }
 
-    for (i=0; i<plate_no; i++)
-    {
-        fprintf(f, "Body %d\n", sif_body+1);
-        fprintf(f, "  Target Bodies(1) = %d\n",plate_property[i].k+1);
-        fprintf(f, "  Name = \"Body Property %d\"\n",sif_body+1);
+    for (i = 0; i < plate_no; i++) {
+        fprintf(f, "Body %d\n", sif_body + 1);
+        fprintf(f, "  Target Bodies(1) = %d\n", plate_property[i].k + 1);
+        fprintf(f, "  Name = \"Body Property %d\"\n", sif_body + 1);
         fprintf(f, "  Equation = 1\n");
-        fprintf(f, "  Material = %d\n",plate_property[i].property_number);
-        fprintf(f, "  Body Force = %d\n", sif_body+1); //TO DO
+        fprintf(f, "  Material = %d\n", plate_property[i].property_number);
+        fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
         fprintf(f, "End\n\n");
         sif_body++;
     }
@@ -1903,164 +2157,68 @@ void Plate_analysis(void) {
     fprintf(f, "  Active Solvers(1) = 1\n");
     fprintf(f, "End\n\n");
 
-    sif_material=0;
-    for (i=0; i<zone_no; i++)
-    {
+    sif_material = 0;
+    for (i = 0; i < zone_no; i++) {
         //searching for properties
-        for (j=0; j<pl_property_no; j++)
-        {
-            if (pl_property[j].n==zone_property[i].property_number)
-            {
-                this_property=j;
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == zone_property[i].property_number) {
+                this_property = j;
                 break;
             }
         }
-        fprintf(f, "Material %d\n", sif_material+1);
-        fprintf(f, "  Name = \"Material %d\"\n", sif_material+1);
+        fprintf(f, "Material %d\n", sif_material + 1);
+        fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
         fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
         fprintf(f, "  Density = %g\n", pl_property[this_property].d);
-        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2.*pl_property[this_property].G)) - 1);
+        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1);
         set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
         fprintf(f, "  Thickness = %s\n", par[1]);
         fprintf(f, "End\n\n");
         sif_material++;
     }
 
-    for (i=0; i<plate_no; i++)
-    {
+    for (i = 0; i < plate_no; i++) {
         //searching for properties
-        for (j=0; j<pl_property_no; j++)
-        {
-            if (pl_property[j].n==plate_property[i].property_number)
-            {
-                this_property=j;
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == plate_property[i].property_number) {
+                this_property = j;
                 break;
             }
         }
-        fprintf(f, "Material %d\n", sif_material+1);
-        fprintf(f, "  Name = \"Material %d\"\n", sif_material+1);
+        fprintf(f, "Material %d\n", sif_material + 1);
+        fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
         fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
         fprintf(f, "  Density = %g\n", pl_property[this_property].d);
-        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2.*pl_property[this_property].G)) -1.);
+        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1.);
         set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
         fprintf(f, "  Thickness = %s\n", par[1]);
         fprintf(f, "End\n\n");
         sif_material++;
     }
 
-    sif_body_force=0;
 
-    for (i=0; i<zone_no; i++)
-    {
-        //searching for properties
-        for (j=0; j<pl_property_no; j++)
-        {
-            if (pl_property[j].n==zone_property[i].property_number)
-            {
-                this_property=j;
-                break;
-            }
-        }
-        fprintf(f, "Body Force %d\n", sif_body_force+1);
-        fprintf(f, "  Name = \"BodyForce %d\"\n",sif_body_force+1);
-        strcpy(load_formula,"");
-
-        self_weight=0.0;
-        self_weight=gZ * pl_property[this_property].d * pl_property[this_property].h;
-        if (self_weight>0.0)
-        {
-            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
-            strcat(load_formula, par[1]);
-        }
-
-        for (j=0; j<pl_load_no; j++)
-        {
-            if ((pl_load[j].body==1) && (pl_load[j].body_no==i)) //zone and number
-            {
-                set_decimal_format(par[1], -pl_load[j].magnitude1*unit_factors_pl->q_f, load_precision);  //is assumed that magnitude1=magnitude2
-                if (strlen(load_formula)>0) strcat(load_formula, " + ");
-                strcat(load_formula, "(");
-                strcat(load_formula, par[1]);
-                strcat(load_formula, ")");
-            }
-        }
-        if (strlen(load_formula)>0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
-
-        //fprintf(f, "  Normal Pressure = -5000\n");
-        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
-        fprintf(f, "  Thickness = Real %s\n", par[1]);
-        fprintf(f, "End\n\n");
-        sif_body_force++;
-    }
-
-    for (i=0; i<plate_no; i++)
-    {
-        //searching for properties
-        for (j=0; j<pl_property_no; j++)
-        {
-            if (pl_property[j].n==plate_property[i].property_number)
-            {
-                this_property=j;
-                break;
-            }
-        }
-        fprintf(f, "Body Force %d\n", sif_body_force+1);
-        fprintf(f, "  Name = \"BodyForce %d\"\n",sif_body_force+1);
-
-        strcpy(load_formula,"");
-
-        self_weight=0.0;
-        self_weight=gZ * pl_property[this_property].d * pl_property[this_property].h;
-        if (self_weight>0.0)
-        {
-            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
-            strcat(load_formula, par[1]);
-        }
-
-        for (j=0; j<pl_load_no; j++)
-        {
-            if ((pl_load[j].body==0) && (pl_load[j].body_no==i)) //plate and number
-            {
-                set_decimal_format(par[1], -pl_load[j].magnitude1*unit_factors_pl->q_f, load_precision);  //is assumed that magnitude1=magnitude2
-                //fprintf(f, "  Normal Pressure = %s\n", par[1]);
-                if (strlen(load_formula)>0) strcat(load_formula, " + ");
-                strcat(load_formula, "(");
-                strcat(load_formula, par[1]);
-                strcat(load_formula, ")");
-            }
-        }
-        if (strlen(load_formula)>0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
-
-        //fprintf(f, "  Normal Pressure = -5000\n");
-        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
-        fprintf(f, "  Thickness = Real %s\n", par[1]);
-        fprintf(f, "End\n\n");
-        sif_body_force++;
-    }
-
-    sif_boundary_condition=0;
-    sif_boundary_condition_simple=0;
-    sif_boundary_condition_fixed=0;
+    ////Boundary conditions
+    sif_boundary_condition = 0;
+    sif_boundary_condition_simple = 0;
+    sif_boundary_condition_fixed = 0;
 
     //simply supported edges
-    for (i=0; i<pl_edge_no; i++) {
-          if (pl_edge[i].restraint==6) sif_boundary_condition_simple++;
-          else if (pl_edge[i].restraint==7) sif_boundary_condition_fixed++;
+    for (i = 0; i < pl_edge_no; i++) {
+        if (pl_edge[i].restraint == 6) sif_boundary_condition_simple++;
+        else if (pl_edge[i].restraint == 7) sif_boundary_condition_fixed++;
     }
 
-    if (sif_boundary_condition_simple>0)
-    {
-        fprintf(f, "Boundary Condition %d\n", sif_boundary_condition+1);
-        sprintf(par[1],"  Target Boundaries(%d) =",sif_boundary_condition_simple);
-        for (i=0; i<pl_edge_no; i++) {
-            if (pl_edge[i].restraint == 6)
-            {
-                sprintf(par[2], " %d", pl_edge[i].k+1);
-                strcat(par[1],par[2]);
+    if (sif_boundary_condition_simple > 0) {
+        fprintf(f, "Boundary Condition %d\n", sif_boundary_condition + 1);
+        sprintf(par[1], "  Target Boundaries(%d) =", sif_boundary_condition_simple);
+        for (i = 0; i < pl_edge_no; i++) {
+            if (pl_edge[i].restraint == 6) {
+                sprintf(par[2], " %d", pl_edge[i].k + 1);
+                strcat(par[1], par[2]);
             }
         }
         fprintf(f, "%s\n", par[1]);
-        fprintf(f, "  Name = \"Boundary Condition %d\"\n",sif_boundary_condition+1);
+        fprintf(f, "  Name = \"Boundary Condition %d\"\n", sif_boundary_condition + 1);
         fprintf(f, "  Displacement 1 = 0\n");
         fprintf(f, "  Displacement 2 = 0\n");
         fprintf(f, "  Displacement 3 = 0\n");
@@ -2075,19 +2233,17 @@ void Plate_analysis(void) {
         sif_boundary_condition++;
     }
 
-    if (sif_boundary_condition_fixed>0)
-    {
-        fprintf(f, "Boundary Condition %d\n", sif_boundary_condition+1);
-        sprintf(par[1],"  Target Boundaries(%d) =",sif_boundary_condition_fixed);
-        for (i=0; i<pl_edge_no; i++) {
-            if (pl_edge[i].restraint == 7)
-            {
-                sprintf(par[2], " %d", pl_edge[i].k+1);
-                strcat(par[1],par[2]);
+    if (sif_boundary_condition_fixed > 0) {
+        fprintf(f, "Boundary Condition %d\n", sif_boundary_condition + 1);
+        sprintf(par[1], "  Target Boundaries(%d) =", sif_boundary_condition_fixed);
+        for (i = 0; i < pl_edge_no; i++) {
+            if (pl_edge[i].restraint == 7) {
+                sprintf(par[2], " %d", pl_edge[i].k + 1);
+                strcat(par[1], par[2]);
             }
         }
         fprintf(f, "%s\n", par[1]);
-        fprintf(f, "  Name = \"Boundary Condition %d\"\n",sif_boundary_condition+1);
+        fprintf(f, "  Name = \"Boundary Condition %d\"\n", sif_boundary_condition + 1);
         fprintf(f, "  Displacement 1 = 0\n");
         fprintf(f, "  Displacement 2 = 0\n");
         fprintf(f, "  Displacement 3 = 0\n");
@@ -2110,6 +2266,953 @@ void Plate_analysis(void) {
 
         sif_boundary_condition++;
     }
+    /////
+
+
+    int combi_uls_no_total = 0;
+    int combi_sls_no_total = 0;
+    int combi_qpsls_no_total = 0;
+
+    int combi_ulslc_ino;
+    int combi_slslc_ino;
+    int combi_qpslslc_ino;
+
+    int ULSLC_NO;
+    int SLSLC_NO;
+    int QPSLSLC_NO;
+
+    int combi_flag;
+    int flag_;
+
+    combi_total_numbers_no = 0;
+
+    combi_uls_no = 0;
+    combi_sls_no = 0;
+    combi_qpsls_no = 0;
+
+    if (ret_standard == 1)  //EUROCODE
+    {
+        ULSLC = (COMBINATION *) &EUROCODE_ULSLC;
+        SLSLC = (COMBINATION *) &EUROCODE_SLSLC;
+        QPSLSLC = (COMBINATION *) &EUROCODE_QPSLSLC;
+
+        MC_ULSLC = (int *) &EUROCODE_MC_ULSLC;
+        MC_SLSLC = (int *) &EUROCODE_MC_SLSLC;
+        MC_QPSLSLC = (int *) &EUROCODE_MC_QPSLSLC;
+
+        ULSLC_NO = EUROCODE_ULSLC_NO;
+        SLSLC_NO = EUROCODE_SLSLC_NO;
+        QPSLSLC_NO = EUROCODE_QPSLSLC_NO;
+
+        load_flag = load_flag_EU;
+
+    } else if (ret_standard == 2)  //ASCE
+    {
+        ULSLC = (COMBINATION *) &ASCE_ULSLC;
+        SLSLC = (COMBINATION *) &ASCE_SLSLC;
+        QPSLSLC = (COMBINATION *) &ASCE_QPSLSLC;
+
+        MC_ULSLC = (int *) &ASCE_MC_ULSLC;
+        MC_SLSLC = (int *) &ASCE_MC_SLSLC;
+        MC_QPSLSLC = (int *) &ASCE_MC_QPSLSLC;
+
+        ULSLC_NO = ASCE_ULSLC_NO;
+        SLSLC_NO = ASCE_SLSLC_NO;
+        QPSLSLC_NO = ASCE_QPSLSLC_NO;
+
+        load_flag = load_flag_ASCE;
+    } else if (ret_standard == 3)  //ICC
+    {
+        ULSLC = (COMBINATION *) &ICC_ULSLC;
+        SLSLC = (COMBINATION *) &ICC_SLSLC;
+        QPSLSLC = (COMBINATION *) &ICC_QPSLSLC;
+
+        MC_ULSLC = (int *) &ICC_MC_ULSLC;
+        MC_SLSLC = (int *) &ICC_MC_SLSLC;
+        MC_QPSLSLC = (int *) &ICC_MC_QPSLSLC;
+
+        ULSLC_NO = ICC_ULSLC_NO;
+        SLSLC_NO = ICC_SLSLC_NO;
+        QPSLSLC_NO = ICC_QPSLSLC_NO;
+
+        load_flag = load_flag_ICC;
+    } else {
+        sprintf(report_row, "%s%s", _unknown_standard_, rn);
+        strcat(report, report_row);
+    }
+
+    if (Check_if_Equal(fabs(gZ), 0)) combi_flag = 0;
+    else combi_flag = 1;
+
+    //nodes forces and moments
+    pllc_node_force_moment_no = 0;
+    for (i = 0; i < pl_point_load_no; i++) {
+        //if (TestBit(st_layer, st_node_force_moment[i].layer)) {
+        if (pl_point_load[i].factor_record >= 0) {
+            gamma_l = pl_load_factors[pl_point_load[i].factor_record].gamma;
+            flag_ = load_flag[pl_load_factors[pl_point_load[i].factor_record].load];
+            flag_ = load_flag[pl_load_factors[pl_point_load[i].factor_record].load];
+        } else {
+            gamma_l = pl_load_factors[abs(pl_point_load[i].factor_record)].gamma;
+            flag_ = load_flag[pl_load_factors[abs(pl_point_load[i].factor_record)].load];
+        }
+        combi_flag |= flag_;
+        pllc_node_force_moment_no++;
+        //}
+    }
+
+    //plate uniform load
+    pllc_uniform_load_no = 0;
+    for (i = 0; i < pl_load_no; i++) {
+        //if (TestBit(st_layer, pl_load[i].layer)) {
+        if (pl_load[i].factor_record >= 0) {
+            gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+            flag_ = load_flag[pl_load_factors[pl_load[i].factor_record].load];
+        } else {
+            gamma_l = pl_load_factors[abs(pl_load[i].factor_record)].gamma;
+            flag_ = load_flag[pl_load_factors[abs(pl_load[i].factor_record)].load];
+        }
+        combi_flag |= flag_;
+        pllc_uniform_load_no++;
+        //}
+    }
+    /////////////////////////
+    //having combi_flag combination flags can be set
+
+    combi_total_numbers[combi_total_numbers_no].case_no = 0; //li;
+    combi_total_numbers[combi_total_numbers_no].combi = 0;  //SLS
+    combi_total_numbers[combi_total_numbers_no].combination = 0;
+    combi_total_numbers[combi_total_numbers_no].first = 1;
+    combi_total_numbers[combi_total_numbers_no].last = 1;
+    combi_total_numbers_no++;
+    combi_total_numbers[combi_total_numbers_no].case_no = 0; //li;
+    combi_total_numbers[combi_total_numbers_no].combi = 1;  //ULS
+    combi_total_numbers[combi_total_numbers_no].combination = 0;
+    combi_total_numbers[combi_total_numbers_no].first = 1;
+    combi_total_numbers[combi_total_numbers_no].last = 1;
+    combi_total_numbers_no++;
+
+    int lfirst = 1;
+    int llast = 0;
+    for (i = 0; i < ULSLC_NO; i++) {
+        if ((combi_flag & ULSLC[i].mask) &&
+            ((MC_ULSLC[i] & combi_flag) || (MC_ULSLC[i] == 0))) {   //some loads included in mask
+            ULSLC[i].flag = 1;
+            combi_uls_no++;
+            combi_total_numbers[combi_total_numbers_no].case_no = 0; //li;
+            combi_total_numbers[combi_total_numbers_no].combi = 2;  //ULSLC
+            combi_total_numbers[combi_total_numbers_no].combination = i + 1;
+            combi_total_numbers[combi_total_numbers_no].first = lfirst;
+            combi_total_numbers[combi_total_numbers_no].last = 0;
+            lfirst = 0;
+            combi_total_numbers_no++;
+        } else ULSLC[i].flag = 0;
+    }
+    if (combi_total_numbers_no > 0) combi_total_numbers[combi_total_numbers_no - 1].last = 1;
+    if (rout) printf("combi_uls_no=%d\n", combi_uls_no);
+
+    lfirst = 1;
+    for (i = 0; i < SLSLC_NO; i++) {
+        if ((combi_flag & SLSLC[i].mask) && ((MC_SLSLC[i] & combi_flag) || (MC_SLSLC[i] == 0))) {
+            SLSLC[i].flag = 1;
+            combi_sls_no++;
+            combi_total_numbers[combi_total_numbers_no].case_no = 0; //li;
+            combi_total_numbers[combi_total_numbers_no].combi = 3;  //SLSLC
+            combi_total_numbers[combi_total_numbers_no].combination = i + 1;
+            combi_total_numbers[combi_total_numbers_no].first = lfirst;
+            combi_total_numbers[combi_total_numbers_no].last = 0;
+            lfirst = 0;
+            combi_total_numbers_no++;
+        } else SLSLC[i].flag = 0;
+    }
+    if (combi_total_numbers_no > 0) combi_total_numbers[combi_total_numbers_no - 1].last = 1;
+    if (rout) printf("combi_sls_no=%d\n", combi_sls_no);
+
+    lfirst = 1;
+    for (i = 0; i < QPSLSLC_NO; i++) {
+        if ((combi_flag & QPSLSLC[i].mask) && ((MC_QPSLSLC[i] & combi_flag) || (MC_QPSLSLC[i] == 0))) {
+            QPSLSLC[i].flag = 1;
+            combi_qpsls_no++;
+            combi_total_numbers[combi_total_numbers_no].case_no = 0; //li;
+            combi_total_numbers[combi_total_numbers_no].combi = 4;  //QPSLSLC
+            combi_total_numbers[combi_total_numbers_no].combination = i + 1;
+            combi_total_numbers[combi_total_numbers_no].first = lfirst;
+            combi_total_numbers[combi_total_numbers_no].last = 0;
+            lfirst = 0;
+            combi_total_numbers_no++;
+        } else QPSLSLC[i].flag = 0;
+    }
+    if (combi_total_numbers_no > 0) combi_total_numbers[combi_total_numbers_no - 1].last = 1;
+    if (rout) printf("combi_qpsls_no=%d\n", combi_qpsls_no);
+
+    //combi_uls_no_total+=combi_uls_no[li];
+    //combi_sls_no_total+=combi_sls_no[li];
+    //combi_qpsls_no_total+=combi_qpsls_no[li];
+
+    combi_uls_no_total += combi_uls_no;
+    combi_sls_no_total += combi_sls_no;
+    combi_qpsls_no_total += combi_qpsls_no;
+
+    for (j = 0; j < pl_load_no; j++) { ;
+    }
+
+
+    combinations_number = 2 + combi_uls_no_total + combi_sls_no_total +
+                          combi_qpsls_no_total;  //SLS + ULS for each st_layer_no plus total number of combinations for each state
+
+    printf("%d\t\t# number of static load cases\n", combinations_number);
+
+    ST_UNIFORM_LOAD *st_uniform_load_comb, *st_uniform_load_cons;
+    int st_uniform_load_no_cons;
+
+    st_uniform_load_comb = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
+    st_uniform_load_cons = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
+
+    int case_number = 0;
+    ///////////////////////////
+    //// LOADS SLS BEGINS
+    case_number++;
+    sif_body_force = 0;
+
+    for (i = 0; i < zone_no; i++) {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == zone_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        fprintf(f, "Body Force %d\n", sif_body_force + 1);
+        fprintf(f, "  Name = \"BodyForce %d\"\n", sif_body_force + 1);
+        strcpy(load_formula, "");
+
+        self_weight = 0.0;
+        self_weight = gZ * pl_property[this_property].d * pl_property[this_property].h;
+        if (self_weight > 0.0) {
+            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+            strcat(load_formula, "(");
+            strcat(load_formula, par[1]);
+            strcat(load_formula, ")");
+        }
+
+        for (j = 0; j < pl_load_no; j++) {
+            if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+            {
+                set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
+                                   load_precision);  //is assumed that magnitude1=magnitude2
+                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                strcat(load_formula, "(");
+                strcat(load_formula, par[1]);
+                strcat(load_formula, ")");
+            }
+        }
+        if (strlen(load_formula) > 0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
+
+        //fprintf(f, "  Normal Pressure = -5000\n");
+        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+        fprintf(f, "  Thickness = Real %s\n", par[1]);
+        fprintf(f, "End\n\n");
+        sif_body_force++;
+    }
+
+    for (i = 0; i < plate_no; i++) {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == plate_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        fprintf(f, "Body Force %d\n", sif_body_force + 1);
+        fprintf(f, "  Name = \"BodyForce %d\"\n", sif_body_force + 1);
+
+        strcpy(load_formula, "");
+
+        self_weight = 0.0;
+        self_weight = gZ * pl_property[this_property].d * pl_property[this_property].h;
+        if (self_weight > 0.0) {
+            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+            strcat(load_formula, "(");
+            strcat(load_formula, par[1]);
+            strcat(load_formula, ")");
+        }
+
+        for (j = 0; j < pl_load_no; j++) {
+            if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+            {
+                set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
+                                   load_precision);  //is assumed that magnitude1=magnitude2
+                //fprintf(f, "  Normal Pressure = %s\n", par[1]);
+                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                strcat(load_formula, "(");
+                strcat(load_formula, par[1]);
+                strcat(load_formula, ")");
+            }
+        }
+        if (strlen(load_formula) > 0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
+
+        //fprintf(f, "  Normal Pressure = -5000\n");
+        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+        fprintf(f, "  Thickness = Real %s\n", par[1]);
+        fprintf(f, "End\n\n");
+        sif_body_force++;
+    }
+    ////SLS ENDS
+    fprintf(f, "RUN\n\n");
+
+    ////LOAD VARIANTS ULS BEGINS
+    fprintf(f, "Simulation::Output File = \"plate_uls.result\"\n");
+
+    case_number++;
+    sif_body_force = 0;
+
+    for (i = 0; i < zone_no; i++) {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == zone_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        fprintf(f, "Body Force %d::", sif_body_force + 1);
+
+        strcpy(load_formula, "");
+
+        self_weight = 0.0;
+        self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+        if (self_weight > 0.0) {
+            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+            strcat(load_formula, "(");
+            strcat(load_formula, par[1]);
+            strcat(load_formula, ")");
+        }
+
+        for (j = 0; j < pl_load_no; j++) {
+            if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+            {
+                if (pl_load[i].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+
+                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                   load_precision);  //is assumed that magnitude1=magnitude2
+                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                strcat(load_formula, "(");
+                strcat(load_formula, par[1]);
+                strcat(load_formula, ")");
+            }
+        }
+        if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+
+        sif_body_force++;
+    }
+
+    for (i = 0; i < plate_no; i++) {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == plate_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        fprintf(f, "Body Force %d::", sif_body_force + 1);
+
+        strcpy(load_formula, "");
+
+        self_weight = 0.0;
+        self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+        if (self_weight > 0.0) {
+            set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+            strcat(load_formula, "(");
+            strcat(load_formula, par[1]);
+            strcat(load_formula, ")");
+        }
+
+        for (j = 0; j < pl_load_no; j++) {
+            if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+            {
+                if (pl_load[i].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+
+                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                   load_precision);  //is assumed that magnitude1=magnitude2
+                //fprintf(f, "  Normal Pressure = %s\n", par[1]);
+                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                strcat(load_formula, "(");
+                strcat(load_formula, par[1]);
+                strcat(load_formula, ")");
+            }
+        }
+        if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+        sif_body_force++;
+    }
+
+    //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 2)"
+    //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 * 2)"
+    fprintf(f, "RUN\n\n");
+    ////ULS ENDS
+
+    ////LOAD VARIANTS ULSLC BEGINS
+
+    combi_ulslc_ino = 0;
+
+    current = 0;
+    all_formula = all_formulas[current];
+    all_formula_bak = NULL;
+
+    for (int ci = 0; ci < ULSLC_NO; ci++) {
+        if (ULSLC[ci].flag == 1) {
+            int load;
+            int flag;
+            ST_LOAD_FACTORS *combi_load_factor;
+            /////////////////////////////
+            int combi_factor_g;
+            if (ret_standard == 1)  //EUROCODE
+                combi_factor_g = eurocode_combi_factors_uls[ci][1];
+            else if (ret_standard == 2)  //ASCE
+                combi_factor_g = asce_combi_factors_uls[ci][1];
+            if (ret_standard == 3)  //ICC
+                combi_factor_g = icc_combi_factors_uls[ci][1];
+
+            double gamma_g = 1.0;
+
+            if (combi_factor_g & 1) gamma_g *= gammas->gamma_g;
+            if (combi_factor_g & 2) gamma_g *= gammas->psi0;
+            if (combi_factor_g & 4) gamma_g *= gammas->psi1;
+            if (combi_factor_g & 8) gamma_g *= gammas->psi2;
+            if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
+            if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
+
+            combi_ulslc_ino++;
+
+            ////fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
+
+            sif_body_force = 0;
+
+            strcpy(all_formula, "");
+
+            for (i = 0; i < zone_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == zone_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_uls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_uls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_uls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+
+                sif_body_force++;
+            }
+
+            for (i = 0; i < plate_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == plate_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_uls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_uls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_uls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        //fprintf(f, "  Normal Pressure = %s\n", par[1]);
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+                sif_body_force++;
+            }
+
+            go_ahead = TRUE;
+            if (all_formula_bak != NULL) {
+                if (strcmp(all_formula_bak, all_formula) == 0)
+                    go_ahead = FALSE;
+            }
+
+            if (go_ahead) {
+                fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
+                fprintf(f, all_formula);
+                //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
+                //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
+                fprintf(f, "RUN\n\n");
+
+                ULSLC[ci].flag = 2;
+            }
+
+            all_formula_bak = all_formula;
+            current = !current;
+            all_formula = all_formulas[current];
+            ////ULSLC ENDS
+        }
+    }
+
+    ////LOAD VARIANTS SLSLC BEGINS
+    combi_slslc_ino = 0;
+
+    for (int ci = 0; ci < SLSLC_NO; ci++) {
+        if (SLSLC[ci].flag == 1) {
+            int load;
+            int flag;
+            ST_LOAD_FACTORS *combi_load_factor;
+            /////////////////////////////
+            int combi_factor_g;
+            if (ret_standard == 1)  //EUROCODE
+                combi_factor_g = eurocode_combi_factors_sls[ci][1];
+            else if (ret_standard == 2)  //ASCE
+                combi_factor_g = asce_combi_factors_sls[ci][1];
+            if (ret_standard == 3)  //ICC
+                combi_factor_g = icc_combi_factors_sls[ci][1];
+            double gamma_g = 1.0;
+
+            if (combi_factor_g & 1) gamma_g *= gammas->gamma_g;
+            if (combi_factor_g & 2) gamma_g *= gammas->psi0;
+            if (combi_factor_g & 4) gamma_g *= gammas->psi1;
+            if (combi_factor_g & 8) gamma_g *= gammas->psi2;
+            if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
+            if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
+
+            combi_slslc_ino++;
+
+            ////fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
+
+            sif_body_force = 0;
+
+            strcpy(all_formula, "");
+
+            for (i = 0; i < zone_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == zone_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_sls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_sls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_sls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+
+                sif_body_force++;
+            }
+
+            for (i = 0; i < plate_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == plate_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_sls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_sls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_sls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        //fprintf(f, "  Normal Pressure = %s\n", par[1]);
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+                sif_body_force++;
+            }
+
+            go_ahead = TRUE;
+            if (all_formula_bak != NULL) {
+                if (strcmp(all_formula_bak, all_formula) == 0)
+                    go_ahead = FALSE;
+            }
+
+            if (go_ahead) {
+                fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
+                fprintf(f, all_formula);
+                //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
+                //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
+                fprintf(f, "RUN\n\n");
+
+                SLSLC[ci].flag = 2;
+            }
+
+            all_formula_bak = all_formula;
+            current = !current;
+            all_formula = all_formulas[current];
+
+            ////SLSLC ENDS
+        }
+    }
+
+    ////LOAD VARIANTS QPSLSLC BEGINS
+    combi_qpslslc_ino = 0;
+
+    for (int ci = 0; ci < QPSLSLC_NO; ci++) {
+        if (QPSLSLC[ci].flag == 1) {
+            int load;
+            int flag;
+            ST_LOAD_FACTORS *combi_load_factor;
+            /////////////////////////////
+            int combi_factor_g;
+            if (ret_standard == 1)  //EUROCODE
+                combi_factor_g = eurocode_combi_factors_qpsls[ci][1];
+            else if (ret_standard == 2)  //ASCE
+                combi_factor_g = asce_combi_factors_qpsls[ci][1];
+            if (ret_standard == 3)  //ICC
+                combi_factor_g = icc_combi_factors_qpsls[ci][1];
+            double gamma_g = 1.0;
+
+            if (combi_factor_g & 1) gamma_g *= gammas->gamma_g;
+            if (combi_factor_g & 2) gamma_g *= gammas->psi0;
+            if (combi_factor_g & 4) gamma_g *= gammas->psi1;
+            if (combi_factor_g & 8) gamma_g *= gammas->psi2;
+            if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
+            if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
+
+            combi_qpslslc_ino++;
+
+            ////fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
+
+            sif_body_force = 0;
+
+            strcpy(all_formula, "");
+
+            for (i = 0; i < zone_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == zone_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_qpsls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_qpsls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+
+                sif_body_force++;
+            }
+
+            for (i = 0; i < plate_no; i++) {
+                //searching for properties
+                for (j = 0; j < pl_property_no; j++) {
+                    if (pl_property[j].n == plate_property[i].property_number) {
+                        this_property = j;
+                        break;
+                    }
+                }
+                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                strcat(all_formula, par[0]);
+
+                strcpy(load_formula, "");
+
+                self_weight = 0.0;
+                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                if (self_weight > 0.0) {
+                    set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+
+                for (j = 0; j < pl_load_no; j++) {
+                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0) {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_qpsls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_qpsls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        //fprintf(f, "  Normal Pressure = %s\n", par[1]);
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+                if (strlen(load_formula) > 0)
+                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                strcat(all_formula, all_load_formula);
+                sif_body_force++;
+            }
+
+            go_ahead = TRUE;
+            if (all_formula_bak != NULL) {
+                if (strcmp(all_formula_bak, all_formula) == 0)
+                    go_ahead = FALSE;
+            }
+
+            if (go_ahead) {
+                fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
+                fprintf(f, all_formula);
+                //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
+                //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
+                fprintf(f, "RUN\n\n");
+
+                QPSLSLC[ci].flag = 2;
+            }
+
+            all_formula_bak = all_formula;
+            current = !current;
+            all_formula = all_formulas[current];
+            ////QPSLSLC ENDS
+        }
+    }
 
     fclose(f);
 
@@ -2117,12 +3220,11 @@ void Plate_analysis(void) {
     ClearInfo();
 
     sprintf(params, "%splate.geo", _STATIC_);
-    if (my_file_exists(params))
-    {
+    if (my_file_exists(params)) {
         //generating msh
         //  gmsh Static/plate.geo -o Static/plate.msh -2
         sprintf(params, "%splate.geo -o %splate.msh -2", _STATIC_, _STATIC_);
-        sprintf(program,"%sgmsh", _ELMER_);
+        sprintf(program, "%sgmsh", _ELMER_);
         //execute gmsh
 #ifdef LINUX
         runcode = SystemSilent(program, params);
@@ -2133,18 +3235,17 @@ void Plate_analysis(void) {
 #endif
         printf("\ngmsh runcode:%lu runcode_short:%d\n", runcode, runcode_short);
         sprintf(params, "%splate.msh", _STATIC_);
-        if ((runcode_short!=0) || (!my_file_exists(params)))
-        {
-            ret = ask_question(1, (char*)"", (char*)"OK", (char*)"", (char*)"gmsh", 12, (char*)_gmsh_error_, 11, 1, 0);
+        if ((runcode_short != 0) || (!my_file_exists(params))) {
+            ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "gmsh", 12, (char *) _gmsh_error_,
+                               11, 1, 0);
             goto pl_error;
         }
 
-        if (my_file_exists(params))
-        {
+        if (my_file_exists(params)) {
             //generating mesh
             // ElmerGrid 14 2 Static/plate.msh -out Static/plate
-            sprintf(params, "14 2 %splate.msh -out %splate", _STATIC_,_STATIC_);
-            sprintf(program,"%s%sElmerGrid", _ELMER_, _BIN_);
+            sprintf(params, "14 2 %splate.msh -out %splate", _STATIC_, _STATIC_);
+            sprintf(program, "%s%sElmerGrid", _ELMER_, _BIN_);
             //execute ElmerGrid
 #ifdef LINUX
             runcode = SystemSilent(program, params);
@@ -2154,19 +3255,18 @@ void Plate_analysis(void) {
             runcode_short = runcode >> 8;
 #endif
             printf("\nElmerGrid runcode:%lu runcode_short:%d\n", runcode, runcode_short);
-            sprintf(params, "%s%smesh.header", _STATIC_,_plate_);
-            if ((runcode_short!=0) || (!my_file_exists(params)))
-            {
-                ret = ask_question(1, (char*)"", (char*)"OK", (char*)"", (char*)"ElmerGrid", 12, (char*)_ElmerGrid_error_, 11, 1, 0);
+            sprintf(params, "%s%smesh.header", _STATIC_, _plate_);
+            if ((runcode_short != 0) || (!my_file_exists(params))) {
+                ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "ElmerGrid", 12,
+                                   (char *) _ElmerGrid_error_, 11, 1, 0);
                 goto pl_error;
             }
 
-            if (my_file_exists(params))
-            {
-                sprintf(params, "%s%splate.sif", _STATIC_,_plate_);
+            if (my_file_exists(params)) {
+                sprintf(params, "%s%splate.sif", _STATIC_, _plate_);
                 //execute ElmerSolver, it will save results in plate folder
 #ifdef LINUX
-                sprintf(program,"%s%sElmerSolver", _ELMER_, _BIN_);
+                sprintf(program, "%s%sElmerSolver", _ELMER_, _BIN_);
                 runcode = SystemSilent(program, params);
                 runcode_short = runcode >> 8;
 #else
@@ -2175,10 +3275,10 @@ void Plate_analysis(void) {
                 runcode_short = runcode >> 8;
 #endif
                 printf("\nElmerSolver runcode:%lu runcode_short:%d\n", runcode, runcode_short);
-                sprintf(params, "%splate.result",_plate_);
-                if ((runcode_short!=0) || (!my_file_exists(params)))
-                {
-                    ret = ask_question(1, (char*)"", (char*)"OK", (char*)"", (char*)"ElmerSolver", 12, (char*)_ElmerSolver_error_, 11, 1, 0);
+                sprintf(params, "%splate_sls.result", _plate_);
+                if ((runcode_short != 0) || (!my_file_exists(params))) {
+                    ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "ElmerSolver", 12,
+                                       (char *) _ElmerSolver_error_, 11, 1, 0);
                     goto pl_error;
                 }
 
@@ -2194,50 +3294,53 @@ void Plate_analysis(void) {
     //202    566
     //303    9894
     //nodes -
-    sprintf(params, "%s%smesh.header", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.header", _STATIC_, _plate_);
     f = fopen(params, "rt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12, (char*)"mesh.header", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12,
+                           (char *) "mesh.header", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
-    i_row=0;
-    data_row=data_row_[i_row];
+    i_row = 0;
+    data_row = data_row_[i_row];
 
-    line=fgets(data_row, MaxTextLen, f);
+    line = fgets(data_row, MaxTextLen, f);
     ret = sscanf(data_row, "%d %d %d", &mesh_nodes_no, &mesh_elements_no, &mesh_boundaries_no);
     while (fgets(data_row, MaxTextLen, f)) //another rows
-    {
-        ;
+    { ;
     }
     fclose(f);
 
-    mesh_node_no=0;
-    mesh_element_no=0;
-    mesh_boundary_no=0;
+    mesh_node_no = 0;
+    mesh_element_no = 0;
+    mesh_boundary_no = 0;
 
     mesh_node = (MESH_NODE *) malloc(mesh_nodes_no * sizeof(MESH_NODE) + 100);
     mesh_element = (MESH_ELEMENT *) malloc(mesh_elements_no * sizeof(MESH_ELEMENT) + 100);
     mesh_boundary = (MESH_BOUNDARY *) malloc(mesh_boundaries_no * sizeof(MESH_BOUNDARY) + 100);
 
-    sprintf(params, "%s%smesh.nodes", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.nodes", _STATIC_, _plate_);
     f = fopen(params, "rt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm,(char*)"", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12, (char*)"mesh.nodes", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12,
+                           (char *) "mesh.nodes", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
     while (fgets(data_row, MaxTextLen, f)) //another rows
     {
-        ret = sscanf(data_row, "%d %d %lf %lf %lf", &mesh_node[mesh_node_no].number, &mesh_node[mesh_node_no].flag, &mesh_node[mesh_node_no].x, &mesh_node[mesh_node_no].y, &mesh_node_z);
-        if (ret!=5) {
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_READ_RESULTS_FILE_, 12, (char*)"hesh.nodes", 11,
+        ret = sscanf(data_row, "%d %d %lf %lf %lf", &mesh_node[mesh_node_no].number, &mesh_node[mesh_node_no].flag,
+                     &mesh_node[mesh_node_no].x, &mesh_node[mesh_node_no].y, &mesh_node_z);
+        if (ret != 5) {
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
+                               (char *) "hesh.nodes", 11,
                                1,
                                62);
             no_error = FALSE;
@@ -2248,22 +3351,27 @@ void Plate_analysis(void) {
     }
     fclose(f);
 
-    sprintf(params, "%s%smesh.elements", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.elements", _STATIC_, _plate_);
     f = fopen(params, "rt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12, (char*)"mesh.elements", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12,
+                           (char *) "mesh.elements", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
     while (fgets(data_row, MaxTextLen, f)) //another rows
     {
-        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_element[mesh_element_no].number, &mesh_element[mesh_element_no].body_number, &mesh_element[mesh_element_no].type, &mesh_element[mesh_element_no].node1, &mesh_element[mesh_element_no].node2, &mesh_element[mesh_element_no].node3, &mesh_element[mesh_element_no].node4);
-        if (mesh_element[mesh_element_no].type==303) ret_exp=6; else ret_exp=7;
-        if (ret!=ret_exp) {
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_READ_RESULTS_FILE_, 12, (char*)"mesh.elements", 11,
+        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_element[mesh_element_no].number,
+                     &mesh_element[mesh_element_no].body_number, &mesh_element[mesh_element_no].type,
+                     &mesh_element[mesh_element_no].node1, &mesh_element[mesh_element_no].node2,
+                     &mesh_element[mesh_element_no].node3, &mesh_element[mesh_element_no].node4);
+        if (mesh_element[mesh_element_no].type == 303) ret_exp = 6; else ret_exp = 7;
+        if (ret != ret_exp) {
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
+                               (char *) "mesh.elements", 11,
                                1,
                                62);
             no_error = FALSE;
@@ -2274,24 +3382,28 @@ void Plate_analysis(void) {
     }
     fclose(f);
 
-    sprintf(params, "%s%smesh.boundary", _STATIC_,_plate_);
+    sprintf(params, "%s%smesh.boundary", _STATIC_, _plate_);
     f = fopen(params, "rt");
 
     if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12, (char*)"mesh.boundary", 11, 1,
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12,
+                           (char *) "mesh.boundary", 11, 1,
                            62);
-        no_error=FALSE;
+        no_error = FALSE;
         goto pl_error;
     }
 
     while (fgets(data_row, MaxTextLen, f)) //another rows
     {
-        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_boundary[mesh_boundary_no].n1, &mesh_boundary[mesh_boundary_no].n2, &mesh_boundary[mesh_boundary_no].n3, &mesh_boundary[mesh_boundary_no].n4, &mesh_boundary[mesh_boundary_no].n5, &mesh_boundary[mesh_boundary_no].n6, &mesh_boundary[mesh_boundary_no].n7);
+        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_boundary[mesh_boundary_no].n1,
+                     &mesh_boundary[mesh_boundary_no].n2, &mesh_boundary[mesh_boundary_no].n3,
+                     &mesh_boundary[mesh_boundary_no].n4, &mesh_boundary[mesh_boundary_no].n5,
+                     &mesh_boundary[mesh_boundary_no].n6, &mesh_boundary[mesh_boundary_no].n7);
         //if (mesh_boundary[mesh_boundary_no].n5==202) ret_exp=7; else ret_exp=6;
         //if (ret!=ret_exp)
-        if (ret<6)
-        {
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_READ_RESULTS_FILE_, 12, (char*)"mesh.boundary", 11,
+        if (ret < 6) {
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
+                               (char *) "mesh.boundary", 11,
                                1,
                                62);
             no_error = FALSE;
@@ -2305,7 +3417,7 @@ void Plate_analysis(void) {
     //creating geometry block
     Ldsp.blok = 1;
     Ldsp.kolor = static_colors.node_element_color;
-    Ldsp.typ=0;  //thinest
+    Ldsp.typ = 0;  //thinest
     /////////////////////
     //Layers
     sprintf(desired_layer, "%s_%s", ptr_id, "geometry");
@@ -2321,14 +3433,16 @@ void Plate_analysis(void) {
     } else {
         if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
 
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_, 12,
+                               (char *) "", 11, 1, 62);
+            no_error = FALSE;
             goto pl_error1;
         }
         if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
 
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_, 12,
+                               (char *) "", 11, 1, 62);
+            no_error = FALSE;
             goto pl_error1;
         }
         No_Layers++;
@@ -2342,84 +3456,95 @@ void Plate_analysis(void) {
 
     Ldsp.warstwa = desired_layer_no;
 
+    if (UNITS==SI)
+    {
+        jednostkiObX=jednostkiObXm;
+        jednostkiObY=jednostkiObYm;
+    }
+    else
+    {
+        jednostkiObX=jednostkiObXi;
+        jednostkiObY=jednostkiObYi;
+    }
+
+
     //from meters to drawing units
-    blok_origin.x=jednostkiObXm(mesh_node[0].x);
-    blok_origin.y=jednostkiObYm(mesh_node[0].y);
+    blok_origin.x = jednostkiObX(mesh_node[0].x);
+    blok_origin.y = jednostkiObY(mesh_node[0].y);
 
     sprintf(block_name, "%s$mesh", ptr_id_short);
 
     ptr_block = add_block(blok_origin.x, blok_origin.y, 'E', block_name, FALSE);
     if (ptr_block == NULL) {
         fclose(f);
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char*)"", 11, 1, 62);
-        no_error=FALSE;
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                           (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char *) "", 11, 1, 62);
+        no_error = FALSE;
         goto pl_error1;
     }
-    GEO_LINE_MAX=1000;
-    geo_line_no=0;
-    geo_line=(GEO_LINE*)malloc(GEO_LINE_MAX * sizeof(GEO_LINE) + 100);
+    GEO_LINE_MAX = 1000;
+    geo_line_no = 0;
+    geo_line = (GEO_LINE *) malloc(GEO_LINE_MAX * sizeof(GEO_LINE) + 100);
     memmove(&geo_line[geo_line_no].L, &Ldsp, sizeof(LINIA));
-    geo_line[geo_line_no].n1=-1;
-    geo_line[geo_line_no].n2=-1;
+    geo_line[geo_line_no].n1 = -1;
+    geo_line[geo_line_no].n2 = -1;
 
-    for (i=0; i<mesh_element_no; i++)
-    {
+    for (i = 0; i < mesh_element_no; i++) {
         //edge 1
-        geo_line[geo_line_no].L.x1 = jednostkiObXm(mesh_node[mesh_element[i].node1 - 1].x);
-        geo_line[geo_line_no].L.y1 = jednostkiObYm(mesh_node[mesh_element[i].node1 - 1].y);
-        geo_line[geo_line_no].L.x2 = jednostkiObXm(mesh_node[mesh_element[i].node2 - 1].x);
-        geo_line[geo_line_no].L.y2 = jednostkiObYm(mesh_node[mesh_element[i].node2 - 1].y);
-        geo_line[geo_line_no].n1=mesh_element[i].node1;
-        geo_line[geo_line_no].n2=mesh_element[i].node2;
+        geo_line[geo_line_no].L.x1 = jednostkiObX(mesh_node[mesh_element[i].node1 - 1].x);
+        geo_line[geo_line_no].L.y1 = jednostkiObY(mesh_node[mesh_element[i].node1 - 1].y);
+        geo_line[geo_line_no].L.x2 = jednostkiObX(mesh_node[mesh_element[i].node2 - 1].x);
+        geo_line[geo_line_no].L.y2 = jednostkiObY(mesh_node[mesh_element[i].node2 - 1].y);
+        geo_line[geo_line_no].n1 = mesh_element[i].node1;
+        geo_line[geo_line_no].n2 = mesh_element[i].node2;
 
         for (j = 0; j < geo_line_no; j++) {
-            if (((geo_line[geo_line_no].n1==geo_line[j].n1) &&
-                 (geo_line[geo_line_no].n2==geo_line[j].n2)) ||
-                 ((geo_line[geo_line_no].n1==geo_line[j].n2) &&
-                  (geo_line[geo_line_no].n2==geo_line[j].n1)))
+            if (((geo_line[geo_line_no].n1 == geo_line[j].n1) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n2)) ||
+                ((geo_line[geo_line_no].n1 == geo_line[j].n2) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n1)))
                 break;
         }
-        if (j==geo_line_no)
+        if (j == geo_line_no)
             add_geo_line();
         //edge 2
-        geo_line[geo_line_no].L.x1 = jednostkiObXm(mesh_node[mesh_element[i].node2 - 1].x);
-        geo_line[geo_line_no].L.y1 = jednostkiObYm(mesh_node[mesh_element[i].node2 - 1].y);
-        geo_line[geo_line_no].L.x2 = jednostkiObXm(mesh_node[mesh_element[i].node3 - 1].x);
-        geo_line[geo_line_no].L.y2 = jednostkiObYm(mesh_node[mesh_element[i].node3 - 1].y);
-        geo_line[geo_line_no].n1=mesh_element[i].node2;
-        geo_line[geo_line_no].n2=mesh_element[i].node3;
+        geo_line[geo_line_no].L.x1 = jednostkiObX(mesh_node[mesh_element[i].node2 - 1].x);
+        geo_line[geo_line_no].L.y1 = jednostkiObY(mesh_node[mesh_element[i].node2 - 1].y);
+        geo_line[geo_line_no].L.x2 = jednostkiObX(mesh_node[mesh_element[i].node3 - 1].x);
+        geo_line[geo_line_no].L.y2 = jednostkiObY(mesh_node[mesh_element[i].node3 - 1].y);
+        geo_line[geo_line_no].n1 = mesh_element[i].node2;
+        geo_line[geo_line_no].n2 = mesh_element[i].node3;
 
         for (j = 0; j < geo_line_no; j++) {
-            if (((geo_line[geo_line_no].n1==geo_line[j].n1) &&
-                 (geo_line[geo_line_no].n2==geo_line[j].n2)) ||
-                ((geo_line[geo_line_no].n1==geo_line[j].n2) &&
-                 (geo_line[geo_line_no].n2==geo_line[j].n1)))
+            if (((geo_line[geo_line_no].n1 == geo_line[j].n1) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n2)) ||
+                ((geo_line[geo_line_no].n1 == geo_line[j].n2) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n1)))
                 break;
         }
-        if (j==geo_line_no)
+        if (j == geo_line_no)
             add_geo_line();
         //edge 3
-        geo_line[geo_line_no].L.x1 = jednostkiObXm(mesh_node[mesh_element[i].node3 - 1].x);
-        geo_line[geo_line_no].L.y1 = jednostkiObYm(mesh_node[mesh_element[i].node3 - 1].y);
-        geo_line[geo_line_no].L.x2 = jednostkiObXm(mesh_node[mesh_element[i].node1 - 1].x);
-        geo_line[geo_line_no].L.y2 = jednostkiObYm(mesh_node[mesh_element[i].node1 - 1].y);
-        geo_line[geo_line_no].n1=mesh_element[i].node3;
-        geo_line[geo_line_no].n2=mesh_element[i].node1;
+        geo_line[geo_line_no].L.x1 = jednostkiObX(mesh_node[mesh_element[i].node3 - 1].x);
+        geo_line[geo_line_no].L.y1 = jednostkiObY(mesh_node[mesh_element[i].node3 - 1].y);
+        geo_line[geo_line_no].L.x2 = jednostkiObX(mesh_node[mesh_element[i].node1 - 1].x);
+        geo_line[geo_line_no].L.y2 = jednostkiObY(mesh_node[mesh_element[i].node1 - 1].y);
+        geo_line[geo_line_no].n1 = mesh_element[i].node3;
+        geo_line[geo_line_no].n2 = mesh_element[i].node1;
 
         for (j = 0; j < geo_line_no; j++) {
-            if (((geo_line[geo_line_no].n1==geo_line[j].n1) &&
-                 (geo_line[geo_line_no].n2==geo_line[j].n2)) ||
-                ((geo_line[geo_line_no].n1==geo_line[j].n2) &&
-                 (geo_line[geo_line_no].n2==geo_line[j].n1)))
+            if (((geo_line[geo_line_no].n1 == geo_line[j].n1) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n2)) ||
+                ((geo_line[geo_line_no].n1 == geo_line[j].n2) &&
+                 (geo_line[geo_line_no].n2 == geo_line[j].n1)))
                 break;
         }
-        if (j==geo_line_no)
+        if (j == geo_line_no)
             add_geo_line();
     }
 
-    for (i=0; i<geo_line_no; i++)
-    {
-        dodaj_obiekt((BLOK *)dane, &geo_line[i].L);
+    for (i = 0; i < geo_line_no; i++) {
+        dodaj_obiekt((BLOK *) dane, &geo_line[i].L);
     }
 
 
@@ -2429,8 +3554,9 @@ void Plate_analysis(void) {
     ptr_block = add_block(blok_origin.x, blok_origin.y, 'E', block_name, FALSE);
     if (ptr_block == NULL) {
         fclose(f);
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char*)"", 11, 1, 62);
-        no_error=FALSE;
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                           (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char *) "", 11, 1, 62);
+        no_error = FALSE;
         goto pl_error1;
     }
 
@@ -2439,20 +3565,19 @@ void Plate_analysis(void) {
     T.warstwa = Ldsp.warstwa;
     T.kolor = Ldsp.kolor;
     T.czcionka = zmwym.czcionka;
-    T.wysokosc = (float)(zmwym.wysokosc * 0.5);
+    T.wysokosc = (float) (zmwym.wysokosc * 0.5);
     T.kat = 0.0f;
-    T.blok=1;
-    T.width_factor=(float)zmwym.width_factor;
-    T.italics=0;
-    T.underline=0;
-    T.width=0;
-    T.kolor=0;
+    T.blok = 1;
+    T.width_factor = (float) zmwym.width_factor;
+    T.italics = 0;
+    T.underline = 0;
+    T.width = 0;
+    T.kolor = 0;
 
-    for (i=0; i<pl_node_no; i++)
-    {
-        T.x=(float)pl_node[i].x;
-        T.y=(float)pl_node[i].y;
-        sprintf(T.text, "%d", i+1);
+    for (i = 0; i < pl_node_no; i++) {
+        T.x = (float) pl_node[i].x;
+        T.y = (float) pl_node[i].y;
+        sprintf(T.text, "%d", i + 1);
 
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
@@ -2460,8 +3585,8 @@ void Plate_analysis(void) {
         adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
     }
 
-    T.italics=1;
-    T.underline=1;
+    T.italics = 1;
+    T.underline = 1;
     /*
     for (i=0; i<pl_edge_no; i++)
     {
@@ -2477,31 +3602,27 @@ void Plate_analysis(void) {
     }
     */
 
-    for (i = 0; i < pl_edge_no; i++)
-    {
-            Lt.x1 = (float)pl_node[pl_edge[i].node1].x;
-            Lt.y1 = (float)pl_node[pl_edge[i].node1].y;
-            Lt.x2 = (float)pl_node[pl_edge[i].node2].x;
-            Lt.y2 = (float)pl_node[pl_edge[i].node2].y;
+    for (i = 0; i < pl_edge_no; i++) {
+        Lt.x1 = (float) pl_node[pl_edge[i].node1].x;
+        Lt.y1 = (float) pl_node[pl_edge[i].node1].y;
+        Lt.x2 = (float) pl_node[pl_edge[i].node2].x;
+        Lt.y2 = (float) pl_node[pl_edge[i].node2].y;
 
-        if ((Check_if_Equal(Lt.x1, Lt.x2)) && (Check_if_Equal(Lt.y1, Lt.y2)))
-        {
-            PL.kat=0;
-            psize=Get_Point_Size()/2.0;
-            T.x = (float)(Lt.x1 + psize);
-            T.y = (float)(Lt.y1 + psize);
-        }
-        else
-        {
+        if ((Check_if_Equal(Lt.x1, Lt.x2)) && (Check_if_Equal(Lt.y1, Lt.y2))) {
+            PL.kat = 0;
+            psize = Get_Point_Size() / 2.0;
+            T.x = (float) (Lt.x1 + psize);
+            T.y = (float) (Lt.y1 + psize);
+        } else {
             parametry_lini(&Lt, &PL);
             T.kat = Pi_ * PL.kat / 180;
             //T.x = Lt.x1 + ((Lt.x2 - Lt.x1) / 3);
             //T.y = Lt.y1 + ((Lt.y2 - Lt.y1) / 3);
-            T.x = (float)((Lt.x1 + Lt.x2) / 2.);
-            T.y = (float)((Lt.y1 + Lt.y2) / 2.);
+            T.x = (float) ((Lt.x1 + Lt.x2) / 2.);
+            T.y = (float) ((Lt.y1 + Lt.y2) / 2.);
         }
 
-        sprintf(T.text, "%d", i+1);
+        sprintf(T.text, "%d", i + 1);
 
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
@@ -2510,28 +3631,28 @@ void Plate_analysis(void) {
         adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
     }
 
-        //mesh nodes
+    //mesh nodes
     sprintf(block_name, "%s$Mesh_Nodes", ptr_id_short);
 
     ptr_block = add_block(blok_origin.x, blok_origin.y, 'E', block_name, FALSE);
     if (ptr_block == NULL) {
         fclose(f);
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char*)"", 11, 1, 62);
-        no_error=FALSE;
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                           (char *) _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_, 12, (char *) "", 11, 1, 62);
+        no_error = FALSE;
         goto pl_error1;
     }
 
     //mesh nodes
-    T.italics=0;
-    T.underline=0;
-    T.wysokosc = (float)(zmwym.wysokosc * 0.05);
+    T.italics = 0;
+    T.underline = 0;
+    T.wysokosc = (float) (zmwym.wysokosc * 0.05);
     T.kat = 0.0f;
-    T.ukryty=1;
-    for (i=0; i<mesh_nodes_no; i++)
-    {
-        T.x=jednostkiObXm(mesh_node[i].x);
-        T.y=jednostkiObYm(mesh_node[i].y);
-        sprintf(T.text, "%d", i+1);
+    T.ukryty = 1;
+    for (i = 0; i < mesh_nodes_no; i++) {
+        T.x = jednostkiObX(mesh_node[i].x);
+        T.y = jednostkiObY(mesh_node[i].y);
+        sprintf(T.text, "%d", i + 1);
 
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
@@ -2541,16 +3662,17 @@ void Plate_analysis(void) {
 
 
     //mesh elements
-    T.italics=1;
-    T.underline=1;
-    T.wysokosc = (float)(zmwym.wysokosc * 0.05);
+    T.italics = 1;
+    T.underline = 1;
+    T.wysokosc = (float) (zmwym.wysokosc * 0.05);
     T.kat = 0.0f;
-    T.ukryty=1;
-    for (i=0; i<mesh_elements_no; i++)
-    {
-        T.x=jednostkiObXm((mesh_node[mesh_element[i].node1-1].x+mesh_node[mesh_element[i].node2-1].x+mesh_node[mesh_element[i].node3-1].x)/3.);
-        T.y=jednostkiObYm((mesh_node[mesh_element[i].node1-1].y+mesh_node[mesh_element[i].node2-1].y+mesh_node[mesh_element[i].node3-1].y)/3.);
-        sprintf(T.text, "%d", i+1);
+    T.ukryty = 1;
+    for (i = 0; i < mesh_elements_no; i++) {
+        T.x = jednostkiObX((mesh_node[mesh_element[i].node1 - 1].x + mesh_node[mesh_element[i].node2 - 1].x +
+                             mesh_node[mesh_element[i].node3 - 1].x) / 3.);
+        T.y = jednostkiObY((mesh_node[mesh_element[i].node1 - 1].y + mesh_node[mesh_element[i].node2 - 1].y +
+                             mesh_node[mesh_element[i].node3 - 1].y) / 3.);
+        sprintf(T.text, "%d", i + 1);
 
         T.dl = strlen(T.text);
         T.n = T18 + T.dl;
@@ -2559,927 +3681,2317 @@ void Plate_analysis(void) {
     }
 
     free(geo_line);
-    geo_line=NULL;
+    geo_line = NULL;
 
-    //results
-    sprintf(params, "%splate.result", _plate_);
-    f = fopen(params, "rt");
+    //consolidation of results
+    //plate_ulslc.result
+    //plate_slslc.result
+    //plate_qpslslc.result
+    //will be created
 
-    if (f == NULL) {
-        ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_OPEN_RESULTS_FILE_, 12, (char*)"plate.result", 11, 1, 62);
-        no_error=FALSE;
-        goto pl_error1;
+    //deflection_ini = 0;
+    //stress_ini = 0;
+    //epsilon_ini = 0;
+
+
+    //let's create body_height table
+    int max_body_no=plate_property[plate_no-1].k+1;
+
+    body_property = (int*)malloc(max_body_no*sizeof(int));
+
+    for (i=0; i<max_body_no; i++) body_property[i]=-1;
+
+    //let's prepare table body_h
+    for (i=0; i<wall_no; i++)
+    {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == wall_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        if (j<pl_property_no)  //found it
+        {
+            body_property[wall_property[i].k]=this_property;
+        }
+    }
+    for (i=0; i<zone_no; i++)
+    {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == zone_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        if (j<pl_property_no)  //found it
+        {
+            body_property[zone_property[i].k]=this_property;
+        }
+    }
+    for (i=0; i<plate_no; i++)
+    {
+        //searching for properties
+        for (j = 0; j < pl_property_no; j++) {
+            if (pl_property[j].n == plate_property[i].property_number) {
+                this_property = j;
+                break;
+            }
+        }
+        if (j<pl_property_no)  //found it
+        {
+            body_property[plate_property[i].k]=this_property;
+        }
     }
 
-    i_row=0;
-    data_row=data_row_[i_row];
-    //deflection
-    while (fgets(data_row, MaxTextLen, f))
+    char params0[32];
+    int ULS_SLS_LC_NO;
+
+    for (i=0; i<5; i++) ULSLC_flag[i]=1;
+
+    for (int sti = 0; sti < 5; sti++)
     {
-        Perm = strstr(data_row, "Perm:");
-        if (Perm != NULL)
+        //deflection_ini = 0;
+        //stress_ini = 0;
+        //epsilon_ini = 0;
+
+        if (sti<2) goto singles;
+        switch (sti)
         {
-            strcpy(deflection_chapter[0], data_row_[!i_row]);
-            deflection_chapter[0][strlen(deflection_chapter[0])-1]='\0';
-            ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
-            if ((ret == 2) && (perm_d_node_no > 0) && (perm_d_index_no > 0)) {
-                //perm_d = (PERM *) malloc(perm_d_node_no * sizeof(PERM *));
-                perm_d = (int *) malloc(perm_d_node_no * sizeof(int)  + 100);
-                for (i = 0; i < perm_d_node_no; i++) perm_d[i]=-1;
-                perm_d_b = 1;
-                for (i = 0; i < perm_d_index_no; i++) {
-                    fgets(data_row, MaxTextLen, f);
-                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                    //perm_d[node_number-1]=index_number-1;
-                    perm_d[node_number-1]=i;
-                }
-                for (i = 0; i < DEFLECTION_NUMBER; i++)
-                    deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double)  + 100);
-                //deflection 1...EPSILON_NUMBER
-                for (j = 0; j < DEFLECTION_NUMBER; j++)
+            case 2:
+                sprintf(params0, "plate_ulslc");
+                ULS_SLS_LC_NO=ULSLC_NO;
+                strncpy(SLS_ULS, "ulslc", 5);
+                ULS_SLS_LC = ULSLC;
+                break;
+            case 3:
+                sprintf(params0, "plate_slslc");
+                ULS_SLS_LC_NO=SLSLC_NO;
+                strncpy(SLS_ULS, "slslc", 5);
+                ULS_SLS_LC = SLSLC;
+                break;
+            case 4:
+                sprintf(params0, "plate_qpslslc");
+                ULS_SLS_LC_NO=QPSLSLC_NO;
+                strncpy(SLS_ULS, "qpulslc", 7);
+                ULS_SLS_LC = QPSLSLC;
+                break;
+        }
+
+        file_no=0;
+        sti_no=0;
+        deflection_ini = 0;
+        stress_ini = 0;
+        epsilon_ini = 0;
+
+        for (int ci = 0; ci < ULS_SLS_LC_NO; ci++)
+        {
+            //deflection_ini = 0;
+            //stress_ini = 0;
+            //epsilon_ini = 0;
+            //file_no=0;
+            //sti_no=0;
+
+            if (ULS_SLS_LC[ci].flag == 2)
+            {
+                file_no++;
+                sprintf(params, "%s%s%d.result", _plate_, params0, file_no);
+                f = fopen(params, "rt");
+
+                if (f != NULL)
                 {
-                    for (i = 0; i < perm_d_index_no; i++)
-                    {
-                        fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%lf", &deflection[j][i]);
-                        deflection_min[j]=min(deflection_min[j], deflection[j][i]);
-                        deflection_max[j]=max(deflection_max[j], deflection[j][i]);
+                    /////////////////////////
+                    sti_no++;
+                    i_row = 0;
+                    data_row = data_row_[i_row];
+                    //deflection
+                    while (fgets(data_row, MaxTextLen, f)) {
+                        Perm = strstr(data_row, "Perm:");
+                        if (Perm != NULL) {
+                            strcpy(deflection_chapter[0], data_row_[!i_row]);
+                            deflection_chapter[0][strlen(deflection_chapter[0]) - 1] = '\0';
+                            modify_chapter((char *) deflection_chapter[0]);
+                            ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                            if ((ret == 2) && (perm_d_node_no > 0) && (perm_d_index_no > 0)) {
+                                //perm_d = (PERM *) malloc(perm_d_node_no * sizeof(PERM *));
+                                perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                                for (i = 0; i < perm_d_node_no; i++) perm_d[i] = -1;
+                                perm_d_b = 1;
+                                for (i = 0; i < perm_d_index_no; i++) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                    //perm_d[node_number-1]=index_number-1;
+                                    perm_d[node_number - 1] = i;
+                                }
+                                for (i = 0; i < DEFLECTION_NUMBER; i++) {
+                                    deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
+                                    deflection_min[i] = BIGNOF;
+                                    deflection_max[i] = -BIGNOF;
+                                    if (!deflection_ini) {
+                                        min_deflection_min[i] = BIGNOF;
+                                        max_deflection_max[i] = -BIGNOF;
+                                        min_deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
+                                        max_deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
+
+                                        for (j = 0; j < perm_d_index_no; j++) {
+                                            min_deflection[i][j] = BIGNOF;
+                                            max_deflection[i][j] = -BIGNOF;
+                                        }
+                                    }
+                                }
+                                deflection_ini = 1;
+                                //deflection 1...EPSILON_NUMBER
+                                for (j = 0; j < DEFLECTION_NUMBER; j++) {
+                                    for (i = 0; i < perm_d_index_no; i++) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        ret = sscanf(data_row, "%lf", &deflection[j][i]);
+                                        deflection_min[j] = min(deflection_min[j], deflection[j][i]);
+                                        deflection_max[j] = max(deflection_max[j], deflection[j][i]);
+
+                                        ////combination max
+                                        min_deflection_min[j] = min(min_deflection_min[j], deflection_min[j]);
+                                        max_deflection_max[j] = max(max_deflection_max[j], deflection_max[j]);
+
+                                        min_deflection[j][i] = min(min_deflection[j][i], deflection[j][i]);
+                                        max_deflection[j][i] = max(max_deflection[j][i], deflection[j][i]);
+                                        ////
+                                    }
+                                    if (j < (DEFLECTION_NUMBER - 1)) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        strcpy(deflection_chapter[j + 1], data_row);
+                                        deflection_chapter[j + 1][strlen(deflection_chapter[j + 1]) - 1] = '\0';
+                                        modify_chapter((char *) deflection_chapter[j + 1]);
+                                        fgets(data_row, MaxTextLen, f);
+                                        /////////////////////////
+                                        Perm = strstr(data_row, "Perm:");
+                                        use_previous = strstr(data_row, "use previous");
+                                        if (Perm != NULL) {
+                                            if (use_previous != NULL) { ; //do nothing
+                                            } else {
+                                                ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                                                if (ret == 2) {
+                                                    if (perm_d_b) free(perm_d);
+                                                    perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                                                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                                                    perm_d_b = 1;
+                                                    for (i = 0; i < perm_d_index_no; i++) {
+                                                        fgets(data_row, MaxTextLen, f);
+                                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                                        perm_d[node_number - 1] = i;
+                                                    }
+                                                } else { ; //TO DO - ERROR
+                                                }
+                                            }
+                                        }
+                                        /////////////////////////
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        i_row = !i_row;
+                        data_row = data_row_[i_row];
                     }
-                    if (j < (DEFLECTION_NUMBER-1))
-                    {
+
+                    i_row = 0;
+                    data_row = data_row_[i_row];
+
+                    //stress
+                    perm_s_b = 0;
+                    while (fgets(data_row, MaxTextLen, f)) {
+                        Perm = strstr(data_row, "Perm:");
+                        use_previous = strstr(data_row, "use previous");
+                        if (Perm != NULL) {
+                            strcpy(stress_chapter[0], data_row_[!i_row]);
+                            stress_chapter[0][strlen(stress_chapter[0]) - 1] = '\0';
+                            modify_chapter((char *) stress_chapter[0]);
+                            if (use_previous != NULL) {
+                                perm_s = perm_d;
+                                perm_s_node_no = perm_d_node_no;
+                                perm_s_index_no = perm_d_index_no;
+                            } else {
+                                ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
+                                if (ret == 2) {
+                                    perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                                    perm_s_b = 1;
+                                    for (i = 0; i < perm_s_index_no; i++) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                        //perm_s[node_number-1]=index_number-1;
+                                        perm_s[node_number - 1] = i;
+                                    }
+                                } else { ; //TO DO - ERROR
+                                }
+                            }
+                            for (i = 0; i < STRESS_NUMBER; i++) {
+                                stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                                stress_min[i] = BIGNOF;
+                                stress_max[i] = -BIGNOF;
+                                if (!stress_ini) {
+                                    min_stress_min[i] = BIGNOF;
+                                    max_stress_max[i] = -BIGNOF;
+                                    min_stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                                    max_stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+
+                                    for (j = 0; j < perm_s_index_no; j++) {
+                                        min_stress[i][j] = BIGNOF;
+                                        max_stress[i][j] = -BIGNOF;
+                                    }
+                                }
+                            }
+                            stress_ini = 1;
+                            //stress 1...6
+                            for (j = 0; j < STRESS_NUMBER; j++) {
+                                for (i = 0; i < perm_s_index_no; i++) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    ret = sscanf(data_row, "%lf", &stress[j][i]);
+                                    stress_min[j] = min(stress_min[j], stress[j][i]);
+                                    stress_max[j] = max(stress_max[j], stress[j][i]);
+
+                                    ////combination max
+                                    min_stress_min[j] = min(min_stress_min[j], stress_min[j]);
+                                    max_stress_max[j] = max(max_stress_max[j], stress_max[j]);
+
+                                    min_stress[j][i] = min(min_stress[j][i], stress[j][i]);
+                                    max_stress[j][i] = max(max_stress[j][i], stress[j][i]);
+                                    /////
+                                }
+                                if (j < (STRESS_NUMBER - 1)) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    strcpy(stress_chapter[j + 1], data_row);
+                                    stress_chapter[j + 1][strlen(stress_chapter[j + 1]) - 1] = '\0';
+                                    modify_chapter((char *) stress_chapter[j + 1]);
+                                    fgets(data_row, MaxTextLen, f);
+                                    /////////////////////////
+                                    Perm = strstr(data_row, "Perm:");
+                                    use_previous = strstr(data_row, "use previous");
+                                    if (Perm != NULL) {
+                                        if (use_previous != NULL) { ; //do nothing
+                                        } else {
+                                            ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
+                                            if (ret == 2) {
+                                                if (perm_s_b) free(perm_s);
+                                                perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                                                for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
+                                                perm_s_b = 1;
+                                                for (i = 0; i < perm_s_index_no; i++) {
+                                                    fgets(data_row, MaxTextLen, f);
+                                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                                    perm_s[node_number - 1] = i;
+                                                }
+                                            } else { ; //TO DO - ERROR
+                                            }
+                                        }
+                                    }
+                                    /////////////////////////
+                                }
+                            }
+                            break;
+                        }
+                        i_row = !i_row;
+                        data_row = data_row_[i_row];
+                    }
+
+                    i_row = 0;
+                    data_row = data_row_[i_row];
+                    
+                    //epsilon
+                    perm_e_b = 0;
+                    while (fgets(data_row, MaxTextLen, f)) {
+                        Perm = strstr(data_row, "Perm:");
+                        use_previous = strstr(data_row, "use previous");
+                        if (Perm != NULL) {
+                            strcpy(epsilon_chapter[0], data_row_[!i_row]);
+                            epsilon_chapter[0][strlen(epsilon_chapter[0]) - 1] = '\0';
+                            modify_chapter((char *) epsilon_chapter[0]);
+                            if (use_previous != NULL) {
+                                perm_e = perm_s;
+                                perm_e_node_no = perm_s_node_no;
+                                perm_e_index_no = perm_s_index_no;
+                            } else {
+                                ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                                if (ret == 2) {
+                                    perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                                    for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
+                                    perm_e_b = 1;
+                                    for (i = 0; i < perm_e_index_no; i++) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                        perm_e[node_number - 1] = i;
+                                    }
+                                } else { ; //TO DO - ERROR
+                                }
+                            }
+                            for (i = 0; i < EPSILON_NUMBER; i++) {
+                                epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
+                                epsilon_min[i] = BIGNOF;
+                                epsilon_max[i] = -BIGNOF;
+                                if (!epsilon_ini) {
+                                    min_epsilon_min[i] = BIGNOF;
+                                    max_epsilon_max[i] = -BIGNOF;
+                                    min_epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
+                                    max_epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
+
+                                    for (j = 0; j < perm_e_index_no; j++) {
+                                        min_epsilon[i][j] = BIGNOF;
+                                        max_epsilon[i][j] = -BIGNOF;
+                                    }
+                                }
+                            }
+                            epsilon_ini = 1;
+                            //epsilon 1...6
+                            for (j = 0; j < EPSILON_NUMBER; j++) {
+                                for (i = 0; i < perm_e_index_no; i++) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    ret = sscanf(data_row, "%lf", &epsilon[j][i]);
+                                    epsilon_min[j] = min(epsilon_min[j], epsilon[j][i]);
+                                    epsilon_max[j] = max(epsilon_max[j], epsilon[j][i]);
+
+                                    ////combination max
+                                    min_epsilon_min[j] = min(min_epsilon_min[j], epsilon_min[j]);
+                                    max_epsilon_max[j] = max(max_epsilon_max[j], epsilon_max[j]);
+
+                                    min_epsilon[j][i] = min(min_epsilon[j][i], epsilon[j][i]);
+                                    max_epsilon[j][i] = max(max_epsilon[j][i], epsilon[j][i]);
+                                    //////
+                                }
+                                if (j < (EPSILON_NUMBER - 1)) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    strcpy(epsilon_chapter[j + 1], data_row);
+                                    epsilon_chapter[j + 1][strlen(epsilon_chapter[j + 1]) - 1] = '\0';
+                                    modify_chapter((char *) epsilon_chapter[j + 1]);
+                                    fgets(data_row, MaxTextLen, f);
+                                    /////////////////////////
+                                    Perm = strstr(data_row, "Perm:");
+                                    use_previous = strstr(data_row, "use previous");
+                                    if (Perm != NULL) {
+                                        if (use_previous != NULL) { ; //do nothing
+                                        } else {
+                                            ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                                            if (ret == 2) {
+                                                if (perm_e_b) free(perm_e);
+                                                perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                                                for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
+                                                perm_e_b = 1;
+                                                for (i = 0; i < perm_e_index_no; i++) {
+                                                    fgets(data_row, MaxTextLen, f);
+                                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                                    perm_e[node_number - 1] = i;
+                                                }
+                                            } else { ; //TO DO - ERROR
+                                            }
+                                        }
+                                    }
+                                    /////////////////////////
+                                }
+                            }
+                            break;
+                        }
+                        i_row = !i_row;
+                        data_row = data_row_[i_row];
+                    }
+
+                    i_row = 0;
+                    data_row = data_row_[i_row];
+
+                    fclose(f);
+                }
+            }
+        }
+
+        ///creating results for combinationsd
+        if (sti_no>0)
+        {
+            nom_max=1;
+            goto singles_multiples;
+        }
+        else
+        {
+            if (sti==2)  //ULSLC
+            {
+                ULSLC_flag[2]=0;
+                nom_max=1;
+                for (int is=0; is<STRESS_NUMBER; is++) {
+                    min_stress[is] = min_stress_bak[is];
+                    max_stress[is] = max_stress_bak[is];
+                    min_stress_min[is] = min_stress_min_bak[is];
+                    max_stress_max[is] = max_stress_max_bak[is];
+                }
+                perm_s = perm_s_bak;
+                perm_d_b = 0;
+                perm_s_b = 0;
+                perm_e_b = 0;
+                goto singles_multiples;
+            }
+            else if (sti==3)
+            {
+                ULSLC_flag[3]=0;
+                continue;
+            }
+            else if (sti==4)
+            {
+                ULSLC_flag[4]=0;
+                continue;
+            }
+            else continue;
+        }
+
+
+    singles:
+    nom_max=0;
+    //results
+        switch (sti)
+        {
+            case 0: //sls
+                sprintf(params, "%splate_sls.result", _plate_);
+                strncpy(SLS_ULS, "sls", 3);  //temporary
+                break;
+            case 1: //uls
+                sprintf(params, "%splate_uls.result", _plate_);
+                strncpy(SLS_ULS, "uls", 3);  //temporary
+                break;
+
+            /*
+            case 2: //ulslc
+                sprintf(params, "%splate_ulslc1.result", _plate_);
+                strncpy(SLS_ULS, "ulslc", 5);  //temporary
+                break;
+            case 3: //slslc
+                sprintf(params, "%splate_slslc1.result", _plate_);
+                strncpy(SLS_ULS, "slslc", 5);  //temporary
+                break;
+            case 4: //qpslslc
+                sprintf(params, "%splate_qpslslc1.result", _plate_);
+                strncpy(SLS_ULS, "qpslslc", 7);  //temporary
+                break;
+            */
+        }
+        //results
+        f = fopen(params, "rt");
+
+        if (f == NULL) {
+
+            //if (lci<4) {
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_,
+                                   12,
+                                   params, 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            //}
+            //else continue;  //qpslslc can not exist
+        }
+
+        i_row = 0;
+        data_row = data_row_[i_row];
+        //deflection
+        while (fgets(data_row, MaxTextLen, f)) {
+            Perm = strstr(data_row, "Perm:");
+            if (Perm != NULL) {
+                strcpy(deflection_chapter[0], data_row_[!i_row]);
+                deflection_chapter[0][strlen(deflection_chapter[0]) - 1] = '\0';
+                modify_chapter((char *) deflection_chapter[0]);
+                ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                if ((ret == 2) && (perm_d_node_no > 0) && (perm_d_index_no > 0)) {
+                    //perm_d = (PERM *) malloc(perm_d_node_no * sizeof(PERM *));
+                    perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                    for (i = 0; i < perm_d_node_no; i++) perm_d[i] = -1;
+                    perm_d_b = 1;
+                    for (i = 0; i < perm_d_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
-                        strcpy(deflection_chapter[j+1], data_row);
-                        deflection_chapter[j+1][strlen(deflection_chapter[j+1])-1]='\0';
+                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                        //perm_d[node_number-1]=index_number-1;
+                        perm_d[node_number - 1] = i;
+                    }
+                    for (i = 0; i < DEFLECTION_NUMBER; i++) {
+                        deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
+                        deflection_min[i]=BIGNOF;
+                        deflection_max[i]=-BIGNOF;
+                    }
+                    //deflection 1...EPSILON_NUMBER
+                    for (j = 0; j < DEFLECTION_NUMBER; j++) {
+                        for (i = 0; i < perm_d_index_no; i++) {
+                            fgets(data_row, MaxTextLen, f);
+                            ret = sscanf(data_row, "%lf", &deflection[j][i]);
+                            deflection_min[j] = min(deflection_min[j], deflection[j][i]);
+                            deflection_max[j] = max(deflection_max[j], deflection[j][i]);
+                        }
+                        if (j < (DEFLECTION_NUMBER - 1)) {
+                            fgets(data_row, MaxTextLen, f);
+                            strcpy(deflection_chapter[j + 1], data_row);
+                            deflection_chapter[j + 1][strlen(deflection_chapter[j + 1]) - 1] = '\0';
+                            modify_chapter((char *) deflection_chapter[j + 1]);
+                            fgets(data_row, MaxTextLen, f);
+                            /////////////////////////
+                            Perm = strstr(data_row, "Perm:");
+                            use_previous = strstr(data_row, "use previous");
+                            if (Perm != NULL) {
+                                if (use_previous != NULL) { ; //do nothing
+                                } else {
+                                    ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                                    if (ret == 2) {
+                                        if (perm_d_b) free(perm_d);
+                                        perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                                        for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                                        perm_d_b = 1;
+                                        for (i = 0; i < perm_d_index_no; i++) {
+                                            fgets(data_row, MaxTextLen, f);
+                                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                            perm_d[node_number - 1] = i;
+                                        }
+                                    } else { ; //TO DO - ERROR
+                                    }
+                                }
+                            }
+                            /////////////////////////
+                        }
+                    }
+                    break;
+                }
+            }
+            i_row = !i_row;
+            data_row = data_row_[i_row];
+        }
+
+        i_row = 0;
+        data_row = data_row_[i_row];
+
+        //stress
+        perm_s_b = 0;
+        while (fgets(data_row, MaxTextLen, f)) {
+            Perm = strstr(data_row, "Perm:");
+            use_previous = strstr(data_row, "use previous");
+            if (Perm != NULL) {
+                strcpy(stress_chapter[0], data_row_[!i_row]);
+                stress_chapter[0][strlen(stress_chapter[0]) - 1] = '\0';
+                modify_chapter((char *) stress_chapter[0]);
+                if (use_previous != NULL) {
+                    perm_s = perm_d;
+                    perm_s_node_no = perm_d_node_no;
+                    perm_s_index_no = perm_d_index_no;
+                } else {
+                    ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
+                    if (ret == 2) {
+                        perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                        for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                        perm_s_b = 1;
+                        for (i = 0; i < perm_s_index_no; i++) {
+                            fgets(data_row, MaxTextLen, f);
+                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                            //perm_s[node_number-1]=index_number-1;
+                            perm_s[node_number - 1] = i;
+                        }
+                    } else { ; //TO DO - ERROR
+                    }
+                }
+                for (i = 0; i < STRESS_NUMBER; i++) {
+                    stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                    stress_min[i]=BIGNOF;
+                    stress_max[i]=-BIGNOF;
+                }
+                //stress 1...6
+                for (j = 0; j < STRESS_NUMBER; j++) {
+                    for (i = 0; i < perm_s_index_no; i++) {
+                        fgets(data_row, MaxTextLen, f);
+                        ret = sscanf(data_row, "%lf", &stress[j][i]);
+                        stress_min[j] = min(stress_min[j], stress[j][i]);
+                        stress_max[j] = max(stress_max[j], stress[j][i]);
+                    }
+                    if (j < (STRESS_NUMBER - 1)) {
+                        fgets(data_row, MaxTextLen, f);
+                        strcpy(stress_chapter[j + 1], data_row);
+                        stress_chapter[j + 1][strlen(stress_chapter[j + 1]) - 1] = '\0';
+                        modify_chapter((char *) stress_chapter[j + 1]);
                         fgets(data_row, MaxTextLen, f);
                         /////////////////////////
                         Perm = strstr(data_row, "Perm:");
                         use_previous = strstr(data_row, "use previous");
-                        if (Perm != NULL)
-                        {
+                        if (Perm != NULL) {
                             if (use_previous != NULL) { ; //do nothing
                             } else {
-                                ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                                ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
                                 if (ret == 2) {
-                                    if (perm_d_b) free(perm_d);
-                                    perm_d = (int *) malloc(perm_d_node_no * sizeof(int)  + 100);
-                                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
-                                    perm_d_b = 1;
-                                    for (i = 0; i < perm_d_index_no; i++) {
+                                    if (perm_s_b) free(perm_s);
+                                    perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                                    for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
+                                    perm_s_b = 1;
+                                    for (i = 0; i < perm_s_index_no; i++) {
                                         fgets(data_row, MaxTextLen, f);
                                         ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                        perm_d[node_number - 1] = i;
+                                        perm_s[node_number - 1] = i;
                                     }
                                 } else { ; //TO DO - ERROR
                                 }
                             }
                         }
-                            /////////////////////////
+                        /////////////////////////
                     }
                 }
                 break;
             }
+            i_row = !i_row;
+            data_row = data_row_[i_row];
         }
-        i_row=!i_row;
-        data_row=data_row_[i_row];
-    }
 
-    i_row=0;
-    data_row=data_row_[i_row];
+        i_row = 0;
+        data_row = data_row_[i_row];
 
-    //stress
-    perm_s_b=0;
-    while (fgets(data_row, MaxTextLen, f))
-    {
-        Perm = strstr(data_row, "Perm:");
-        use_previous = strstr(data_row, "use previous");
-        if (Perm != NULL) {
-            strcpy(stress_chapter[0], data_row_[!i_row]);
-            stress_chapter[0][strlen(stress_chapter[0])-1]='\0';
-            if (use_previous != NULL) {
-                perm_s = perm_d;
-                perm_s_node_no = perm_d_node_no;
-                perm_s_index_no = perm_d_index_no;
-            } else
-            {
-                ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
-                if (ret == 2)
-                {
-                    perm_s = (int *) malloc(perm_s_node_no * sizeof(int)  + 100);
-                    for (i = 0; i < perm_d_node_no; i++) perm_s[i]=-1;
-                    perm_s_b = 1;
-                    for (i = 0; i < perm_s_index_no; i++) {
-                        fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                        //perm_s[node_number-1]=index_number-1;
-                        perm_s[node_number-1]=i;
-                    }
-                }
-                else
-                {
-                    ; //TO DO - ERROR
-                }
-            }
-            for (i = 0; i < STRESS_NUMBER; i++)
-                stress[i] = (double *) malloc(perm_s_index_no * sizeof(double)  + 100);
-            //stress 1...6
-            for (j = 0; j < STRESS_NUMBER; j++) {
-                for (i = 0; i < perm_s_index_no; i++) {
-                    fgets(data_row, MaxTextLen, f);
-                    ret = sscanf(data_row, "%lf", &stress[j][i]);
-                    stress_min[j]=min(stress_min[j], stress[j][i]);
-                    stress_max[j]=max(stress_max[j], stress[j][i]);
-                }
-                if (j < (STRESS_NUMBER-1)) {
-                    fgets(data_row, MaxTextLen, f);
-                    strcpy(stress_chapter[j+1], data_row);
-                    stress_chapter[j+1][strlen(stress_chapter[j+1])-1]='\0';
-                    fgets(data_row, MaxTextLen, f);
-                    /////////////////////////
-                    Perm = strstr(data_row, "Perm:");
-                    use_previous = strstr(data_row, "use previous");
-                    if (Perm != NULL)
-                    {
-                        if (use_previous != NULL)
-                        { ; //do nothing
-                        } else
-                        {
-                            ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
-                            if (ret == 2)
-                            {
-                                if (perm_s_b) free(perm_s);
-                                perm_s = (int *) malloc(perm_s_node_no * sizeof(int)  + 100);
-                                for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
-                                perm_s_b = 1;
-                                for (i = 0; i < perm_s_index_no; i++) {
-                                    fgets(data_row, MaxTextLen, f);
-                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                    perm_s[node_number - 1] = i;
-                                }
-                            } else
-                            { ; //TO DO - ERROR
-                            }
+        //epsilon
+        perm_e_b = 0;
+        while (fgets(data_row, MaxTextLen, f)) {
+            Perm = strstr(data_row, "Perm:");
+            use_previous = strstr(data_row, "use previous");
+            if (Perm != NULL) {
+                strcpy(epsilon_chapter[0], data_row_[!i_row]);
+                epsilon_chapter[0][strlen(epsilon_chapter[0]) - 1] = '\0';
+                modify_chapter((char *) epsilon_chapter[0]);
+                if (use_previous != NULL) {
+                    perm_e = perm_s;
+                    perm_e_node_no = perm_s_node_no;
+                    perm_e_index_no = perm_s_index_no;
+                } else {
+                    ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                    if (ret == 2) {
+                        perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                        for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
+                        perm_e_b = 1;
+                        for (i = 0; i < perm_e_index_no; i++) {
+                            fgets(data_row, MaxTextLen, f);
+                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                            perm_e[node_number - 1] = i;
                         }
+                    } else { ; //TO DO - ERROR
                     }
-                    /////////////////////////
                 }
-            }
-            break;
-        }
-        i_row=!i_row;
-        data_row=data_row_[i_row];
-    }
-
-    i_row=0;
-    data_row=data_row_[i_row];
-
-    //epsilon
-    perm_e_b = 0;
-    while (fgets(data_row, MaxTextLen, f))
-    {
-        Perm = strstr(data_row, "Perm:");
-        use_previous = strstr(data_row, "use previous");
-        if (Perm != NULL) {
-            strcpy(epsilon_chapter[0], data_row_[!i_row]);
-            epsilon_chapter[0][strlen(epsilon_chapter[0])-1]='\0';
-            if (use_previous != NULL) {
-                perm_e = perm_s;
-                perm_e_node_no = perm_s_node_no;
-                perm_e_index_no = perm_s_index_no;
-            } else
-            {
-                ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
-                if (ret == 2)
-                {
-                    perm_e = (int *) malloc(perm_e_node_no * sizeof(int)  + 100);
-                    for (i = 0; i < perm_d_node_no; i++) perm_e[i]=-1;
-                    perm_e_b = 1;
+                for (i = 0; i < EPSILON_NUMBER; i++) {
+                    epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
+                    epsilon_min[i]=BIGNOF;
+                    epsilon_max[i]=-BIGNOF;
+                }
+                //epsilon 1...6
+                for (j = 0; j < EPSILON_NUMBER; j++) {
                     for (i = 0; i < perm_e_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                        perm_e[node_number-1]=i;
+                        ret = sscanf(data_row, "%lf", &epsilon[j][i]);
+                        epsilon_min[j] = min(epsilon_min[j], epsilon[j][i]);
+                        epsilon_max[j] = max(epsilon_max[j], epsilon[j][i]);
                     }
-                }
-                else
-                {
-                    ; //TO DO - ERROR
-                }
-            }
-            for (i = 0; i < EPSILON_NUMBER; i++)
-                epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double)  + 100);
-            //epsilon 1...6
-            for (j = 0; j < EPSILON_NUMBER; j++) {
-                for (i = 0; i < perm_e_index_no; i++) {
-                    fgets(data_row, MaxTextLen, f);
-                    ret = sscanf(data_row, "%lf", &epsilon[j][i]);
-                    epsilon_min[j]=min(epsilon_min[j], epsilon[j][i]);
-                    epsilon_max[j]=max(epsilon_max[j], epsilon[j][i]);
-                }
-                if (j < (EPSILON_NUMBER-1))
-                {
-                    fgets(data_row, MaxTextLen, f);
-                    strcpy(epsilon_chapter[j+1], data_row);
-                    epsilon_chapter[j+1][strlen(epsilon_chapter[j+1])-1]='\0';
-                    fgets(data_row, MaxTextLen, f);
-                    /////////////////////////
-                    Perm = strstr(data_row, "Perm:");
-                    use_previous = strstr(data_row, "use previous");
-                    if (Perm != NULL)
-                    {
-                        if (use_previous != NULL)
-                        {
-                            ; //do nothing
-                        } else
-                        {
-                            ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
-                            if (ret == 2)
-                            {
-                                if (perm_e_b) free(perm_e);
-                                perm_e = (int *) malloc(perm_e_node_no * sizeof(int)  + 100);
-                                for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
-                                perm_e_b = 1;
-                                for (i = 0; i < perm_e_index_no; i++) {
-                                    fgets(data_row, MaxTextLen, f);
-                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                    perm_e[node_number - 1] = i;
+                    if (j < (EPSILON_NUMBER - 1)) {
+                        fgets(data_row, MaxTextLen, f);
+                        strcpy(epsilon_chapter[j + 1], data_row);
+                        epsilon_chapter[j + 1][strlen(epsilon_chapter[j + 1]) - 1] = '\0';
+                        modify_chapter((char *) epsilon_chapter[j + 1]);
+                        fgets(data_row, MaxTextLen, f);
+                        /////////////////////////
+                        Perm = strstr(data_row, "Perm:");
+                        use_previous = strstr(data_row, "use previous");
+                        if (Perm != NULL) {
+                            if (use_previous != NULL) { ; //do nothing
+                            } else {
+                                ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                                if (ret == 2) {
+                                    if (perm_e_b) free(perm_e);
+                                    perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                                    for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
+                                    perm_e_b = 1;
+                                    for (i = 0; i < perm_e_index_no; i++) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                        perm_e[node_number - 1] = i;
+                                    }
+                                } else { ; //TO DO - ERROR
                                 }
-                            } else
-                            { ; //TO DO - ERROR
                             }
                         }
-                    }
                         /////////////////////////
+                    }
                 }
-            }
-            break;
-        }
-        i_row=!i_row;
-        data_row=data_row_[i_row];
-    }
-
-    i_row=0;
-    data_row=data_row_[i_row];
-
-    fclose(f);
-
-    //allocation space for block names
-    block_names_no=0;
-
-    my_sleep(10);
-    strncpy(SLS_ULS, "sls", 3);  //temporary
-    //deflection blocks
-    //sprintf(desired_layer, "%s_%s", ptr_id, "deflection");
-    sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "deflection", SLS_ULS, combination_no);
-
-    for (ii = 0; ii < No_Layers; ii++) {
-        if (strcmp(Layers[ii].name, desired_layer) == 0)
-
-            break;
-    }
-    if (ii < No_Layers) {
-        desired_layer_no = ii;
-        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS, MAX_L_BLOCKS_LEN);  //to remember only visible blocks
-        delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-    } else {
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
-        }
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
-        }
-        No_Layers++;
-        desired_layer_no = No_Layers - 1;
-        Layers[No_Layers - 1].on = 1;
-        Layers[No_Layers - 1].edit = 1;
-        Layers[No_Layers - 1].point = 1;
-        strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-        Layers[No_Layers - 1].color = Ldsp.kolor;
-    }
-
-    for (i=0; i<DEFLECTION_NUMBER; i++)
-    {
-        Ldsp.warstwa = desired_layer_no;
-        w.warstwa = Ldsp.warstwa;
-        w.kolor = Ldsp.kolor;
-        w.blok = 1;
-
-        //from meters to drawing units
-        blok_origin.x = jednostkiObXm(mesh_node[0].x);
-        blok_origin.y = jednostkiObYm(mesh_node[0].y);
-
-        sprintf(block_name, "%s$%s_%s_%d", ptr_id_short, deflection_chapter[i], SLS_ULS, combination_no);
-
-        hiding = TRUE;
-        for (j = 0; j < block_names_no; j++) {
-            if (strcmp(block_names[j], block_name) == 0) {
-                hiding = FALSE;
                 break;
             }
+            i_row = !i_row;
+            data_row = data_row_[i_row];
         }
 
-        deflection_amax = max(fabs(deflection_max[i]), fabs(deflection_min[i]));
+        i_row = 0;
+        data_row = data_row_[i_row];
 
-        if (deflection_amax>0.0)
+        fclose(f);
+
+singles_multiples:
+
+        //allocation space for block names
+        block_names_no = 0;
+
+        my_sleep(10);
+        //strncpy(SLS_ULS, "sls", 3);  //temporary
+        //deflection blocks
+        //sprintf(desired_layer, "%s_%s", ptr_id, "deflection");
+        sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "deflection", SLS_ULS, combination_no);
+
+        for (ii = 0; ii < No_Layers; ii++)
         {
-            ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
-            if (ptr_block == NULL) {
-                fclose(f);
-                ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char*)"", 11, 1, 62);
+            if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+                break;
+        }
+        if (ii < No_Layers)
+        {
+            desired_layer_no = ii;
+            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+            delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+        } else {
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
                 no_error = FALSE;
                 goto pl_error1;
             }
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
 
-            for (j = 0; j < mesh_element_no; j++) {
-                w.xy[0] = jednostkiObXm(mesh_node[mesh_element[j].node1 - 1].x);
-                w.xy[1] = jednostkiObYm(mesh_node[mesh_element[j].node1 - 1].y);
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            }
+            No_Layers++;
+            desired_layer_no = No_Layers - 1;
+            Layers[No_Layers - 1].on = 1;
+            Layers[No_Layers - 1].edit = 1;
+            Layers[No_Layers - 1].point = 1;
+            strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+            Layers[No_Layers - 1].color = Ldsp.kolor;
+        }
 
-                w.xy[2] = jednostkiObXm(mesh_node[mesh_element[j].node2 - 1].x);
-                w.xy[3] = jednostkiObYm(mesh_node[mesh_element[j].node2 - 1].y);
+        if ((sti==2) && (ULSLC_flag[2]==0)) // non existing ULSLC
+            goto stress_block;
 
-                w.xy[4] = jednostkiObXm(mesh_node[mesh_element[j].node3 - 1].x);
-                w.xy[5] = jednostkiObYm(mesh_node[mesh_element[j].node3 - 1].y);
+        for (i = 0; i < DEFLECTION_NUMBER; i++) 
+        {
+            if ((theta_==0) && (i==(DEFLECTION_NUMBER-3)))
+                break;
 
-                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                else gradient.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
-                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                else gradient.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
-                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                else gradient.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
-                gradient.c4 = getRGB(0.0, deflection_amax);
+            Ldsp.warstwa = desired_layer_no;
+            w.warstwa = Ldsp.warstwa;
+            w.kolor = Ldsp.kolor;
+            w.blok = 1;
 
-                fe_data.el_number = j + 1;
-                fe_data.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                fe_data.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                fe_data.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
-                fe_data.f4 = 0.0f;
+            //from meters to drawing units
+            blok_origin.x = jednostkiObX(mesh_node[0].x);
+            blok_origin.y = jednostkiObY(mesh_node[0].y);
 
-                w.lp = 6;
-                w.gradient = 1;
 
-                w.translucent = 1;
-                translucency_ptr = (char *) w.xy;
-                translucency_ptr += (w.lp * sizeof(float));
-                memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                adr = dodaj_obiekt((BLOK *) dane, &w);
+            if (nom_max)
+            {
+                bim=2;
+                min_max=_min_;
+            }
+            else
+            {
+                bim=1;
+                min_max = _nope_;
             }
 
-            //colorbar
-            if (deflection_amax > 0.0) {
-                w.xy[0] = (float) pl_min_x + 10.f;
-                w.xy[1] = (float) pl_min_y - 10.f;
+            for (bi=0; bi<bim; bi++)
+            {
 
-                w.xy[2] = w.xy[0] + 50.f;
-                w.xy[3] = w.xy[1];
+                if (bi>0) min_max = _max_;
 
-                w.xy[4] = w.xy[2];
-                w.xy[5] = w.xy[3] - 5.f;
-
-                w.xy[6] = w.xy[0];
-                w.xy[7] = w.xy[5];
-
-                gradient.c1 = getRGB(-deflection_min[i], deflection_amax);
-                gradient.c2 = getRGB(-deflection_max[i], deflection_amax);
-                gradient.c3 = getRGB(-deflection_max[i], deflection_amax);
-                gradient.c4 = getRGB(-deflection_min[i], deflection_amax);
-
-                fe_data.el_number = 0;
-                fe_data.f1 = (float) -deflection_min[i];
-                fe_data.f2 = (float) -deflection_max[i];
-                fe_data.f3 = (float) -deflection_max[i];
-                fe_data.f4 = (float) -deflection_min[i];
-
-                w.lp = 8;
-                w.gradient = 1;
-                w.translucent = 1;
-                translucency_ptr = (char *) w.xy;
-                translucency_ptr += (w.lp * sizeof(float));
-                memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                adr = dodaj_obiekt((BLOK *) dane, &w);
-
-                //adjust deflection to proper units
-                if (i<3)  //in [mm]
+                if (nom_max)
                 {
-                    if (UNITS == SI) {
-                        deflection_min[i] *= 1000.0; //in mm
-                        deflection_max[i] *= 1000.0; //in mm
-                        unit = _mm_;
-                    } else //IMP stays as is  in inches
+                    //checking bipolarity
+                    if (bi==0)  //potentially minimal
                     {
-                        unit = _inch_;
+                      if ((max_deflection_max[i]>0.) && (min_deflection_min[i]>=0.))
+                      continue;  //we do not create zero unipolar graph
                     }
+                    if (bi==1)  //potentially maximal
+                    {
+                        if ((max_deflection_max[i]<=0.) && (min_deflection_min[i]<0))
+                        continue; //we do not create zero unipolar graph
+                    }
+                }
+
+                sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, deflection_chapter[i], SLS_ULS, min_max, combination_no);
+
+                hiding = TRUE;
+                for (j = 0; j < block_names_no; j++) {
+                    if (strcmp(block_names[j], block_name) == 0) {
+                        hiding = FALSE;
+                        break;
+                    }
+                }
+
+                if (nom_max) deflection_amax = max(fabs(max_deflection_max[i]), fabs(min_deflection_min[i]));
+                else deflection_amax = max(fabs(deflection_max[i]), fabs(deflection_min[i]));
+
+                if (deflection_amax > 0.0) {
+                    ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
+                    if (ptr_block == NULL) {
+                        fclose(f);
+                        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                                           (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char *) "", 11, 1, 62);
+                        no_error = FALSE;
+                        goto pl_error1;
+                    }
+
+                    for (j = 0; j < mesh_element_no; j++) {
+                        w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
+                        w.xy[1] = jednostkiObY(mesh_node[mesh_element[j].node1 - 1].y);
+
+                        w.xy[2] = jednostkiObX(mesh_node[mesh_element[j].node2 - 1].x);
+                        w.xy[3] = jednostkiObY(mesh_node[mesh_element[j].node2 - 1].y);
+
+                        w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
+                        w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
+
+                        if (nom_max)
+                        {
+                            if (bi==0) {
+                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                                else gradient.c1 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
+                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                                else gradient.c2 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
+                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                                else gradient.c3 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
+                                gradient.c4 = getRGB(0.0, deflection_amax);
+
+                                fe_data.el_number = j + 1;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) min_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) min_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) min_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                                fe_data.f4 = 0.0f;
+                            }
+                            else
+                            {
+                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                                else gradient.c1 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
+                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                                else gradient.c2 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
+                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                                else gradient.c3 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
+                                gradient.c4 = getRGB(0.0, deflection_amax);
+
+                                fe_data.el_number = j + 1;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) max_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) max_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) max_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                                fe_data.f4 = 0.0f;
+                            }
+                        } else
+                        {
+                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                            else gradient.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
+                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                            else gradient.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
+                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                            else gradient.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
+                            gradient.c4 = getRGB(0.0, deflection_amax);
+
+                            fe_data.el_number = j + 1;
+                            fe_data.flag=0;
+                            fe_data.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                            fe_data.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                            fe_data.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            fe_data.f4 = 0.0f;
+                        }
+
+                        w.lp = 6;
+                        w.gradient = 1;
+
+                        w.translucent = 1;
+                        translucency_ptr = (char *) w.xy;
+                        translucency_ptr += (w.lp * sizeof(float));
+                        memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                        gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                        memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                        memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                        w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                        adr = dodaj_obiekt((BLOK *) dane, &w);
+                    }
+
+                    //colorbar
+                    if (deflection_amax > 0.0) {
+                        w.xy[0] = (float) pl_min_x + 10.f;
+                        w.xy[1] = (float) pl_min_y - 10.f;
+
+                        w.xy[2] = w.xy[0] + 50.f;
+                        w.xy[3] = w.xy[1];
+
+                        w.xy[4] = w.xy[2];
+                        w.xy[5] = w.xy[3] - 5.f;
+
+                        w.xy[6] = w.xy[0];
+                        w.xy[7] = w.xy[5];
+
+                        if (nom_max)
+                        {
+                            if (bi==0) {
+                                gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                                gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                                gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                                gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+
+                                fe_data.el_number = 0;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) -min_deflection_min[i];
+                                fe_data.f2 = (float) -max_deflection_max[i];
+                                fe_data.f3 = (float) -max_deflection_max[i];
+                                fe_data.f4 = (float) -min_deflection_min[i];
+                            }
+                            else
+                            {
+                                gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                                gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                                gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                                gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+
+                                fe_data.el_number = 0;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) -min_deflection_min[i];
+                                fe_data.f2 = (float) -max_deflection_max[i];
+                                fe_data.f3 = (float) -max_deflection_max[i];
+                                fe_data.f4 = (float) -min_deflection_min[i];
+                            }
+                        } else
+                        {
+                            gradient.c1 = getRGB(-deflection_min[i], deflection_amax);
+                            gradient.c2 = getRGB(-deflection_max[i], deflection_amax);
+                            gradient.c3 = getRGB(-deflection_max[i], deflection_amax);
+                            gradient.c4 = getRGB(-deflection_min[i], deflection_amax);
+
+                            fe_data.el_number = 0;
+                            fe_data.flag=0;
+                            fe_data.f1 = (float) -deflection_min[i];
+                            fe_data.f2 = (float) -deflection_max[i];
+                            fe_data.f3 = (float) -deflection_max[i];
+                            fe_data.f4 = (float) -deflection_min[i];
+                        }
+
+                        w.lp = 8;
+                        w.gradient = 1;
+                        w.translucent = 1;
+                        translucency_ptr = (char *) w.xy;
+                        translucency_ptr += (w.lp * sizeof(float));
+                        memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                        gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                        memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                        memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                        w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                        adr = dodaj_obiekt((BLOK *) dane, &w);
+
+                        //adjust deflection to proper units
+                        if (i < 3)  //in [mm]
+                        {
+                            if (UNITS == SI) {
+                                if (nom_max)
+                                {
+                                    deflection_min_ = min_deflection_min[i] * 1000.0; //in mm
+                                    deflection_max_ = max_deflection_max[i] * 1000.0; //in mm
+                                }
+                                else {
+                                    deflection_min_ = deflection_min[i] * 1000.0; //in mm
+                                    deflection_max_ = deflection_max[i] * 1000.0; //in mm
+                                }
+                                unit = _mm_;
+                            } else //IMP stays as is  in inches
+                            {
+                                if (nom_max)
+                                {
+                                    deflection_min_ = min_deflection_min[i]; //in inch
+                                    deflection_max_ = max_deflection_max[i]; //in inch
+                                }
+                                else {
+                                    deflection_min_ = deflection_min[i]; //in inch
+                                    deflection_max_ = deflection_max[i]; //in inch
+                                }
+                                unit = _inch_;
+                            }
+                        } else {
+                            //in radians
+                            if (nom_max)
+                            {
+                                deflection_min_ = min_deflection_min[i]; //in inch
+                                deflection_max_ = max_deflection_max[i]; //in inch
+                            }
+                            else {
+                                deflection_min_ = deflection_min[i]; //in inch
+                                deflection_max_ = deflection_max[i]; //in inch
+                            }
+                            unit = _rad_;
+                        }
+
+                        T.warstwa = Ldsp.warstwa;
+                        T.kolor = Ldsp.kolor;
+                        T.italics = 0;
+                        T.underline = 0;
+                        T.wysokosc = (float) (zmwym.wysokosc * 0.5);
+                        T.kat = 0.0f;
+                        T.ukryty = 0;
+
+                        T.x = w.xy[0];
+                        T.y = w.xy[1] + 0.5f;
+                        T.justowanie = j_do_lewej;
+                        sprintf(T.text, "%.5f", deflection_min_);
+
+                        T.dl = strlen(T.text);
+                        T.n = T18 + T.dl;
+                        normalize_txt(&T);
+                        adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                        T.x = w.xy[2];
+                        T.y = w.xy[3] + 0.5f;
+                        T.justowanie = j_do_prawej;
+                        sprintf(T.text, "%.4f", deflection_max_);
+
+                        T.dl = strlen(T.text);
+                        T.n = T18 + T.dl;
+                        normalize_txt(&T);
+                        adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                        T.x = (w.xy[0] + w.xy[2]) / 2.f;
+                        T.y = w.xy[3] + 0.5f;
+                        T.justowanie = j_srodkowo;
+                        sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), deflection_chapter[i],min_max, unit);
+
+                        T.dl = strlen(T.text);
+                        T.n = T18 + T.dl;
+                        normalize_txt(&T);
+                        adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                    }
+                }
+            }
+        }
+
+        my_sleep(10);
+
+        //stress blocks
+        //sprintf(desired_layer, "%s_%s", ptr_id, "stress");
+        //strcpy(SLS_ULS, "sls"); //temporary
+        sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
+
+        for (ii = 0; ii < No_Layers; ii++) {
+            if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+                break;
+        }
+        if (ii < No_Layers) {
+            desired_layer_no = ii;
+            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+            delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+        } else {
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            }
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            }
+            No_Layers++;
+            desired_layer_no = No_Layers - 1;
+            Layers[No_Layers - 1].on = 1;
+            Layers[No_Layers - 1].edit = 1;
+            Layers[No_Layers - 1].point = 1;
+            strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+            Layers[No_Layers - 1].color = Ldsp.kolor;
+        }
+
+stress_block:
+        if (perm_s != NULL) 
+        {
+            for (i = 0; i < STRESS_NUMBER; i++) 
+            {
+                if ((sigma_eq_==0) && (i==(STRESS_NUMBER-1)))
+                    break;
+                Ldsp.warstwa = desired_layer_no;
+                w.warstwa = Ldsp.warstwa;
+                w.kolor = Ldsp.kolor;
+                w.blok = 1;
+
+                //from meters to drawing units
+                blok_origin.x = jednostkiObX(mesh_node[0].x);
+                blok_origin.y = jednostkiObY(mesh_node[0].y);
+
+                if (nom_max)
+                {
+                    bim=2;
+                    min_max=_min_;
                 }
                 else
                 {
-                    //in radians
-                    unit = _rad_;
+                    bim=1;
+                    min_max = _nope_;
                 }
 
-                T.warstwa = Ldsp.warstwa;
-                T.kolor = Ldsp.kolor;
-                T.italics = 0;
-                T.underline = 0;
-                T.wysokosc = (float) (zmwym.wysokosc * 0.5);
-                T.kat = 0.0f;
-                T.ukryty = 0;
-
-                T.x = w.xy[0];
-                T.y = w.xy[1] + 0.5f;
-                T.justowanie = j_do_lewej;
-                sprintf(T.text, "%.5f", -deflection_min[i]);
-
-                T.dl = strlen(T.text);
-                T.n = T18 + T.dl;
-                normalize_txt(&T);
-                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-                T.x = w.xy[2];
-                T.y = w.xy[3] + 0.5f;
-                T.justowanie = j_do_prawej;
-                sprintf(T.text, "%.4f", deflection_max[i]);
-
-                T.dl = strlen(T.text);
-                T.n = T18 + T.dl;
-                normalize_txt(&T);
-                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-                T.x = (w.xy[0] + w.xy[2]) / 2.f;
-                T.y = w.xy[3] + 0.5f;
-                T.justowanie = j_srodkowo;
-                sprintf(T.text, "%s %s", deflection_chapter[i], unit);
-
-                T.dl = strlen(T.text);
-                T.n = T18 + T.dl;
-                normalize_txt(&T);
-                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-            }
-        }
-    }
-
-    my_sleep(10);
-    //stress blocks
-    //sprintf(desired_layer, "%s_%s", ptr_id, "stress");
-    strcpy(SLS_ULS, "sls"); //temporary
-    sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
-
-    for (ii = 0; ii < No_Layers; ii++) {
-        if (strcmp(Layers[ii].name, desired_layer) == 0)
-
-            break;
-    }
-    if (ii < No_Layers) {
-        desired_layer_no = ii;
-        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS, MAX_L_BLOCKS_LEN);  //to remember only visible blocks
-        delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-    } else {
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
-        }
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
-        }
-        No_Layers++;
-        desired_layer_no = No_Layers - 1;
-        Layers[No_Layers - 1].on = 1;
-        Layers[No_Layers - 1].edit = 1;
-        Layers[No_Layers - 1].point = 1;
-        strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-        Layers[No_Layers - 1].color = Ldsp.kolor;
-    }
-
-    if (perm_s!=NULL)
-    {
-        for (i = 0; i < STRESS_NUMBER; i++)
-        {
-            sprintf(block_name, "%s$%s_%s_%d", ptr_id_short, stress_chapter[i], SLS_ULS, combination_no);
-
-            hiding=TRUE;
-            for (j=0; j<block_names_no; j++)
-            {
-                if (strcmp(block_names[j], block_name)==0)
+                for (bi=0; bi<bim; bi++) 
                 {
-                    hiding=FALSE;
-                    break;
-                }
-            }
+                    if (bi>0) min_max = _max_;
 
-            Ldsp.warstwa = desired_layer_no;
-            w.warstwa = Ldsp.warstwa;
-            w.kolor = Ldsp.kolor;
-            w.blok = 1;
-
-            //from meters to drawing units
-            blok_origin.x = jednostkiObXm(mesh_node[0].x);
-            blok_origin.y = jednostkiObYm(mesh_node[0].y);
-
-            stress_amax = max(fabs(stress_max[i]), fabs(stress_min[i]));
-            if (stress_amax>0)
-            {
-                ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
-                if (ptr_block == NULL) {
-                    fclose(f);
-                    ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char*)"", 11, 1, 62);
-                    no_error = FALSE;
-                    goto pl_error1;
-                }
-
-
-                for (j = 0; j < mesh_element_no; j++) {
-                    w.xy[0] = jednostkiObXm(mesh_node[mesh_element[j].node1 - 1].x);
-                    w.xy[1] = jednostkiObYm(mesh_node[mesh_element[j].node1 - 1].y);
-
-                    w.xy[2] = jednostkiObXm(mesh_node[mesh_element[j].node2 - 1].x);
-                    w.xy[3] = jednostkiObYm(mesh_node[mesh_element[j].node2 - 1].y);
-
-                    w.xy[4] = jednostkiObXm(mesh_node[mesh_element[j].node3 - 1].x);
-                    w.xy[5] = jednostkiObYm(mesh_node[mesh_element[j].node3 - 1].y);
-
-                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                    else gradient.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                    else gradient.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                    else gradient.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                    gradient.c4 = getRGB(0.0, stress_amax);
-
-                    fe_data.el_number = j + 1;
-                    fe_data.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
-                    fe_data.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
-                    fe_data.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
-                    fe_data.f4 = 0.0f;
-
-                    w.lp = 6;
-                    w.gradient = 1;
-
-                    w.translucent = 1;
-                    translucency_ptr = (char *) w.xy;
-                    translucency_ptr += (w.lp * sizeof(float));
-                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                    adr = dodaj_obiekt((BLOK *) dane, &w);
-
-                }
-
-                //colorbar
-                if (stress_amax > 0.0) {
-                    w.xy[0] = (float) pl_min_x + 10.f;
-                    w.xy[1] = (float) pl_min_y - 10.f;
-
-                    w.xy[2] = w.xy[0] + 50.f;
-                    w.xy[3] = w.xy[1];
-
-                    w.xy[4] = w.xy[2];
-                    w.xy[5] = w.xy[3] - 5.f;
-
-                    w.xy[6] = w.xy[0];
-                    w.xy[7] = w.xy[5];
-
-                    gradient.c1 = getRGB(stress_min[i], stress_amax);
-                    gradient.c2 = getRGB(stress_max[i], stress_amax);
-                    gradient.c3 = getRGB(stress_max[i], stress_amax);
-                    gradient.c4 = getRGB(stress_min[i], stress_amax);
-
-                    fe_data.el_number = 0;
-                    fe_data.f1 = (float) stress_min[i];
-                    fe_data.f2 = (float) stress_max[i];
-                    fe_data.f3 = (float) stress_max[i];
-                    fe_data.f4 = (float) stress_min[i];
-
-                    w.lp = 8;
-                    w.gradient = 1;
-                    w.translucent = 1;
-                    translucency_ptr = (char *) w.xy;
-                    translucency_ptr += (w.lp * sizeof(float));
-                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                    adr = dodaj_obiekt((BLOK *) dane, &w);
-
-                    //adjust deflection to proper units
-                    if (UNITS == SI) {
-                        stress_min[i] *= 0.000001; //in mm
-                        stress_max[i] *= 0.000001; //in mm
-                        unit = _MPa_;
-                    } else //IMP stays as is  in inches
+                    if (nom_max)
                     {
-                        stress_min[i] *= 0.001; //in mm
-                        stress_max[i] *= 0.001; //in mm
-                        unit = _ksi_;
+                        //checking bipolarity
+                        if (bi==0)  //potentially minimal
+                        {
+                            if ((max_stress_max[i]>0.) && (min_stress_min[i]>=0.))
+                                do_nothing(); //continue;  //we do not create zero unipolar graph
+                        }
+                        if (bi==1)  //potentially maximal
+                        {
+                            if ((max_stress_max[i]<=0.) && (min_stress_min[i]<0.))
+                                do_nothing(); //continue; //we do not create zero unipolar graph
+                        }
                     }
 
-                    T.warstwa = Ldsp.warstwa;
-                    T.kolor = Ldsp.kolor;
-                    T.italics = 0;
-                    T.underline = 0;
-                    T.wysokosc = (float) (zmwym.wysokosc * 0.5);
-                    T.kat = 0.0f;
-                    T.ukryty = 0;
+                    sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, stress_chapter[i], SLS_ULS, min_max, combination_no);
 
-                    T.x = w.xy[0];
-                    T.y = w.xy[1] + 0.5f;
-                    T.justowanie = j_do_lewej;
-                    sprintf(T.text, "%.5f", stress_min[i]);
+                    hiding = TRUE;
+                    for (j = 0; j < block_names_no; j++) {
+                        if (strcmp(block_names[j], block_name) == 0) {
+                            hiding = FALSE;
+                            break;
+                        }
+                    }
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                    if (nom_max) stress_amax = max(fabs(max_stress_max[i]), fabs(min_stress_min[i]));
+                    else stress_amax = max(fabs(stress_max[i]), fabs(stress_min[i]));
 
-                    T.x = w.xy[2];
-                    T.y = w.xy[3] + 0.5f;
-                    T.justowanie = j_do_prawej;
-                    sprintf(T.text, "%.4f", stress_max[i]);
+                    stress_min_RC=BIGNOD;
+                    stress_max_RC=-BIGNOD;
+                    stress_min_RC_rho=BIGNOD;
+                    stress_max_RC_rho=-BIGNOD;
+                    RC_flag_exists=FALSE;
+                    
+                    if (stress_amax > 0.0) {
+                        ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
+                        if (ptr_block == NULL) {
+                            fclose(f);
+                            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                                               (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, (char *) "", 11, 1, 62);
+                            no_error = FALSE;
+                            goto pl_error1;
+                        }
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                        int higher=0;
+                        int lower=0;
 
-                    T.x = (w.xy[0] + w.xy[2]) / 2.f;
-                    T.y = w.xy[3] + 0.5f;
-                    T.justowanie = j_srodkowo;
-                    sprintf(T.text, "%s %s", stress_chapter[i], unit);
+                        for (j = 0; j < mesh_element_no; j++)
+                        {
+                            w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
+                            w.xy[1] = jednostkiObY(mesh_node[mesh_element[j].node1 - 1].y);
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                            w.xy[2] = jednostkiObX(mesh_node[mesh_element[j].node2 - 1].x);
+                            w.xy[3] = jednostkiObY(mesh_node[mesh_element[j].node2 - 1].y);
+
+                            w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
+                            w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
+
+                            if (nom_max) //ULS_SLS
+                            {
+                                BOOL RC_flag=FALSE;
+                                w.kolor = Ldsp.kolor;
+                                if (sti==2) //ULS
+                                {
+                                    //checking cross section
+                                    body_prop_no=body_property[mesh_element[j].body_number-1];
+                                    if (body_prop_no>-1)
+                                        body_prop=&pl_property[body_prop_no];
+                                    else body_prop=NULL;
+
+                                    if (body_prop!=NULL) //WARNING, RC_flag should be inherited from plate
+                                    {
+                                        if (body_prop->RC_flag) {
+                                            //calculating reinforcement ratio and normalized compression stress
+                                            RC_flag = TRUE; //so there will be just one block for both min and max
+                                        }
+                                    }
+                                }
+                                if ((RC_flag==TRUE) && (i<3))  //only σ.xx, σ.yy, σ.zz
+                                {
+                                    RC_flag_exists=TRUE;
+                                    //changing kolor
+                                    w.kolor = 255;  //this is indicator of showing percent for negatives, and stress for positives
+                                    //double vmax_node[3];
+                                    //double vmin_node[3];
+                                    double v_node[3];
+                                    double d;  //effective depth
+                                    double M;  //moment of force
+                                    double M_;  //absolute value moment of force
+                                    double K;  //non-dimentional moment
+                                    double z;  //lever arm
+                                    double As;
+                                    double p[3];  //reinforcement ratio in each node
+                                    double sigma[3];  //effective stress in concrete in each node
+                                    double cb; //concrete cross section b
+                                    double cc;
+                                    double h; //cross section height
+                                    double fck, fcd, fyk, fyd;  //in ACI 318   fyd=fyk, fcd=fyd
+                                    double n, m;
+                                    double E_cm;
+                                    double E_c;
+                                    double E_s; // = 200;  //GPa in SI
+                                    double dk;  //relative neutral axis depth
+                                    double x; //neutral axis depth
+                                    double I_cr; //cracked moment of inertia
+                                    double R;  //moment strength paramete
+                                    double fi;
+                                    double a; //compression block depth
+                                    double nac; //neutral axis
+                                    double beta1;
+                                    double epsilont; //tensile strain
+
+                                    if (bi==0) {
+                                        //vmin_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                        //vmin_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                        //vmin_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                        v_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                        v_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                        v_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    }
+                                    else
+                                    {
+                                        //vmax_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                        //vmax_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                        //vmax_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                        v_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                        v_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                        v_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    }
+
+                                    if (ret_standard==1) //Eurocodes
+                                    {
+                                        if (UNITS != SI)  //need to be converted
+                                        {
+                                            //concrete
+                                            if (body_prop->fck > 0.) {
+                                                fck = body_prop->fck;
+                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //psi
+                                                else fcd = body_prop->fck / 1.5;
+                                            } else {
+                                                if (body_prop->fcd > 0.) {
+                                                    fcd = body_prop->fcd;
+                                                    fck = fcd * 1.5;
+                                                } else {
+                                                    fck = 4351.13; // equivalent of 30.0e6 Pa
+                                                    fcd = fck / 1.5;
+                                                }
+                                            }
+                                            //steel
+                                            E_s = 29000;  //ksi
+
+                                            if (body_prop->fyk > 0.) {
+                                                fyk = body_prop->fyk;
+                                                if (body_prop->fyd > 0.) fyd = body_prop->fyd;  //psi
+                                                else fyd = body_prop->fyk / 1.15;
+                                            } else {
+                                                if (body_prop->fyd > 0.) {
+                                                    fyd = body_prop->fyd; //psi
+                                                    fyk = fyd * 1.15;
+                                                } else {
+                                                    fyk = 58015.1; //equivalent of 400.0e6 Pa
+                                                    fyd = fyk / 1.15;
+                                                }
+                                            }
+                                            if (body_prop->c>0.) cc=body_prop->c;
+                                            else cc=1.18;  //equivalent of 30 mm
+
+                                            h = body_prop->h;
+                                            d=h-cc;
+
+                                            //conversion to IS
+                                            //converstion from psi to Pa
+                                            fck *= 6894.76;
+                                            fcd *= 6894.76;
+                                            fyk *= 6894.76;
+                                            fyd *= 6894.76;
+                                            E_s *= 0.00689476;  //Gpa
+
+                                            h *= 0.0254;   //inch to m
+                                            d *= 0.0254;   //inch to m
+                                            cc*= 0.0254;   //inch to m
+                                        }
+                                        else
+                                        {
+                                            //concrete
+                                            if (body_prop->fck > 0.) {
+                                                fck = body_prop->fck;
+                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa
+                                                else fcd = body_prop->fck  * 1e6 / 1.5; //MPa to Pa
+                                            } else {
+                                                if (body_prop->fcd > 0.) {
+                                                    fcd = body_prop->fcd * 1e6;  //MPa to Pa
+                                                    fck = fcd * 1.5;
+                                                } else {
+                                                    fck = 30.0e6;
+                                                    fcd = fck / 1.5;
+                                                }
+                                            }
+
+                                            E_s = 200;  //GPa
+                                            //steel
+                                            if (body_prop->fyk > 0.) {
+                                                fyk = body_prop->fyk;
+                                                if (body_prop->fyd > 0.) fyd = body_prop->fyd * 1e6;  //MPa to Pa
+                                                else fyd = body_prop->fyk * 1e6 / 1.15; //MPa to Pa
+                                            } else {
+                                                if (body_prop->fyd > 0.) {
+                                                    fyd = body_prop->fyd * 1e6; //MPa to Pa
+                                                    fyk = fyd * 1.15;
+                                                } else {
+                                                    fyk = 400.0e6;
+                                                    fyd = fyk / 1.15;
+                                                }
+                                            }
+                                            if (body_prop->c>0.) cc=body_prop->c;
+                                            else cc=0.03;  //30 mm
+
+                                            h = body_prop->h;
+                                            d=h-cc;
+                                        }
+
+                                        for (int ni=0; ni<3; ni++)
+                                        {
+                                            //reinforcement ratio
+                                            //M=v_node[ni]*h*h/6.;
+
+                                            M=v_node[ni]*body_prop->h*body_prop->h/6.;
+
+                                            if (UNITS != SI)  //need to be converted
+                                            {
+                                               M*=0.112985 * 1000.0/25.4;   //lbs-inch to Nm
+                                            }
+                                            M_ = fabs(M);
+
+                                            if (Check_if_Equal(M,0.0))
+                                            {
+                                                sigma[ni]=0.;
+                                                p[ni]=0.;
+                                                continue;
+                                            }
+                                            K=M_/(d*d*fck);
+                                            if (K>0.167)
+                                                K=0.167; //it's for no redistribution and ductile failure
+                                            z=d*(1 + sqrt(1-3.53*K))/2.;
+                                            if (z>0.95*d) z=(0.95*d);  //for practicality
+                                            As=M_/(fyd*z);
+                                            p[ni]=As/d;
+                                            //stress in concrete
+                                            E_cm = 22*pow((fck*1e-6+8)/10., 0.3);  //WARNING
+                                            n = E_s / E_cm;
+                                            m = n * p[ni];
+                                            dk = -m + sqrt(m*m + 2*m);
+                                            x = dk * d;
+                                            I_cr = (x*x*x)/3. + n*p[ni]*d*(d-x)*(d-x);
+                                            sigma[ni] = M*x / I_cr;
+
+                                            if (UNITS != SI)  //need to be converted
+                                            {
+                                                sigma[ni] *= 0.000145038;  //Pa to psi
+                                            }
+
+                                            if (fabs(sigma[ni])>fabs(v_node[ni])) higher++;
+                                            else lower++;
+                                            stress_min_RC=min(stress_min_RC, sigma[ni]);
+                                            stress_max_RC=max(stress_max_RC, sigma[ni]);
+
+                                            ps = p[ni] * (signbit(M) ? -1:1);
+                                            stress_min_RC_rho=min(stress_min_RC_rho, ps);
+                                            stress_max_RC_rho=max(stress_max_RC_rho, ps);
+                                        }
+                                    }
+                                    else // ASCE & ICC
+                                    {
+                                        if (UNITS != SI)  //need to be converted
+                                        {
+                                            if (body_prop->fck > 0.) {
+                                                fck = body_prop->fck;
+                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //ksi
+                                                else fcd = body_prop->fck / 1.5;
+                                            } else {
+                                                if (body_prop->fcd > 0.) {
+                                                    fcd = body_prop->fcd;
+                                                    fck = fcd * 1.5;
+                                                } else
+                                                {
+                                                    fck = 4351.13;  //psi
+                                                    fcd = fck / 1.0;
+                                                }
+                                            }
+
+                                            E_s = 29.0e6;  //psi
+
+                                            if (body_prop->fyk > 0.) {
+                                                fyk = body_prop->fyk;
+                                                if (body_prop->fyd > 0.) fcd = body_prop->fyd;  //ksi
+                                                else fcd = body_prop->fyk / 1.15;
+                                            } else {
+                                                if (body_prop->fyd > 0.) {
+                                                    fyd = body_prop->fyd;  //ksi
+                                                    fyk = fyd * 1.15;
+                                                } else {
+                                                    fyk = 60000.;  //psi
+                                                    fyd = fyk / 1.0;
+                                                }
+                                            }
+                                        }
+                                        else {
+                                            if (body_prop->fck > 0.) {
+                                                fck = body_prop->fck;
+                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa;
+                                                else fcd = body_prop->fck / 1.5;
+                                            } else {
+                                                if (body_prop->fcd > 0.) {
+                                                    fcd = body_prop->fcd * 1e6;  //MPa to Pa;
+                                                    fck = fcd * 1.5;
+                                                } else
+                                                {
+                                                    fck = 30.0e6;  //in Pa
+                                                    fcd = fck / 1.0;
+                                                }
+                                            }
+
+                                            E_s = 200;  //GPa
+
+                                            if (body_prop->fyk > 0.) {
+                                                fyk = body_prop->fyk;
+                                                if (body_prop->fyd > 0.) fcd = body_prop->fyd * 1e6;  //MPa to Pa;
+                                                else fcd = body_prop->fyk / 1.15;
+                                            } else {
+                                                if (body_prop->fyd > 0.) {
+                                                    fyd = body_prop->fyd * 1e6;  //MPa to Pa;;
+                                                    fyk = fyd * 1.15;
+                                                } else
+                                                {
+                                                    fyk = 400.0e6; //in Pa
+                                                    fyd = fyk / 1.0;
+                                                }
+                                            }
+                                        }
+
+                                        h = body_prop->h;
+                                        if (body_prop->c>0.) cc=body_prop->c;
+                                        else cc=1.0;  //onr inch
+                                        fi = 0.9;
+                                        d = h - cc;
+
+                                        for (int ni=0; ni<3; ni++)
+                                        {
+                                            M=v_node[ni]*h*h/6.;
+
+                                            M_ = fabs(M);
+                                            if (Check_if_Equal(M,0.0))
+                                            {
+                                                sigma[ni]=0.;
+                                                p[ni]=0.;
+                                                continue;
+                                            }
+                                            R = M_ / (fi * d * d);
+                                            p[ni]=(0.85*fck/fyk)*(1-sqrt(1-2*R/(0.85*fck)));
+
+                                            //Verify tension-controlled:
+                                            a = p[ni]*d*fyk/(0.85*fck);
+                                            beta1 = 0.85; //for fck <=> 4000$ psi, decreasing to 0.65 for higher
+                                            nac = a / beta1;
+                                            epsilont = 0.003*(d/cc -1);
+                                            if (epsilont<0.005)
+                                            {
+                                                do_nothing(); //adjust and recalculate (may need compression reinforcement if p too high
+                                            }
+
+                                            if (UNITS!=SI) //imperial
+                                                E_c=57000*sqrt(fck);  //in psi
+                                            else
+                                                E_c=4700*1e-6*sqrt(fck);  //in Gpa
+
+                                            n = E_s / E_c;
+                                            m = n * p[ni];
+                                            dk = -m + sqrt(m*m + 2*m);
+                                            x = dk * d;
+                                            I_cr = (x*x*x)/3. + n*p[ni]*d*(d-x)*(d-x);
+                                            sigma[ni]=M*x/I_cr;
+                                            if (fabs(sigma[ni])>fabs(v_node[ni])) higher++;
+                                            else lower++;
+                                            stress_min_RC=min(stress_min_RC, sigma[ni]);
+                                            stress_max_RC=max(stress_max_RC, sigma[ni]);
+                                            ps = p[ni] * (signbit(M) ? -1:1);
+                                            stress_min_RC_rho=min(stress_min_RC_rho, ps);
+                                            stress_max_RC_rho=max(stress_max_RC_rho, ps);
+                                        }
+                                    }
+
+                                    if (bi==0)
+                                    {
+                                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                        else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
+                                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                        else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
+                                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                        else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
+                                        gradient.c4 = getRGB(0.0, stress_amax);
+
+                                        fe_data.el_number = j + 1;
+                                        fe_data.flag=1;
+
+                                        fe_data.f1 = (float) sigma[0];
+                                        fe_data.f2 = (float) sigma[1];
+                                        fe_data.f3 = (float) sigma[2];
+                                        fe_data.f4 = 0.0f;
+
+                                        fe_data_ex.f1 = (float) p[0];  //negative means %
+                                        fe_data_ex.f2 = (float) p[1];  //negative means %
+                                        fe_data_ex.f3 = (float) p[2];  //negative means %
+                                        fe_data_ex.f4 = 0.0f;
+                                    }
+                                    else
+                                    {
+                                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                        else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
+                                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                        else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
+                                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                        else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
+                                        gradient.c4 = getRGB(0.0, stress_amax);
+
+                                        fe_data.el_number = j + 1;
+                                        fe_data.flag=1;
+
+                                        fe_data.f1 = (float) sigma[0];
+                                        fe_data.f2 = (float) sigma[1];
+                                        fe_data.f3 = (float) sigma[2];
+                                        fe_data.f4 = 0.0f;
+
+                                        fe_data_ex.f1 = (float) p[0];  //negative means %
+                                        fe_data_ex.f2 = (float) p[1];  //negative means %
+                                        fe_data_ex.f3 = (float) p[2];  //negative means %
+                                        fe_data_ex.f4 = 0.0f;
+
+                                    }
+                                }
+                                else if (bi==0) 
+                                {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
+                                    gradient.c4 = getRGB(0.0, stress_amax);
+
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    fe_data.f2 = (float) min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    fe_data.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    fe_data.f4 = 0.0f;
+                                }
+                                else if (bi==1)
+                                {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
+                                    gradient.c4 = getRGB(0.0, stress_amax);
+
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    fe_data.f2 = (float) max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    fe_data.f3 = (float) max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    fe_data.f4 = 0.0f;
+                                }
+                            }
+                            else {
+                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                else gradient.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                else gradient.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                else gradient.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                gradient.c4 = getRGB(0.0, stress_amax);
+
+                                fe_data.el_number = j + 1;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                fe_data.f4 = 0.0f;
+                            }
+
+                            w.lp = 6;
+                            w.gradient = 1;
+
+                            w.translucent = 1;
+                            translucency_ptr = (char *) w.xy;
+                            translucency_ptr += (w.lp * sizeof(float));
+                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                            if (fe_data.flag==1)  //extended
+                            {
+                                fe_data_ex_ptr = fe_data_ptr + sizeof(FE_DATA);
+                                memmove(fe_data_ex_ptr, &fe_data_ex, sizeof(FE_DATA_EX));
+                                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA) + sizeof(FE_DATA_EX);
+                            }
+                            else
+                            {
+                                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            }
+                            adr = dodaj_obiekt((BLOK *) dane, &w);
+
+                        }
+
+                        if ((nom_max) && (sti==2))
+                                printf("higher=%d  lower=%d \n",higher,lower);
+
+                        //colorbar
+                        if (stress_amax > 0.0) {
+                            w.xy[0] = (float) pl_min_x + 10.f;
+                            w.xy[1] = (float) pl_min_y - 10.f;
+
+                            w.xy[2] = w.xy[0] + 50.f;
+                            w.xy[3] = w.xy[1];
+
+                            w.xy[4] = w.xy[2];
+                            w.xy[5] = w.xy[3] - 5.f;
+
+                            w.xy[6] = w.xy[0];
+                            w.xy[7] = w.xy[5];
+
+                            if (nom_max)
+                            {
+                                if (bi==0) {
+                                    gradient.c1 = getRGB(min_stress_min[i], stress_amax);
+                                    gradient.c2 = getRGB(max_stress_max[i], stress_amax);
+                                    gradient.c3 = getRGB(max_stress_max[i], stress_amax);
+                                    gradient.c4 = getRGB(min_stress_min[i], stress_amax);
+
+                                    fe_data.el_number = 0;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_stress_min[i];
+                                    fe_data.f2 = (float) max_stress_max[i];
+                                    fe_data.f3 = (float) max_stress_max[i];
+                                    fe_data.f4 = (float) min_stress_min[i];
+                                }
+                                else
+                                {
+                                    gradient.c1 = getRGB(min_stress_min[i], stress_amax);
+                                    gradient.c2 = getRGB(max_stress_max[i], stress_amax);
+                                    gradient.c3 = getRGB(max_stress_max[i], stress_amax);
+                                    gradient.c4 = getRGB(min_stress_min[i], stress_amax);
+
+                                    fe_data.el_number = 0;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_stress_min[i];
+                                    fe_data.f2 = (float) max_stress_max[i];
+                                    fe_data.f3 = (float) max_stress_max[i];
+                                    fe_data.f4 = (float) min_stress_min[i];
+                                }
+                            }
+                            else {
+                                gradient.c1 = getRGB(stress_min[i], stress_amax);
+                                gradient.c2 = getRGB(stress_max[i], stress_amax);
+                                gradient.c3 = getRGB(stress_max[i], stress_amax);
+                                gradient.c4 = getRGB(stress_min[i], stress_amax);
+
+                                fe_data.el_number = 0;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) stress_min[i];
+                                fe_data.f2 = (float) stress_max[i];
+                                fe_data.f3 = (float) stress_max[i];
+                                fe_data.f4 = (float) stress_min[i];
+                            }
+
+                            w.lp = 8;
+                            w.gradient = 1;
+                            w.translucent = 1;
+                            translucency_ptr = (char *) w.xy;
+                            translucency_ptr += (w.lp * sizeof(float));
+                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            adr = dodaj_obiekt((BLOK *) dane, &w);
+
+                            //adjust stress to proper units
+                            if (UNITS == SI) {
+                                if (nom_max)
+                                {
+                                    if (bi == 0)
+                                    {
+                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
+                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
+                                    }
+                                    else
+                                    {
+                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
+                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
+                                    }
+                                }
+                                else {
+                                    stress_min_ = stress_min[i] * 0.000001; //in MPa
+                                    stress_max_ = stress_max[i] * 0.000001; //in MPa
+                                }
+                                unit = _MPa_;
+                            } else //IMP stays as is  in inches
+                            {
+                                if (nom_max)
+                                {
+                                    if (bi == 0) 
+                                    {
+                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //in ksp
+                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //in ksi
+                                    }
+                                    else
+                                    {
+                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //ksi mm
+                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //ksi mm
+                                    }
+                                }
+                                else {
+                                    stress_min_ = stress_min[i] * 0.001; //in ksi
+                                    stress_max_ = stress_max[i] * 0.001; //in ksi
+                                }
+                                unit = _ksi_;
+                            }
+
+                            T.warstwa = Ldsp.warstwa;
+                            T.kolor = Ldsp.kolor;
+                            T.italics = 0;
+                            T.underline = 0;
+                            T.wysokosc = (float) (zmwym.wysokosc * 0.5);
+                            T.kat = 0.0f;
+                            T.ukryty = 0;
+
+                            T.x = w.xy[0];
+                            T.y = w.xy[1] + 0.5f;
+                            T.justowanie = j_do_lewej;
+                            sprintf(T.text, "%.4f", stress_min_);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            T.x = w.xy[2];
+                            T.y = w.xy[3] + 0.5f;
+                            T.justowanie = j_do_prawej;
+                            sprintf(T.text, "%.4f", stress_max_);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            T.x = (w.xy[0] + w.xy[2]) / 2.f;
+                            T.y = w.xy[3] + 0.5f;
+                            T.justowanie = j_srodkowo;
+                            sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), stress_chapter[i],min_max,unit);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            if (RC_flag_exists)
+                            {
+                                T.x = w.xy[0];
+                                T.y = w.xy[5] - T.wysokosc - 0.5f;
+                                T.justowanie = j_do_lewej;
+                                sprintf(T.text, "%.2f", fabs(stress_min_RC_rho) * 100.);
+
+                                T.dl = strlen(T.text);
+                                T.n = T18 + T.dl;
+                                normalize_txt(&T);
+                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                                T.x = w.xy[2];
+                                T.y = w.xy[5] - T.wysokosc - 0.5f;
+                                T.justowanie = j_do_prawej;
+                                sprintf(T.text, "%.2f", fabs(stress_max_RC_rho) * 100.);
+
+                                T.dl = strlen(T.text);
+                                T.n = T18 + T.dl;
+                                normalize_txt(&T);
+                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                                T.x = (w.xy[0] + w.xy[2]) / 2.f;
+                                T.y = w.xy[5] + - T.wysokosc - 0.5f;
+                                T.justowanie = j_srodkowo;
+                                sprintf(T.text, "%s", "ρ [%]");
+
+                                T.dl = strlen(T.text);
+                                T.n = T18 + T.dl;
+                                normalize_txt(&T);
+                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            }
+                        }
+                    }
                 }
             }
         }
-    }
 
-    my_sleep(10);
-    //epsilon blocks
-    //sprintf(desired_layer, "%s_%s", ptr_id, "epsilon");
-    strcpy(SLS_ULS, "sls"); //temporary
-    sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "epsilon", SLS_ULS, combination_no);
+        my_sleep(10);
+        //epsilon blocks
+        //sprintf(desired_layer, "%s_%s", ptr_id, "epsilon");
+        //strcpy(SLS_ULS, "sls"); //temporary
+        sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "epsilon", SLS_ULS, combination_no);
 
-    for (ii = 0; ii < No_Layers; ii++) {
-        if (strcmp(Layers[ii].name, desired_layer) == 0)
+        for (ii = 0; ii < No_Layers; ii++) {
+            if (strcmp(Layers[ii].name, desired_layer) == 0)
 
-            break;
-    }
-    if (ii < No_Layers) {
-        desired_layer_no = ii;
-        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS, MAX_L_BLOCKS_LEN);  //to remember only visible blocks
-        delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-    } else {
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
+                break;
         }
-        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+        if (ii < No_Layers) {
+            desired_layer_no = ii;
+            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+            delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+        } else {
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
 
-            ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_NEW_LAYER_, 12, (char*)"", 11, 1, 62);
-            no_error=FALSE;
-            goto pl_error1;
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            }
+            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                                   12, (char *) "", 11, 1, 62);
+                no_error = FALSE;
+                goto pl_error1;
+            }
+            No_Layers++;
+            desired_layer_no = No_Layers - 1;
+            Layers[No_Layers - 1].on = 1;
+            Layers[No_Layers - 1].edit = 1;
+            Layers[No_Layers - 1].point = 1;
+            strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+            Layers[No_Layers - 1].color = Ldsp.kolor;
         }
-        No_Layers++;
-        desired_layer_no = No_Layers - 1;
-        Layers[No_Layers - 1].on = 1;
-        Layers[No_Layers - 1].edit = 1;
-        Layers[No_Layers - 1].point = 1;
-        strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-        Layers[No_Layers - 1].color = Ldsp.kolor;
-    }
 
-    if (perm_e!=NULL)
-    {
-        for (i = 0; i < EPSILON_NUMBER; i++)
+        if ((sti==2) && (ULSLC_flag[2]==0)) // non existing ULSLC
+            goto end_block;
+
+        if (perm_e != NULL) 
         {
-            sprintf(block_name, "%s$%s_%s_%d", ptr_id_short, epsilon_chapter[i], SLS_ULS, combination_no);
-
-            hiding=TRUE;
-            for (j=0; j<block_names_no; j++)
+            for (i = 0; i < EPSILON_NUMBER; i++) 
             {
-                if (strcmp(block_names[j], block_name)==0)
-                {
-                    hiding=FALSE;
+                if (epsilon_==0)
                     break;
+
+                Ldsp.warstwa = desired_layer_no;
+                w.warstwa = Ldsp.warstwa;
+                w.kolor = Ldsp.kolor;
+                w.blok = 1;
+                //from meters to drawing units
+                blok_origin.x = jednostkiObX(mesh_node[0].x);
+                blok_origin.y = jednostkiObY(mesh_node[0].y);
+
+                if (nom_max)
+                {
+                    bim=2;
+                    min_max=_min_;
                 }
-            }
-
-            Ldsp.warstwa = desired_layer_no;
-            w.warstwa = Ldsp.warstwa;
-            w.kolor = Ldsp.kolor;
-            w.blok = 1;
-            //from meters to drawing units
-            blok_origin.x = jednostkiObXm(mesh_node[0].x);
-            blok_origin.y = jednostkiObYm(mesh_node[0].y);
-
-            epsilon_amax = max(fabs(epsilon_max[i]), fabs(epsilon_min[i]));
-            if (epsilon_amax>0)
-            {
-                ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
-                if (ptr_block == NULL) {
-                    fclose(f);
-                    ret = ask_question(1, (char*)"", (char *) confirm, (char*)"", (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char*)"", 11, 1, 62);
-                    no_error = FALSE;
-                    goto pl_error1;
+                else
+                {
+                    bim=1;
+                    min_max = _nope_;
                 }
 
+                for (bi=0; bi<bim; bi++) 
+                {
+                    if (bi>0) min_max = _max_;
 
-                for (j = 0; j < mesh_element_no; j++) {
-                    w.xy[0] = jednostkiObXm(mesh_node[mesh_element[j].node1 - 1].x);
-                    w.xy[1] = jednostkiObYm(mesh_node[mesh_element[j].node1 - 1].y);
+                    if (nom_max)
+                    {
+                        //checking bipolarity
+                        if (bi==0)  //potentially minimal
+                        {
+                            if ((max_epsilon_max[i]>0.) && (min_epsilon_min[i]>=0.))
+                                continue;  //we do not create zero unipolar graph
+                        }
+                        if (bi==1)  //potentially maximal
+                        {
+                            if ((max_epsilon_max[i]<=0.) && (min_epsilon_min[i]<0))
+                                continue; //we do not create zero unipolar graph
+                        }
+                    }
 
-                    w.xy[2] = jednostkiObXm(mesh_node[mesh_element[j].node2 - 1].x);
-                    w.xy[3] = jednostkiObYm(mesh_node[mesh_element[j].node2 - 1].y);
+                    sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, epsilon_chapter[i], SLS_ULS, min_max, combination_no);
 
-                    w.xy[4] = jednostkiObXm(mesh_node[mesh_element[j].node3 - 1].x);
-                    w.xy[5] = jednostkiObYm(mesh_node[mesh_element[j].node3 - 1].y);
+                    hiding = TRUE;
+                    for (j = 0; j < block_names_no; j++) {
+                        if (strcmp(block_names[j], block_name) == 0) {
+                            hiding = FALSE;
+                            break;
+                        }
+                    }
+                    if (nom_max) epsilon_amax = max(fabs(max_epsilon_max[i]), fabs(min_epsilon_min[i]));
+                    else epsilon_amax = max(fabs(epsilon_max[i]), fabs(epsilon_min[i]));
+                    
+                    if (epsilon_amax > 0.0) {
+                        ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
+                        if (ptr_block == NULL) {
+                            fclose(f);
+                            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                                               (char *) _CANNOT_CREATE_STRAIN_BLOCK_, 12, (char *) "", 11, 1, 62);
+                            no_error = FALSE;
+                            goto pl_error1;
+                        }
 
-                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                    else gradient.c1 = getRGB(epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                    else gradient.c2 = getRGB(epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                    else gradient.c3 = getRGB(epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
-                    gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                    fe_data.el_number = j + 1;
-                    fe_data.f1 = (float) epsilon[i][perm_e[mesh_element[j].node1 - 1]];
-                    fe_data.f2 = (float) epsilon[i][perm_e[mesh_element[j].node2 - 1]];
-                    fe_data.f3 = (float) epsilon[i][perm_e[mesh_element[j].node3 - 1]];
-                    fe_data.f4 = 0.0f;
+                        for (j = 0; j < mesh_element_no; j++) {
+                            w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
+                            w.xy[1] = jednostkiObY(mesh_node[mesh_element[j].node1 - 1].y);
 
-                    w.lp = 6;
-                    w.gradient = 1;
+                            w.xy[2] = jednostkiObX(mesh_node[mesh_element[j].node2 - 1].x);
+                            w.xy[3] = jednostkiObY(mesh_node[mesh_element[j].node2 - 1].y);
 
-                    w.translucent = 1;
-                    translucency_ptr = (char *) w.xy;
-                    translucency_ptr += (w.lp * sizeof(float));
-                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+                            w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
+                            w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
 
-                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                            if (nom_max)
+                            {
+                                if (bi==0) 
+                                {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
+                                    else gradient.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]],epsilon_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
+                                    else gradient.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]],epsilon_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
+                                    else gradient.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]],epsilon_amax);
+                                    gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                    fe_data.f2 = (float) min_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                    fe_data.f3 = (float) min_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                    fe_data.f4 = 0.0f;
+                                }
+                                else
+                                {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
+                                    else gradient.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]],epsilon_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
+                                    else gradient.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]],epsilon_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
+                                    else gradient.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]],epsilon_amax);
+                                    gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                    adr = dodaj_obiekt((BLOK *) dane, &w);
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) max_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                    fe_data.f2 = (float) max_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                    fe_data.f3 = (float) max_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                    fe_data.f4 = 0.0f;
+                                }
+                            }
+                            else {
+                                if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
+                                else gradient.c1 = getRGB(epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
+                                if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
+                                else gradient.c2 = getRGB(epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
+                                if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
+                                else gradient.c3 = getRGB(epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
+                                gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                }
+                                fe_data.el_number = j + 1;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                fe_data.f4 = 0.0f;
+                            }
 
-                //colorbar
-                if (epsilon_amax > 0.0) {
-                    w.xy[0] = (float) pl_min_x + 10.f;
-                    w.xy[1] = (float) pl_min_y - 10.f;
+                            w.lp = 6;
+                            w.gradient = 1;
 
-                    w.xy[2] = w.xy[0] + 50.f;
-                    w.xy[3] = w.xy[1];
+                            w.translucent = 1;
+                            translucency_ptr = (char *) w.xy;
+                            translucency_ptr += (w.lp * sizeof(float));
+                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
-                    w.xy[4] = w.xy[2];
-                    w.xy[5] = w.xy[3] - 5.f;
+                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
 
-                    w.xy[6] = w.xy[0];
-                    w.xy[7] = w.xy[5];
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
 
-                    gradient.c1 = getRGB(epsilon_min[i], epsilon_amax);
-                    gradient.c2 = getRGB(epsilon_max[i], epsilon_amax);
-                    gradient.c3 = getRGB(epsilon_max[i], epsilon_amax);
-                    gradient.c4 = getRGB(epsilon_min[i], epsilon_amax);
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            adr = dodaj_obiekt((BLOK *) dane, &w);
 
-                    fe_data.el_number = 0;
-                    fe_data.f1 = (float) epsilon_min[i];
-                    fe_data.f2 = (float) epsilon_max[i];
-                    fe_data.f3 = (float) epsilon_max[i];
-                    fe_data.f4 = (float) epsilon_min[i];
+                        }
 
-                    w.lp = 8;
-                    w.gradient = 1;
-                    w.translucent = 1;
-                    translucency_ptr = (char *) w.xy;
-                    translucency_ptr += (w.lp * sizeof(float));
-                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+                        //colorbar
+                        if (epsilon_amax > 0.0) {
+                            w.xy[0] = (float) pl_min_x + 10.f;
+                            w.xy[1] = (float) pl_min_y - 10.f;
 
-                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                            w.xy[2] = w.xy[0] + 50.f;
+                            w.xy[3] = w.xy[1];
 
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                            w.xy[4] = w.xy[2];
+                            w.xy[5] = w.xy[3] - 5.f;
 
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                    adr = dodaj_obiekt((BLOK *) dane, &w);
+                            w.xy[6] = w.xy[0];
+                            w.xy[7] = w.xy[5];
 
-                    T.warstwa = Ldsp.warstwa;
-                    T.kolor = Ldsp.kolor;
-                    T.italics = 0;
-                    T.underline = 0;
-                    T.wysokosc = (float) (zmwym.wysokosc * 0.5);
-                    T.kat = 0.0f;
-                    T.ukryty = 0;
+                            if (nom_max)
+                            {
+                                if (bi==0) {
+                                    gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
-                    T.x = w.xy[0];
-                    T.y = w.xy[1] + 0.5f;
-                    T.justowanie = j_do_lewej;
-                    sprintf(T.text, "%.5f", epsilon_min[i]);
+                                    fe_data.el_number = 0;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_epsilon_min[i];
+                                    fe_data.f2 = (float) max_epsilon_max[i];
+                                    fe_data.f3 = (float) max_epsilon_max[i];
+                                    fe_data.f4 = (float) min_epsilon_min[i];
+                                }
+                                else
+                                {
+                                    gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                                    fe_data.el_number = 0;
+                                    fe_data.flag=0;
+                                    fe_data.f1 = (float) min_epsilon_min[i];
+                                    fe_data.f2 = (float) max_epsilon_max[i];
+                                    fe_data.f3 = (float) max_epsilon_max[i];
+                                    fe_data.f4 = (float) min_epsilon_min[i];
+                                }
+                            }
+                            else {
+                                gradient.c1 = getRGB(epsilon_min[i], epsilon_amax);
+                                gradient.c2 = getRGB(epsilon_max[i], epsilon_amax);
+                                gradient.c3 = getRGB(epsilon_max[i], epsilon_amax);
+                                gradient.c4 = getRGB(epsilon_min[i], epsilon_amax);
 
-                    T.x = w.xy[2];
-                    T.y = w.xy[3] + 0.5f;
-                    T.justowanie = j_do_prawej;
-                    sprintf(T.text, "%.4f", epsilon_max[i]);
+                                fe_data.el_number = 0;
+                                fe_data.flag=0;
+                                fe_data.f1 = (float) epsilon_min[i];
+                                fe_data.f2 = (float) epsilon_max[i];
+                                fe_data.f3 = (float) epsilon_max[i];
+                                fe_data.f4 = (float) epsilon_min[i];
+                            }
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                            w.lp = 8;
+                            w.gradient = 1;
+                            w.translucent = 1;
+                            translucency_ptr = (char *) w.xy;
+                            translucency_ptr += (w.lp * sizeof(float));
+                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
-                    T.x = (w.xy[0] + w.xy[2]) / 2.f;
-                    T.y = w.xy[3] + 0.5f;
-                    T.justowanie = j_srodkowo;
-                    sprintf(T.text, "%s", epsilon_chapter[i]);
+                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
 
-                    T.dl = strlen(T.text);
-                    T.n = T18 + T.dl;
-                    normalize_txt(&T);
-                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            adr = dodaj_obiekt((BLOK *) dane, &w);
+
+                            T.warstwa = Ldsp.warstwa;
+                            T.kolor = Ldsp.kolor;
+                            T.italics = 0;
+                            T.underline = 0;
+                            T.wysokosc = (float) (zmwym.wysokosc * 0.5);
+                            T.kat = 0.0f;
+                            T.ukryty = 0;
+
+                            T.x = w.xy[0];
+                            T.y = w.xy[1] + 0.5f;
+                            T.justowanie = j_do_lewej;
+                            sprintf(T.text, "%.5f", epsilon_min[i]);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            T.x = w.xy[2];
+                            T.y = w.xy[3] + 0.5f;
+                            T.justowanie = j_do_prawej;
+                            sprintf(T.text, "%.4f", epsilon_max[i]);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            T.x = (w.xy[0] + w.xy[2]) / 2.f;
+                            T.y = w.xy[3] + 0.5f;
+                            T.justowanie = j_srodkowo;
+                            sprintf(T.text, "%s  %s%s", Utf8StrMakeUprUtf8Str(SLS_ULS), epsilon_chapter[i],min_max);
+
+                            T.dl = strlen(T.text);
+                            T.n = T18 + T.dl;
+                            normalize_txt(&T);
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+                        }
+                    }
                 }
             }
         }
+
+end_block:
+
+        pl_error2:
+
+        if (sti==1)  //ULS
+        {
+            //stress backup
+            for (int is = 0; is < STRESS_NUMBER; is++)
+            {
+                min_stress_min_bak[is] = stress_min[is];
+                max_stress_max_bak[is] = stress_max[is];
+                min_stress_bak[is] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                max_stress_bak[is] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                memmove(min_stress_bak[is], stress[is], perm_s_index_no * sizeof(double));
+                memmove(max_stress_bak[is], stress[is], perm_s_index_no * sizeof(double));
+            }
+            perm_s_bak = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+            memmove(perm_s_bak, perm_s, perm_s_node_no * sizeof(int));
+        }
+
+        if (geo_line) free(geo_line);
+        if (perm_d_b == 1) {
+            if (perm_d) free(perm_d);
+        }
+        if (perm_s_b == 1) {
+            if (perm_s) free(perm_s);
+        }
+        if (perm_e_b == 1) {
+            if (perm_e) free(perm_e);
+        }
+
+        for (i = 0; i < DEFLECTION_NUMBER; i++) {
+            if (deflection[i] != NULL) {
+                free(deflection[i]);
+                deflection[i] = NULL;
+            }
+        }
+        for (i = 0; i < DEFLECTION_NUMBER; i++) {
+            if (min_deflection[i] != NULL) {
+                free(min_deflection[i]);
+                min_deflection[i] = NULL;
+            }
+        }
+        for (i = 0; i < DEFLECTION_NUMBER; i++) {
+            if (max_deflection[i] != NULL) {
+                free(max_deflection[i]);
+                max_deflection[i] = NULL;
+            }
+        }
+
+        for (i = 0; i < STRESS_NUMBER; i++) {
+            if (stress[i] != NULL) {
+                free(stress[i]);
+                stress[i] = NULL;
+            }
+        }
+        for (i = 0; i < STRESS_NUMBER; i++) {
+            if (ULSLC_flag[sti]) {
+                if (min_stress[i] != NULL) {
+                    free(min_stress[i]);
+                    min_stress[i] = NULL;
+                }
+            }
+        }
+
+        for (i = 0; i < STRESS_NUMBER; i++) {
+            if (ULSLC_flag[sti]) {
+                if (max_stress[i] != NULL) {
+                    free(max_stress[i]);
+                    max_stress[i] = NULL;
+                }
+            }
+        }
+        for (i = 0; i < EPSILON_NUMBER; i++) {
+            if (epsilon[i] != NULL) {
+                free(epsilon[i]);
+                epsilon[i] = NULL;
+            }
+        }
+        for (i = 0; i < EPSILON_NUMBER; i++) {
+            if (min_epsilon[i] != NULL) {
+                free(min_epsilon[i]);
+                min_epsilon[i] = NULL;
+            }
+        }
+        for (i = 0; i < EPSILON_NUMBER; i++) {
+            if (max_epsilon[i] != NULL) {
+                free(max_epsilon[i]);
+                max_epsilon[i] = NULL;
+            }
+        }
+    }  //sti done
+
+    for (i = 0; i < STRESS_NUMBER; i++)
+    {
+        if (min_stress_bak[i] != NULL) {
+            free(min_stress_bak[i]);
+            min_stress_bak[i] = NULL;
+        }
     }
 
-pl_error2:
-
-    if (geo_line) free(geo_line);
-    if (perm_d) free(perm_d);
-    if (perm_s_b==1) {
-        if (perm_s) free(perm_s);
-    }
-    if (perm_e_b==1) {
-        if (perm_e) free(perm_e);
+    for (i = 0; i < STRESS_NUMBER; i++)
+    {
+        if (max_stress_bak[i] != NULL) {
+            free(max_stress[i]);
+            max_stress_bak[i] = NULL;
+        }
     }
 
-    for (i=0; i<DEFLECTION_NUMBER; i++) if (deflection[i]!=NULL)
-    {
-        free(deflection[i]);
-        deflection[i]=NULL;
-    }
-    for (i=0; i<STRESS_NUMBER; i++) if (stress[i]!=NULL)
-    {
-        free(stress[i]);
-        stress[i]=NULL;
-    }
-    for (i=0; i<EPSILON_NUMBER; i++) if (epsilon[i]!=NULL)
-    {
-        free(epsilon[i]);
-        epsilon[i]=NULL;
-    }
+    free(perm_s_bak);
 
 pl_error1:
 
     if (mesh_node) free(mesh_node);
     if (mesh_element) free(mesh_element);
     if (mesh_boundary) free(mesh_boundary);
+
+    if (body_property) free(body_property);
 
 pl_error:
 
@@ -3499,6 +6011,10 @@ pl_error:
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0] = '\0';
     }
+
+
+    free(st_uniform_load_comb);
+    free(st_uniform_load_cons);
 
     if (pl_property) free(pl_property);
     if (pl_load_factors)free(pl_load_factors);

@@ -29,10 +29,14 @@ typedef struct
     int RC_flag; //0 - steel or wood, >0 Reinforced Concrete
     double c;  //concrete cover as a distance from bottom/top concrete edge to the centroid of bottom/top reinforcement layer or the centroid of all bottom/top reinforcement layers
     double zeta; //parameter dependent on the share of concrete in transferring the bending moment. In preliminary dimensioning, ζ=0.85 can be assumed
+    double fyk; //fyk characteristic yield strength of reinforcing steel; γs partial safety factor for reinforcing steel
     double fyd; //Design yield strength of reinforcing steel fyd=fyk/γs where fyk characteristic yield strength of reinforcing steel; γs partial safety factor for reinforcing steel
                 //fyd must be indicated in properties for RC element, in Mpa (e.g. 350) or in kpsi (e.g. 50)
                 //According to Eurocode 2, the characteristic yield strength fyk of steel reinforcement in reinforced concrete should be between 400 and 600 MPa.
-                //The partial safety factor for rebar in Eurocodes is γs = 1.15 for reinforcement and γc = 1.5 for concrete
+                //The partial safety factor for rebar in Eurocodes is γs = 1.15 for reinforcement
+    double fck; //fck characteristic yield strength of concrete; γc partial safety factor for reinforcing steel
+    double fcd; //Design yield strength of reinforcing steel fcd=fck/γc where fck characteristic yield strength of concrete; γc partial safety factor for concrete
+                //The partial safety factor for rebar in Eurocodes is  γc = 1.5 for concrete
     int ok;
 } ST_PROPERTY;
 
@@ -224,6 +228,7 @@ typedef struct {              //                                                
    double S_f; //Stress  (out)                                                      kPa -> Mpa          kip
    double Ma_f;//Mass                                                               kPa -> tone         kip
    double c_f; //concrete cover  should be no less than 35 mm / 1.5" in for beams and 55 mm / 2"  for columns
+
 } UNIT_FACTORS;
 
 typedef struct {

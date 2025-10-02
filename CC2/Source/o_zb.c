@@ -196,6 +196,7 @@ extern char  *dane0;
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -204,6 +205,7 @@ extern double rotation_magnitude;
 extern double depth_magnitude0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude0; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude0; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -232,6 +234,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double src_magnitude;
 extern double q_magnitude;
 extern double p_magnitude;
 
@@ -242,6 +245,7 @@ extern double d_magnitude0;
 extern double r_magnitude0;
 extern double rm_magnitude0;
 extern double s_magnitude0;
+extern double src_magnitude0;
 extern double q_magnitude0;
 extern double p_magnitude0;
 
@@ -1883,7 +1887,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
         if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
      }
 
-      float magnitude;
+      float magnitude, precision;
 
       int marker;
 
@@ -1891,7 +1895,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
       if (proc_io(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
       if (proc_io(f, &null_var_float, sizeof(float)) != sizeof(float)) return FALSE;
 
-      if (marker==1234567)
+      if ((marker==1234567) || (marker==1234568))
       {
           if ((null_var_float>0) && (null_var_float<=10000)) q_magnitude=null_var_float;
           else q_magnitude=q_magnitude0;
@@ -1901,9 +1905,19 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
           if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
           if (Check_if_LE(magnitude, 0.0)) s_magnitude=s_magnitude0; else s_magnitude=(double)magnitude;
 
-          if (proc_io(f, &stress_precision, sizeof(double)) != sizeof(double)) return FALSE;
-
-          if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0;
+          if (marker==1234567)
+          {
+              src_magnitude=src_magnitude0;
+              if (proc_io(f, &stress_precision, sizeof(double)) != sizeof(double)) return FALSE;
+              if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0;
+          }
+          else  //(marker==1234568)
+          {
+              if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+              if (Check_if_LE(magnitude, 0.0)) src_magnitude=src_magnitude0; else src_magnitude=(double)magnitude;
+              if (proc_io(f, &precision, sizeof(float)) != sizeof(float)) return FALSE;
+              if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0; else stress_precision=(double)precision;
+          }
       }
       else
       {
@@ -1954,8 +1968,21 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
       if (proc_io(f, &rotation_precision, sizeof(double)) != sizeof(double)) return FALSE;
       if (Check_if_LE(rotation_precision, 0.0)) rotation_precision=rotation_precision0;
 
-    if (proc_io(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(thermal_magnitude, 0.0)) thermal_magnitude=thermal_magnitude0;
+
+      if (marker==1234568)  //upgraded from 1234567
+      {
+          if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+          if (Check_if_LE(magnitude, 0.0)) flood_magnitude = flood_magnitude0; else flood_magnitude = (double) magnitude;
+          if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+          if (Check_if_LE(magnitude, 0.0)) thermal_magnitude = thermal_magnitude0; else thermal_magnitude = (double) magnitude;
+      }
+      else
+      {
+          flood_magnitude = flood_magnitude0;
+          if (proc_io(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+          if (Check_if_LE(thermal_magnitude, 0.0)) thermal_magnitude=thermal_magnitude0;
+      }
+
     if (proc_io(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
     if (Check_if_LE(load_magnitude, 0.0)) load_magnitude=load_magnitude0;
     if (proc_io(f, &force_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
@@ -2391,9 +2418,11 @@ static BOOL write_param (int f, int *error_code1)
   if (write(f, &prn_window->xk, sizeof(double)) != sizeof(double)) return FALSE;
   if (write(f, &prn_window->yk, sizeof(double)) != sizeof(double)) return FALSE;
 
-    float magnitude;
+    float magnitude, precision;
 
-    int marker=1234567;
+    //int marker=1234567;
+    //it was upgraded now
+    int marker=1234568;
 
     if (write(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
 
@@ -2403,7 +2432,11 @@ static BOOL write_param (int f, int *error_code1)
     if (write(f, &static_stress_colors, sizeof(STATIC_STRESS_COLORS)) != sizeof(STATIC_STRESS_COLORS)) return FALSE;
     magnitude=(float)s_magnitude;
     if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-    if (write(f, &stress_precision, sizeof(double)) != sizeof(double)) return FALSE;
+
+    magnitude=(float)src_magnitude;
+    if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+    precision=(float)stress_precision;
+    if (write(f, &precision, sizeof(float)) != sizeof(float)) return FALSE;
 
     if (write(f, &static_colors, sizeof(STATIC_COLORS)) != sizeof(STATIC_COLORS)) return FALSE;
 
@@ -2427,7 +2460,10 @@ static BOOL write_param (int f, int *error_code1)
     if (write(f, &displacement_precision, sizeof(double)) != sizeof(double)) return FALSE;
     if (write(f, &rotation_precision, sizeof(double)) != sizeof(double)) return FALSE;
 
-  if (write(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  magnitude=(float)flood_magnitude;
+  if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  magnitude=(float)thermal_magnitude;
+  if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
   if (write(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
   if (write(f, &force_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
   if (write(f, &moment_magnitude, sizeof(double)) != sizeof(double)) return FALSE;

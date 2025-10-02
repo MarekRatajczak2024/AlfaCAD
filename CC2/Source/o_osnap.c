@@ -68,6 +68,7 @@ extern int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LI
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 
 extern double dim_precision;
@@ -817,9 +818,9 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                         if (v->flags & 1) n*=-1;
 
                         Lt.x1 = LL.x1;
-                        Lt.y1 = LL.y1 + n * (v->magnitude1 / load_magnitude);
+                        Lt.y1 = LL.y1 + n * (v->magnitude1 / ((v->style==10) ? load_magnitude : flood_magnitude));
                         Lt.x2 = LL.x2;
-                        Lt.y2 = LL.y2 + n * (v->magnitude2 / load_magnitude);
+                        Lt.y2 = LL.y2 + n * (v->magnitude2 / ((v->style==10) ? load_magnitude : flood_magnitude));
                     break;
                     case 11: //trapezium X
                         LL.x1=v->x1;

@@ -486,10 +486,12 @@ static char* komunikaty_kom[] =
 /*217*/u8"Wprowadź współczynnik przeskalowania wynikowych momentów reakcji podpór: ",
 
 /*218*/u8"Wprowadź współczynnik przeskalowania głębokości przekroju: ",
-/*219*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń: ",
+/*219*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń (stal, drewno): ",
 /*220*/u8"Wprowadź precyzję naprężeń: ",
 /*221*/u8"Wprowadź współczynnik przeskalowania odkształcenia modalnych postaci drgań: ",
 /*222*/u8"Wprowadź współczynnik przeskalowania dla wynikowego procentu zbrojenia: ",
+/*223*/u8"Wprowadź współczynnik przeskalowania obciążenia płaszczyznowego: ",
+/*224*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń (żelbet):",
 "",
 "",
 };
@@ -1234,6 +1236,8 @@ static char confirm[] = u8"Potwierdź";
 #define _CANNOT_CREATE_NEW_LAYER_ u8"Nie można utworzyć nowej warstwy. Utworzono już zbyt wiele warstw"
 #define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Nie można utworzyć bloku węzłów i elementów"
 #define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Nie można utworzyć bloku odkształceń"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Nie można utworzyć bloku naprężeń"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Nie można utworzyć bloku odkształceń postaciowych"
 
 #define _PROCEED_PLATE_FEM_ u8"Przeprowadzić analizę statyczną wskazanej płyty?"
 
@@ -1243,6 +1247,7 @@ static char confirm[] = u8"Potwierdź";
 #define _THE_WALL_ u8"Sciana"
 #define _THE_ZONE_ u8"Strefa"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Liczba polilinii płyt jest równa 0"
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"Liczba polilinii płyt jest większa od 1\n Takiego rozwiązania jeszcze nie wdrożono."
 #define _NO_LOAD_ASSIGNED_ u8"Nie przypisano obciążenia i nie zadeklarowano „%g” dla obciażenia ciężarem własnym"
 
 #define _Yes_ "Tak"
@@ -1255,6 +1260,7 @@ static char confirm[] = u8"Potwierdź";
 
 #define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym"
 #define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer"
+#define _unknown_standard_ u8"Nieznany standard"
 
 #endif
 

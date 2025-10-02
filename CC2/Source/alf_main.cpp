@@ -2959,6 +2959,25 @@ void Put_Str_To_Clip(char *ptrsz_buf)
 {
 #ifndef MACOS //MACOS TEMPORARY
     clip::set_text(ptrsz_buf);
+#else
+		// Open a pipe to the pbcopy command
+		FILE *pipe = popen("/usr/bin/pbcopy", "w");
+		if (pipe == NULL) {
+			printf("clipboard popen failed");
+			return;
+		}
+
+		// Write the string to the pipe, which pbcopy will then put into the clipboard
+		fprintf(pipe, "%s", ptrsz_buf);
+
+		// Close the pipe
+		int status = pclose(pipe);
+		if (status == -1) {
+			printf("clipboard pclose failed");
+			return;
+		}
+
+		printf("String successfully copied to clipboard.\n");
 #endif
 }
 
@@ -2969,12 +2988,41 @@ int Get_Str_From_Clip(char *ptrsz_buf,
                        int ypcz)
 /*---------------------------------*/
 {
+	std::string value;
 #ifndef MACOS //MACOS TEMPORARY
-    std::string value;
-
     clip::get_text(value);
+	const char *value_p=value.c_str();
+#else
+	const char *value_p;
+	FILE* fp;
+	char buffer[1024]; // Adjust buffer size as needed
+	char* content = (char*)malloc(1);
+	size_t content_len = 0;
 
-    const char *value_p=value.c_str();
+	fp = popen("pbpaste", "r");
+	if (fp == NULL) {
+		perror("Failed to run pbpaste");
+		return NULL;
+	}
+
+	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+		size_t buffer_len = strlen(buffer);
+		content = (char*)realloc(content, content_len + buffer_len + 1);
+		if (content == NULL) {
+			perror("Memory allocation failed");
+			pclose(fp);
+			return NULL;
+		}
+		strcpy(content + content_len, buffer);
+		content_len += buffer_len;
+	}
+
+	pclose(fp);
+
+	value_p = content;
+
+#endif
+    //const char *value_p=value.c_str();
     int pos=i_poz;
     size_t l1 = strlen(ptrsz_buf);
     size_t l2 = strlen(value_p);
@@ -2990,7 +3038,11 @@ int Get_Str_From_Clip(char *ptrsz_buf,
         memmove(p, value_p, l2);
         p[l1+l2]='\0';
     }
+
+#ifdef MACOS
+	free(content);
 #endif
+
     return 1;
 }
 

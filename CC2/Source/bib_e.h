@@ -3216,12 +3216,22 @@ typedef struct {
 
 typedef struct
 {
-    int el_number;
-    float f1;
+    //unsigned flag:4;
+    unsigned el_number:30;
+    unsigned flag:2;  //0 normal  1 extended
+    float f1;  //for stress is stress
     float f2;
     float f3;
     float f4;
 } FE_DATA;
+
+typedef struct
+{
+    float f1;  //for stress is reinforcement ratio
+    float f2;
+    float f3;
+    float f4;
+} FE_DATA_EX;
 
 /*
 typedef struct

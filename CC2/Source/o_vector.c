@@ -88,6 +88,7 @@ double radius_magnitude=1.0; //units per mm  default 1 mm of section depth per 1
 double depth_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double thermal_magnitude=5.0; //units per mm  default 1 Celsius per 1 mm on drawing paper
 double load_magnitude=10.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+double flood_magnitude=10.0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 double force_magnitude=10.0; //units per mm  default 10kN force per 1 mm on drawing paper
 double moment_magnitude=10.0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 double displacement_magnitude=1.0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -97,6 +98,7 @@ double radius_magnitude0=1.0; //units per mm  default 1 mm of section depth per 
 double depth_magnitude0=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double thermal_magnitude0=5.0; //units per mm  default 1 Celsius per 1 mm on drawing paper
 double load_magnitude0=10.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+double flood_magnitude0=1.0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 double force_magnitude0=10.0; //units per mm  default 10kN force per 1 mm on drawing paper
 double moment_magnitude0=10.0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 double displacement_magnitude0=1.0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -615,7 +617,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     }
                     n=(LL.x1<LL.x2) ? 1 : -1;
                     if (V->flags & 1) n*=-1;
-                    V->magnitude1=V->magnitude2=n*PL.dy*load_magnitude;
+                    V->magnitude1=V->magnitude2=n*PL.dy*flood_magnitude;
                     break;
                 case 11:
                     if (Check_if_Equal(LL.y1, LL.y2))
@@ -690,7 +692,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     }
                     n=(LL.x1<LL.x2) ? 1 : -1;
                     if (V->flags & 1) n*=-1;
-                    V->magnitude1=V->magnitude2=n*PL.dy*load_magnitude;
+                    V->magnitude1=V->magnitude2=n*PL.dy*flood_magnitude;
                     break;
                 case 11:
                     if (Check_if_Equal(LL.y1, LL.y2))
@@ -817,7 +819,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 n=(LL.x1<LL.x2) ? 1 : -1;
                 if (V->flags & 1) n*=-1;
-                V->magnitude2=V->magnitude1=n*PL.dy*load_magnitude;
+                V->magnitude2=V->magnitude1=n*PL.dy*flood_magnitude;
                 break;
             case 11:
                 if (Check_if_Equal(LL.y1, LL.y2))
@@ -892,7 +894,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 n=(LL.x1<LL.x2) ? 1 : -1;
                 if (V->flags & 1) n*=-1;
-                V->magnitude2=V->magnitude1=n*PL.dy*load_magnitude;
+                V->magnitude2=V->magnitude1=n*PL.dy*flood_magnitude;
                 break;
             case 11:
                 if (Check_if_Equal(LL.y1, LL.y2))

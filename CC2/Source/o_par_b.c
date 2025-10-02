@@ -54,6 +54,9 @@ extern void frame_on(TMENU * menu);
 
 extern void inc_menu_level(TMENU * menu);
 extern void dec_menu_level(void);
+extern int get_cursor_posX(void);
+extern int get_cursor_posY(void);
+extern void move_pointer(int x, int y);
 
 //parametry ramki i sektorow
 float del_sektor = 0.25;       //przesuniecie ramki do srodka rysunku
@@ -111,6 +114,7 @@ extern char* punits[];
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -131,6 +135,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double src_magnitude;
 extern double p_magnitude;
 extern double q_magnitude;
 
@@ -925,7 +930,29 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
 
     *parameter=d;
     DF_to_String (sk, "%-6.4f", d, 6) ;
-    menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
+    if (menu_number==4)
+    {
+        sprintf(sk, "%-6.4f/%-6.4f", load_magnitude, flood_magnitude) ;
+        menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
+        DF_to_String (sk, "%-6.4f", load_magnitude, 6) ;
+        menu_par_new ((*mLoadMagnitude.pola)[0].txt, sk) ;
+        DF_to_String (sk, "%-6.4f", flood_magnitude, 6) ;
+        menu_par_new ((*mLoadMagnitude.pola)[1].txt, sk) ;
+    }
+    if (menu_number==12)
+    {
+        sprintf(sk, "%-6.4f/%-6.4f", s_magnitude, src_magnitude) ;
+        menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
+        DF_to_String (sk, "%-6.4f", s_magnitude, 6) ;
+        menu_par_new ((*mStressMagnitude.pola)[0].txt, sk) ;
+        DF_to_String (sk, "%-6.4f", src_magnitude, 6) ;
+        menu_par_new ((*mStressMagnitude.pola)[1].txt, sk) ;
+    }
+    else
+    {
+        DF_to_String (sk, "%-6.4f", d, 6) ;
+        menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
+    }
     drawp (&mParametry) ;
     go_refresh=TRUE;
     vector_refresh=TRUE;
@@ -953,6 +980,11 @@ void Stress_Precision(void)
 void Load_Magnitude(void)
 {
     Change_Magnitude(203, &load_magnitude, 4);
+}
+
+void Flood_Magnitude(void)
+{
+    Change_Magnitude(223, &flood_magnitude, 4);
 }
 
 void Load_Precision(void)
@@ -1028,6 +1060,11 @@ void RM_Magnitude(void)
 void S_Magnitude(void)
 {
     Change_Magnitude(219, &s_magnitude, 12);
+}
+
+void SRC_Magnitude(void)
+{
+    Change_Magnitude(224, &src_magnitude, 12);
 }
 
 void P_Magnitude(void)
@@ -1226,8 +1263,13 @@ int ret;
     menu_par_new((*mMagnitude.pola)[2].txt, sk);
     sprintf(sk, "%lg", rotation_magnitude);
     menu_par_new((*mMagnitude.pola)[3].txt, sk);
-    sprintf(sk, "%lg", load_magnitude);
+    sprintf(sk, "%lg/%lg", load_magnitude, flood_magnitude);
     menu_par_new((*mMagnitude.pola)[4].txt, sk);
+
+    sprintf(sk, "%lg", load_magnitude);
+    menu_par_new((*mLoadMagnitude.pola)[0].txt, sk);
+    sprintf(sk, "%lg", flood_magnitude);
+    menu_par_new((*mLoadMagnitude.pola)[1].txt, sk);
 
     sprintf(sk, "%lg", thermal_magnitude);
     menu_par_new((*mMagnitude.pola)[5].txt, sk);
@@ -1244,8 +1286,14 @@ int ret;
     menu_par_new((*mMagnitude.pola)[10].txt, sk);
     sprintf(sk, "%lg", rm_magnitude);
     menu_par_new((*mMagnitude.pola)[11].txt, sk);
-    sprintf(sk, "%lg", s_magnitude);
+    sprintf(sk, "%lg/%lg", s_magnitude, src_magnitude);
     menu_par_new((*mMagnitude.pola)[12].txt, sk);
+
+    sprintf(sk, "%lg", s_magnitude);
+    menu_par_new((*mStressMagnitude.pola)[0].txt, sk);
+    sprintf(sk, "%lg", src_magnitude);
+    menu_par_new((*mStressMagnitude.pola)[1].txt, sk);
+
     sprintf(sk, "%lg", p_magnitude);   //% of reinforcement
     menu_par_new((*mMagnitude.pola)[13].txt, sk);
     sprintf(sk, "%lg", q_magnitude);  //exaggerate modal modes of vibrations
@@ -1812,12 +1860,13 @@ static void (* COMND[])(void)={
 /*89 kursor */       kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS,
 /*99 kursorB */	     kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB,
 /*109 uklad */       Uklad_kartezjanski, Uklad_geodezyjny,
-                     Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, Load_Magnitude, Thermal_Magnitude,
-                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, S_Magnitude, P_Magnitude, Q_Magnitude,
+                     Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, nooop/*Load_Magnitude*/, Thermal_Magnitude,
+                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, nooop, P_Magnitude, Q_Magnitude,
                      nooop,nooop,
                      Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
+                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude
 };
 
 /*----------------------------------------------------*/
@@ -1827,6 +1876,7 @@ void Magnitudes(void)
 {
     int n, n0, n1, n2;
     int m_level;
+    int x_cur, y_cur;
     n0 = mMagnitude.off;
     n1 = mPrecision.off;
     n2 = mStaticColors.off;
@@ -1861,7 +1911,10 @@ void Magnitudes(void)
                 }
                 else
                 {
+                    x_cur = mouse_x;
+                    y_cur = mouse_y;
                     (*COMND[n - 1 + n0])();
+                    position_mouse(x_cur, y_cur);
                 }
             }
             frame_on(&mMagnitude);
@@ -1883,15 +1936,21 @@ void Magnitudes(void)
                 }
                 else
                 {
+                    x_cur = mouse_x;
+                    y_cur = mouse_y;
                     (*COMND[n - 1 + n0])();
                     Restore_Pointer();
+                    position_mouse(x_cur, y_cur);
                 }
             }
             frame_on(&mMagnitude);
         }
         else
         {
+            x_cur = mouse_x;
+            y_cur = mouse_y;
             (*COMND[n - 1])();
+            position_mouse(x_cur, y_cur);
         }
     }
 

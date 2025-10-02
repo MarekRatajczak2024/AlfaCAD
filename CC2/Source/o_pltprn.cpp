@@ -253,6 +253,7 @@ extern "C" {
     extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
     extern double radius_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
     extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+    extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
     extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
     extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
     extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -3349,9 +3350,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             if (ptrs_vector->flags & 1) n*=-1;
 
             Lt.x1 = L1.x1;
-            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude);
+            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
             Lt.x2 = L1.x2;
-            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude);
+            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;

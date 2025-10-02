@@ -288,6 +288,7 @@ extern void magnitude2angle(AVECTOR *V, double factor);
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -8154,6 +8155,7 @@ int inukeys(TMENU *menu)
 			if (key[KEY_F10]) { clear_keybuff();  return ucatch(F10); }
 			if (key[KEY_F11]) { clear_keybuff();  return ucatch(F11); }
 
+#ifndef MACOS
 			if ((key_shifts & KB_CTRL_FLAG) && (key_shifts ^ KB_ALT_FLAG))
 			{
 				if ((key[KEY_LCONTROL] || key[KEY_RCONTROL]) && (!key[KEY_ALT]) && (!key[KEY_ALTGR]) && key[KEY_V] ) {
@@ -8165,72 +8167,93 @@ int inukeys(TMENU *menu)
 					return ucatch(COPYCLIP);
 				}
 			}
+#else
+			if (key_shifts & KB_COMMAND_FLAG)
+			{
+				if (key[KEY_V]) {
+					clear_keybuff();
+					return ucatch(PASTECLIP);
+				}
+				if (key[KEY_C]) {
+					clear_keybuff();
+					return ucatch(COPYCLIP);
+				}
+			}
+#endif
 
-			if ((key[KEY_ALT] || altkey) && key[KEY_8]) { clear_keybuff();  return ucatch(DEGREESIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_3]) { clear_keybuff();  return ucatch(SUPERSCRIPT3); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && ((key[KEY_ALT] || altkey) && key[KEY_4])) { clear_keybuff(); return ucatch(EUROSIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && ((key[KEY_ALT] || altkey) && key[KEY_BACKSLASH])) { clear_keybuff(); return ucatch(ROOT3SIGN); }
-            if ((key[KEY_ALT] || altkey) && key[KEY_4]) { clear_keybuff(); return ucatch(SUPERSCRIPT4); }
-            if ((key[KEY_ALT] || altkey) && key[KEY_BACKSLASH]) { clear_keybuff(); return ucatch(ROOTSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_2]) { clear_keybuff();  return ucatch(SUPERSCRIPT2); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_MINUS]) { clear_keybuff();  return ucatch(PLUSMINUS); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_SLASH]) { clear_keybuff();  return ucatch(DIVISION); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_STOP]) { clear_keybuff();  return ucatch(MIDDLEDOT); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_1]) { clear_keybuff();  return ucatch(ONEHALF); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_5]) { clear_keybuff();  return ucatch(ONEQUARTER); }
-            if ((key[KEY_ALT] || altkey) && key[KEY_6]) { clear_keybuff();  return ucatch(THREEQUARTERS);}
-			if ((key[KEY_ALT] || altkey) && key[KEY_0]) { clear_keybuff();  return ucatch(DIAMETERSIGN); }
+#ifdef MACOS
+			if (key_shifts & KB_COMMAND_FLAG)
+			{
+#endif
 
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_A]) { clear_keybuff();  return ucatch(CAPITALALPHASIGN); } ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_B]) { clear_keybuff();  return ucatch(CAPITALBETASIGN); }  ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_G]) { clear_keybuff();  return ucatch(CAPITALGAMMASIGN); }
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_D]) { clear_keybuff();  return ucatch(CAPITALDELTASIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_E]) { clear_keybuff();  return ucatch(CAPITALEPSILONSIGN); }  ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Z]) { clear_keybuff();  return ucatch(CAPITALZETASIGN); }   ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Q]) { clear_keybuff();  return ucatch(CAPITALETASIGN); }   ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_H]) { clear_keybuff();  return ucatch(CAPITALTHETASIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_I]) { clear_keybuff();  return ucatch(CAPITALIOTASIGN); }  ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_K]) { clear_keybuff();  return ucatch(CAPITALKAPPASIGN); }  ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_L]) { clear_keybuff();  return ucatch(CAPITALLAMBDASIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_M]) { clear_keybuff();  return ucatch(CAPITALMUSIGN); }  ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_N]) { clear_keybuff();  return ucatch(CAPITALNUSIGN); }  ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_X]) { clear_keybuff();  return ucatch(CAPITALXISIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_O]) { clear_keybuff();  return ucatch(CAPITALOMICRONSIGN); } ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_P]) { clear_keybuff();  return ucatch(CAPITALPISIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_R]) { clear_keybuff();  return ucatch(CAPITALRHOSIGN); } ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_S]) { clear_keybuff();  return ucatch(CAPITALSIGMASIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_T]) { clear_keybuff();  return ucatch(CAPITALTAUSIGN); } ////
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Y]) { clear_keybuff();  return ucatch(CAPITALUPSYLONSIGN); }  ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_F]) { clear_keybuff();  return ucatch(CAPITALPHISIGN); }
-            if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_C]) { clear_keybuff();  return ucatch(CAPITALCHISIGN); } ////
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_U]) { clear_keybuff();  return ucatch(CAPITALPSISIGN); }
-			if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_W]) { clear_keybuff();  return ucatch(CAPITALOMEGASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_8]) { clear_keybuff();  return ucatch(DEGREESIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_3]) { clear_keybuff();  return ucatch(SUPERSCRIPT3); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && ((key[KEY_ALT] || altkey) && key[KEY_4])) { clear_keybuff(); return ucatch(EUROSIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && ((key[KEY_ALT] || altkey) && key[KEY_BACKSLASH])) { clear_keybuff(); return ucatch(ROOT3SIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_4]) { clear_keybuff(); return ucatch(SUPERSCRIPT4); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_BACKSLASH]) { clear_keybuff(); return ucatch(ROOTSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_2]) { clear_keybuff();  return ucatch(SUPERSCRIPT2); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_MINUS]) { clear_keybuff();  return ucatch(PLUSMINUS); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_SLASH]) { clear_keybuff();  return ucatch(DIVISION); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_STOP]) { clear_keybuff();  return ucatch(MIDDLEDOT); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_1]) { clear_keybuff();  return ucatch(ONEHALF); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_5]) { clear_keybuff();  return ucatch(ONEQUARTER); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_6]) { clear_keybuff();  return ucatch(THREEQUARTERS);}
+				if ((key[KEY_ALT] || altkey) && key[KEY_0]) { clear_keybuff();  return ucatch(DIAMETERSIGN); }
 
-			if ((key[KEY_ALT] || altkey) && key[KEY_A]) { clear_keybuff();
-                return ucatch(ALPHASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_B]) { clear_keybuff();  return ucatch(BETASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_G]) { clear_keybuff();  return ucatch(GAMMASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_D]) { clear_keybuff();  return ucatch(DELTASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_E]) { clear_keybuff();  return ucatch(EPSILONSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_Z]) { clear_keybuff();  return ucatch(ZETASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_Q]) { clear_keybuff();  return ucatch(ETASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_H]) { clear_keybuff();  return ucatch(THETASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_I]) { clear_keybuff();  return ucatch(IOTASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_K]) { clear_keybuff();  return ucatch(KAPPASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_L]) { clear_keybuff();  return ucatch(LAMBDASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_M]) { clear_keybuff();  return ucatch(MUSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_N]) { clear_keybuff();  return ucatch(NUSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_X]) { clear_keybuff();  return ucatch(XISIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_O]) { clear_keybuff();  return ucatch(OMICRONSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_P]) { clear_keybuff();  return ucatch(PISIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_R]) { clear_keybuff();  return ucatch(RHOSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_S]) { clear_keybuff();  return ucatch(SIGMASIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_T]) { clear_keybuff();  return ucatch(TAUSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_Y]) { clear_keybuff();  return ucatch(UPSYLONSIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_F]) { clear_keybuff();  return ucatch(PHISIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_C]) { clear_keybuff();  return ucatch(CHISIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_U]) { clear_keybuff();  return ucatch(PSISIGN); }
-			if ((key[KEY_ALT] || altkey) && key[KEY_W]) { clear_keybuff();  return ucatch(OMEGASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_A]) { clear_keybuff();  return ucatch(CAPITALALPHASIGN); } ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_B]) { clear_keybuff();  return ucatch(CAPITALBETASIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_G]) { clear_keybuff();  return ucatch(CAPITALGAMMASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_D]) { clear_keybuff();  return ucatch(CAPITALDELTASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_E]) { clear_keybuff();  return ucatch(CAPITALEPSILONSIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Z]) { clear_keybuff();  return ucatch(CAPITALZETASIGN); }   ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Q]) { clear_keybuff();  return ucatch(CAPITALETASIGN); }   ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_H]) { clear_keybuff();  return ucatch(CAPITALTHETASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_I]) { clear_keybuff();  return ucatch(CAPITALIOTASIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_K]) { clear_keybuff();  return ucatch(CAPITALKAPPASIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_L]) { clear_keybuff();  return ucatch(CAPITALLAMBDASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_M]) { clear_keybuff();  return ucatch(CAPITALMUSIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_N]) { clear_keybuff();  return ucatch(CAPITALNUSIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_X]) { clear_keybuff();  return ucatch(CAPITALXISIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_O]) { clear_keybuff();  return ucatch(CAPITALOMICRONSIGN); } ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_P]) { clear_keybuff();  return ucatch(CAPITALPISIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_R]) { clear_keybuff();  return ucatch(CAPITALRHOSIGN); } ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_S]) { clear_keybuff();  return ucatch(CAPITALSIGMASIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_T]) { clear_keybuff();  return ucatch(CAPITALTAUSIGN); } ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_Y]) { clear_keybuff();  return ucatch(CAPITALUPSYLONSIGN); }  ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_F]) { clear_keybuff();  return ucatch(CAPITALPHISIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_C]) { clear_keybuff();  return ucatch(CAPITALCHISIGN); } ////
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_U]) { clear_keybuff();  return ucatch(CAPITALPSISIGN); }
+				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_W]) { clear_keybuff();  return ucatch(CAPITALOMEGASIGN); }
+
+				if ((key[KEY_ALT] || altkey) && key[KEY_A]) { clear_keybuff();  return ucatch(ALPHASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_B]) { clear_keybuff();  return ucatch(BETASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_G]) { clear_keybuff();  return ucatch(GAMMASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_D]) { clear_keybuff();  return ucatch(DELTASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_E]) { clear_keybuff();  return ucatch(EPSILONSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_Z]) { clear_keybuff();  return ucatch(ZETASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_Q]) { clear_keybuff();  return ucatch(ETASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_H]) { clear_keybuff();  return ucatch(THETASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_I]) { clear_keybuff();  return ucatch(IOTASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_K]) { clear_keybuff();  return ucatch(KAPPASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_L]) { clear_keybuff();  return ucatch(LAMBDASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_M]) { clear_keybuff();  return ucatch(MUSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_N]) { clear_keybuff();  return ucatch(NUSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_X]) { clear_keybuff();  return ucatch(XISIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_O]) { clear_keybuff();  return ucatch(OMICRONSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_P]) { clear_keybuff();  return ucatch(PISIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_R]) { clear_keybuff();  return ucatch(RHOSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_S]) { clear_keybuff();  return ucatch(SIGMASIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_T]) { clear_keybuff();  return ucatch(TAUSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_Y]) { clear_keybuff();  return ucatch(UPSYLONSIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_F]) { clear_keybuff();  return ucatch(PHISIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_C]) { clear_keybuff();  return ucatch(CHISIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_U]) { clear_keybuff();  return ucatch(PSISIGN); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_W]) { clear_keybuff();  return ucatch(OMEGASIGN); }
+
+#ifdef MACOS
+			}
+#endif
 
 			return ucatch(newkey);
 			

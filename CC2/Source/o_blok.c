@@ -258,6 +258,7 @@ extern void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor);
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -4959,7 +4960,7 @@ static void	redcrck(char typ)
                      LiniaG.x1 = VectorC.x1;
                      LiniaG.y1 = VectorC.y1;
                      LiniaG.x2 = VectorC.x1;
-                     LiniaG.y2 = VectorC.y1 + n*(VectorC.magnitude1/load_magnitude);
+                     LiniaG.y2 = VectorC.y1 + n*(VectorC.magnitude1/((VectorC.style==10) ? load_magnitude : flood_magnitude));
                      parametry_lini(&VectorC, &PL);
                      break;
                  case 11:

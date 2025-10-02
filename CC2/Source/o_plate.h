@@ -38,6 +38,8 @@ typedef struct
     int load;     //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
     int variant;  //0 undefined, 1..255 number of load character with different factors
     int flags;    //0  regular   1 inverted
+    int factor_record;
+    int take_it;
     float x1;
     float y1;
     float x2;
@@ -52,7 +54,7 @@ typedef struct
     int first_edge;
     int last_edge;
     int property_number;
-    int k;
+    int k;  //body number - 1
 } PLATE_PROPERTY;
 
 

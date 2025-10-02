@@ -3378,12 +3378,26 @@ static POLE pmStaticColors[] = {
 
 static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
+static POLE pmLoadMagnitude[] = {
+       {u8"Linear load\0 \0",L'L',733,NULL},
+	   {u8"Surface load\0 \0",L'S',845,NULL},
+	  };
+
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmStressMagnitude[] = {
+       {u8"stress in Steel/timber\0 \0",L'S',775,NULL},
+	   {u8"stress in reinforced Concrete\0 \0",L'C',6,NULL},
+	  };
+
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
 static POLE pmMagnitude[] = {
        {u8"Force rescaling\0 \0",                       L'F',727,NULL},
 	   {u8"Moment rescaling\0 \0",                      L'M',728,NULL},
 	   {u8"Displacement rescaling\0 \0",                L'D',730,NULL},
 	   {u8"Rotation rescaling\0 \0",                    L'R',731,NULL},
-       {u8"Load rescaling\0 \0",                        L'L',733,NULL},
+       {u8"Load rescaling\0 \0",                        L'L',733,&mLoadMagnitude},
        {u8"Thermal load rescaling\0 \0",                L'T',752,NULL}, //&mThermal},
        {u8"axial forces rescaling\0 \0",                L'N',758,NULL},
        {u8"shear forces rescaling\0 \0",                L'V',759,NULL},
@@ -3391,7 +3405,7 @@ static POLE pmMagnitude[] = {
        {u8"deformation rescaling\0 \0",                 L'U',761,NULL},
        {u8"reaction forces rescaling\0 \0",             L'X',762,NULL},
        {u8"reaction moments rescaling\0 \0",            L'Z',763,NULL},
-       {u8"Stress rescaling\0 \0",                      L'S',800,NULL},
+       {u8"Stress rescaling\0 \0",                      L'S',800,&mStressMagnitude},
        {u8"reinforcement % rescaling\0 \0",             L'%',823,NULL},
        {u8"Exaggeratation of vibrations\0 \0",          L'E',814,NULL},
        {u8"Precision\0 \0",                             L'P',184,NULL},  //&mPrecision},

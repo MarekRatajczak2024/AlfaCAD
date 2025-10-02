@@ -513,6 +513,8 @@ extern double milimetryplt(double jednostki) ;
 extern double jednostkiOb(double mmob) ;
 extern float jednostkiObXm(double mob);
 extern float jednostkiObYm(double mob);
+extern float jednostkiObXi(double mob);
+extern float jednostkiObYi(double mob);
 extern double get_skala_profilu_x(void);
 extern double get_poziom_pp(void);
 extern double get_typ_profilu(void);

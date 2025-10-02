@@ -98,6 +98,7 @@ extern int get_3p_arc(LUK *l, POINTD *p1, POINTD *p2, POINTD *p3);
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -746,9 +747,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             if (v->flags & 1) n*=-1;
 
             Lt.x1 = L->x1;
-            Lt.y1 = L->y1 + n*(v->magnitude1/load_magnitude);
+            Lt.y1 = L->y1 + n*(v->magnitude1/((v->style==10) ? load_magnitude : flood_magnitude));
             Lt.x2 = L->x2;
-            Lt.y2 = L->y2 + n*(v->magnitude2/load_magnitude);
+            Lt.y2 = L->y2 + n*(v->magnitude2/((v->style==10) ? load_magnitude : flood_magnitude));
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
@@ -1476,8 +1477,8 @@ int vector_wybrany(AVECTOR *ad)
 
             if (ad->flags & 1) n*=-1;
 
-            L.y1=LL.y1+n*ad->magnitude1/load_magnitude;
-            L.y2=LL.y2+n*ad->magnitude2/load_magnitude;
+            L.y1=LL.y1+n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude);
+            L.y2=LL.y2+n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude);
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
@@ -1880,8 +1881,8 @@ int vector_w_prostokacie(AVECTOR *ad)
             L.x2=ad->x2;
             if (ad->x1<ad->x2) n=1; else n=-1;
             if (ad->flags & 1) n*=-1;
-            L.y1=ad->y1+n*ad->magnitude1/load_magnitude;
-            L.y2=ad->y2+n*ad->magnitude2/load_magnitude;
+            L.y1=ad->y1+n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude);
+            L.y2=ad->y2+n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude);
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))!=3)  return 0;
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),

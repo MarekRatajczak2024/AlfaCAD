@@ -3614,6 +3614,18 @@ static void draw_check_box(BUTTON *Button)
   int paper, ink;
   int x1,x2,y1,y2, x0, y0;
 
+    if (Button->flags & BUTTON_HIDDEN)
+    {
+        x1 = jed_to_piks_x(Button->x) + pocz_x;
+        x2 = jed_to_piks_x(Button->x + Button->dx - 1) + pocz_x;
+        y1 = jed_to_piks_y(Button->y) + pocz_y;
+        y2 = jed_to_piks_y(Button->y + Button->dy - 1) + pocz_y;
+        paper = dlg_kolory->dlg_paper;
+        setfillstyle_(SOLID_FILL, paper);
+        bar(x1, y1, x2, y2);
+        return;
+    }
+
   //if (Button->flags & BUTTON_HIDDEN) return;
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setwritemode(COPY_PUT);

@@ -1118,6 +1118,7 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
   double mom_bezwl_x, mom_bezwl_y, wskazn_wytrz_x, wskazn_wytrz_y;
   double mom_bezwl_x1, mom_bezwl_y1, wskazn_wytrz_x1, wskazn_wytrz_y1;
   double mom_bezwl_x2, mom_bezwl_y2, wskazn_wytrz_x2, wskazn_wytrz_y2;
+  double mom_bezwl_x3, mom_bezwl_y3, wskazn_wytrz_x3, wskazn_wytrz_y3;
 #ifdef LINUX
   char divider[6]=" \n";
 #else
@@ -1138,6 +1139,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       mom_bezwl_x2 = mom_bezwl_x / pow(10.0, 4);
       mom_bezwl_y2 = mom_bezwl_y / pow(10.0, 4);
+
+      mom_bezwl_x3=mom_bezwl_x2*0.0240250961;
+      mom_bezwl_y3=mom_bezwl_y2*0.0240250961;
   }
   else if (Jednostki == 10) //cm
   {
@@ -1146,6 +1150,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       mom_bezwl_x2 = mom_bezwl_x;
       mom_bezwl_y2 = mom_bezwl_y;
+
+      mom_bezwl_x3=mom_bezwl_x2*0.0240250961;
+      mom_bezwl_y3=mom_bezwl_y2*0.0240250961;
   }
   else if (Jednostki == 1000)  //m
   {
@@ -1154,6 +1161,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       mom_bezwl_x2 = mom_bezwl_x / pow(0.01, 4); //in cm4
       mom_bezwl_y2 = mom_bezwl_y / pow(0.01, 4); //in cm4
+
+      mom_bezwl_x3=mom_bezwl_x2*0.0240250961;
+      mom_bezwl_y3=mom_bezwl_y2*0.0240250961;
   }
   else if (Jednostki == 1000000)  //km
   {
@@ -1162,39 +1172,54 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       mom_bezwl_x2 = mom_bezwl_x / pow(0.00001, 4);
       mom_bezwl_y2 = mom_bezwl_y / pow(0.00001, 4);
+
+      mom_bezwl_x3=mom_bezwl_x2*0.0240250961;
+      mom_bezwl_y3=mom_bezwl_y2*0.0240250961;
   }
   else if (Jednostki == 25.4)  //"
   {
-	  mom_bezwl_x1 = mom_bezwl_x / pow(39.3700787, 4);
-	  mom_bezwl_y1 = mom_bezwl_y / pow(39.3700787, 4);
+      mom_bezwl_x3 = mom_bezwl_x;
+      mom_bezwl_y3 = mom_bezwl_y;
 
-      mom_bezwl_x2 = mom_bezwl_x1;
-      mom_bezwl_y2 = mom_bezwl_y1;
+	  mom_bezwl_x1 = mom_bezwl_x * pow(0.0254, 4);  //[m]
+	  mom_bezwl_y1 = mom_bezwl_y * pow(0.0254, 4);
+
+      mom_bezwl_x2 = mom_bezwl_x * pow(2.54, 4);  //cm
+      mom_bezwl_y2 = mom_bezwl_y * pow(2.54, 4);
   }
   else if (Jednostki == 304.8)  //'
   {
-	  mom_bezwl_x1 = mom_bezwl_x / pow(3.280839, 4);
-	  mom_bezwl_y1 = mom_bezwl_y / pow(3.280839, 4);
+      mom_bezwl_x3 = mom_bezwl_x * pow(12., 4);
+      mom_bezwl_y3 = mom_bezwl_y * pow(12., 4);
 
-      mom_bezwl_x2 = mom_bezwl_x1 * pow(12, 4);
-      mom_bezwl_y2 = mom_bezwl_y1 * pow(12, 4);
+	  mom_bezwl_x1 = mom_bezwl_x * pow(0.3048, 4);
+	  mom_bezwl_y1 = mom_bezwl_y * pow(0.3048, 4);
+
+      mom_bezwl_x2 = mom_bezwl_x * pow(30.48, 4);
+      mom_bezwl_y2 = mom_bezwl_y * pow(30.48, 4);
   }
   else if (Jednostki == 914.4)  //yd
   {
-      mom_bezwl_x1 = mom_bezwl_x / pow(1.094092, 4);
-      mom_bezwl_y1 = mom_bezwl_y / pow(1.094092, 4);
+      mom_bezwl_x3 = mom_bezwl_x * pow(36., 4);
+      mom_bezwl_y3 = mom_bezwl_y * pow(36., 4);
 
-      mom_bezwl_x2 = mom_bezwl_x1 * pow(36, 4);
-      mom_bezwl_y2 = mom_bezwl_y1 * pow(36, 4);
+      mom_bezwl_x1 = mom_bezwl_x / pow(0.9144, 4);
+      mom_bezwl_y1 = mom_bezwl_y / pow(0.9144, 4);
+
+      mom_bezwl_x2 = mom_bezwl_x * pow(91.44, 4);
+      mom_bezwl_y2 = mom_bezwl_y * pow(91.44, 4);
   }
 
   else if (Jednostki == 1609344)  //mi
   {
-      mom_bezwl_x1 = mom_bezwl_x / pow(0.000621371, 4);
-      mom_bezwl_y1 = mom_bezwl_y / pow(0.000621371, 4);
+      mom_bezwl_x3 = mom_bezwl_x * pow(63360, 4);
+      mom_bezwl_y3 = mom_bezwl_y * pow(63360, 4);
 
-      mom_bezwl_x2 = mom_bezwl_x1 * pow(63360, 4);
-      mom_bezwl_y2 = mom_bezwl_y1 * pow(63360, 4);
+      mom_bezwl_x1 = mom_bezwl_x * pow(1609.344, 4);
+      mom_bezwl_y1 = mom_bezwl_y * pow(1609.344, 4);
+
+      mom_bezwl_x2 = mom_bezwl_x * pow(160934.4, 4);
+      mom_bezwl_y2 = mom_bezwl_y * pow(160934.4, 4);
   }
 
   ////wskazn_wytrz
@@ -1206,6 +1231,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       wskazn_wytrz_x2 = wskazn_wytrz_x / pow(10.0, 3);
       wskazn_wytrz_y2 = wskazn_wytrz_y / pow(10.0, 3);
+
+      wskazn_wytrz_x3=wskazn_wytrz_x2*0.0610237;
+      wskazn_wytrz_y3=wskazn_wytrz_y2*0.0610237;
   }
   else if (Jednostki == 10) //cm
   {
@@ -1214,6 +1242,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       wskazn_wytrz_x2 = wskazn_wytrz_x;
       wskazn_wytrz_y2 = wskazn_wytrz_y;
+
+      wskazn_wytrz_x3=wskazn_wytrz_x2*0.0610237;
+      wskazn_wytrz_y3=wskazn_wytrz_y2*0.0610237;
   }
   else if (Jednostki == 1000)  //m
   {
@@ -1222,6 +1253,9 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       wskazn_wytrz_x2 = wskazn_wytrz_x / pow(0.01, 3); //in cm4
       wskazn_wytrz_y2 = wskazn_wytrz_y / pow(0.01, 3); //in cm4
+
+      wskazn_wytrz_x3=wskazn_wytrz_x2*0.0610237;
+      wskazn_wytrz_y3=wskazn_wytrz_y2*0.0610237;
   }
   else if (Jednostki == 1000000)  //km
   {
@@ -1230,38 +1264,55 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
 
       wskazn_wytrz_x2 = wskazn_wytrz_x / pow(0.00001, 3);
       wskazn_wytrz_y2 = wskazn_wytrz_y / pow(0.00001, 3);
+
+      wskazn_wytrz_x3=wskazn_wytrz_x2*0.0610237;
+      wskazn_wytrz_y3=wskazn_wytrz_y2*0.0610237;
   }
   else if (Jednostki == 25.4)  //"
   {
-	  wskazn_wytrz_x1 = wskazn_wytrz_x / pow(39.3700787, 3);
-	  wskazn_wytrz_y1 = wskazn_wytrz_y / pow(39.3700787, 3);
+      wskazn_wytrz_x3 = wskazn_wytrz_x;
+      wskazn_wytrz_y3 = wskazn_wytrz_y;
 
-      wskazn_wytrz_x2 = wskazn_wytrz_x1;
-      wskazn_wytrz_y2 = wskazn_wytrz_y1;
+	  wskazn_wytrz_x1 = wskazn_wytrz_x * pow(0.0254, 3);
+	  wskazn_wytrz_y1 = wskazn_wytrz_y * pow(0.0254, 3);
+
+      wskazn_wytrz_x2 = wskazn_wytrz_x * pow(2.54, 3);
+      wskazn_wytrz_y2 = wskazn_wytrz_y * pow(2.54, 3);
   }
   else if (Jednostki == 304.8)  //'
   {
-	  wskazn_wytrz_x1 = wskazn_wytrz_x / pow(3.280839, 3);
-	  wskazn_wytrz_y1 = wskazn_wytrz_y / pow(3.280839, 3);
+      wskazn_wytrz_x3 = wskazn_wytrz_x * pow(12., 3);
+      wskazn_wytrz_y3 = wskazn_wytrz_y * pow(12., 3);
 
-      wskazn_wytrz_x2 = wskazn_wytrz_x1 * pow(12, 3);;
-      wskazn_wytrz_y2 = wskazn_wytrz_y1 * pow(12, 3);;
+      wskazn_wytrz_x1 = wskazn_wytrz_x * pow(0.3048, 3);
+      wskazn_wytrz_y1 = wskazn_wytrz_y * pow(0.3048, 3);
+
+      wskazn_wytrz_x2 = wskazn_wytrz_x * pow(30.48, 3);
+      wskazn_wytrz_y2 = wskazn_wytrz_y * pow(30.48, 3);
+
   }
     else if (Jednostki == 914.4)  //yd
     {
-        wskazn_wytrz_x1 = wskazn_wytrz_x / pow(1.094092, 3);
-        wskazn_wytrz_y1 = wskazn_wytrz_y / pow(1.094092, 3);
+        wskazn_wytrz_x3 = wskazn_wytrz_x * pow(36., 3);
+        wskazn_wytrz_y3 = wskazn_wytrz_y * pow(36., 3);
 
-        wskazn_wytrz_x2 = wskazn_wytrz_x1 * pow(36, 3);
-        wskazn_wytrz_y2 = wskazn_wytrz_y1 * pow(36, 3);
+        wskazn_wytrz_x1 = wskazn_wytrz_x * pow(0.9144, 3);
+        wskazn_wytrz_y1 = wskazn_wytrz_y * pow(0.9144, 3);
+
+        wskazn_wytrz_x2 = wskazn_wytrz_x * pow(91.44, 3);
+        wskazn_wytrz_y2 = wskazn_wytrz_y * pow(91.44, 3);
     }
     else if (Jednostki == 1609344)  //mi
     {
-        wskazn_wytrz_x1 = wskazn_wytrz_x / pow(0.000621371, 3);
-        wskazn_wytrz_y1 = wskazn_wytrz_y / pow(0.000621371, 3);
 
-        wskazn_wytrz_x2 = wskazn_wytrz_x1 * pow(63360, 3);;
-        wskazn_wytrz_y2 = wskazn_wytrz_y1 * pow(63360, 3);;
+        wskazn_wytrz_x3 = wskazn_wytrz_x * pow(63360, 3);
+        wskazn_wytrz_y3 = wskazn_wytrz_y * pow(63360, 3);
+
+        wskazn_wytrz_x1 = wskazn_wytrz_x * pow(1609.344, 3);
+        wskazn_wytrz_y1 = wskazn_wytrz_y * pow(1609.344, 3);
+
+        wskazn_wytrz_x2 = wskazn_wytrz_x * pow(160934.4, 3);
+        wskazn_wytrz_y2 = wskazn_wytrz_y * pow(160934.4, 3);
     }
 
     //sprintf(buf[0], u8"Iy=%-11.8lg m⁴, %-11.8lg cm⁴", mom_bezwl_x1, mom_bezwl_x2) ;
@@ -1269,10 +1320,15 @@ static void out_centr_moment_bezwl (double mom_bezwl_x_, double mom_bezwl_y_, do
     //sprintf(buf[2], u8"Wy=%-11.8lg m³, %-11.8lg cm³", wskazn_wytrz_x1, wskazn_wytrz_x2);
     //sprintf(buf[3], u8"Wz=%-11.8lg m³, %-11.8lg cm³ ", wskazn_wytrz_y1, wskazn_wytrz_y2);
 
-    sprintf(buf[0], u8"Iy=%.8lg m⁴, %.8lg cm⁴", mom_bezwl_x1, mom_bezwl_x2) ;
-    sprintf(buf[1], u8"Iz=%.8lg m⁴, %.8lg cm⁴", mom_bezwl_y1, mom_bezwl_y2);
-    sprintf(buf[2], u8"Wy=%.8lg m³, %.8lg cm³", wskazn_wytrz_x1, wskazn_wytrz_x2);
-    sprintf(buf[3], u8"Wz=%.8lg m³, %.8lg cm³ ", wskazn_wytrz_y1, wskazn_wytrz_y2);
+    ////mom_bezwl_x3=mom_bezwl_x2*0.0240250961;
+    ////mom_bezwl_y3=mom_bezwl_y2*0.0240250961;
+    ////wskazn_wytrz_x3=wskazn_wytrz_x2*0.0610237;
+    ////wskazn_wytrz_y3=wskazn_wytrz_y2*0.0610237;
+
+    sprintf(buf[0], u8"Iy=%.8lg m⁴, %.8lg cm⁴, %.8lg in⁴", mom_bezwl_x1, mom_bezwl_x2, mom_bezwl_x3) ;
+    sprintf(buf[1], u8"Iz=%.8lg m⁴, %.8lg cm⁴, %.8lg in⁴", mom_bezwl_y1, mom_bezwl_y2, mom_bezwl_y3);
+    sprintf(buf[2], u8"Wy=%.8lg m³, %.8lg cm³, %.8lg in³", wskazn_wytrz_x1, wskazn_wytrz_x2, wskazn_wytrz_x3);
+    sprintf(buf[3], u8"Wz=%.8lg m³, %.8lg cm³, %.8lg in³", wskazn_wytrz_y1, wskazn_wytrz_y2, wskazn_wytrz_y3);
 
   //Add_String_To_List1(buf[0]) ;
   //Add_String_To_List1(buf[1]);

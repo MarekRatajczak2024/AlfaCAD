@@ -3369,12 +3369,27 @@ static POLE pmStaticColors[] = {
 
 static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
+static POLE pmLoadMagnitude[] = {
+       {u8"obciążenie Liniowe\0 \0",L'L',733,NULL},
+	   {u8"obciążenie Płaszczyznowe\0 \0",L'P',845,NULL},
+	  };
+
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmStressMagnitude[] = {
+       {u8"naprężenia w Stali/drewnie\0 \0",L'S',775,NULL},
+	   {u8"naprężenia w Betonie zbrojonym\0 \0",L'B',6,NULL},
+	  };
+
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
+
 static POLE pmMagnitude[] = {
        {u8"przeskalowanie Siły\0 \0",                   L'S',727,NULL},
 	   {u8"przeskalowanie Momentu\0 \0",                L'M',728,NULL},
 	   {u8"przeskalowanie Przemieszczenia\0 \0",        L'P',730,NULL},
 	   {u8"przeskalowanie Rotacji\0 \0",                L'R',731,NULL},
-       {u8"przeskalowanie Obciążenia\0 \0",             L'O',733,NULL},
+       {u8"przeskalowanie Obciążenia\0 \0",             L'O',733,&mLoadMagnitude},
        {u8"przeskalowanie obciążenia Termicznego\0 \0", L'T',752,NULL}, //&mThermal},
        {u8"przeskalowanie sił osiowych\0 \0",           L'N',758,NULL},
        {u8"przeskalowanie sił ścinających\0 \0",        L'V',759,NULL},
@@ -3382,7 +3397,7 @@ static POLE pmMagnitude[] = {
        {u8"przeskalowanie deformacji\0 \0",             L'U',761,NULL},
        {u8"przeskalowanie sił reakcji\0 \0",            L'X',762,NULL},
        {u8"przeskalowanie momentów reakcji\0 \0",       L'Z',763,NULL},
-       {u8"przeskalowanie naprężeń\0 \0",               L'A',800,NULL},
+       {u8"przeskalowanie naprężeń\0 \0",               L'A',800,&mStressMagnitude},
        {u8"przeskalowanie % zbrojenia\0 \0",            L'%',823,NULL},
        {u8"przeskalowanie Wibracji\0 \0",               L'W',814,NULL},
        {u8"Dokładność\0 \0",                            L'D',184,NULL}, //&mPrecision},

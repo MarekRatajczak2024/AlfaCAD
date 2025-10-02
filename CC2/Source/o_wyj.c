@@ -357,6 +357,7 @@ extern void position_mouse_xy(int x, int y);
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude;
 extern double load_magnitude; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -377,6 +378,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double src_magnitude;
 extern double q_magnitude;
 extern double p_magnitude;
 
@@ -4321,6 +4323,7 @@ int Restore_params(void)
     depth_magnitude=Drawing_Params[DRAWING_NUMBER].depth_magnitude;
     thermal_magnitude=Drawing_Params[DRAWING_NUMBER].thermal_magnitude;
     load_magnitude=Drawing_Params[DRAWING_NUMBER].load_magnitude;
+    flood_magnitude=Drawing_Params[DRAWING_NUMBER].flood_magnitude;
     force_magnitude=Drawing_Params[DRAWING_NUMBER].force_magnitude;
     moment_magnitude=Drawing_Params[DRAWING_NUMBER].moment_magnitude;
     displacement_magnitude=Drawing_Params[DRAWING_NUMBER].displacement_magnitude;
@@ -4341,6 +4344,7 @@ int Restore_params(void)
     r_magnitude=Drawing_Params[DRAWING_NUMBER].r_magnitude;
     rm_magnitude=Drawing_Params[DRAWING_NUMBER].rm_magnitude;
     s_magnitude=Drawing_Params[DRAWING_NUMBER].s_magnitude;
+    src_magnitude=Drawing_Params[DRAWING_NUMBER].src_magnitude;
     q_magnitude=Drawing_Params[DRAWING_NUMBER].q_magnitude;
     p_magnitude=Drawing_Params[DRAWING_NUMBER].p_magnitude;
 
@@ -4479,6 +4483,7 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].depth_magnitude=depth_magnitude;
     Drawing_Params[DRAWING_NUMBER].thermal_magnitude=thermal_magnitude;
     Drawing_Params[DRAWING_NUMBER].load_magnitude=load_magnitude;
+    Drawing_Params[DRAWING_NUMBER].flood_magnitude=flood_magnitude;
     Drawing_Params[DRAWING_NUMBER].force_magnitude=force_magnitude;
     Drawing_Params[DRAWING_NUMBER].moment_magnitude=moment_magnitude;
     Drawing_Params[DRAWING_NUMBER].displacement_magnitude=displacement_magnitude;
@@ -4499,6 +4504,7 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].r_magnitude=r_magnitude;
     Drawing_Params[DRAWING_NUMBER].rm_magnitude=rm_magnitude;
     Drawing_Params[DRAWING_NUMBER].s_magnitude=s_magnitude;
+    Drawing_Params[DRAWING_NUMBER].src_magnitude=src_magnitude;
     Drawing_Params[DRAWING_NUMBER].q_magnitude=q_magnitude;
     Drawing_Params[DRAWING_NUMBER].p_magnitude=p_magnitude;
 

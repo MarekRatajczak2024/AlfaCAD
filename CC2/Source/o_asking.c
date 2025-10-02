@@ -72,8 +72,11 @@
 #define ID_GEOM_STIFFNESS 7
 #define ID_INERTIA        8
 #define ID_PINNABLE       9
-#define ID_COMBINATION   10
-#define ID_MODES_NUMBER  11
+#define ID_THETA         10
+#define ID_SIGMA_EQ      11
+#define ID_EPSILON       12
+#define ID_COMBINATION   13
+#define ID_MODES_NUMBER  14
 
 #define MaxComLen 120
 
@@ -117,13 +120,13 @@ static GROUP_BOX gr_box []=
 static BUTTON buttons [] =
         {
                 { XpOK1, YpOK1, DXBut1, DYBut1, COLOR_NULL,
-                                                      COLOR_NULL, COLOR_NULL, ""/*ok_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_OK, 0, 0,
+                        COLOR_NULL, COLOR_NULL, ""/*ok_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_OK, 0, 0,
                 },
                 { XpCANCEL1, YpCANCEL1, DXBut1, DYBut1, COLOR_NULL,
-                                                      COLOR_NULL, COLOR_NULL, ""/*esc_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_CANCEL, 0, 0,
+                        COLOR_NULL, COLOR_NULL, ""/*esc_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_CANCEL, 0, 0,
                 },
                 { XpESCAPE1, YpESCAPE1, DXBut1, DYBut1, COLOR_NULL,
-                                                      COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_ESCAPE, 0, 0,
+                        COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 0,B_PUSHBUTTON, 0, 1,0, ID_ESCAPE, 0, 0,
                 },
                 { Xp1+13, YpESCAPE1, 20, 20, COLOR_NULL,
                         COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 1,B_RADIOBUTTON, 0, 1,0, ID_EUROCODE, 0, 0,
@@ -142,6 +145,15 @@ static BUTTON buttons [] =
                 },
                 { XpESCAPE1+500, YpESCAPE1+20, 20, 20, COLOR_NULL,
                         COLOR_NULL, COLOR_NULL, ""/*cont_string1*/, 0,B_CHECKBOX, 0, 1,0, ID_PINNABLE, 0, 0,
+                },
+                { XpESCAPE1+20, YpESCAPE1, 10, 10, COLOR_NULL,
+                        COLOR_NULL, COLOR_NULL, "θ", 0,B_CHECKBOX, 0, 1,0, ID_THETA, 0, 0,
+                },
+                { XpESCAPE1+250, YpESCAPE1, 10, 10, COLOR_NULL,
+                        COLOR_NULL, COLOR_NULL, "Σσ", 0,B_CHECKBOX, 0, 1,0, ID_SIGMA_EQ, 0, 0,
+                },
+                { XpESCAPE1+300, YpESCAPE1+20, 10, 10, COLOR_NULL,
+                        COLOR_NULL, COLOR_NULL, "ε", 0,B_CHECKBOX, 0, 1,0, ID_EPSILON, 0, 0,
                 },
         };
 
@@ -464,7 +476,8 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
 
 }
 
-int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image, int *combination, int *geometric_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE)
+int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image, int *combination, int *geometric_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
+                         int *theta_, int *sigma_eq_, int *epsilon_)
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 { int Ret_Val;
     char sk[MAXPATH]="";
@@ -539,12 +552,26 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
         case 6:
 
             ////TEMPORARY
+            /*
             buttons[3].flags |= BUTTON_HIDDEN;
             buttons[4].flags |= BUTTON_HIDDEN;
             buttons[5].flags |= BUTTON_HIDDEN;
+            */
+
+            buttons[3].flags &= ~BUTTON_HIDDEN;
+            buttons[4].flags &= ~BUTTON_HIDDEN;
+            buttons[5].flags &= ~BUTTON_HIDDEN;
+
+            buttons[6].flags |= BUTTON_HIDDEN;
+            buttons[7].flags |= BUTTON_HIDDEN;
+            buttons[8].flags |= BUTTON_HIDDEN;
+
+            buttons[9].flags &= ~BUTTON_HIDDEN;
+            buttons[10].flags &= ~BUTTON_HIDDEN;
+            buttons[11].flags &= ~BUTTON_HIDDEN;
             ///////////
 
-            asking_dlg_static.SizeButtonT=6;
+            asking_dlg_static.SizeButtonT=12; //6;
             asking_dlg_static.SizeImageT=5;
             asking_dlg_static.SizeComboBoxT=1;
 
@@ -580,6 +607,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
             del1=WIDTH-9;
             if (del1>0) del1=0;
+
+            /*
             images_as[5].x1=buttons[1].x+DXBut1 + WIDTH/4 + del; // - abs(WIDTH-12)/wsp_x;
             buttons[6].x=images_as[5].x1+15/wsp_x;
             buttons[6].check=*geometric_stiffness;
@@ -591,6 +620,19 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[8].x=images_as[8].x1+15/wsp_x-del1;
             buttons[8].y=images_as[8].y1+40/wsp_y-del1;
             buttons[8].check=!(*PINNABLE);
+            */
+
+            buttons[9].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[9].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 20);
+            buttons[9].check=*theta_;
+
+            buttons[10].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[10].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 8);
+            buttons[10].check=*sigma_eq_;
+
+            buttons[11].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[11].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y + 4);
+            buttons[11].check=*epsilon_;
 
             break;
         case 9:
@@ -599,6 +641,14 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[3].flags &= ~BUTTON_HIDDEN;
             buttons[4].flags &= ~BUTTON_HIDDEN;
             buttons[5].flags &= ~BUTTON_HIDDEN;
+
+            buttons[6].flags &= ~BUTTON_HIDDEN;
+            buttons[7].flags &= ~BUTTON_HIDDEN;
+            buttons[8].flags &= ~BUTTON_HIDDEN;
+
+            buttons[9].flags |= BUTTON_HIDDEN;
+            buttons[10].flags |= BUTTON_HIDDEN;
+            buttons[11].flags |= BUTTON_HIDDEN;
             ///////////
 
             asking_dlg_static.SizeButtonT=9;

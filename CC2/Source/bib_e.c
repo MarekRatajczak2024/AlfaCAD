@@ -465,6 +465,7 @@ extern double radius_magnitude; //units per mm  default 1 mm of section depth pe
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
+extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -1549,12 +1550,19 @@ double jednostkiplt(double mmplt)   /*mm (plt) -> jednostki */
 double jednostkiOb(double mmob)     /*mm (ob) -> jednostki */
 {return  mmob*Jednostki/SkalaF;}
 
+static const double inch_mm = 25.4;
 
 float jednostkiObXm(double mob)     /*m (ob) local -> jednostki global*/
 {return  (float)(mob*1000.0/SkalaF + localx);}
 
+float jednostkiObXi(double mob)     /*in (ob) local -> jednostki global*/
+{return  (float)(mob*inch_mm/SkalaF + localx);}
+
 float jednostkiObYm(double mob)     /*m (ob) local -> jednostki global*/
 {return  (float)(mob*1000.0/SkalaF + localy);}
+
+float jednostkiObYi(double mob)     /*in (ob) local -> jednostki global*/
+{return  (float)(mob*inch_mm/SkalaF + localy);}
 
 double get_skala_profilu_x(void)    //mnoznik skali
 { return skala_p_x; }
@@ -1782,9 +1790,6 @@ double milimetryobyl (double x0, double y0)
     if (options1.uklad_geodezyjny==0) return jy;
     else return jx;
 }
-
-
-static const double inch_mm = 25.4;
 
 double mm_to_inch (double mm)
 /*------------------------*/
@@ -6214,9 +6219,9 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             if (ptrs_vector->flags & 1) n*=-1;
 
             Lt.x1 = L1.x1;
-            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude);
+            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
             Lt.x2 = L1.x2;
-            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude);
+            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
@@ -11266,7 +11271,7 @@ char *get_units(void)
 
 void set_st_jedn(void)
 {  int i;
-    for (i = 0; i<5; i++)
+    for (i = 0; i<8; i++)
         if (Jednostki == funits [i]) break;
     strcpy(st_jedn,punits[i]);
 }

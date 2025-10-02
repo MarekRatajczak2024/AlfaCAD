@@ -61,7 +61,8 @@ extern void FreeMouse(void);
 extern void select_blok(void);
 extern void redcrsb(char typ, int n);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
-extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE);
+extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
+                               int *theta_, int *sigma_eq_, int *epsilon_);
 extern BOOL Check_if_Equal (double x, double y);
 extern BOOL Check_if_Equal2(double x, double y);
 extern BOOL Check_if_Equal3(double x, double y);
@@ -131,6 +132,8 @@ extern void enable_F11(void);
 extern void Get_Limits(long_long off, long_long offk, int atrybut, double *xmin, double *xmax, double *ymin, double *ymax);
 extern void out_circle_cur_on(double X, double Y);
 
+extern int theta_, sigma_eq_, epsilon_;
+
 extern BOOL Semaphore;
 
 extern double thermal_precision;
@@ -145,6 +148,7 @@ extern double force_magnitude;
 extern double moment_magnitude;
 extern double displacement_magnitude;
 extern double load_magnitude;
+extern double flood_magnitude;
 
 BOOL PINNABLE=TRUE;
 
@@ -155,6 +159,7 @@ double d_magnitude=1;
 double r_magnitude=0.1; //10;
 double rm_magnitude=50.0; //0.001;
 double s_magnitude=5.0; //10;  //stress
+double src_magnitude=1.0; //stress in reinforced concrete
 double q_magnitude=250.0; //vibrations
 
 double sp_magnitude=0.5;
@@ -169,6 +174,7 @@ double d_magnitude0=1;
 double r_magnitude0=0.1; //10;
 double rm_magnitude0=50.0; //0.001;
 double s_magnitude0=5.0; //10;  //stress
+double src_magnitude0=1.0; //stress in reinforced concrete
 double q_magnitude0=250.0; //vibrations
 
 double sp_magnitude0=0.5;
@@ -191,7 +197,7 @@ double m0999 = 1.0; //0.99999;
 
 extern TMENU mVector;
 
-BOOL rout=FALSE;
+BOOL rout=TRUE; //FALSE;
 
 void Static_analysis(void);
 
@@ -310,13 +316,16 @@ STATIC_COLORS static_colors={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_COLORS static_colors0={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_STRESS_COLORS static_stress_colors={9,13,11};
 STATIC_STRESS_COLORS static_stress_colors0={9,13,11};
-ST_PROPERTY prt_def={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0};
+ST_PROPERTY prt_def={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0,0,0,0};
 
 BOOL qpslsLC_Layer=FALSE;
 
 char *UNITS;
 char *SI="SI";
 char *IMP="IMP";
+
+char VALUE_NAME[16];
+char *VALUE_NAME1="ρ";
 
 //load;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
 //variant;  //0 undefined, 1..255 number of load character with different factors
@@ -386,6 +395,7 @@ ST_LOAD_FACTORS *load_factors;
 UNIT_FACTORS *unit_factors;
 UNIT_FACTORS unit_factors_si={1.0, 0.001, 100.0,0.000001, 10000.0,0.000001, 0.000000001,1000.0,1e-12,1.0,1000.0,1000.0,1000000,1.0, 1000.0, 1000.0, 9.81, 0.001};
 UNIT_FACTORS unit_factors_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
+UNIT_FACTORS unit_factors_imp_out={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1000.0,1000.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
 
 //double h_f; //depth of cross section in y axis                                   mm                  in
 //double hm_f; //depth of cross section in y axis                                  mm->m               in
@@ -1942,7 +1952,7 @@ void Static_analysis(void) {
     ClearInfo();
 
     ret_standard = ask_question_static(9, _No_, _Yes_, "", _PROCEED_STATIC_, 12, "", 11, 1, 0, &combination_no,
-                                       &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE);
+                                       &geometric_tiffness, &inertia, &st_dynamic_no, &PINNABLE,  &theta_, &sigma_eq_, &epsilon_);
     //0 - rezygnuj; 1 - Eurocode, 2 - ASCE, 3 - ICC
     if (ret_standard > 0) key1 = _YES_;
     else if (ret_standard == 0) key1 = _NO_;
@@ -2375,11 +2385,26 @@ void Static_analysis(void) {
                     st_property[st_property_no].zeta = atof(ptr + 3);
                 }
 
+                ptr = strstr(t->text, "fyk=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    st_property[st_property_no].fyk = atof(ptr + 4); // * unit_factors->E_f;
+                }
+
                 ptr = strstr(t->text, "fyd=");  //no default, in Mpa or kpsi
                 if (ptr != NULL) {
                     st_property[st_property_no].fyd = atof(ptr + 4); // * unit_factors->E_f;
                 }
                 else if (st_property[st_property_no].RC_flag == 1) break;
+
+                ptr = strstr(t->text, "fck=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    st_property[st_property_no].fck = atof(ptr + 4); // * unit_factors->E_f;
+                }
+
+                ptr = strstr(t->text, "fcd=");  //no default, in Mpa or kpsi
+                if (ptr != NULL) {
+                    st_property[st_property_no].fcd = atof(ptr + 4); // * unit_factors->E_f;
+                }
 
                 ptr = strstr(t->text, u8"γ="); //gamma
                 if (ptr == NULL) ptr = strstr(t->text, "Γ=");  //Gamma
@@ -6543,6 +6568,14 @@ void Static_analysis(void) {
 
         ////CREATING RESULT BLOCKS
 
+        //let's modify some factors
+        if (UNITS!=SI) {
+            //unit_factors->F_f *= 1000.;  //lb to kip
+            //unit_factors->M_f *= 1000.;  //lb-in to kip-in
+            //unit_factors->S_f *= 1000.;  //psi to ksi
+            unit_factors = &unit_factors_imp_out;
+        }
+
         if ((runcode_short == 0) || ((runcode_short > 180) && (runcode_short < 200)) ||
             (strcmp(frame3dd[runcode_short], _ERROR_FREE_COMPLETION_) == 0)) {
 
@@ -9983,7 +10016,7 @@ void Static_analysis(void) {
                                         }
                                       }
                                     }
-                                    else //RC
+                                    else //RC_flag
                                     {
                                         //////////////////////////////
                                         if (combi_total_numbers[i].combi == 2) //just for ULSLC
@@ -10045,8 +10078,8 @@ void Static_analysis(void) {
                                                     else Msign = copysign(1.0, Mz_min);
                                                 }
 
-                                                sp_magnitude=s_magnitude*0.1;
-                                                sm_magnitude=s_magnitude*0.1;
+                                                sp_magnitude=src_magnitude;
+                                                sm_magnitude=src_magnitude;
 
 
                                                 if (Sp > 0) //tension
@@ -10240,8 +10273,8 @@ void Static_analysis(void) {
                                                         //Sm=0;  //TEMPORARY
                                                         ignore_Sm=TRUE;
 
-                                                    sp_magnitude=s_magnitude*0.1;
-                                                    sm_magnitude=s_magnitude*0.1;
+                                                    sp_magnitude=src_magnitude;
+                                                    sm_magnitude=src_magnitude;
 
 
                                                     if (Sp > 0) //tension
@@ -10853,7 +10886,7 @@ void Static_analysis(void) {
 
                                                 strcpy(p_suffix,"%");
 
-                                                sp_magnitude=p_magnitude*0.1;  //so 10 times more than for main reinforcing
+                                                sp_magnitude=p_magnitude;  //could be 10 times more than for main reinforcing
                                                 p_shear_precision = stress_precision;
 
                                                 x = dr[inx].x;
@@ -12076,9 +12109,12 @@ static void  cur_point_on(double x,double y)
     char *adp, *adk;
     POINTF *p1, *p2, *p3, p;
     char force_text[MaxTextLen];
+    char force_text1[MaxTextLen];
     int width, height;
     FE_DATA fe_data;
+    FE_DATA_EX fe_data_ex;
     char *fe_data_ptr;
+    char *fe_data_ex_ptr;
     char *gradient_ptr;
     char *translucency_ptr;
     double alpha, beta, gamma;
@@ -12120,9 +12156,23 @@ static void  cur_point_on(double x,double y)
                         {
                             // Calculate and return the weighted average value
                             c_value = ((alpha * ((FE_DATA *) fe_data_ptr)->f1) + (beta * ((FE_DATA *) fe_data_ptr)->f2) + (gamma * ((FE_DATA *) fe_data_ptr)->f3)) * plate_graph_data.factor;
-                            sprintf(force_text, "value=%.4f", c_value);
+                            sprintf(force_text, "%s=%.4f", VALUE_NAME, c_value);
                             width = TTF_text_len(force_text);
                             height = HEIGHT;
+                            if (((FE_DATA*)fe_data_ptr)->flag==1)  //extended data
+                            {
+                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA);
+                                c_value = ((alpha * ((FE_DATA_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME1, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+                            }
+                            //sprintf(force_text1, "el: %d", ((FE_DATA*)fe_data_ptr)->el_number);
+                            //strcat(force_text,"\n");
+                            //strcat(force_text,force_text1);
+                            //height += HEIGHT;
                             show_forces(x, y, width, height, force_text);
                         }
                     }
@@ -12506,7 +12556,7 @@ void Cross_section_forces(void)
                 {
                     switch (((NAGLOWEK*)ad)->obiekt)
                     {
-                        case Bvector:
+                        case Ovector:
                             if (Layers[((AVECTOR*)ad)->warstwa].edit != 0)
                             {
                                 V= (AVECTOR *)ad;
@@ -12799,26 +12849,51 @@ void Cross_section_forces(void)
                                                         UNITS=SI;
                                                         else UNITS=IMP;
 
-                                                        if (strstr(plate_graph_data.component_name, "deflection")!=NULL) {
+                                                        if (strstr(plate_graph_data.component_name, "δ")!=NULL)
+                                                        {
+                                                            if (UNITS == SI) plate_graph_data.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                                                            else plate_graph_data.factor = 1.0f;
+                                                        }
+                                                        else if (strstr(plate_graph_data.component_name, "θ")!=NULL)
+                                                        {
+                                                            plate_graph_data.factor = 1.0f;  //rotational deflection in rad
+                                                        }
+                                                        else if (strstr(plate_graph_data.component_name, "deflection")!=NULL)
+                                                        {
                                                             if ((strstr(plate_graph_data.component_name," 1")!=NULL) ||
-                                                               (strstr(plate_graph_data.component_name," 2")!=NULL) ||
-                                                               (strstr(plate_graph_data.component_name," 2")!=NULL))
-                                                               {  //in x,y,z axis
+                                                                (strstr(plate_graph_data.component_name," 2")!=NULL) ||
+                                                                (strstr(plate_graph_data.component_name," 2")!=NULL))
+                                                            {  //in x,y,z axis
                                                                 if (UNITS == SI) plate_graph_data.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
                                                                 else plate_graph_data.factor = 1.0f;
-                                                               }
-                                                               //about x,y,z axis
-                                                               else plate_graph_data.factor = 1.0f;
+                                                            }
+                                                                //about x,y,z axis
+                                                            else plate_graph_data.factor = 1.0f;
+                                                        }
+                                                        else if ((strstr(plate_graph_data.component_name, "σ")!=NULL) ||
+                                                                (strstr(plate_graph_data.component_name, "τ")!=NULL))
+                                                        {
+                                                            if (UNITS == SI) plate_graph_data.factor = 0.000001f;
+                                                            else plate_graph_data.factor = 0.001f;
                                                         }
                                                         else if (strstr(plate_graph_data.component_name, "stress")!=NULL) {
                                                             if (UNITS == SI) plate_graph_data.factor = 0.000001f;
                                                             else plate_graph_data.factor = 0.001f;
+                                                        }
+                                                        else if (strstr(plate_graph_data.component_name, "ε")!=NULL) {
+                                                            if (UNITS == SI) plate_graph_data.factor = 1.0f;
+                                                            else plate_graph_data.factor = 1.0f;
                                                         }
                                                         else if (strstr(plate_graph_data.component_name, "epsilon")!=NULL) {
                                                             if (UNITS == SI) plate_graph_data.factor = 1.0f;
                                                             else plate_graph_data.factor = 1.0f;
                                                         }
                                                         else plate_graph_data.factor = 1.0f;
+
+                                                        strncpy(VALUE_NAME, plate_graph_data.component_name,15);
+                                                        VALUE_NAME[15]='\0';
+                                                        char *ptr_vn=strchr(VALUE_NAME,'_');
+                                                        if (ptr_vn!=NULL) *ptr_vn='\0';
                                                     }
                                                 }
                                             }

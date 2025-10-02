@@ -3367,12 +3367,26 @@ static POLE pmStaticColors[] = {
 
 static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
+static POLE pmLoadMagnitude[] = {
+       {u8"carga Lineal\0 \0",L'L',733,NULL},
+	   {u8"arga Superficial\0 \0",L'S',845,NULL},
+	  };
+
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmStressMagnitude[] = {
+       {u8"tensión en Acero/madera\0 \0",L'A',775,NULL},
+	   {u8"tensión en el Hormigón armado\0 \0",L'H',6,NULL},
+	  };
+
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
 static POLE pmMagnitude[] = {
        {u8"reescalado de Forzar\0 \0",              L'F',727,NULL},
 	   {u8"reescalado de Momento\0 \0",             L'M',728,NULL},
 	   {u8"reescalado de Desplazamiento\0 \0",      L'D',730,NULL},
 	   {u8"reescalado de Rotación\0 \0",            L'R',731,NULL},
-       {u8"reescalado de Carga\0 \0",               L'C',733,NULL},
+       {u8"reescalado de Carga\0 \0",               L'C',733,&mLoadMagnitude},
        {u8"reescalado de carga Térmica\0 \0",       L'T',752,NULL}, //&mThermal}
        {u8"reescalado de fuerzas axiales\0 \0",     L'A',758,NULL},
        {u8"reescalado de fuerzas cortantes\0 \0",   L'V',759,NULL},
@@ -3380,7 +3394,7 @@ static POLE pmMagnitude[] = {
        {u8"reescalado de deformación\0 \0",         L'U',761,NULL},
        {u8"reescalado de fuerzas de reacción\0 \0", L'X',762,NULL},
        {u8"momentos de reacción reescalado\0 \0",   L'Z',763,NULL},
-       {u8"reescalado de tensión \0 \0",            L'S',800,NULL},
+       {u8"reescalado de tensión \0 \0",            L'S',800,&mStressMagnitude},
        {u8"reescalado % de refuerzo\0 \0",          L'%',823,NULL},
        {u8"Exageración de las vibraciónes\0 \0",    L'E',814,NULL},
        {u8"Precisión\0 \0",                         L'P',184,NULL}, //&mPrecision},

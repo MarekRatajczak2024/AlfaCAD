@@ -5908,6 +5908,7 @@ if (child==0)
     gradient.c4=getRGB(+0, 1000);
 
     fe_data.el_number=0;
+    fe_data.flag=0;
     fe_data.f1=-1000.0f;
     fe_data.f2=1000.0f;
     fe_data.f3=0.0f;
@@ -5949,6 +5950,7 @@ if (child==0)
     gradient.c4=getRGB(0, 1000);
 
     fe_data.el_number=0;
+    fe_data.flag=0;
     fe_data.f1=1000.0f;
     fe_data.f2=-1000.0f;
     fe_data.f3=0.0f;
@@ -5978,6 +5980,7 @@ if (child==0)
     gradient.c4=getRGBgreen(0, 1000);
 
     fe_data.el_number=0;
+    fe_data.flag=0;
     fe_data.f1=1000.0f;
     fe_data.f2=-1000.0f;
     fe_data.f3=0.0f;

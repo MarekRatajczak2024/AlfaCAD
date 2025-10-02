@@ -3363,12 +3363,26 @@ static POLE pmStaticColors[] = {
 
 static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
+static POLE pmLoadMagnitude[] = {
+       {u8"Лінійне навантаження\0 \0",L'Л',733,NULL},
+	   {u8"Поверхневе навантаження\0 \0",L'П',845,NULL},
+	  };
+
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmStressMagnitude[] = {
+       {u8"напруження в Сталі/деревині\0 \0",L'С',775,NULL},
+	   {u8"напруження в Залізобетоні\0 \0",L'З',6,NULL},
+	  };
+
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
 static POLE pmMagnitude[] = {
        {u8"масштаб Сили\0\0",           L'С',727,NULL},
 	   {u8"масштаб Моменту\0\0",        L'М',728,NULL},
 	   {u8"масштаб Зміщення\0\0",       L'З',730,NULL},
 	   {u8"масштаб Обертання\0\0",      L'О',731,NULL},
-       {u8"масштаб Навантаження\0\0",   L'Н',733,NULL},
+       {u8"масштаб Навантаження\0\0",   L'Н',733,&mLoadMagnitude},
        {u8"масштаб Теплові\0\0",        L'Т',752,NULL}, //&mThermal},
        {u8"масштаб осьових сил\0\0",    L'А',758,NULL},
        {u8"масштаб сил зсуву\0\0",      L'Б',759,NULL},
@@ -3376,7 +3390,7 @@ static POLE pmMagnitude[] = {
        {u8"масштаб Деформації\0\0",     L'Д',761,NULL},
        {u8"масштаб сил Реакції\0\0",    L'Р',762,NULL},
        {u8"масштаб моментів опор\0\0",  L'У',763,NULL},
-       {u8"масштаб наПружень\0 \0",     L'П',800,NULL},
+       {u8"масштаб наПружень\0 \0",     L'П',800,&mStressMagnitude},
        {u8"масштаб % армування\0 \0",   L'%',823,NULL},
        {u8"перебільшення Вібрацій\0 \0",L'В',814,NULL},
        {u8"точність Чисел\0\0",         L'Ч',184,NULL}, //&mPrecision},
