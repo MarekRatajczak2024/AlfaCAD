@@ -3022,21 +3022,26 @@ int Get_Str_From_Clip(char *ptrsz_buf,
 	value_p = content;
 
 #endif
-    //const char *value_p=value.c_str();
     int pos=i_poz;
-    size_t l1 = strlen(ptrsz_buf);
-    size_t l2 = strlen(value_p);
+    int l1 = strlen(ptrsz_buf);
+    int l2 = strlen(value_p);
 
     if (pos <  0) pos = 0;
     if (pos > l1) pos = l1;
 
-    if ((l1+l2)>i_buflen) l2=i_buflen-l1;
-    if (l2>0) {
-        if (value_p[l2-1]>127) l2--;
+    if ((l1+l2)>i_buflen)
+    {
+        l2=i_buflen-l1-1;
+        if ((value_p[l2-1]>=127) || (value_p[l2-1]<0))
+            l2--;
+    }
+    if (l2>0)
+    {
         char *p = ptrsz_buf + pos;
         memmove(p + l2, p, l1 - pos);
-        memmove(p, value_p, l2);
-        p[l1+l2]='\0';
+        memmove(p, value_p, l2+1);
+        p=ptrsz_buf + (l1+l2);
+        *p='\0';
     }
 
 #ifdef MACOS

@@ -98,6 +98,8 @@ extern void flip_full_screen(BITMAP * the_screen);
 extern void putkeepimage(int left, int top, BITMAP  *bitmap, int op);
 extern int get_pYk(void);
 
+extern  BITMAP *screenplay;
+
 #ifdef ALLEGRO5
 static int mouse_x0, mouse_y0;
 #endif
@@ -785,8 +787,10 @@ static int read_dlg(char  *tekst, int ink, int paper,int ink_ini, int paper_ini,
   }
   else
   {
-	  width = (dx - 4 * DXIL - ttf_width_w) / ttf_width_w + extra1;
+	  ////width = (dx - 4 * DXIL - ttf_width_w) / ttf_width_w + extra1;
+      width = dx / ttf_width_w;
 	  zn = editstring(tekst, legal, lmax, width, FALSE, 1, TRUE, 5, 3);
+      ////zn = editstring(tekst, legal, lmax, dx, FALSE, 1, TRUE, 5, 3);
   }
 
   _free_mouse();
@@ -1200,10 +1204,12 @@ static int find_input_line(INPUTLINE *InputLines,int SizeInLinT)
 
 	dx = (int)((float)InputLines[i].dx*wsp_x);
 
-    get_clip_rect(screen, &x01, &y01, &x02, &y02);
-    set_clip_rect(screen,  x1+2, y1, x2-2, y2); //+2 and -2 to not overlap the frame
-    clip_state=get_clip_state(screen);
-    set_clip_state(screen, 1);
+      dx = jed_to_piks_x (InputLines[i].dx);
+
+    get_clip_rect(screenplay, &x01, &y01, &x02, &y02);
+    set_clip_rect(screenplay,  x1+2, y1, x2-2, y2); //+2 and -2 to not overlap the frame
+    clip_state=get_clip_state(screenplay);
+    set_clip_state(screenplay, 1);
 
     if(read_dlg(buf, ink, paper, ink_ini, paper_ini,
 	InputLines[i].MaxLen, InputLines[i].width, dx, InputLines[i].legal) != ESC)
@@ -1219,14 +1225,15 @@ static int find_input_line(INPUTLINE *InputLines,int SizeInLinT)
 	  if (InputLines[i].MaxLen < 10)
 	  {
 	  	  //input_width = ((x2 - x1) - 3 * DXIL - ttf_width_w) / ttf_width_w + extra1;
-          input_width=InputLines[i].width;
+          input_width = ((x2 - x1) - ttf_width_w) / ttf_width_w  + extra1;
+          //input_width=InputLines[i].width;
 	  	  outetextxy(x1 + 0.9 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLines[i].MaxLen,
             input_width, InputLines[i].txt, ink, paper);
 	  }
 	  else
 	  {
-		  //input_width = ((x2 - x1) - 4 * DXIL - ttf_width_w ) / ttf_width_w + extra1;
-          input_width=InputLines[i].width;
+		  input_width = ((x2 - x1) - 4 * DXIL - ttf_width_w ) / ttf_width_w + extra1;
+          //input_width=jed_to_piks_x(InputLines[i].width);
 		  outetextxy(x1 + 2 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLines[i].MaxLen,
 			  input_width, InputLines[i].txt, ink, paper);
 	  }
@@ -1234,8 +1241,8 @@ static int find_input_line(INPUTLINE *InputLines,int SizeInLinT)
       ret = -1;
     }
       _free_mouse();
-      set_clip_rect(screen,  x01, y01, x02, y02);
-      set_clip_state(screen, clip_state);
+      set_clip_rect(screenplay,  x01, y01, x02, y02);
+      set_clip_state(screenplay, clip_state);
   }
   moveto(PozX+pocz_x, PozY+pocz_y);
   cur_on(PozX, PozY); 
@@ -1250,6 +1257,8 @@ void Draw_Input_Line(INPUTLINE *InputLine)
   int ink, paper, border;
   int x1, y1, x2, y2;
   int input_width;
+    int x01, y01, x02, y02;
+    int clip_state;
 
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setwritemode(COPY_PUT);
@@ -1261,6 +1270,11 @@ void Draw_Input_Line(INPUTLINE *InputLine)
   x2 = jed_to_piks_x(InputLine->x + InputLine->dx - 1)+pocz_x;
   y1 = jed_to_piks_y(InputLine->y)+pocz_y;
   y2 = jed_to_piks_y(InputLine->y + InputLine->dy - 1)+pocz_y;
+
+    get_clip_rect(screenplay, &x01, &y01, &x02, &y02);
+    set_clip_rect(screenplay,  x1+2, y1, x2-2, y2); //+2 and -2 to not overlap the frame
+    clip_state=get_clip_state(screenplay);
+    set_clip_state(screenplay, 1);
   
   setwritemode(COPY_PUT);
   
@@ -1280,25 +1294,20 @@ void Draw_Input_Line(INPUTLINE *InputLine)
   if (InputLine->enable==1) setcolor(ink);
     else setcolor(LIGHTGRAY);
 
-  if (InputLine->MaxLen < 10)
+  if (InputLine->MaxLen < 10)  //10
   {
-	  input_width = InputLine->MaxLen;
-
-	  if (InputLine->id == 999)
-	  {
-		  int a = 0;
-	  }
-
-	  outetextxy(x1 + 0.9 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLine->MaxLen,
-		  InputLine->width, InputLine->txt, ink, paper); //254
+	  //input_width = InputLine->MaxLen;
+      input_width = ((x2 - x1) - ttf_width_w) / ttf_width_w  + extra1;
+	  outetextxy(x1 + 0.9 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLine->MaxLen, input_width, InputLine->txt, ink, paper); //254
   }
   else
   {
-	  input_width = ((x2 - x1) - 4 * DXIL - ttf_width_w) / ttf_width_w  + extra1;
-
-	  outetextxy(x1 + 2 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLine->MaxLen,
-		  input_width, InputLine->txt, ink, paper); //254
+      input_width = ((x2 - x1) - 4 * DXIL - ttf_width_w) / ttf_width_w + extra1;
+      outetextxy(x1 + 2 * DXIL, y1 + (y2 - y1 - (HEIGHT - 3)) / 2 + 2, InputLine->MaxLen, input_width, InputLine->txt,ink, paper); //254
   }
+
+    set_clip_rect(screenplay,  x01, y01, x02, y02);
+    set_clip_state(screenplay, clip_state);
 
 }
 

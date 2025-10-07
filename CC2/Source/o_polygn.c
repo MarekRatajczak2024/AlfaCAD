@@ -221,7 +221,7 @@ static int O_n (BOOL b_graph_value)
     return 0 ;
   }
   n = eO.values [0] ;
-  if (n > 2 && n < 1024)
+  if (n > 2 && n <= 1024)
   {
     s_polygon.n = n ;
 	sprintf(polygon_n, "%d", s_polygon.n);

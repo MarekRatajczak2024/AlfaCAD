@@ -13516,16 +13516,16 @@ void DoneBuffMacro(void)
 
 void my_scare_mouse() 
 {
-    show_mouse(NULL);
+    show_mouse(NULL);  //WARNING
     //select_mouse_cursor(MOUSE_CURSOR_NONE);
-    //scare_mouse();
+    ////scare_mouse();  //WARNING
 }
 
 void my_unscare_mouse()
 {
-    show_mouse(screen);
+    show_mouse(screen);  //WARNING
     //select_mouse_cursor(MOUSE_CURSOR_ALLEGRO);
-    //unscare_mouse();
+    ////unscare_mouse();  //WARNING
 }
 
 void set_cursor_pointer(void)

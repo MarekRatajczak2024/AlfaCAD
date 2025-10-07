@@ -4332,6 +4332,11 @@ int TTF_text_len_pos(char *text, int pos)
 	char buf[MaxTextLen*2+2];
 	int text_h, text_v;
 
+    if (pos>10000)  //emergency
+    {
+        pos=0;
+    }
+
 	if (pos < 0)
 		return 0;
 

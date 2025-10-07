@@ -36,7 +36,7 @@
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 
-extern void Odczyt_licznikow(int *mouse_x, int *mouse_y);
+extern void Odczyt_licznikow(void);
 
 extern char *get_komunikat_ptr (int n) ;
 extern BOOL Add_String_To_List (char *) ;
@@ -99,6 +99,7 @@ extern void move_pointer(int x, int y);
 BOOL editing_text = FALSE;
 
 static int mouse_x_=0, mouse_y_=0;
+static void (*TCUR)(int ,int);
 
 
 #define MIDDLE_BUTTON 2
@@ -261,11 +262,21 @@ static void cursorT_On(int x,int y, BOOL ins)
   setwritemode(COPY_PUT);
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setcolor(kolory.inkk);
-  my_scare_mouse();
+#ifdef ALLEGRO5
+  my_scare_mouse();  //WARNING
+#endif
+#ifndef LINUX
+	my_scare_mouse();  //WARNING
+#endif
 
   LINE(x+1,y+ED_INF_HEIGHT-y_3,x+b,y+ED_INF_HEIGHT-y_3);
   if ( ins) LINE(x+1,y+ED_INF_HEIGHT-y_4,x+b,y+ED_INF_HEIGHT-y_4);
-  my_unscare_mouse();
+#ifdef ALLEGRO5
+  my_unscare_mouse();  //WARNING
+#endif
+#ifndef LINUX
+	my_unscare_mouse();  //WARNING
+#endif
 }
 static void cursorT_Off(int x,int y, BOOL ins)
 /*------------------------------------------*/
@@ -274,19 +285,33 @@ static void cursorT_Off(int x,int y, BOOL ins)
   setwritemode(COPY_PUT);
   setlinestyle1(SOLID_LINE,0,NORM_WIDTH);
   setcolor(kolory.paperk);
+#ifdef ALLEGRO5
   my_scare_mouse();
+#endif
+#ifndef LINUX
+	my_scare_mouse();  //WARNING
+#endif
   LINE(x+1,y+ED_INF_HEIGHT-y_3,x+b,y+ED_INF_HEIGHT-y_3);
   if (ins) LINE(x+1,y+ED_INF_HEIGHT-y_4,x+b,y+ED_INF_HEIGHT-y_4);
   setcolor(kolory.inkk);
+#ifdef ALLEGRO5
   my_unscare_mouse();
+#endif
+#ifndef LINUX
+	my_unscare_mouse();  //WARNING
+#endif
 }
 
 static void put_add_char (int x0, int y0, int fpos, int len, int width, int width0, int width_w, int fwlen, int width_pxl, int pos_len_pxl, int expand, int y_4_, int y_3_)
 {
   int x1, x2;
 
-
-  show_mouse(NULL);
+#ifdef ALLEGRO5
+  show_mouse(NULL);  //WARNING
+#endif
+#ifndef LINUX
+	show_mouse(NULL);  //WARNING
+#endif
 
   if (expand)
   {
@@ -333,7 +358,12 @@ static void put_add_char (int x0, int y0, int fpos, int len, int width, int widt
 	bar(x1, y0 - y_4_, x2, y0 + ED_INF_HEIGHT - y_3_);  //y_3
   }
 
-  show_mouse(screen);
+#ifdef ALLEGRO5
+   show_mouse(screen);  //WARNING
+#endif
+#ifndef LINUX
+	show_mouse(screen);  //WARNING
+#endif
 }
 
 
@@ -379,19 +409,25 @@ int set_wchar0(unsigned char *buf, int len)
 	return j;
 }
 
-void outtext_r_e (int x0, int y0, int len, char *s, BOOL ini, int y_4_)
-/*-------------------------------------------------------------------*/
+void outtext_r_e (int x0, int y0, int len, int width, char *s, BOOL ini, BOOL end, int fpos, int pos1_, int pos2_, int y_4_)
+/*-------------------------------------------------------------------------------------------------------------*/
 {
   unsigned char buf [MaxTextLen*2+2];
-  int x;
-  int len_ttf;
+  int x01,x;
+  int len_ttf0, len_ttf;
   int char_len_ttf, b_index;
   int wlen;
   int blen;
+  int pos1, pos2;
+
+  pos1 = min(pos1_, pos2_) - fpos;
+  pos2 = max(pos1_, pos2_) - fpos;
+  ////pos1 = max(pos1, fpos);
 
   strncpy (buf, s, MaxTextLen*2+1);
 
   blen = strlen(buf);
+  x01=x0;
 
   if (len < 0)
   {
@@ -399,8 +435,8 @@ void outtext_r_e (int x0, int y0, int len, char *s, BOOL ini, int y_4_)
 	  return;
   }
 
-  if (len > blen)
-	  return;
+ //// if (len > blen)
+////	  return;
 
   //converting len to wlen
   if (len <= blen)
@@ -408,25 +444,41 @@ void outtext_r_e (int x0, int y0, int len, char *s, BOOL ini, int y_4_)
 	  wlen = set_wchar0(buf, len);
 
 	  buf[wlen] = '\0';
-
+	  buf[wlen] = '\0';
   }
+  else wlen=len;
 
-  my_scare_mouse();
+#ifdef ALLEGRO5
+  my_scare_mouse();  //WARNING
+#endif
+#ifndef LINUX
+	my_scare_mouse();  //WARNING
+#endif
 
   if (ini)
   {
+   setcolor(kolory.inkk);
+   setfillstyle_(SOLID_FILL,kolory.paperk);
+   bar(x0 - DXIL + 2, y0 - y_4_, x0+width /*x + char_len_ttf*/, y0 + ED_INF_HEIGHT - y_3);
+
     setcolor(kolory.inkk_ini);
     setfillstyle_(SOLID_FILL,kolory.paperk_ini);
 
-	len_ttf = TTF_text_len_pos(&buf, wlen);  //wlen
+    len_ttf0 = TTF_text_len_pos(&buf, pos1);
+    x01=x0 + len_ttf0;
+	//len_ttf = TTF_text_len_pos(&buf, wlen);  //wlen
+    len_ttf = TTF_text_len_pos(&buf, pos2+1);
 
 	x = x0 + len_ttf;
 
 	char_len_ttf = ttf_width_w;
 
-    if (len > 0) bar(x0-1,y0-2,x,y0+ED_INF_HEIGHT - y_3);
-    setfillstyle_(SOLID_FILL,kolory.paperk);   /*nad kursorem*/
-	bar(x + 1, y0 - y_4_, x + char_len_ttf /*8*/, y0 + ED_INF_HEIGHT - y_3);
+    if (len > 0) bar(x01-1,y0-2,x,y0+ED_INF_HEIGHT - y_3);
+
+    if (end) {
+        setfillstyle_(SOLID_FILL, kolory.paperk);   /*nad kursorem*/
+        bar(x + 1, y0 - y_4_, x + char_len_ttf /*8*/, y0 + ED_INF_HEIGHT - y_3);
+    }
   }
   else
   {
@@ -438,15 +490,23 @@ void outtext_r_e (int x0, int y0, int len, char *s, BOOL ini, int y_4_)
 
 	char_len_ttf = 0;
 
-	bar(x0 - DXIL + 2, y0 - y_4_, x + char_len_ttf, y0 + ED_INF_HEIGHT - y_3);
+	////bar(x0 - DXIL + 2, y0 - y_4_, x + char_len_ttf, y0 + ED_INF_HEIGHT - y_3);
+
+    bar(x0 - DXIL + 2, y0 - y_4_, x0+width /*x + char_len_ttf*/, y0 + ED_INF_HEIGHT - y_3);
+    ////bar(x0 - DXIL + 2, y0 - y_4_, x0+width /*x + char_len_ttf*/, y0 + ED_INF_HEIGHT - y_3);
   }
   moveto(x0,y0);
   outtext_r (buf);
-  my_unscare_mouse();
+#ifdef ALLEGRO5
+  my_unscare_mouse();  //WARNING
+#endif
+#ifndef LINUX
+	my_unscare_mouse();  //WARNING
+#endif
 }
 
-void outtext_r_e1 (int x0, int y0, int len, char *s, BOOL ini)
-/*-------------------------*/
+void outtext_r_e1 (int x0, int y0, int len, char *s, BOOL ini, BOOL end, int fpos, int pos1, int po2)
+/*-------------------------------------------------------------------------------------------------*/
 {
   char buf [256];
   int x;
@@ -482,12 +542,12 @@ int Get_Key (void)
 /*---------------*/
 {
    int ret ;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
 
-   CUR=MVCUR;
+   LCUR=MVCUR;
    MVCUR=noop;
    ret = getkey ();
-   MVCUR=CUR;
+   MVCUR=LCUR;
    return ret;
 }
 
@@ -684,13 +744,49 @@ void my_show_mouse(BITMAP* sc)
 	}
 }
 
+static void mktext (int dx, int dy)
+{
+    int w,h;
+
+    if (!mouse_b)
+    {
+
+        MVCUR=TCUR;
+        return;
+    }
+    else
+    {
+       ;
+    }
+}
+
+
+void Shift_characters(char *s, int *pos, int *pos1, int *pos2)
+{
+    int last_pos;
+    int extra_ch=0;
+	int len;
+    if (pos1<pos2) last_pos=*pos2;
+    else last_pos=*pos1;
+    if (s[last_pos]>=127) extra_ch=1;
+
+	len=strlen(s);
+    //Shift_characters from after the cut to cover the cut section
+	if ((s[last_pos]=='\0') || (s[last_pos+extra_ch]=='\0')) s[min(*pos1, *pos2)]='\0';
+    else memmove(&s[min(*pos1, *pos2)], &s[max(*pos1, *pos2)] + 1 + extra_ch,len - max(*pos1, *pos2) - 1 - extra_ch + 1); // +1 for null terminator
+    *pos = min(*pos1, *pos2);
+    *pos1 = *pos2 = -1; //min(*pos1, *pos2);
+}
+
 int editstring(unsigned char *s, char *legal, int maxlength, float width0, BOOL b_graph_value, int expand, BOOL last_edit, int y_4_, int y_3_)
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /* Allows the user to edit a string with only certain characters allowed -
    Returns TRUE if ESC was not pressed, FALSE is ESC was pressed.
 */
 {
-	int c, len, wlen, fwlen, lpos_cur, pos, pos1, fpos;
+	int c, len, wlen, fwlen, lpos_cur, pos, fpos;
+    int pos1=-1, pos2=-1, pos2_bak=-1;
+    BOOL ini;
 	uint8_t utf8c[4];
 	int scancode;
 	BOOL insert = TRUE;
@@ -713,6 +809,7 @@ int editstring(unsigned char *s, char *legal, int maxlength, float width0, BOOL 
     int x1, y1, x2, y2;
 	//int mouse_x_, mouse_y_;
     int32_t len0,len1;
+    static int mouse_x0=0, mouse_y0=0, mouse_x_bak=0, min_mouse_x, max_mouse_x;
 
     _free_mouse();
     set_cursor_edit();
@@ -729,7 +826,7 @@ int editstring(unsigned char *s, char *legal, int maxlength, float width0, BOOL 
 aa:
     width_pxl = width0 * width_w;
 
-    width_pxl_a=getmaxx()-x00-27*WIDTH;
+    //width_pxl_a=getmaxx()-x00-27*WIDTH;
 
     width_pxl_a = (int)(width0) * ttf_width_w;
 
@@ -743,7 +840,8 @@ aa:
 	wlen = utf8len(s);
 	fwlen = wlen;
 
-	if (wlen > maxlength)
+	//if (len > maxlength)
+    if (wlen > maxlength)
 	{
 		if (s[maxlength] >= 127)
         {
@@ -802,7 +900,9 @@ if (last_edit==TRUE)
    my_show_mouse(NULL);
 #endif
 
-	outtext_r_e(x0, y0, m_len, &s[fpos], TRUE, y_4_);
+    pos1=fpos;
+    pos2=strlen(s);
+	outtext_r_e(x0, y0, m_len, width_pxl_a, &s[fpos], TRUE, TRUE, fpos, pos1, pos2, y_4_);
 	pos_len_pxl = TTF_text_len_pos(&s[fpos], m_len);
 
     if (b_add == TRUE) put_add_char (x0, y0, fpos, len, width, width0, width_w, fwlen, width_pxl_a, pos_len_pxl, expand, y_4_, y_3_);
@@ -826,9 +926,11 @@ if (last_edit==TRUE)
   }
   else if ((c==F11) || (c==CTRLSPC))
   {
-      do_not_draw_cur=TRUE;
-      c=Expand_flex();
-      do_not_draw_cur=FALSE;
+      if (!now_is_dialog) {
+          do_not_draw_cur = TRUE;
+          c = Expand_flex();
+          do_not_draw_cur = FALSE;
+      }
   }
 
   if (c == F2) c = ESC ;
@@ -844,7 +946,7 @@ if (last_edit==TRUE)
 	 if (fwlen < (width - 1)) m_len = (len - fpos);
 	 else m_len = (width - 1);
 
-	 outtext_r_e(x0, y0, m_len, &s[fpos], FALSE, y_4_);
+	 outtext_r_e(x0, y0, m_len, width_pxl_a, &s[fpos], FALSE, FALSE, fpos, pos1, pos2, y_4_);
 	 pos_len_pxl = TTF_text_len_pos(&s[fpos], m_len);
 	 
      if (b_add == TRUE) put_add_char (x0, y0, fpos, len, width, width0, width_w, fwlen, width_pxl_a, pos_len_pxl, expand, y_4_, y_3_);
@@ -869,7 +971,7 @@ if (last_edit==TRUE)
 	 if (fwlen < (width - 1)) m_len = (len - fpos);
 	 else m_len = (width - 1);
 
-	  outtext_r_e(x0, y0, m_len, &s[fpos], FALSE, y_4_);
+	  outtext_r_e(x0, y0, m_len, width_pxl_a, &s[fpos], fpos, pos1, pos2, FALSE, FALSE, y_4_);
 	  pos_len_pxl = TTF_text_len_pos(&s[fpos], m_len);
 	 
      if (b_add == TRUE) put_add_char (x0, y0, fpos, len, width, width0, width_w, fwlen, width_pxl_a, pos_len_pxl, expand, y_4_, y_3_);
@@ -886,7 +988,7 @@ if (last_edit==TRUE)
 #ifndef LINUX 
 	my_show_mouse(NULL);
 #endif
-	 outtext_r_e(x0, y0, m_len, &s[fpos], FALSE, y_4_);
+	 outtext_r_e(x0, y0, m_len, width_pxl_a, &s[fpos], FALSE, FALSE, fpos, pos1, pos2, y_4_);
 	 pos_len_pxl = TTF_text_len_pos(&s[fpos], m_len);
      
       if (b_add == TRUE) put_add_char (x0, y0, fpos, len, width, width0, width_w, fwlen, width_pxl_a, pos_len_pxl, expand, y_4_, y_3_);
@@ -925,9 +1027,11 @@ if (last_edit==TRUE)
 	 my_show_mouse(screen);
 #endif
    }
+
+pos1=pos2=-1;
+
 do
 {
-	
 	switch (c)
 	{
 	case PGDNKEY:
@@ -962,13 +1066,35 @@ do
         }
 		break;
 	case PASTECLIP:
+        if ((pos1>=0) && (pos2>=0))
+        {
+            Shift_characters(s, &pos, &pos1, &pos2);
+        }
+
 		if (1 == Get_Str_From_Clip(s, pos, maxlength, x0, y0 - (y0 * 0.25)))
 		{
 			goto aa;
 		}
 		break;
 	case COPYCLIP:
-		Put_Str_To_Clip(s);
+        if ((pos1>=0) && (pos2>=0))  //copying marked part of string
+        {
+            // Shift characters from after the cut to cover the cut section
+            int last_pos;
+            int extra_ch=0;
+            if (pos1<pos2) last_pos=pos2;
+            else last_pos=pos1;
+            if (s[last_pos]>=127) extra_ch=1;
+            char *s_bak=malloc(abs(pos2-pos1)+2);
+            memmove(s_bak, &s[min(pos1, pos2)], abs(pos2-pos1)+1+extra_ch); //
+            s_bak[abs(pos2-pos1)+1+extra_ch]='\0';
+            Put_Str_To_Clip(s_bak);
+            free(s_bak);
+        }
+        else   //copying entire string
+        {
+            Put_Str_To_Clip((char*)s);
+        }
 		break;
 	case HOMEKEY:
 		pos = 0;
@@ -988,7 +1114,6 @@ do
 		cursorT_On(x, y, insert);
 		break;
 	case LEFTKEY:
-
 		if (pos > 0)
 		{
 			if (s[pos - 1] > 127)
@@ -1002,7 +1127,6 @@ do
 
 		break;
 	case RIGHTKEY:
-
 		if (pos < len)
 		{
 			if (s[pos] > 127)
@@ -1015,53 +1139,54 @@ do
 		}
 
 		break;
-	case BS:if (pos > 0)
-		{
-            if ((pos > 1) && (s[pos - 1] > 127))
-            {
-                if ((pos > 2) && known3bytes(s[pos-3], s[pos-2], s[pos-1]) /*((s[pos-1] == 180) && (s[pos - 2] == 129) && (s[pos - 3] == 226))*/)
-                {
-                    memmove(&s[pos - 3], &s[pos], len - pos + 1);
-                    pos -= 3;
-                    len -= 3;
-                }
-                else
-                {
-                    memmove(&s[pos - 2], &s[pos], len - pos + 1);
-                    pos -= 2;
-                    len -= 2;
+	case BS:
+        if ((pos1>=0) && (pos2>=0))
+        {
+            Shift_characters(s, &pos, &pos1, &pos2);
+        }
+        else {
+            if (pos > 0) {
+                if ((pos > 1) && (s[pos - 1] > 127)) {
+                    if ((pos > 2) && known3bytes(s[pos - 3], s[pos - 2], s[pos -
+                                                                           1]) /*((s[pos-1] == 180) && (s[pos - 2] == 129) && (s[pos - 3] == 226))*/) {
+                        memmove(&s[pos - 3], &s[pos], len - pos + 1);
+                        pos -= 3;
+                        len -= 3;
+                    } else {
+                        memmove(&s[pos - 2], &s[pos], len - pos + 1);
+                        pos -= 2;
+                        len -= 2;
+                    }
+                } else {
+                    memmove(&s[pos - 1], &s[pos], len - pos + 1);
+                    pos--;
+                    len--;
                 }
             }
-			else
-			{
-				memmove(&s[pos - 1], &s[pos], len - pos + 1);
-				pos--;
-				len--;
-			}
-		}
+        }
 		break;
 	case DELKEY:
-		if (pos < len)
-		{
-			if (s[pos] > 127)
-			{
-                if (((pos+1)<len) && known3bytes(s[pos], s[pos+1], s[pos+2]) /*((s[pos] == 226) && (s[pos+1] == 129) && (s[pos+2] == 180))*/)
-                {
-                    memmove(&s[pos], &s[pos + 3], len - pos - 1);
-                    len -= 3;
+        if ((pos1>=0) && (pos2>=0))
+        {
+            Shift_characters(s, &pos, &pos1, &pos2);
+        }
+        else {
+            if (pos < len) {
+                if (s[pos] > 127) {
+                    if (((pos + 1) < len) && known3bytes(s[pos], s[pos + 1], s[pos +
+                                                                               2]) /*((s[pos] == 226) && (s[pos+1] == 129) && (s[pos+2] == 180))*/) {
+                        memmove(&s[pos], &s[pos + 3], len - pos - 1);
+                        len -= 3;
+                    } else {
+                        memmove(&s[pos], &s[pos + 2], len - pos - 1);
+                        len -= 2;
+                    }
+                } else {
+                    memmove(&s[pos], &s[pos + 1], len - pos);
+                    len--;
                 }
-                else
-                {
-                    memmove(&s[pos], &s[pos + 2], len - pos - 1);
-                    len -= 2;
-                }
-			}
-			else
-			{
-				memmove(&s[pos], &s[pos + 1], len - pos);
-				len--;
-			}
-		}
+            }
+        }
 
 		break;
 	case DOWNKEY:
@@ -1073,9 +1198,90 @@ do
 	case ENTER:
 		break;
     case MOUSEENTER:
-        pos1=0;
+
+        max_mouse_x=TTF_text_len(&s[fpos]);
+
+        //if ((pos1>=0) && (pos2>=0))  //it was marked before
+        //{
+            //outtext_r_e (x0, y0, m_len, x0+width_pxl_a, &s[fpos], FALSE, FALSE, fpos, 0, 0, y_4_);
+        //}
+
+        pos1=-1;
+        pos2=-1;
+        pos2_bak=-1;
         ret=TTF_text_pos_x0(&s[fpos], x0, y0, width_w, &pos1);
-        if (ret) pos=fpos+pos1;
+        int max_text_len= TTF_text_len(&s[fpos]);
+        if (ret)
+        {
+            pos=fpos+pos1;
+            //my_scare_mouse();
+            //moveto(x0, y0);
+            //outtext_r(&s[fpos]);
+            //my_unscare_mouse();
+        }
+
+        mouse_x0=mouse_x;
+        mouse_x_bak=mouse_x;
+        mouse_y0=y0-3;
+
+        printf("x0=%d y0=%d mouse_x0=%d mouse_y0=%d pos1=%d\n", x0, y0,mouse_x0, mouse_y0, pos1);
+        while (mouse_b)
+        {
+            //mouse_x_=mouse_x;
+            Odczyt_licznikow();
+            if ((mouse_x_!=mouse_x) && (mouse_y>=mouse_y0) && (mouse_y<(mouse_y0+HEIGHT)))
+            {
+                ////ret=TTF_text_pos_x0(&s[fpos], x0, y0, width_w, &pos2);
+                if ((mouse_x_bak!=mouse_x) && (mouse_x>x0) && (mouse_x<(x0+max_mouse_x)))
+                //if (pos2!=pos2_bak)
+                    {
+                    setfillstyle_(SOLID_FILL, kolory.paperk);
+                    //bar(mouse_x0, mouse_y0, mouse_x_bak, mouse_y0 + HEIGHT);
+#ifdef ALLEGRO5
+                    my_scare_mouse();
+#endif
+#ifndef LINUX
+                	my_scare_mouse();  //WARNING
+#endif
+                    bar(x0, mouse_y0, x0 + width_pxl_a, mouse_y0 + HEIGHT);
+
+                    mouse_x_=mouse_x;
+
+                    mouse_x_ = max(x0, mouse_x_);
+                    mouse_x_ = min(x0 + max_text_len, mouse_x_);
+
+                    mouse_x0 = max(x0, mouse_x0);
+                    mouse_x0 = min(x0 + max_text_len, mouse_x0);
+
+                    setfillstyle_(SOLID_FILL, kolory.paperk_ini);
+
+                    bar(mouse_x0, mouse_y0, mouse_x, mouse_y0 + HEIGHT);
+                    //mouse_x_bak = mouse_x_;
+                    moveto(x0, y0);
+                    outtext_r(&s[fpos]);
+#ifdef ALLEGRO5
+                    my_unscare_mouse();
+#endif
+#ifndef LINUX
+                	my_unscare_mouse();  //WARNING
+#endif
+                    pos2_bak=pos2;
+                }
+                mouse_x_ = mouse_x;
+            }
+        }
+
+        pos1 += fpos;
+        if (mouse_x!=mouse_x0) {
+            ret = TTF_text_pos_x0(&s[fpos], x0, y0, width_w, &pos2);
+            if (ret) pos = fpos + pos2;
+            pos2 += fpos;
+        }
+
+        printf("x01=%d y01=%d mouse_x1=%d mouse_y0=%d pos2=%d\n", x0, y0,mouse_x, mouse_y0, pos2);
+        //pos1 += fpos;
+        //pos2 += fpos;
+
         break;
 	case F11:
 		break;
@@ -1091,19 +1297,35 @@ do
 		break;
 	default:
 
+        len=strlen(s);
+
         if (((legal[0] == 0) || (strchr(legal, c) != NULL)) &&
-            (c >= ' ') && ((wlen < maxlength) || ((wlen == maxlength) && (last_edit == TRUE))))
+            (c >= ' ') && ((((wlen < maxlength) || ((wlen == maxlength) && (last_edit == TRUE))) && (len <= maxlength)) || ((pos1>=0) && (pos2>=0))))
 		{
             
 			if (last_edit == TRUE)
 			{
-				show_mouse(NULL);
+#ifdef ALLEGRO5
+				show_mouse(NULL);   //WARNING
+#endif
+#ifndef LINUX
+				show_mouse(NULL);  //WARNING
+#endif
 				setfillstyle_(SOLID_FILL, kolory.paperk);
 				bar(x0 - 1, y0 - 2, x, y0 + ED_INF_HEIGHT - y_3);
+#ifdef ALLEGRO5
 				show_mouse(screen);
+#endif
+#ifndef LINUX
+				show_mouse(screen);  //WARNING
+#endif
 			}
-			
-				
+
+            if ((pos1>=0) && (pos2>=0))
+            {
+                Shift_characters(s, &pos, &pos1, &pos2);
+            }
+
 			if (insert)
 			{
                 if (c > 65535)
@@ -1227,7 +1449,9 @@ do
      pos_len_pxl = TTF_text_len_pos(&s[fpos],  m_len);
 
 
-	 outtext_r_e (x0, y0, m_len, &s[fpos], FALSE, y_4_);
+      if ((pos1<0) || (pos2<0)) ini=FALSE;
+     else ini=TRUE;
+	 outtext_r_e (x0, y0, m_len, width_pxl_a, &s[fpos], ini /*FALSE*/, FALSE, fpos, pos1, pos2, y_4_);
 
      if (b_add == TRUE) put_add_char (x0, y0, fpos, len, width, width0, width_w, fwlen, width_pxl_a, pos_len_pxl, expand, y_4_, y_3_);
      
@@ -1245,9 +1469,13 @@ do
 	 }
      else if ((c==F11) || (c==CTRLSPC))
      {
-         do_not_draw_cur=TRUE;
-         c=Expand_flex();
-         do_not_draw_cur=FALSE;
+         //check if dialog
+         if (!now_is_dialog) {
+             do_not_draw_cur = TRUE;
+             c = Expand_flex();
+             do_not_draw_cur = FALSE;
+         }
+         //else continue;
      }
 
     if (c == F2) c = ESC ;
@@ -1266,7 +1494,7 @@ do
    m_len = findlentopxl(s, width_pxl);
 
 
-   outtext_r_e(x0, y0, m_len, &s[fpos], FALSE, y_4_);
+   outtext_r_e(x0, y0, m_len, width_pxl_a, &s[fpos], FALSE, FALSE, fpos, pos1, pos2, y_4_);
 
 
  if ((c == ENTER) || (c == F10) || (c == F9))
@@ -1275,7 +1503,9 @@ do
  }
  else if (c == F11)
  {
-	 simulate_ukeypress(14592, 14592);
+     if (!now_is_dialog) {
+         simulate_ukeypress(14592, 14592);
+     }
  }
  editing_text = FALSE;
 
@@ -1299,6 +1529,7 @@ int editstring1(unsigned char *s, char *legal, int maxlength, int width, BOOL b_
  BOOL insert = TRUE;
  BOOL b_add;
  int x,y,x0,y0, x00;
+ int pos1=-1, pos2=-1;
 
   width0 = width ;
   x00 = getx () ;
@@ -1340,7 +1571,7 @@ aa:
     lpos_cur = width - 1;
    }
    
-  outtext_r_e1 (x0, y0, min (len - fpos, width /*-1*/), &s[fpos], FALSE /*TRUE*/);
+  outtext_r_e1 (x0, y0, min (len - fpos, width /*-1*/), &s[fpos], FALSE /*TRUE*/, FALSE, fpos, pos1, pos2);
   if (expand==1)
     {
     if (b_add == TRUE) put_add_char1 (x0, y0, fpos, len, width);
@@ -1477,7 +1708,7 @@ aa:
           fpos = 0;
          }
          lpos_cur = pos - fpos;
-	 outtext_r_e1 (x0, y0, min (len - fpos, width - kor), &s[fpos], FALSE);
+	 outtext_r_e1 (x0, y0, min (len - fpos, width - kor), &s[fpos], FALSE, FALSE, fpos, pos1, pos2);
 	 if (expand==1)
          {
           if (b_add == TRUE) put_add_char1 (x0, y0, fpos, len, width);
@@ -1494,7 +1725,7 @@ aa:
         (c != CTRLXKEY) && (c != CTRLKKEY) && (c != CTRLWKEY) &&
         (c != CTRLHOMEKEY) && (c != CTRLENDKEY) && (c != BCSPKEY) &&  (c != PGUPKEY) && (c != PGDNKEY) &&
 	 ((c != DOWNKEY && c != MIDDLE_BUTTON) || FALSE == b_graph_value) ) ;
-  outtext_r_e1 (x0, y0, min (len, width), s, FALSE);
+  outtext_r_e1 (x0, y0, min (len, width), s, FALSE, FALSE, fpos, pos1, pos2);
   if (expand==1)
     {
      if (b_add == TRUE) put_add_char1 (x0, y0, 0, len, width);
@@ -1513,7 +1744,7 @@ int get_string_str (char *tekst, char *legal, int maxlength, int width0, char *k
 /*-----------------------------------------------------------------------------------*/
 {
     int zn, k;
-    void (*CUR)(int ,int);
+    void (*LCUR)(int ,int);
     int x, y ;
     int maxwidth;
     int width_str;
@@ -1528,7 +1759,7 @@ int get_string_str (char *tekst, char *legal, int maxlength, int width0, char *k
 
     moveto (x + 10, y + 2) ;
 
-    CUR=MVCUR; MVCUR=noop;
+    LCUR=MVCUR; MVCUR=noop;
     if (width0 == 0)
     {
         width = (float)(getmaxx() - TTF_text_len(kom_str) - ttf_width_w) / ttf_width_w;
@@ -1539,7 +1770,7 @@ int get_string_str (char *tekst, char *legal, int maxlength, int width0, char *k
     zn = editstring(tekst, legal, maxlength, width, FALSE, 1, TRUE, 2, 4) ;  //4,3
 
     komunikat(k);
-    MVCUR=CUR;
+    MVCUR=LCUR;
 
     return zn==27 ? 0 : 1;
 }
@@ -1548,7 +1779,7 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
 /*------------------------------------------------------------------------*/
 {
    int zn, k;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
    int x, y ;
    int maxwidth;
    int width_w;
@@ -1561,7 +1792,7 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
    k=Komunikat_R;
    komunikat(kom);
    Get_Current_Pos (&x, &y) ;
-   moveto (x + 5 , y + 2) ;
+   moveto (x + 5 , y + 3) ;   //2
 
 #ifdef ALLEGRO5
 #ifndef MACOS
@@ -1573,7 +1804,7 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
     position_mouse(x + 10, y + HEIGHT + 20);
 #endif
 
-   CUR=MVCUR; MVCUR=noop;
+   LCUR=MVCUR; MVCUR=noop;
    if (width0 == 0)
    {
 	   width = (float)(getmaxx() - 27*WIDTH - TTF_text_len(get_komunikat_ptr(kom)) - ttf_width_w) / ttf_width_w; // width_w;
@@ -1583,7 +1814,7 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
    zn = editstring(tekst, legal, maxlength, width, FALSE, 1, TRUE, 2, 4) ;
    
    komunikat(k);
-   MVCUR=CUR;
+   MVCUR=LCUR;
 
 #ifdef ALLEGRO5
 #ifndef MACOS
@@ -1602,17 +1833,17 @@ int get_string1 (char *tekst, char *legal, int maxlength, int width0, int kom, i
 /*---------------------------------------------------------------------------------------*/
 {
    int zn, k;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
    float width;
 
    k=Komunikat_R;
    komunikat(kom);
    moveto (x + 5, y + 2) ;
-   CUR=MVCUR; MVCUR=noop;
+   LCUR=MVCUR; MVCUR=noop;
    width=width0;
    zn = editstring(tekst, legal, maxlength, width, FALSE,0, TRUE, 2, 4) ;  //4,3
    komunikat(k);
-   MVCUR=CUR;
+   MVCUR=LCUR;
    return zn==27 ? 0 : 1;
 }
 
@@ -1620,18 +1851,18 @@ int get_string2 (char *tekst, char *legal, int maxlength, int width, int kom, in
 /*-------------------------------------------------------------------------------------------------------*/
 {
    int zn, k;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
    int lpos_cur;
 
    k=Komunikat_R;
    komunikat(kom);
    moveto (x, y) ;
-   CUR=MVCUR; MVCUR=noop;
+   LCUR=MVCUR; MVCUR=noop;
    lpos_cur = *lpos_cur0;
    zn = editstring1(tekst, legal, maxlength, width, FALSE, 1, &lpos_cur) ;
    *lpos_cur0 = lpos_cur;
    komunikat(k);
-   MVCUR=CUR;
+   MVCUR=LCUR;
    return zn;
 }
 
@@ -1648,7 +1879,7 @@ int  read_esc1 (char  *tekst,int lmax,int kom)
 int  read_esc(char  *tekst,int lmax,int kom)
 /*---------------------------------------------*/
 {  int zn,k;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
    int x, y ;
    float width;
 
@@ -1656,11 +1887,11 @@ int  read_esc(char  *tekst,int lmax,int kom)
    komunikat (kom) ;
    Get_Current_Pos (&x, &y) ;
    moveto (x, y + 3 ) ; //2
-   CUR=MVCUR; MVCUR=noop;
+   LCUR=MVCUR; MVCUR=noop;
    width = (float)lmax;
    zn = editstring(tekst, "", lmax, width, FALSE,1, TRUE, 2, 4); //4, 3);
    komunikat(k);
-   MVCUR=CUR;
+   MVCUR=LCUR;
    if (zn==324) return 2;
     else return zn==27 ? 0 : 1;
 }
@@ -1669,7 +1900,7 @@ int  read_esc(char  *tekst,int lmax,int kom)
 int  read_esc_legal (char *tekst, char *legal, int lmax,int kom)
 /*---------------------------------------------*/
 {  int zn,k;
-   void (*CUR)(int ,int);
+   void (*LCUR)(int ,int);
    int x, y ;
    int fwlen;
    float width;
@@ -1678,13 +1909,13 @@ int  read_esc_legal (char *tekst, char *legal, int lmax,int kom)
    komunikat (kom);
    Get_Current_Pos (&x, &y) ;
    moveto (x, y + 3) ;
-   CUR=MVCUR; MVCUR=noop;
+   LCUR=MVCUR; MVCUR=noop;
 
    width = (float)lmax;
 
    zn = editstring(tekst, legal, lmax, width, FALSE,1, TRUE, 2, 4); //4, 3);
    komunikat(k);
-   MVCUR=CUR;
+   MVCUR=LCUR;
    return zn==27 ? 0 : 1;
 }
 
@@ -1697,7 +1928,8 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
   int len, wlen, max_len, m_len;
   int inkk, paperk;
   int text_len_pxl;
-  int width_w, width_pxl;
+  int width_w, width_pxl, width_pxl_a;
+  int fpos=0, pos1=-1, pos2=-1;
 
   if (width == 0)
   {
@@ -1709,6 +1941,7 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
 
   text_len_pxl = TTF_text_len(s);
   width_pxl = width * ttf_width_w; // width_w;
+  width_pxl_a = (int)(width) * ttf_width_w;
 
   wlen = utf8len(s);
   if (text_len_pxl > 0)  width = (int)(((float)width_pxl / ((float)text_len_pxl / wlen)) /*+ 0.5*/);
@@ -1737,7 +1970,7 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
 
   m_len=findlentopxl(s, width_pxl);
 
-  outtext_r_e (x/*+DXIL*/, y, m_len, s, FALSE, 2);  //2 is y_4_
+  outtext_r_e (x/*+DXIL*/, y, m_len, width_pxl_a, s, FALSE, FALSE, fpos, pos1, pos2, 2);  //2 is y_4_
 
 
   if (b_add == TRUE) put_add_char (x, y, 0, len, width, width, width_w, wlen, width_pxl, width_pxl, 0, 4, 4);
@@ -1759,6 +1992,9 @@ void outetextxy_s(int x, int y, int maxlength, int width, char *s,
 	BOOL b_add;
 	int len;
 	int inkk, paperk;
+    int fpos=0, pos1=-1, pos2=-1;
+
+    int width_pxl_a = (int)(width) * ttf_width_w;
 
 	if (s < 255)
 		return;
@@ -1792,7 +2028,7 @@ void outetextxy_s(int x, int y, int maxlength, int width, char *s,
 		width -= 2;
 		b_add = TRUE;
 	}
-	outtext_r_e(x, y, min(len, width), s, FALSE, 2);  //2 is y_4_
+	outtext_r_e(x, y, min(len, width), width_pxl_a, s, FALSE, FALSE, fpos, pos1, pos2, 2);  //2 is y_4_
 	int width_w = ttf_width_w;
 	int wlen = utf8len(s);
 

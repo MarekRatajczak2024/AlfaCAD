@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-extern void outtext_r_e (int , int , int , char *, BOOL, int y_4_);
+extern void outtext_r_e (int , int , int , int, char *, BOOL, BOOL, int, int, int, int y_4_);
 extern int Get_Key (void);
 extern int Get_Legal_Key (char *);
 extern int getkey(void);
