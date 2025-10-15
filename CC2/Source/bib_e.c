@@ -6063,7 +6063,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
     L1.x1=ptrs_vector->x1;
     L1.y1=ptrs_vector->y1;
 
-    if (((ptrs_vector->style==4) || (ptrs_vector->style==7)) && (!Check_if_Equal(view_vector_scale, 1.0)))
+    if (((ptrs_vector->style==4) || (ptrs_vector->style==7) || (ptrs_vector->style==18)) && (!Check_if_Equal(view_vector_scale, 1.0)))
     {
         Scale_Point (view_vector_scale, view_vector_scale ,ptrs_vector->x1,ptrs_vector->y1,ptrs_vector->x2,ptrs_vector->y2,&x2,&y2);
         L1.x2=x2;  L1.y2=y2;
@@ -6106,10 +6106,17 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             if (ptrs_vector->property_no>0) sprintf(&Vtxt.text, "#%d", ptrs_vector->property_no);
            break;
         case 4:
+        case 18:
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            if (L1.x1<=L1.x2) n=1; else n=-1;
+            if (L1.y1>L1.y2) {
+                if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
+            }
+            else
+            {
+                if (L1.x1 <= L1.x2) n = 1; else n = -1;
+            }
 
             Vtxt.x=(L1.x1+L1.x2)/2-((n*ra/4)*koc1);
             Vtxt.y=(L1.y1+L1.y2)/2-((n*ra/4)*kos1);
@@ -6129,7 +6136,14 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            if (L1.x1<=L1.x2) n=1; else n=-1;
+            //if (L1.x1<=L1.x2) n=1; else n=-1;
+            if (L1.y1>L1.y2) {
+                if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
+            }
+            else
+            {
+                if (L1.x1 <= L1.x2) n = 1; else n = -1;
+            }
 
             Vtxt.x=(float)(L1.x1+L1.x2)/2.f-((n*ra/4)*koc1);
             Vtxt.y=(float)(L1.y1+L1.y2)/2.f-((n*ra/4)*kos1);
@@ -6945,6 +6959,21 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             break;
         case 4:  //force
+        case 18: //slab force
+            if (ptrs_vector->style==18)  //slab force
+            {
+                load_ellipse.kolor=ptrs_vector->kolor;
+                load_ellipse.warstwa=ptrs_vector->warstwa;
+                load_ellipse.widoczny=ptrs_vector->widoczny;
+                load_ellipse.translucency=51;
+                load_ellipse.typ=64;
+                load_ellipse.x=ptrs_vector->x1;
+                load_ellipse.y=ptrs_vector->y1;
+                load_ellipse.angle=0;
+                load_ellipse.rx=(float)(df_psize*3.);
+                load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                rysuj_obiekt_((void*)&load_ellipse, mode, kolor);
+            }
 
             w.atrybut=ptrs_vector->atrybut;
             w.warstwa=ptrs_vector->warstwa;
@@ -9940,6 +9969,7 @@ BOOL move_vector_inside(T_PixelTVal *PolyPoints, int v_number, int flag)
 
 		break;
 	case 4:  //last vector
+    case 18: //slab force
 
 		vector_middle = perpend_intersect(PolyPoints[6], PolyPoints[7], PolyPoints[0], PolyPoints[1], center);
 
@@ -11170,7 +11200,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                if ((ptrs_vector->atrybut != Ausuniety) &&
                    (ptrs_vector->atrybut != Abad))
                {
-                   if ((ptrs_vector->style > 9) && ((ptrs_vector->style < 16) || (ptrs_vector->style == 17))) bitmap_vector_exist = TRUE;
+                   if ((ptrs_vector->style > 9) && ((ptrs_vector->style < 16) /*|| (ptrs_vector->style > 17)*/)) bitmap_vector_exist = TRUE;  // (ptrs_vector->style > 17 is not practical due to covering by gradients
 
                    if (!(ptrs_vector->widoczny = Vector_Selected(ptrs_vector))) break;
 

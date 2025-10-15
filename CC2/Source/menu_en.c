@@ -1485,7 +1485,9 @@ char* vector_style_tab[] = { u8"rigid-rigid",u8"rigid-pin",u8"pin-rigid",u8"pin-
                              u8"vertical projection of a horizontal load",
                              u8"thermal load",
                              u8"node size (radius)",
-                             u8"slab Load","?","?","?","?","?","?","?",
+                             u8"slab surface Load",
+                             u8"slab concentrated Force load",
+                             u8"?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
@@ -1583,12 +1585,12 @@ char* objects[] = { u8"Line",u8"Line 3D",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8
 #define _FILLING_ u8"filling"
 
 char *vector_txt[]={u8"Vector: rigid-rigid",u8"Vector: rigid-pin",u8"Vector: pin-rigid",u8"Vector: pin-pin",u8"Vector: Force",u8"Vector: Moment",u8"Vector: -Moment",
-                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)", u8"slab Load"};
+                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)", u8"slab surface Load", u8"slab concentrated slab force Load"};
 
 //char *point_txt[]={"Simple","Base point",'','','','','',"Junction","pin point",'','','',"Fixed","fixed L","fixed R","fixed U","Pinned","pinned L","pinned R","pinned U","fixed Roller","fixed roller L","fixed roller R","fixed roller U",
 //     "pinned rOller","pinned roller L","pinned roller R","pinned roller U"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'V', L'H', L'Q', L'R', 'S'};
+unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
 unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'C', ' ', ' ', ' ',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', L'B', L'V', ' '};
 char *object_txt[]={u8"Image",u8"Line",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Solid",u8"Point",u8"Block",u8"Solid Arc",u8"Elliptical Arc",u8"Ellipse",u8"Filled Ellipse",u8"Bezier Spline",u8"Vector",""};
@@ -1801,7 +1803,8 @@ static POLE pmVector[] = {
           {u8"slab Space\0\0",L'S',844,NULL},
           {u8"slab Wall\0\0",L'W',843,NULL},
           {u8"slab Zone\0\0",L'Z',842,NULL},
-          {u8"slab Load\0\0",L'L',845,&mLoad_Char},
+          {u8"slab surface load\0\0",L'Q',845,&mLoad_Char},
+          {u8"slab concentrated force Load\0\0",L'L',856,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -3351,7 +3354,7 @@ static POLE pmPrecision[] = {
        {u8"Stress precision\0 \0",L'S',800,NULL},
        };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 
 static POLE pmThermal[] = {
@@ -3376,21 +3379,28 @@ static POLE pmStaticColors[] = {
        {u8"֎Vibrations\0other\0",           L'V',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"Linear load\0 \0",L'L',733,NULL},
 	   {u8"Surface load\0 \0",L'S',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"stress in Steel/timber\0 \0",L'S',775,NULL},
 	   {u8"stress in reinforced Concrete\0 \0",L'C',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
+static POLE pmResetMagnitude[] = {
+       {u8"SI\0 \0",L'S',858,NULL},
+	   {u8"Imperial\0 \0",L'I',859,NULL},
+	  };
+
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"Force rescaling\0 \0",                       L'F',727,NULL},
@@ -3410,9 +3420,10 @@ static POLE pmMagnitude[] = {
        {u8"Exaggeratation of vibrations\0 \0",          L'E',814,NULL},
        {u8"Precision\0 \0",                             L'P',184,NULL},  //&mPrecision},
        {u8"Colors\0 \0",                                L'C',495,NULL}, //&mStaticColors},
+       {u8"reset rescaling\0 \0",                       L'I',860,&mResetMagnitude},
 };
 
-static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS | NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Format\0 A4\0     ",'F',96,&mFormat_r},
@@ -3451,6 +3462,17 @@ static char config_sectors[11][32] =
 	"Zone style",
 	"Reversed numbering",
 };
+
+#define _Yes_ u8"Yes"
+#define _No_ u8"No"
+#define _YES_ 'Y'
+#define _yes_ 'y'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _reset_mgnitude_to_ u8"Would you like to restore the default scaling factors for the measurement system:"
+#define _SI_ u8"SI"
+#define _IMP_ u8"Imperial"
 
 #endif
 

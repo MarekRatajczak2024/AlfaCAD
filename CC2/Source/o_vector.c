@@ -73,7 +73,7 @@ static void (*cursor_on)(double ,double)=out_cur_on;
 static void (*cursor_off)(double ,double)=out_cur_off;
 static BOOL add_vector (BOOL b_strwyj) ;
 
-TMENU mVector={23,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector,NULL,NULL} ;
+TMENU mVector={24,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector,NULL,NULL} ;
 
 static TMENU mVector_Con={1,0,0,15,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector_Con,NULL,NULL} ;
 
@@ -82,14 +82,14 @@ TMENU mForce_Displacement_style= {2, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmn
 TMENU mMoment_Rotation_style= {4, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmMoment_Rotation_style, NULL,NULL} ;
 TMENU mLoad_style= {5, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLoad_style, NULL,NULL} ;
 
-ESTR eVe, eVf, eVm, eVd, eVr, eVt, eVt1, eVn;
+ESTR eVe, eVf, eVf1, eVm, eVd, eVr, eVt, eVt1, eVn;
 
 double radius_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double depth_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double thermal_magnitude=5.0; //units per mm  default 1 Celsius per 1 mm on drawing paper
-double load_magnitude=10.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
-double flood_magnitude=10.0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
-double force_magnitude=10.0; //units per mm  default 10kN force per 1 mm on drawing paper
+double load_magnitude=1.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+double flood_magnitude=1.0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+double force_magnitude=1.0; //units per mm  default 10kN force per 1 mm on drawing paper
 double moment_magnitude=10.0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 double displacement_magnitude=1.0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
 double rotation_magnitude=0.001; //units per mm  default 0.001 rad desplacement per 1 mm radius on drawing paper
@@ -97,12 +97,22 @@ double rotation_magnitude=0.001; //units per mm  default 0.001 rad desplacement 
 double radius_magnitude0=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double depth_magnitude0=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double thermal_magnitude0=5.0; //units per mm  default 1 Celsius per 1 mm on drawing paper
-double load_magnitude0=10.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+double load_magnitude0=1.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
 double flood_magnitude0=1.0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
-double force_magnitude0=10.0; //units per mm  default 10kN force per 1 mm on drawing paper
+double force_magnitude0=1.0; //units per mm  default 10kN force per 1 mm on drawing paper
 double moment_magnitude0=10.0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 double displacement_magnitude0=1.0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
 double rotation_magnitude0=0.001; //units per mm  default 0.001 rad desplacement per 1 mm radius on drawing paper
+
+double radius_magnitude_imp0=0.04; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
+double depth_magnitude_imp0=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
+double thermal_magnitude_imp0=5.0; //units per mm  default 1 Celsius per 1 mm on drawing paper
+double load_magnitude_imp0=5.0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+double flood_magnitude_imp0=0.15; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+double force_magnitude_imp0=100.0; //units per mm  default 10kN force per 1 mm on drawing paper
+double moment_magnitude_imp0=85000.0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
+double displacement_magnitude_imp0=0.04; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
+double rotation_magnitude_imp0=0.001; //units per mm  default 0.001 rad desplacement per 1 mm radius on drawing paper
 
 static ESTR *eVa;
 static int set_arc_stage=0;
@@ -115,7 +125,7 @@ static char *format2_float2="%#9.4lf\0%#9.4lf;%#9.4lf";
 
 enum MENU_ID {IDM_UNDO = 0, IDM_RIGID_RIGID, IDM_RIGID_PIN, IDM_PIN_RIGID, IDM_PIN_PIN, IDM_FORCE, IDM_MOMENT, IDM_MOMENT_REV,
         IDM_DISPLACEMENT, IDM_ROTATION, IDM_ROTATION_REV, IDM_TRAPEZIUM_Y, IDM_TRAPEZIUM_X, IDM_TRAPEZIUM_N, IDM_TRAPEZIUM_H, IDM_TRAPEZIUM_V, IDM_THERMAL, IDM_NODE,
-        IDM_SLAB_PLATE, IDM_SLAB_SPACE, IDM_SLAB_WALL, IDM_SLAB_ZONE, IDM_SLAB_LOAD} ;
+        IDM_SLAB_PLATE, IDM_SLAB_SPACE, IDM_SLAB_WALL, IDM_SLAB_ZONE, IDM_SLAB_LOAD, IDM_SLAB_FORCE} ;
 
 /*-----------------------------------------------------------------------*/
 double line2len(AVECTOR *V)
@@ -189,6 +199,7 @@ void set_magnitude(AVECTOR *V)
             eVa=&eVe;
             break;
         case 4:
+        case 18:
             V->magnitude1=(float)(line2len(V)*force_magnitude);
             eVa=NULL;
             break;
@@ -248,6 +259,7 @@ void set_length_angle2(AVECTOR *V)
             eVa=&eVe;
             break;
         case 4:
+        case 18:
             eVa=NULL;
             break;
         case 5:
@@ -321,6 +333,34 @@ void out_parametry_vector (LINIA *L, AVECTOR *V)
                 sprintf (eVf.st, format_float, l) ;
             }
             Out_Edited_Draw_Param ((ESTR *)&eVf, TRUE) ;
+            break;
+        case 18:
+            l=PL.dl*force_magnitude;
+            if (eVf1.st == NULL) break;
+            eVf1.st [0] = '\0' ;
+            /*
+            if (!orto)
+            {
+                angle_l=get_angle_l();
+                if (angle_l!=0)
+                {
+                    PL_kat=PL.kat-angle_l;
+                    if (PL_kat<0) PL_kat+=360;
+                }
+                else
+                {
+                    PL_kat=PL.kat;
+                }
+                sprintf (eVf.st, format_float2, l, PL_kat);
+            }
+            else
+            {
+             */
+                sprintf (eVf1.st, format_float, l) ;
+                /*
+            }
+                 */
+            Out_Edited_Draw_Param ((ESTR *)&eVf1, TRUE) ;
             break;
         case 5:
         case 6:
@@ -415,6 +455,14 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
     int grubosc;
     PLINIA PL;
     double angle1, angle2;
+    int orto_bak;
+
+    if (V->style==18)  //slab force
+    {
+        orto_bak=orto;
+        orto=1;
+    }
+
 
     if (L == NULL)
     {
@@ -439,12 +487,28 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
 
     if (orto)
     {
+        if (V->style==18)  //slab force
+        {
+            L->x2=L->x1;
+            if (L->y2==L->y1)
+                L->y2+=0.0001f;
+        }
+
         L1.x1=L->x1;
         L1.y1=L->y1;
         L1.x2=L->x2;
         L1.y2=L->y2;
+
         Orto_Dir =  Set_Orto_Dir (L, Orto_Dir);
+
+        if (V->style==18)  //slab force
+        {
+            if (Orto_Dir==I_Orto_NoDir)
+                Orto_Dir=I_Orto_YDir;
+        }
+
         orto_l(&L1, &Orto_Dir);
+
         switch (V->style)
         {
             case 5:
@@ -526,6 +590,7 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
             if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
             break;
         case 4:
+        case 18:
         case 7:
             out_parametry_vector(L, V);
             break;
@@ -550,6 +615,11 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
             break;
         default:
             break;
+    }
+
+    if (V->style==18)  //slab force
+    {
+        orto=orto_bak;
     }
 }
 
@@ -1442,6 +1512,10 @@ int vector_command_proc (int ev_nr)
           VectorG.style=17;  //real
           ret_val = PL_MODE_END ;
           break;
+      case IDM_SLAB_FORCE:
+          VectorG.style=18;  //real, like style 4 but vertical
+          ret_val = PL_MODE_END ;
+          break;
     default :
       ret_val = PL_MODE_CONTINUE ;
       break ;
@@ -1496,6 +1570,7 @@ static BOOL add_vector (BOOL b_strwyj)
                 VectorG.r=0;
                 break;
             case 4:  //force
+            case 18: //slab force
                 VectorG.r=0;
                 break;
             case 5:  //moment
@@ -1638,6 +1713,17 @@ void Resize_Vector (void)
         switch (ptrs_vector->style)
         {
             case 4:
+                parametry_lini((LINIA*)ptrs_vector, &PL);
+                kat = PL.kat;
+                kos = sin(PL.kat * Pi / 180);
+                koc = cos(PL.kat * Pi / 180);
+                x0 = ptrs_vector->x1 + (ptrs_vector->magnitude1 / force_magnitude);
+                y0 = ptrs_vector->y1;
+                Rotate_Point(kos, koc, ptrs_vector->x1, ptrs_vector->y1, x0, y0, &x2, &y2);
+                ptrs_vector->x2=(float)x2;
+                ptrs_vector->y2=(float)y2;
+                break;
+            case 18:
                 parametry_lini((LINIA*)ptrs_vector, &PL);
                 kat = PL.kat;
                 kos = sin(PL.kat * Pi / 180);
@@ -1893,6 +1979,50 @@ int Vf1_n (BOOL b_graph_value)
     if (m > -3.4E38 && m < 3.4E38)
     {
         VectorG.magnitude1 = (float)m ;
+        strwyj = 1;
+        return 1 ;
+    }
+    else
+    {
+        ErrList (2) ;
+        return 0 ;
+    }
+}
+
+int Vf1_1_n (BOOL b_graph_value)
+/*--------------------------------*/
+{
+    double m, l, k;
+    double df_x, df_y ;
+    PLINIA PL ;
+
+    b_graph_value = b_graph_value ;
+    if (eVf1.val_no < 1)
+    {
+        return 0 ;
+    }
+    m = eVf1.values [0] ;
+    if (m > -3.4E38 && m < 3.4E38)
+    {
+        if (TRUE == b_graph_value)
+        {
+            Get_Graph_Values_Cur_Pos (&df_x, &df_y) ;
+            LiniaG.x2 = df_x ;
+            LiniaG.y2 = df_y ;
+        }
+
+        parametry_linior (&LiniaG, &PL) ;
+        k = PL.kat ;
+
+        l = m/force_magnitude;
+        k = Grid_to_Rad (k) ;
+        Lx2 = LiniaG.x1 + l * cos (k) ;
+        Ly2 = LiniaG.y1 + l * sin (k) ;
+
+        VectorG.x2=Lx2;
+        VectorG.y2=Ly2;
+
+        VectorG.magnitude1 = (float)fabs(m) ;
         strwyj = 1;
         return 1 ;
     }
@@ -2202,6 +2332,15 @@ void ini_vector_estr(void)
     eVf.ESTRF=Vf_n;
     eVf.extend = 0;
 
+    eVf1.x=maxX/2 + 5 ;
+    eVf1.y= ESTR_Y;
+    eVf1.lmax=12;
+    eVf1.val_no_max	= 1 ;
+    eVf1.mode	= GV_DIST	;
+    eVf1.format = format_float;
+    eVf1.ESTRF=Vf1_1_n;
+    eVf1.extend = 0;
+
     eVm.x=maxX/2 + 5 ;
     eVm.y= ESTR_Y;
     eVm.lmax=12;
@@ -2351,6 +2490,12 @@ static void redcr(char typ)
              parametry_lini(&LiniaG, &PL);
              sprintf (eVf.st, format_float2, VectorG.magnitude1, PL.kat);
              Out_Edited_Draw_Param ((ESTR *)&eVf, TRUE) ;
+             break;
+         case 18: //slab force
+             npv=dodajstr(&eVf1);
+             parametry_lini(&LiniaG, &PL);
+             sprintf (eVf1.st, format_float, VectorG.magnitude1);
+             Out_Edited_Draw_Param ((ESTR *)&eVf1, TRUE) ;
              break;
          case 5:  //moment
          case 6:
@@ -2531,7 +2676,7 @@ static void poczatekV (double X0, double Y0)
 
             CUR_OFF(X, Y);
             CUR_ON(X, Y);
-            if ((VectorG.style > 3) && (VectorG.style < 10)) {
+            if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style == 18)) {
                 redcr(1);
                 return;
             }
@@ -2593,7 +2738,8 @@ static void poczatekV (double X0, double Y0)
 
              CUR_OFF(X, Y);
              CUR_ON(X, Y);
-             if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style==16)){
+             if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style>16))  //including slab load and slab force
+             {
                  redcr(1);
                  return;
              }

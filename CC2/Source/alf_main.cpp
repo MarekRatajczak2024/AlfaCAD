@@ -2188,7 +2188,7 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
 	unicode.ReleaseBuffer();
 	
 
-	LPWSTR windowTitle = __EDIT_MULTILINE__;
+	LPWSTR windowTitle = (LPWSTR)__EDIT_MULTILINE__;
 
 	if (*single == 0) memmove(&lpRect, &lpRect_edit, sizeof(RECT));
 	else memmove(&lpRect, &lpRect_single, sizeof(RECT));
@@ -2996,7 +2996,7 @@ int Get_Str_From_Clip(char *ptrsz_buf,
 	const char *value_p;
 	FILE* fp;
 	char buffer[1024]; // Adjust buffer size as needed
-	char* content = (char*)malloc(1);
+	char* content = (char*)malloc(10);
 	size_t content_len = 0;
 
 	fp = popen("pbpaste", "r");
@@ -3007,7 +3007,7 @@ int Get_Str_From_Clip(char *ptrsz_buf,
 
 	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
 		size_t buffer_len = strlen(buffer);
-		content = (char*)realloc(content, content_len + buffer_len + 1);
+		content = (char*)realloc(content, content_len + buffer_len + 10);
 		if (content == NULL) {
 			perror("Memory allocation failed");
 			pclose(fp);

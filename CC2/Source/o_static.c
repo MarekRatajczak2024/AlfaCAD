@@ -59,6 +59,7 @@ extern BOOL global_any_choice;
 extern void LockMouse(void);
 extern void FreeMouse(void);
 extern void select_blok(void);
+extern void select_blok_items(int items);
 extern void redcrsb(char typ, int n);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
 extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
@@ -132,8 +133,23 @@ extern void enable_F11(void);
 extern void Get_Limits(long_long off, long_long offk, int atrybut, double *xmin, double *xmax, double *ymin, double *ymax);
 extern void out_circle_cur_on(double X, double Y);
 
+extern void *obiekt_wybrany_select (unsigned int Bobjects);
+
 extern int theta_, sigma_eq_, epsilon_;
 
+
+/*
+extern int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
+                                         double fck, double fcd, double fyd,
+                                         double eta, double lambda, double Es,
+                                         double *As, double *As_prime, double *rho, double *rho_prime,
+                                         double *total_rho, double *sigma_c_max);
+
+extern int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
+                                        double fyk, double fyd, double fck, double fcd,
+                                        double *As, double *As_prime, double *rho, double *rho_prime,
+                                        double *total_rho, double *sigma_c_max);
+*/
 extern BOOL Semaphore;
 
 extern double thermal_precision;
@@ -153,34 +169,43 @@ extern double flood_magnitude;
 BOOL PINNABLE=TRUE;
 
 double n_magnitude=1.0; //10;
-double v_magnitude=0.1; //10;
-double m_magnitude=5.0; //10;
-double d_magnitude=1;
-double r_magnitude=0.1; //10;
+double v_magnitude=10.0; //10;
+double m_magnitude=10.0; //10;
+double d_magnitude=10.0;
+double r_magnitude=10.0; //10;
 double rm_magnitude=50.0; //0.001;
 double s_magnitude=5.0; //10;  //stress
 double src_magnitude=1.0; //stress in reinforced concrete
 double q_magnitude=250.0; //vibrations
-
-double sp_magnitude=0.5;
-double sm_magnitude=0.5;
-
-double p_magnitude=0.2; //reinforcing percentage % per mm, 4%/0.2=20mm on drawing
+double sp_magnitude=1.0;
+double sm_magnitude=1.0;
+double p_magnitude=1.0; //reinforcing percentage % per mm, 4%/0.2=20mm on drawing
 
 double n_magnitude0=1.0; //10;
-double v_magnitude0=0.1; //10;
-double m_magnitude0=5.0; //10;
-double d_magnitude0=1;
-double r_magnitude0=0.1; //10;
+double v_magnitude0=10.0; //10;
+double m_magnitude0=10.0; //10;
+double d_magnitude0=10.0;
+double r_magnitude0=10.0; //10;
 double rm_magnitude0=50.0; //0.001;
 double s_magnitude0=5.0; //10;  //stress
 double src_magnitude0=1.0; //stress in reinforced concrete
 double q_magnitude0=250.0; //vibrations
+double sp_magnitude0=1.0;
+double sm_magnitude0=1.0;
+double p_magnitude0=1.0; //reinforcing percentage
 
-double sp_magnitude0=0.5;
-double sm_magnitude0=0.5;
-
-double p_magnitude0=0.2; //reinforcing percentage
+double n_magnitude_imp0=0.2;
+double v_magnitude_imp0=2.0;
+double m_magnitude_imp0=80.0;
+double d_magnitude_imp0=0.4;
+double r_magnitude_imp0=2.0;
+double rm_magnitude_imp0=450.0;
+double s_magnitude_imp0=0.75;  //stress
+double src_magnitude_imp0=0.75; //stress in reinforced concrete
+double q_magnitude_imp0=250.0; //vibrations
+double sp_magnitude_imp0=0.75;
+double sm_magnitude_imp0=0.75;
+double p_magnitude_imp0=1.0; //reinforcing percentage
 
 double def_precision=0.01;
 PROP_PRECISIONS SI_precisions={0.1, 0.01, 0.01, 0.01, 0.1, 0.1, 0.001, 0.0001, 0.000000000000001};
@@ -1853,6 +1878,1143 @@ BOOL check_if_not_virtual(double x, PLINIA PL, int rep_element_no)
     else return FALSE;
 }
 
+static void do_nothing(void)
+{
+    return;
+}
+
+int solve_quadratic_equation(double a, double b, double c, double *root1, double *root2)
+{
+    double discriminant, realPart, imagPart;
+    discriminant = b * b - 4 * a * c;
+    if (discriminant > 0) {
+        *root1 = (-b + sqrt(discriminant)) / (2 * a);
+        *root2 = (-b - sqrt(discriminant)) / (2 * a);
+        ////printf("root1 = %.2lf and root2 = %.2lf\n", root1, root2);
+    }
+    else if (discriminant == 0) {
+        *root1 = *root2 = -b / (2 * a);
+        ////printf("root1 = root2 = %.2lf\n", root1);
+    }
+    else {
+        realPart = -b / (2 * a);
+        imagPart = sqrt(-discriminant) / (2 * a);
+        ////printf("root1 = %.2lf+%.2lfi and root2 = %.2lf-%.2lfi\n", realPart, imagPart, realPart, imagPart);
+        return 0;
+    }
+    return 1;
+}
+
+/**
+ * Eurocode 2 procedure for RC section under combined axial force and bending to calculate
+ * reinforcement areas (As, As_prime), ratios (rho, rho_prime, total_rho), and pseudo-elastic
+ * compressive stress (sigma_c_max). Handles tension (positive N) and compression (negative N).
+ * Assumes x = c for doubly reinforced calculations. Handles pure compression (M = 0) correctly.
+ * Does not enforce minimum reinforcement unless use_min_reinf is true.
+ * Checks both roots of the quadratic equation in singly reinforced case for validity.
+ *
+ * Parameters:
+ *   M: Bending moment (Nm)
+ *   N: Axial force (N, positive for tension, negative for compression)
+ *   h: Section height (m)
+ *   b: Section width (m)
+ *   c: Concrete cover (m, same top/bottom)
+ *   fck: Characteristic concrete compressive strength (Pa)
+ *   fcd: Design concrete compressive strength (Pa)
+ *   fyd: Design steel yield strength (Pa)
+ *   eta: Concrete stress block factor
+ *   lambda: Concrete stress block factor
+ *   Es: Steel modulus of elasticity (Pa)
+ *   use_min_reinf: Flag to enforce minimum reinforcement
+ *   As: Pointer to store tension rebar area (m²)
+ *   As_prime: Pointer to store compression rebar area (m²)
+ *   rho: Pointer to store tension reinforcement ratio
+ *   rho_prime: Pointer to store compression reinforcement ratio
+ *   total_rho: Pointer to store total reinforcement ratio (rho + rho_prime)
+ *   sigma_c_max: Pointer to store pseudo-elastic compressive stress (Pa)
+ *
+ * Returns:
+ *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
+ */
+int calculate_rebars_doubly_reinforced(double M, double N, double h, double b, double cc,
+                                       double fck, double fcd, double fyd, double eta, double lambda,
+                                       double Es, int use_min_reinf, double *As, double *As_prime,
+                                       double *rho, double *rho_prime, double *total_rho, double *sigma_c_max) {
+    double d = h - cc; // Effective depth
+    double d_prime = cc; // Compression rebar depth
+    double Ecm = 22.0 * pow((fck * 1e-6 + 8.0) / 10.0, 0.3) * 1e9; // Pa
+    double n = Es / Ecm; // Modular ratio
+    double fctm = 0.3 * pow(fck * 1e-6, 2.0 / 3.0) * 1e6; // Pa
+    double As_min = use_min_reinf ? fmax(0.26 * fctm / fyd * b * d, 0.0013 * b * d) : 0.0;
+
+    // Pure compression case (M = 0)
+    if (M == 0) {
+        *As = fmax(0.0, As_min);
+        *As_prime = 0.0;
+        *rho = *As / (b * d);
+        *rho_prime = 0.0;
+        *total_rho = *rho;
+        double A_g = b * h;
+        *sigma_c_max = -N / A_g; // Use gross section area
+        *sigma_c_max = fabs(*sigma_c_max); // Magnitude
+        printf("Pure compression: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+               *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+        if (*sigma_c_max > eta * fcd) {
+            printf("Warning: sigma_c_max (%.2f MPa) exceeds eta*fcd (%.2f MPa).\n",
+                   *sigma_c_max / 1e6, eta * fcd / 1e6);
+        }
+        return 0;
+    }
+
+    // Try singly reinforced
+    double aa = eta * fcd * lambda * b;
+    double c2 = lambda / 2.0;
+    double A = -aa * c2;              // -\eta f_cd \lambda b (\lambda / 2)
+    double B = aa * d;                // \eta f_cd \lambda b d
+    double C = -N * (d - h / 2.0) - M; // Include axial force moment
+    double D = B * B - 4 * A * C;
+    double N_abs = fabs(N);
+    double e = (N_abs > 0) ? fabs(M) / N_abs : INFINITY;
+    //double h6 = h / 6.0;
+    double h4 = h / 4.0;  // Relaxed eccentricity threshold
+    if (D >= 0) {
+        double a1 = (-B + sqrt(D)) / (2 * A); // Smaller root
+        double a2 = (-B - sqrt(D)) / (2 * A); // Larger root
+        double x1 = a1 / lambda;
+        double x2 = a2 / lambda;
+        double As1 = -1.0, As2 = -1.0;
+
+        // Check smaller root
+        if (x1 > 0 && x1 <= h) {
+            As1 = (eta * fcd * a1 * b - (-N)) / fyd;
+        }
+        // Check larger root
+        if (x2 > 0 && x2 <= h) {
+            As2 = (eta * fcd * a2 * b - (-N)) / fyd;
+        }
+
+        // Select valid root with non-negative As
+        if (As1 >= 0 && (As2 < 0 || As1 <= As2 || x2 > h)) {
+            *As = As1;
+            double x = x1;
+            *As_prime = 0.0;
+            *rho = *As / (b * d);
+            *rho_prime = 0.0;
+            *total_rho = *rho;
+            // Check for compression-dominated case
+            if (*rho < 0.005 || e <= h4) {
+                double A_g = b * h;
+                double I_g = b * h * h * h / 12.0;
+                *sigma_c_max = N_abs / A_g + 6 * fabs(M) / (b * h * h);
+                *sigma_c_max = fabs(*sigma_c_max);
+                *As = As_min; // Use minimum reinforcement
+                *rho = *As / (b * d);
+                *total_rho = *rho;
+                printf("Compression-dominated (singly reinforced): M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            } else {
+                double m = n * (*rho);
+                double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+                double A_cr = b * x + m * b * d;
+                *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+                *sigma_c_max = fabs(*sigma_c_max);
+                printf("Singly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            }
+            if (*total_rho > 0.04) {
+                printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 4%%.\n", *total_rho * 100);
+            }
+            if (*sigma_c_max > eta * fcd) {
+                printf("Warning: sigma_c_max (%.2f MPa) exceeds eta*fcd (%.2f MPa).\n",
+                       *sigma_c_max / 1e6, eta * fcd / 1e6);
+            }
+            return 0;
+        } else if (As2 >= 0) {
+            *As = As2;
+            double x = x2;
+            *As_prime = 0.0;
+            *rho = *As / (b * d);
+            *rho_prime = 0.0;
+            *total_rho = *rho;
+            if (*rho < 0.005 || e <= h4) {
+                double A_g = b * h;
+                double I_g = b * h * h * h / 12.0;
+                *sigma_c_max = N_abs / A_g + 6 * fabs(M) / (b * h * h);
+                *sigma_c_max = fabs(*sigma_c_max);
+                *As = As_min;
+                *rho = *As / (b * d);
+                *total_rho = *rho;
+                printf("Compression-dominated (singly reinforced): M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            } else {
+                double m = n * (*rho);
+                double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+                double A_cr = b * x + m * b * d;
+                *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+                *sigma_c_max = fabs(*sigma_c_max);
+                printf("Singly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            }
+            if (*total_rho > 0.04) {
+                printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 4%%.\n", *total_rho * 100);
+            }
+            if (*sigma_c_max > eta * fcd) {
+                printf("Warning: sigma_c_max (%.2f MPa) exceeds eta*fcd (%.2f MPa).\n",
+                       *sigma_c_max / 1e6, eta * fcd / 1e6);
+            }
+            return 0;
+        }
+    }
+
+    // Doubly reinforced with x = c
+    double concrete_force = eta * fcd * lambda * cc * b;
+    double As_term = (concrete_force - (-N)) / fyd; // Updated formula
+    double lever_arm_concrete = h / 2.0 - (lambda * cc) / 2.0;
+    double lever_arm_As_prime = h / 2.0 - cc;
+    double lever_arm_As = d - h / 2.0;
+    double concrete_moment = concrete_force * lever_arm_concrete;
+    double coeff_As_prime = fyd * (lever_arm_As_prime + lever_arm_As);
+    double constant_term = concrete_moment + fyd * lever_arm_As * As_term;
+    *As_prime = (M - constant_term) / coeff_As_prime;
+    *As = *As_prime + As_term;
+
+    if (*As_prime < 0) {
+        *As_prime = 0.0;
+        *As = fmax(As_term, As_min);
+    }
+
+    if (*As < 0) {
+        printf("Error: Negative reinforcement area (As = %.2f mm²).\n", *As * 1e6);
+        return -1;
+    }
+
+    *rho = *As / (b * d);
+    *rho_prime = *As_prime / (b * d);
+    *total_rho = *rho + *rho_prime;
+
+    // Use x = c for stress calculation
+    double x = cc;
+    double m = n * (*rho);
+    double m_prime = n * (*rho_prime);
+    double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+    if (x > d_prime) {
+        I_cr += m_prime * b * d_prime * (x - d_prime) * (x - d_prime);
+    }
+    double A_cr = b * x + m * b * d;
+    if (x > d_prime) {
+        A_cr += m_prime * b * d_prime;
+    }
+    *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+    *sigma_c_max = fabs(*sigma_c_max);
+
+    // Check limits (for warning only)
+    if (*total_rho > 0.04) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 4%%.\n", *total_rho * 100);
+    }
+    if (*sigma_c_max > eta * fcd) {
+        printf("Warning: sigma_c_max (%.2f MPa) exceeds eta*fcd (%.2f MPa).\n",
+               *sigma_c_max / 1e6, eta * fcd / 1e6);
+    }
+
+    printf("Doubly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+           *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+    return 0;
+}
+
+/**
+ * Example usage with provided data
+ */
+int foo_test_9() {
+    double M = 18716.0;   // Nm
+    double N = -58989.64; // N (compression)
+    double h = 0.3;       // m
+    double b = 0.3;       // m
+    double cc = 0.04;      // m
+    double fck = 30e6;    // Pa
+    double fcd = 20e6;    // Pa
+    double fyd = 350e6;   // Pa
+    double eta = 1.0;
+    double lambda = 0.8;
+    double Es = 200e9;    // Pa
+    int use_min_reinf = 0; // Do not enforce minimum reinforcement
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    printf("Test Case (M = 18716 Nm, N = -58989.64 N):\n");
+    int result = calculate_rebars_doubly_reinforced(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                                    use_min_reinf, &As, &As_prime, &rho, &rho_prime,
+                                                    &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    return 0;
+}
+
+int calculate_rebars_column(double M, double N, double h, double b, double cc,
+                            double fck, double fcd, double fyd, double eta, double lambda,
+                            double Es, int use_min_reinf, double *As, double *As_prime,
+                            double *rho, double *rho_prime, double *total_rho, double *sigma_c_max) {
+    // Handle sign convention (positive N for tension, negative for compression)
+    double N_abs = fabs(N);
+    double Ecm = 22.0 * pow((fck * 1e-6 + 8.0) / 10.0, 0.3) * 1e9; // Pa
+    double n = Es / Ecm; // Modular ratio
+    double fctm = 0.3 * pow(fck * 1e-6, 2.0 / 3.0) * 1e6; // Pa
+    double As_min = use_min_reinf ? fmax(0.26 * fctm / fyd * b * (h - cc), 0.0013 * b * (h - cc)) : 0.0;
+
+    // Calculate eccentricity
+    double e = (N_abs > 0) ? fabs(M) / N_abs : INFINITY;
+
+    // Calculate sigma_c_max using uncracked section
+    double A_g = b * h;
+    double I_g = b * h * h * h / 12.0;
+    *sigma_c_max = N_abs / A_g + 6 * fabs(M) / (b * h * h);
+    *sigma_c_max = fabs(*sigma_c_max); // Magnitude
+
+    if (N < 0) {
+        // Column-like (compression)
+        *As = As_min;
+        *As_prime = As_min; // Symmetric for column
+    } else if (N > 0) {
+        // Tendon-like (tension)
+        *As = N_abs / fyd;
+        *As_prime = 0.0;
+        *As = fmax(*As, As_min);
+        *sigma_c_max = 0.0; // Concrete cracked, stress in rebar
+    } else {
+        *As = 0.0;
+        *As_prime = 0.0;
+    }
+
+    *rho = *As / (b * (h - cc));
+    *rho_prime = *As_prime / (b * (h - cc));
+    *total_rho = *rho + *rho_prime;
+
+    // Check limits (for warning only)
+    if (*total_rho > 0.04) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 4%%.\n", *total_rho * 100);
+    }
+    if (*sigma_c_max > eta * fcd) {
+        printf("Warning: sigma_c_max (%.2f MPa) exceeds eta*fcd (%.2f MPa).\n",
+               *sigma_c_max / 1e6, eta * fcd / 1e6);
+    }
+
+    printf("Column-like: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+           *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+    return 0;
+}
+
+int calculate_rebars(double M, double N, double h, double b, double cc,
+                     double fck, double fcd, double fyd, double eta, double lambda,
+                     double Es, int use_min_reinf, double *As, double *As_prime,
+                     double *rho, double *rho_prime, double *total_rho, double *sigma_c_max)
+{
+    double N_abs = fabs(N);
+    double e = (N_abs > 0) ? fabs(M) / N_abs : INFINITY;
+    double h6 = h / 6.0;
+
+    if (N == 0 || e > h6) {
+        // Beam-like
+        return calculate_rebars_doubly_reinforced(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, Es, use_min_reinf, As, As_prime, rho, rho_prime, total_rho, sigma_c_max);
+    } else {
+        // Column-like (small e)
+        return calculate_rebars_column(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, Es, use_min_reinf, As, As_prime, rho, rho_prime, total_rho, sigma_c_max);
+    }
+}
+
+/**
+ * Example usage with provided data
+ */
+int foo_test_9_1() {
+    double M = 2522.0;    // Nm
+    double N = -54519.0;  // N (compression)
+    double h = 0.3;       // m
+    double b = 0.3;       // m
+    double c = 0.04;      // m
+    double fck = 30e6;    // Pa
+    double fcd = 20e6;    // Pa
+    double fyd = 350e6;   // Pa
+    double eta = 1.0;
+    double lambda = 0.8;
+    double Es = 200e9;    // Pa
+    int use_min_reinf = 0; // Do not enforce minimum reinforcement
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    printf("Test Case:\n");
+    int result = calculate_rebars(M, N, h, b, c, fck, fcd, fyd, eta, lambda, Es, use_min_reinf, &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    return 0;
+}
+
+int calculate_rebars_aci_doubly_reinforced(double M, double N, double h, double b, double cc,
+                                           double fck, double fcd, double fyd, double eta, double lambda,
+                                           double Es, int use_min_reinf, double *As, double *As_prime,
+                                           double *rho, double *rho_prime, double *total_rho, double *sigma_c_max) {
+    double d = h - cc; // Effective depth
+    double d_prime = cc; // Compression rebar depth
+    double Ec = 4700 * sqrt(fck / 1e6) * 1e6; // Pa, ACI 318-19 Eq. 19.2.2.1
+    double n = Es / Ec; // Modular ratio
+    double beta1 = (fck <= 28e6) ? 0.85 : 0.85 - 0.05 * (fck / 1e6 - 28) / 4; // ACI 318-19 Table 21.2.2
+    if (beta1 < 0.65) beta1 = 0.65;
+    double phi = 0.9; // Strength reduction factor, tension-controlled
+    //double As_min = use_min_reinf ? fmax(0.25 * sqrt(fck / 1e6) * 1e6 * b * d / fyd, 1.4e6 / fyd * b * d) : 0.0; // ACI 318-19 9.6.1.2
+    //double As_min = use_min_reinf ? 0.008 * b * d : 0.0; // Custom minimum for rho ≈ 0.8%
+    double f_ctm = 0.3 * pow(fck / 1e6, 2.0 / 3.0) * 1e6; // Eurocode f_ctm for C30/37
+    double As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // Eurocode As_min
+
+    // Pure compression case (M = 0)
+    if (M == 0) {
+        *As = As_min;
+        *As_prime = 0.0;
+        *rho = *As / (b * d);
+        *rho_prime = 0.0;
+        *total_rho = *rho;
+        double A_g = b * h;
+        *sigma_c_max = fabs(N) / A_g; // Gross section area
+        printf("Pure compression: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+               *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+        if (*sigma_c_max > 0.85 * fck / 1.5) {
+            printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck/1.5 (%.2f MPa).\n",
+                   *sigma_c_max / 1e6, 0.85 * fck / 1.5 / 1e6);
+        }
+        return 0;
+    }
+
+    // Compute eccentricity
+    double N_abs = fabs(N);
+    double e = (N_abs > 0) ? fabs(M) / N_abs : INFINITY;
+    double h4 = h / 4.0; // Threshold for compression-dominated check
+
+    // Try singly reinforced
+    double aa = 0.85 * fcd * beta1 * b; // ACI stress block
+    double c2 = beta1 / 2.0;
+    double A = -aa * c2;
+    double B = aa * d;
+    double C = -N * (d - h / 2.0) - M; // Include axial force moment
+    double D = B * B - 4 * A * C;
+    if (D >= 0) {
+        double a1 = (-B + sqrt(D)) / (2 * A); // Smaller root
+        double a2 = (-B - sqrt(D)) / (2 * A); // Larger root
+        double x1 = a1 / beta1;
+        double x2 = a2 / beta1;
+        double As1 = -1.0, As2 = -1.0;
+
+        // Check smaller root
+        if (x1 > 0 && x1 <= h) {
+            As1 = (0.85 * fcd * a1 * b - (-N)) / fyd;
+        }
+        // Check larger root
+        if (x2 > 0 && x2 <= h) {
+            As2 = (0.85 * fcd * a2 * b - (-N)) / fyd;
+        }
+
+        // Select valid root with non-negative As
+        if (As1 >= 0 && (As2 < 0 || As1 <= As2 || x2 > h)) {
+            *As = fmax(As1, As_min);
+            double x = x1;
+            *As_prime = 0.0;
+            *rho = *As / (b * d);
+            *rho_prime = 0.0;
+            *total_rho = *rho;
+            // Check for compression-dominated case
+            if (*rho < 0.005 || e <= h4) {
+                double A_g = b * h;
+                double I_g = b * h * h * h / 12.0;
+                *sigma_c_max = N_abs / A_g + 6 * fabs(M) / (b * h * h);
+                *sigma_c_max = fabs(*sigma_c_max);
+                *As = As_min; // Use minimum reinforcement
+                *rho = *As / (b * d);
+                *total_rho = *rho;
+                printf("Compression-dominated (singly reinforced): M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            } else {
+                double m = n * (*rho);
+                double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+                double A_cr = b * x + m * b * d;
+                *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+                *sigma_c_max = fabs(*sigma_c_max);
+                printf("Singly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            }
+            if (*total_rho > 0.08) {
+                printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19 9.3.3.2).\n", *total_rho * 100);
+            }
+            if (*sigma_c_max > 0.85 * fck / 1.5) {
+                printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck/1.5 (%.2f MPa).\n",
+                       *sigma_c_max / 1e6, 0.85 * fck / 1.5 / 1e6);
+            }
+            return 0;
+        } else if (As2 >= 0 && x2 <= h) {
+            *As = fmax(As2, As_min);
+            double x = x2;
+            *As_prime = 0.0;
+            *rho = *As / (b * d);
+            *rho_prime = 0.0;
+            *total_rho = *rho;
+            if (*rho < 0.005 || e <= h4) {
+                double A_g = b * h;
+                double I_g = b * h * h * h / 12.0;
+                *sigma_c_max = N_abs / A_g + 6 * fabs(M) / (b * h * h);
+                *sigma_c_max = fabs(*sigma_c_max);
+                *As = As_min;
+                *rho = *As / (b * d);
+                *total_rho = *rho;
+                printf("Compression-dominated (singly reinforced): M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            } else {
+                double m = n * (*rho);
+                double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+                double A_cr = b * x + m * b * d;
+                *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+                *sigma_c_max = fabs(*sigma_c_max);
+                printf("Singly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+                       *As * 1e6, *As_prime * 1e6, *rho * 100, *sigma_c_max / 1e6);
+            }
+            if (*total_rho > 0.08) {
+                printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19 9.3.3.2).\n", *total_rho * 100);
+            }
+            if (*sigma_c_max > 0.85 * fck / 1.5) {
+                printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck/1.5 (%.2f MPa).\n",
+                       *sigma_c_max / 1e6, 0.85 * fck / 1.5 / 1e6);
+            }
+            return 0;
+        }
+    }
+
+    // Doubly reinforced with x = c, using ACI stress block (eta = 0.85, lambda = beta1)
+    double concrete_force = 0.85 * fcd * beta1 * cc * b; // ACI stress block
+    double As_term = (concrete_force - (-N)) / fyd;
+    double lever_arm_concrete = h / 2.0 - (beta1 * cc) / 2.0;
+    double lever_arm_As_prime = h / 2.0 - cc;
+    double lever_arm_As = d - h / 2.0;
+    double concrete_moment = concrete_force * lever_arm_concrete;
+    double coeff_As_prime = fyd * (lever_arm_As_prime + lever_arm_As);
+    double constant_term = concrete_moment + fyd * lever_arm_As * As_term;
+    *As_prime = (M - constant_term) / coeff_As_prime;
+    *As = *As_prime + As_term;
+
+    if (*As_prime < 0) {
+        *As_prime = 0.0;
+        *As = fmax(As_term, As_min);
+    }
+
+    if (*As < 0) {
+        printf("Error: Negative reinforcement area (As = %.2f mm²). M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m\n", *As * 1e6,M,N,h,b,cc);
+        return -1;
+    }
+
+    *rho = *As / (b * d);
+    *rho_prime = *As_prime / (b * d);
+    *total_rho = *rho + *rho_prime;
+
+    // Stress calculation for doubly reinforced
+    double x = cc;
+    double m = n * (*rho);
+    double m_prime = n * (*rho_prime);
+    double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+    if (x > d_prime) {
+        I_cr += m_prime * b * d_prime * (x - d_prime) * (x - d_prime);
+    }
+    double A_cr = b * x + m * b * d;
+    if (x > d_prime) {
+        A_cr += m_prime * b * d_prime;
+    }
+    *sigma_c_max = -N / A_cr + (M * x) / I_cr;
+    *sigma_c_max = fabs(*sigma_c_max);
+
+    if (*total_rho > 0.08) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19 9.3.3.2).\n", *total_rho * 100);
+    }
+    if (*sigma_c_max > 0.85 * fck / 1.5) {
+        printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck/1.5 (%.2f MPa).\n",
+               *sigma_c_max / 1e6, 0.85 * fck / 1.5 / 1e6);
+    }
+
+    printf("Doubly reinforced: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+           *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+    return 0;
+}
+
+/**
+ * ACI 318-19 procedure for column-like sections (e <= h/6).
+ * Handles compression-dominated cases with minimal bending.
+ * Uses simplified compression capacity check.
+ *
+ * Parameters: Same as calculate_rebars_aci_doubly_reinforced
+ * Returns: 0 on success, -1 if infeasible
+ */
+int calculate_rebars_column_aci(double M, double N, double h, double b, double cc,
+                                double fck, double fcd, double fyd, double eta, double lambda,
+                                double Es, int use_min_reinf, double *As, double *As_prime,
+                                double *rho, double *rho_prime, double *total_rho, double *sigma_c_max) {
+    double d = h - cc;
+    double A_g = b * h;
+    double phi = 0.65; // Strength reduction factor for compression-controlled (ACI 318-19 21.2.2)
+    //double As_min = use_min_reinf ? fmax(0.01 * A_g, 0.005 * A_g) : 0.0; // ACI 318-19 10.6.1.1 (1% to 0.5% of A_g)
+    double As_min = use_min_reinf ? 0.01 * A_g : 0.0; // ACI 318-19 10.6.1.1 (1% A_g)
+    double Pn_max = 0.80 * phi * (0.85 * fck / 1.5 * (A_g - As_min) + fyd * As_min); // ACI 318-19 22.4.2.2
+
+    // Check axial capacity
+    if (fabs(N) > Pn_max) {
+        printf("Error: Axial force (%.2f kN) exceeds maximum capacity (%.2f kN). M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m\n",
+               fabs(N) / 1e3, Pn_max / 1e3,M,N,h,b,cc);
+        return -1;
+    }
+
+    // Assume minimum reinforcement for columns
+    *As = As_min / 2.0; // Symmetric reinforcement
+    *As_prime = As_min / 2.0;
+    *rho = *As / (b * d);
+    *rho_prime = *As_prime / (b * d);
+    *total_rho = *rho + *rho_prime;
+    double I_g = b * h * h * h / 12.0;
+    *sigma_c_max = fabs(N) / A_g + 6 * fabs(M) / (b * h * h);
+    *sigma_c_max = fabs(*sigma_c_max);
+
+    if (*total_rho > 0.08) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19 10.6.1.1).\n", *total_rho * 100);
+    }
+    if (*sigma_c_max > 0.85 * fck / 1.5) {
+        printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck/1.5 (%.2f MPa).\n",
+               *sigma_c_max / 1e6, 0.85 * fck / 1.5 / 1e6);
+    }
+
+    printf("Column: M=%.2f Nm, N=%.2f N, h=%.3f m, b=%.3f m, c=%.3f m, As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",M,N,h,b,cc,
+           *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+    return 0;
+}
+
+/**
+ * ACI 318-19 dispatcher to distinguish beams (N = 0 or e > h/6) from columns (N != 0, e <= h/6).
+ * Calls calculate_rebars_aci_doubly_reinforced for beams or calculate_rebars_column_aci for columns.
+ * Uses SI units (m, Pa, N, Nm).
+ *
+ * Parameters: Same as calculate_rebars_aci_doubly_reinforced
+ * Returns: 0 on success, -1 if infeasible
+ */
+int calculate_rebars_aci(double M, double N, double h, double b, double cc,
+                         double fck, double fcd, double fyd, double eta, double lambda,
+                         double Es, int use_min_reinf, double *As, double *As_prime,
+                         double *rho, double *rho_prime, double *total_rho, double *sigma_c_max) {
+    double h6 = h / 6.0; // Eccentricity threshold for column vs. beam
+    double e = (fabs(N) > 0) ? fabs(M) / fabs(N) : INFINITY;
+
+    if (N == 0 || e > h6) {
+        // Beam-like behavior
+        return calculate_rebars_aci_doubly_reinforced(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                                      use_min_reinf, As, As_prime, rho, rho_prime,
+                                                      total_rho, sigma_c_max);
+    } else {
+        // Column-like behavior
+        return calculate_rebars_column_aci(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                           use_min_reinf, As, As_prime, rho, rho_prime,
+                                           total_rho, sigma_c_max);
+    }
+}
+
+/**
+ * Example usage with provided test cases
+ */
+int foo_test_aci_1() {
+    double M1 = 22255.74; // Nm
+    double N1 = -59734.58; // N
+    double M2 = 25795.47; // Nm
+    double N2 = -60479.53; // N
+    double h = 0.3;       // m
+    double b = 0.3;       // m
+    double cc = 0.04;      // m
+    double fck = 30e6;    // Pa
+    double fcd = 20e6;    // Pa
+    double fyd = 350e6;   // Pa
+    double eta = 1.0;     // For compatibility, overridden to 0.85 in doubly reinforced
+    double lambda = 0.8;  // For compatibility, overridden to beta1 in doubly reinforced
+    double Es = 200e9;    // Pa
+    int use_min_reinf = 1;
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    printf("Test Case 1 (M = %.2f Nm, N = %.2f N):\n", M1, N1);
+    int result1 = calculate_rebars_aci(M1, N1, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                       use_min_reinf, &As, &As_prime, &rho, &rho_prime,
+                                       &total_rho, &sigma_c_max);
+    if (result1 == 0) printf("Calculation successful.\n");
+
+    printf("\nTest Case 2 (M = %.2f Nm, N = %.2f N):\n", M2, N2);
+    int result2 = calculate_rebars_aci(M2, N2, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                       use_min_reinf, &As, &As_prime, &rho, &rho_prime,
+                                       &total_rho, &sigma_c_max);
+    if (result2 == 0) printf("Calculation successful.\n");
+
+    return 0;
+}
+
+double calculate_min_shear_ratio(double fck, double fyk, int is_aci) {
+    double fck_mpa = fck / 1e6;
+    double fyk_mpa = fyk / 1e6;
+    double rho_min;
+    if (is_aci) {
+        // ACI approximation in MPa
+        rho_min = fmax(0.062 * sqrt(fck_mpa) / fyk_mpa, 0.35 / fyk_mpa);
+    } else {
+        // Eurocode
+        rho_min = 0.08 * sqrt(fck_mpa) / fyk_mpa;
+    }
+    return rho_min*100.0;  //%
+ }
+
+// Usage in graph: Clamp calculated rho_shear to this min
+//double rho_shear = ... // Your calculated from V_Ed or similar
+//rho_shear = fmax(rho_shear, calculate_min_shear_ratio(fck, fyk, is_aci));
+
+
+int calculate_p_tau(int state, int ret_standard, ST_PROPERTY *property, /*double H, double B, double C,*/ double V, double *rho)
+{
+    double rho_min;
+    double fck, fcd, fyk, fyd, E_s, E_c;
+    double d;
+    double Ass;
+    double h, b, cc;
+
+    if ((ret_standard == 1) || (ret_standard>1)) //Eurocodes and ACI  //TEMPORARY
+    {
+        if (UNITS != SI)  //imperial need to be converted
+        {
+//concrete
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd;  //psi
+                else fcd = property->fck / 1.5;
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd;
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 4351.13; // equivalent of 30.0e6 Pa
+                    fcd = fck / 1.5;
+                }
+            }
+//steel
+            //E_s = 29000;  //ksi
+            E_s = 200e9;  //Pa
+
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fyd = property->fyd;  //psi
+                else fyd = property->fyk / 1.15;
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd; //psi
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 58015.1; //equivalent of 400.0e6 Pa
+                    fyd = fyk / 1.15;
+                }
+            }
+            if (property->c > 0.) cc = property->c;
+            else cc = 1.18;  //equivalent of 30 mm
+
+            h = property->h;
+            d = h - cc;
+            b = property->b;
+
+//conversion to IS
+//converstion from psi to Pa
+            fck *= 6894.76;
+            fcd *= 6894.76;
+            fyk *= 6894.76;
+            fyd *= 6894.76;
+            //E_s *= 0.00689476;  //Gpa
+
+            h *= 0.0254;   //inch to m
+            b *= 0.0254;   //inch to m
+            d *= 0.0254;   //inch to m
+            cc *= 0.0254;   //inch to m
+
+            V*=4.44822;  //lbf to N
+        } else //SI
+        {
+//concrete
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd * 1e6;  //MPa to Pa
+                else fcd = property->fck * 1e6 / 1.5; //MPa to Pa
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd * 1e6;  //MPa to Pa
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 30.0e6;
+                    fcd = fck / 1.5;
+                }
+            }
+
+            E_s = 200e9;  //Pa
+//steel
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fyd = property->fyd * 1e6;  //MPa to Pa
+                else fyd = property->fyk * 1e6 / 1.15; //MPa to Pa
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd * 1e6; //MPa to Pa
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 400.0e6;
+                    fyd = fyk / 1.15;
+                }
+            }
+            if (property->c > 0.) cc = property->c * 0.001;
+            else cc = 0.03;  //30 mm
+
+            h = property->h * 0.001;
+            d = h - cc;
+            b = property->b * 0.001;
+        }
+    }
+
+    //rho_min = ((0.08*sqrt(fck*1e-6)) / (fyk*1e-6)) * 100.0;  //per s is the spacing of the shear reinforcement, measured along the longitudinal axis of the member.
+    Ass = V / fyd;
+    *rho = max(calculate_min_shear_ratio(fck, fyk, ret_standard>1 ? 1:0), Ass / (h*(b-cc)) * 100.0);  //in %
+
+    return 0;
+}
+
+int calculate_p_sigma(int state, int ret_standard, ST_PROPERTY *property, double M0, double N0, double *rho, double *sigma)
+{
+    //state==2 is ULS, state==3 is SLS, stat==4 is QLS
+    double v_node[3];
+    double d;  //effective depth
+    double M; //moment of force
+    double N; //axial force
+    double M_;  //absolute value moment of force
+    double K;  //non-dimentional moment
+    double z;  //lever arm
+    double As, Asc;    //surface of reinforcing bars in tension, reinforcing bars in compression
+    double cb; //concrete cross section b
+    double cc; ////concrete cover
+    double h; //cross section height
+    double b; //cross section width
+    double fck, fcd, fyk, fyd;  //in ACI 318   fyd=fyk, fcd=fyd
+    double n, m;
+    double E_cm;
+    double E_c;
+    double E_s; // = 200;  //GPa in SI
+    double dk;  //relative neutral axis depth
+    double x; //neutral axis depth
+    double I_cr; //cracked moment of inertia
+    double R;  //moment strength paramete
+    double fi;
+    double a; //compression block depth
+    double nac; //neutral axis
+    double beta1;
+    double epsilont; //tensile strain
+
+    M=M0;  //Nmm to Nm
+    N=N0;
+
+    //Let's calculate all in m [SI] and in [Imp]
+
+    if (ret_standard == 1) //Eurocodes
+    {
+        if (UNITS != SI)  //imperial need to be converted
+        {
+//concrete
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd;  //psi
+                else fcd = property->fck / 1.5;
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd;
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 4351.13; // equivalent of 30.0e6 Pa
+                    fcd = fck / 1.5;
+                }
+            }
+//steel
+            E_s = 29000;  //ksi
+
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fyd = property->fyd;  //psi
+                else fyd = property->fyk / 1.15;
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd; //psi
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 58015.1; //equivalent of 400.0e6 Pa
+                    fyd = fyk / 1.15;
+                }
+            }
+            if (property->c > 0.) cc = property->c;
+            else cc = 1.18;  //equivalent of 30 mm
+
+            h = property->h;
+            d = h - cc;
+            b = property->b;
+
+//conversion to IS
+//converstion from psi to Pa
+            fck *= 6894.76;
+            fcd *= 6894.76;
+            fyk *= 6894.76;
+            fyd *= 6894.76;
+            //E_s *= 0.00689476;  //Gpa
+
+            E_s = 200e9;  //Pa
+
+            h *= 0.0254;   //inch to m
+            b *= 0.0254;   //inch to m
+            d *= 0.0254;   //inch to m
+            cc *= 0.0254;   //inch to m
+        }
+        else //SI
+        {
+//concrete
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd * 1e6;  //MPa to Pa
+                else fcd = property->fck * 1e6 / 1.5; //MPa to Pa
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd * 1e6;  //MPa to Pa
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 30.0e6;
+                    fcd = fck / 1.5;
+                }
+            }
+
+            E_s = 200e9;  //Pa
+//steel
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fyd = property->fyd * 1e6;  //MPa to Pa
+                else fyd = property->fyk * 1e6 / 1.15; //MPa to Pa
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd * 1e6; //MPa to Pa
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 400.0e6;
+                    fyd = fyk / 1.15;
+                }
+            }
+            if (property->c > 0.) cc = property->c * 0.001;
+            else cc = 0.03;  //30 mm
+
+            M*=0.001; //Nmm - > Nm
+
+            h = property->h * 0.001;
+            d = h - cc;
+            b = property->b * 0.001;
+        }
+
+//reinforcement ratio
+            if (UNITS != SI)  //need to be converted
+            {
+                M *= 0.112985; // * 1000.0 / 25.4;   //lbs-inch to Nm
+            }
+
+            M = fabs(M);
+
+            if (Check_if_Equal(M, 0.0) && Check_if_Equal(N, 0.0))
+            {
+                *sigma = 0.;
+                *rho = 0.;
+                return 1;
+            }
+
+            //Non-dimensional parameters:
+            double lambda = 0.8;  //λ
+            double eta = 1.0;  //η
+            double rhot, rhoc, total_rho, sigma_c_max;
+
+            *rho=0.0;
+
+            BOOL compress_p = TRUE;
+
+            if (compress_p == TRUE)
+            {
+                int use_min_reinf = 1;
+
+                int ret_p = calculate_rebars(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, E_s, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+
+                if (ret_p==0)
+                {
+                    *rho = total_rho;
+                    *sigma = sigma_c_max;
+                }
+                else //Negative reinforcement area
+                {
+                    *rho = 0.0;  //or NaN
+                    *sigma = 0.0;  //or NaN
+                }
+            }
+
+        if (UNITS != SI)  //need to be converted
+        {
+            *sigma *= -1.45038e-7;  //Pa to ksi
+        }
+        else
+        {
+            *sigma *=  -1e-6; //Pa to MPa
+        }
+
+    }
+    else // ASCE & ICC
+    {
+        if (UNITS != SI)  //imperial, need to be converted
+        {
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd;  //ksi
+                else fcd = property->fck / 1.5;
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd;
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 4351.13;  //psi
+                    fcd = fck / 1.0;
+                }
+            }
+
+            //E_s = 29.0e6;  //psi
+
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fcd = property->fyd;  //ksi
+                else fcd = property->fyk / 1.15;
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd;  //ksi
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 60000.;  //psi
+                    fyd = fyk / 1.0;
+                }
+            }
+
+            if (property->c > 0.) cc = property->c;
+            else cc = 1.0;  //1 inch
+
+            h = property->h;
+            d = h - cc;
+            b = property->b;
+
+//conversion to IS
+//converstion from psi to Pa
+            fck *= 6894.76;
+            fcd *= 6894.76;
+            fyk *= 6894.76;
+            fyd *= 6894.76;
+            //E_s *= 0.00689476;  //Gpa
+
+            E_s = 200e9;  //Pa
+
+            h *= 0.0254;   //inch to m
+            b *= 0.0254;   //inch to m
+            d *= 0.0254;   //inch to m
+            cc *= 0.0254;   //inch to m
+
+        }
+        else //SI
+        {
+            if (property->fck > 0.) {
+                fck = property->fck;
+                if (property->fcd > 0.) fcd = property->fcd * 1e6;  //MPa to Pa;
+                else fcd = property->fck / 1.5;
+            } else {
+                if (property->fcd > 0.) {
+                    fcd = property->fcd * 1e6;  //MPa to Pa;
+                    fck = fcd * 1.5;
+                } else {
+                    fck = 30.0e6;  //in Pa
+                    fcd = fck / 1.0;
+                }
+            }
+
+            E_s = 200e9;  //Pa
+
+            if (property->fyk > 0.) {
+                fyk = property->fyk;
+                if (property->fyd > 0.) fcd = property->fyd * 1e6;  //MPa to Pa;
+                else fcd = property->fyk / 1.15;
+            } else {
+                if (property->fyd > 0.) {
+                    fyd = property->fyd * 1e6;  //MPa to Pa;;
+                    fyk = fyd * 1.15;
+                } else {
+                    fyk = 400.0e6; //in Pa
+                    fyd = fyk / 1.0;
+                }
+            }
+
+            if (property->c > 0.) cc = property->c * 0.001;
+            else cc = 0.03;  //30 mm
+
+            M*=0.001; //Nmm - > Nm
+
+            h = property->h * 0.001;
+            d = h - cc;
+            b = property->b * 0.001;
+
+        }
+
+        //reinforcement ratio
+        if (UNITS != SI)  //need to be converted
+        {
+            M *= 0.112985; // * 1000.0 / 25.4;   //lbs-inch to Nm
+        }
+
+        M = fabs(M);
+
+        if (Check_if_Equal(M, 0.0) && Check_if_Equal(N, 0.0))
+        {
+            *sigma = 0.;
+            *rho = 0.;
+            return 1;
+        }
+
+        double lambda = 0.8;  //λ
+        double eta = 1.0;  //η
+        double rhot, rhoc, total_rho, sigma_c_max;
+
+        int use_min_reinf = 1;
+
+        int ret_p = calculate_rebars_aci(M, N, h, b, cc, fck, fcd, fyd, eta, lambda, E_s, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+
+        if (ret_p==0)
+        {
+            *rho = total_rho;
+            *sigma = sigma_c_max;
+        }
+        else //Negative reinforcement area
+        {
+            *rho = 0.0;  //or NaN
+            *sigma = 0.0;  //or NaN
+        }
+
+        if (UNITS != SI)  //need to be converted
+        {
+            *sigma *= -1.45038e-7;  //Pa to ksi
+        }
+        else
+        {
+            *sigma *=  -1e-6; //Pa to MPa
+        }
+    }
+    return 1;
+}
+
 void Static_analysis(void) {
     int ret, ret_standard;
     int key1;
@@ -1939,7 +3101,8 @@ void Static_analysis(void) {
     ST_LOAD_FACTORS_MAX = 100;
 
     redcrsb(0, 167);
-    select_blok();
+    //select_blok();  ////
+    select_blok_items(Bvector | Bpoint | Btekst);  //for frame
     redcrsb(1, 167);
 
     if ((ADP == NULL) && (ADK == NULL)) return;
@@ -3122,6 +4285,10 @@ void Static_analysis(void) {
         add_reaction();
     }
 
+    //int st_reaction_Z = 0;  //rotational
+    int st_reaction_Y = 0;  //vertical, 2 are needed
+    int st_reaction_X = 0;  //horizontal, 1 is needed
+
     obiekt_tok((char *) ADP, ADK, (char **) &nag, Opoint);
     while (nag != NULL) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
@@ -3147,6 +4314,10 @@ void Static_analysis(void) {
 
                                 ////restraint
                                 st_node[i].restraint=1;
+
+                                //st_reaction_Z ++;
+                                st_reaction_Y +=2;
+                                st_reaction_X +=2;
                                 break;
                             case 16:  //hinged
                             case 17:
@@ -3159,6 +4330,10 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 0;
+
+                                st_reaction_Y++;
+                                st_reaction_X++;
+
                                 break;
                             case 20:  //rigid with X roll
                             case 23:
@@ -3169,6 +4344,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
+
+                                //st_reaction_Z ++;
+                                st_reaction_Y ++;
 
                                 ////restraint
                                 st_node[i].restraint=1;
@@ -3182,6 +4360,9 @@ void Static_analysis(void) {
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 1;
 
+                                //st_reaction_Z ++;
+                                st_reaction_X ++;
+
                                 ////restraint
                                 st_node[i].restraint=1;
                                 break;
@@ -3194,6 +4375,9 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 0;
+
+                                st_reaction_Y ++;
+
                                 break;
                             case 25:  //hinged with Y roll
                             case 26:
@@ -3204,6 +4388,8 @@ void Static_analysis(void) {
                                 st_reaction[i].xx = 1;
                                 st_reaction[i].yy = 1;
                                 st_reaction[i].zz = 0;
+
+                                st_reaction_X++;
                                 break;
                             case 28:
                                 st_reaction[i].active = 1;
@@ -3216,6 +4402,8 @@ void Static_analysis(void) {
 
                                 ////restraint
                                 st_node[i].restraint=1;
+
+                                //st_reaction_Z++;
                                 break;
                         }
                         //add_reaction();
@@ -3230,6 +4418,24 @@ void Static_analysis(void) {
             }
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Opoint);
+    }
+
+
+    //checking if entire structure is restrained
+    if ((st_reaction_Y<2) && (st_reaction_X>0))
+    {
+        sprintf(report_row, "%s\n", _reaction_not_enough_in_Y_);
+        strcat(report, report_row);
+    }
+    else if ((st_reaction_X<2) && (st_reaction_X<1))
+    {
+        sprintf(report_row, "%s\n", _reaction_not_enough_in_X_Y_);
+        strcat(report, report_row);
+    }
+    else if ((st_reaction_Y>1) && (st_reaction_X<1))
+    {
+        sprintf(report_row, "%s\n", _reaction_not_enough_in_X_);
+        strcat(report, report_row);
     }
 
     //checking if all nodes are restrained - st_node[i].restraint==1
@@ -5153,7 +6359,7 @@ void Static_analysis(void) {
             fprintf(f, "# gX		gY		gZ\n");
             fprintf(f, "# in/s^2\t\tin/s^2\t\tin/s^2\n");
             fprintf(f, "# mm/s^2\t\tmm/s^2\t\tmm/s^2\n\n");
-            fprintf(f, "%f %f %f\n\n", gX, -gY * gammas->gamma_g * unit_factors->g_f, gZ);
+            fprintf(f, "%f %f %f\n\n", gX, -gY * gamma_g * unit_factors->g_f, gZ);
 
             stl_node_force_moment_no = 0;
             for (i = 0; i < st_node_force_moment_no; i++) {
@@ -5561,7 +6767,7 @@ void Static_analysis(void) {
             fprintf(f, "# gX		gY		gZ\n");
             fprintf(f, "# in/s^2\t\tin/s^2\t\tin/s^2\n");
             fprintf(f, "# mm/s^2\t\tmm/s^2\t\tmm/s^2\n\n");
-            fprintf(f, "%f %f %f\n\n", gX, -gY * gammas->gamma_g * unit_factors->g_f, gZ);
+            fprintf(f, "%f %f %f\n\n", gX, -gY * gamma_g * unit_factors->g_f, gZ);
 
             stl_node_force_moment_no = 0;
             for (i = 0; i < st_node_force_moment_no; i++) {
@@ -5970,7 +7176,7 @@ void Static_analysis(void) {
             fprintf(f, "# gX		gY		gZ\n");
             fprintf(f, "# in/s^2\t\tin/s^2\t\tin/s^2\n");
             fprintf(f, "# mm/s^2\t\tmm/s^2\t\tmm/s^2\n\n");
-            fprintf(f, "%f %f %f\n\n", gX, -gY * gammas->gamma_g * unit_factors->g_f, gZ);
+            fprintf(f, "%f %f %f\n\n", gX, -gY * gamma_g * unit_factors->g_f, gZ);
 
             stl_node_force_moment_no = 0;
             for (i = 0; i < st_node_force_moment_no; i++) {
@@ -9403,6 +10609,8 @@ void Static_analysis(void) {
                 new_line = TRUE;
                 new_line1 = TRUE;
 
+                int ip=-1;
+
                 while (fgets(report_row, MaxTextLen, f))
                 {
                     double x, Nx, Vy, Vz, Tx, My, Mz, Dx, Dy, Dz, Rx;
@@ -9437,7 +10645,6 @@ void Static_analysis(void) {
 
                         int property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
                         //search for properties
-                        int ip;
                         for (ip = 0; ip < st_property_no; ip++)
                         {
                             if (st_property[ip].n == property_no) {
@@ -10019,7 +11226,7 @@ void Static_analysis(void) {
                                     else //RC_flag
                                     {
                                         //////////////////////////////
-                                        if (combi_total_numbers[i].combi == 2) //just for ULSLC
+                                        if (combi_total_numbers[i].combi >= 2) //for ULSLC, SLSLC, QPSLSLC
                                         {
                                             if ((st_element[rep_element_no - 1].node1r != -1) &&
                                                 (st_element[rep_element_no - 1].node2r != -1))
@@ -10059,28 +11266,48 @@ void Static_analysis(void) {
                                                 else column=0; //tensions exist
 
                                                 double Fss;
+                                                Fss=min(Nx_min, Nx_max);
 
+                                                /*   //such super simple calculation is not performed anymore for the benefit of calculate_p_sigma
                                                 if (column==1)  //TO DO
                                                 {
-                                                    Fss=min(Nx_min, Nx_max);
+                                                    //Fss=min(Nx_min, Nx_max);
                                                     As = (M / (H-2*C) + Fss) / Fyd;
                                                     pAs = As / (H*B) * 100.0;  //in %
                                                 }
                                                 else
                                                 {
-                                                    Fss=max(Nx_min, Nx_max);
+                                                    //Fss=max(Nx_min, Nx_max);
                                                     As = (M / (Zeta*(H-C)) + Fss) / Fyd;
                                                     pAs = As / (H*B) * 100.0;  //in %
                                                 }
+                                                 */
+
+                                                //bus stop for tests
+                                                //if ((combi_total_numbers[i].combi == 2) && (rep_element_no==4) && (inx==18))
+                                                //{
+                                                //    int abc=0;
+                                                //}
+
+                                                ////precise calculation
+                                                double rho;
+                                                double sigma;
+
+                                                int rho_ret = calculate_p_sigma(combi_total_numbers[i].combi, ret_standard, &st_property[ip], M, Fss, &rho, &sigma);
+
+                                                pAs = rho * 100.0;
 
                                                 if (column==0) {
                                                     if (fabs(Mz_max) > fabs(Mz_min)) Msign = copysign(1.0, Mz_max);
                                                     else Msign = copysign(1.0, Mz_min);
                                                 }
 
+                                                Sm = sigma; //!!!!!!  only negative stress was changed in RC
+
+                                                fd[inx].Sm_min=sigma;
+
                                                 sp_magnitude=src_magnitude;
                                                 sm_magnitude=src_magnitude;
-
 
                                                 if (Sp > 0) //tension
                                                 {
@@ -10619,6 +11846,8 @@ void Static_analysis(void) {
                 new_line = TRUE;
                 new_line1 = TRUE;
 
+                int ip=-1;
+
                 while (fgets(report_row, MaxTextLen, f)) {
                     double x, Nx, Vy, Vz, Tx, My, Mz, Dx, Dy, Dz, Rx;
                     ptr = strstr(report_row, "# @");
@@ -10649,7 +11878,7 @@ void Static_analysis(void) {
 
                         int property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
                         //search for properties
-                        int ip;
+
                         for (ip = 0; ip < st_property_no; ip++)
                         {
                             if (st_property[ip].n == property_no) {
@@ -10865,7 +12094,7 @@ void Static_analysis(void) {
                                          //by the total cross-sectional area of the concrete, omitting the effective value of the arm of forces in the cross-section,
                                          //which allows for a quick assessment of whether the amount of required reinforcement does not exceed the assumed maximum value.
                                         //////////////////////////////
-                                        if (combi_total_numbers[i].combi == 2) //just for ULSLC
+                                        if (combi_total_numbers[i].combi >= 2) //for ULSLC, SLSLC and QPSLSLC
                                         {
                                             if ((st_element[rep_element_no - 1].node1r != -1) &&
                                                 (st_element[rep_element_no - 1].node2r != -1)) {
@@ -10877,8 +12106,13 @@ void Static_analysis(void) {
                                                 SsM = ((VyM / unit_factors->F_f) / Asy) / unit_factors->S_f;  //Max tensions in concrete
                                                 Ssm = ((Vym / unit_factors->F_f) / Asy) / unit_factors->S_f;  //Min tensions in concrete
 
-                                                double Ass = Vy / Fyd;
-                                                double pAss = Ass / (H*B) * 100.0;  //in %
+                                                //double Ass = Vy / Fyd;
+                                                //double pAss = Ass / (H*(B-C)) * 100.0;  //in %
+
+                                                double pAss;
+
+                                                int rho_ret = calculate_p_tau(combi_total_numbers[i].combi, ret_standard, &st_property[ip], Vy, &pAss);
+
                                                 char p_suffix[4]="";
                                                 double p_shear_precision;
 
@@ -11801,7 +13035,11 @@ void show_forces(double show_x, double show_y, int width, int height, char *forc
 
     set_clip_rect(tip_screen, 0, 0, width, height);
 
+#ifdef ALLEGRO5
+    y=1;
+#else
     y=0;
+#endif
     moveto(0,y);
     ptr0=force_text;
     ptr= strchr(force_text,'\n');
@@ -12523,7 +13761,7 @@ void Cross_section_forces(void)
             if (ev->Number == ENTER)
             {
                 redcr_ele(1);
-                typ = Bvector | Bwwielokat;
+                typ = Bvector | BwwielokatGradient;
 
                 //zeroing
                 all_section_graph_data[0].element_line=NULL;
@@ -12552,7 +13790,8 @@ void Cross_section_forces(void)
 
                 global_any_choice=TRUE;
 
-                if ((ad = obiekt_wybrany(&typ)) != NULL)
+                //if ((ad = obiekt_wybrany(&typ)) != NULL)
+                if ((ad = obiekt_wybrany_select(typ)) != NULL)
                 {
                     switch (((NAGLOWEK*)ad)->obiekt)
                     {

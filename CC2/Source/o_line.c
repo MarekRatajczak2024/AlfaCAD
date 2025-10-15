@@ -107,14 +107,14 @@ static void  cur_on(double x,double y)
     LiniaG.x2=x; LiniaG.y2=y;
     switch (LiniaG.obiektt2) {
         case 6:
-            if (LiniaG.obiektt3==0)  VectorG.style = 18;
-            else VectorG.style = 19;
+            if (LiniaG.obiektt3==0)  VectorG.style = V_EDGE_SIMPLE; //18;
+            else VectorG.style = V_EDGE_SIMPLE_INV; //19;
             VectorG.typ=LiniaG.typ;
             outvectoror(&LiniaG, &VectorG, COPY_PUT, 1);
             break;
         case 7:
-            if (LiniaG.obiektt3==0)  VectorG.style = 20;
-            else VectorG.style = 21;
+            if (LiniaG.obiektt3==0)  VectorG.style = V_EDGE_FIXED; //20;
+            else VectorG.style = V_EDGE_FIXED_INV; //21;
             VectorG.typ=LiniaG.typ;
             outvectoror(&LiniaG, &VectorG, COPY_PUT, 1);
             break;

@@ -57,6 +57,7 @@ extern void dec_menu_level(void);
 extern int get_cursor_posX(void);
 extern int get_cursor_posY(void);
 extern void move_pointer(int x, int y);
+extern int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_string, char *comment_string, int color_comment, char *comment1_string, int color1_comment, int cien, int image);
 
 //parametry ramki i sektorow
 float del_sektor = 0.25;       //przesuniecie ramki do srodka rysunku
@@ -70,6 +71,7 @@ unsigned char linia_ramka_ini = 32;         //typ-grubosc linii ramki
 unsigned char linia_sektor_ini = 64;        //typ-grubosc linii sektorow
 
 void Magnitudes(void);
+static void near uaktualnij_polap(void);
 
 static int asp = 0;
 
@@ -111,6 +113,7 @@ extern int funits_no;
 extern double funits[];
 extern char* punits[];
 
+extern double radius_magnitude;
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
@@ -119,6 +122,26 @@ extern double force_magnitude; //units per mm  default 10kN force per 1 mm on dr
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
 extern double rotation_magnitude; //units per mm  default 0.001 rad desplacement per 1 mm radius on drawing paper
+
+extern double radius_magnitude0;
+extern double depth_magnitude0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
+extern double thermal_magnitude0; //units per mm  default 1 Celsius per 1 mm on drawing paper
+extern double load_magnitude0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double force_magnitude0; //units per mm  default 10kN force per 1 mm on drawing paper
+extern double moment_magnitude0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
+extern double displacement_magnitude0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
+extern double rotation_magnitude0;
+
+extern double radius_magnitude_imp0;
+extern double depth_magnitude_imp0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
+extern double thermal_magnitude_imp0; //units per mm  default 1 Celsius per 1 mm on drawing paper
+extern double load_magnitude_imp0; //units per mm  default 10kN/m load per 1 mm on drawing paper
+extern double flood_magnitude_imp0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double force_magnitude_imp0; //units per mm  default 10kN force per 1 mm on drawing paper
+extern double moment_magnitude_imp0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
+extern double displacement_magnitude_imp0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
+extern double rotation_magnitude_imp0;
 
 extern double thermal_precision;
 extern double force_precision;
@@ -138,6 +161,34 @@ extern double s_magnitude;
 extern double src_magnitude;
 extern double p_magnitude;
 extern double q_magnitude;
+extern double sp_magnitude;
+extern double sm_magnitude;
+
+extern double n_magnitude0;
+extern double v_magnitude0;
+extern double m_magnitude0;
+extern double d_magnitude0;
+extern double r_magnitude0;
+extern double rm_magnitude0;
+extern double s_magnitude0;
+extern double src_magnitude0;
+extern double p_magnitude0;
+extern double q_magnitude0;
+extern double sp_magnitude0;
+extern double sm_magnitude0;
+
+extern double n_magnitude_imp0;
+extern double v_magnitude_imp0;
+extern double m_magnitude_imp0;
+extern double d_magnitude_imp0;
+extern double r_magnitude_imp0;
+extern double rm_magnitude_imp0;
+extern double s_magnitude_imp0;
+extern double src_magnitude_imp0;
+extern double p_magnitude_imp0;
+extern double q_magnitude_imp0;
+extern double sp_magnitude_imp0;
+extern double sm_magnitude_imp0;
 
 extern TMENU mTTF_OTF;
 extern void Resize_Vector (void);
@@ -1077,6 +1128,89 @@ void Q_Magnitude(void)
     Change_Magnitude(221, &q_magnitude, 14);
 }
 
+void reset_magnitude_SI(void)
+{
+    int key1;
+    int x_cur = mouse_x;
+    int y_cur = mouse_y;
+    int ret=ask_question(2, _No_,_Yes_,"", _reset_mgnitude_to_, 12, _SI_, 11, 1, 61);
+    Restore_Pointer();
+    position_mouse(x_cur, y_cur);
+    if (ret==1) key1=_YES_;
+    else if (ret==2) key1=_NO_;
+    else return;
+    if (key1 == _YES_ || key1 == _yes_)
+    {
+        radius_magnitude=radius_magnitude0;
+        depth_magnitude=depth_magnitude0;
+        thermal_magnitude=thermal_magnitude0;
+        load_magnitude=load_magnitude0;
+        flood_magnitude=flood_magnitude0;
+        force_magnitude=force_magnitude0;
+        moment_magnitude=moment_magnitude0;
+        displacement_magnitude=displacement_magnitude0;
+        rotation_magnitude=rotation_magnitude0;
+
+        n_magnitude=n_magnitude0;
+        v_magnitude=v_magnitude0;
+        m_magnitude=m_magnitude0;
+        d_magnitude=d_magnitude0;
+        r_magnitude=r_magnitude0;
+        rm_magnitude=rm_magnitude0;
+        s_magnitude=s_magnitude0;
+        src_magnitude=src_magnitude0;
+        q_magnitude=q_magnitude0;
+        sp_magnitude=sp_magnitude0;
+        sm_magnitude=sm_magnitude0;
+        p_magnitude=p_magnitude0;
+
+        uaktualnij_polap();
+        Change = TRUE;
+    }
+    return;
+}
+
+void reset_magnitude_IMP(void)
+{
+    int key1;
+    int x_cur = mouse_x;
+    int y_cur = mouse_y;
+    int ret=ask_question(2, _No_,_Yes_,"", _reset_mgnitude_to_, 12, _IMP_, 11, 1, 61);
+    Restore_Pointer();
+    position_mouse(x_cur, y_cur);
+    if (ret==1) key1=_YES_;
+    else if (ret==2) key1=_NO_;
+    else return;
+    if (key1 == _YES_ || key1 == _yes_)
+    {
+        radius_magnitude=radius_magnitude_imp0;
+        depth_magnitude=depth_magnitude_imp0;
+        thermal_magnitude=thermal_magnitude_imp0;
+        load_magnitude=load_magnitude_imp0;
+        flood_magnitude=flood_magnitude_imp0;
+        force_magnitude=force_magnitude_imp0;
+        moment_magnitude=moment_magnitude_imp0;
+        displacement_magnitude=displacement_magnitude_imp0;
+        rotation_magnitude=rotation_magnitude_imp0;
+
+        n_magnitude=n_magnitude_imp0;
+        v_magnitude=v_magnitude_imp0;
+        m_magnitude=m_magnitude_imp0;
+        d_magnitude=d_magnitude_imp0;
+        r_magnitude=r_magnitude_imp0;
+        rm_magnitude=rm_magnitude_imp0;
+        s_magnitude=s_magnitude_imp0;
+        src_magnitude=src_magnitude_imp0;
+        q_magnitude=q_magnitude_imp0;
+        sp_magnitude=sp_magnitude_imp0;
+        sm_magnitude=sm_magnitude_imp0;
+        p_magnitude=p_magnitude_imp0;
+
+        uaktualnij_polap();
+        Change = TRUE;
+    }
+}
+
 void Jednost(void)
 {
   double J;
@@ -1862,11 +1996,12 @@ static void (* COMND[])(void)={
 /*109 uklad */       Uklad_kartezjanski, Uklad_geodezyjny,
                      Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, nooop/*Load_Magnitude*/, Thermal_Magnitude,
                      N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, nooop, P_Magnitude, Q_Magnitude,
-                     nooop,nooop,
+                     nooop,nooop, nooop,
+
                      Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
-                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude
+                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP,
 };
 
 /*----------------------------------------------------*/

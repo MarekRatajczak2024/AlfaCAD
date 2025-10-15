@@ -1362,6 +1362,7 @@ int vector_wybrany(AVECTOR *ad)
                                      jednostkiN(ad->x2), jednostkiN(ad->y2));
             break;
         case 4:
+        case 18:
         case 7:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
@@ -1855,6 +1856,7 @@ int vector_w_prostokacie(AVECTOR *ad)
         case 2:
         case 3:
         case 4:
+        case 18:
         case 7:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))!=3)  return 0;
@@ -2113,6 +2115,7 @@ int vector_drag_wybrany(AVECTOR *ad)
         case 2:
         case 3:
         case 4:
+        case 18:
         case 7:
             return prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2));
@@ -3166,6 +3169,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (vector_okrag_wybrany(ptrs_vector, 1, df_psize1)) return 1;
             break;
         case 4:
+        case 18:
             ra=Get_Point_Size () / arrowf;
             L1.x1=ptrs_vector->x1;
             L1.y1=ptrs_vector->y1;

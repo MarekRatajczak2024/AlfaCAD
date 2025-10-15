@@ -489,6 +489,7 @@ int qkoniecS(double *x, double *y)
                   case 2:
                   case 3:
                   case 4:  //force
+                  case 18: //slab force
                   case 7:  //displacement
                   if (!(Layers[((AVECTOR *) adr)->warstwa].point)) break;
                   adv = (AVECTOR *) adr;
@@ -1398,7 +1399,7 @@ static int sprawdz_obiekt (NAGLOWEK *ad,int typL, int info)
 		      }
 		     break;
      case Owwielokat :
-         if((typL & Bwwielokat) &&
+         if(((typL & Bwwielokat) || ((typL & BwwielokatGradient) && (((WIELOKAT*)ad)->gradient==1))) &&
 			((Layers [((WIELOKAT*)ad)->warstwa].point ) || (info==1)))
 		       { ws=wielokat_wybrany((WIELOKAT*)ad);
 			 if(ws) 
@@ -1417,7 +1418,7 @@ static int sprawdz_obiekt (NAGLOWEK *ad,int typL, int info)
 				 if (ws) typ = Bspline;
 			 }
   		    break;
-     case   Otekst : if((typL & Btekst) &&
+     case   Otekst : if(((typL & Btekst) || ((typL & BtekstNoType15) && (((TEXT*)ad)->typ!=15))) &&
 			((Layers [((TEXT*)ad)->warstwa].point ) || (info==1)))
 		      { ws=tekst_wybrany((TEXT*)ad);
 			if(ws) typ=Btekst;
@@ -1677,7 +1678,7 @@ int GetObjectColor(char *PTR__Sel_Adr, int *layer)
     return kolor;
 }
 
-#define MAX_TYPE_ADDRESS_NO 32
+#define MAX_TYPE_ADDRESS_NO 64 //32
 
 void delete_element(TYPE_ADDRESS *arr, int *n, int index_to_delete) {
     if (index_to_delete < 0 || index_to_delete >= *n) {

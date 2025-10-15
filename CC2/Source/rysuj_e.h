@@ -304,7 +304,7 @@ extern unsigned short dos_version;
 extern long DelDaneSize;
 extern double text_line_width ;  /* grubosc linii dla teskstu */
 extern int procesp;
-extern ESTR eO,eL,el,elc,eTens,eA,eEA,eVf,eVd,eVm,eVr,eVe, eVn;
+extern ESTR eO,eL,el,elc,eTens,eA,eEA,eVf,eVf1,eVd,eVm,eVr,eVe, eVn;
 extern int selq;
 extern TMENU mTypyLinii;
 extern KOLORY kolory;
@@ -721,6 +721,7 @@ extern int dodaj_blok(char *adr,char *adrk,double x,double y,double k1,double k2
 extern void undo_blok(void);
 extern void Global_Undo(void);
 extern void blok(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const void (*COMND[])(void));
+extern void blok_items(int items, int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const void (*COMND[])(void));
 BOOL check_if_hidden (char *adp,char *adk,int atrybut);
 
 /*bib_cia*/

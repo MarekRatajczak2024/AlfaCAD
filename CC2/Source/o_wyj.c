@@ -2407,6 +2407,8 @@ BITMAP *icon_slab_space;
 char *icon_slab_space_p;
 BITMAP *icon_slab_load;
 char *icon_slab_load_p;
+BITMAP *icon_slab_force;
+char *icon_slab_force_p;
 BITMAP *icon_slab_geo_red;
 char *icon_slab_geo_red_p;
 BITMAP *icon_slab_geo_black;
@@ -2427,6 +2429,16 @@ BITMAP *icon_static;
 char *icon_static_p;
 BITMAP *icon_slab_fem_a;
 char *icon_slab_fem_a_p;
+
+BITMAP *icon_view_log_d_48;
+char *icon_view_log_d_48_p;
+
+BITMAP *icon_SI;
+char *icon_SI_p;
+BITMAP *icon_IMP;
+char *icon_IMP_p;
+BITMAP *icon_factory_reset;
+char *icon_factory_reset_p;
 
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -2537,33 +2549,39 @@ void set_background_menu(char *background)
 
 void load_file_to_history(char *sk)
 /*-------------------------------*/
-{ int i;
-	if (strlen(sk) > 0)
-	{
-		i = 0;  //Check for MacOS
-		while (i<MAXHISTORYFILES)
-		{
-			if ((strlen(Previous_File[i]) > 0) && (strcmp(sk, Previous_File[i]) == 0))
-			{
-#ifdef MACOS
-				if (i!=0)
-#endif
-				 strcpy(Previous_File[i], Previous_File[0]);  //(i!=0) condition has to be on Mac, if not it's crashing, Windows and Linux tolerate it
-				strcpy(Previous_File[0], sk);
-				mLastFiles.poz = 0;
-				return;
-			}
-			i++;
-		}
-		/*dopisanie nazwy do zbioru Previous_File[][]*/
-		for (i = 0; i < (MAXHISTORYFILES-1); i++)
-		{
-			strcpy(Previous_File[(MAXHISTORYFILES-1) - i], Previous_File[(MAXHISTORYFILES-2) - i]);
-		}
-		strcpy(Previous_File[0], sk);
-		mLastFiles.poz = 0;
-	}
-}    
+{ int i, j;
+    if (strlen(sk) > 0)
+    {
+        i = 0;
+        while (i<MAXHISTORYFILES)
+        {
+            if ((strlen(Previous_File[i]) > 0) && (strcmp(sk, Previous_File[i]) == 0))
+            {
+                //found one
+                if (i!=0)
+                {
+                    for (j = 0; j < i; j++)
+                    {
+                        strcpy(Previous_File[i-j], Previous_File[i-j-1]);
+                    }
+                    strcpy(Previous_File[0], sk);
+                    mLastFiles.poz = 0;
+                    return;
+                }
+                else return;  //file exists as first on list
+            }
+            i++;
+        }
+
+        /*dopisanie nazwy do zbioru Previous_File[][]*/
+        for (i = 0; i < (MAXHISTORYFILES-1); i++)
+        {
+            strcpy(Previous_File[(MAXHISTORYFILES-1) - i], Previous_File[(MAXHISTORYFILES-2) - i]);
+        }
+        strcpy(Previous_File[0], sk);
+        mLastFiles.poz = 0;
+    }
+}
 
 BOOL zapisz_do(void);
 

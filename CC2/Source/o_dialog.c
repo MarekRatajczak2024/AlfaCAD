@@ -504,6 +504,8 @@ extern char *icon_inertia_d48_p;
 extern char *icon_hourglass_p;
 extern char *icon_pin_to_flex_d48_p;
 
+extern char *icon_view_log_d_48_p;
+
 /////////////////////////////
 
 extern FORTIPS_MAP fortips_map;
@@ -613,7 +615,7 @@ extern int SkalaZ_Plus(int sclfct);
          /*189*/ icon_tab_p, icon_arrow_down_end_d48_p, icon_alpha_sorting_d32_p, icon_time_lapse_d32_p, icon_no_d_12_p,
          /*194*/ icon_eurocode_d48_p, icon_asce_d48_p, icon_icc_d48_p, icon_combination_d48_p, icon_erase_layer_db_64_p, icon_mark_layer_db_64_p,
          /*200*/ icon_mark_d_12_p, icon_Pdelta_d48_p, icon_upgrademark_pmem, icon_noupgrademark_pmem, icon_vibrations_d48_p, icon_inertia_d48_p,
-         /*206*/ icon_mouse1b2b_p, icon_paper_size_d_p, icon_empty_p, icon_hourglass_p, icon_pin_to_flex_d48_p
+         /*206*/ icon_mouse1b2b_p, icon_paper_size_d_p, icon_empty_p, icon_hourglass_p, icon_pin_to_flex_d48_p, icon_view_log_d_48_p,
      };
 
 	 return icons[iconno];

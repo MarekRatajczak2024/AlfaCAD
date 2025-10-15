@@ -1479,7 +1479,9 @@ char* vector_style_tab[] = { u8"rígido-rígido",u8"rígido-con bisagras",u8"con
                             u8"proyección vertical de una carga horizontal",
                             u8"carga térmica",
                             u8"tamaño del nodo (radio)",
-                            u8"carga de losa","?","?","?","?","?","?","?",
+                            u8"carga de losa  superficial",
+                            u8"carga de Losa de fuerza concentrada",
+                            u8"?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
@@ -1577,13 +1579,13 @@ char* objects[] = { u8"Línea", u8"Línea 3D", u8"Texto", u8"Arco", u8"Círculo"
 #define _FILLING_ u8"relleno"
 
 char *vector_txt[]={u8"Vector: rígido-rígido",u8"Vector: rígido-pasador",u8"Vector: pasador-rígido",u8"Vector: pasador-pasador",u8"Vector: Fuerza",u8"Vector: Momento" ,u8"Vector: -Momento",
- u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)", u8"carga de losa"};
+ u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)", u8"carga de losa superficial", u8"carga de losa de fuerza concentrada"};
 
 //char *point_txt[]={u8"Simple",u8"punto Base",'','','','','',u8"Unión",u8"Pasador",'','','',u8"apoyo Empotrado",u8"apoyo empotrado I",u8"apoyo empotrado D",u8"apoyo empotrado A",u8"apoyo Articulado fijo",
 // u8"apoyo articulado fijo I",u8"apoyo articulado fijo D",u8"apoyo articulado fijo A",u8"apoyo Deslizadera horizontalmente",u8"apoyo deslizadera verticalmente I",u8"apoyo deslizadera verticalmente D",
  //u8"apoyo deslizadera horizontalmente A",u8"apoyo articulado deslizadera horizontalmente",u8"apoyo articulado deslizadera verticalmente I",u8"apoyo articulado deslizadera verticalmente D",u8"apoyo articulado deslizadera horizontalmente A"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'V', L'H', L'Q', L'R'};
+unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
 unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'U', L'P', ' ', ' ', ' ',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', 'B', L'V', ' '};
 char *object_txt[]={u8"Imagen",u8"Línea",u8"Texto",u8"Arco",u8"Círculo",u8"Disco",u8"Sólido",u8"Punto",u8"Bloque",u8"Arco sólido",u8"Arco elíptico",u8"Elipse",u8"Elipse rellena",u8"Bézier Spline",u8"Vector",""};
@@ -1798,7 +1800,8 @@ static POLE pmVector[] = {
           {u8"apertura de Losa\0\0",L'L',844,NULL},
           {u8"La pared debajo de la losa\0\0",L'W',843,NULL},
           {u8"Zona de losa\0\0",L'Z',842,NULL},
-          {u8"carga de losa\0\0",L'Q',845,&mLoad_Char},
+          {u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
+          {u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -3342,7 +3345,7 @@ static POLE pmPrecision[] = {
         {u8"precisión de tensiones\0 \0",       L'S',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Profundidad de la sección\0 \0",L'P',764,NULL},
@@ -3365,21 +3368,28 @@ static POLE pmStaticColors[] = {
        {u8"֎Vibraciones\0otro\0",               L'V',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"carga Lineal\0 \0",L'L',733,NULL},
 	   {u8"arga Superficial\0 \0",L'S',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"tensión en Acero/madera\0 \0",L'A',775,NULL},
 	   {u8"tensión en el Hormigón armado\0 \0",L'H',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
+static POLE pmResetMagnitude[] = {
+       {u8"SI\0 \0",L'S',858,NULL},
+	   {u8"Imperial\0 \0",L'I',859,NULL},
+	  };
+
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"reescalado de Forzar\0 \0",              L'F',727,NULL},
@@ -3399,9 +3409,10 @@ static POLE pmMagnitude[] = {
        {u8"Exageración de las vibraciónes\0 \0",    L'E',814,NULL},
        {u8"Precisión\0 \0",                         L'P',184,NULL}, //&mPrecision},
        {u8"Coloros de Graficas\0 \0",               L'G',495,NULL}, //&mStaticColors},
+       {u8"restablecer reescalado\0 \0",            L'I',860,&mResetMagnitude},
        };
 
-static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Formato\0 A4\0     ",'F',96,&mFormat_r},
@@ -3440,6 +3451,17 @@ static char config_sectors[11][32] =
 	"Estilo de zona",
 	"Numeración invertida",
 };
+
+#define _Yes_ u8"Sí"
+#define _No_ u8"No"
+#define _YES_ 'S'
+#define _yes_ 's'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _reset_mgnitude_to_ u8"¿Desea restaurar los factores de escala predeterminados para el sistema de medición:"
+#define _SI_ u8"SI"
+#define _IMP_ u8"Imperial"
 
 #endif
 

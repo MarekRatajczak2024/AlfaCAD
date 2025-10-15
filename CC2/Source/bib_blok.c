@@ -268,6 +268,7 @@ static void zwvector(char  *adr,double dx,double dy)
             memmove(v, vc, sizeof(AVECTOR));
             break;
             case 4: //stretching angle and value of moment or rotation
+            case 18:
             vc=get_vector_c();
             memmove(v, vc, sizeof(AVECTOR));
             break;
@@ -962,6 +963,7 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
             v->x2=xp;v->y2=yp;
             break;
         case 4:  //force
+        case 18: //slab force
         case 7:  //displacement
             del_x=(v->x2 - v->x1);
             del_y=(v->y2 - v->y1);
@@ -2877,14 +2879,14 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
         switch (ad->obiektt2) {
             case 6:
                 memmove(&V, ad, sizeof(LINIA));
-                if (ad->obiektt3==0)  V.style = 18;
-                else V.style = 19;
+                if (ad->obiektt3==0)  V.style = V_EDGE_SIMPLE; //18;
+                else V.style = V_EDGE_SIMPLE_INV; //19;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             case 7:
                 memmove(&V, ad, sizeof(LINIA));
-                if (ad->obiektt3==0)  V.style = 20;
-                else V.style = 21;
+                if (ad->obiektt3==0)  V.style = V_EDGE_FIXED; //20;
+                else V.style = V_EDGE_FIXED_INV; //21;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
 
@@ -4021,8 +4023,8 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
                 V.angle1 = ad->kat1;
                 V.angle2 = ad->kat2;
                 V.magnitude1 = 0.0f;
-                if (ad->obiektt3 == 0) V.style = 22;
-                else V.style = 23;
+                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE; //22;
+                else V.style = V_EDGE_ARC_SIMPLE_INV; //23;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             case 7:
@@ -4035,8 +4037,8 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
                 V.angle1 = ad->kat1;
                 V.angle2 = ad->kat2;
                 V.magnitude1 = 0.0f;
-                if (ad->obiektt3 == 0) V.style = 24;
-                else V.style = 25;
+                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED; //24;
+                else V.style = V_EDGE_ARC_FIXED_INV; //25;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             default:

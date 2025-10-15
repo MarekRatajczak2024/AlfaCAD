@@ -2289,6 +2289,8 @@ extern BITMAP *icon_slab_space;
 extern char *icon_slab_space_p;
 extern BITMAP *icon_slab_load;
 extern char *icon_slab_load_p;
+extern BITMAP *icon_slab_force;
+extern char *icon_slab_force_p;
 extern BITMAP *icon_slab_geo_red;
 extern char *icon_slab_geo_red_p;
 extern BITMAP *icon_slab_geo_black;
@@ -2309,6 +2311,16 @@ extern BITMAP *icon_static;
 extern char *icon_static_p;
 extern BITMAP *icon_slab_fem_a;
 extern char *icon_slab_fem_a_p;
+
+extern BITMAP *icon_view_log_d_48;
+extern char *icon_view_log_d_48_p;
+
+extern BITMAP *icon_SI;
+extern char *icon_SI_p;
+extern BITMAP *icon_IMP;
+extern char *icon_IMP_p;
+extern BITMAP *icon_factory_reset;
+extern char *icon_factory_reset_p;
 
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
@@ -3182,6 +3194,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_slab_wall,"slab_wall",&icon_slab_wall_p },
         {&icon_slab_space,"slab_space",&icon_slab_space_p },
         {&icon_slab_load,"slab_load",&icon_slab_load_p },
+        {&icon_slab_force,"slab_force",&icon_slab_force_p },
         {&icon_slab_geo_red,"slab_geo_red",&icon_slab_geo_red_p },
         {&icon_slab_geo_black,"slab_geo_black",&icon_slab_geo_black_p },
         {&icon_slab_fem,"slab_fem",&icon_slab_fem_p },
@@ -3192,6 +3205,10 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_flip_support,"flip_support",&icon_flip_support_p },
         {&icon_static,"static",&icon_static_p },
         {&icon_slab_fem_a,"slab_fem_a",&icon_slab_fem_a_p },
+        {&icon_view_log_d_48,"view_log_d_48",&icon_view_log_d_48_p },
+        {&icon_SI,"SI",&icon_SI_p },
+        {&icon_SI,"IMP",&icon_IMP_p },
+        {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);

@@ -95,6 +95,7 @@ extern void lock_mouse(void);
 extern int my_file_exists(char *name);
 extern int my_directory_exists(const char *path);
 extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
+
 extern void set_decimal_format(char *text, double l, double precision);
 
 extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area,
@@ -111,7 +112,8 @@ extern void get_blocks_setup(int layer_no, char **block_names, int *block_names_
 extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
                                int *theta, int *sigma_eq, int *epsilon);
 extern int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab);
-extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image);
+extern int EditFile(char *, int adjust, int nCmdShow);
+extern double Angle_Normal (double angle);
 
 #ifndef LINUX
 extern BOOL Is64BitOperatingSystem(void);
@@ -212,6 +214,7 @@ static ST_LOAD_FACTORS *pl_load_factors=NULL;
 int pl_load_factors_no=0;
 
 static PL_NODE *pl_node=NULL;
+static PL_NODE_EMB *pl_node_emb=NULL;
 static PL_EDGE *pl_edge=NULL;
 static PL_LOAD *pl_load=NULL;
 static PL_LOAD *pl_point_load=NULL;
@@ -257,6 +260,7 @@ static PLATE_PROPERTY *wall_property=NULL;
 static PLATE_PROPERTY *zone_property=NULL;
 
 int pl_node_no=0;
+int pl_node_emb_no=0;
 int pl_edge_no=0;
 int plate_no=0;
 int hole_no=0;
@@ -276,6 +280,7 @@ int pllc_uniform_load_no=0;
 int PL_PROPERTY_MAX=10;
 int PL_LOAD_FACTORS_MAX=100;
 int PL_NODE_MAX=100;
+int PL_NODE_EMB_MAX=10;
 int PL_EDGE_MAX=100;
 int PL_LOAD_MAX=10;
 int PL_POINT_LOAD_MAX=10;
@@ -380,7 +385,7 @@ unsigned char str2load(char *ptr)
 }
 */
 #define Utf8Char unsigned char	// must be 1 byte, 8 bits, can be char, the UTF consortium specify unsigned
-extern Utf8Char* Utf8StrMakeUprUtf8Str(const Utf8Char* pUtf8);
+extern Utf8Char* Utf8StrMakeUprUtf8Str(const Utf8Char *pUtf8);
 
 void add_load_factors_pl(void)
 {
@@ -412,7 +417,16 @@ void add_node_pl(void)
     pl_node_no++;
     if (pl_node_no==PL_NODE_MAX) {
         PL_NODE_MAX+=100;
-        pl_node=realloc(pl_node, PL_NODE_MAX * sizeof(ST_NODE));
+        pl_node=realloc(pl_node, PL_NODE_MAX * sizeof(PL_NODE));
+    }
+}
+
+void add_node_emb_pl(void)
+{
+    pl_node_emb_no++;
+    if (pl_node_emb_no==PL_NODE_EMB_MAX) {
+        PL_NODE_EMB_MAX+=10;
+        pl_node_emb=realloc(pl_node, PL_NODE_EMB_MAX * sizeof(PL_NODE_EMB));
     }
 }
 
@@ -816,6 +830,538 @@ void modify_chapter(char *chapter)
 
 }
 
+void embed_node(int load_no, double geo_units_factor)
+{
+    int k;
+//check if point must be embeded
+    for (k = 0; k < pl_node_no; k++)
+    {
+        if ((Check_if_Equal(pl_node[k].x, pl_load[load_no].x1) == TRUE) &&
+            (Check_if_Equal(pl_node[k].y, pl_load[load_no].y1) == TRUE))
+            break;  //no need to embed
+    }
+    if (k == pl_node_no)  //checking if already embeded
+    {
+        for (k = 0; k < pl_node_emb_no; k++) {
+            if ((Check_if_Equal(pl_node_emb[k].x, pl_load[load_no].x1) == TRUE) &&
+                (Check_if_Equal(pl_node_emb[k].y, pl_load[load_no].y1) == TRUE))
+                break;  //no need to embed
+        }
+    }
+    if (k == pl_node_emb_no)  //need to embed
+    {
+        pl_node_emb[pl_node_emb_no].x = pl_load[load_no].x1;
+        pl_node_emb[pl_node_emb_no].y = pl_load[load_no].y1;
+        pl_node_emb[pl_node_emb_no].d = (float)(dxl_min / geo_units_factor);  //for compatibility
+        pl_node_emb[pl_node_emb_no].body = pl_load[load_no].body;
+        pl_node_emb[pl_node_emb_no].body_no = pl_load[load_no].body_no;
+        add_node_emb_pl();
+    }
+}
+
+//#include <math.h>
+//#include <stdio.h>
+
+/**
+ * Calculate reinforcement areas (As, As_prime), ratios (rho, rho_prime, total_rho),
+ * and pseudo-elastic stress (sigma_c_max) for a rectangular RC section under Eurocode 2,
+ * handling cases where K > 0.283 (doubly reinforced with x = c) or K <= 0.283 (singly reinforced).
+ * Assumes N = 0 for pure bending. Units: m, Pa, N, Nm.
+ *
+ * Parameters:
+ *   M: Design moment (Nm)
+ *   h: Section height (m)
+ *   b: Section width (m)
+ *   c: Concrete cover (m, same top/bottom)
+ *   fck: Characteristic concrete compressive strength (Pa)
+ *   fcd: Design concrete compressive strength (Pa, typically fck/1.5)
+ *   fyd: Design steel yield strength (Pa, typically fyk/1.15)
+ *   eta: Stress block factor (typically 1.0 for fck <= 50 MPa)
+ *   lambda: Stress block depth factor (typically 0.8 for fck <= 50 MPa)
+ *   Es: Steel modulus (Pa, typically 200e9)
+ *   As: Pointer to store tension rebar area (m²)
+ *   As_prime: Pointer to store compression rebar area (m²)
+ *   rho: Pointer to store tension reinforcement ratio
+ *   rho_prime: Pointer to store compression reinforcement ratio
+ *   total_rho: Pointer to store total reinforcement ratio (rho + rho_prime)
+ *   sigma_c_max: Pointer to store pseudo-elastic compressive stress (Pa)
+ *
+ * Returns:
+ *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
+ */
+int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
+                              double fck, double fcd, double fyd,
+                              double eta, double lambda, double Es,
+                              double *As, double *As_prime, double *rho, double *rho_prime,
+                              double *total_rho, double *sigma_c_max) {
+    double d = h - cc; // Effective depth
+    double d_prime = cc; // Compression rebar depth
+    double Ecm = 22.0 * pow((fck * 1e-6 + 8.0) / 10.0, 0.3) * 1e9; // Pa
+    double n = Es / Ecm; // Modular ratio
+    double K = M / (b * d * d * fck);
+
+    if (K <= 0.283) {
+        // Singly reinforced
+        double sqrt_term = sqrt(1.0 - 3.53 * K);
+        if (sqrt_term < 0) {
+            printf("Error: Negative sqrt for K = %.4f.\n", K);
+            return -1;
+        }
+        double z = d * (1.0 + sqrt_term) / 2.0;
+        if (z > 0.95 * d) z = 0.95 * d;
+        *As = M / (fyd * z);
+        *As_prime = 0.0;
+        *rho = *As / (b * d);
+        *rho_prime = 0.0;
+        *total_rho = *rho + *rho_prime;
+
+        // Pseudo-elastic stress with x = d - z
+        double x = d - z; // Neutral axis from compression face
+        double m = n * (*rho); // Tension reinforcement only
+        double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+        double A_cr = b * x + m * b * d;
+        *sigma_c_max = M * x / I_cr;
+
+        // Check limits
+        if (*total_rho > 0.02) {
+            printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 2%%.\n", *total_rho * 100);
+        }
+        if (*sigma_c_max > fcd) {
+            printf("Warning: sigma_c_max (%.2f MPa) exceeds fcd (%.2f MPa).\n",
+                   *sigma_c_max / 1e6, fcd / 1e6);
+        }
+
+        printf("Singly reinforced: As = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",
+               *As * 1e6, *rho * 100, *sigma_c_max / 1e6);
+        return 0;
+    } else {
+        // Doubly reinforced (K > 0.283, use x = cc)
+        double x = cc;
+        double concrete_force = eta * fcd * lambda * x * b;
+        double As_term = concrete_force / fyd;
+        double lever_arm_concrete = h / 2.0 - (lambda * x) / 2.0;
+        double lever_arm_As_prime = h / 2.0 - x;
+        double lever_arm_As = d - h / 2.0;
+        double concrete_moment = concrete_force * lever_arm_concrete;
+        double coeff_As_prime = fyd * (lever_arm_As_prime + lever_arm_As);
+        double constant_term = concrete_moment + fyd * lever_arm_As * As_term;
+        *As_prime = (M - constant_term) / coeff_As_prime;
+        *As = *As_prime + As_term;
+
+        if (*As < 0 || *As_prime < 0) {
+            printf("Error: Negative reinforcement areas (As = %.2f mm², As_prime = %.2f mm²).\n",
+                   *As * 1e6, *As_prime * 1e6);
+            return -1;
+        }
+
+        *rho = *As / (b * d);
+        *rho_prime = *As_prime / (b * d);
+        *total_rho = *rho + *rho_prime;
+        double m = n * (*rho); // Tension reinforcement only
+        double I_cr = (b * x * x * x) / 3.0 + m * b * d * (d - x) * (d - x);
+        double A_cr = b * x + m * b * d;
+        *sigma_c_max = M * x / I_cr;
+
+        // Check limits
+        if (*total_rho > 0.02) {
+            printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 2%%.\n", *total_rho * 100);
+        }
+        if (*sigma_c_max > fcd) {
+            printf("Warning: sigma_c_max (%.2f MPa) exceeds fcd (%.2f MPa).\n",
+                   *sigma_c_max / 1e6, fcd / 1e6);
+        }
+
+        printf("Doubly reinforced: As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",
+               *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+        return 0;
+    }
+}
+
+/**
+ * Example usage with test data
+ */
+int foo_test_p_eurocode() {
+    // Test case: K > 0.283
+    double M = 150000.0; // Nm (adjusted to force K > 0.283)
+    double h = 0.1;      // m
+    double b = 2.0;      // m
+    double cc = 0.02;     // m
+    double fck = 30e6;   // Pa
+    double fcd = 20e6;   // Pa
+    double fyd = 350e6;  // Pa
+    double eta = 1.0;
+    double lambda = 0.8;
+    double Es = 200e9;   // Pa
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    int result = calculate_rebars_eurocode_simplified(M, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+                                           &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    return 0;
+}
+
+//#include <math.h>
+//#include <stdio.h>
+
+/**
+ * Simplified ACI 318 procedure for pure bending (N=0) in a plate (per 1 m width) to calculate
+ * reinforcement areas (As, As_prime), ratios (rho, rho_prime, total_rho), and pseudo-elastic
+ * stress (sigma_c_max). Handles sqrt_term < 0 by switching to doubly reinforced with c_na = c.
+ * Units: m, Pa, N, Nm/m (coherent SI).
+ *
+ * Parameters:
+ *   M: Factored moment per meter (Nm/m)
+ *   h: Section height (m)
+ *   c: Concrete cover (m, same top/bottom)
+ *   fyk: Characteristic steel yield strength (Pa)
+ *   fyd: Design steel yield strength (Pa, typically fyk for ACI)
+ *   fck: Characteristic concrete compressive strength (Pa)
+ *   fcd: Design concrete compressive strength (Pa, typically fck for ACI stress block)
+ *   As: Pointer to store tension rebar area (m²/m)
+ *   As_prime: Pointer to store compression rebar area (m²/m)
+ *   rho: Pointer to store tension reinforcement ratio
+ *   rho_prime: Pointer to store compression reinforcement ratio
+ *   total_rho: Pointer to store total reinforcement ratio (rho + rho_prime)
+ *   sigma_c_max: Pointer to store pseudo-elastic compressive stress (Pa)
+ *
+ * Returns:
+ *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
+ */
+int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
+                                    double fyk, double fyd, double fck, double fcd,
+                                    double *As, double *As_prime, double *rho, double *rho_prime,
+                                    double *total_rho, double *sigma_c_max)
+{
+    double b = 1.0; // Width per meter for plate
+    double d = h - cc; // Effective depth
+    double d_prime = cc; // Compression rebar depth
+    double fi = 0.9; // Phi for tension-controlled
+    double Es = 200e9; // Steel modulus (Pa)
+    double Ec = 4700 * sqrt(fck / 1e6) * 1e6; // Concrete modulus (Pa)
+    double n = Es / Ec; // Modular ratio
+    double beta1 = (fck <= 28e6) ? 0.85 : 0.85 - 0.05 * (fck / 1e6 - 28) / 4; // ACI 318-19
+    if (beta1 < 0.65) beta1 = 0.65;
+
+    // Step 1: Try singly reinforced
+    double R = M / (fi * b * d * d);
+    double sqrt_term = 1.0 - 2.0 * R / (0.85 * fck);
+
+    double c_na;
+
+    if (sqrt_term >= 0.0)
+    {
+        // Singly reinforced
+        *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
+        *As = *rho * b * d;
+        *As_prime = 0.0;
+        *rho_prime = 0.0;
+        *total_rho = *rho + *rho_prime;
+
+        // Check tension-controlled (epsilon_s >= 0.005)
+        c_na = *rho * fyk * d / (0.85 * fck * beta1); // c = a / beta1
+        double epsilon_s = 0.003 * (d - c_na) / c_na;
+        if (epsilon_s < 0.005) {
+            printf("Warning: Section not tension-controlled (epsilon_s = %.6f < 0.005).\n", epsilon_s);
+            fi = 0.65 + (epsilon_s - 0.002) * (0.9 - 0.65) / (0.005 - 0.002);
+            if (fi < 0.65) fi = 0.65;
+            // Recalculate with adjusted phi
+            R = M / (fi * b * d * d);
+            sqrt_term = 1.0 - 2.0 * R / (0.85 * fck);
+            if (sqrt_term < 0.0) goto doubly_reinforced;
+            *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
+            *As = *rho * b * d;
+            c_na = *rho * fyk * d / (0.85 * fck * beta1);
+        }
+
+        // Pseudo-elastic stress
+        double m = n * (*rho); // Tension reinforcement only
+        double I_cr = (b * c_na * c_na * c_na) / 3.0 + m * b * d * (d - c_na) * (d - c_na);
+        double A_cr = b * c_na + m * b * d;
+        *sigma_c_max = M * c_na / I_cr;
+
+        // Check limits
+        double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+        if (*total_rho > rho_max || *total_rho > 0.02) {
+            printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
+                   *total_rho * 100, rho_max * 100);
+        }
+        if (*sigma_c_max > 0.85 * fck) {
+            printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck (%.2f MPa).\n",
+                   *sigma_c_max / 1e6, 0.85 * fck / 1e6);
+        }
+
+        printf("Singly reinforced: As = %.2f mm²/m, rho = %.2f%%, sigma_c_max = %.2f MPa\n",
+               *As * 1e6, *rho * 100, *sigma_c_max / 1e6);
+        return 0;
+    }
+
+doubly_reinforced:
+    /* Step 2: Doubly reinforced (sqrt_term < 0, use c_na = c)*/
+    c_na = cc;
+    double concrete_force = 0.85 * fcd * beta1 * cc * b;
+    double As_term = concrete_force / fyd;
+    double lever_arm_concrete = h / 2.0 - (beta1 * cc) / 2.0;
+    double lever_arm_As_prime = h / 2.0 - cc;
+    double lever_arm_As = d - h / 2.0;
+    double concrete_moment = concrete_force * lever_arm_concrete;
+    double coeff_As_prime = fyd * (lever_arm_As_prime + lever_arm_As);
+    double constant_term = concrete_moment + fyd * lever_arm_As * As_term;
+    *As_prime = (M - constant_term) / coeff_As_prime;
+    *As = *As_prime + As_term;
+
+    if (*As < 0 || *As_prime < 0) {
+        printf("Error: Negative reinforcement areas (As = %.2f mm²/m, As_prime = %.2f mm²/m).\n",
+               *As * 1e6, *As_prime * 1e6);
+        return -1;
+    }
+
+    *rho = *As / (b * d);
+    *rho_prime = *As_prime / (b * d);
+    *total_rho = *rho + *rho_prime;
+    double m = n * (*rho); // Tension reinforcement only
+    double I_cr = (b * c_na * c_na * c_na) / 3.0 + m * b * d * (d - c_na) * (d - c_na);
+    double A_cr = b * c_na + m * b * d;
+    *sigma_c_max = M * c_na / I_cr;
+
+    // Check limits
+    double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+    if (*total_rho > rho_max || *total_rho > 0.02) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
+               *total_rho * 100, rho_max * 100);
+    }
+    if (*sigma_c_max > 0.85 * fck) {
+        printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck (%.2f MPa).\n",
+               *sigma_c_max / 1e6, 0.85 * fck / 1e6);
+    }
+
+    printf("Doubly reinforced: As = %.2f mm²/m, As_prime = %.2f mm²/m, rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",
+           *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+    return 0;
+}
+
+/**
+ * Example usage with provided data
+ */
+int foo_p_aci() {
+    // Test case
+    double M = 218000.0; // Nm/m
+    double h = 0.15;     // m (adjusted for d = 0.13)
+    double c = 0.02;     // m
+    double fyk = 350e6;  // Pa
+    double fyd = 350e6;  // Pa (fyk for ACI)
+    double fck = 30e6;   // Pa
+    double fcd = 30e6;   // Pa (fck for ACI stress block)
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    int result = calculate_rebars_aci_simplified_SI(M, h, c, fyk, fyd, fck, fcd,
+                                                 &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    return 0;
+}
+
+
+#include <math.h>
+#include <stdio.h>
+
+/**
+ * Simplified ACI 318 procedure for pure bending (N=0) in a plate (per 1 m or 1 ft width) to calculate
+ * reinforcement areas (As, As_prime), ratios (rho, rho_prime, total_rho), and pseudo-elastic
+ * stress (sigma_c_max). Handles sqrt_term < 0 by switching to doubly reinforced with c_na = c.
+ * Supports SI (m, Nm/m, Pa) or Imperial (in, in-lbf/ft, psi) units based on fyk magnitude.
+ *
+ * Parameters:
+ *   M: Factored moment per meter (Nm/m) or per foot (in-lbf/ft)
+ *   h: Section height (m or in)
+ *   c: Concrete cover (m or in, same top/bottom)
+ *   fyk: Characteristic steel yield strength (Pa or psi)
+ *   fyd: Design steel yield strength (Pa or psi, typically fyk for ACI)
+ *   fck: Characteristic concrete compressive strength (Pa or psi)
+ *   fcd: Design concrete compressive strength (Pa or psi, typically fck for ACI stress block)
+ *   As: Pointer to store tension rebar area (m²/m or in²/ft)
+ *   As_prime: Pointer to store compression rebar area (m²/m or in²/ft)
+ *   rho: Pointer to store tension reinforcement ratio
+ *   rho_prime: Pointer to store compression reinforcement ratio
+ *   total_rho: Pointer to store total reinforcement ratio (rho + rho_prime)
+ *   sigma_c_max: Pointer to store pseudo-elastic compressive stress (Pa or psi)
+ *
+ * Returns:
+ *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
+ */
+int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
+                                    double fyk, double fyd, double fck, double fcd,
+                                    double *As, double *As_prime, double *rho, double *rho_prime,
+                                    double *total_rho, double *sigma_c_max) {
+    // Detect unit system based on fyk magnitude
+    int is_si_units = (fyk > 1e8); // Pa (>100 MPa) for SI, psi for Imperial
+    ////double b = is_si_units ? 1.0 : 12.0; // 1 m for SI, 12 in (1 ft) for Imperial
+    double unit_factor = is_si_units ? 1e6 : 1.0; // Convert Pa to MPa or psi to psi
+    double area_display_factor = is_si_units ? 1e6 : 1.0; // m²/m to mm²/m or in²/ft
+    const char *length_unit = is_si_units ? "m" : "ft";
+    const char *area_unit = is_si_units ? "mm²/m" : "in²/ft";
+    const char *stress_unit = is_si_units ? "MPa" : "psi";
+
+    double d = h - cc; // Effective depth
+    double d_prime = cc; // Compression rebar depth
+    double fi = 0.9; // Phi for tension-controlled
+    double Es = is_si_units ? 200e9 : 29e6; // 200 GPa or 29e6 psi
+    double Ec = is_si_units ? 4700 * sqrt(fck / 1e6) * 1e6 : 57000 * sqrt(fck); // Pa or psi
+    double n = Es / Ec; // Modular ratio
+    double beta1 = (fck / unit_factor <= 28.0) ? 0.85 : 0.85 - 0.05 * (fck / unit_factor - 28.0) / 4.0; // ACI 318-19
+    if (beta1 < 0.65) beta1 = 0.65;
+
+    // Step 1: Try singly reinforced
+    double R = M / (fi * b * d * d);
+    double sqrt_term = 1.0 - 2.0 * R / (0.85 * fck);
+
+    double c_na;
+
+    if (sqrt_term >= 0.0) {
+        // Singly reinforced
+        *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
+        *As = *rho * b * d;
+        *As_prime = 0.0;
+        *rho_prime = 0.0;
+        *total_rho = *rho + *rho_prime;
+
+        // Check tension-controlled (epsilon_s >= 0.005)
+        c_na = *rho * fyk * d / (0.85 * fck * beta1); // c = a / beta1
+        double epsilon_s = 0.003 * (d - c_na) / c_na;
+        if (epsilon_s < 0.005) {
+            printf("Warning: Section not tension-controlled (epsilon_s = %.6f < 0.005).\n", epsilon_s);
+            fi = 0.65 + (epsilon_s - 0.002) * (0.9 - 0.65) / (0.005 - 0.002);
+            if (fi < 0.65) fi = 0.65;
+            // Recalculate with adjusted phi
+            R = M / (fi * b * d * d);
+            sqrt_term = 1.0 - 2.0 * R / (0.85 * fck);
+            if (sqrt_term < 0.0) goto doubly_reinforced;
+            *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
+            *As = *rho * b * d;
+            c_na = *rho * fyk * d / (0.85 * fck * beta1);
+        }
+
+        // Pseudo-elastic stress
+        double m = n * (*rho); // Tension reinforcement only
+        double I_cr = (b * c_na * c_na * c_na) / 3.0 + m * b * d * (d - c_na) * (d - c_na);
+        double A_cr = b * c_na + m * b * d;
+        *sigma_c_max = M * c_na / I_cr;
+
+        // Check limits
+        double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+        if (*total_rho > rho_max || *total_rho > 0.02) {
+            printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
+                   *total_rho * 100, rho_max * 100);
+        }
+        if (*sigma_c_max > 0.85 * fck) {
+            printf("Warning: sigma_c_max (%.2f %s) exceeds 0.85*fck (%.2f %s).\n",
+                   *sigma_c_max / unit_factor, stress_unit, 0.85 * fck / unit_factor, stress_unit);
+        }
+
+        printf("Singly reinforced: As = %.2f %s, rho = %.2f%%, sigma_c_max = %.2f %s\n",
+               *As * area_display_factor, area_unit, *rho * 100, *sigma_c_max / unit_factor, stress_unit);
+        return 0;
+    }
+
+    doubly_reinforced:
+    // Step 2: Doubly reinforced (sqrt_term < 0, use c_na = c)
+    c_na = cc;
+    double concrete_force = 0.85 * fcd * beta1 * cc * b;
+    double As_term = concrete_force / fyd;
+    double lever_arm_concrete = h / 2.0 - (beta1 * cc) / 2.0;
+    double lever_arm_As_prime = h / 2.0 - cc;
+    double lever_arm_As = d - h / 2.0;
+    double concrete_moment = concrete_force * lever_arm_concrete;
+    double coeff_As_prime = fyd * (lever_arm_As_prime + lever_arm_As);
+    double constant_term = concrete_moment + fyd * lever_arm_As * As_term;
+    *As_prime = (M - constant_term) / coeff_As_prime;
+    *As = *As_prime + As_term;
+
+    if (*As < 0 || *As_prime < 0) {
+        printf("Error: Negative reinforcement areas (As = %.2f %s, As_prime = %.2f %s).\n",
+               *As * area_display_factor, area_unit, *As_prime * area_display_factor, area_unit);
+        return -1;
+    }
+
+    *rho = *As / (b * d);
+    *rho_prime = *As_prime / (b * d);
+    *total_rho = *rho + *rho_prime;
+    double m = n * (*rho); // Tension reinforcement only
+    double I_cr = (b * c_na * c_na * c_na) / 3.0 + m * b * d * (d - c_na) * (d - c_na);
+    double A_cr = b * c_na + m * b * d;
+    *sigma_c_max = M * c_na / I_cr;
+
+    // Check limits
+    double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+    if (*total_rho > rho_max || *total_rho > 0.02) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
+               *total_rho * 100, rho_max * 100);
+    }
+    if (*sigma_c_max > 0.85 * fck) {
+        printf("Warning: sigma_c_max (%.2f %s) exceeds 0.85*fck (%.2f %s).\n",
+               *sigma_c_max / unit_factor, stress_unit, 0.85 * fck / unit_factor, stress_unit);
+    }
+
+    printf("Doubly reinforced: As = %.2f %s, As_prime = %.2f %s, rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f %s\n",
+           *As * area_display_factor, area_unit, *As_prime * area_display_factor, area_unit,
+           *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / unit_factor, stress_unit);
+    return 0;
+}
+
+/**
+ * Example usage with provided data
+ */
+int foo_test_UNI() {
+    // Test case (SI units)
+    double M = 218000.0; // Nm/m
+    double h = 0.15;     // m
+    double b = 1.0;  //m
+    double cc = 0.02;     // m
+    double fyk = 350e6;  // Pa
+    double fyd = 350e6;  // Pa (fyk for ACI)
+    double fck = 30e6;   // Pa
+    double fcd = 30e6;   // Pa (fck for ACI stress block)
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    printf("SI Units Test:\n");
+    int result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd,
+                                                 &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    // Test case (Imperial units)
+    M = 588100.0; // in-lbf/ft (218000 Nm/m * 2.6988)
+    h = 5.90551;   // in (0.15 m * 39.3701)
+    b = 12; //ft
+    cc = 0.787402;  // in (0.02 m * 39.3701)
+    fyk = 50763.2; // psi (350 MPa / 6.89476)
+    fyd = 50763.2; // psi
+    fck = 4351.13; // psi (30 MPa / 6.89476)
+    fcd = 4351.13; // psi
+
+    printf("\nImperial Units Test:\n");
+    result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd,
+                                             &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    if (result == 0) {
+        printf("Calculation successful.\n");
+    } else {
+        printf("Calculation failed.\n");
+    }
+
+    return 0;
+}
+
 void Plate_analysis(void) {
 
     int i, j, k, ii, li=0;
@@ -878,6 +1424,7 @@ void Plate_analysis(void) {
     char *line;
     int mesh_nodes_no, mesh_elements_no, mesh_boundaries_no;
     double mesh_node_z;
+    double koc, kos;
     char desired_layer[maxlen_w];
     char desired_layer_bak[maxlen_w];
     int desired_layer_no;
@@ -937,11 +1484,12 @@ void Plate_analysis(void) {
     char *translucency_ptr;
     unsigned char HalfTranslucency = 128;
     char *adr;
-    TEXT T = Tdef;
+    TEXT T=Tdef, Tcb=Tdef;
     LINIA Lt;
     PLINIA PL;
     double psize;
     BOOL hiding;
+    char load_formula0[MaxTextLen];
     char load_formula[MaxMultitextLen];
     char all_load_formula[MaxMultitextLen];
     char all_formulas[2][MaxMultitextLen];
@@ -979,6 +1527,7 @@ void Plate_analysis(void) {
     was_refreshed = FALSE;
 
     pl_node_no = 0;
+    pl_node_emb_no = 0;
     pl_edge_no = 0;
     pl_load_no = 0;
     plate_no = 0;
@@ -989,6 +1538,7 @@ void Plate_analysis(void) {
     PL_PROPERTY_MAX = 10;
     PL_LOAD_FACTORS_MAX = 100;
     PL_NODE_MAX = 100;
+    PL_NODE_EMB_MAX = 10;
     PL_EDGE_MAX = 100;
     PL_LOAD_MAX = 100;
     PL_PLATE_MAX = 10;
@@ -1003,7 +1553,8 @@ void Plate_analysis(void) {
     gZ = 0.0;
 
     redcrsb(0, 171);
-    select_blok();
+    //select_blok();
+    select_blok_items(Blinia | Bluk | Bvector | BtekstNoType15);  //for plate  //Btext
     redcrsb(1, 171);
 
     if ((ADP == NULL) && (ADK == NULL)) return;
@@ -1032,6 +1583,7 @@ void Plate_analysis(void) {
     pl_property = (ST_PROPERTY *) malloc(PL_PROPERTY_MAX * sizeof(ST_PROPERTY) + 100);
     pl_load_factors = (ST_LOAD_FACTORS *) malloc(PL_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS) + 100);
     pl_node = (PL_NODE *) malloc(PL_NODE_MAX * sizeof(PL_NODE) + 100);
+    pl_node_emb = (PL_NODE_EMB *) malloc(PL_NODE_EMB_MAX * sizeof(PL_NODE_EMB) + 100);
     pl_edge = (PL_EDGE *) malloc(PL_EDGE_MAX * sizeof(PL_EDGE) + 100);
     pl_load = (PL_LOAD *) malloc(PL_LOAD_MAX * sizeof(PL_LOAD) + 100);
 
@@ -1699,7 +2251,42 @@ void Plate_analysis(void) {
                 pl_load[pl_load_no].variant = v->variant;
                 pl_load[pl_load_no].body = -1;  //not yet assigned
                 pl_load[pl_load_no].body_no = -1;  //not yet assigned
+                pl_load[pl_load_no].type = 0;  //uniformly distributed load
 
+
+                if (v->variant > 0)
+                    pl_load[pl_load_no].factor_record = factor_record(v->load, v->variant);
+                else
+                    pl_load[pl_load_no].factor_record = -(v->load == 0 ? 2
+                                                                       : v->load);  //if no load spec, is assumed to be LL, so load=2
+                pl_load[pl_load_no].take_it = 0;
+
+                int v_factor_record = pl_load[pl_load_no].factor_record;
+
+                add_load_pl();
+            }
+            else if (v->style == 18) {
+                pl_load[pl_load_no].adr = v;
+                pl_load[pl_load_no].x1 = v->x1;
+                pl_load[pl_load_no].y1 = v->y1;
+                pl_load[pl_load_no].x2 = v->x1;  //same point
+                pl_load[pl_load_no].y2 = v->y1;
+
+                parametry_lini((LINIA*)v, &PL);
+                kos = sin(Angle_Normal(PL.kat * Pi / 180.));
+                koc = cos(Angle_Normal(PL.kat * Pi / 180.));
+
+                //pl_load[pl_load_no].magnitude1 = v->magnitude1;
+                //pl_load[pl_load_no].magnitude2 = v->magnitude2;
+
+                pl_load[pl_load_no].magnitude1 = v->magnitude1 * kos;
+                pl_load[pl_load_no].magnitude2 = pl_load[pl_load_no].magnitude1;
+
+                pl_load[pl_load_no].load = v->load;
+                pl_load[pl_load_no].variant = v->variant;
+                pl_load[pl_load_no].body = -1;  //not yet assigned
+                pl_load[pl_load_no].body_no = -1;  //not yet assigned
+                pl_load[pl_load_no].type = 1;  //concentrated force load
 
                 if (v->variant > 0)
                     pl_load[pl_load_no].factor_record = factor_record(v->load, v->variant);
@@ -1735,12 +2322,17 @@ void Plate_analysis(void) {
             zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
             ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,
                                    1, 0, 0, 0, 0);
-            ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,
+            if (pl_load[i].type==0)
+                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,
                                    1, 0, 0, 0, 0);
+            else ret2=ret1;  //same point
             zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
             if ((ret1 == 1) && (ret2 == 1)) {
                 pl_load[i].body = 1; //zone
                 pl_load[i].body_no = j;
+
+                if (pl_load[i].type == 1)  //point load
+                      embed_node(i, geo_units_factor);
                 break;
             }
         }
@@ -1754,12 +2346,17 @@ void Plate_analysis(void) {
                 zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
                 ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
                                        &s_hatch_param, 1, 0, 0, 0, 0);
-                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                if (pl_load[i].type==0)
+                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
                                        &s_hatch_param, 1, 0, 0, 0, 0);
+                else ret2=ret1;  //same point
                 zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
                 if ((ret1 == 1) && (ret2 == 1)) {
                     pl_load[i].body = 0; //plate
                     pl_load[i].body_no = j;
+
+                    if (pl_load[i].type == 1)  //point load
+                        embed_node(i, geo_units_factor);
                     break;
                 }
             }
@@ -1902,6 +2499,21 @@ void Plate_analysis(void) {
 
         fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", i + 1, par[0], par[1], par[2]);
     }
+
+    //Embeded points and setting emb_no
+    for (i=0; i<pl_node_emb_no; i++)
+    {
+        set_decimal_format(par[0], milimetryobx(pl_node_emb[i].x) * geo_units_factor, dim_precision_pl);
+        set_decimal_format(par[1], milimetryoby(pl_node_emb[i].y) * geo_units_factor, dim_precision_pl);
+        set_decimal_format(par[2], max(milimetryob((double) pl_node_emb[i].d) * geo_units_factor, dxl_min),
+                           dim_precision_pl);
+
+        fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", pl_node_no + i + 1, par[0], par[1], par[2]);
+        pl_node_emb[i].emb_no=pl_node_no + i + 1;
+    }
+
+    //fprintf(f, "Point(32) = {2.500, 2.500, 0, 0.45};\n");
+
     //edges
     fprintf(f, "\n// EDGES\n");
     k = 0;
@@ -2024,6 +2636,18 @@ void Plate_analysis(void) {
         zone_property[i].k = k;
         k++;
         fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
+
+        //Embeding points
+        // Embed the point (dimension 0) into the surface (dimension 2)
+        // Embed { point_tags } In { surface_tags };
+        //fprintf(f, "Point{32} In Surface{%d};\n", k+1);
+        for (j=0; j<pl_node_emb_no; j++)
+        {
+            if ((pl_node_emb[j].body==1) && (pl_node_emb[j].body_no==i)) //is zone and it's this zone
+            {
+                fprintf(f, "Point{%d} In Surface{%d};\n", pl_node_emb[j].emb_no, k+1);
+            }
+        }
         k++;
     }
 
@@ -2049,6 +2673,18 @@ void Plate_analysis(void) {
         for (j = 0; j < zone_no; j++)
             fprintf(f, ", %d", zone_property[j].k + 1);
         fprintf(f, "};\n");
+
+        //Embeding points
+        // Embed the point (dimension 0) into the surface (dimension 2)
+        // Embed { point_tags } In { surface_tags };
+        //fprintf(f, "Point{32} In Surface{%d};\n", k+1);
+        for (j=0; j<pl_node_emb_no; j++)
+        {
+            if ((pl_node_emb[j].body==0) && (pl_node_emb[j].body_no==i)) //is plate and it's this plate
+            {
+                fprintf(f, "Point{%d} In Surface{%d};\n", pl_node_emb[j].emb_no, k+1);
+            }
+        }
         k++;
     }
 
@@ -2474,7 +3110,8 @@ void Plate_analysis(void) {
     case_number++;
     sif_body_force = 0;
 
-    for (i = 0; i < zone_no; i++) {
+    for (i = 0; i < zone_no; i++)
+    {
         //searching for properties
         for (j = 0; j < pl_property_no; j++) {
             if (pl_property[j].n == zone_property[i].property_number) {
@@ -2495,8 +3132,9 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) {
-            if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
             {
                 set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
                                    load_precision);  //is assumed that magnitude1=magnitude2
@@ -2506,11 +3144,53 @@ void Plate_analysis(void) {
                 strcat(load_formula, ")");
             }
         }
+
+        ////fprintf(f,"  Direction of Outward Normal = –1\n");
+
         if (strlen(load_formula) > 0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
 
-        //fprintf(f, "  Normal Pressure = -5000\n");
+        ///////////////// Concentrated Load
+        /*
+        Point Load (m,n) = Real
+        Point load can be specified as concentrated load at a point on the body. It is to be
+        specified as an array of 9 columns and as many rows as the number of points. The
+        quantities in the column are xp, yp, zp, Fx, Fy, Fz, Mx, My, Mz. First three are the
+        coordinates of the point of application of load, which should exactly match with the
+        coordinates of any one of the nodes. (Preferably the corner points of the body should be
+        chosen because the nodes will always be located at the corners.) Next three are the
+        forces in axial directions and last three values represent moment about axes. All 9
+        components should be specified even though some of these are absent. An example of
+        specifying load Fx at two points is given here.
+
+        Point Load (2,9) = Real 2.0 0.0 0.0 10000.0 0.0 0.0 0.0 0.0 0.0 2.0 0.2 0.0 10000.0 0.0 0.0 0.0 0.0 0.0
+        */
+
+        //fprintf(f, "  Point Load (2,9) = Real 2.0 2.0 0.0 0.0 0.0 -10000.0 0.0 0.0 0.0 10.5 3.5 0.0 0.0 0.0 -10000.0 0.0 0.0 0.0\n");  //TEST
+
+        strcpy(load_formula, "");
+        int f_no=0;
+
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+            {
+                strcpy(load_formula0, "");
+                set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[2], pl_load[j].magnitude1 * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                strcat(load_formula, load_formula0);
+                f_no++;
+            }
+        }
+
+        if (f_no>0)
+            fprintf(f, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+        ///////////////// concentrated load
+
         set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
         fprintf(f, "  Thickness = Real %s\n", par[1]);
+
         fprintf(f, "End\n\n");
         sif_body_force++;
     }
@@ -2537,21 +3217,44 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) {
-            if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+        for (j = 0; j < pl_load_no; j++)   //all load
+        {
+            if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
             {
                 set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
                                    load_precision);  //is assumed that magnitude1=magnitude2
-                //fprintf(f, "  Normal Pressure = %s\n", par[1]);
                 if (strlen(load_formula) > 0) strcat(load_formula, " + ");
                 strcat(load_formula, "(");
                 strcat(load_formula, par[1]);
                 strcat(load_formula, ")");
             }
         }
+
+        ////fprintf(f,"  Direction of Outward Normal = –1\n");
         if (strlen(load_formula) > 0) fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
 
-        //fprintf(f, "  Normal Pressure = -5000\n");
+        ///////////////// Concentrated Load
+        strcpy(load_formula, "");
+        int f_no=0;
+
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
+            {
+                strcpy(load_formula0, "");
+                set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[2], pl_load[j].magnitude1 * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                strcat(load_formula, load_formula0);
+                f_no++;
+            }
+        }
+
+        if (f_no>0)
+            fprintf(f, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+        //////// concentrated load
+
         set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
         fprintf(f, "  Thickness = Real %s\n", par[1]);
         fprintf(f, "End\n\n");
@@ -2587,8 +3290,9 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) {
-            if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
             {
                 if (pl_load[i].factor_record >= 0)
                     gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
@@ -2603,6 +3307,35 @@ void Plate_analysis(void) {
             }
         }
         if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+
+        ///////////////// Concentrated Load
+        strcpy(load_formula, "");
+        int f_no=0;
+
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+            {
+                if (pl_load[i].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+
+                strcpy(load_formula0, "");
+                set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                strcat(load_formula, load_formula0);
+                f_no++;
+            }
+        }
+
+        if (f_no>0)
+        {
+            fprintf(f, "Body Force %d::", sif_body_force + 1);
+            fprintf(f, "Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+        }
+        //////// concentrated load
 
         sif_body_force++;
     }
@@ -2628,8 +3361,9 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) {
-            if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
             {
                 if (pl_load[i].factor_record >= 0)
                     gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
@@ -2645,6 +3379,36 @@ void Plate_analysis(void) {
             }
         }
         if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+
+        ///////////////// Concentrated Load
+        strcpy(load_formula, "");
+        int f_no=0;
+
+        for (j = 0; j < pl_load_no; j++) //all load
+        {
+            if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
+            {
+                if (pl_load[i].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+
+                strcpy(load_formula0, "");
+                set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                strcat(load_formula, load_formula0);
+                f_no++;
+            }
+        }
+
+        if (f_no>0)
+        {
+            fprintf(f, "Body Force %d::", sif_body_force + 1);
+            fprintf(f, "Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+        }
+        //////// concentrated load
+
         sif_body_force++;
     }
 
@@ -2706,7 +3470,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     strcat(load_formula, "(");
@@ -2714,10 +3478,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -2753,6 +3519,58 @@ void Plate_analysis(void) {
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_uls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_uls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_uls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -2770,7 +3588,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
@@ -2779,10 +3597,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -2818,6 +3638,58 @@ void Plate_analysis(void) {
                 if (strlen(load_formula) > 0)
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
+
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_uls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_uls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_uls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -2829,7 +3701,7 @@ void Plate_analysis(void) {
 
             if (go_ahead) {
                 fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
-                fprintf(f, all_formula);
+                fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
@@ -2891,7 +3763,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
@@ -2900,10 +3772,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -2939,6 +3813,57 @@ void Plate_analysis(void) {
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_sls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_sls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_sls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -2956,7 +3881,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     strcat(load_formula, "(");
@@ -2964,10 +3889,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -3003,6 +3930,58 @@ void Plate_analysis(void) {
                 if (strlen(load_formula) > 0)
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
+
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_sls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_sls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_sls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -3014,7 +3993,7 @@ void Plate_analysis(void) {
 
             if (go_ahead) {
                 fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
-                fprintf(f, all_formula);
+                fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
@@ -3077,7 +4056,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     strcat(load_formula, "(");
@@ -3085,10 +4064,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 1) && (pl_load[j].body_no == i)) //zone and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -3124,6 +4105,57 @@ void Plate_analysis(void) {
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_qpsls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_qpsls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -3141,7 +4173,7 @@ void Plate_analysis(void) {
                 strcpy(load_formula, "");
 
                 self_weight = 0.0;
-                self_weight = gZ * gammas->gamma_g * pl_property[this_property].d * pl_property[this_property].h;
+                self_weight = gZ * gamma_g * pl_property[this_property].d * pl_property[this_property].h;
                 if (self_weight > 0.0) {
                     set_decimal_format(par[1], -self_weight, load_precision);  //is assumed that magnitude1=magnitude2
                     strcat(load_formula, "(");
@@ -3149,10 +4181,12 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) {
-                    if ((pl_load[j].body == 0) && (pl_load[j].body_no == i)) //plate and number
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0) {
+                        if (pl_load[i].factor_record >= 0)
+                        {
                             combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
                             load = pl_load_factors[pl_load[i].factor_record].load;
                         } else {
@@ -3188,6 +4222,58 @@ void Plate_analysis(void) {
                 if (strlen(load_formula) > 0)
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
+
+                ///////////////// Concentrated Load
+                strcpy(load_formula, "");
+                int f_no=0;
+
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                        {
+                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                            load = pl_load_factors[pl_load[i].factor_record].load;
+                        } else {
+                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                        }
+
+                        int combi_factor;
+                        if (ret_standard == 1)  //EUROCODE
+                            combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                        else if (ret_standard == 2)  //ASCE
+                            combi_factor = asce_combi_factors_qpsls[ci][load];
+                        if (ret_standard == 3)  //ICC
+                            combi_factor = icc_combi_factors_qpsls[ci][load];
+
+                        gamma_l = 1.0;
+                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                        strcpy(load_formula0, "");
+                        set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[1], milimetryoby(pl_load[j].y1) * geo_units_factor, dim_precision_pl);
+                        set_decimal_format(par[2], pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f,force_precision);  //is assumed that magnitude1=magnitude2 and magnitude is normalized to z axis and vector direction
+                        sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
+                        strcat(load_formula, load_formula0);
+                        f_no++;
+                    }
+                }
+
+                if (f_no>0)
+                {
+                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
+                //////// concentrated load
+
                 sif_body_force++;
             }
 
@@ -3199,7 +4285,7 @@ void Plate_analysis(void) {
 
             if (go_ahead) {
                 fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
-                fprintf(f, all_formula);
+                fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
@@ -3223,7 +4309,7 @@ void Plate_analysis(void) {
     if (my_file_exists(params)) {
         //generating msh
         //  gmsh Static/plate.geo -o Static/plate.msh -2
-        sprintf(params, "%splate.geo -o %splate.msh -2", _STATIC_, _STATIC_);
+        sprintf(params, "%splate.geo -o %splate.msh -2 > %sgmsh.log", _STATIC_, _STATIC_, _STATIC_);
         sprintf(program, "%sgmsh", _ELMER_);
         //execute gmsh
 #ifdef LINUX
@@ -3236,15 +4322,21 @@ void Plate_analysis(void) {
         printf("\ngmsh runcode:%lu runcode_short:%d\n", runcode, runcode_short);
         sprintf(params, "%splate.msh", _STATIC_);
         if ((runcode_short != 0) || (!my_file_exists(params))) {
-            ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "gmsh", 12, (char *) _gmsh_error_,
+            ret = ask_question(2, (char *) "Log", (char *) "OK", (char *) "", (char *) "gmsh", 12, (char *) _gmsh_error_,
                                11, 1, 0);
+            if (ret==0)
+            {
+                //show log gmsh.log
+                sprintf(params, "%sgmsh.log", _STATIC_);
+                ret = EditFile(params, 0, mynCmdShow);
+            }
             goto pl_error;
         }
 
         if (my_file_exists(params)) {
             //generating mesh
             // ElmerGrid 14 2 Static/plate.msh -out Static/plate
-            sprintf(params, "14 2 %splate.msh -out %splate", _STATIC_, _STATIC_);
+            sprintf(params, "14 2 %splate.msh -out %splate > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);
             sprintf(program, "%s%sElmerGrid", _ELMER_, _BIN_);
             //execute ElmerGrid
 #ifdef LINUX
@@ -3257,13 +4349,19 @@ void Plate_analysis(void) {
             printf("\nElmerGrid runcode:%lu runcode_short:%d\n", runcode, runcode_short);
             sprintf(params, "%s%smesh.header", _STATIC_, _plate_);
             if ((runcode_short != 0) || (!my_file_exists(params))) {
-                ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "ElmerGrid", 12,
+                ret = ask_question(2, (char *) "Log", (char *) "OK", (char *) "", (char *) "ElmerGrid", 12,
                                    (char *) _ElmerGrid_error_, 11, 1, 0);
+                if (ret==0)
+                {
+                    //show log grid.log
+                    sprintf(params, "%sgrid.log", _STATIC_);
+                    ret = EditFile(params, 0, mynCmdShow);
+                }
                 goto pl_error;
             }
 
             if (my_file_exists(params)) {
-                sprintf(params, "%s%splate.sif", _STATIC_, _plate_);
+                sprintf(params, "%s%splate.sif  > %ssolver.log", _STATIC_, _plate_, _STATIC_);
                 //execute ElmerSolver, it will save results in plate folder
 #ifdef LINUX
                 sprintf(program, "%s%sElmerSolver", _ELMER_, _BIN_);
@@ -3277,8 +4375,14 @@ void Plate_analysis(void) {
                 printf("\nElmerSolver runcode:%lu runcode_short:%d\n", runcode, runcode_short);
                 sprintf(params, "%splate_sls.result", _plate_);
                 if ((runcode_short != 0) || (!my_file_exists(params))) {
-                    ret = ask_question(1, (char *) "", (char *) "OK", (char *) "", (char *) "ElmerSolver", 12,
+                    ret = ask_question(2, (char *) "Log", (char *) "OK", (char *) "", (char *) "ElmerSolver", 12,
                                        (char *) _ElmerSolver_error_, 11, 1, 0);
+                    if (ret==0)
+                    {
+                        //show log solver.log
+                        sprintf(params, "%ssolver.log", _STATIC_);
+                        ret = EditFile(params, 0, mynCmdShow);
+                    }
                     goto pl_error;
                 }
 
@@ -3774,7 +4878,7 @@ void Plate_analysis(void) {
             case 4:
                 sprintf(params0, "plate_qpslslc");
                 ULS_SLS_LC_NO=QPSLSLC_NO;
-                strncpy(SLS_ULS, "qpulslc", 7);
+                strncpy(SLS_ULS, "qpslslc", 7);
                 ULS_SLS_LC = QPSLSLC;
                 break;
         }
@@ -4123,21 +5227,66 @@ void Plate_analysis(void) {
                 perm_d_b = 0;
                 perm_s_b = 0;
                 perm_e_b = 0;
+
+                sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
+
+                for (ii = 0; ii < No_Layers; ii++) {
+                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+                        break;
+                }
+                if (ii < No_Layers) {
+                    desired_layer_no = ii;
+                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+                }
+
+
                 goto singles_multiples;
             }
             else if (sti==3)
             {
                 ULSLC_flag[3]=0;
+
+                sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
+
+                for (ii = 0; ii < No_Layers; ii++) {
+                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+                        break;
+                }
+                if (ii < No_Layers) {
+                    desired_layer_no = ii;
+                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+                }
+
                 continue;
             }
             else if (sti==4)
             {
                 ULSLC_flag[4]=0;
+
+                sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
+
+                for (ii = 0; ii < No_Layers; ii++) {
+                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+                        break;
+                }
+                if (ii < No_Layers) {
+                    desired_layer_no = ii;
+                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
+                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+                }
+
                 continue;
             }
             else continue;
         }
-
 
     singles:
     nom_max=0;
@@ -4291,7 +5440,8 @@ void Plate_analysis(void) {
                     stress_max[i]=-BIGNOF;
                 }
                 //stress 1...6
-                for (j = 0; j < STRESS_NUMBER; j++) {
+                for (j = 0; j < STRESS_NUMBER; j++)
+                {
                     for (i = 0; i < perm_s_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
                         ret = sscanf(data_row, "%lf", &stress[j][i]);
@@ -4339,7 +5489,8 @@ void Plate_analysis(void) {
 
         //epsilon
         perm_e_b = 0;
-        while (fgets(data_row, MaxTextLen, f)) {
+        while (fgets(data_row, MaxTextLen, f))
+        {
             Perm = strstr(data_row, "Perm:");
             use_previous = strstr(data_row, "use previous");
             if (Perm != NULL) {
@@ -4741,6 +5892,8 @@ singles_multiples:
                         T.kat = 0.0f;
                         T.ukryty = 0;
 
+                        T.typ=15;
+
                         T.x = w.xy[0];
                         T.y = w.xy[1] + 0.5f;
                         T.justowanie = j_do_lewej;
@@ -4768,9 +5921,12 @@ singles_multiples:
 
                         T.dl = strlen(T.text);
                         T.n = T18 + T.dl;
+
                         normalize_txt(&T);
                         adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
+                        //changing back
+                        T.typ=0;
                     }
                 }
             }
@@ -4892,9 +6048,6 @@ stress_block:
                             goto pl_error1;
                         }
 
-                        int higher=0;
-                        int lower=0;
-
                         for (j = 0; j < mesh_element_no; j++)
                         {
                             w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
@@ -4939,12 +6092,13 @@ stress_block:
                                     double M_;  //absolute value moment of force
                                     double K;  //non-dimentional moment
                                     double z;  //lever arm
-                                    double As;
+                                    double As, Asc;    //surface of reinforcing bars in tension, reinforcing bars in compression
                                     double p[3];  //reinforcement ratio in each node
                                     double sigma[3];  //effective stress in concrete in each node
                                     double cb; //concrete cross section b
                                     double cc;
                                     double h; //cross section height
+                                    double bb; //width 1 m or 12 inch
                                     double fck, fcd, fyk, fyd;  //in ACI 318   fyd=fyk, fcd=fyd
                                     double n, m;
                                     double E_cm;
@@ -4980,7 +6134,7 @@ stress_block:
 
                                     if (ret_standard==1) //Eurocodes
                                     {
-                                        if (UNITS != SI)  //need to be converted
+                                        if (UNITS != SI)  //impoerial, need to be converted
                                         {
                                             //concrete
                                             if (body_prop->fck > 0.) {
@@ -4997,7 +6151,7 @@ stress_block:
                                                 }
                                             }
                                             //steel
-                                            E_s = 29000;  //ksi
+                                            E_s = 29000000;  //psi
 
                                             if (body_prop->fyk > 0.) {
                                                 fyk = body_prop->fyk;
@@ -5024,13 +6178,13 @@ stress_block:
                                             fcd *= 6894.76;
                                             fyk *= 6894.76;
                                             fyd *= 6894.76;
-                                            E_s *= 0.00689476;  //Gpa
+                                            E_s *= 6894.76;
 
                                             h *= 0.0254;   //inch to m
                                             d *= 0.0254;   //inch to m
                                             cc*= 0.0254;   //inch to m
                                         }
-                                        else
+                                        else  //SI
                                         {
                                             //concrete
                                             if (body_prop->fck > 0.) {
@@ -5047,7 +6201,7 @@ stress_block:
                                                 }
                                             }
 
-                                            E_s = 200;  //GPa
+                                            E_s = 200e9;  //Pa
                                             //steel
                                             if (body_prop->fyk > 0.) {
                                                 fyk = body_prop->fyk;
@@ -5088,29 +6242,30 @@ stress_block:
                                                 p[ni]=0.;
                                                 continue;
                                             }
-                                            K=M_/(d*d*fck);
-                                            if (K>0.167)
-                                                K=0.167; //it's for no redistribution and ductile failure
-                                            z=d*(1 + sqrt(1-3.53*K))/2.;
-                                            if (z>0.95*d) z=(0.95*d);  //for practicality
-                                            As=M_/(fyd*z);
-                                            p[ni]=As/d;
-                                            //stress in concrete
-                                            E_cm = 22*pow((fck*1e-6+8)/10., 0.3);  //WARNING
-                                            n = E_s / E_cm;
-                                            m = n * p[ni];
-                                            dk = -m + sqrt(m*m + 2*m);
-                                            x = dk * d;
-                                            I_cr = (x*x*x)/3. + n*p[ni]*d*(d-x)*(d-x);
-                                            sigma[ni] = M*x / I_cr;
+
+                                            double lambda = 0.8;  //λ
+                                            double eta = 1.0;  //η
+                                            double rhot, rhoc, total_rho, sigma_c_max;
+
+                                            int ret_p = calculate_rebars_eurocode_simplified(M_, h, 1.0, cc, fck, fcd, fyd, eta, lambda, E_s, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+
+
+                                            if (ret_p==0)
+                                            {
+                                                p[ni] = total_rho;
+                                                sigma[ni]=sigma_c_max;
+                                            }
+                                            else //Negative reinforcement area
+                                            {
+                                                p[ni] = 0.0;  //or NaN
+                                                sigma[ni] = 0.0;  //or NaN
+                                            }
 
                                             if (UNITS != SI)  //need to be converted
                                             {
                                                 sigma[ni] *= 0.000145038;  //Pa to psi
                                             }
 
-                                            if (fabs(sigma[ni])>fabs(v_node[ni])) higher++;
-                                            else lower++;
                                             stress_min_RC=min(stress_min_RC, sigma[ni]);
                                             stress_max_RC=max(stress_max_RC, sigma[ni]);
 
@@ -5121,7 +6276,7 @@ stress_block:
                                     }
                                     else // ASCE & ICC
                                     {
-                                        if (UNITS != SI)  //need to be converted
+                                        if (UNITS != SI)  //imperial, need to be converted
                                         {
                                             if (body_prop->fck > 0.) {
                                                 fck = body_prop->fck;
@@ -5153,8 +6308,11 @@ stress_block:
                                                     fyd = fyk / 1.0;
                                                 }
                                             }
+
+                                            bb=12.0;
                                         }
-                                        else {
+                                        else //SI
+                                        {
                                             if (body_prop->fck > 0.) {
                                                 fck = body_prop->fck;
                                                 if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa;
@@ -5170,7 +6328,7 @@ stress_block:
                                                 }
                                             }
 
-                                            E_s = 200;  //GPa
+                                            E_s = 200e9;  //Pa
 
                                             if (body_prop->fyk > 0.) {
                                                 fyk = body_prop->fyk;
@@ -5186,6 +6344,7 @@ stress_block:
                                                     fyd = fyk / 1.0;
                                                 }
                                             }
+                                            bb=1.0;
                                         }
 
                                         h = body_prop->h;
@@ -5194,9 +6353,18 @@ stress_block:
                                         fi = 0.9;
                                         d = h - cc;
 
-                                        for (int ni=0; ni<3; ni++)
-                                        {
-                                            M=v_node[ni]*h*h/6.;
+                                        for (int ni=0; ni<3; ni++) {
+
+                                            if (fabs(v_node[ni]) > 11000) {
+                                                int abc = 0;
+                                            }
+                                            M = v_node[ni] * h * h / 6.;
+
+                                            if (UNITS != SI)
+                                            {
+                                                //M *= 1000.0/304.8;   //Nm/m to in-lbs/ft
+                                                M *= 12.;
+                                            }
 
                                             M_ = fabs(M);
                                             if (Check_if_Equal(M,0.0))
@@ -5205,32 +6373,23 @@ stress_block:
                                                 p[ni]=0.;
                                                 continue;
                                             }
-                                            R = M_ / (fi * d * d);
-                                            p[ni]=(0.85*fck/fyk)*(1-sqrt(1-2*R/(0.85*fck)));
 
-                                            //Verify tension-controlled:
-                                            a = p[ni]*d*fyk/(0.85*fck);
-                                            beta1 = 0.85; //for fck <=> 4000$ psi, decreasing to 0.65 for higher
-                                            nac = a / beta1;
-                                            epsilont = 0.003*(d/cc -1);
-                                            if (epsilont<0.005)
+                                            double rhot, rhoc, total_rho, sigma_c_max;
+
+                                            int ret_p = calculate_rebars_aci_simplified_UNI(M_, h, bb, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
+                                            //int ret_p = calculate_rebars_aci_simplified_SI(M_, h, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
+
+                                            if (ret_p==0)
                                             {
-                                                do_nothing(); //adjust and recalculate (may need compression reinforcement if p too high
+                                                p[ni] = total_rho;
+                                                sigma[ni]=sigma_c_max;
+                                            }
+                                            else
+                                            {
+                                                p[ni] = 0.0;   //or NaN
+                                                sigma[ni] = 0.0;  //or Nan
                                             }
 
-                                            if (UNITS!=SI) //imperial
-                                                E_c=57000*sqrt(fck);  //in psi
-                                            else
-                                                E_c=4700*1e-6*sqrt(fck);  //in Gpa
-
-                                            n = E_s / E_c;
-                                            m = n * p[ni];
-                                            dk = -m + sqrt(m*m + 2*m);
-                                            x = dk * d;
-                                            I_cr = (x*x*x)/3. + n*p[ni]*d*(d-x)*(d-x);
-                                            sigma[ni]=M*x/I_cr;
-                                            if (fabs(sigma[ni])>fabs(v_node[ni])) higher++;
-                                            else lower++;
                                             stress_min_RC=min(stress_min_RC, sigma[ni]);
                                             stress_max_RC=max(stress_max_RC, sigma[ni]);
                                             ps = p[ni] * (signbit(M) ? -1:1);
@@ -5367,9 +6526,6 @@ stress_block:
 
                         }
 
-                        if ((nom_max) && (sti==2))
-                                printf("higher=%d  lower=%d \n",higher,lower);
-
                         //colorbar
                         if (stress_amax > 0.0) {
                             w.xy[0] = (float) pl_min_x + 10.f;
@@ -5494,6 +6650,8 @@ stress_block:
                             T.kat = 0.0f;
                             T.ukryty = 0;
 
+                            T.typ=15;
+
                             T.x = w.xy[0];
                             T.y = w.xy[1] + 0.5f;
                             T.justowanie = j_do_lewej;
@@ -5557,6 +6715,8 @@ stress_block:
                                 adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
                             }
+                            //changing back
+                            T.typ=0;
                         }
                     }
                 }
@@ -5839,6 +6999,8 @@ stress_block:
                             T.kat = 0.0f;
                             T.ukryty = 0;
 
+                            T.typ=15;
+
                             T.x = w.xy[0];
                             T.y = w.xy[1] + 0.5f;
                             T.justowanie = j_do_lewej;
@@ -5868,6 +7030,9 @@ stress_block:
                             T.n = T18 + T.dl;
                             normalize_txt(&T);
                             adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                            //changing back
+                            T.typ=0;
                         }
                     }
                 }
@@ -6019,6 +7184,7 @@ pl_error:
     if (pl_property) free(pl_property);
     if (pl_load_factors)free(pl_load_factors);
     if (pl_node) free(pl_node);
+    if (pl_node_emb) free(pl_node_emb);
     if (pl_edge) free(pl_edge);
     if (pl_load) free(pl_load);
     if (plate_property) free(plate_property);

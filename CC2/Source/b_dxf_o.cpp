@@ -4786,6 +4786,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             break;
         case 4:  //force
+        case 18: //slab force
             w.atrybut=ptrs_vector->atrybut;
             w.warstwa=ptrs_vector->warstwa;
             w.kolor=vkolor;

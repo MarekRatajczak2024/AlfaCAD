@@ -592,6 +592,103 @@ void addrem_obiekty(int dwc, OKNO *O, int (*DZI)(void *), int (*ODZI)(void *) )
   Destroy_Blocks_Array();
 }
 
+
+void addrem_obiekty_items(int items, int dwc, OKNO *O, int (*DZI)(void *), int (*ODZI)(void *) )
+{ char *ad;
+    NAGLOWEK *nag;
+    int w;
+    char  *adh;
+    int blok_no;
+
+    adh=dane;
+    adh+=dane_size;
+
+    blok_no=Ini_Blocks_Array();
+
+    O->x01=O->x1; O->y01=O->y1;
+    O->x02=O->x2; O->y02=O->y2;
+    if(O->x01>O->x02) zamien1(&(O->x01),&(O->x02));
+    if(O->y01>O->y02) zamien1(&(O->y01),&(O->y02));
+    oknoS(O->x01,O->y01,O->x02,O->y02);
+    ad=NULL;
+    obiekt_tok((char *)dane,adh,&ad,ONieOkreslony);
+    while (ad!=NULL)
+    {
+        nag=(NAGLOWEK*)ad;
+        if (((nag->atrybut == Anormalny || nag->atrybut == Ablok || nag->atrybut == Aoblok || nag->atrybut==Apoblok
+              || nag->atrybut==Appoblok || nag->atrybut==Apppoblok ) &&
+             add == ADD_MODE  &&
+             (dwc == Windoww ? /*nag->przec == 0*/ TRUE : TRUE)) ||      //change to allow multiple choice
+            (nag->atrybut == Ablok && add == DEL_MODE))
+        {
+            w=0;
+            switch(nag->obiekt)
+            { case Olinia :
+                    if (!(items & Blinia)) break;
+                    w=linia_dwc((LINIA*)ad,dwc);
+                    break;
+                case Ovector :
+                    if (!(items & Bvector)) break;
+                    w=vector_dwc((AVECTOR*)ad,dwc);
+                    break;
+                case Otekst :
+                    //this item is restricted
+                    //if text has typ==15 is ignored  (aux_description used in colorbars)
+                    //if ((!(items & Btekst)) || (((TEXT*)nag)->typ)==15) break;
+                    if ((!(items & Btekst)) && (!(items & BtekstNoType15) && (((TEXT*)ad)->typ!=15))) break;
+                    w=tekst_dwc((TEXT*)ad,dwc);
+                    break;
+                case Oluk :
+                    if (!(items & Bluk)) break;
+                    w=luk_dwc((LUK*)ad,dwc);
+                    break;
+                case Osolidarc :
+                    if (!(items & Bsolidarc)) break;
+                    w=solidarc_dwc((SOLIDARC*)ad,dwc);
+                    break;
+                case Ookrag :
+                case Okolo   :
+                    if (!(items & Bokrag)) break;
+                    w=okrag_dwc((OKRAG*)ad,dwc);
+                    break;
+                case Oellipse :
+                case Ofilledellipse   :
+                    if (!(items & Bellipse)) break;
+                    w=ellipse_dwc((ELLIPSE*)ad,dwc);
+                    break;
+                case Oellipticalarc :
+                    if (!(items & Bellipticalarc)) break;
+                    w=ellipticalarc_dwc((ELLIPTICALARC*)ad,dwc);
+                    break;
+                case Owwielokat   :
+                    if (!(items & Bwwielokat)) break;
+                    w=wielokat_dwc((WIELOKAT*)ad,dwc);
+                    break ;
+                case Ospline:
+                    if (!(items & Bspline)) break;
+                    w = spline_dwc((SPLINE*)ad, dwc);
+                    break;
+                case Opoint :
+                    if (!(items & Bpoint)) break;
+                    w = point_dwc ((T_Point *)ad, dwc) ;
+                    break ;
+                case Opcx :
+                    if (!(items & Bpcx)) break;
+                    w = pcx_dwc ((B_PCX *)ad, dwc) ;
+                    break ;
+                default :
+                    break;
+            }
+            if (w) {
+                adrem_obiekt(ad, DZI, ODZI, TRUE);
+            }
+        }
+        obiekt_tok(NULL,adh,&ad,ONieOkreslony);
+    }
+
+    Destroy_Blocks_Array();
+}
+
 void addrem_obiekty_FIRSTB(int dwc, OKNO *O, int (*DZI)(void *), int (*ODZI)(void *) )
 { char *ad;
   NAGLOWEK *nag;
@@ -932,6 +1029,45 @@ add_l:	    dodatkowe_linie=0;
   redcrok(1);
   return ret;
 }
+
+
+static int oknok_items(int items, int dwc, int (*DZI)(void *), int (*ODZI)(void *))
+{ int ret=1;
+    double X0,Y0;
+    //char key;
+    EVENT *ev;
+
+    redcrok(0);
+    while(1)
+    { wyj=1;
+        ev=Get_Event_Point(NULL, &X0, &Y0);
+        if(ev->What == evKeyDown &&  ev->Number==0)
+        {
+            ret=0;
+            break;
+        }
+        if (ev->What == evKeyDown &&  ev->Number==ENTER)
+        {
+            dwc = win ;	/*tymczasowe, poprawic, np.Get_Win () */
+
+            CUR_OFF(X, Y);
+            addrem_obiekty_items (items, dwc, &O, DZI, ODZI) ;
+
+            flip_screen();
+
+            CUR_ON(X, Y);
+
+            if (dwc == Windoww)
+            {
+                Set_Object_Temp_Flag (0, 0L, dane_size - 1) ;
+            }
+            break;
+        }
+    }
+    redcrok(1);
+    return ret;
+}
+
 
 
 static int oknok_FIRSTB(int dwc, int (*DZI)(void *), int (*ODZI)(void *))
@@ -1352,7 +1488,8 @@ static void *obiekt_wybrany (void)
   return select_w(&typ,&adr);
 }
 
-static void *obiekt_wybrany_select (int Bobjects)
+//static
+void *obiekt_wybrany_select (unsigned int Bobjects)
 /*----------------------------------------------*/
 { unsigned typ;
     void *adr;
@@ -1509,6 +1646,48 @@ void blok(int (*DZI)(void *), int (*ODZI)(void *),
 	    (*COMND[ev->Number])();
 
    }
+}
+
+void blok_items(int items, int (*DZI)(void *), int (*ODZI)(void *),
+          void (*REDROWd)(void),const void (*COMND[])(void))
+{
+    void *ad;
+    EVENT *ev;
+    double X0, Y0;
+
+    redcr(0,REDROWd);
+    while (1)
+    {
+        komunikaty_bloku = FALSE;
+        ev = Get_Event_Point(NULL, &X0, &Y0);
+        if (ev->What == evKeyDown)
+        {
+            if (ev->Number == 0)
+            {
+                redcr(1, REDROWd);
+                return;
+            }
+            if (ev->Number == ENTER)
+            {
+                //if ((ad = obiekt_wybrany()) != NULL)
+                if ((ad = obiekt_wybrany_select(items)) != NULL)
+                {
+                    adrem_obiekt(ad, DZI, ODZI, FALSE);
+                    CUR_OFF(X,Y);
+                }
+                else
+                if (b_auto == TRUE)
+                {
+                    redcr(2, REDROWd);
+                    oknok_items(items, win, DZI, ODZI);
+                    redcr(3, REDROWd);
+                }
+            }
+        }
+        else if (ev->What == evCommandP)
+            (*COMND[ev->Number])();
+
+    }
 }
 
 int blok_single(int (*DZI)(void *), int (*ODZI)(void *),

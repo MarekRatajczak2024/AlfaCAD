@@ -88,14 +88,19 @@ static int MaxNoBlock=1000;
 #define MAX_CLIENT_BITMAP 64
 #define FIRST_CLIENT_BITMAP_NO 1000
 
-#define V_EDGE_SIMPLE 18
-#define V_EDGE_SIMPLE_INV 19
-#define V_EDGE_FIXED 20
-#define V_EDGE_FIXED_INV 21
-#define V_EDGE_ARC_SIMPLE 22
-#define V_EDGE_ARC_SIMPLE_INV 23
-#define V_EDGE_ARC_FIXED 24
-#define V_EDGE_ARC_FIXED_INV 25
+#define V_EDGE_SIMPLE 21 //18
+#define V_EDGE_SIMPLE_INV 22  //19
+#define V_EDGE_FIXED 23 //20
+#define V_EDGE_FIXED_INV 24 //21
+#define V_EDGE_ARC_SIMPLE 25 //22
+#define V_EDGE_ARC_SIMPLE_INV 26 //23
+#define V_EDGE_ARC_FIXED 27 //24
+#define V_EDGE_ARC_FIXED_INV 28 //25
+
+#define V_EDGE_ROLL 26
+#define V_EDGE_ROLL_INV 27
+#define V_EDGE_ARC_ROLL 28
+#define V_EDGE_ARC_ROLL_INV 29
 
 #define V_SLAB_PLATE 21
 #define V_SLAB_SPACE 22
@@ -2764,25 +2769,27 @@ enum OKNOTYP {Cross=0,Dragg,Windoww};
 #define line_ge1_x2 0.0
 #define line_ge1_y2 0.0  */
 
-#define Bnic              0
-#define Blinia            1
-#define Bluk              2
-#define Bokrag            4
-#define Bkolo             8
-#define Bwwielokat       16
-#define Btekst           32
-#define Bpoint           64
-#define Bspline         128
-#define Bellipse        256
-#define Bfilledellipse  512
-#define Bellipticalarc 1024
-#define Bsolidarc      2048
-#define Bvector        4096
-#define Bprzeciecie    8192
-#define Bwymiarowanie 16384
-#define Bblok         32768
-#define Bpolygon      65536
-#define Bpcx         131072
+#define Bnic                0
+#define Blinia              1
+#define Bluk                2
+#define Bokrag              4
+#define Bkolo               8
+#define Bwwielokat          16
+#define Btekst              32
+#define Bpoint              64
+#define Bspline             128
+#define Bellipse            256
+#define Bfilledellipse      512
+#define Bellipticalarc      1024
+#define Bsolidarc           2048
+#define Bvector             4096
+#define Bprzeciecie         8192
+#define Bwymiarowanie       16384
+#define Bblok               32768
+#define Bpolygon            65536
+#define Bpcx                131072
+#define BtekstNoType15      262144
+#define BwwielokatGradient  524288
 
 typedef enum { PRN_DRIVE = 0, PLT_DRIVE } DRAW_DRIVE;
 

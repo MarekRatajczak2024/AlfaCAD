@@ -601,6 +601,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             }
             break;
         case 4:  //force
+        case 18:  //slab force
         case 7:  //displacement
             if (0 != linia_wybrana(v))
             {
@@ -2502,6 +2503,7 @@ BOOL vector_przec (double *x, double *y, void *adr, void *adr1,
             }
             break;
         case 4:
+        case 18:
             break;
         case 5:
             break;

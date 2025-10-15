@@ -1481,7 +1481,9 @@ char* vector_style_tab[] = { u8"sztywny-sztywny",u8"sztywny-przegubowy",u8"przeg
                             u8"rzut pionowy obciążenia poziomego",
                             u8"obciążenie termiczne",
                             u8"rozmiar węzła (promień)",
-                            u8"obciążenie płyty","?","?","?","?","?","?","?",
+                            u8"obciążenie powieżchniowe płyty",
+                            u8"obciążenie punktowe płyty",
+                            u8"?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
@@ -1581,13 +1583,13 @@ char* objects[] = { u8"Linia",u8"Linia 3D",u8"Tekst",u8"Łuk",u8"Okrąg",u8"Koł
 #define _FILLING_ u8"wypełnienie"
 
 char *vector_txt[]={u8"Wektor: sztywno-sztywny",u8"Wektor: sztywno-przegubowy",u8"Wektor: przegubowo-sztywny",u8"Wektor: przegubowo-przegubowy",u8"Wektor: Siła",u8"Wektor: Moment" ,u8"Wektor: -Moment",
- u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)", u8"obciążenie płyty"};
+ u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)", u8"obciążenie powieżchniowe płyty", u8"obciążenie punktowe płyty"};
 
 //char *point_txt[]={u8"Normalny",u8"punkt Bazowy",'','','','','',u8"połączenie",u8"Zacisk",'','','',u8"Utwierdzenie",u8"utwierdzenie L",u8"utwierdzenie P",u8"utwierdzenie G",u8"Przegubowe",
  //    u8"przegubowe L",u8"przegubowe P",u8"przegubowe G",u8"utwierdzenie przesuwne poziomo",u8"utwierdzenie przesuwne pionowo L",u8"utwierdzenie przesuwne pionowo P",u8"utwierdzenie przesuwne poziomo G",
   //   u8"przegubowe przesuwne poziomo",u8"przegubowe przesuwne pionowo L",u8"przegubowe przesuwne pionowo P",u8"przegubowe przesuwne poziomo G",
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'V', L'H', L'Q', L'R'};
+unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
 unsigned short point_wcod[]={L'N', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'Z', ' ', ' ', ' ',L'U', L'1', L'2', L'3', L'P', L'3', L'4', L'5', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'U', L'O', L'D', L'S', L'P', L'*', L'G', L'C', L'E', L'F', 'B', L'W', ' '};
 char *object_txt[]={u8"Obraz", u8"Linia", u8"Tekst", u8"Łuk", u8"Okrąg", u8"Dysk", u8"Obszar", u8"Punkt", u8"Blok", u8"Obszar łukowy",u8"Łuk eliptyczny",u8"Elipsa",u8"Wypełniona elipsa",u8"Splajn Beziera",u8"Wektor",""};
@@ -1804,7 +1806,8 @@ static POLE pmVector[] = {
           {u8"otwór w płycie\0\0",L'L',844,NULL},
           {u8"ściana pod płytą\0\0",L'W',843,NULL},
           {u8"strefa płyty\0\0",L'Z',842,NULL},
-          {u8"obciążenie płyty\0\0",L'Q',845,&mLoad_Char},
+          {u8"obciążenie powierzchniowe płyty\0\0",L'Q',845,&mLoad_Char},
+          {u8"obciążenie skupione płyty\0\0",L'F',856,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -3344,7 +3347,7 @@ static POLE pmPrecision[] = {
         {u8"dokładność naprężeń\0 \0",L'N',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Głębokość przekroju\0 \0",L'G',764,NULL},
@@ -3367,22 +3370,28 @@ static POLE pmStaticColors[] = {
        {u8"֎Wibracje\0inny\0",                          L'W',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"obciążenie Liniowe\0 \0",L'L',733,NULL},
 	   {u8"obciążenie Płaszczyznowe\0 \0",L'P',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"naprężenia w Stali/drewnie\0 \0",L'S',775,NULL},
 	   {u8"naprężenia w Betonie zbrojonym\0 \0",L'B',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
+static POLE pmResetMagnitude[] = {
+       {u8"SI\0 \0",L'S',858,NULL},
+	   {u8"Imperial\0 \0",L'I',859,NULL},
+	  };
+
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"przeskalowanie Siły\0 \0",                   L'S',727,NULL},
@@ -3402,9 +3411,10 @@ static POLE pmMagnitude[] = {
        {u8"przeskalowanie Wibracji\0 \0",               L'W',814,NULL},
        {u8"Dokładność\0 \0",                            L'D',184,NULL}, //&mPrecision},
        {u8"Kolory\0 \0",                                L'K',495,NULL}, //&mStaticColors},
+       {u8"resetuj przeskalowanie\0 \0",                L'I',860,&mResetMagnitude},
 };
 
-static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Format rysunku\0 A4\0    ",'F',96,&mFormat_r},
@@ -3443,6 +3453,17 @@ static char config_sectors[11][32] =
 	"Wysokosc opisu sektora",
 	"Odwrocona numeracja",
 };
+
+#define _Yes_ u8"Tak"
+#define _No_ u8"Nie"
+#define _YES_ 'T'
+#define _yes_ 't'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _reset_mgnitude_to_ u8"Czy chcesz przywrócić domyślne współczynniki skalowania dla systemu miar:"
+#define _SI_ u8"SI"
+#define _IMP_ u8"Imperial"
 
 #endif
 

@@ -1478,7 +1478,9 @@ char* vector_style_tab[] = { u8"жорсткий-жорсткий",u8"жорст
                             u8"вертик.проекція горизонт.",
                             u8"теплове навантаж.",
                             u8"розмір вузла (радіус)",
-                            u8"навантаження на плиту","?","?","?","?","?","?","?",
+                            u8"поверхневе навантаження",
+                            u8"зосереджене навантаження",
+                            u8"?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
@@ -1578,14 +1580,14 @@ char* objects[] = { u8"Лінія",u8"Лінія 3D",u8"Текст",u8"Дуга"
 #define _FILLING_ u8"Наповнення"
 
 char *vector_txt[]={u8"Вектор: жорсткий-жорсткий",u8"Вектор: жорсткий-штифт",u8"Вектор: pin-жорсткий",u8"Вектор: pin-pin",u8"Вектор: Сила",u8"Вектор: Момент" ,u8"Вектор: -Момент",
- u8"Вектор: переміщення",u8"Вектор: обертання",u8"Вектор: -обертання",u8"Вектор: навантаження трапеції Y",u8"Вектор: навантаження трапеції X",u8"Вектор: навантаження N трапеції",u8"Вектор: трапеція H навантаження",u8"Вектор: трапеція V навантаження",u8"Вектор: Теплове навантаження", u8"Вектор: розмір Вузла (радіус)", u8"навантаження на плиту"};
+ u8"Вектор: переміщення",u8"Вектор: обертання",u8"Вектор: -обертання",u8"Вектор: навантаження трапеції Y",u8"Вектор: навантаження трапеції X",u8"Вектор: навантаження N трапеції",u8"Вектор: трапеція H навантаження",u8"Вектор: трапеція V навантаження",u8"Вектор: Теплове навантаження", u8"Вектор: розмір Вузла", u8"Поверхневе навантаження", u8"Зосереджене навантаження"};
 
 //char *point_txt[]={u8"Простий",u8"Базова точка",'','','','','',u8"З'єднання",u8"Термінал",'','','',u8"Жорстке кріплення",u8"жорстке кріплення Л",u8"жорстке кріплення П",u8"Жорстке кріплення В",u8"Шарнірне, нерухоме кріплення",
  //u8"шарнірне, нерухоме кріплення Л",u8"шарнірне, нерухоме кріплення П",u8"шарнірне, нерухоме кріплення В",u8"жорстке, Горизонт. ковзання",u8"жорстке, вертик. ковзання Л",
  //u8"жорстке, вертик. ковзання П",u8"жорстке, горизонт. ковзання В",u8"шарнірне, горизонт. Ковзання",u8"шарнірне, вертик. ковзання Л",u8"шарнірне, вертик. ковзання П",u8"шарнірне, горизонт. ковзання В"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'У', L'Х', L'И', L'V', L'Ц', L'Ф', L'В'};
-unsigned short point_wcod[]={L'П', L'Б', ' ', ' ', ' ', ' ',' ', L'З', L'Т', ' ', ' ', ' ',L'Ж', L'1', L'2', L'3', L'Ш', L'3', L'4', L'5', L'Г', L'7', L'8', L'9', L'К', '0', '-', '=', '+'};
+unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'У', L'Х', L'И', L'V', L'Ц', L'Ф', L'В', L'П', L'З'};
+unsigned short point_wcod[]={L'П', L'Б', L' ', L' ', L' ', L' ',L' ', L'З', L'Т', ' ', ' ', ' ',L'Ж', L'1', L'2', L'3', L'Ш', L'3', L'4', L'5', L'Г', L'7', L'8', L'9', L'К', L'0', L'-', L'=', L'+'};
 unsigned short object_wcod[]={L'З', L'Л', L'Т', L'Д', L'К', L'Г', L'П', L'Т', L'*', L'С', L'O', L'Р', L'Е', L'Б', L'В', ' '};
 char *object_txt[]={u8"Зображення",u8"Лінія",u8"Текст",u8"Дуга",u8"Коло",u8"Диск",u8"Площа",u8"Точка",u8"Блок",u8"Суцільна дуга ",u8"Еліптична дуга",u8"Еліпс",u8"Заповнений еліпс",u8"Сплайн Безьє",u8"Вектор",""};
 
@@ -1778,7 +1780,7 @@ POLE pmLoad_Char_Thermal[] = {
 TMENU mLoad_Char_Thermal = { 2, 0,0, 12, 88, 12, ICONS, CMNU,CMBR,CMTX,0, 18, 0, 0,0,(POLE(*)[]) &pmLoad_Char_Thermal, NULL, NULL };
 
 static POLE pmVector[] = {
-		  {u8"зняти\0Del\0",L'З',218,NULL},
+		  {u8"Зняти\0Del\0",L'З',218,NULL},
           {u8"жорсткий - жорсткий\0\0",L'А',723,NULL},
           {u8"жорсткий - штифт\0\0",L'Б',724,NULL},
           {u8"штифт - жорсткий\0\0",L'В',725,NULL},
@@ -1799,9 +1801,10 @@ static POLE pmVector[] = {
 
           {u8"Контур плити\0\0",L'К',846,NULL},
           {u8"Дупло у плиті\0\0",L'Д',844,NULL},
-          {u8"Мур\0\0",L'М',843,NULL},
+          {u8"стІна\0\0",L'І',843,NULL},
           {u8"Район плити\0\0",L'Р',842,NULL},
-          {u8"навантаження на плиту\0\0",L'Й',845,&mLoad_Char},
+          {u8"поверхневе навантаження плити\0\0",L'Й',845,&mLoad_Char},
+          {u8"зосереджене навантаження плити\0\0",L'К',856,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -3338,7 +3341,7 @@ static POLE pmPrecision[] = {
         {u8"точність наПруги\0 \0",     L'П',800,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Глибина розрізу\0 \0",L'Г',764,NULL},
@@ -3361,21 +3364,28 @@ static POLE pmStaticColors[] = {
        {u8"֎Вібрації\0інше\0",                      L'В',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,24,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"Лінійне навантаження\0 \0",L'Л',733,NULL},
 	   {u8"Поверхневе навантаження\0 \0",L'П',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"напруження в Сталі/деревині\0 \0",L'С',775,NULL},
 	   {u8"напруження в Залізобетоні\0 \0",L'З',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+
+static POLE pmResetMagnitude[] = {
+       {u8"SI\0 \0",L'S',858,NULL},
+	   {u8"Imperial\0 \0",L'I',859,NULL},
+	  };
+
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"масштаб Сили\0\0",           L'С',727,NULL},
@@ -3395,9 +3405,10 @@ static POLE pmMagnitude[] = {
        {u8"перебільшення Вібрацій\0 \0",L'В',814,NULL},
        {u8"точність Чисел\0\0",         L'Ч',184,NULL}, //&mPrecision},
        {u8"Кольори\0\0",                L'К',495,NULL}, //&mStaticColors},
+       {u8"скинути масштабування\0 \0", L'І',860,&mResetMagnitude},
 };
 
-static TMENU mMagnitude = { 17,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Формат\0 A4\0     ",L'Ф',96,&mFormat_r},
@@ -3436,6 +3447,17 @@ static char config_sectors[11][48] =
 	u8"Зонний стиль",
 	u8"Зворотна нумерація",
 };
+
+#define _Yes_ u8"Так"
+#define _No_ u8"Ні"
+#define _YES_ L'Т'
+#define _yes_ L'т'
+#define _NO_ L'Н'
+#define _no_ L'н'
+
+#define _reset_mgnitude_to_ u8"Бажаєте відновити коефіцієнти масштабування за замовчуванням для системи вимірювання:"
+#define _SI_ u8"SI"
+#define _IMP_ u8"Imperial"
 
 #endif
 

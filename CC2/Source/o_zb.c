@@ -1974,13 +1974,13 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
           if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
           if (Check_if_LE(magnitude, 0.0)) flood_magnitude = flood_magnitude0; else flood_magnitude = (double) magnitude;
           if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-          if (Check_if_LE(magnitude, 0.0)) thermal_magnitude = thermal_magnitude0; else thermal_magnitude = (double) magnitude;
+          if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude = thermal_magnitude0; else thermal_magnitude = (double) magnitude;
       }
       else
       {
           flood_magnitude = flood_magnitude0;
           if (proc_io(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-          if (Check_if_LE(thermal_magnitude, 0.0)) thermal_magnitude=thermal_magnitude0;
+          if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude=thermal_magnitude0;
       }
 
     if (proc_io(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;

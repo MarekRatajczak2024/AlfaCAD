@@ -227,6 +227,7 @@ extern void reset_stretch_vector(void);
 extern void *get_vector_s(void);
 extern int Vf_n (BOOL b_graph_value);
 extern int Vf1_n (BOOL b_graph_value);
+extern int Vf1_1_n (BOOL b_graph_value);
 extern int Vf2_n (BOOL b_graph_value);
 extern int Vth1_n (BOOL b_graph_value);
 extern int Vm_n (BOOL b_graph_value);
@@ -988,6 +989,16 @@ static int Vf1_n_(BOOL b_graph_value)
     return ret;
 }
 
+static int Vf1_1_n_(BOOL b_graph_value)
+{
+    int ret = Vf1_1_n(b_graph_value);
+    strwyj=1;
+    VectorC.x2=VectorG.x2;
+    VectorC.y2=VectorG.y2;
+    VectorC.magnitude1=VectorG.magnitude1;
+    return ret;
+}
+
 static int Vf2_n_(BOOL b_graph_value)
 {
     int ret = Vf2_n(b_graph_value);
@@ -1360,6 +1371,21 @@ int dzi(void *ad)
   return	1;
 }
 
+int dzi_item(void *ad)
+{
+    NAGLOWEK *nag;
+
+    nag	= (NAGLOWEK*)ad ;
+    ////rysuj_obiekt	(ad, XOR_PUT, 1) ;
+    nag->atrybut=Ablok;
+    if ((nag->obiekt == Olinia || nag->obiekt == Ovector || nag->obiekt == Oluk || nag->obiekt == Oellipticalarc || nag->obiekt == Osolidarc) &&
+        (nag->obiektt1	==	Utwierdzony1 || nag->obiektt1	==	Utwierdzony2))
+    {
+        nag->obiektt1	= Guma ;
+    }
+    return	1;
+}
+
 int dzi_pcx(void *ad)
 {
   NAGLOWEK *nag;
@@ -1405,6 +1431,13 @@ int odzi(void *ad)
   rysuj_obiekt	(ad, COPY_PUT, 1) ;
   ((NAGLOWEK*)ad)->atrybut=Anormalny;
   return	1;
+}
+
+int odzi_item(void *ad)
+{
+    ////rysuj_obiekt	(ad, COPY_PUT, 1) ;
+    ((NAGLOWEK*)ad)->atrybut=Anormalny;
+    return	1;
 }
 
 
@@ -2277,6 +2310,11 @@ void redcrsb(char typ, int n)
 void select_blok(void)
 {
     blok(dzi,odzi,Redraw_Block,COMNDmb);
+}
+
+void select_blok_items(int b_items)
+{
+    blok_items(b_items, dzi,odzi,Redraw_Block,COMNDmb);
 }
 
 void PrzesunZ(void)
@@ -4859,6 +4897,18 @@ static void	redcrck(char typ)
                  eVf.extend = 0;
                  np = dodajstr(&eVf);
              }
+             else if (VectorC.style==18) //force
+             {
+                 eVf1.x = maxX / 2 + 5;
+                 eVf1.y = ESTR_Y;
+                 eVf1.lmax = 12;
+                 eVf1.val_no_max = 1;
+                 eVf1.mode = GV_VECTOR;
+                 eVf1.format = format_float;
+                 eVf1.ESTRF = Vf1_1_n_;
+                 eVf1.extend = 0;
+                 np = dodajstr(&eVf1);
+             }
              else //displacement
              {
                  eVd.x = maxX / 2 + 5;
@@ -5433,6 +5483,7 @@ static void	utwierdzenie_vector(AVECTOR *adl)
                         switch (adl->style)
                         {
                             case 4:
+                            case 18:
                             case 7:
                                 adl->obiektt1 = Guma;
                                 break;
@@ -5446,6 +5497,7 @@ static void	utwierdzenie_vector(AVECTOR *adl)
                         switch (adl->style)
                         {
                             case 4:
+                            case 18:
                             case 7:
                                 if (get_stretch_vector()<=0) {
                                     adl->atrybut = Anormalny;  //!!!!!!!!!!!!!!!!!

@@ -506,14 +506,14 @@ static void  cur_on(double x,double y)
         switch (LukG.obiektt2)
         {
             case 6:
-                if (LiniaG.obiektt3 == 0) VectorG.style = 22;
-                else VectorG.style = 23;
+                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_SIMPLE; //22;
+                else VectorG.style = V_EDGE_ARC_SIMPLE_INV; //23;
                 VectorG.typ=LiniaG.typ;
                 outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
                 break;
             case 7:
-                if (LiniaG.obiektt3 == 0) VectorG.style = 24;
-                else VectorG.style = 25;
+                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_FIXED; //24;
+                else VectorG.style = V_EDGE_ARC_FIXED_INV; //25;
                 VectorG.typ=LiniaG.typ;
                 outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
                 break;

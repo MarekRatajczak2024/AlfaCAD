@@ -355,6 +355,7 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
   double wsp_x, wsp_y;
   double dt,dt1,dt2;
   static int curr_h, curr_v;
+  BOOL but_changed=FALSE;
 
   asking_dlg.SizeLabT=2;
   asking_dlg.dy=DYBox1+14;
@@ -400,6 +401,16 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
 	 buttons[1].x = DXBox1_ * 10 / 16 - (DXBut1 / 2) + DXShift + Xp1;
 	 buttons[1].name2 = 101;
      buttons[1].flags &= ~BUTTON_HIDDEN;
+
+     if (strcmp(esc_string,"Log")==0)
+     {
+         buttons[0].y -= 3;
+         buttons[1].y -= 3;
+         buttons[0].dy += 3;
+         buttons[1].dy += 3;
+         buttons[1].name2 = 211;
+         but_changed=TRUE;
+     }
   break;
   case 3:
      buttons[0].x=DXBox1_ * 7 / 24 - (DXBut1/2) + DXShift + Xp1;
@@ -462,6 +473,15 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
 
   Save_Update_flex(0, &curr_h, &curr_v);
   Ret_Val = Dialog(&asking_dlg, &color_dlg, proc_dlg_asking, bMouse);
+
+  if (but_changed==TRUE)
+  {
+      buttons[0].y += 3;
+      buttons[1].y += 3;
+      buttons[0].dy -= 3;
+      buttons[1].dy -= 3;
+  }
+
   if (strcmp(cont_string, "Upgrade") == 0)
   {
       FreeMouse();

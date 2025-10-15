@@ -958,6 +958,7 @@ BOOL move_vector_inside_prn(T_PixelTVal* PolyPoints, int v_number, int flag)
 
 		break;
 	case 4:  //last vector
+    case 18: //slab force
 
 		vector_middle = perpend_intersect(PolyPoints[4], PolyPoints[5], PolyPoints[6], PolyPoints[7], center);
 
@@ -3234,12 +3235,20 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             Vtxt.y=(L1.y1+L1.y2)/2;
             if (ptrs_vector->property_no>0) sprintf(Vtxt.text, "#%d", ptrs_vector->property_no);
             break;
-        case 4:
+        case 4:  //force
+        case 18: //slab force
 
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            if (L1.x1<=L1.x2) n=1; else n=-1;
+            //if (L1.x1<=L1.x2) n=1; else n=-1;
+            if (L1.y1>L1.y2) {
+                if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
+            }
+            else
+            {
+                if (L1.x1 <= L1.x2) n = 1; else n = -1;
+            }
 
             Vtxt.x=(L1.x1+L1.x2)/2-((n*ra/4)*koc1);
             Vtxt.y=(L1.y1+L1.y2)/2-((n*ra/4)*kos1);
@@ -3260,7 +3269,14 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            if (L1.x1<=L1.x2) n=1; else n=-1;
+            //if (L1.x1<=L1.x2) n=1; else n=-1;
+            if (L1.y1>L1.y2) {
+                if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
+            }
+            else
+            {
+                if (L1.x1 <= L1.x2) n = 1; else n = -1;
+            }
 
             Vtxt.x=(L1.x1+L1.x2)/2-((n*ra/4)*koc1);
             Vtxt.y=(L1.y1+L1.y2)/2-((n*ra/4)*kos1);
@@ -3936,7 +3952,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             K.x=ptrs_vector->x1;
             K.y=ptrs_vector->y1;
-            K.r=df_psize1;
+            K.r=(float)df_psize1;
 
             line_width_type = LINE_MIN_WIDTH ;
             if (Draw_Fill_Circle_To_Drive (&K) == FALSE) return FALSE;
@@ -3959,7 +3975,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             K.x=ptrs_vector->x1;
             K.y=ptrs_vector->y1;
-            K.r=df_psize1;
+            K.r=(float)df_psize1;
 
             line_width_type = LINE_MIN_WIDTH ;
             if (Draw_Fill_Circle_To_Drive (&K) == FALSE) return FALSE;
@@ -3967,7 +3983,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             l.typ = 64;
             l.x = ptrs_vector->x2;
             l.y = ptrs_vector->y2;
-            l.r = df_psize;
+            l.r = (float)df_psize;
             l.kat1 = 0;
             l.kat2 = Pi2;
 
@@ -3989,14 +4005,14 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             K.x=ptrs_vector->x2;
             K.y=ptrs_vector->y2;
-            K.r=df_psize1;
+            K.r=(float)df_psize1;
             line_width_type = LINE_MIN_WIDTH ;
             if (Draw_Fill_Circle_To_Drive (&K) == FALSE) return FALSE;
 
             l.typ = 64;
             l.x = ptrs_vector->x1;
             l.y = ptrs_vector->y1;
-            l.r = df_psize;
+            l.r = (float)df_psize;
             l.kat1 = 0;
             l.kat2 = Pi2;
             line_width_type = Line_Width (l.typ);
@@ -4013,7 +4029,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             l.typ = 64;
             l.x = ptrs_vector->x1;
             l.y = ptrs_vector->y1;
-            l.r = df_psize;
+            l.r = (float)df_psize;
             l.kat1 = 0;
             l.kat2 = Pi2;
              line_width_type = Line_Width (l.typ);
@@ -4028,6 +4044,22 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             break;
         case 4:  //force
+        case 18: //slab force
+            if (ptrs_vector->style==18)  //slab force
+            {
+                load_ellipse.kolor=ptrs_vector->kolor;
+                load_ellipse.warstwa=ptrs_vector->warstwa;
+                load_ellipse.widoczny=ptrs_vector->widoczny;
+                load_ellipse.translucency=51;
+                load_ellipse.typ=64;
+                load_ellipse.x=ptrs_vector->x1;
+                load_ellipse.y=ptrs_vector->y1;
+                load_ellipse.angle=0;
+                load_ellipse.rx=(float)(df_psize*3.);
+                load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                Draw_Ellipse_To_Drive(&load_ellipse);
+            }
+
             w.atrybut=ptrs_vector->atrybut;
             w.warstwa=ptrs_vector->warstwa;
             w.kolor=ptrs_vector->kolor;
@@ -4083,7 +4115,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             l.typ = 64;
             l.x = ptrs_vector->x1;
             l.y = ptrs_vector->y1;
-            l.r = df_psize;
+            l.r = (float)df_psize;
             l.kat1 = 0;
             l.kat2 = Pi2;
 

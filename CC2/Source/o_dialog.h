@@ -213,6 +213,7 @@ Dlg_Ret_Val;
 #define DYBut0 	40
 #define DXBut0 	90
 #define DYBut1 	20  //40
+//#define DYBut2 	20  //40
 #define DXBut1 	45  //90
 #define DXIL 	8 //6  //0
 #define DYIL 	3

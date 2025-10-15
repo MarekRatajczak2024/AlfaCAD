@@ -2281,12 +2281,16 @@ void FilledEllipsePDF(int x0, int y0, int rx, int ry, double angle, COLOR_ color
 
     HPDF_Page_GSave (pdf_page);  // Save the current graphic state ////
 
+    HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
+    HPDF_ExtGState_SetAlphaStroke(gstate, 0.0 /*((float)translucency)/255.0*/); // Set the opacity  ////
+
     HPDF_Page_SetLineWidth(pdf_page, 0);
     HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
     HPDF_Page_SetLineCap(pdf_page, cap); // HPDF_ROUND_END);
 
     HPDF_Page_SetRGBFill(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
-    HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
+    ////HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
+    ////HPDF_ExtGState_SetAlphaStroke(gstate, 0.0 /*((float)translucency)/255.0*/); // Set the opacity  ////
     HPDF_ExtGState_SetAlphaFill(gstate, ((float)translucency)/255.0); // Set the opacity  ////
     HPDF_Page_SetExtGState(pdf_page, gstate); // Apply the gstate property to the page  ////
 
@@ -2304,12 +2308,15 @@ void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsi
 
     HPDF_Page_GSave (pdf_page);  // Save the current graphic state ////
 
+    HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
+    HPDF_ExtGState_SetAlphaStroke(gstate, 0.0 /*((float)translucency)/255.0*/); // Set the opacity  ////
+
     HPDF_Page_SetLineWidth(pdf_page, 0);
     HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
     HPDF_Page_SetLineCap(pdf_page, cap); // HPDF_ROUND_END);
 
     HPDF_Page_SetRGBFill(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
-    HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
+    ////HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
     HPDF_ExtGState_SetAlphaFill(gstate, ((float)translucency)/255.0); // Set the opacity  ////
     hpdf_status = HPDF_Page_SetExtGState(pdf_page, gstate); // Apply the gstate property to the page  ////
 

@@ -1356,6 +1356,7 @@ extern char *icon_slab_zone_p;
 extern char *icon_slab_wall_p;
 extern char *icon_slab_space_p;
 extern char *icon_slab_load_p;
+extern char *icon_slab_force_p;
 extern char *icon_slab_geo_red_p;
 extern char *icon_slab_geo_black_p;
 extern char *icon_slab_fem_p;
@@ -1366,6 +1367,12 @@ extern char *icon_slab_edge_fixed_p;
 extern char *icon_flip_support_p;
 extern char *icon_static_p;
 extern char *icon_slab_fem_a_p;
+
+extern char *icon_view_log_d_48_p;
+
+extern char *icon_SI_p;
+extern char *icon_IMP_p;
+extern char *icon_factory_reset_p;
 
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
@@ -3454,7 +3461,8 @@ static char *get_icons_p(int number)
         /*832*/   icon_cursor_extrabig_p, icon_mousewheel_p, icon_mousewheelnatural_p, icon_mousewheelregular_p, icon_stonewall_p,
         /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p,
         /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
-        /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p
+        /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p, icon_slab_force_p,
+        /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p,
     };
    
 	if (number>1999)
@@ -4721,7 +4729,7 @@ static void activate(TMENU *menu)
 {
  TMENU **adr;
    menu->next=NULL;
-   for(adr=&ACTW;*adr!=NULL;adr=&((*adr)->next));
+   for(adr=&ACTW;(*adr!=NULL) && (adr!=&((*adr)->next)); adr=&((*adr)->next));
    *adr=menu;
 }
 
@@ -9835,6 +9843,7 @@ void ch_stype (void) {
             n = Simple_Menu_Proc(&mMember_style);
             break;
         case 4:
+        //case 18:
         case 7:
             menu_address[menu_level-1]=&mForce_Displacement_style;
             n = Simple_Menu_Proc(&mForce_Displacement_style);
@@ -9915,8 +9924,41 @@ void ch_stype (void) {
     return;
 
 }
-
+//up to 64 objects
 static POLE pmObjectSelected[] = {
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+        {u8"",     L' ',0,NULL},
+
         {u8"",     L' ',0,NULL},
         {u8"",     L' ',0,NULL},
         {u8"",     L' ',0,NULL},
@@ -9953,7 +9995,7 @@ static POLE pmObjectSelected[] = {
 
 static TMENU mObjectSelected = { 0,0,0,10,30,7,ICONS,CMNU,CMBR,CMTX,0,19,0,0,0,(POLE(*)[]) &pmObjectSelected,NULL,NULL };
 
-int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845};
+int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845, 856};
 
 int edge_icon[]={0, 0, 0, 0, 0, 851, 850, 852};
 int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818};
@@ -11522,6 +11564,7 @@ void ch_magnitude1 (void)
             switch (((AVECTOR *) object_info_ad)->style)
             {
                 case 4:
+                case 18:
                     magnitude2line((AVECTOR*)object_info_ad, force_magnitude);
                     set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, force_precision);
                     //menu update

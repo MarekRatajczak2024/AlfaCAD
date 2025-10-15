@@ -8,6 +8,7 @@
 extern void Plate_analysis(void);
 extern void redcrsb(char typ, int n);
 extern void select_blok(void);
+extern void select_blok_items(int items);
 
 typedef struct
 {
@@ -15,6 +16,16 @@ typedef struct
     double y;
     float d;
 } PL_NODE;
+
+typedef struct
+{
+    double x;
+    double y;
+    float d;
+    int body;  //number of 0 plate or 1 zone
+    int body_no;  //number of plate or zone
+    int emb_no;
+} PL_NODE_EMB;
 
 typedef struct
 {
@@ -40,6 +51,7 @@ typedef struct
     int flags;    //0  regular   1 inverted
     int factor_record;
     int take_it;
+    int type;     //0 uniformly distributed load, 1 concentrated force load
     float x1;
     float y1;
     float x2;

@@ -1617,6 +1617,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 4:
+        case 18:
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 7:
