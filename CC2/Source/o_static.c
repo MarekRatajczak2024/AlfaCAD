@@ -215,8 +215,19 @@ PROP_PRECISIONS *prop_precisions=&SI_precisions;  //just to initialize
 
 double dim_precision=0.0001;
 double t_precision=0.001;
-double r_precision=0.001;
-double rm_precision=0.001;
+
+double r_precision=0.01;
+double rm_precision=0.01;
+
+//double dim_precision0=0.0001;
+//double t_precision0=0.001;
+double r_precision0=0.01;
+double rm_precision0=0.01;
+
+//double dim_precision_imp0=0.0001;
+//double t_precision_imp0=0.001;
+double r_precision_imp0=0.01;
+double rm_precision_imp0=0.01;
 
 double m0999 = 1.0; //0.99999;
 
@@ -224,7 +235,7 @@ extern TMENU mVector;
 
 BOOL rout=TRUE; //FALSE;
 
-void Static_analysis(void);
+//void Static_analysis(void);
 
 int st_layer_no=0;
 int st_property_no=0;
@@ -1948,7 +1959,7 @@ int calculate_rebars_doubly_reinforced(double M, double N, double h, double b, d
     double As_min = use_min_reinf ? fmax(0.26 * fctm / fyd * b * d, 0.0013 * b * d) : 0.0;
 
     // Pure compression case (M = 0)
-    if (M == 0) {
+    if (Check_if_Equal(M,0)) {
         *As = fmax(0.0, As_min);
         *As_prime = 0.0;
         *rho = *As / (b * d);
@@ -2266,10 +2277,15 @@ int calculate_rebars_aci_doubly_reinforced(double M, double N, double h, double 
     //double As_min = use_min_reinf ? fmax(0.25 * sqrt(fck / 1e6) * 1e6 * b * d / fyd, 1.4e6 / fyd * b * d) : 0.0; // ACI 318-19 9.6.1.2
     //double As_min = use_min_reinf ? 0.008 * b * d : 0.0; // Custom minimum for rho ≈ 0.8%
     double f_ctm = 0.3 * pow(fck / 1e6, 2.0 / 3.0) * 1e6; // Eurocode f_ctm for C30/37
-    double As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // Eurocode As_min
+    double As_min;
+    // Use Eurocode formula for preliminary design
+    As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // Eurocode As_min in m²
+    // Optional: ACI 318-19 formula (uncomment to use)
+    // As_min = use_min_reinf ? fmax(0.249 * sqrt(fck / 1e6) / (fyd / 1e6) * b * d, 1.379 / (fyd / 1e6) * b * d) : 0.0; // As_min in m²
 
     // Pure compression case (M = 0)
-    if (M == 0) {
+    //if (M == 0) {
+    if (Check_if_Equal(M,0)) {
         *As = As_min;
         *As_prime = 0.0;
         *rho = *As / (b * d);
@@ -2825,12 +2841,14 @@ int calculate_p_sigma(int state, int ret_standard, ST_PROPERTY *property, double
 
             M = fabs(M);
 
+            /*   ////due to use_min_reinf
             if (Check_if_Equal(M, 0.0) && Check_if_Equal(N, 0.0))
             {
                 *sigma = 0.;
                 *rho = 0.;
                 return 1;
             }
+             */
 
             //Non-dimensional parameters:
             double lambda = 0.8;  //λ
@@ -2977,12 +2995,15 @@ int calculate_p_sigma(int state, int ret_standard, ST_PROPERTY *property, double
 
         M = fabs(M);
 
+
+        /*  ////due to use_min_reinf
         if (Check_if_Equal(M, 0.0) && Check_if_Equal(N, 0.0))
         {
             *sigma = 0.;
             *rho = 0.;
             return 1;
         }
+        */
 
         double lambda = 0.8;  //λ
         double eta = 1.0;  //η
@@ -4245,8 +4266,7 @@ void Static_analysis(void) {
     for (i = 0; i < st_node_pre_no; i++)  //node1
     {
         if (st_node_pre[i].flag == 0) {
-            sprintf(report_row, "<%f;%f> %s%s", milimetryobx(st_node_pre[i].x), milimetryoby(st_node_pre[i].y),
-                    _node_size_not_associated_,rn);
+            sprintf(report_row, "<%f;%f> %s%s", milimetryobx(st_node_pre[i].x), milimetryoby(st_node_pre[i].y), _node_size_not_associated_,rn);
             strcat(report, report_row);
         }
     }
@@ -4411,8 +4431,7 @@ void Static_analysis(void) {
                     }
                 }
                 if (i == st_node_no) {
-                    sprintf(report_row, "<%f;%f> %s%s", milimetryobx(p->x), milimetryoby(p->y),
-                            _reaction_not_associated_,rn);
+                    sprintf(report_row, "<%f;%f> %s%s", milimetryobx(p->x), milimetryoby(p->y), _reaction_not_associated_,rn);
                     strcat(report, report_row);
                 }
             }
@@ -4424,17 +4443,17 @@ void Static_analysis(void) {
     //checking if entire structure is restrained
     if ((st_reaction_Y<2) && (st_reaction_X>0))
     {
-        sprintf(report_row, "%s\n", _reaction_not_enough_in_Y_);
+        sprintf(report_row, "%s%s", _reaction_not_enough_in_Y_, rn);
         strcat(report, report_row);
     }
     else if ((st_reaction_X<2) && (st_reaction_X<1))
     {
-        sprintf(report_row, "%s\n", _reaction_not_enough_in_X_Y_);
+        sprintf(report_row, "%s%s", _reaction_not_enough_in_X_Y_, rn);
         strcat(report, report_row);
     }
     else if ((st_reaction_Y>1) && (st_reaction_X<1))
     {
-        sprintf(report_row, "%s\n", _reaction_not_enough_in_X_);
+        sprintf(report_row, "%s%s", _reaction_not_enough_in_X_, rn);
         strcat(report, report_row);
     }
 
@@ -4531,7 +4550,7 @@ void Static_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s",_cannot_create_folder_, _STATIC_);
+            sprintf(report_row, "%s %s%s",_cannot_create_folder_, _STATIC_, rn);
             strcat(report, report_row);
         }
     }
@@ -7738,7 +7757,11 @@ void Static_analysis(void) {
     if (strlen(report) > 0) {
         int edit_params = 0;
         int tab;
+#ifndef LINUX
+        int single = 0;  //info
+#else
         int single = 2;  //info
+#endif
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0]='\0';
         no_error = FALSE;
@@ -10838,12 +10861,12 @@ void Static_analysis(void) {
 
 
                                         if (copysign(1.0, Sp_min) == copysign(1.0, Sp_max)) {
-                                            if (fabs(Sp_min) < fabs(Sp_max)) Sp_min = 0;
+                                            if (fabs(Sp_min) <= fabs(Sp_max)) Sp_min = 0;   ////or  <
                                             else Sp_max = 0;
                                         }
 
                                         if (copysign(1.0, Sm_min) == copysign(1.0, Sm_max)) {
-                                            if (fabs(Sm_min) < fabs(Sm_max)) Sm_min = 0;
+                                            if (fabs(Sm_min) <= fabs(Sm_max)) Sm_min = 0;    ////or <
                                             else Sm_max = 0;
                                         }
 
@@ -10909,10 +10932,10 @@ void Static_analysis(void) {
                                                 Ldsp_.y2 = Ldsp.y1;
                                                 Ldsp_.blok = 1;
 
-                                                if (Sp < 0)
+                                                if (Sp <= 0)
                                                     Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
-                                                if (Sm < 0)
+                                                if (Sm <= 0)
                                                     Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -10965,7 +10988,7 @@ void Static_analysis(void) {
 
                                                 ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp);
 
-                                                if (Sp < 0)
+                                                if (Sp <= 0)
                                                     Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11007,7 +11030,7 @@ void Static_analysis(void) {
 
                                                 ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1);
 
-                                                if (Sm < 0)
+                                                if (Sm <= 0)
                                                     Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                 else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11082,10 +11105,10 @@ void Static_analysis(void) {
                                                     Ldsp_.y2 = Ldsp01.y1;
                                                     Ldsp_.blok = 1;
 
-                                                    if (Sp < 0)
+                                                    if (Sp <= 0)
                                                         Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
-                                                    if (Sm < 0)
+                                                    if (Sm <= 0)
                                                         Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11138,7 +11161,7 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp01);
 
-                                                    if (Sp < 0)
+                                                    if (Sp <= 0)
                                                         Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11181,7 +11204,7 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp11);
 
-                                                    if (Sm < 0)
+                                                    if (Sm <= 0)
                                                         Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11237,6 +11260,34 @@ void Static_analysis(void) {
                                                 Sp = Sp_min;
                                                 Sm = Sm_min;
 
+                                                /*
+
+                                                if (RC_flag && (Sp==0) && (Sm==0))
+                                                {
+                                                    if (inx < (inxi-1)) //it's not last section
+                                                    {
+                                                        if (fd[inx + 1].Sp_min > 0) //tension
+                                                            Sp=+0.00001;
+                                                        //else Sp=-0.00001;
+
+                                                        if (fd[inx + 1].Sm_min > 0) //tension
+                                                            Sm=+0.00001;
+                                                        //else Sm=-0.00001;
+                                                    }
+                                                   else
+                                                    {
+                                                        if (fd[inx - 1].Sp_min > 0) //tension
+                                                            Sp=+0.00001;
+                                                        //else Sp=-0.00001;
+
+                                                        if (fd[inx - 1].Sm_min > 0) //tension
+                                                            Sm=+0.00001;
+                                                        //else Sm=-0.00001;
+                                                    }
+                                                }
+
+                                                 */
+
                                                 ignore_Sm=FALSE;
                                                 if (Check_if_Equal3(Sp, Sm))
                                                     //Sm=0;  //TEMPORARY
@@ -11262,7 +11313,7 @@ void Static_analysis(void) {
                                                 char p_suffix[4]="", m_suffix[4]="";
                                                 int Msign=1.0;
 
-                                                if ((Fs1<=0) && (Fs2<=0) && (Fs11<=0) && (Fs22<=0)) column=1;  //compression in all cases, so this is column
+                                                if ((Fs1<0) && (Fs2<0) && (Fs11<0) && (Fs22<0)) column=1;  //compression in all cases, so this is column
                                                 else column=0; //tensions exist
 
                                                 double Fss;
@@ -11297,9 +11348,26 @@ void Static_analysis(void) {
 
                                                 pAs = rho * 100.0;
 
-                                                if (column==0) {
-                                                    if (fabs(Mz_max) > fabs(Mz_min)) Msign = copysign(1.0, Mz_max);
-                                                    else Msign = copysign(1.0, Mz_min);
+                                                if (column==0)
+                                                {
+                                                    if (RC_flag && (Mz_max==0) && (Mz_min==0))
+                                                    {
+                                                        if (inx < (inxi-1)) //it's not last section
+                                                        {
+                                                            if (fabs(fd[inx + 1].Mz_max) > fabs(fd[inx + 1].Mz_min)) Msign = copysign(1.0, fd[inx + 1].Mz_max);
+                                                            else Msign = copysign(1.0, fd[inx + 1].Mz_min);
+                                                        }
+                                                        else
+                                                        {
+                                                            if (fabs(fd[inx - 1].Mz_max) > fabs(fd[inx - 1].Mz_min)) Msign = copysign(1.0, fd[inx - 1].Mz_max);
+                                                            else Msign = copysign(1.0, fd[inx - 1].Mz_min);
+                                                        }
+                                                    }
+                                                     else
+                                                     {
+                                                        if (fabs(Mz_max) > fabs(Mz_min)) Msign = copysign(1.0, Mz_max);
+                                                        else Msign = copysign(1.0, Mz_min);
+                                                    }
                                                 }
 
                                                 Sm = sigma; //!!!!!!  only negative stress was changed in RC
@@ -11325,8 +11393,49 @@ void Static_analysis(void) {
                                                     fd[inx].Sm_min=pAs;
                                                 }
 
+                                                /*
+                                                if ((Sp == 0) && (Sm== 0))//min %
+                                                {
+                                                    Sp = pAs;  //tensions to reinforced ratio replacement
+                                                    //Sm = pAs;
+                                                    sp_magnitude=p_magnitude;
+                                                    //sm_magnitude=p_magnitude;
+                                                    strcpy(p_suffix,"%");
+                                                    fd[inx].Sp_min=pAs;
+                                                    //fd[inx].Sm_min=pAs;
+                                                }
+                                                 */
+
+                                                //Sp = Sp_min;
+                                                //Sm = Sm_min;
+
+                                                /*
+
+                                                if ((Sp == 0) && (Sm== 0))//only min % can be shown, so lopoking into another cross section
+                                                {
+                                                    if (inx < inxi) {
+                                                        if (fd[inx + 1].Sp_min > 0) //tension
+                                                        {
+                                                            Sp = pAs;  //tensions to reinforced ratio replacement
+                                                            sp_magnitude = p_magnitude;
+                                                            strcpy(p_suffix, "%");
+                                                            fd[inx].Sp_min = pAs;
+                                                        }
+
+                                                        if (fd[inx + 1].Sm_min > 0) //tension
+                                                        {
+                                                            Sm = pAs;
+                                                            sm_magnitude = p_magnitude;
+                                                            strcpy(m_suffix, "%");
+                                                            fd[inx].Sm_min = pAs;
+                                                        }
+                                                    }
+                                                }
+                                                 */
+
+
                                                 ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
-                                                ////else Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_plus_color;
+                                                ////else Ldsp.kol(1 RC) l=393.7 H=5.9055 B=78.74 A=465 Asy=465 Asz=465 Iy=1351.4 Iz=2.4025e+05 Wy=457.68 Wz=6102.4or=Ldsp_.kolor=static_stress_colors.axial_stress_plus_color;
                                                 ////if (Sm<0) Ldsp1.kolor=Ldsp1_.kolor=static_stress_colors.axial_stress_minus_color;
                                                 ////else Ldsp1.kolor=Ldsp1_.kolor=static_stress_colors.axial_stress_plus_color;
 
@@ -11354,10 +11463,10 @@ void Static_analysis(void) {
                                                     Ldsp_.y2 = Ldsp.y1;
                                                     Ldsp_.blok = 1;
 
-                                                    if (Sp < 0)
+                                                    if (Sp <= 0)
                                                         Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
-                                                    if (Sm < 0)
+                                                    if (Sm <= 0)
                                                         Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11410,7 +11519,7 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp);
 
-                                                    if (Sp < 0)
+                                                    if (Sp <= 0)
                                                         Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11452,7 +11561,7 @@ void Static_analysis(void) {
 
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp1);
 
-                                                    if (Sm < 0)
+                                                    if (Sm <= 0)
                                                         Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                     else Ldsp1.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11495,6 +11604,30 @@ void Static_analysis(void) {
                                                     Sp = Sp_max;
                                                     Sm = Sm_max;
 
+                                                    if (RC_flag && (Sp==0) && (Sm==0))
+                                                    {
+                                                        if (inx < (inxi-1)) //it's not last section
+                                                        {
+                                                            if (fd[inx + 1].Sp_max > 0) //tension
+                                                                Sp=+0.00001;
+                                                            //else Sp=-0.00001;
+
+                                                            if (fd[inx + 1].Sm_max > 0) //tension
+                                                                Sm=+0.00001;
+                                                            //else Sm=-0.00001;
+                                                        }
+                                                        else
+                                                        {
+                                                            if (fd[inx - 1].Sp_max > 0) //tension
+                                                                Sp=+0.00001;
+                                                            //else Sp=-0.00001;
+
+                                                            if (fd[inx - 1].Sm_max > 0) //tension
+                                                                Sm=+0.00001;
+                                                            //else Sm=-0.00001;
+                                                        }
+                                                    }
+
                                                     ignore_Sm=FALSE;
                                                     if (Check_if_Equal3(Sp, Sm))
                                                         //Sm=0;  //TEMPORARY
@@ -11519,6 +11652,45 @@ void Static_analysis(void) {
                                                         strcpy(m_suffix,"%");
                                                         fd[inx].Sm_max=pAs;
                                                     }
+
+                                                    /*
+                                                    if ((Sp == 0) && (Sm== 0))//min %
+                                                    {
+                                                        Sp = pAs;  //tensions to reinforced ratio replacement
+                                                        //Sm = pAs;
+                                                        sp_magnitude=p_magnitude;
+                                                        //sm_magnitude=p_magnitude;
+                                                        strcpy(p_suffix,"%");
+                                                        fd[inx].Sp_max=pAs;
+                                                        //fd[inx].Sm_max=pAs;
+                                                    }
+                                                     */
+
+                                                    //Sp = Sp_max;
+                                                    //Sm = Sm_max;
+                                                    /*
+
+                                                    if ((Sp == 0) && (Sm== 0))//only min % can be shown, so lopoking into another cross section
+                                                    {
+                                                        if (inx < inxi) {
+                                                            if (fd[inx + 1].Sp_max > 0) //tension
+                                                            {
+                                                                Sp = pAs;  //tensions to reinforced ratio replacement
+                                                                sp_magnitude = p_magnitude;
+                                                                strcpy(p_suffix, "%");
+                                                                fd[inx].Sp_max = pAs;
+                                                            }
+
+                                                            if (fd[inx + 1].Sm_max > 0) //tension
+                                                            {
+                                                                Sm = pAs;
+                                                                sm_magnitude = p_magnitude;
+                                                                strcpy(m_suffix, "%");
+                                                                fd[inx].Sm_max = pAs;
+                                                            }
+                                                        }
+                                                    }
+                                                     */
 
                                                     ////if (Sp<0) Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_minus_color;
                                                     ////else Ldsp.kolor=Ldsp_.kolor=static_stress_colors.axial_stress_plus_color;
@@ -11547,10 +11719,10 @@ void Static_analysis(void) {
                                                         Ldsp_.y2 = Ldsp01.y1;
                                                         Ldsp_.blok = 1;
 
-                                                        if (Sp < 0)
+                                                        if (Sp <= 0)
                                                             Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
-                                                        if (Sm < 0)
+                                                        if (Sm <= 0)
                                                             Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11603,7 +11775,7 @@ void Static_analysis(void) {
 
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp01);
 
-                                                        if (Sp < 0)
+                                                        if (Sp <= 0)
                                                             Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp01.kolor = Ldsp_.kolor = static_stress_colors.axial_stress_plus_color;
 
@@ -11646,7 +11818,7 @@ void Static_analysis(void) {
 
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp11);
 
-                                                        if (Sm < 0)
+                                                        if (Sm <= 0)
                                                             Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_minus_color;
                                                         else Ldsp11.kolor = Ldsp1_.kolor = static_stress_colors.axial_stress_plus_color;
 

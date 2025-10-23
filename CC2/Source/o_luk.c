@@ -2767,7 +2767,12 @@ int Pline_Arc (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode)
      }
        else
      {
-           if (mode==1) menupini (&mPLukmSlab, _ARC_, _ARC_C_, 15) ;
+           if (mode==1)
+           {
+               if ((PLATE==1) || (WALL==1) || (HOLE==1))  //but not zone
+                   menupini (&mPLukmSlab, _ARC_, _ARC_C_, 15) ;
+               else menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
+           }
            else menupini (&mPLukm, _ARC_, _ARC_C_, 15) ;
            menu_par_new ((*mPLukm.pola)[8].txt, st);
      }

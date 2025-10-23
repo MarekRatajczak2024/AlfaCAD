@@ -1256,6 +1256,10 @@ static char confirm[] = u8"Confirm";
 #define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"The number of plate polylines is greater than 1\n Such solution has not been implemented yet."
 #define _NO_LOAD_ASSIGNED_ u8"No load assigned and no '%g' declared for self weight load"
 
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Hole not assigned to any zone or plate"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Wall not assigned to any zone or plate"
+#define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Zone not assigned to any plate"
+
 
 #define _Yes_ "Yes"
 #define _No_ "No"

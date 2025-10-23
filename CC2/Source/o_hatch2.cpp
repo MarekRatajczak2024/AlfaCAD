@@ -570,8 +570,8 @@ add_area_next_seg (int 		    i_object_no,
 		ababab = ababab;
 	}
 	
-    if (TRUE == Check_if_Equal0 (df_x0, df_x) &&  ////WARNING
-	TRUE == Check_if_Equal0 (df_y0, df_y))   ////WARNING
+    if (TRUE == Check_if_Equal1 (df_x0, df_x) &&  ////WARNING   Check_if_Equal0
+	TRUE == Check_if_Equal1 (df_y0, df_y))   ////WARNING   Check_if_Equal0
     {
       b_close = TRUE ;
       i_vertex2_no = 0 ;

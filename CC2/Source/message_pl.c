@@ -1253,6 +1253,10 @@ static char confirm[] = u8"Potwierdź";
 #define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"Liczba polilinii płyt jest większa od 1\n Takiego rozwiązania jeszcze nie wdrożono."
 #define _NO_LOAD_ASSIGNED_ u8"Nie przypisano obciążenia i nie zadeklarowano „%g” dla obciażenia ciężarem własnym"
 
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Otwór nie jest przypisany do żadnej strefy ani płyty"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Ściana nie jest przypisana do żadnej strefy ani płyty"
+#define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Strefa nie jest przypisana do żadnej płyty"
+
 #define _Yes_ "Tak"
 #define _No_ "Nie"
 #define _YES_NO_ESC_ u8"TNtn\033"

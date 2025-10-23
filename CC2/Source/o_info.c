@@ -290,10 +290,12 @@ void nazwa_koloru(char *ad1, char *sk)
 }
 
 
-static void nazwa_bloku_first(char *ad1,char *sk)
-/*---------------------------------------------*/
+static void nazwa_bloku_first(char *ad1,char *sk, int *plate_hole_wall_zone)
+/*-----------------------------------------------------------------------*/
 { BLOK *ptrs_block ;
   T_Desc_Ex_Block *ptrs_desc_bl ;
+
+  *plate_hole_wall_zone=-1;
    
    strcpy(sk,u8"");
    if (((LINIA *)ad1)->blok==NoElemBlok) strcpy(sk,u8"");
@@ -314,10 +316,26 @@ static void nazwa_bloku_first(char *ad1,char *sk)
                if (ptrs_block->kod_obiektu==B_PLINE)
                {
                    strcpy(sk, u8"*PLINE");
-                   if (ptrs_block->opis_obiektu [0] == PL_PLATE) strcat(sk,__PLATE__);
-                   else if (ptrs_block->opis_obiektu [0] == PL_HOLE) strcat(sk,__HOLE__);
-                   else if (ptrs_block->opis_obiektu [0] == PL_WALL) strcat(sk,__WALL__);
-                   else if (ptrs_block->opis_obiektu [0] == PL_ZONE) strcat(sk,__ZONE__);
+                   if (ptrs_block->opis_obiektu [0] == PL_PLATE)
+                   {
+                       strcat(sk,__PLATE__);
+                       *plate_hole_wall_zone=0;
+                   }
+                   else if (ptrs_block->opis_obiektu [0] == PL_HOLE)
+                   {
+                       strcat(sk,__HOLE__);
+                       *plate_hole_wall_zone=1;
+                   }
+                   else if (ptrs_block->opis_obiektu [0] == PL_WALL) 
+                   {
+                       strcat(sk, __WALL__);
+                       *plate_hole_wall_zone=2;
+                   }
+                   else if (ptrs_block->opis_obiektu [0] == PL_ZONE)
+                   {
+                       strcat(sk,__ZONE__);
+                       *plate_hole_wall_zone=3;
+                   }
                }
                else if (ptrs_block->kod_obiektu==B_HATCH) strcpy(sk, u8"*HATCH");
                else if ((ptrs_block->kod_obiektu==B_DIM) || (ptrs_block->kod_obiektu==B_DIM1) ||(ptrs_block->kod_obiektu==B_DIM2) ||(ptrs_block->kod_obiektu==B_DIM3)) strcpy(sk, u8"*DIM");
@@ -378,6 +396,10 @@ void act(int pos)
 	active[pos] = TRUE;
 }
 
+void inact(int pos)
+{
+    active[pos] = FALSE;
+}
 
 void Info_about_object(char *ad)
 /*----------------------------*/
@@ -414,6 +436,7 @@ void Info_about_object(char *ad)
   unsigned char translucency;
   int transluc;
   float d_trans=12.75;
+  int p_h_w_z;
 
   deact();
 
@@ -507,10 +530,15 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iDY].txt, sk) ;
 	 act(iDY);
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
+     if (p_h_w_z==3)   //not for zone
+     {
+         inact(iEdge);
+         inact(iEdgeInverted);
+     }
 
      nazwa_bloku(ad,&sk);
 	 sk[40]='\0';
@@ -634,7 +662,7 @@ void Info_about_object(char *ad)
         menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
         act(iLWidth);
 
-        nazwa_bloku_first(ad,&sk);
+        nazwa_bloku_first(ad,&sk, &p_h_w_z);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
         act(iInnerBlockName);
@@ -719,7 +747,7 @@ void Info_about_object(char *ad)
          act(iLineSpacing);
      }
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -801,10 +829,15 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLenght].txt, sk) ;
 	 act(iLenght);
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
+     if (p_h_w_z==3)  //not for zone
+       {
+           inact(iEdge);
+           inact(iEdgeInverted);
+       }
 
      nazwa_bloku(ad,&sk);    
 	 sk[40]='\0';
@@ -904,7 +937,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLenght].txt, sk) ;
       act(iLenght);
 
-      nazwa_bloku_first(ad,&sk);
+      nazwa_bloku_first(ad,&sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
@@ -978,7 +1011,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iAngle2].txt, sk) ;
       act(iAngle2);
 
-      nazwa_bloku_first(ad,&sk);
+      nazwa_bloku_first(ad,&sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
@@ -1042,7 +1075,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iArea].txt, sk) ;
 	 act(iArea);
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -1118,7 +1151,7 @@ void Info_about_object(char *ad)
       act(iArea);
        */
 
-      nazwa_bloku_first(ad,&sk);
+      nazwa_bloku_first(ad,&sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
@@ -1172,7 +1205,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iArea].txt, sk) ;
 	 act(iArea);
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -1231,7 +1264,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iOpacity].txt, sk) ;
       act(iOpacity);
 
-      nazwa_bloku_first(ad,&sk);
+      nazwa_bloku_first(ad,&sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
@@ -1328,7 +1361,7 @@ void Info_about_object(char *ad)
          act(iOpacity);
      }
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -1409,7 +1442,7 @@ void Info_about_object(char *ad)
 	   act(iY4);
    }
 
-   nazwa_bloku_first(ad, &sk);
+   nazwa_bloku_first(ad, &sk, &p_h_w_z);
    sk[40] = '\0';
    menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk);
    act(iInnerBlockName);
@@ -1454,7 +1487,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
 
-     nazwa_bloku_first(ad,&sk);
+     nazwa_bloku_first(ad,&sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -1523,7 +1556,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iPxlDy].txt, sk);
       act(iPxlDy);
 
-	nazwa_bloku_first(ad, &sk);
+	nazwa_bloku_first(ad, &sk, &p_h_w_z);
 	sk[40] = '\0';
 	menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk);
 	act(iInnerBlockName);
@@ -1801,7 +1834,7 @@ void Info_about_object(char *ad)
                 break;
         }
 
-        nazwa_bloku_first(ad,&sk);
+        nazwa_bloku_first(ad,&sk, &p_h_w_z);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
         act(iInnerBlockName);

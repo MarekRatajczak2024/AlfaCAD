@@ -317,12 +317,47 @@ int przeciecieLl_tt (double *x1, double *y1, double *t1,
 /*----------------------------------------------------*/
 {
   LUK *luk;
+  LINIA *linia;
   OKRAG o ;
   int l;
   int i_interno ;
   double df_x1, df_y1, df_x2, df_y2 ;
+    double Lx1, Ly1, Lx2, Ly2;
+    double lx1, ly1, lx2, ly2;
 
-  luk=(LUK*)adr1;
+    linia=(LINIA*)adr;
+    luk=(LUK*)adr1;
+
+  //check if arc end lays exactly on line end
+    lx1=luk->x+luk->r*cos(luk->kat1);
+    ly1=luk->y+luk->r*sin(luk->kat1);
+    lx2=luk->x+luk->r*cos(luk->kat2);
+    ly2=luk->y+luk->r*sin(luk->kat2);
+
+    Lx1=linia->x1;
+    Ly1=linia->y1;
+    Lx2=linia->x2;
+    Ly2=linia->y2;
+
+    if (((Check_if_Equal(Lx2, lx1)) && (Check_if_Equal(Ly2, ly1))) ||
+        ((Check_if_Equal(Lx2, lx2)) && (Check_if_Equal(Ly2, ly2))))
+    {
+        *x1 = Lx2 ;
+        *y1 = Ly2 ;
+        *t1=1;
+        *t2=0;
+        return 1;
+    }
+    else if (((Check_if_Equal(Lx1, lx1)) && (Check_if_Equal(Ly1, ly1))) ||
+            ((Check_if_Equal(Lx1, lx2)) && (Check_if_Equal(Ly1, ly2))))
+    {
+        *x1 = Lx1 ;
+        *y1 = Ly1 ;
+        *t1=1;
+        *t2=0;
+        return 1;
+    }
+    
   o.r = luk->r ;
   o.x = luk->x ;
   o.y = luk->y ;

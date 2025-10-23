@@ -46,7 +46,7 @@ extern void alfpro2acad (char *);
 extern int hatch_proc (long_long, long_long, int, double[], double[], T_PTR_Hatch_Param, int comput_area,
 			double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block, int draw);
 extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area,
-			double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
+			double df_apx1, double df_apy1, double df_apx2, double df_apy2 );
 extern void windows2mazovia(char *tekst);
 extern char  *find_first_hatch_block(char *ad1, double *x0b, double *y0b);
 extern void zmien_atrybut_preserve_hatch_outline(char  *adr, char  *adrk, int aold, int anew);
@@ -1977,7 +1977,7 @@ once_again_view:
     Error = 0;
 
 	ret = 	hatch_proc_test ((long_long)0, (long_long)dane_size,
-		df_x, df_y, &s_hatch_param, comput_area1, df_apx1_, df_apy1_, df_apx2_, df_apy2_, TRUE) ;
+		df_x, df_y, &s_hatch_param, comput_area1, df_apx1_, df_apy1_, df_apx2_, df_apy2_) ;
     LiniaG.blok = 0 ;
     if(ptrs__hatch_line_def != NULL)
     {

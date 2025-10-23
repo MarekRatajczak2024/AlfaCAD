@@ -1120,7 +1120,12 @@ static void redcr0(char typ, int mode)
        if (OBRYS==TRUE) menupini (&mPLineObrys, _POLYLINE_, _POLYLINE_C_,20) ;
          else
        {
-             if (mode==1) menupini (&mPLineSlab, _POLYLINE_, _POLYLINE_C_,20) ;
+             if (mode==1)
+             {
+                 if ((PLATE==1) || (WALL==1) || (HOLE==1))   //but not ZONE
+                     menupini (&mPLineSlab, _POLYLINE_, _POLYLINE_C_,20) ;
+                 else menupini (&mPLine, _POLYLINE_, _POLYLINE_C_,20) ;
+             }
              else menupini (&mPLine, _POLYLINE_, _POLYLINE_C_,20) ;
        }
        LiniaG.blok = ElemBlok ;

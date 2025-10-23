@@ -1288,6 +1288,10 @@ static char confirm[] = u8"Підтвердьте";
 #define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"Кількість поліліній плит перекриття перевищує 1. Таке рішення ще не реалізовано."
 #define _NO_LOAD_ASSIGNED_ u8"Навантаження не призначено, і для власної ваги не заявлено значення «%g»"
 
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Отвір не призначено жодній зоні чи плиті"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Стіна не призначена жодній зоні чи плиті"
+#define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Зона не призначена жодній плиті перекриття"
+
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
 #define _YES_NO_ESC_ u8"ТНтн\033"

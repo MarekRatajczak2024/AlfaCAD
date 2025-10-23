@@ -506,8 +506,6 @@ static BOOL make_nodes_ob_ob (long_long l_off_ob1,
     i_inter = IntersectionWW (Text_to_Solid ((TEXT*)nag1, &s_solid1), Text_to_Solid ((TEXT*)nag2, &s_solid2), df_x, df_y, df_t1, df_t2) ;
   }
 
-    //if (i_inter==2) i_inter=1;  //TEMPORARY  //HERE IS A PROBLEM  intersection between circle and line
-
   for (i = 0 ; i < i_inter ; i++)
   {
     b_ret = add_node_ob_ob (i_ob1_no, i_ob2_no, df_x [i], df_y [i], df_t1 [i], df_t2 [i]) ;
@@ -838,7 +836,7 @@ extern "C" {
 BOOL  hatch_proc_test (long_long l_offb, long_long l_offe,
 	    double df_pointx, double df_pointy,
 	    T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
-	    double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
+	    double df_apx1, double df_apy1, double df_apx2, double df_apy2);
 }
 
 int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
@@ -1029,8 +1027,8 @@ int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
 BOOL hatch_proc_test (long_long l_offb0, long_long l_offe0,
 	    double df_pointx, double df_pointy,
 	    T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
-	    double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow)
-/*---------------------------------------------------------------------------------*/
+	    double df_apx1, double df_apy1, double df_apx2, double df_apy2)
+/*-------------------------------------------------------------------*/
 {
     int to_block=0;
 
@@ -1042,75 +1040,50 @@ BOOL hatch_proc_test (long_long l_offb0, long_long l_offe0,
   long_long l_offb, l_offe;
   int shadows_no, solidarc_shadows_no, arc_shadows_no, el_shadows_no;
 
-    ////// TEST in WINDOWS
-    l_offb0 = 0;
-    l_offe0 = dane_size;
-    //////
-
   l_offb = l_offb0;
   l_offe = l_offe0;
-
   shadows_no = 0;
   solidarc_shadows_no=0;
   arc_shadows_no = 0;
   el_shadows_no = 0;
 
-    if (shadow)
+    solidarc_shadows_no = make_solidarc_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);
+    if (solidarc_shadows_no > 0)
     {
-        solidarc_shadows_no = make_solidarc_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);
-        if (solidarc_shadows_no > 0)
-        {
+        l_offb = 0;
+        l_offe = dane_size;
+    }
+    else
+    {
+        l_offb = l_offb0;
+        l_offe = l_offe0;
+    }
+
+    shadows_no = make_spline_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);  //1
+    if (shadows_no > 0)
+    {
+        l_offb = 0;
+        l_offe = dane_size;
+    }
+    else
+    {
+        l_offb = l_offb0;
+        l_offe = l_offe0;
+    }
+
+    el_shadows_no = make_elliptical_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);  //1
+    if (el_shadows_no > 0)
+    {
+        l_offb = 0;
+        l_offe = dane_size;
+    }
+    else {
+        if ((shadows_no) > 0) {
             l_offb = 0;
             l_offe = dane_size;
-        }
-        else
-        {
+        } else {
             l_offb = l_offb0;
             l_offe = l_offe0;
-        }
-
-        shadows_no = make_spline_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);  //1
-        if (shadows_no > 0)
-        {
-            l_offb = 0;
-            l_offe = dane_size;
-        }
-        else
-        {
-            l_offb = l_offb0;
-            l_offe = l_offe0;
-        }
-
-        //////////////  FOR TEST IN WINDOWS
-        /*
-        arc_shadows_no = make_arc_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);
-        if (arc_shadows_no > 0)
-        {
-            l_offb = 0;
-            l_offe = dane_size;
-        }
-        else
-        {
-            l_offb = l_offb0;
-            l_offe = l_offe0;
-        }
-        */
-        //////////////
-
-        el_shadows_no = make_elliptical_shadows(l_offb, l_offe, Ablok, FALSE, Anormalny, 1, to_block);  //1
-        if (el_shadows_no > 0)
-        {
-            l_offb = 0;
-            l_offe = dane_size;
-        }
-        else {
-            if ((shadows_no) > 0) {
-                l_offb = 0;
-                l_offe = dane_size;
-            } else {
-                l_offb = l_offb0;
-                l_offe = l_offe0;
-            }
         }
     }
 

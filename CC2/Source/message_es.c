@@ -1256,6 +1256,10 @@ static char confirm[] = u8"Confirmar";
 #define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"El número de polilíneas de losas es mayor que 1\n. Esta solución aún no se ha implementado."
 #define _NO_LOAD_ASSIGNED_ u8"No se ha asignado ninguna carga y no se ha declarado ningún '%g' para el peso propio"
 
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Agujero no asignado a ninguna zona ni losa"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Muro no asignado a ninguna zona ni losa"
+#define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Zona no asignada a ninguna losa"
+
 #define _Yes_ "Sí"
 #define _No_ "No"
 #define _YES_NO_ESC_ u8"SNsn\033"

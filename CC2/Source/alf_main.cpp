@@ -2644,6 +2644,8 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 
     mytext[flength]='\0';
 
+    for (int ii=0; ii<flength-1; ii++) if (mytext[ii]=='\"') mytext[ii]='\'';
+
     sprintf(Height,"%d", HeightI);
     sprintf(Width, "%d", WidthI);
     sprintf(New_Edit_Params,"%d",edit_params);

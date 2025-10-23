@@ -942,7 +942,7 @@ void setviewport(int left, int top, int right, int bottom, int clip)
 #ifndef ALLEGRO5
     screen = NONCLIPPED_SCREEN;
 #endif
-    parent_screen = create_sub_bitmap(screen, left, top, right-left+1, bottom-top+1);
+    parent_screen = create_sub_bitmap((BITMAP*)screen, left, top, right-left+1, bottom-top+1);
 #ifndef ALLEGRO5
     screen = parent_screen;
 #else

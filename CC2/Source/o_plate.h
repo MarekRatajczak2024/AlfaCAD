@@ -1,4 +1,4 @@
-//
+
 // Created by marek on 9/4/25.
 //
 
@@ -67,6 +67,9 @@ typedef struct
     int last_edge;
     int property_number;
     int k;  //body number - 1
+    int ps;  //parent style  0 plate, 1 hole, 2 wall, 3 zone, initiated as -1
+    int pn;  //parent number initiated as - 1
+    int load;
 } PLATE_PROPERTY;
 
 

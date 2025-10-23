@@ -98,8 +98,8 @@ extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* 
 
 extern void set_decimal_format(char *text, double l, double precision);
 
-extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area,
-                            double df_apx1, double df_apy1, double df_apx2, double df_apy2 );
+//extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area, double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow );
+extern BOOL  hatch_proc_test (long_long l_offb, long_long l_offe, double df_pointx, double df_pointy, T_PTR_Hatch_Param ptrs_hatch_param, int comput_area, double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
 
 extern BOOL Check_if_Equal (double x, double y);
 extern BOOL Check_if_Equal2(double x, double y);
@@ -114,6 +114,7 @@ extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string,
 extern int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab);
 extern int EditFile(char *, int adjust, int nCmdShow);
 extern double Angle_Normal (double angle);
+extern void utf8Upper(char* text);
 
 #ifndef LINUX
 extern BOOL Is64BitOperatingSystem(void);
@@ -891,13 +892,15 @@ void embed_node(int load_no, double geo_units_factor)
  */
 int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
                               double fck, double fcd, double fyd,
-                              double eta, double lambda, double Es,
+                              double eta, double lambda, double Es, int use_min_reinf,
                               double *As, double *As_prime, double *rho, double *rho_prime,
                               double *total_rho, double *sigma_c_max) {
     double d = h - cc; // Effective depth
     double d_prime = cc; // Compression rebar depth
     double Ecm = 22.0 * pow((fck * 1e-6 + 8.0) / 10.0, 0.3) * 1e9; // Pa
     double n = Es / Ecm; // Modular ratio
+    double fctm = 0.3 * pow(fck * 1e-6, 2.0 / 3.0) * 1e6; // Pa  ////due to use_min_reinf
+    double As_min = use_min_reinf ? fmax(0.26 * fctm / fyd * b * d, 0.0013 * b * d) : 0.0;  //// due to  use_min_reinf
     double K = M / (b * d * d * fck);
 
     if (K <= 0.283) {
@@ -910,6 +913,9 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
         double z = d * (1.0 + sqrt_term) / 2.0;
         if (z > 0.95 * d) z = 0.95 * d;
         *As = M / (fyd * z);
+
+        *As = fmax(*As, As_min);  //// due to  use_min_reinf
+
         *As_prime = 0.0;
         *rho = *As / (b * d);
         *rho_prime = 0.0;
@@ -948,9 +954,21 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
         *As_prime = (M - constant_term) / coeff_As_prime;
         *As = *As_prime + As_term;
 
+        /*
         if (*As < 0 || *As_prime < 0) {
             printf("Error: Negative reinforcement areas (As = %.2f mm², As_prime = %.2f mm²).\n",
                    *As * 1e6, *As_prime * 1e6);
+            return -1;
+        }
+        */
+        //// due to  use_min_reinf
+        if (*As_prime < 0) {
+            *As_prime = 0.0;
+            *As = fmax(As_term, As_min);
+        }
+
+        if (*As < 0) {
+            printf("Error: Negative reinforcement area (As = %.2f mm²).\n", *As * 1e6);
             return -1;
         }
 
@@ -993,8 +1011,9 @@ int foo_test_p_eurocode() {
     double lambda = 0.8;
     double Es = 200e9;   // Pa
     double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+    int use_min_reinf = 0;
 
-    int result = calculate_rebars_eurocode_simplified(M, h, b, cc, fck, fcd, fyd, eta, lambda, Es,
+    int result = calculate_rebars_eurocode_simplified(M, h, b, cc, fck, fcd, fyd, eta, lambda, Es, use_min_reinf,
                                            &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
     if (result == 0) {
         printf("Calculation successful.\n");
@@ -1170,8 +1189,88 @@ int foo_p_aci() {
 }
 
 
-#include <math.h>
-#include <stdio.h>
+//#include <math.h>
+//#include <stdio.h>
+
+// Simplified ACI 318-19 procedure for RC section (SI: Pa, m, Nm; Imperial: psi, in, lbf-in)
+int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, double b, double c,
+                                    double fck, double fcd, double fyd, double eta, double lambda,
+                                    double Es, int use_min_reinf, int is_si_units,
+                                    double *As, double *As_prime, double *rho, double *rho_prime,
+                                    double *total_rho, double *sigma_c_max) {
+    double d = h - c;
+    double A_g = b * h;
+    double Ec = is_si_units ? 4700 * sqrt(fck / 1e6) * 1e6 : 57000 * sqrt(fck); // SI: Pa, Imperial: psi
+    double n = Es / Ec;
+    double beta1 = is_si_units ? (fck <= 28e6 ? 0.85 : 0.85 - 0.05 * (fck / 1e6 - 28) / 4) :
+                   (fck <= 4000 ? 0.85 : 0.85 - 0.05 * (fck / 1000 - 4));
+    if (beta1 < 0.65) beta1 = 0.65;
+    double phi = 0.9;
+
+    // Calculate f_ctm and As_min based on unit system
+    double f_ctm, As_min;
+    if (is_si_units) {
+        f_ctm = 0.3 * pow(fck / 1e6, 2.0 / 3.0) * 1e6; // f_ctm in Pa
+        As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // As_min in m²
+    } else {
+        f_ctm = 0.3 * pow(fck / 1000, 2.0 / 3.0) * 1000; // f_ctm in psi
+        As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // As_min in in²
+    }
+
+    // Simplified moment capacity check
+    double a = M / (phi * 0.85 * fcd * b);
+    *As = (0.85 * fcd * a * b - (-N)) / fyd;
+    *As = fmax(*As, As_min); // Ensure minimum reinforcement
+    *As_prime = 0.0;
+    *rho = *As / (b * d);
+    *rho_prime = 0.0;
+    *total_rho = *rho;
+    *sigma_c_max = fabs(N) / A_g + 6 * fabs(M) / (b * h * h);
+    *sigma_c_max = fabs(*sigma_c_max);
+
+    // Warnings for reinforcement limits
+    if (*total_rho > 0.08) {
+        printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19).\n", *total_rho * 100);
+    }
+    if (*sigma_c_max > (is_si_units ? 0.85 * fck / 1.5 : 0.85 * fck)) {
+        printf("Warning: sigma_c_max (%.2f %s) exceeds limit (%.2f %s).\n",
+               *sigma_c_max / (is_si_units ? 1e6 : 1000), is_si_units ? "MPa" : "ksi",
+               (is_si_units ? 0.85 * fck / 1.5 / 1e6 : 0.85 * fck / 1000), is_si_units ? "MPa" : "ksi");
+    }
+
+    printf("Singly reinforced: As = %.2f %s, As_prime = %.2f %s, rho = %.2f%%, sigma_c_max = %.2f %s\n",
+           *As * (is_si_units ? 1e6 : 1), is_si_units ? "mm²" : "in²",
+           *As_prime * (is_si_units ? 1e6 : 1), is_si_units ? "mm²" : "in²",
+           *rho * 100, *sigma_c_max / (is_si_units ? 1e6 : 1000), is_si_units ? "MPa" : "ksi");
+    return 0;
+}
+
+// Example test
+int foo_test_with_N() {
+    double M_si = 37919.83, N_si = -47070.49; // Nm, N
+    double M_imp = 335573.0, N_imp = -10580.0; // lbf-in, lbf
+    double h = 0.3, b = 0.3, c = 0.04; // m (SI) or in (Imperial)
+    double fck_si = 30e6, fcd_si = 20e6, fyd_si = 350e6; // Pa
+    double fck_imp = 4350, fcd_imp = 2900, fyd_imp = 60000; // psi
+    double eta = 1.0, lambda = 0.8, Es = 200e9; // Es in Pa (SI) or psi (Imperial)
+    int use_min_reinf = 1;
+    double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+
+    // SI test
+    printf("SI Units Test:\n");
+    calculate_rebars_aci_simplified_UNI_with_N(M_si, N_si, h, b, c, fck_si, fcd_si, fyd_si, eta, lambda, Es,
+                                    use_min_reinf, 1, &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+
+    // Imperial test
+    printf("\nImperial Units Test:\n");
+    calculate_rebars_aci_simplified_UNI_with_N(M_imp, N_imp, h, b, c, fck_imp, fcd_imp, fyd_imp, eta, lambda, Es,
+                                    use_min_reinf, 0, &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
+    return 0;
+}
+
+
+//#include <math.h>
+//#include <stdio.h>
 
 /**
  * Simplified ACI 318 procedure for pure bending (N=0) in a plate (per 1 m or 1 ft width) to calculate
@@ -1198,7 +1297,7 @@ int foo_p_aci() {
  *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
  */
 int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
-                                    double fyk, double fyd, double fck, double fcd,
+                                    double fyk, double fyd, double fck, double fcd, int use_min_reinf,
                                     double *As, double *As_prime, double *rho, double *rho_prime,
                                     double *total_rho, double *sigma_c_max) {
     // Detect unit system based on fyk magnitude
@@ -1216,6 +1315,27 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
     double Es = is_si_units ? 200e9 : 29e6; // 200 GPa or 29e6 psi
     double Ec = is_si_units ? 4700 * sqrt(fck / 1e6) * 1e6 : 57000 * sqrt(fck); // Pa or psi
     double n = Es / Ec; // Modular ratio
+
+
+    //double f_ctm = 0.3 * pow(fck / 1e6, 2.0 / 3.0) * 1e6; // Eurocode f_ctm for C30/37  ////due to use_min_reinf
+    //double As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // Eurocode As_min  ////due to use_min_reinf
+    // Calculate f_ctm and As_min based on unit system
+    double f_ctm, As_min;
+    if (is_si_units) {
+        f_ctm = 0.3 * pow(fck / 1e6, 2.0 / 3.0) * 1e6; // f_ctm in Pa
+        // Use Eurocode formula for preliminary design
+        As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // As_min in m²
+        // Optional: ACI 318-19 formula (uncomment to use)
+        // As_min = use_min_reinf ? fmax(0.249 * sqrt(fck / 1e6) / (fyd / 1e6) * b * d, 1.379 / (fyd / 1e6) * b * d) : 0.0; // As_min in m²
+    } else {
+        double fck_mpa = fck / 145.038; // Convert fck from psi to MPa
+        f_ctm = 0.3 * pow(fck_mpa, 2.0 / 3.0) * 145.038; // f_ctm in psi
+        // Use Eurocode formula for preliminary design
+        As_min = use_min_reinf ? fmax(0.26 * f_ctm / fyd * b * d, 0.0013 * b * d) : 0.0; // As_min in in²
+        // Optional: ACI 318-19 formula (uncomment to use)
+        // As_min = use_min_reinf ? fmax(3.0 * sqrt(fck) / fyd * b * d, 200.0 / fyd * b * d) : 0.0;
+    }
+
     double beta1 = (fck / unit_factor <= 28.0) ? 0.85 : 0.85 - 0.05 * (fck / unit_factor - 28.0) / 4.0; // ACI 318-19
     if (beta1 < 0.65) beta1 = 0.65;
 
@@ -1229,6 +1349,10 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
         // Singly reinforced
         *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
         *As = *rho * b * d;
+
+        *As = fmax(*As, As_min); ////due to use_min_reinf
+        *rho = *As / (b * d);  ////due to use_min_reinf
+
         *As_prime = 0.0;
         *rho_prime = 0.0;
         *total_rho = *rho + *rho_prime;
@@ -1246,6 +1370,10 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
             if (sqrt_term < 0.0) goto doubly_reinforced;
             *rho = (0.85 * fck / fyk) * (1.0 - sqrt(sqrt_term));
             *As = *rho * b * d;
+
+            *As = fmax(*As, As_min);  //due to use_min_reinf
+            *rho = *As / (b * d);  //due to use_min_reinf
+
             c_na = *rho * fyk * d / (0.85 * fck * beta1);
         }
 
@@ -1285,9 +1413,21 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
     *As_prime = (M - constant_term) / coeff_As_prime;
     *As = *As_prime + As_term;
 
+    /*
     if (*As < 0 || *As_prime < 0) {
         printf("Error: Negative reinforcement areas (As = %.2f %s, As_prime = %.2f %s).\n",
                *As * area_display_factor, area_unit, *As_prime * area_display_factor, area_unit);
+        return -1;
+    }
+    */
+    ////due to use_min_reinf
+    if (*As_prime < 0) {
+        *As_prime = 0.0;
+        *As = fmax(As_term, As_min);
+    }
+
+    if (*As < 0) {
+        printf("Error: Negative reinforcement area (As = %.2f mm²). M=%.2f Nm, h=%.3f m, b=%.3f m, c=%.3f m\n", *As * 1e6,M,h,b,cc);
         return -1;
     }
 
@@ -1330,9 +1470,10 @@ int foo_test_UNI() {
     double fck = 30e6;   // Pa
     double fcd = 30e6;   // Pa (fck for ACI stress block)
     double As, As_prime, rho, rho_prime, total_rho, sigma_c_max;
+    int use_min_reinf = 1;
 
     printf("SI Units Test:\n");
-    int result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd,
+    int result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd, use_min_reinf,
                                                  &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
     if (result == 0) {
         printf("Calculation successful.\n");
@@ -1351,7 +1492,7 @@ int foo_test_UNI() {
     fcd = 4351.13; // psi
 
     printf("\nImperial Units Test:\n");
-    result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd,
+    result = calculate_rebars_aci_simplified_UNI(M, h, b, cc, fyk, fyd, fck, fcd, use_min_reinf,
                                              &As, &As_prime, &rho, &rho_prime, &total_rho, &sigma_c_max);
     if (result == 0) {
         printf("Calculation successful.\n");
@@ -1362,10 +1503,92 @@ int foo_test_UNI() {
     return 0;
 }
 
+void correct_pline(char *adp, char *adk)
+{  NAGLOWEK *nag;
+    LINIA *L;
+    LUK *l;
+    double Lx1, Ly1, Lx2, Ly2;
+    double lx1, ly1, lx2, ly2;
+    double dx1, dy1, dx2, dy2;
+    double dx, dy, d1x, d1y;
+    int last_obj;
+    ////searching lines and arcs
+    last_obj=0;
+    obiekt_tok((char *) adp, adk, (char **) &nag, ONieOkreslony);
+    while (nag != NULL) {
+        switch (nag->obiekt)
+        {
+            case Olinia:
+                L=(LINIA*)nag;
+                Lx1=L->x1;
+                Ly1=L->y1;
+                Lx2=L->x2;
+                Ly2=L->y2;
+
+                if (last_obj==Oluk)
+                {
+                    //checking points offset
+                    dx=Lx1-lx2;
+                    dy=Ly1-ly2;
+
+                    dx1=Lx1-lx1;
+                    dy1=Ly1-ly1;
+
+                    if ((dx*dx+dy*dy) < (dx1*dx1+dy1*dy1))
+                    {
+                        Lx1=(float)lx2;
+                        Ly1=(float)ly2;
+                    }
+                    else
+                    {
+                        Lx1=(float)lx1;
+                        Ly1=(float)ly1;
+                    }
+                }
+                last_obj=Olinia;
+                break;
+            case Oluk:
+                l=(LUK*)nag;
+                lx1=l->x+l->r*cos(l->kat1);
+                ly1=l->y+l->r*sin(l->kat1);
+                lx2=l->x+l->r*cos(l->kat2);
+                ly2=l->y+l->r*sin(l->kat2);
+                if (last_obj==Olinia)
+                {
+                    //checking points offset
+                    dx=lx1-Lx2;
+                    dy=ly1-Ly2;
+
+                    dx1=lx2-Lx2;
+                    dy1=ly2-Ly2;
+
+                    if ((dx*dx+dy*dy) < (dx1*dx1+dy1*dy1))
+                    {
+                        Lx2=(float)lx1;
+                        Ly2=(float)ly1;
+                    }
+                    else
+                    {
+                        Lx2=(float)lx2;
+                        Ly2=(float)ly2;
+                    }
+                }
+                last_obj=Oluk;
+                break;
+            case OdBLOK :
+                break;
+            default:
+                break;
+        }
+        obiekt_tok(NULL, adk, (char **) &nag, ONieOkreslony);
+    }
+}
+
 void Plate_analysis(void) {
 
     int i, j, k, ii, li=0;
-    int ret, ret1, ret2, ret_standard, ret_exp;
+    int ret, ret_standard, ret_exp;
+    BOOL ret1, ret2;
     double units_factor = 1.0;
     double m_units_factor = 1000.0;
     double geo_units_factor = 1000.0;
@@ -1426,6 +1649,8 @@ void Plate_analysis(void) {
     double mesh_node_z;
     double koc, kos;
     char desired_layer[maxlen_w];
+    char desired_layer_upper[maxlen_w];
+    char layer_name_upper[maxlen_w];
     char desired_layer_bak[maxlen_w];
     int desired_layer_no;
     char block_name[MaxTextLen];
@@ -1523,6 +1748,8 @@ void Plate_analysis(void) {
 
     float (*jednostkiObX)(double mob);
     float (*jednostkiObY)(double mob);
+    ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
+
 
     was_refreshed = FALSE;
 
@@ -2126,10 +2353,13 @@ void Plate_analysis(void) {
                             plate_property[plate_no].property_number = property_number;
                             plate_property[plate_no].first_edge = first;
                             plate_property[plate_no].last_edge = last;
+                            plate_property[plate_no].ps = -1;
+                            plate_property[plate_no].pn = -1;
+                            plate_property[plate_no].load = 0;
                             add_plate_property();
                             body_number++;
                         } else {
-                            sprintf(report_row, "%s %d %s\n", _THE_PLATE_, plate_no + 1, _POLYLINE_IS_NOT_CLOSED_);
+                            sprintf(report_row, "%s %d %s%s", _THE_PLATE_, plate_no + 1, _POLYLINE_IS_NOT_CLOSED_,rn);
                             strcat(report, report_row);
                         }
                     }
@@ -2152,10 +2382,13 @@ void Plate_analysis(void) {
                             hole_property[hole_no].property_number = property_number;
                             hole_property[hole_no].first_edge = first;
                             hole_property[hole_no].last_edge = last;
+                            hole_property[hole_no].ps = -1;
+                            hole_property[hole_no].pn = -1;
+                            hole_property[hole_no].load = 0;
                             add_hole_property();
                             body_number++;
                         } else {
-                            sprintf(report_row, "%s %d %s\n", _THE_HOLE_, hole_no + 1, _POLYLINE_IS_NOT_CLOSED_);
+                            sprintf(report_row, "%s %d %s%s", _THE_HOLE_, hole_no + 1, _POLYLINE_IS_NOT_CLOSED_,rn);
                             strcat(report, report_row);
                         }
                     }
@@ -2180,10 +2413,13 @@ void Plate_analysis(void) {
                             wall_property[wall_no].property_number = plate_property[0].property_number;
                             wall_property[wall_no].first_edge = first;
                             wall_property[wall_no].last_edge = last;
+                            wall_property[wall_no].ps = -1;
+                            wall_property[wall_no].pn = -1;
+                            wall_property[wall_no].load = 0;
                             add_wall_property();
                             body_number++;
                         } else {
-                            sprintf(report_row, "%s %d %s\n", _THE_WALL_, wall_no + 1, _POLYLINE_IS_NOT_CLOSED_);
+                            sprintf(report_row, "%s %d %s%s", _THE_WALL_, wall_no + 1, _POLYLINE_IS_NOT_CLOSED_,rn);
                             strcat(report, report_row);
                         }
                     }
@@ -2207,10 +2443,13 @@ void Plate_analysis(void) {
                             zone_property[zone_no].property_number = property_number;
                             zone_property[zone_no].first_edge = first;
                             zone_property[zone_no].last_edge = last;
+                            zone_property[zone_no].ps = -1;
+                            zone_property[zone_no].pn = -1;
+                            zone_property[zone_no].load = 0;
                             add_zone_property();
                             body_number++;
                         } else {
-                            sprintf(report_row, "%s %d %s\n", _THE_ZONE_, zone_no + 1, _POLYLINE_IS_NOT_CLOSED_);
+                            sprintf(report_row, "%s %d %s%s", _THE_ZONE_, zone_no + 1, _POLYLINE_IS_NOT_CLOSED_,rn);
                             strcat(report, report_row);
                         }
                     }
@@ -2223,16 +2462,18 @@ void Plate_analysis(void) {
     ////counting objects
     if (plate_no == 0)  //no plate
     {
-        sprintf(report_row, "%s\n", _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_);
+        sprintf(report_row, "%s%s", _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_,rn);
         strcat(report, report_row);
-        goto pl_error;
+        //goto pl_error;
     }
     else if (plate_no > 1)  //to many plates - TEMPORARY
     {
-        sprintf(report_row, "%s\n", _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_);
+        sprintf(report_row, "%s%s", _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_,rn);
         strcat(report, report_row);
-        goto pl_error;
+        //goto pl_error;
     }
+
+    if (strlen(report) > 0) goto pl_error;
 
     ////searching for load
     obiekt_tok((char *) ADP, ADK, (char **) &nag, Ovector);
@@ -2309,6 +2550,255 @@ void Plate_analysis(void) {
     zmien_atrybut(ADP, ADK, Ablok, Aoblok);
     was_refreshed = TRUE;
 
+    //assigning:
+    // each hole to zone or plate
+    // each wall to zone or plate, wall cannot belong to any hole
+    // each zone to plate
+    // we have for each element first_edge and last edge
+    // checking if each endpoint of each edges lays inside another element
+    //HOLES in ZONES
+    BOOL missed = FALSE;
+
+    //this is actually not necessary
+    /*
+    for (j=0; j<zone_no; j++)
+    {
+        ADPB = (char *) zone_property[j].adr;
+        ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+        correct_pline(ADPB, ADKB);
+    }
+
+    for (j=0; j<hole_no; j++)
+    {
+        ADPB = (char *) hole_property[j].adr;
+        ADKB = ADPB + sizeof(NAGLOWEK) + hole_property[j].adr->n - 1;
+        correct_pline(ADPB, ADKB);
+    }
+
+    for (j=0; j<wall_no; j++)
+    {
+        ADPB = (char *) wall_property[j].adr;
+        ADKB = ADPB + sizeof(NAGLOWEK) + wall_property[j].adr->n - 1;
+        correct_pline(ADPB, ADKB);
+    }
+
+    for (j=0; j<plate_no; j++)
+    {
+        ADPB = (char *) plate_property[j].adr;
+        ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+        correct_pline(ADPB, ADKB);
+    }
+    */
+
+    for (i=0; i<hole_no; i++)
+    {
+        //matching with zones
+        for (j=0; j<zone_no; j++)
+        {
+            ADPB = (char *) zone_property[j].adr;
+            ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            //BOOL found = FALSE;
+            missed = FALSE;
+            for (k=hole_property[i].first_edge; k<hole_property[i].last_edge; k++)
+            {
+                df_x1 = pl_node[pl_edge[k].node1].x;
+                df_y1 = pl_node[pl_edge[k].node1].y;
+                df_x2 = pl_node[pl_edge[k].node2].x;
+                df_y2 = pl_node[pl_edge[k].node2].y;
+                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,1, 0, 0, 0, 0, 0);
+                if (!ret1) {missed=TRUE; break;}
+                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,1, 0, 0, 0, 0, 0);
+                if (!ret2) {missed=TRUE; break;}
+            }
+            zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+            if (missed==FALSE)
+            {
+                hole_property[i].ps=3; //zone
+                hole_property[i].pn=j;
+                break;
+            }
+        }
+    }
+
+    //HOLES in PLATES
+    for (i=0; i<hole_no; i++)
+    {
+        if (hole_property[i].ps<0) //not yet assigned
+        {
+            //matching with plate
+            for (j = 0; j < plate_no; j++) {
+                ADPB = (char *) plate_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+
+                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                //BOOL found = FALSE;
+                missed = FALSE;
+                for (k = hole_property[i].first_edge; k < hole_property[i].last_edge; k++) {
+                    df_x1 = pl_node[pl_edge[k].node1].x;
+                    df_y1 = pl_node[pl_edge[k].node1].y;
+                    df_x2 = pl_node[pl_edge[k].node2].x;
+                    df_y2 = pl_node[pl_edge[k].node2].y;
+                    ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,&s_hatch_param, 1, 0, 0, 0, 0, FALSE);
+                    if (!ret1) {
+                        missed = TRUE;
+                        break;
+                    }
+                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret2) {
+                        missed = TRUE;
+                        break;
+                    }
+                }
+                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                if (missed == FALSE) {
+                    hole_property[i].ps = 0; //plate
+                    hole_property[i].pn = j;
+                    break;
+                }
+            }
+        }
+    }
+
+    //WALLS in ZONES
+    for (i=0; i<wall_no; i++)
+    {
+        //matching with zones
+        for (j=0; j<zone_no; j++)
+        {
+            ADPB = (char *) zone_property[j].adr;
+            ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            //BOOL found = FALSE;
+            missed = FALSE;
+            for (k=wall_property[i].first_edge; k<wall_property[i].last_edge; k++)
+            {
+                df_x1 = pl_node[pl_edge[k].node1].x;
+                df_y1 = pl_node[pl_edge[k].node1].y;
+                df_x2 = pl_node[pl_edge[k].node2].x;
+                df_y2 = pl_node[pl_edge[k].node2].y;
+                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,1, 0, 0, 0, 0, 0);
+                if (!ret1) {missed=TRUE; break;}
+                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,1, 0, 0, 0, 0, 0);
+                if (!ret2) {missed=TRUE; break;}
+            }
+            zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+            if (missed==FALSE)
+            {
+                wall_property[i].ps=3; //zone
+                wall_property[i].pn=j;
+                break;
+            }
+        }
+    }
+
+    //WALLS in PLATES
+    for (i=0; i<wall_no; i++)
+    {
+        if (wall_property[i].ps<0) //not yet assigned
+        {
+            //matching with plate
+            for (j = 0; j < plate_no; j++) {
+                ADPB = (char *) plate_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                //BOOL found = FALSE;
+                missed = FALSE;
+                for (k = wall_property[i].first_edge; k < wall_property[i].last_edge; k++) {
+                    df_x1 = pl_node[pl_edge[k].node1].x;
+                    df_y1 = pl_node[pl_edge[k].node1].y;
+                    df_x2 = pl_node[pl_edge[k].node2].x;
+                    df_y2 = pl_node[pl_edge[k].node2].y;
+                    ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret1) {
+                        missed = TRUE;
+                        break;
+                    }
+                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret2) {
+                        missed = TRUE;
+                        break;
+                    }
+                }
+                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                if (missed == FALSE) {
+                    wall_property[i].ps = 0; //plate
+                    wall_property[i].pn = j;
+                    break;
+                }
+            }
+        }
+    }
+
+    //ZONES in PLATES
+    for (i=0; i<zone_no; i++)
+    {
+        //matching with plate
+        for (j = 0; j < plate_no; j++) {
+            ADPB = (char *) plate_property[j].adr;
+            ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            //BOOL found = FALSE;
+            missed = FALSE;
+            for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
+                df_x1 = pl_node[pl_edge[k].node1].x;
+                df_y1 = pl_node[pl_edge[k].node1].y;
+                df_x2 = pl_node[pl_edge[k].node2].x;
+                df_y2 = pl_node[pl_edge[k].node2].y;
+                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                if (!ret1) {
+                    missed = TRUE;
+                    break;
+                }
+                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                if (!ret2) {
+                    missed = TRUE;
+                    break;
+                }
+            }
+            zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+            if (missed == FALSE) {
+                zone_property[i].ps = 0; //plate
+                zone_property[i].pn = j;
+                break;
+            }
+        }
+    }
+
+    //checking assignement
+    for (i=0; i<hole_no; i++)
+    {
+        if (hole_property[i].ps<0) //ALERT
+        {
+            sprintf(report_row, "%s%s", _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_,rn);
+            strcat(report, report_row);
+        }
+    }
+
+    for (i=0; i<wall_no; i++)
+    {
+        if (wall_property[i].ps<0) //ALERT
+        {
+            sprintf(report_row, "%s%s", _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_,rn);
+            strcat(report, report_row);
+        }
+    }
+
+    for (i=0; i<zone_no; i++)
+    {
+        if (zone_property[i].ps<0) //ALERT
+        {
+            sprintf(report_row, "%s%s", _THE_ZONE_NOT_ASSIGNED_TO_PLATE_,rn);
+            strcat(report, report_row);
+        }
+    }
+
+    if (strlen(report) > 0) goto pl_error;
+
     ////LOAD assignement
     for (i = 0; i < pl_load_no; i++) {
         df_x1 = pl_load[i].x1;
@@ -2321,10 +2811,10 @@ void Plate_analysis(void) {
             ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
             zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
             ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,
-                                   1, 0, 0, 0, 0);
+                                   1, 0, 0, 0, 0, 0);
             if (pl_load[i].type==0)
                 ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,
-                                   1, 0, 0, 0, 0);
+                                   1, 0, 0, 0, 0, 0);
             else ret2=ret1;  //same point
             zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
             if ((ret1 == 1) && (ret2 == 1)) {
@@ -2333,6 +2823,7 @@ void Plate_analysis(void) {
 
                 if (pl_load[i].type == 1)  //point load
                       embed_node(i, geo_units_factor);
+                zone_property[j].load++;
                 break;
             }
         }
@@ -2345,10 +2836,10 @@ void Plate_analysis(void) {
                 ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
                 zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
                 ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
-                                       &s_hatch_param, 1, 0, 0, 0, 0);
+                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
                 if (pl_load[i].type==0)
                     ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
-                                       &s_hatch_param, 1, 0, 0, 0, 0);
+                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
                 else ret2=ret1;  //same point
                 zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
                 if ((ret1 == 1) && (ret2 == 1)) {
@@ -2357,6 +2848,7 @@ void Plate_analysis(void) {
 
                     if (pl_load[i].type == 1)  //point load
                         embed_node(i, geo_units_factor);
+                    plate_property[j].load++;
                     break;
                 }
             }
@@ -2378,7 +2870,7 @@ void Plate_analysis(void) {
 
     if ((pl_load_no == 0) && (gZ == 0)) //no load, no self weight
     {
-        sprintf(report_row, "%s\n", _NO_LOAD_ASSIGNED_);
+        sprintf(report_row, "%s%s", _NO_LOAD_ASSIGNED_,rn);
         strcat(report, report_row);
         goto pl_error;
     }
@@ -2397,7 +2889,7 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s", _cannot_create_folder_, _STATIC_);
+            sprintf(report_row, "%s %s%s", _cannot_create_folder_, _STATIC_,rn);
             strcat(report, report_row);
         }
     }
@@ -2414,7 +2906,7 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s%s", _cannot_create_folder_, _STATIC_, _plate_);
+            sprintf(report_row, "%s %s%s%s", _cannot_create_folder_, _STATIC_, _plate_,rn);
             strcat(report, report_row);
         }
     }
@@ -2430,7 +2922,7 @@ void Plate_analysis(void) {
 #endif
 
         if (check) {
-            sprintf(report_row, "%s %s", _cannot_create_folder_, _plate_);
+            sprintf(report_row, "%s %s%s", _cannot_create_folder_, _plate_,rn);
             strcat(report, report_row);
         }
     }
@@ -2635,7 +3127,21 @@ void Plate_analysis(void) {
         fprintf(f, "};\n");
         zone_property[i].k = k;
         k++;
+        /*
         fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
+         */
+        fprintf(f, "Plane Surface(%d) = {%d", k + 1, k);
+        for (j = 0; j < hole_no; j++)
+        {
+            if ((hole_property[j].ps==3) && (hole_property[j].pn==i))
+                fprintf(f, ", %d", hole_property[j].k + 1);
+        }
+        for (j = 0; j < wall_no; j++)
+        {
+            if ((wall_property[j].ps==3) && (wall_property[j].pn==i))
+                fprintf(f, ", %d", wall_property[j].k + 1);
+        }
+        fprintf(f, "};\n");
 
         //Embeding points
         // Embed the point (dimension 0) into the surface (dimension 2)
@@ -2667,11 +3173,20 @@ void Plate_analysis(void) {
         k++;
         fprintf(f, "Plane Surface(%d) = {%d", k + 1, k);
         for (j = 0; j < hole_no; j++)
-            fprintf(f, ", %d", hole_property[j].k + 1);
+        {
+            if ((hole_property[j].ps==0) && (hole_property[j].pn==i))
+                fprintf(f, ", %d", hole_property[j].k + 1);
+        }
         for (j = 0; j < wall_no; j++)
-            fprintf(f, ", %d", wall_property[j].k + 1);
+        {
+            if ((wall_property[j].ps==0) && (wall_property[j].pn==i))
+                fprintf(f, ", %d", wall_property[j].k + 1);
+        }
         for (j = 0; j < zone_no; j++)
-            fprintf(f, ", %d", zone_property[j].k + 1);
+        {
+            if ((zone_property[j].ps==0) && (zone_property[j].pn==i))
+                fprintf(f, ", %d", zone_property[j].k + 1);
+        }
         fprintf(f, "};\n");
 
         //Embeding points
@@ -2973,7 +3488,7 @@ void Plate_analysis(void) {
 
         load_flag = load_flag_ICC;
     } else {
-        sprintf(report_row, "%s%s", _unknown_standard_, rn);
+        sprintf(report_row, "%s%s%s", _unknown_standard_, rn,rn);
         strcat(report, report_row);
     }
 
@@ -3098,7 +3613,7 @@ void Plate_analysis(void) {
 
     printf("%d\t\t# number of static load cases\n", combinations_number);
 
-    ST_UNIFORM_LOAD *st_uniform_load_comb, *st_uniform_load_cons;
+    //ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
     int st_uniform_load_no_cons;
 
     st_uniform_load_comb = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
@@ -3132,16 +3647,48 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) //all load
+        if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
         {
-            if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+            if ((zone_property[i].load == 0) && (self_weight == 0.0)) //no load
             {
-                set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
-                                   load_precision);  //is assumed that magnitude1=magnitude2
-                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
-                strcat(load_formula, "(");
-                strcat(load_formula, par[1]);
-                strcat(load_formula, ")");
+                if (self_weight == 0.0) //no load, no self load
+                {
+                    //load simulation
+                    set_decimal_format(par[1], 0, load_precision);
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+            } else {
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type == 0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    {
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
+            }
+        }
+        else  //property zone, inherits from plate 0 + zona local load
+        {
+            for (j = 0; j < pl_load_no; j++) //all load
+            {
+                if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
+                    (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                     (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                {
+                    set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
+                                       load_precision);  //is assumed that magnitude1=magnitude2
+                    if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
             }
         }
 
@@ -3277,7 +3824,7 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Body Force %d::", sif_body_force + 1);
+        //fprintf(f, "Body Force %d::", sif_body_force + 1);
 
         strcpy(load_formula, "");
 
@@ -3290,23 +3837,65 @@ void Plate_analysis(void) {
             strcat(load_formula, ")");
         }
 
-        for (j = 0; j < pl_load_no; j++) //all load
+        if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
         {
-            if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+            if ((zone_property[i].load == 0) && (self_weight == 0.0)) //no load
             {
-                if (pl_load[i].factor_record >= 0)
-                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                if (self_weight == 0.0) //no load, no self load
+                {
+                    //load simulation
+                    set_decimal_format(par[1], 0, load_precision);
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+            } else {
+                for (j = 0; j < pl_load_no; j++) //all load
+                {
+                    if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
+                        (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    {
+                        if (pl_load[i].factor_record >= 0)
+                            gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                        else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
 
-                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
-                                   load_precision);  //is assumed that magnitude1=magnitude2
-                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
-                strcat(load_formula, "(");
-                strcat(load_formula, par[1]);
-                strcat(load_formula, ")");
+                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                           load_precision);  //is assumed that magnitude1=magnitude2
+                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                        strcat(load_formula, "(");
+                        strcat(load_formula, par[1]);
+                        strcat(load_formula, ")");
+                    }
+                }
             }
         }
-        if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+        else  //property zone, inherits from plate 0 + zona local load
+        {
+            for (j = 0; j < pl_load_no; j++) //all load
+            {
+                if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
+                    (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                     (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                {
+                    if (pl_load[i].factor_record >= 0)
+                        gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
+                    else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+
+                    set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                       load_precision);  //is assumed that magnitude1=magnitude2
+                    if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                    strcat(load_formula, "(");
+                    strcat(load_formula, par[1]);
+                    strcat(load_formula, ")");
+                }
+            }
+        }
+
+        if (strlen(load_formula) > 0)
+        {
+            fprintf(f, "Body Force %d::", sif_body_force + 1);
+            fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+        }
 
         ///////////////// Concentrated Load
         strcpy(load_formula, "");
@@ -3348,7 +3937,7 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Body Force %d::", sif_body_force + 1);
+        //fprintf(f, "Body Force %d::", sif_body_force + 1);
 
         strcpy(load_formula, "");
 
@@ -3378,7 +3967,11 @@ void Plate_analysis(void) {
                 strcat(load_formula, ")");
             }
         }
-        if (strlen(load_formula) > 0) fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+        if (strlen(load_formula) > 0)
+        {
+            fprintf(f, "Body Force %d::", sif_body_force + 1);
+            fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+        }
 
         ///////////////// Concentrated Load
         strcpy(load_formula, "");
@@ -3478,41 +4071,97 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) //all load
+                if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    if ((zone_property[i].load == 0) && (self_weight == 0.0)) //no load
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (self_weight == 0.0) //no load, no self load
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
-                        } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            //load simulation
+                            set_decimal_format(par[1], 0, load_precision);
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
                         }
+                    } else {
+                        for (j = 0; j < pl_load_no; j++) //all load
+                        {
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
+                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            {
+                                if (pl_load[i].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                } else {
+                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                }
 
-                        int combi_factor;
-                        if (ret_standard == 1)  //EUROCODE
-                            combi_factor = eurocode_combi_factors_uls[ci][load];
-                        else if (ret_standard == 2)  //ASCE
-                            combi_factor = asce_combi_factors_uls[ci][load];
-                        if (ret_standard == 3)  //ICC
-                            combi_factor = icc_combi_factors_uls[ci][load];
+                                int combi_factor;
+                                if (ret_standard == 1)  //EUROCODE
+                                    combi_factor = eurocode_combi_factors_uls[ci][load];
+                                else if (ret_standard == 2)  //ASCE
+                                    combi_factor = asce_combi_factors_uls[ci][load];
+                                if (ret_standard == 3)  //ICC
+                                    combi_factor = icc_combi_factors_uls[ci][load];
 
-                        gamma_l = 1.0;
-                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
-                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
-                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
-                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
-                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+                                gamma_l = 1.0;
+                                if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                                if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                                if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                                if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                                if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                                if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
 
-                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
-                                           load_precision);  //is assumed that magnitude1=magnitude2
-                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
-                        strcat(load_formula, "(");
-                        strcat(load_formula, par[1]);
-                        strcat(load_formula, ")");
+                                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                                   load_precision);  //is assumed that magnitude1=magnitude2
+                                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                                strcat(load_formula, "(");
+                                strcat(load_formula, par[1]);
+                                strcat(load_formula, ")");
+                            }
+                        }
+                    }
+                }
+                else //property zone, inherits from plate 0 + zona local load
+                {
+                    for (j = 0; j < pl_load_no; j++) //all load
+                    {
+                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
+                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        {
+                            if (pl_load[i].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            } else {
+                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                            }
+
+                            int combi_factor;
+                            if (ret_standard == 1)  //EUROCODE
+                                combi_factor = eurocode_combi_factors_uls[ci][load];
+                            else if (ret_standard == 2)  //ASCE
+                                combi_factor = asce_combi_factors_uls[ci][load];
+                            if (ret_standard == 3)  //ICC
+                                combi_factor = icc_combi_factors_uls[ci][load];
+
+                            gamma_l = 1.0;
+                            if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                            if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                            if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                            if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                            if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                            if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                            set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                               load_precision);  //is assumed that magnitude1=magnitude2
+                            if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
+                        }
                     }
                 }
                 if (strlen(load_formula) > 0)
@@ -3772,42 +4421,99 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) //all load
+                if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    if ((zone_property[i].load == 0) && (self_weight == 0.0)) //no load
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (self_weight == 0.0) //no load, no self load
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
-                        } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            //load simulation
+                            set_decimal_format(par[1], 0, load_precision);
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
                         }
+                    } else {
+                        for (j = 0; j < pl_load_no; j++) //all load
+                        {
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
+                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            {
+                                if (pl_load[i].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                } else {
+                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                }
 
-                        int combi_factor;
-                        if (ret_standard == 1)  //EUROCODE
-                            combi_factor = eurocode_combi_factors_sls[ci][load];
-                        else if (ret_standard == 2)  //ASCE
-                            combi_factor = asce_combi_factors_sls[ci][load];
-                        if (ret_standard == 3)  //ICC
-                            combi_factor = icc_combi_factors_sls[ci][load];
+                                int combi_factor;
+                                if (ret_standard == 1)  //EUROCODE
+                                    combi_factor = eurocode_combi_factors_sls[ci][load];
+                                else if (ret_standard == 2)  //ASCE
+                                    combi_factor = asce_combi_factors_sls[ci][load];
+                                if (ret_standard == 3)  //ICC
+                                    combi_factor = icc_combi_factors_sls[ci][load];
 
-                        gamma_l = 1.0;
-                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
-                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
-                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
-                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
-                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+                                gamma_l = 1.0;
+                                if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                                if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                                if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                                if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                                if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                                if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
 
-                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
-                                           load_precision);  //is assumed that magnitude1=magnitude2
-                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
-                        strcat(load_formula, "(");
-                        strcat(load_formula, par[1]);
-                        strcat(load_formula, ")");
+                                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                                   load_precision);  //is assumed that magnitude1=magnitude2
+                                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                                strcat(load_formula, "(");
+                                strcat(load_formula, par[1]);
+                                strcat(load_formula, ")");
+                            }
+                        }
                     }
+                }
+                else //property zone, inherits from plate 0 + zona local load
+                {
+                    for (j = 0; j < pl_load_no; j++) //all load
+                    {
+                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
+                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        {
+                            if (pl_load[i].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            } else {
+                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                            }
+
+                            int combi_factor;
+                            if (ret_standard == 1)  //EUROCODE
+                                combi_factor = eurocode_combi_factors_sls[ci][load];
+                            else if (ret_standard == 2)  //ASCE
+                                combi_factor = asce_combi_factors_sls[ci][load];
+                            if (ret_standard == 3)  //ICC
+                                combi_factor = icc_combi_factors_sls[ci][load];
+
+                            gamma_l = 1.0;
+                            if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                            if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                            if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                            if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                            if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                            if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                            set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                               load_precision);  //is assumed that magnitude1=magnitude2
+                            if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
+                        }
+                    }
+
                 }
                 if (strlen(load_formula) > 0)
                     sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
@@ -4064,41 +4770,97 @@ void Plate_analysis(void) {
                     strcat(load_formula, ")");
                 }
 
-                for (j = 0; j < pl_load_no; j++) //all load
+                if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    if ((zone_property[i].load == 0) && (self_weight == 0.0)) //no load
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (self_weight == 0.0) //no load, no self load
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
-                        } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            //load simulation
+                            set_decimal_format(par[1], 0, load_precision);
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
                         }
+                    } else {
+                        for (j = 0; j < pl_load_no; j++) //all load
+                        {
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
+                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            {
+                                if (pl_load[i].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                } else {
+                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                }
 
-                        int combi_factor;
-                        if (ret_standard == 1)  //EUROCODE
-                            combi_factor = eurocode_combi_factors_qpsls[ci][load];
-                        else if (ret_standard == 2)  //ASCE
-                            combi_factor = asce_combi_factors_qpsls[ci][load];
-                        if (ret_standard == 3)  //ICC
-                            combi_factor = icc_combi_factors_qpsls[ci][load];
+                                int combi_factor;
+                                if (ret_standard == 1)  //EUROCODE
+                                    combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                                else if (ret_standard == 2)  //ASCE
+                                    combi_factor = asce_combi_factors_qpsls[ci][load];
+                                if (ret_standard == 3)  //ICC
+                                    combi_factor = icc_combi_factors_qpsls[ci][load];
 
-                        gamma_l = 1.0;
-                        if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
-                        if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
-                        if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
-                        if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
-                        if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
-                        if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+                                gamma_l = 1.0;
+                                if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                                if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                                if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                                if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                                if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                                if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
 
-                        set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
-                                           load_precision);  //is assumed that magnitude1=magnitude2
-                        if (strlen(load_formula) > 0) strcat(load_formula, " + ");
-                        strcat(load_formula, "(");
-                        strcat(load_formula, par[1]);
-                        strcat(load_formula, ")");
+                                set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                                   load_precision);  //is assumed that magnitude1=magnitude2
+                                if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                                strcat(load_formula, "(");
+                                strcat(load_formula, par[1]);
+                                strcat(load_formula, ")");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < pl_load_no; j++) //all load
+                    {
+                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
+                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        {
+                            if (pl_load[i].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
+                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            } else {
+                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
+                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                            }
+
+                            int combi_factor;
+                            if (ret_standard == 1)  //EUROCODE
+                                combi_factor = eurocode_combi_factors_qpsls[ci][load];
+                            else if (ret_standard == 2)  //ASCE
+                                combi_factor = asce_combi_factors_qpsls[ci][load];
+                            if (ret_standard == 3)  //ICC
+                                combi_factor = icc_combi_factors_qpsls[ci][load];
+
+                            gamma_l = 1.0;
+                            if (combi_factor & 1) gamma_l *= combi_load_factor->gamma;
+                            if (combi_factor & 2) gamma_l *= combi_load_factor->psi0;
+                            if (combi_factor & 4) gamma_l *= combi_load_factor->psi1;
+                            if (combi_factor & 8) gamma_l *= combi_load_factor->psi2;
+                            if (combi_factor & 16) gamma_l *= combi_load_factor->xi;
+                            if (combi_factor & 32) gamma_l *= combi_load_factor->gamma_inf;
+
+                            set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
+                                               load_precision);  //is assumed that magnitude1=magnitude2
+                            if (strlen(load_formula) > 0) strcat(load_formula, " + ");
+                            strcat(load_formula, "(");
+                            strcat(load_formula, par[1]);
+                            strcat(load_formula, ")");
+                        }
                     }
                 }
                 if (strlen(load_formula) > 0)
@@ -4526,9 +5288,14 @@ void Plate_analysis(void) {
     //Layers
     sprintf(desired_layer, "%s_%s", ptr_id, "geometry");
 
-    for (ii = 0; ii < No_Layers; ii++) {
-        if (strcmp(Layers[ii].name, desired_layer) == 0)
+    memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+    utf8Upper(desired_layer_upper);
 
+    for (ii = 0; ii < No_Layers; ii++) {
+        memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+        utf8Upper(layer_name_upper);
+
+        if (strcmp(layer_name_upper, desired_layer_upper) == 0)
             break;
     }
     if (ii < No_Layers) {
@@ -4854,6 +5621,9 @@ void Plate_analysis(void) {
 
     for (i=0; i<5; i++) ULSLC_flag[i]=1;
 
+    //allocation space for block names
+    block_names_no = 0;
+
     for (int sti = 0; sti < 5; sti++)
     {
         //deflection_ini = 0;
@@ -4866,19 +5636,19 @@ void Plate_analysis(void) {
             case 2:
                 sprintf(params0, "plate_ulslc");
                 ULS_SLS_LC_NO=ULSLC_NO;
-                strncpy(SLS_ULS, "ulslc", 5);
+                strncpy(SLS_ULS, "ULSLC", 5);
                 ULS_SLS_LC = ULSLC;
                 break;
             case 3:
                 sprintf(params0, "plate_slslc");
                 ULS_SLS_LC_NO=SLSLC_NO;
-                strncpy(SLS_ULS, "slslc", 5);
+                strncpy(SLS_ULS, "slsLC", 5);
                 ULS_SLS_LC = SLSLC;
                 break;
             case 4:
                 sprintf(params0, "plate_qpslslc");
                 ULS_SLS_LC_NO=QPSLSLC_NO;
-                strncpy(SLS_ULS, "qpslslc", 7);
+                strncpy(SLS_ULS, "qpslsLC", 7);
                 ULS_SLS_LC = QPSLSLC;
                 break;
         }
@@ -5230,8 +6000,14 @@ void Plate_analysis(void) {
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                utf8Upper(desired_layer_upper);
+
                 for (ii = 0; ii < No_Layers; ii++) {
-                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    utf8Upper(layer_name_upper);
+
+                    if (strcmp(layer_name_upper, desired_layer_upper) == 0)
 
                         break;
                 }
@@ -5245,15 +6021,20 @@ void Plate_analysis(void) {
 
                 goto singles_multiples;
             }
-            else if (sti==3)
+            else if (sti==3) //SLSLC
             {
                 ULSLC_flag[3]=0;
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-                for (ii = 0; ii < No_Layers; ii++) {
-                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                utf8Upper(desired_layer_upper);
 
+                for (ii = 0; ii < No_Layers; ii++) {
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    utf8Upper(layer_name_upper);
+
+                    if (strcmp(layer_name_upper, desired_layer_upper) == 0)
                         break;
                 }
                 if (ii < No_Layers) {
@@ -5265,15 +6046,21 @@ void Plate_analysis(void) {
 
                 continue;
             }
-            else if (sti==4)
+            else if (sti==4)  //QPSLSLC
             {
                 ULSLC_flag[4]=0;
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-                for (ii = 0; ii < No_Layers; ii++) {
-                    if (strcmp(Layers[ii].name, desired_layer) == 0)
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                utf8Upper(desired_layer_upper);
 
+                for (ii = 0; ii < No_Layers; ii++) {
+
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    utf8Upper(layer_name_upper);
+
+                    if (strcmp(layer_name_upper, desired_layer_upper) == 0)
                         break;
                 }
                 if (ii < No_Layers) {
@@ -5299,7 +6086,7 @@ void Plate_analysis(void) {
                 break;
             case 1: //uls
                 sprintf(params, "%splate_uls.result", _plate_);
-                strncpy(SLS_ULS, "uls", 3);  //temporary
+                strncpy(SLS_ULS, "ULS", 3);  //temporary
                 break;
 
             /*
@@ -5572,7 +6359,7 @@ void Plate_analysis(void) {
 singles_multiples:
 
         //allocation space for block names
-        block_names_no = 0;
+        //block_names_no = 0;
 
         my_sleep(10);
         //strncpy(SLS_ULS, "sls", 3);  //temporary
@@ -5580,10 +6367,15 @@ singles_multiples:
         //sprintf(desired_layer, "%s_%s", ptr_id, "deflection");
         sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "deflection", SLS_ULS, combination_no);
 
+        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+        utf8Upper(desired_layer_upper);
+
         for (ii = 0; ii < No_Layers; ii++)
         {
-            if (strcmp(Layers[ii].name, desired_layer) == 0)
+            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+            utf8Upper(layer_name_upper);
 
+            if (strcmp(layer_name_upper, desired_layer_upper) == 0)
                 break;
         }
         if (ii < No_Layers)
@@ -5939,9 +6731,14 @@ singles_multiples:
         //strcpy(SLS_ULS, "sls"); //temporary
         sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-        for (ii = 0; ii < No_Layers; ii++) {
-            if (strcmp(Layers[ii].name, desired_layer) == 0)
+        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+        utf8Upper(desired_layer_upper);
 
+        for (ii = 0; ii < No_Layers; ii++) {
+            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+            utf8Upper(layer_name_upper);
+
+            if (strcmp(layer_name_upper, desired_layer_upper) == 0)
                 break;
         }
         if (ii < No_Layers) {
@@ -6246,8 +7043,9 @@ stress_block:
                                             double lambda = 0.8;  //λ
                                             double eta = 1.0;  //η
                                             double rhot, rhoc, total_rho, sigma_c_max;
+                                            int use_min_reinf = 1;
 
-                                            int ret_p = calculate_rebars_eurocode_simplified(M_, h, 1.0, cc, fck, fcd, fyd, eta, lambda, E_s, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+                                            int ret_p = calculate_rebars_eurocode_simplified(M_, h, 1.0, cc, fck, fcd, fyd, eta, lambda, E_s, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
 
 
                                             if (ret_p==0)
@@ -6375,8 +7173,9 @@ stress_block:
                                             }
 
                                             double rhot, rhoc, total_rho, sigma_c_max;
+                                            int use_min_reinf = 1;
 
-                                            int ret_p = calculate_rebars_aci_simplified_UNI(M_, h, bb, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
+                                            int ret_p = calculate_rebars_aci_simplified_UNI(M_, h, bb, cc, fyk, fyd, fck, fcd, use_min_reinf, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
                                             //int ret_p = calculate_rebars_aci_simplified_SI(M_, h, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
 
                                             if (ret_p==0)
@@ -6729,9 +7528,14 @@ stress_block:
         //strcpy(SLS_ULS, "sls"); //temporary
         sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "epsilon", SLS_ULS, combination_no);
 
-        for (ii = 0; ii < No_Layers; ii++) {
-            if (strcmp(Layers[ii].name, desired_layer) == 0)
+        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+        utf8Upper(desired_layer_upper);
 
+        for (ii = 0; ii < No_Layers; ii++) {
+            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+            utf8Upper(layer_name_upper);
+
+            if (strcmp(layer_name_upper, desired_layer_upper) == 0)
                 break;
         }
         if (ii < No_Layers) {
@@ -7172,14 +7976,18 @@ pl_error:
     if (strlen(report) > 0) {
         int edit_params = 0;
         int tab;
+#ifndef LINUX
+        int single = 0;  //info
+#else
         int single = 2;  //info
+#endif
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0] = '\0';
     }
 
 
-    free(st_uniform_load_comb);
-    free(st_uniform_load_cons);
+    if (st_uniform_load_comb) free(st_uniform_load_comb);
+    if (st_uniform_load_cons) free(st_uniform_load_cons);
 
     if (pl_property) free(pl_property);
     if (pl_load_factors)free(pl_load_factors);

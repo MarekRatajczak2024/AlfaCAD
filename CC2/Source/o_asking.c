@@ -777,6 +777,9 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
         *geometric_stiffness=Get_Check_Button(&asking_dlg_static, ID_GEOM_STIFFNESS);
         *inertia=Get_Check_Button(&asking_dlg_static, ID_INERTIA);
         *PINNABLE=!Get_Check_Button(&asking_dlg_static, ID_PINNABLE);
+        *theta_=Get_Check_Button(&asking_dlg_static, ID_THETA);
+        *sigma_eq_=Get_Check_Button(&asking_dlg_static, ID_SIGMA_EQ);
+        *epsilon_=Get_Check_Button(&asking_dlg_static, ID_EPSILON);
         *combination= listbox_as [0].poz + listbox_as [0].foff + 1;
         *st_dynamic_no= listbox_as [1].poz + listbox_as [1].foff;
         if (Get_Check_Button(&asking_dlg_static, ID_EUROCODE))

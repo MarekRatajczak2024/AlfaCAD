@@ -2700,7 +2700,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
     ra=df_seg_len / 2;
     ra1=0.9*ra;
 
-    if ((v->style==24) || (v->style==25))
+    if ((v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
     {
         katS = Pi_ * 45.0 / 180;
         df_seg_len_dens = df_seg_len / 2.0;
@@ -2726,7 +2726,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
             //koc=cos(angle);
             //kos=sin(angle);
 
-            if ((v->style==23) || (v->style==25)) PL1.kat+=180;
+            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV)) PL1.kat+=180;
 
             angle = Angle_Normal(-(PL1.kat) * Pi / 180);
             if (fabs(angle - Pi2) < 0.00001) angle = 0;
