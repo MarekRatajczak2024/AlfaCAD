@@ -593,7 +593,9 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
             }
 
             if (style == 2)  //wall
-                pl_edge[pl_edge_no].restraint = 6;
+            {
+                pl_edge[pl_edge_no].restraint = max(6, L->obiektt2);  //6 is default
+            }
             else pl_edge[pl_edge_no].restraint = L->obiektt2;  //could be check logically, 0, 5,6 or 7
             //// to match with next element
             last_x = L->x2;
@@ -854,8 +856,8 @@ void embed_node(int load_no, double geo_units_factor)
         pl_node_emb[pl_node_emb_no].x = pl_load[load_no].x1;
         pl_node_emb[pl_node_emb_no].y = pl_load[load_no].y1;
         pl_node_emb[pl_node_emb_no].d = (float)(dxl_min / geo_units_factor);  //for compatibility
-        pl_node_emb[pl_node_emb_no].body = pl_load[load_no].body;
-        pl_node_emb[pl_node_emb_no].body_no = pl_load[load_no].body_no;
+        pl_node_emb[pl_node_emb_no].body = pl_load[load_no].point_body;
+        pl_node_emb[pl_node_emb_no].body_no = pl_load[load_no].point_body_no;
         add_node_emb_pl();
     }
 }
@@ -1582,6 +1584,18 @@ void correct_pline(char *adp, char *adk)
         }
         obiekt_tok(NULL, adk, (char **) &nag, ONieOkreslony);
     }
+}
+
+static int qsort_by_val(const void *e1, const void *e2)
+{ int delta;
+    if (((*(PLATE_PROPERTY *)e1).ps==3) && ((*(PLATE_PROPERTY *)e2).ps==3))
+    delta=((*(PLATE_PROPERTY *)e1).pn - (*(PLATE_PROPERTY *)e2).pn);
+    else
+    {
+        if ((*(PLATE_PROPERTY *)e1).ps==-1) delta=1;
+        else delta=-1;
+    }
+    return delta;
 }
 
 void Plate_analysis(void) {
@@ -2550,15 +2564,6 @@ void Plate_analysis(void) {
     zmien_atrybut(ADP, ADK, Ablok, Aoblok);
     was_refreshed = TRUE;
 
-    //assigning:
-    // each hole to zone or plate
-    // each wall to zone or plate, wall cannot belong to any hole
-    // each zone to plate
-    // we have for each element first_edge and last edge
-    // checking if each endpoint of each edges lays inside another element
-    //HOLES in ZONES
-    BOOL missed = FALSE;
-
     //this is actually not necessary
     /*
     for (j=0; j<zone_no; j++)
@@ -2590,8 +2595,324 @@ void Plate_analysis(void) {
     }
     */
 
+    //assigning:
+    // each hole to zone or plate
+    // each wall to zone or plate, wall cannot belong to any hole
+    // each zone to plate
+    // we have for each element first_edge and last edge
+    // checking if each endpoint of each edges lays inside another element
+
+    BOOL missed = FALSE;
+
+
+    //ZONES in ZONES  -  FOR GRADIATION
+    for (i=0; i<zone_no; i++)
+    {
+        zone_property[i].pnz_n = 0;  //no parent zones
+        zone_property[i].pnz = 0;  //parent zones flags zeroed
+
+        //matching with plate
+        for (j = 0; j < zone_no; j++)
+        {
+            if (j!=i)
+            {
+                ADPB = (char *) zone_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                //BOOL found = FALSE;
+                missed = FALSE;
+                for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
+                    df_x1 = pl_node[pl_edge[k].node1].x;
+                    df_y1 = pl_node[pl_edge[k].node1].y;
+                    df_x2 = pl_node[pl_edge[k].node2].x;
+                    df_y2 = pl_node[pl_edge[k].node2].y;
+                    ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret1) {
+                        missed = TRUE;
+                        break;
+                    }
+                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret2) {
+                        missed = TRUE;
+                        break;
+                    }
+                }
+                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                if (missed == FALSE) {
+                    zone_property[i].ps = 3; //zone
+                    zone_property[i].pnz_n++;
+                    // Set a bit of parent zone
+                    zone_property[i].pnz = zone_property[i].pnz | (1LL << j);
+                    //to be continued for all zones
+                }
+            }
+        }
+    }
+
+    //ZONES  GRADIATION
+    long long mask;
+    for (i=0; i<zone_no; i++)
+    {
+        if ((zone_property[i].ps == 3) && (zone_property[i].pnz_n>1)) //zone in zone(s), more than 1
+        {
+            for (j=0; j<nest_bits; j++)  //nest bits
+            {
+               mask = (1LL << j);
+               if ((zone_property[i].pnz & mask) !=0)  //bit is on
+               {
+                   if ((zone_property[j].pnz==0) && (zone_property[i].pnz_n>1)) //this j zone doesn't belong to any other and i zone belongs to more than 1 zones
+                   {
+                       zone_property[i].pnz &= ~(1LL << j);  //removing external zone
+                   }
+                   else
+                   {
+                       //checking j zone
+                       for (k = 0; k < nest_bits; k++)  //nest bits
+                       {
+                           mask = (1LL << k);
+                           if ((zone_property[j].pnz & mask) != 0)  //bit is on
+                               zone_property[i].pnz &= ~(1LL << k);
+                       }
+                   }
+               }
+            }
+        }
+    }
+
+    //this is useless
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+    //qsort(zone_property, zone_no, sizeof(PLATE_PROPERTY), qsort_by_val_pnz);
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+
+    //CONSOLIDATING ZONES
+    for (i=0; i<zone_no; i++)
+    {
+        for (j=0; j<nest_bits; j++)  //nest bits
+        {
+            mask = (1LL << j);
+            if ((zone_property[i].pnz & mask) !=0)  //bit is on
+            {
+                zone_property[i].pn=j;  //j is a number of closest zone which i zone belongs to
+            }
+        }
+    }
+
+    //TEMPORARY - if zones ios included in another zone, it stops
+    for (i=0; i<zone_no; i++)
+    {
+        if (zone_property[i].ps==3)
+        {
+            sprintf(report_row, "%s: #%d%s", _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_,zone_property[i].property_number,rn);
+            strcat(report, report_row);
+        }
+    }
+
+
+    //this is useless
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+    //qsort(zone_property, zone_no, sizeof(PLATE_PROPERTY), qsort_by_val);
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+
+    ////
+
+    //sorting zones  -  THIS IS TEMPORARY OFF
+    /*
+    if (zone_no>0)
+    {
+        int *top_zone = (int *) malloc(zone_no * sizeof(int));
+        int top_zone_no = 0;
+        int tier0=0, tier1=0, tier2=0, tier3=0, tier4=0;
+        //int next_tier;
+        int **tier_zone = (int**) malloc(zone_no * sizeof(int *));
+        int *tier_zone_no = (int*) malloc(zone_no * sizeof(int *));
+
+        int *sorted_zone = (int*) malloc(zone_no * sizeof(int *));
+        int sorted_zone_no=0;
+
+        PLATE_PROPERTY *sorted_zone_property = (PLATE_PROPERTY*) malloc(zone_no * sizeof(PLATE_PROPERTY));
+
+        for (i = 0; i < zone_no; i++)
+        {
+            if (zone_property[i].ps == -1) {
+                top_zone[top_zone_no] = i;
+                top_zone_no++;
+            }
+        }
+        for (i=0; i<top_zone_no; i++)
+        {
+            tier_zone[tier0] = (int *) malloc(zone_no * sizeof(int));
+            tier_zone_no[tier0] = 0;
+            for (j = 0; j < zone_no; j++)
+            {
+                if (j!=top_zone[i])  //not with itself
+                {
+                    if ((zone_property[j].ps==3) && (zone_property[j].pn==top_zone[i])) //zone belongs to top
+                    {
+                        tier_zone[tier0][tier_zone_no[tier0]]=j;
+                        tier_zone_no[tier0]++;
+                    }
+                }
+            }
+            //so we got tier 0
+            for (j=0; j<tier_zone_no[tier0]; j++)
+            {
+                tier1 = tier0 + 1;
+                tier_zone[tier1] = (int *) malloc(zone_no * sizeof(int));
+                tier_zone_no[tier1] = 0;
+                for (int jj = 0; jj < zone_no; jj++) {
+                    if (jj != tier_zone[tier0][j])  //not with itself
+                    {
+                        if ((zone_property[jj].ps == 3) && (zone_property[jj].pn == tier_zone[tier0][j])) //zone belongs to top
+                        {
+                            tier_zone[tier1][tier_zone_no[tier1]] = jj;
+                            tier_zone_no[tier1]++;
+                        }
+                    }
+                }
+                //so we got tier 1
+                for (j = 0; j < tier_zone_no[tier1]; j++)
+                {
+                    tier2 = tier1 + 1;
+                    tier_zone[tier2] = (int *) malloc(zone_no * sizeof(int));
+                    tier_zone_no[tier2] = 0;
+                    for (int jj = 0; jj < zone_no; jj++) {
+                        if (jj != tier_zone[tier1][j])  //not with itself
+                        {
+                            if ((zone_property[jj].ps == 3) && (zone_property[jj].pn == tier_zone[tier1][j])) //zone belongs to top
+                            {
+                                tier_zone[tier2][tier_zone_no[tier2]] = jj;
+                                tier_zone_no[tier2]++;
+                            }
+                        }
+                    }
+                    //so we got tier 2
+                    for (j = 0; j < tier_zone_no[tier2]; j++)
+                    {
+                        tier3 = tier2 + 1;
+                        tier_zone[tier3] = (int *) malloc(zone_no * sizeof(int));
+                        tier_zone_no[tier3] = 0;
+                        for (int jj = 0; jj < zone_no; jj++) {
+                            if (jj != tier_zone[tier2][j])  //not with itself
+                            {
+                                if ((zone_property[jj].ps == 3) && (zone_property[jj].pn == tier_zone[tier2][j])) //zone belongs to top
+                                {
+                                    tier_zone[tier3][tier_zone_no[tier3]] = jj;
+                                    tier_zone_no[tier3]++;
+                                }
+                            }
+                        }
+                        //so we got tier 3
+                        for (j = 0; j < tier_zone_no[tier3]; j++)
+                        {
+                            tier4 = tier3 + 1;
+                            tier_zone[tier4] = (int *) malloc(zone_no * sizeof(int));
+                            tier_zone_no[tier4] = 0;
+                            for (int jj = 0; jj < zone_no; jj++) {
+                                if (jj != tier_zone[tier3][j])  //not with itself
+                                {
+                                    if ((zone_property[jj].ps == 3) && (zone_property[jj].pn == tier_zone[tier3][j])) //zone belongs to top
+                                    {
+                                        tier_zone[tier4][tier_zone_no[tier4]] = jj;
+                                        tier_zone_no[tier4]++;
+                                    }
+                                }
+                            }
+                            //so we got tier 4 - let's stop here
+                            //collecting data
+                            for (j=0; j<tier_zone_no[tier4]; j++)
+                            {
+                                sorted_zone[sorted_zone_no]=tier_zone[tier4][j];
+                                sorted_zone_no++;
+                            }
+                            //releasing tier4
+                            free(tier_zone[tier4]);
+
+                        }
+                        //collecting data
+                        for (j=0; j<tier_zone_no[tier3]; j++)
+                        {
+                            sorted_zone[sorted_zone_no]=tier_zone[tier3][j];
+                            sorted_zone_no++;
+                        }
+                        //releasing tier3
+                        free(tier_zone[tier3]);
+                    }
+                    //collecting data
+                    for (j=0; j<tier_zone_no[tier2]; j++)
+                    {
+                        sorted_zone[sorted_zone_no]=tier_zone[tier2][j];
+                        sorted_zone_no++;
+                    }
+                    //releasing tier2
+                    free(tier_zone[tier2]);
+                }
+                //collecting data
+                for (j=0; j<tier_zone_no[tier1]; j++)
+                {
+                    sorted_zone[sorted_zone_no]=tier_zone[tier1][j];
+                    sorted_zone_no++;
+                }
+                //releasing tier1
+                free(tier_zone[tier1]);
+            }
+            //collecting data
+            for (j=0; j<tier_zone_no[tier0]; j++)
+            {
+                sorted_zone[sorted_zone_no]=tier_zone[tier0][j];
+                sorted_zone_no++;
+            }
+            //releasing tier0
+            free(tier_zone[tier0]);
+        }
+        //collecting data
+        for (j=0; j<top_zone_no; j++)
+        {
+            sorted_zone[sorted_zone_no]=top_zone[j];
+            sorted_zone_no++;
+        }
+        //releasing tier0
+        free(top_zone);
+
+        int *pn_table=(int*) malloc(zone_no*sizeof(int));
+
+        if (sorted_zone_no>0)
+        {
+            //creating pn_table
+
+            for (j=0; j<zone_no; j++)
+            {
+                //pn_table[zone_property[sorted_zone[j]].pn]=j;
+                pn_table[j]=sorted_zone[j];
+            }
+
+            if (sorted_zone_no==zone_no)
+            {
+                for (j = 0; j < sorted_zone_no; j++) {
+                    memmove(&sorted_zone_property[j], &zone_property[sorted_zone[j]], sizeof(PLATE_PROPERTY));
+                    //.pn need to be changed
+                    sorted_zone_property[j].pn=pn_table[sorted_zone_property[j].pn];
+                }
+                //finally overwrite zone_properties
+                memmove(zone_property, sorted_zone_property, zone_no * sizeof(PLATE_PROPERTY));
+            }
+        }
+        free(sorted_zone_property);
+        free(pn_table);
+    }
+    */
+
+    //HOLES in ZONES
+
     for (i=0; i<hole_no; i++)
     {
+        hole_property[i].pnz_n = 0;  //no parent zones
+        hole_property[i].pnz = 0;  //parent zones flags zeroed
         //matching with zones
         for (j=0; j<zone_no; j++)
         {
@@ -2615,8 +2936,53 @@ void Plate_analysis(void) {
             if (missed==FALSE)
             {
                 hole_property[i].ps=3; //zone
-                hole_property[i].pn=j;
-                break;
+                //hole_property[i].pn=j;
+                hole_property[i].pnz_n++;
+                // Set a bit of parent zone
+                hole_property[i].pnz = hole_property[i].pnz | (1LL << j);
+                //to be continued for all zones
+            }
+        }
+    }
+
+    //HOLES in ZONES GRADIATION
+    for (i=0; i<hole_no; i++)
+    {
+        if ((hole_property[i].ps == 3) && (hole_property[i].pnz_n>1)) //hole in zone(s), more than 1
+        {
+            for (j=0; j<nest_bits; j++)  //nest bits
+            {
+                mask = (1LL << j);
+                if ((hole_property[i].pnz & mask) !=0)  //bit is on
+                {
+                    if ((zone_property[j].pnz==0) && (hole_property[i].pnz_n>1)) //this j zone doesn't belong to any other and i zone belongs to more than 1 zones
+                    {
+                        hole_property[i].pnz &= ~(1LL << j);  //removing external zone
+                    }
+                    else
+                    {
+                        //checking j zone
+                        for (k = 0; k < nest_bits; k++)  //nest bits
+                        {
+                            mask = (1LL << k);
+                            if ((zone_property[j].pnz & mask) != 0)  //bit is on
+                                hole_property[i].pnz &= ~(1LL << k);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //CONSOLIDATING HOLES
+    for (i=0; i<hole_no; i++)
+    {
+        for (j=0; j<nest_bits; j++)  //nest bits
+        {
+            mask = (1LL << j);
+            if ((hole_property[i].pnz & mask) !=0)  //bit is on
+            {
+                hole_property[i].pn=j;  //j is a number of closest zone which i hole belongs to
             }
         }
     }
@@ -2663,6 +3029,8 @@ void Plate_analysis(void) {
     //WALLS in ZONES
     for (i=0; i<wall_no; i++)
     {
+        wall_property[i].pnz_n = 0;  //no parent zones
+        wall_property[i].pnz = 0;  //parent zones flags zeroed
         //matching with zones
         for (j=0; j<zone_no; j++)
         {
@@ -2686,8 +3054,53 @@ void Plate_analysis(void) {
             if (missed==FALSE)
             {
                 wall_property[i].ps=3; //zone
-                wall_property[i].pn=j;
-                break;
+                //wall_property[i].pn=j;
+                wall_property[i].pnz_n++;
+                // Set a bit of parent zone
+                wall_property[i].pnz = wall_property[i].pnz | (1LL << j);
+                //to be continued for all zones
+            }
+        }
+    }
+
+    //WALLS in ZONES GRADIATION
+    for (i=0; i<wall_no; i++)
+    {
+        if ((wall_property[i].ps == 3) && (wall_property[i].pnz_n>1)) //wall in zone(s), more than 1
+        {
+            for (j=0; j<nest_bits; j++)  //nest bits
+            {
+                mask = (1LL << j);
+                if ((wall_property[i].pnz & mask) !=0)  //bit is on
+                {
+                    if ((zone_property[j].pnz==0) && (wall_property[i].pnz_n>1)) //this j zone doesn't belong to any other and i zone belongs to more than 1 zones
+                    {
+                        wall_property[i].pnz &= ~(1LL << j);  //removing external zone
+                    }
+                    else
+                    {
+                        //checking j zone
+                        for (k = 0; k < nest_bits; k++)  //nest bits
+                        {
+                            mask = (1LL << k);
+                            if ((zone_property[j].pnz & mask) != 0)  //bit is on
+                                wall_property[i].pnz &= ~(1LL << k);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //CONSOLIDATING WALLS
+    for (i=0; i<wall_no; i++)
+    {
+        for (j=0; j<nest_bits; j++)  //nest bits
+        {
+            mask = (1LL << j);
+            if ((wall_property[i].pnz & mask) !=0)  //bit is on
+            {
+                wall_property[i].pn=j;  //j is a number of closest zone which i wall belongs to
             }
         }
     }
@@ -2735,36 +3148,41 @@ void Plate_analysis(void) {
     //ZONES in PLATES
     for (i=0; i<zone_no; i++)
     {
-        //matching with plate
-        for (j = 0; j < plate_no; j++) {
-            ADPB = (char *) plate_property[j].adr;
-            ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
-            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
-            //BOOL found = FALSE;
-            missed = FALSE;
-            for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
-                df_x1 = pl_node[pl_edge[k].node1].x;
-                df_y1 = pl_node[pl_edge[k].node1].y;
-                df_x2 = pl_node[pl_edge[k].node2].x;
-                df_y2 = pl_node[pl_edge[k].node2].y;
-                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
-                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                if (!ret1) {
-                    missed = TRUE;
+
+        if (zone_property[i].ps<0) //not yet assigned
+        {
+            //matching with plate
+            for (j = 0; j < plate_no; j++)
+            {
+                ADPB = (char *) plate_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                //BOOL found = FALSE;
+                missed = FALSE;
+                for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
+                    df_x1 = pl_node[pl_edge[k].node1].x;
+                    df_y1 = pl_node[pl_edge[k].node1].y;
+                    df_x2 = pl_node[pl_edge[k].node2].x;
+                    df_y2 = pl_node[pl_edge[k].node2].y;
+                    ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret1) {
+                        missed = TRUE;
+                        break;
+                    }
+                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (!ret2) {
+                        missed = TRUE;
+                        break;
+                    }
+                }
+                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                if (missed == FALSE) {
+                    zone_property[i].ps = 0; //plate
+                    zone_property[i].pn = j;
                     break;
                 }
-                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
-                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                if (!ret2) {
-                    missed = TRUE;
-                    break;
-                }
-            }
-            zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
-            if (missed == FALSE) {
-                zone_property[i].ps = 0; //plate
-                zone_property[i].pn = j;
-                break;
             }
         }
     }
@@ -2805,51 +3223,95 @@ void Plate_analysis(void) {
         df_y1 = pl_load[i].y1;
         df_x2 = pl_load[i].x2;
         df_y2 = pl_load[i].y2;
-        ////marking zone
-        for (j = 0; j < zone_no; j++) {
-            ADPB = (char *) zone_property[j].adr;
-            ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+
+        ////marking wall
+        for (j = 0; j < wall_no; j++)
+        {
+            ADPB = (char *) wall_property[j].adr;
+            ADKB = ADPB + sizeof(NAGLOWEK) + wall_property[j].adr->n - 1;
             zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
             ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,
                                    1, 0, 0, 0, 0, 0);
             if (pl_load[i].type==0)
                 ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2, &s_hatch_param,
-                                   1, 0, 0, 0, 0, 0);
+                                       1, 0, 0, 0, 0, 0);
             else ret2=ret1;  //same point
             zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
             if ((ret1 == 1) && (ret2 == 1)) {
-                pl_load[i].body = 1; //zone
-                pl_load[i].body_no = j;
+                //pl_load[i].body = 2; //wall
+                //pl_load[i].body_no = j;
+                pl_load[i].body = wall_property[j].ps;
+                pl_load[i].body_no = wall_property[j].pn;
+                pl_load[i].point_body = wall_property[j].ps;   //2
+                pl_load[i].point_body_no = wall_property[j].pn;   //j
 
                 if (pl_load[i].type == 1)  //point load
-                      embed_node(i, geo_units_factor);
-                zone_property[j].load++;
+                    embed_node(i, geo_units_factor);
+
+                if (pl_load[i].body==3) zone_property[j].load++;
+                else plate_property[j].load++;
                 break;
             }
         }
-        //if assigned to zone, won't be assigned to plate
-        if (j == zone_no)  //not found in zones
+        if (j == wall_no) //not found in walls
         {
-            ////marking plate
-            for (j = 0; j < plate_no; j++) {
-                ADPB = (char *) plate_property[j].adr;
-                ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+            ////marking zone
+            for (j = 0; j < zone_no; j++)
+            {
+                ADPB = (char *) zone_property[j].adr;
+                ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
                 zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
                 ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
-                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                if (pl_load[i].type==0)
+                                       &s_hatch_param,
+                                       1, 0, 0, 0, 0, 0);
+                if (pl_load[i].type == 0)
                     ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
-                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                else ret2=ret1;  //same point
+                                           &s_hatch_param,
+                                           1, 0, 0, 0, 0, 0);
+                else ret2 = ret1;  //same point
                 zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
-                if ((ret1 == 1) && (ret2 == 1)) {
-                    pl_load[i].body = 0; //plate
+                if ((ret1 == 1) && (ret2 == 1))
+                {
+                    //check if wall belongs to zone or plate
+                    pl_load[i].body = 3; //zone
                     pl_load[i].body_no = j;
+                    pl_load[i].point_body = 3; //zone
+                    pl_load[i].point_body_no = j;
 
                     if (pl_load[i].type == 1)  //point load
                         embed_node(i, geo_units_factor);
-                    plate_property[j].load++;
+
+                    zone_property[j].load++;
                     break;
+                }
+            }
+            //if assigned to zone, won't be assigned to plate
+            if (j == zone_no)  //not found in zones
+            {
+                ////marking plate
+                for (j = 0; j < plate_no; j++) {
+                    ADPB = (char *) plate_property[j].adr;
+                    ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
+                    zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                    ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    if (pl_load[i].type == 0)
+                        ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                               &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                    else ret2 = ret1;  //same point
+                    zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                    if ((ret1 == 1) && (ret2 == 1)) {
+                        pl_load[i].body = 0; //plate
+                        pl_load[i].body_no = j;
+                        pl_load[i].point_body = 0; //plate
+                        pl_load[i].point_body_no = j;
+
+                        if (pl_load[i].type == 1)  //point load
+                            embed_node(i, geo_units_factor);
+
+                        plate_property[j].load++;
+                        break;
+                    }
                 }
             }
         }
@@ -3044,9 +3506,12 @@ void Plate_analysis(void) {
         }
     }
 
+
     //the third are walls
     fprintf(f, "\n// WALLS\n");
-    for (i = 0; i < wall_no; i++) {
+    //int first_walls_line=k+1;
+    for (i = 0; i < wall_no; i++)
+    {
         for (j = wall_property[i].first_edge; j < wall_property[i].last_edge; j++) {
             if (pl_edge[j].type == 0)  //line
             {
@@ -3061,6 +3526,8 @@ void Plate_analysis(void) {
             k++;
         }
     }
+    //int last_walls_line=k+1;
+
 
     //the last are zones
     fprintf(f, "\n// ZONES\n");
@@ -3097,6 +3564,8 @@ void Plate_analysis(void) {
         k++;
     }
 
+    /*
+
     //the second are walls
     fprintf(f, "\n// WALLS\n");
     for (i = 0; i < wall_no; i++) {
@@ -3111,35 +3580,73 @@ void Plate_analysis(void) {
         wall_property[i].k = k;
         k++;
         fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
+
+        //Embeding points
+        // Embed the point (dimension 0) into the surface (dimension 2)
+        // Embed { point_tags } In { surface_tags };
+        //fprintf(f, "Point{32} In Surface{%d};\n", k+1);
+        for (j=0; j<pl_node_emb_no; j++)
+        {
+            if ((pl_node_emb[j].body==2) && (pl_node_emb[j].body_no==i)) //is wall and it's this wall
+            {
+                fprintf(f, "Point{%d} In Surface{%d};\n", pl_node_emb[j].emb_no, k+1);
+            }
+        }
+
         k++;
     }
 
+     */
+
+    //zones have to be sorted, so if zone 4 belongs to 3 firstly 4 has to be defined, next 3
+    //so we are looking to hole_property[j].ps and hole_property[j].pn
+    //and we are sorting after hole_property[j].pn
+
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+    //qsort(zone_property, zone_no, sizeof(PLATE_PROPERTY), qsort_by_val);
+    //for (i = 0; i < zone_no; i++) printf("%d %d\n",zone_property[i].ps, zone_property[i].pn);
+    //printf("---------------\n");
+
+
     //the third are zones
     fprintf(f, "\n// ZONES\n");
-    for (i = 0; i < zone_no; i++) {
+    for (i = 0; i < zone_no; i++)
+    {
         fprintf(f, "Curve Loop (%d) = {", k + 1);
 
         for (j = zone_property[i].first_edge; j < zone_property[i].last_edge; j++) {
             if (pl_edge[j].inverted == 0) fprintf(f, "%d", pl_edge[j].k + 1);
             else fprintf(f, "-%d", pl_edge[j].k + 1);
+            //if (pl_edge[j].inverted == 0) fprintf(f, "%d", j + 1);
+            //else fprintf(f, "-%d", j + 1);
             if (j < (zone_property[i].last_edge - 1)) fprintf(f, ", ");
         }
         fprintf(f, "};\n");
         zone_property[i].k = k;
         k++;
-        /*
-        fprintf(f, "Plane Surface(%d) = {%d};\n", k + 1, k);
-         */
-        fprintf(f, "Plane Surface(%d) = {%d", k + 1, k);
+
+        //fprintf(f, "Plane Surface(%d) = {%d", k + 1, k);
+        fprintf(f, "Plane Surface(%d) = {%d", k + 1, zone_property[i].k + 1);
         for (j = 0; j < hole_no; j++)
         {
             if ((hole_property[j].ps==3) && (hole_property[j].pn==i))
                 fprintf(f, ", %d", hole_property[j].k + 1);
         }
+        /*
         for (j = 0; j < wall_no; j++)
         {
             if ((wall_property[j].ps==3) && (wall_property[j].pn==i))
                 fprintf(f, ", %d", wall_property[j].k + 1);
+        }
+         */
+        for (j = 0; j < zone_no; j++)  //this is not working, reserved for the future
+        {
+            if (j!=i)  //doesn't take itself
+            {
+                if ((zone_property[j].ps == 3) && (zone_property[j].pn == i))
+                    fprintf(f, ", %d", zone_property[j].k + 1);
+            }
         }
         fprintf(f, "};\n");
 
@@ -3149,11 +3656,28 @@ void Plate_analysis(void) {
         //fprintf(f, "Point{32} In Surface{%d};\n", k+1);
         for (j=0; j<pl_node_emb_no; j++)
         {
-            if ((pl_node_emb[j].body==1) && (pl_node_emb[j].body_no==i)) //is zone and it's this zone
+            if ((pl_node_emb[j].body==3) && (pl_node_emb[j].body_no==i)) //is zone and it's this zone
             {
                 fprintf(f, "Point{%d} In Surface{%d};\n", pl_node_emb[j].emb_no, k+1);
             }
         }
+
+        //Embedding wall lines
+        fprintf(f, "\n// WALLS in ZONE\n");
+        for (j = 0; j<wall_no; j++)
+        {
+            if ((wall_property[j].ps==3) && (wall_property[j].pn==i))
+            {
+                for (int jj=wall_property[j].first_edge; jj<wall_property[j].last_edge; jj++)
+                {
+                    if (pl_edge[jj].type==0)  //line
+                        fprintf(f, "Line{%d} In Surface {%d};\n", jj + 1, k + 1);
+                    else
+                        fprintf(f, "Circle{%d} In Surface {%d};\n", jj+ 1, k + 1);
+                }
+            }
+        }
+
         k++;
     }
 
@@ -3177,11 +3701,14 @@ void Plate_analysis(void) {
             if ((hole_property[j].ps==0) && (hole_property[j].pn==i))
                 fprintf(f, ", %d", hole_property[j].k + 1);
         }
+
+        /*
         for (j = 0; j < wall_no; j++)
         {
             if ((wall_property[j].ps==0) && (wall_property[j].pn==i))
                 fprintf(f, ", %d", wall_property[j].k + 1);
         }
+         */
         for (j = 0; j < zone_no; j++)
         {
             if ((zone_property[j].ps==0) && (zone_property[j].pn==i))
@@ -3200,6 +3727,23 @@ void Plate_analysis(void) {
                 fprintf(f, "Point{%d} In Surface{%d};\n", pl_node_emb[j].emb_no, k+1);
             }
         }
+
+        //Embedding wall lines
+        fprintf(f, "\n// WALLS in PLATE\n");
+        for (j = 0; j<wall_no; j++)
+        {
+            if ((wall_property[j].ps==0) && (wall_property[j].pn==i))
+            {
+                for (int jj=wall_property[j].first_edge; jj<wall_property[j].last_edge; jj++)
+                {
+                    if (pl_edge[jj].type==0)  //line
+                        fprintf(f, "Line{%d} In Surface {%d};\n", jj + 1, k + 1);
+                    else
+                        fprintf(f, "Circle{%d} In Surface {%d};\n", jj+ 1, k + 1);
+                }
+            }
+        }
+
         k++;
     }
 
@@ -3662,7 +4206,7 @@ void Plate_analysis(void) {
             } else {
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type == 0 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
                         set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
                                            load_precision);  //is assumed that magnitude1=magnitude2
@@ -3679,7 +4223,7 @@ void Plate_analysis(void) {
             for (j = 0; j < pl_load_no; j++) //all load
             {
                 if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                    (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                    (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
                      (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
                 {
                     set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
@@ -3719,7 +4263,7 @@ void Plate_analysis(void) {
 
         for (j = 0; j < pl_load_no; j++) //all load
         {
-            if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+            if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
             {
                 strcpy(load_formula0, "");
                 set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
@@ -3852,8 +4396,7 @@ void Plate_analysis(void) {
             } else {
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
-                        (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                    if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
                         if (pl_load[i].factor_record >= 0)
                             gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
@@ -3874,7 +4417,7 @@ void Plate_analysis(void) {
             for (j = 0; j < pl_load_no; j++) //all load
             {
                 if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                    (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                    (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
                      (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
                 {
                     if (pl_load[i].factor_record >= 0)
@@ -3903,7 +4446,7 @@ void Plate_analysis(void) {
 
         for (j = 0; j < pl_load_no; j++) //all load
         {
-            if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+            if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
             {
                 if (pl_load[i].factor_record >= 0)
                     gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
@@ -4086,8 +4629,7 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
-                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                             {
                                 if (pl_load[i].factor_record >= 0) {
                                     combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
@@ -4128,7 +4670,7 @@ void Plate_analysis(void) {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
                         if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
                              (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
                         {
                             if (pl_load[i].factor_record >= 0) {
@@ -4174,7 +4716,7 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
                         if (pl_load[i].factor_record >= 0)
                         {
@@ -4436,8 +4978,7 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
-                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                             {
                                 if (pl_load[i].factor_record >= 0) {
                                     combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
@@ -4478,7 +5019,7 @@ void Plate_analysis(void) {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
                         if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
                              (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
                         {
                             if (pl_load[i].factor_record >= 0) {
@@ -4525,7 +5066,7 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
                         if (pl_load[i].factor_record >= 0)
                         {
@@ -4785,8 +5326,7 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 1) &&
-                                (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                             {
                                 if (pl_load[i].factor_record >= 0) {
                                     combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
@@ -4827,7 +5367,7 @@ void Plate_analysis(void) {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
                         if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 1) && (pl_load[j].body_no == i)) ||  //local load on zone
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
                              (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
                         {
                             if (pl_load[i].factor_record >= 0) {
@@ -4873,7 +5413,7 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==1 && (pl_load[j].body == 1) && (pl_load[j].body_no == i)) //concentrated, zone and number
+                    if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
                         if (pl_load[i].factor_record >= 0)
                         {
@@ -5083,7 +5623,7 @@ void Plate_analysis(void) {
 #endif
         printf("\ngmsh runcode:%lu runcode_short:%d\n", runcode, runcode_short);
         sprintf(params, "%splate.msh", _STATIC_);
-        if ((runcode_short != 0) || (!my_file_exists(params))) {
+        if ((runcode_short > 1/*!= 0*/) || (!my_file_exists(params))) {
             ret = ask_question(2, (char *) "Log", (char *) "OK", (char *) "", (char *) "gmsh", 12, (char *) _gmsh_error_,
                                11, 1, 0);
             if (ret==0)
@@ -5098,7 +5638,7 @@ void Plate_analysis(void) {
         if (my_file_exists(params)) {
             //generating mesh
             // ElmerGrid 14 2 Static/plate.msh -out Static/plate
-            sprintf(params, "14 2 %splate.msh -out %splate > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);
+            sprintf(params, "14 2 %splate.msh -out %splate -unite > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);  //-merge 1.e-8
             sprintf(program, "%s%sElmerGrid", _ELMER_, _BIN_);
             //execute ElmerGrid
 #ifdef LINUX
@@ -5573,6 +6113,7 @@ void Plate_analysis(void) {
     for (i=0; i<max_body_no; i++) body_property[i]=-1;
 
     //let's prepare table body_h
+    /*   //ignoring walls
     for (i=0; i<wall_no; i++)
     {
         //searching for properties
@@ -5587,6 +6128,7 @@ void Plate_analysis(void) {
             body_property[wall_property[i].k]=this_property;
         }
     }
+     */
     for (i=0; i<zone_no; i++)
     {
         //searching for properties

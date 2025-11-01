@@ -1292,6 +1292,8 @@ static char confirm[] = u8"Підтвердьте";
 #define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Стіна не призначена жодній зоні чи плиті"
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Зона не призначена жодній плиті перекриття"
 
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Зона знаходиться всередині іншої зони, що поки що заборонено"
+
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
 #define _YES_NO_ESC_ u8"ТНтн\033"

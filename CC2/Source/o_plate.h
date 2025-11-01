@@ -22,8 +22,8 @@ typedef struct
     double x;
     double y;
     float d;
-    int body;  //number of 0 plate or 1 zone
-    int body_no;  //number of plate or zone
+    int body;  //number of 0 plate 2 wall or 3 zone
+    int body_no;  //number of plate or zone or wall
     int emb_no;
 } PL_NODE_EMB;
 
@@ -46,6 +46,8 @@ typedef struct
     AVECTOR *adr;
     int body;     //number of 0 plate or 1 zone
     int body_no;  //number of plate or zone
+    int point_body;     //number of 0 plate or 1 zone
+    int point_body_no;  //number of plate or zone
     int load;     //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
     int variant;  //0 undefined, 1..255 number of load character with different factors
     int flags;    //0  regular   1 inverted
@@ -60,6 +62,7 @@ typedef struct
     double magnitude2;
 } PL_LOAD;
 
+#define nest_bits 16
 typedef struct
 {
     BLOK *adr;
@@ -69,6 +72,8 @@ typedef struct
     int k;  //body number - 1
     int ps;  //parent style  0 plate, 1 hole, 2 wall, 3 zone, initiated as -1
     int pn;  //parent number initiated as - 1
+    int pnz_n; //number of parent zones
+    unsigned pnz : nest_bits;  //parent zone numbers, for zones gradiation  16 bit
     int load;
 } PLATE_PROPERTY;
 

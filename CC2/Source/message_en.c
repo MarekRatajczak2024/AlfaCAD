@@ -1260,6 +1260,8 @@ static char confirm[] = u8"Confirm";
 #define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Wall not assigned to any zone or plate"
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Zone not assigned to any plate"
 
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"The zone is contained within another zone, what is not yet allowed"
+
 
 #define _Yes_ "Yes"
 #define _No_ "No"

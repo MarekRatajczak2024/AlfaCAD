@@ -1257,6 +1257,8 @@ static char confirm[] = u8"Potwierdź";
 #define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Ściana nie jest przypisana do żadnej strefy ani płyty"
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Strefa nie jest przypisana do żadnej płyty"
 
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Strefa znajduje się w innej strefie, co nie jest jeszcze dozwolone"
+
 #define _Yes_ "Tak"
 #define _No_ "Nie"
 #define _YES_NO_ESC_ u8"TNtn\033"
