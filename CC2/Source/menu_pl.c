@@ -393,7 +393,7 @@ char _NO_[4] = "N";
 
 const char *_EDIT_[] = {u8"Przesuń", u8"Przesuń Z", u8"Obrót", u8"Obrót XZ", u8"Obrót YZ", u8"Skala", u8"Lustro", u8"->pomiń", u8"-----"};
 
-char* loading_program[] = { u8"Ładowanie programu", u8"Ładowanie okna..." , u8"Proszę czekać. Trwa pobieranie pliku: ", u8"Łączenie z chmurą..."};
+//char* loading_program[] = { u8"Ładowanie programu", u8"Ładowanie okna..." , u8"Proszę czekać. Trwa pobieranie pliku: ", u8"Łączenie z chmurą..."};
 
 #define _NO_MOUSE_ "Nie jest zainstalowana mysz !!!!!\n"
 
@@ -3341,13 +3341,14 @@ static POLE pmPrecision[] = {
         {u8"dokładność Siły\0 \0",L'S',727,NULL},
         {u8"dokładność Momentu\0 \0",L'M',728,NULL},
         {u8"dokładność Przemieszczenia\0 \0",L'P',730,NULL},
-        {u8"dokładność Rotacji\0 \0",L'R',731,NULL},
+        {u8"dokładność oBrotu\0 \0",L'B',731,NULL},
         {u8"dokładność Obciążenia\0 \0",L'O',733,NULL},
         {u8"dokładność obciążenia Termicznego\0 \0",L'T',752,NULL},
-        {u8"dokładność naprężeń\0 \0",L'N',800,NULL},
+        {u8"dokładność Naprężeń\0 \0",L'N',800,NULL},
+        {u8"dokładność Reakcji\0 \0",L'R',763,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 8,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Głębokość przekroju\0 \0",L'G',764,NULL},
@@ -3370,28 +3371,35 @@ static POLE pmStaticColors[] = {
        {u8"֎Wibracje\0inny\0",                          L'W',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"obciążenie Liniowe\0 \0",L'L',733,NULL},
 	   {u8"obciążenie Płaszczyznowe\0 \0",L'P',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmReactionMagnitude[] = {
+       {u8"Skupione siły reakcji\0 \0",L'S',762,NULL},
+	   {u8"Rozproszone siły reakcji\0 \0",L'R',864,NULL},
+	  };
+
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"naprężenia w Stali/drewnie\0 \0",L'S',775,NULL},
 	   {u8"naprężenia w Betonie zbrojonym\0 \0",L'B',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"przeskalowanie Siły\0 \0",                   L'S',727,NULL},
@@ -3404,7 +3412,7 @@ static POLE pmMagnitude[] = {
        {u8"przeskalowanie sił ścinających\0 \0",        L'V',759,NULL},
        {u8"przeskalowanie momentów Zginających\0 \0",   L'B',760,NULL},
        {u8"przeskalowanie deformacji\0 \0",             L'U',761,NULL},
-       {u8"przeskalowanie sił reakcji\0 \0",            L'X',762,NULL},
+       {u8"przeskalowanie sił reakcji\0 \0",            L'X',762,&mReactionMagnitude},
        {u8"przeskalowanie momentów reakcji\0 \0",       L'Z',763,NULL},
        {u8"przeskalowanie naprężeń\0 \0",               L'A',800,&mStressMagnitude},
        {u8"przeskalowanie % zbrojenia\0 \0",            L'%',823,NULL},

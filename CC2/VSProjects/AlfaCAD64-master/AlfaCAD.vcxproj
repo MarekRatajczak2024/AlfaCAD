@@ -449,9 +449,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;
-%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -465,7 +464,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug/AlfaCAD4Win64.exe</OutputFile>
@@ -495,8 +496,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_UA|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;UKRAINIAN;BIT64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;UKRAINIAN;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -511,6 +512,9 @@
       <CompileAsManaged>false</CompileAsManaged>
       <StringPooling>true</StringPooling>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug_UA/AlfaCADUA4Win64.exe</OutputFile>
@@ -537,8 +541,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_ES|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;SPANISH;BIT64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;SPANISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -553,6 +557,9 @@
       <CompileAsManaged>false</CompileAsManaged>
       <StringPooling>true</StringPooling>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug_ES/AlfaCADES4Win64.exe</OutputFile>
@@ -620,8 +627,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_PL|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;BIT64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;ALF_MAIN;alfpro;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -637,6 +644,9 @@
       <StringPooling>true</StringPooling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Debug_PL/AlfaCADPL4Win64.exe</OutputFile>
@@ -784,8 +794,8 @@
     <ClCompile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>
       </StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -803,6 +813,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <Optimization>Disabled</Optimization>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Release/AlfaCAD4Win64.exe</OutputFile>
@@ -832,8 +845,8 @@
     <ClCompile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;UKRAINIAN;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;UKRAINIAN;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>
       </StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -851,6 +864,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Release_UA/AlfaCADUA4Win64.exe</OutputFile>
@@ -879,8 +895,8 @@
     <ClCompile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;SPANISH;BIT64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;ENGLISH;SPANISH;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>
       </StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -898,6 +914,9 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Release_ES/AlfaCADES4Win64.exe</OutputFile>
@@ -967,8 +986,8 @@
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;..\..\..\qt5\qt5-build\qtbase\include;..\..\..\qt5\qt5-build\qtbase\include\QtGui;..\..\..\qt5\qt5-build\qtbase\include\QtCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\CC2\source;..\..\..\CC2\source\include;..\..\..\zlib;..\..\..\zlib\build;..\..\..\lpng1637;..\..\..\libharu-master\include;..\..\..\libharu-master\build\include;..\..\..\libharu-master\win32\include;..\..\..\glyph-keeper64\src;..\..\..\glyph-keeper64\include;..\..\..\glyph-keeper64\freetype\src;..\..\..\glyph-keeper64\freetype\include;..\..\..\allegro-4.4.3.1\allegro\include;..\..\..\allegro-4.4.3.1\allegro\include\allegro;..\..\..\allegro-4.4.3.1\allegro\addons\jpgalleg\include;..\..\..\CavalierContours\include;..\..\..\CavalierContours\c_api_include;;..\..\..\CC2\Source\3rdparty\qt6;..\..\..\CC2\Source\3rdparty\qt6\tools;..\..\..\CC2\Source\3rdparty\qt6\corelib;..\..\..\CC2\Source\3rdparty\qt6\QtCore;..\..\..\CC2\Source\3rdparty\qt6\QtGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;ALF_MAIN;alfpro;BIT64;__ALLEGRO_MSVC;__ALLEGRO_SRC;QT_NO_DEBUG;QT_NO_EXCEPTIONS;QT_NO_VERSION_TAGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>
       </StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -985,6 +1004,9 @@
       <CompileAsManaged>false</CompileAsManaged>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <OutputFile>x64/Release_PL/AlfaCADPL4Win64.exe</OutputFile>
@@ -5337,6 +5359,7 @@
     <ClCompile Include="..\..\Source\L_section_CA_si.c" />
     <ClCompile Include="..\..\Source\L_section_CN_si.c" />
     <ClCompile Include="..\..\Source\o_plate.c" />
+    <ClCompile Include="..\..\Source\o_plate_reactions.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />

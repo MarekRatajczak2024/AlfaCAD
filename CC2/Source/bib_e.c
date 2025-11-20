@@ -466,6 +466,7 @@ extern double depth_magnitude; //units per mm  default 1 mm of section depth per
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
 extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude; //units per mm  default 10kN/m shear/reactions per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -5360,7 +5361,7 @@ void draw_wave(double x0, double y0, double x1, double y1, double x2, double y2,
         i+=2;
 
         s.lp=i;
-        s.xy[s.lp]=0.75;
+        s.xy[s.lp]=0.75f;
         s.n = 8 + (s.lp + 1 ) * sizeof(float);
 
         s.npts=5;
@@ -14261,7 +14262,11 @@ void my_sleep(int sleepMs)
     usleep(sleepMs * 1000);   // usleep takes sleep time in us (1 millionth of a second)
 #else
 #ifdef BIT64
+#ifndef LINUX
+    _sleep(sleepMs);
+#else
     Sleep(sleepMs);
+#endif
 #else
 	_sleep(sleepMs);
 #endif

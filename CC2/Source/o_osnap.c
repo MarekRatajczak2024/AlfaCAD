@@ -69,6 +69,7 @@ extern double depth_magnitude; //units per mm  default 1 mm of section depth per
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
 extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude; //units per mm  default 10kN/m shear/reaction per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 
 extern double dim_precision;

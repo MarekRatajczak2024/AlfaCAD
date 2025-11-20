@@ -289,6 +289,7 @@ extern double depth_magnitude; //units per mm  default 1 mm of section depth per
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
 extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -1261,6 +1262,7 @@ extern char *icon_shear_mag_p;
 extern char *icon_moments_mag_p;
 extern char *icon_displacements_mag_p;
 extern char *icon_reactions_xy_p;
+extern char *icon_shear_p;
 extern char *icon_reactions_m_p;
 
 extern char *icon_thermal_y_p;
@@ -1345,6 +1347,10 @@ extern char *icon_resilience_p;
 extern char *icon_ULS_p;
 extern char *icon_SLS_p;
 extern char *icon_QPSLS_p;
+
+extern char *icon_ULSLC_p;
+extern char *icon_SLSLC_p;
+extern char *icon_QPSLSLC_p;
 
 extern char *icon_mousewheel_p;
 extern char *icon_mousewheelnatural_p;
@@ -3462,7 +3468,7 @@ static char *get_icons_p(int number)
         /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p,
         /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
         /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p, icon_slab_force_p,
-        /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p,
+        /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p, icon_ULSLC_p, icon_SLSLC_p, icon_QPSLSLC_p, icon_shear_p
     };
    
 	if (number>1999)

@@ -79,6 +79,8 @@
 #define BIGNOD 1e200
 #define BIGNOF 1e20
 
+//#define REACTIONSNSEW
+
 typedef unsigned long DWORD;
 extern DWORD RunSilent(char* strFunct, char* strstrParams);
 extern DWORD SystemSilent(char* strFunct, char* strstrParams);
@@ -107,6 +109,7 @@ extern BOOL Check_if_Equal3(double x, double y);
 
 extern BOOL Check_Attribute (int i_attribute, int i_check);
 extern unsigned char str2load(char *ptr);
+
 extern void get_blocks_setup(int layer_no, char **block_names, int *block_names_no, int max_no, int max_len);
 
 extern int ask_question_static(int n_buttons, char* esc_string, char* ok_string, char* cont_string, char* comment_string, int color_comment, char* comment1_string, int color1_comment, int cien, int image, int *combinantion, int *geometri_stiffness, int *inertia, int *st_dynamic_no, BOOL *PINNABLE,
@@ -115,6 +118,120 @@ extern int EditText(char *mytext, int edit_params, int nCmdShow, int *single, in
 extern int EditFile(char *, int adjust, int nCmdShow);
 extern double Angle_Normal (double angle);
 extern void utf8Upper(char* text);
+extern int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma);
+extern void Rotate_Point(double si, double co, double x1, double y1, /*center point*/ double x2, double y2, double *x, double *y); /*rotate point*/
+//int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix);
+//extern double r_magnitude;
+
+static char T_text[64];
+
+static int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix)
+{
+    TEXT T=Tdef;
+    double x, y;
+    PLINIA PL, PL1;
+    char *ptr_t;
+    double x1, y1, x2, y2;
+    double kos, koc, dlx;
+    double lb, le;
+    char *ptr;
+
+    parametry_lini(L, &PL);
+    parametry_lini(Le, &PL1);
+    dlx=jednostkiOb(dx);
+
+    lb=jednostkiOb(r1);
+    le=PL1.dl-jednostkiOb(r2);
+
+    strcpy(T.text, prefix);
+    ptr=T.text+strlen(prefix);
+
+    //set_decimal_format(T.text, vpar, precision);
+    set_decimal_format(ptr, vpar, precision);
+
+    if ((strcmp(T.text,"0")==0) || (strcmp(T.text,"-0")==0)) return 0;
+
+    strcat(T.text, suffix);
+
+    if (strcmp(T.text, T_text)!=0)
+    {
+        T.x = (L->x1 + L->x2) / 2;
+        T.y = (L->y1 + L->y2) / 2;
+
+        T.justowanie = j_srodkowo;
+        T.bold = bold;
+        T.warstwa = L->warstwa;
+        T.kolor = L->kolor;
+        T.czcionka = zmwym.czcionka;
+        T.wysokosc = zmwym.wysokosc * 0.5;
+
+        if (Check_if_Equal(L->y1,L->y2))
+        {
+            if ((Check_if_Equal2(dlx, PL1.dl) || Check_if_Equal2(dlx, le)) && (L->x1 > L->x2))
+                T.kat = (Pi_ * (PL.kat + 180) / 180);
+            else if ((Check_if_Equal2(dlx, 0.0) || Check_if_Equal2(dlx, lb)) && (L->x2 > L->x1))
+                T.kat = (Pi_ * (PL.kat + 180) / 180);
+            else
+                T.kat = Pi_ * PL.kat / 180;
+        }
+        else {
+            if ((Check_if_Equal2(dlx, PL1.dl) || Check_if_Equal2(dlx, le)) && (L->y1 > L->y2))
+                T.kat = (Pi_ * (PL.kat + 180) / 180);
+            else if ((Check_if_Equal2(dlx, 0.0) || Check_if_Equal2(dlx, lb)) && (L->y2 > L->y1))
+                T.kat = (Pi_ * (PL.kat + 180) / 180);
+            else
+                T.kat = Pi_ * PL.kat / 180;
+        }
+        T.blok=1;
+        //set_decimal_format(T.text, vpar, precision);
+        T.dl = strlen(T.text);
+        T.n = T18 + T.dl;
+        normalize_txt(&T);
+        ptr_t = dodaj_obiekt((BLOK *) dane, (void *) &T);
+        strcpy(T_text, T.text);
+
+        return 1;
+    }
+    return 0;
+}
+
+
+extern double compute_support_reaction(
+        double H,
+        double supp_x, double supp_y,
+        double supp_sigx, double supp_sigy, double supp_sigxy,
+        int    num_adj_supp,
+        const double adj_supp_x[],
+        const double adj_supp_y[],
+        int    num_inside,
+        const double h[],
+        const double inside_x[],
+        const double inside_y[],
+        const double inside_sigx[],
+        const double inside_sigy[],
+        const double inside_sigxy[],
+        double *Qn
+);
+
+double compute_NSEW_reaction(
+        POINTD b, POINTD c,
+        double kos, double koc,
+        double H, BOOL is_simple,
+        double supp_x, double supp_y,
+        double supp_sigx, double supp_sigy,
+        int    num_adj_supp,
+        const double adj_supp_x[],
+        const double adj_supp_y[],
+        int    num_inside,
+        int b_inside[],
+        const double h[],
+        const double inside_x[],
+        const double inside_y[],
+        const double inside_sigx[],
+        const double inside_sigy[],
+        double *Q_normal
+);
+
 
 #ifndef LINUX
 extern BOOL Is64BitOperatingSystem(void);
@@ -159,7 +276,7 @@ typedef struct {              //                                                
 */
 ///UNIT_FACTORS unit_factors_si={1.0, 0.001, 100.0,0.000001, 10000.0,0.000001, 0.000000001,1000.0,1e-12,1.0,1000.0,1000.0,1000000,1.0, 1000.0, 1000.0, 9.81, 0.001};
 
-UNIT_FACTORS unit_factors_pl_si={0.001, 1.0, 0.0001, 1.0, 0.00000001, 0.000001, 0.000000001, 1.0e9,  1.0, 1.0, 1.0, 1000.0, 1000, 1000.0, 0.001, .000001, 9.81, 0.001};
+UNIT_FACTORS unit_factors_pl_si={0.001, 1.0, 0.0001, 1.0, 0.00000001, 0.000001, 0.000000001, 1.0e9,  1.0, 1.0, 1.0, 1000.0, 1000, 1000.0, 1000.0, .000001, 9.81, 0.001};
 UNIT_FACTORS unit_factors_pl_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
 
 extern PROP_PRECISIONS SI_precisions;
@@ -184,6 +301,7 @@ extern double moment_magnitude;
 extern double displacement_magnitude;
 extern double load_magnitude;
 extern double flood_magnitude;
+extern double shear_magnitude;
 
 double dim_precision_pl=0.0001;
 
@@ -221,11 +339,13 @@ static PL_LOAD *pl_load=NULL;
 static PL_LOAD *pl_point_load=NULL;
 static GEO_LINE *geo_line=NULL;
 LINIA Ldsp = Ldef;
+LINIA Ldspm = Ldef;
+LINIA Ldsp1 = Ldef;
 
 #define MAX_L_BLOCKS 16
 #define MAX_L_BLOCKS_LEN 64
-static char block_names[MAX_L_BLOCKS][MAX_L_BLOCKS_LEN+1];
 
+static char **block_names=NULL;
 
 static double pl_min_x, pl_min_y, pl_max_x, pl_max_y;
 int theta_=0, sigma_eq_=0, epsilon_=0;
@@ -728,6 +848,10 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
 
         return 1;
     }
+    else if (style==2)
+    {
+        if (el_no>0) return 1;
+    }
     else return 0;
 }
 
@@ -931,6 +1055,7 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
         *sigma_c_max = M * x / I_cr;
 
         // Check limits
+#ifndef NDEBUG
         if (*total_rho > 0.02) {
             printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 2%%.\n", *total_rho * 100);
         }
@@ -938,9 +1063,9 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
             printf("Warning: sigma_c_max (%.2f MPa) exceeds fcd (%.2f MPa).\n",
                    *sigma_c_max / 1e6, fcd / 1e6);
         }
-
         printf("Singly reinforced: As = %.2f mm², rho = %.2f%%, sigma_c_max = %.2f MPa\n",
                *As * 1e6, *rho * 100, *sigma_c_max / 1e6);
+#endif
         return 0;
     } else {
         // Doubly reinforced (K > 0.283, use x = cc)
@@ -983,6 +1108,7 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
         *sigma_c_max = M * x / I_cr;
 
         // Check limits
+#ifndef NDEBUG
         if (*total_rho > 0.02) {
             printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 2%%.\n", *total_rho * 100);
         }
@@ -990,9 +1116,9 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
             printf("Warning: sigma_c_max (%.2f MPa) exceeds fcd (%.2f MPa).\n",
                    *sigma_c_max / 1e6, fcd / 1e6);
         }
-
         printf("Doubly reinforced: As = %.2f mm², As_prime = %.2f mm², rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",
                *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+#endif
         return 0;
     }
 }
@@ -1087,7 +1213,9 @@ int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
         c_na = *rho * fyk * d / (0.85 * fck * beta1); // c = a / beta1
         double epsilon_s = 0.003 * (d - c_na) / c_na;
         if (epsilon_s < 0.005) {
+#ifndef NDEBUG
             printf("Warning: Section not tension-controlled (epsilon_s = %.6f < 0.005).\n", epsilon_s);
+#endif
             fi = 0.65 + (epsilon_s - 0.002) * (0.9 - 0.65) / (0.005 - 0.002);
             if (fi < 0.65) fi = 0.65;
             // Recalculate with adjusted phi
@@ -1107,6 +1235,7 @@ int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
 
         // Check limits
         double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+#ifndef NDEBUG
         if (*total_rho > rho_max || *total_rho > 0.02) {
             printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
                    *total_rho * 100, rho_max * 100);
@@ -1115,9 +1244,9 @@ int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
             printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck (%.2f MPa).\n",
                    *sigma_c_max / 1e6, 0.85 * fck / 1e6);
         }
-
         printf("Singly reinforced: As = %.2f mm²/m, rho = %.2f%%, sigma_c_max = %.2f MPa\n",
                *As * 1e6, *rho * 100, *sigma_c_max / 1e6);
+#endif
         return 0;
     }
 
@@ -1151,6 +1280,8 @@ doubly_reinforced:
 
     // Check limits
     double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+
+#ifndef NDEBUG
     if (*total_rho > rho_max || *total_rho > 0.02) {
         printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
                *total_rho * 100, rho_max * 100);
@@ -1159,9 +1290,9 @@ doubly_reinforced:
         printf("Warning: sigma_c_max (%.2f MPa) exceeds 0.85*fck (%.2f MPa).\n",
                *sigma_c_max / 1e6, 0.85 * fck / 1e6);
     }
-
     printf("Doubly reinforced: As = %.2f mm²/m, As_prime = %.2f mm²/m, rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f MPa\n",
            *As * 1e6, *As_prime * 1e6, *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / 1e6);
+#endif
     return 0;
 }
 
@@ -1230,6 +1361,7 @@ int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, dou
     *sigma_c_max = fabs(N) / A_g + 6 * fabs(M) / (b * h * h);
     *sigma_c_max = fabs(*sigma_c_max);
 
+#ifndef NDEBUG
     // Warnings for reinforcement limits
     if (*total_rho > 0.08) {
         printf("Warning: Total reinforcement ratio (%.2f%%) exceeds 8%% (ACI 318-19).\n", *total_rho * 100);
@@ -1239,11 +1371,11 @@ int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, dou
                *sigma_c_max / (is_si_units ? 1e6 : 1000), is_si_units ? "MPa" : "ksi",
                (is_si_units ? 0.85 * fck / 1.5 / 1e6 : 0.85 * fck / 1000), is_si_units ? "MPa" : "ksi");
     }
-
-    printf("Singly reinforced: As = %.2f %s, As_prime = %.2f %s, rho = %.2f%%, sigma_c_max = %.2f %s\n",
+    printf("Doubly reinforced: As = %.2f %s, As_prime = %.2f %s, rho = %.2f%%, sigma_c_max = %.2f %s\n",
            *As * (is_si_units ? 1e6 : 1), is_si_units ? "mm²" : "in²",
            *As_prime * (is_si_units ? 1e6 : 1), is_si_units ? "mm²" : "in²",
            *rho * 100, *sigma_c_max / (is_si_units ? 1e6 : 1000), is_si_units ? "MPa" : "ksi");
+#endif
     return 0;
 }
 
@@ -1363,7 +1495,9 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
         c_na = *rho * fyk * d / (0.85 * fck * beta1); // c = a / beta1
         double epsilon_s = 0.003 * (d - c_na) / c_na;
         if (epsilon_s < 0.005) {
+#ifndef NDEBUG
             printf("Warning: Section not tension-controlled (epsilon_s = %.6f < 0.005).\n", epsilon_s);
+#endif
             fi = 0.65 + (epsilon_s - 0.002) * (0.9 - 0.65) / (0.005 - 0.002);
             if (fi < 0.65) fi = 0.65;
             // Recalculate with adjusted phi
@@ -1387,6 +1521,7 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
 
         // Check limits
         double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+#ifndef NDEBUG
         if (*total_rho > rho_max || *total_rho > 0.02) {
             printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
                    *total_rho * 100, rho_max * 100);
@@ -1395,9 +1530,9 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
             printf("Warning: sigma_c_max (%.2f %s) exceeds 0.85*fck (%.2f %s).\n",
                    *sigma_c_max / unit_factor, stress_unit, 0.85 * fck / unit_factor, stress_unit);
         }
-
         printf("Singly reinforced: As = %.2f %s, rho = %.2f%%, sigma_c_max = %.2f %s\n",
                *As * area_display_factor, area_unit, *rho * 100, *sigma_c_max / unit_factor, stress_unit);
+#endif
         return 0;
     }
 
@@ -1443,6 +1578,7 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
 
     // Check limits
     double rho_max = 0.75 * 0.85 * beta1 * (fck / fyk) * (0.003 / (0.003 + 0.005));
+#ifndef NDEBUG
     if (*total_rho > rho_max || *total_rho > 0.02) {
         printf("Warning: Total reinforcement ratio (%.2f%%) exceeds limits (rho_max = %.2f%% or 2%%).\n",
                *total_rho * 100, rho_max * 100);
@@ -1451,10 +1587,10 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
         printf("Warning: sigma_c_max (%.2f %s) exceeds 0.85*fck (%.2f %s).\n",
                *sigma_c_max / unit_factor, stress_unit, 0.85 * fck / unit_factor, stress_unit);
     }
-
     printf("Doubly reinforced: As = %.2f %s, As_prime = %.2f %s, rho = %.2f%%, rho_prime = %.2f%%, total_rho = %.2f%%, sigma_c_max = %.2f %s\n",
            *As * area_display_factor, area_unit, *As_prime * area_display_factor, area_unit,
            *rho * 100, *rho_prime * 100, *total_rho * 100, *sigma_c_max / unit_factor, stress_unit);
+#endif
     return 0;
 }
 
@@ -1598,6 +1734,48 @@ static int qsort_by_val(const void *e1, const void *e2)
     return delta;
 }
 
+// Function to calculate the area of a triangle given its vertex coordinates
+double calculateTriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
+    double area = 0.5 * fabs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+    return area;
+}
+
+double nofabs(double value) {
+    return value;
+}
+
+
+/*
+// Function to calculate the "cross product" (Z-component) of two 2D vectors
+double point_cross_product(POINTD a, POINTD b, POINTD p)
+{
+    // Vector AB: (b.x - a.x, b.y - a.y)
+    // Vector AP: (p.x - a.x, p.y - a.y)
+    return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+}
+
+// Function to check if a point is inside a triangle
+int is_point_in_triangle(POINTD pa, POINTD pb, POINTD pc, POINTD pp) {
+    double cp1 = point_cross_product(pa, pb, pp);
+    double cp2 = point_cross_product(pb, pc, pp);
+    double cp3 = point_cross_product(pc, pa, pp);
+
+    // Check if all cross products have the same sign or are zero
+    // This handles cases where the point is on an edge
+    return (cp1 >= 0 && cp2 >= 0 && cp3 >= 0) || (cp1 <= 0 && cp2 <= 0 && cp3 <= 0);
+}
+*/
+
+static int getSignFloat(double num) {
+    if (num == 0.0) {
+        return 0;
+    } else if (signbit(num)) {
+        return -1;
+    } else {
+        return 1;
+    }
+}
+
 void Plate_analysis(void) {
 
     int i, j, k, ii, li=0;
@@ -1659,14 +1837,14 @@ void Plate_analysis(void) {
     int i_row = 0;
     //char data_row2[MaxTextLen];
     char *line;
-    int mesh_nodes_no, mesh_elements_no, mesh_boundaries_no;
+    int mesh_nodes_no, mesh_elements_no, mesh_boundaries_no, total_mesh_boundaries_no, mesh_101_boundaries_no, max_element_nodes, mesh_202_boundaries_no, mesh_303_boundaries_no, flag101_no, flag202_no, flag303_no;
     double mesh_node_z;
     double koc, kos;
     char desired_layer[maxlen_w];
     char desired_layer_upper[maxlen_w];
     char layer_name_upper[maxlen_w];
     char desired_layer_bak[maxlen_w];
-    int desired_layer_no;
+    int desired_layer_no, desired_reactions_layer_no;
     char block_name[MaxTextLen];
     char *ptr_block;
     POINTD blok_origin;
@@ -1763,7 +1941,19 @@ void Plate_analysis(void) {
     float (*jednostkiObX)(double mob);
     float (*jednostkiObY)(double mob);
     ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
-
+    double Rzmin=0.0;
+    double Rzmax=0.0;
+    double Rzmin_back=0.0;
+    double Rzmax_back=0.0;
+    double area;
+    double *body_area=NULL;
+    double *surface_load[64]={NULL};  //there is no more than 64 cases
+    double point_load[64];
+    int case_files[5];
+    double total_load;
+    double load_ratio, load_ratio_d;
+    POINTD point_b, point_c;
+    double NSEW_dist_div=4.;
 
     was_refreshed = FALSE;
 
@@ -1820,6 +2010,28 @@ void Plate_analysis(void) {
         redcrsb(2, 167);
         return;
     }
+
+
+    // Allocate memory for 16 char pointers (for the array of strings)
+    block_names = (char **)malloc(MAX_L_BLOCKS * sizeof(char *));
+
+    // Allocate memory for each individual string
+    for (i = 0; i < MAX_L_BLOCKS; i++)
+    {
+        block_names[i] = (char *)malloc((MAX_L_BLOCKS_LEN + 1) * sizeof(char));
+        if (block_names[i] == NULL) {
+            perror("Failed to allocate memory for a string");
+            // Free previously allocated memory before exiting
+            for (int j = 0; j < i; j++) {
+                free(block_names[j]);
+            }
+            free(block_names);
+            block_names=NULL;
+        }
+        // Optional: Initialize the strings (e.g., to empty strings)
+        block_names[i][0] = '\0';
+    }
+
 
     pl_property = (ST_PROPERTY *) malloc(PL_PROPERTY_MAX * sizeof(ST_PROPERTY) + 100);
     pl_load_factors = (ST_LOAD_FACTORS *) malloc(PL_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS) + 100);
@@ -2420,7 +2632,7 @@ void Plate_analysis(void) {
             if (b->kod_obiektu == B_PLINE) {
                 if (b->opis_obiektu[0] == PL_WALL) {
                     if (create_plate(b, 2, wall_no, body_number, &first, &last, &property_number, &is_closed)) {
-                        if (is_closed) {
+                        if ((is_closed) || (!is_closed)) {
                             wall_property[wall_no].adr = b;
                             //wall_property[wall_no].property_number = property_number;
                             //inheriting property from plate
@@ -3751,6 +3963,19 @@ void Plate_analysis(void) {
 
     fclose(f);
 
+    //So there is no more than k bodies.
+    //allocation of body_area;
+    body_area=(double *)malloc(k*sizeof(double));  //max k bodies
+    for (i=0; i<k; i++) body_area[i]=0.0;
+
+    for (j=0; j<64; j++)  //for max 64 cases
+    {
+        surface_load[j] = (double *) malloc(k * sizeof(double));  //max k bodies
+        for (i = 0; i < k; i++) surface_load[j][i] = 0.0;
+
+        point_load[j]=0.0;
+    }
+
     //creating geo file
     sprintf(params, "%s%splate.sif", _STATIC_, _plate_);
     f = fopen(params, "wt");
@@ -3792,7 +4017,7 @@ void Plate_analysis(void) {
     fprintf(f, "End\n\n");
 
     fprintf(f, "Solver 1\n");
-    fprintf(f, "  Equation = Shell Solver\n");
+    fprintf(f, "  Equation = \"Shell Solver\"\n");
     fprintf(f, "  Procedure = \"ShellMultiSolver\" \"ShellSolver\"\n");
     //fprintf(f, "  Procedure = \"ShellSolver\" \"ShellSolver\"\n");
     fprintf(f, "  Linear System Solver = Direct\n");
@@ -3802,16 +4027,19 @@ void Plate_analysis(void) {
     fprintf(f, "  Linear System Convergence Tolerance = 1.0e-10\n");
     fprintf(f, "  Nonlinear System Newton After Tolerance = 1.0e-8\n");
     fprintf(f, "  Nonlinear System Newton After Iterations = 20\n");
-    fprintf(f, "  Nonlinear System Max Iterations = 1\n");
+    //fprintf(f, "  Nonlinear System Max Iterations = 1\n");  //????
+    fprintf(f, "  Nonlinear System Max Iterations = 5\n");  //????
     fprintf(f, "  Nonlinear System Convergence Tolerance = 1.0e-8\n");
     fprintf(f, "  Nonlinear System Relaxation Factor = 1.0\n");
     fprintf(f, "  Steady State Convergence Tolerance = 1.0e-8\n");
     fprintf(f, "\n");
     fprintf(f, "  Shear Stabilization Parameter = Real 0.0\n");
+    //fprintf(f, "  Shear Stabilization Parameter = Real 0.05\n");
     fprintf(f, "  Drilling Stabilization Parameter = Real 1.0\n");
     fprintf(f, "  Calculate Stresses = Logical TRUE\n");
     fprintf(f, "  !Compute Membrane Stress = Logical TRUE\n");
     fprintf(f, "  Compute Bending Stress = Logical FALSE\n");  //or TRUE
+    //fprintf(f, "  Compute Bending Stress = Logical TRUE\n");  //or TRUE
     fprintf(f, "  Compute Total Stress = Logical TRUE\n");  //or FALSE
     fprintf(f, "  Bottom Side Stress = Logical TRUE\n");
     fprintf(f, "\n");
@@ -3821,7 +4049,122 @@ void Plate_analysis(void) {
     fprintf(f, "  Use SMITC Element = Logical FALSE\n");   //no 3
     fprintf(f, "  Use MITC3 Element = Logical FALSE\n");   //no 4
     fprintf(f, "  Integration Points = Integer 3\n");
+    //fprintf(f, "  Variable Output = Logical TRUE\n");
+    //fprintf(f, "  Variable 1 = \"Force 3\"\n");
+    //fprintf(f, "  Variable 2 = \"Force 4\"\n");
+    //fprintf(f, "  Variable 3 = \"Force 5\"\n");
+    //fprintf(f, "  Variable 4 = \"Force 6\"\n");
+    //fprintf(f, "  Calculate Loads = Logical TRUE\n");
+    //fprintf(f, "  Calculate Reactions = Logical TRUE\n");
     fprintf(f, "End\n\n");
+
+    /*
+    fprintf(f, "! New Solver section to calculate and save reaction forces\n");
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  Equation = SaveReactions\n");
+    fprintf(f, "  Procedure = \"SaveData\" \"SaveReactions\"\n");
+    fprintf(f, "  ! Name of the boundary condition you want to monitor\n");
+    fprintf(f, "  ! (e.g., the name given to your support boundary condition)\n");
+    fprintf(f, "  ! Boundary Id = 1\n");
+    fprintf(f, "  Filename = \"total_reaction_forces.dat\"\n");
+    fprintf(f, "  Save Body Forces = Logical False\n");
+    fprintf(f, "  Save Surface Forces = Logical True\n");
+    fprintf(f, "  ! Optional: specify which direction forces to sum\n");
+    fprintf(f, "  ! Save Reaction 1 = Logical True ! for Fx\n");
+    fprintf(f, "  ! Save Reaction 2 = Logical True ! for Fy\n");
+    fprintf(f, "  Save Reaction 3 = Logical True ! for Fz\n");
+    fprintf(f, "  ! By default, it might save all. Check Elmer documentation.\n");
+    fprintf(f, "End\n\n");
+    */
+
+/*
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  Equation = \"SaveScalars\"\n");
+    //fprintf(f, "  Exec Solver = After Timestep\n");
+    fprintf(f, "  Exec Solver = After Simulation\n");
+    //fprintf(f, "  Procedure = \"SaveScalars\" \"SaveBoundaryLoads\" ! Use SaveBoundaryLoads for forces on a boundary\n");
+    fprintf(f, "  Procedure = \"SaveData\" \"SaveScalars\"\n");
+    fprintf(f, "  Filename = \"shell_loads.dat\"\n");
+    fprintf(f, "  ! Specify the boundary ID (e.g., 4)\n");
+    //fprintf(f, "  Boundary Target = 1\n");
+    fprintf(f, "  ! Specify what to save: \"Loads\"\n");
+    fprintf(f, "  Variable 1 = \"Load 1\"\n");
+    //fprintf(f, "  Scalar 1 = \"Load 3\"\n");
+    fprintf(f, "  ! Specify the components if needed (e.g. for Force in Z direction)\n");
+    //fprintf(f, "  Scalar 2 = \"Load 3\"\n");
+    //fprintf(f, "  Save also = \"Load 1\" \"Load 2\" ! or other components\n");
+    fprintf(f, "End\n\n");
+*/
+/*
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  Equation = \"CalculateLoads\"\n");
+    fprintf(f, "  Exec Solver = After Simulation\n");
+    fprintf(f, "  Procedure = \"StressSolve\" \"CalculateLoads\"\n");
+    fprintf(f, "  Filename = \"shell_loads.dat\"\n");
+    //fprintf(f, "  Loads on Boundary = Logical TRUE\n");
+    //fprintf(f, "  Output Table = Logical TRUE\n");
+    fprintf(f, "End\n\n");
+*/
+
+    /*
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  !Equation = Linear elasticity\n");
+    fprintf(f, "  !Procedure = \"StressSolve\" \"StressSolver\"\n");
+    fprintf(f, "  Equation = \"Nonlinear elasticity\"\n");
+    fprintf(f, "  Procedure = \"ElasticSolve\" \"ElasticSolver\"\n");
+    fprintf(f, "  Variable = -dofs 3 Displacement\n");
+    fprintf(f, "  Calculate Loads = True\n");
+    fprintf(f, "  Calculate Stresses = True\n");
+    fprintf(f, "  Exec Solver = Always\n");
+    fprintf(f, "  Stabilize = True\n");
+    fprintf(f, "  Bubbles = False\n");
+    fprintf(f, "  Lumped Mass Matrix = False\n");
+    fprintf(f, "  Optimize Bandwidth = True\n");
+    fprintf(f, "  Steady State Convergence Tolerance = 1.0e-5\n");
+    fprintf(f, "  Nonlinear System Convergence Tolerance = 1.0e-8\n");
+    fprintf(f, "  Nonlinear System Max Iterations = 20\n");
+    fprintf(f, "  Nonlinear System Newton After Iterations = 3\n");
+    fprintf(f, "  Nonlinear System Newton After Tolerance = 1.0e-3\n");
+    fprintf(f, "  Nonlinear System Relaxation Factor = 1\n");
+    fprintf(f, "  Linear System Solver = Iterative\n");
+    fprintf(f, "  Linear System Iterative Method = BiCGStab\n");
+    fprintf(f, "  Linear System Max Iterations = 500\n");
+    fprintf(f, "  Linear System Convergence Tolerance = 1.0e-8\n");
+    fprintf(f, "  Linear System Preconditioning = ILU5\n");
+    fprintf(f, "  Linear System ILUT Tolerance = 1.0e-3\n");
+    fprintf(f, "  Linear System Abort Not Converged = False\n");
+    fprintf(f, "  Linear System Residual Output = 1\n");
+    fprintf(f, "  Linear System Precondition Recompute = 1\n");
+    fprintf(f, "  Normalize By Area = Logical True\n");
+    fprintf(f, "End\n\n");
+     */
+
+    /*
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  Equation = \"Shell equations\"\n");
+    //fprintf(f, "  Procedure = \"ShellSolver\" \"ShellSolver\"\n");
+    fprintf(f, "  Procedure = \"FacetShellSolve\" \"ShellSolver\"\n");
+    fprintf(f, "  !\n");
+    fprintf(f, "          ! Computing nodal loads wouldn't work with the default component names:\n");
+    fprintf(f, "  !\n");
+    fprintf(f, "          Variable = \"U\"\n");
+
+    fprintf(f, "  Large Deflection = False\n");
+    fprintf(f, "  Displace Mesh = False\n");
+    fprintf(f, "  Nonlinear System Max Iterations = 1\n");
+    fprintf(f, "  Nonlinear System Convergence Tolerance = 1e-7\n");
+
+    fprintf(f, "  Linear System Solver = \"Iterative\"\n");
+    fprintf(f, "  Linear System Preconditioning = Diagonal\n");
+    fprintf(f, "  Linear System Max Iterations = 1000\n");
+    fprintf(f, "  Linear System Convergence Tolerance = 1e-9\n");
+    fprintf(f, "  Linear System Iterative Method = GCR\n");
+    fprintf(f, "  Linear System GCR Restart = 100\n");
+    fprintf(f, "  Linear System Abort Not Converged = True\n");
+    fprintf(f, "  Steady State Convergence Tolerance = 1e-09\n");
+    ////fprintf(f, "  Calculate Loads = True\n");
+    fprintf(f, "End\n\n");
+    */
 
     sif_body = 0;
 
@@ -3832,6 +4175,7 @@ void Plate_analysis(void) {
         fprintf(f, "  Equation = 1\n");
         fprintf(f, "  Material = %d\n", zone_property[i].property_number);
         fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
+        ////fprintf(f, "  Normalize By Area = Logical True\n");
         fprintf(f, "End\n\n");
         sif_body++;
     }
@@ -3843,6 +4187,7 @@ void Plate_analysis(void) {
         fprintf(f, "  Equation = 1\n");
         fprintf(f, "  Material = %d\n", plate_property[i].property_number);
         fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
+        ////fprintf(f, "  Normalize By Area = Logical True\n");
         fprintf(f, "End\n\n");
         sif_body++;
     }
@@ -3850,6 +4195,7 @@ void Plate_analysis(void) {
     fprintf(f, "Equation 1\n");
     fprintf(f, "  Name = \"Equation 1\"\n");
     fprintf(f, "  Active Solvers(1) = 1\n");
+    ////fprintf(f, "  Active Solvers(2) = 1 2\n");
     fprintf(f, "End\n\n");
 
     sif_material = 0;
@@ -3923,6 +4269,8 @@ void Plate_analysis(void) {
         fprintf(f, "  u 1 = 0\n");
         fprintf(f, "  u 2 = 0\n");
         fprintf(f, "  u 3 = 0\n");
+        ////fprintf(f, "  Normalize By Area = Logical True\n");
+        ////fprintf(f, "  Resultant Force = Logical True\n");
         fprintf(f, "End\n");
 
         sif_boundary_condition++;
@@ -3957,6 +4305,7 @@ void Plate_analysis(void) {
         fprintf(f, "  dnu 1 = 0\n");
         fprintf(f, "  dnu 2 = 0\n");
         fprintf(f, "  dnu 3 = 0\n");
+        ////fprintf(f, "  Normalize By Area = Logical True\n");
         fprintf(f, "End\n");
 
         sif_boundary_condition++;
@@ -4164,8 +4513,11 @@ void Plate_analysis(void) {
     st_uniform_load_cons = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
 
     int case_number = 0;
+
     ///////////////////////////
     //// LOADS SLS BEGINS
+
+    case_files[0]=case_number;
     case_number++;
     sif_body_force = 0;
 
@@ -4180,6 +4532,7 @@ void Plate_analysis(void) {
         }
         fprintf(f, "Body Force %d\n", sif_body_force + 1);
         fprintf(f, "  Name = \"BodyForce %d\"\n", sif_body_force + 1);
+        ////fprintf(f, "  Normalize By Area = Logical True\n");
         strcpy(load_formula, "");
 
         self_weight = 0.0;
@@ -4189,6 +4542,8 @@ void Plate_analysis(void) {
             strcat(load_formula, "(");
             strcat(load_formula, par[1]);
             strcat(load_formula, ")");
+
+            surface_load[case_number-1][zone_property[i].k] += self_weight;
         }
 
         if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
@@ -4214,6 +4569,8 @@ void Plate_analysis(void) {
                         strcat(load_formula, "(");
                         strcat(load_formula, par[1]);
                         strcat(load_formula, ")");
+
+                        surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * unit_factors_pl->q_f);
                     }
                 }
             }
@@ -4232,6 +4589,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * unit_factors_pl->q_f);
                 }
             }
         }
@@ -4272,6 +4631,8 @@ void Plate_analysis(void) {
                 sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                 strcat(load_formula, load_formula0);
                 f_no++;
+
+                point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
             }
         }
 
@@ -4306,6 +4667,8 @@ void Plate_analysis(void) {
             strcat(load_formula, "(");
             strcat(load_formula, par[1]);
             strcat(load_formula, ")");
+
+            surface_load[case_number-1][plate_property[i].k] += self_weight;
         }
 
         for (j = 0; j < pl_load_no; j++)   //all load
@@ -4318,6 +4681,8 @@ void Plate_analysis(void) {
                 strcat(load_formula, "(");
                 strcat(load_formula, par[1]);
                 strcat(load_formula, ")");
+
+                surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * unit_factors_pl->q_f);
             }
         }
 
@@ -4339,6 +4704,8 @@ void Plate_analysis(void) {
                 sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                 strcat(load_formula, load_formula0);
                 f_no++;
+
+                point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
             }
         }
 
@@ -4357,6 +4724,7 @@ void Plate_analysis(void) {
     ////LOAD VARIANTS ULS BEGINS
     fprintf(f, "Simulation::Output File = \"plate_uls.result\"\n");
 
+    case_files[1]=case_number;
     case_number++;
     sif_body_force = 0;
 
@@ -4379,6 +4747,8 @@ void Plate_analysis(void) {
             strcat(load_formula, "(");
             strcat(load_formula, par[1]);
             strcat(load_formula, ")");
+
+            surface_load[case_number-1][zone_property[i].k] += self_weight;
         }
 
         if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
@@ -4408,6 +4778,8 @@ void Plate_analysis(void) {
                         strcat(load_formula, "(");
                         strcat(load_formula, par[1]);
                         strcat(load_formula, ")");
+
+                        surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                     }
                 }
             }
@@ -4430,6 +4802,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                 }
             }
         }
@@ -4459,6 +4833,8 @@ void Plate_analysis(void) {
                 sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                 strcat(load_formula, load_formula0);
                 f_no++;
+
+                point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
             }
         }
 
@@ -4491,6 +4867,8 @@ void Plate_analysis(void) {
             strcat(load_formula, "(");
             strcat(load_formula, par[1]);
             strcat(load_formula, ")");
+
+            surface_load[case_number-1][plate_property[i].k] += self_weight;
         }
 
         for (j = 0; j < pl_load_no; j++) //all load
@@ -4508,6 +4886,8 @@ void Plate_analysis(void) {
                 strcat(load_formula, "(");
                 strcat(load_formula, par[1]);
                 strcat(load_formula, ")");
+
+                surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
             }
         }
         if (strlen(load_formula) > 0)
@@ -4535,6 +4915,8 @@ void Plate_analysis(void) {
                 sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                 strcat(load_formula, load_formula0);
                 f_no++;
+
+                point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
             }
         }
 
@@ -4555,14 +4937,19 @@ void Plate_analysis(void) {
 
     ////LOAD VARIANTS ULSLC BEGINS
 
+    case_files[2]=case_number;
     combi_ulslc_ino = 0;
 
     current = 0;
     all_formula = all_formulas[current];
     all_formula_bak = NULL;
 
-    for (int ci = 0; ci < ULSLC_NO; ci++) {
-        if (ULSLC[ci].flag == 1) {
+    for (int ci = 0; ci < ULSLC_NO; ci++)
+    {
+        case_number++;  //index is changing always, no matter case will be executed
+
+        if (ULSLC[ci].flag == 1)
+        {
             int load;
             int flag;
             ST_LOAD_FACTORS *combi_load_factor;
@@ -4584,7 +4971,7 @@ void Plate_analysis(void) {
             if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
             if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
 
-            combi_ulslc_ino++;
+            //combi_ulslc_ino++;
 
             ////fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
 
@@ -4612,6 +4999,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][zone_property[i].k] += self_weight;
                 }
 
                 if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
@@ -4661,6 +5050,8 @@ void Plate_analysis(void) {
                                 strcat(load_formula, "(");
                                 strcat(load_formula, par[1]);
                                 strcat(load_formula, ")");
+
+                                surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                             }
                         }
                     }
@@ -4703,6 +5094,8 @@ void Plate_analysis(void) {
                             strcat(load_formula, "(");
                             strcat(load_formula, par[1]);
                             strcat(load_formula, ")");
+
+                            surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                         }
                     }
                 }
@@ -4751,6 +5144,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -4786,6 +5181,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][plate_property[i].k] += self_weight;
                 }
 
                 for (j = 0; j < pl_load_no; j++) //all load
@@ -4824,6 +5221,8 @@ void Plate_analysis(void) {
                         strcat(load_formula, "(");
                         strcat(load_formula, par[1]);
                         strcat(load_formula, ")");
+
+                        surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                     }
                 }
                 if (strlen(load_formula) > 0)
@@ -4870,6 +5269,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -4891,12 +5292,18 @@ void Plate_analysis(void) {
             }
 
             if (go_ahead) {
-                fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
+
+                combi_ulslc_ino++;
+
+                //fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", combi_ulslc_ino);
+                fprintf(f, "Simulation::Output File = \"plate_ulslc%d.result\"\n", ci+1);
                 fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
 
+                //ULSLC[ci].flag = 2;
+                //ULSLC[combi_ulslc_ino-1].flag = 2;
                 ULSLC[ci].flag = 2;
             }
 
@@ -4908,10 +5315,15 @@ void Plate_analysis(void) {
     }
 
     ////LOAD VARIANTS SLSLC BEGINS
+    case_files[3]=case_number;
     combi_slslc_ino = 0;
 
-    for (int ci = 0; ci < SLSLC_NO; ci++) {
-        if (SLSLC[ci].flag == 1) {
+    for (int ci = 0; ci < SLSLC_NO; ci++)
+    {
+        case_number++;  //index is changing always, no matter case will be executed
+
+        if (SLSLC[ci].flag == 1)
+        {
             int load;
             int flag;
             ST_LOAD_FACTORS *combi_load_factor;
@@ -4932,7 +5344,7 @@ void Plate_analysis(void) {
             if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
             if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
 
-            combi_slslc_ino++;
+            //combi_slslc_ino++;
 
             ////fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
 
@@ -4961,6 +5373,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][zone_property[i].k] += self_weight;
                 }
 
                 if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
@@ -5010,6 +5424,8 @@ void Plate_analysis(void) {
                                 strcat(load_formula, "(");
                                 strcat(load_formula, par[1]);
                                 strcat(load_formula, ")");
+
+                                surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                             }
                         }
                     }
@@ -5052,6 +5468,8 @@ void Plate_analysis(void) {
                             strcat(load_formula, "(");
                             strcat(load_formula, par[1]);
                             strcat(load_formula, ")");
+
+                            surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                         }
                     }
 
@@ -5100,6 +5518,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -5134,6 +5554,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][plate_property[i].k] += self_weight;
                 }
 
                 for (j = 0; j < pl_load_no; j++) //all load
@@ -5172,6 +5594,8 @@ void Plate_analysis(void) {
                         strcat(load_formula, "(");
                         strcat(load_formula, par[1]);
                         strcat(load_formula, ")");
+
+                        surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                     }
                 }
                 if (strlen(load_formula) > 0)
@@ -5218,6 +5642,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -5239,12 +5665,18 @@ void Plate_analysis(void) {
             }
 
             if (go_ahead) {
-                fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
+
+                combi_slslc_ino++;
+
+                //fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", combi_slslc_ino);
+                fprintf(f, "Simulation::Output File = \"plate_slslc%d.result\"\n", ci+1);
                 fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
 
+                //SLSLC[ci].flag = 2;
+                //SLSLC[combi_slslc_ino-1].flag = 2;
                 SLSLC[ci].flag = 2;
             }
 
@@ -5257,10 +5689,15 @@ void Plate_analysis(void) {
     }
 
     ////LOAD VARIANTS QPSLSLC BEGINS
+    case_files[4]=case_number;
     combi_qpslslc_ino = 0;
 
-    for (int ci = 0; ci < QPSLSLC_NO; ci++) {
-        if (QPSLSLC[ci].flag == 1) {
+    for (int ci = 0; ci < QPSLSLC_NO; ci++)
+    {
+        case_number++;  //index is changing always, no matter case will be executed
+
+        if (QPSLSLC[ci].flag == 1)
+        {
             int load;
             int flag;
             ST_LOAD_FACTORS *combi_load_factor;
@@ -5281,7 +5718,7 @@ void Plate_analysis(void) {
             if (combi_factor_g & 16) gamma_g *= gammas->xi_g;
             if (combi_factor_g & 32) gamma_g *= gammas->gamma_gi;
 
-            combi_qpslslc_ino++;
+            //combi_qpslslc_ino++;
 
             ////fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
 
@@ -5309,6 +5746,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][zone_property[i].k] += self_weight;
                 }
 
                 if (zone_property[i].property_number==plate_property[0].property_number)  //load zone
@@ -5358,6 +5797,8 @@ void Plate_analysis(void) {
                                 strcat(load_formula, "(");
                                 strcat(load_formula, par[1]);
                                 strcat(load_formula, ")");
+
+                                surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                             }
                         }
                     }
@@ -5400,6 +5841,8 @@ void Plate_analysis(void) {
                             strcat(load_formula, "(");
                             strcat(load_formula, par[1]);
                             strcat(load_formula, ")");
+
+                            surface_load[case_number-1][zone_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                         }
                     }
                 }
@@ -5447,6 +5890,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -5481,6 +5926,8 @@ void Plate_analysis(void) {
                     strcat(load_formula, "(");
                     strcat(load_formula, par[1]);
                     strcat(load_formula, ")");
+
+                    surface_load[case_number-1][plate_property[i].k] += self_weight;
                 }
 
                 for (j = 0; j < pl_load_no; j++) //all load
@@ -5519,6 +5966,8 @@ void Plate_analysis(void) {
                         strcat(load_formula, "(");
                         strcat(load_formula, par[1]);
                         strcat(load_formula, ")");
+
+                        surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
                     }
                 }
                 if (strlen(load_formula) > 0)
@@ -5565,6 +6014,8 @@ void Plate_analysis(void) {
                         sprintf(load_formula0," %s %s 0.0 0.0 0.0 %s 0.0 0.0 0.0",par[0],par[1],par[2]);
                         strcat(load_formula, load_formula0);
                         f_no++;
+
+                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
@@ -5586,12 +6037,17 @@ void Plate_analysis(void) {
             }
 
             if (go_ahead) {
-                fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
+                combi_qpslslc_ino++;
+
+                //fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", combi_qpslslc_ino);
+                fprintf(f, "Simulation::Output File = \"plate_qpslslc%d.result\"\n", ci+1);
                 fprintf(f, "%s",all_formula);
                 //// Body Force 1::Normal Pressure = Real MATC "-2452.5 + (-4000 * 0.5)"
                 //// Body Force 2::Normal Pressure = Real MATC "-2452.5 + (-3000 *0.5)"
                 fprintf(f, "RUN\n\n");
 
+                //QPSLSLC[ci].flag = 2;
+                //QPSLSLC[combi_qpslslc_ino-1].flag = 2;
                 QPSLSLC[ci].flag = 2;
             }
 
@@ -5695,10 +6151,10 @@ void Plate_analysis(void) {
     //getting geometry
     //mesh.header
     //5079   9894   592   //number of nodes in mesh.nodes   number of elements in mesh.elements  number of boundaries in mesh.baunday
-    //3
-    //101    26
-    //202    566
-    //303    9894
+    //3  //Maximum Element Nodes
+    //101    26  //number of baundary nodes - can be ignored
+    //202    566  //number of baundary elements - to read
+    //303    9894  //number of all elements - alread read in first row
     //nodes -
     sprintf(params, "%s%smesh.header", _STATIC_, _plate_);
     f = fopen(params, "rt");
@@ -5716,6 +6172,15 @@ void Plate_analysis(void) {
 
     line = fgets(data_row, MaxTextLen, f);
     ret = sscanf(data_row, "%d %d %d", &mesh_nodes_no, &mesh_elements_no, &mesh_boundaries_no);
+    line = fgets(data_row, MaxTextLen, f);
+    ret = sscanf(data_row, "%d", &max_element_nodes);
+    line = fgets(data_row, MaxTextLen, f);
+    ret = sscanf(data_row, "%d %d", &flag101_no, &mesh_101_boundaries_no);
+    line = fgets(data_row, MaxTextLen, f);
+    ret = sscanf(data_row, "%d %d", &flag202_no, &mesh_202_boundaries_no);
+    line = fgets(data_row, MaxTextLen, f);
+    ret = sscanf(data_row, "%d %d", &flag303_no, &mesh_303_boundaries_no);
+    line = fgets(data_row, MaxTextLen, f);
     while (fgets(data_row, MaxTextLen, f)) //another rows
     { ;
     }
@@ -5727,7 +6192,37 @@ void Plate_analysis(void) {
 
     mesh_node = (MESH_NODE *) malloc(mesh_nodes_no * sizeof(MESH_NODE) + 100);
     mesh_element = (MESH_ELEMENT *) malloc(mesh_elements_no * sizeof(MESH_ELEMENT) + 100);
-    mesh_boundary = (MESH_BOUNDARY *) malloc(mesh_boundaries_no * sizeof(MESH_BOUNDARY) + 100);
+    mesh_boundary = (MESH_BOUNDARY *) malloc(mesh_boundaries_no * sizeof(MESH_BOUNDARY) + 1000);
+
+    MESH_BOUNDARY mesh_boundary_ini={0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
+
+
+    for (i=0; i<mesh_boundaries_no; i++)
+        memmove(&mesh_boundary[i], &mesh_boundary_ini, sizeof(MESH_BOUNDARY));
 
     sprintf(params, "%s%smesh.nodes", _STATIC_, _plate_);
     f = fopen(params, "rt");
@@ -5744,7 +6239,8 @@ void Plate_analysis(void) {
     {
         ret = sscanf(data_row, "%d %d %lf %lf %lf", &mesh_node[mesh_node_no].number, &mesh_node[mesh_node_no].flag,
                      &mesh_node[mesh_node_no].x, &mesh_node[mesh_node_no].y, &mesh_node_z);
-        if (ret != 5) {
+        if (ret != 5)
+        {
             ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
                                (char *) "hesh.nodes", 11,
                                1,
@@ -5753,6 +6249,7 @@ void Plate_analysis(void) {
             fclose(f);
             goto pl_error1;
         }
+        mesh_node[mesh_node_no].restraint=0;
         mesh_node_no++;
     }
     fclose(f);
@@ -5775,6 +6272,7 @@ void Plate_analysis(void) {
                      &mesh_element[mesh_element_no].node1, &mesh_element[mesh_element_no].node2,
                      &mesh_element[mesh_element_no].node3, &mesh_element[mesh_element_no].node4);
         if (mesh_element[mesh_element_no].type == 303) ret_exp = 6; else ret_exp = 7;
+        mesh_element[mesh_element_no].h=0.0;
         if (ret != ret_exp) {
             ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
                                (char *) "mesh.elements", 11,
@@ -5784,9 +6282,18 @@ void Plate_analysis(void) {
             fclose(f);
             goto pl_error1;
         }
+
+        //calculate area of element
+        area=calculateTriangleArea(mesh_node[mesh_element[mesh_element_no].node1-1].x, mesh_node[mesh_element[mesh_element_no].node1-1].y,
+                                   mesh_node[mesh_element[mesh_element_no].node2-1].x, mesh_node[mesh_element[mesh_element_no].node2-1].y,
+                                   mesh_node[mesh_element[mesh_element_no].node3-1].x, mesh_node[mesh_element[mesh_element_no].node3-1].y);
+        body_area[mesh_element[mesh_element_no].body_number-1]+=area;
+
         mesh_element_no++;
     }
     fclose(f);
+
+    printf("TRACE A\n");
 
     sprintf(params, "%s%smesh.boundary", _STATIC_, _plate_);
     f = fopen(params, "rt");
@@ -5801,13 +6308,14 @@ void Plate_analysis(void) {
 
     while (fgets(data_row, MaxTextLen, f)) //another rows
     {
-        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_boundary[mesh_boundary_no].n1,
-                     &mesh_boundary[mesh_boundary_no].n2, &mesh_boundary[mesh_boundary_no].n3,
-                     &mesh_boundary[mesh_boundary_no].n4, &mesh_boundary[mesh_boundary_no].n5,
-                     &mesh_boundary[mesh_boundary_no].n6, &mesh_boundary[mesh_boundary_no].n7);
-        //if (mesh_boundary[mesh_boundary_no].n5==202) ret_exp=7; else ret_exp=6;
-        //if (ret!=ret_exp)
-        if (ret < 6) {
+        ret = sscanf(data_row, "%d %d %d %d %d %d %d", &mesh_boundary[mesh_boundary_no].no,
+                     &mesh_boundary[mesh_boundary_no].edge, &mesh_boundary[mesh_boundary_no].element1,
+                     &mesh_boundary[mesh_boundary_no].element2, &mesh_boundary[mesh_boundary_no].flag,
+                     &mesh_boundary[mesh_boundary_no].node1, &mesh_boundary[mesh_boundary_no].node2);
+        if (mesh_boundary[mesh_boundary_no].flag==202) ret_exp=7; else ret_exp=6;
+        if (ret!=ret_exp)
+        //if (ret < 6)
+        {
             ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_READ_RESULTS_FILE_, 12,
                                (char *) "mesh.boundary", 11,
                                1,
@@ -5816,11 +6324,78 @@ void Plate_analysis(void) {
             fclose(f);
             goto pl_error1;
         }
+
+        for (i = 0; i < pl_edge_no; i++)
+        {
+            if ((pl_edge[i].k+1)==mesh_boundary[mesh_boundary_no].edge)
+            {
+                mesh_boundary[mesh_boundary_no].restraint = pl_edge[i].restraint;
+                mesh_boundary[mesh_boundary_no].inverted = pl_edge[i].inverted;
+                break;
+            }
+        }
+
+        //mesh nodes inherit restraint from mesh_boundary
+        //check if mesh_node belongs to mesh_boundary[] then inherit from mesh_boundary[mesh_boundary_no].restraint
+        for (i = 0; i < mesh_nodes_no; i++)
+        {
+            if (mesh_boundary[mesh_boundary_no].node1 == mesh_node[i].number /*(i+1)*/)
+                mesh_node[i].restraint = max(mesh_node[i].restraint, mesh_boundary[mesh_boundary_no].restraint);
+            else if (mesh_boundary[mesh_boundary_no].node2 == mesh_node[i].number /*(i+1)*/)
+                mesh_node[i].restraint = max(mesh_node[i].restraint, mesh_boundary[mesh_boundary_no].restraint);
+        }
+
+        if (ret_exp == 7)
+        {
+            //kos, koc
+            LINIA BL;
+            PLINIA PLB;
+            if (mesh_boundary[mesh_boundary_no].node1 > 0)
+            {
+                BL.x1 = (float)mesh_node[mesh_boundary[mesh_boundary_no].node1 - 1].x;
+                BL.y1 = (float)mesh_node[mesh_boundary[mesh_boundary_no].node1 - 1].y;
+            }
+            else
+            {
+                BL.x1 = 0.0f;
+                BL.y1 = 0.0f;
+            }
+            if (mesh_boundary[mesh_boundary_no].node2 > 0)
+            {
+                BL.x2 = (float)mesh_node[mesh_boundary[mesh_boundary_no].node2 - 1].x;
+                BL.y2 = (float)mesh_node[mesh_boundary[mesh_boundary_no].node2 - 1].y;
+            }
+            else
+            {
+                BL.x2 = 1.0f;  //to be different from BL.x1
+                BL.y2 = 0.0f;
+            }
+            parametry_lini(&BL, &PLB);
+            mesh_boundary[mesh_boundary_no].kos = sin(PLB.kat * Pi / 180);
+            mesh_boundary[mesh_boundary_no].koc = cos(PLB.kat * Pi / 180);
+        }
+        else
+        {
+            mesh_boundary[mesh_boundary_no].kos = 0.0;
+            mesh_boundary[mesh_boundary_no].koc = 0.0;
+        }
+
+        if (mesh_boundary[mesh_boundary_no].node1 > 0)
+        {
+            mesh_boundary[mesh_boundary_no].x1 = mesh_node[mesh_boundary[mesh_boundary_no].node1 - 1].x;
+            mesh_boundary[mesh_boundary_no].y1 = mesh_node[mesh_boundary[mesh_boundary_no].node1 - 1].y;
+        }
+        if (mesh_boundary[mesh_boundary_no].node2 > 0)
+        {
+            mesh_boundary[mesh_boundary_no].x2 = mesh_node[mesh_boundary[mesh_boundary_no].node2 - 1].x;
+            mesh_boundary[mesh_boundary_no].y2 = mesh_node[mesh_boundary[mesh_boundary_no].node2 - 1].y;
+        }
+
         mesh_boundary_no++;
     }
     fclose(f);
 
-    //creating geometry block
+    ////creating geometry block
     Ldsp.blok = 1;
     Ldsp.kolor = static_colors.node_element_color;
     Ldsp.typ = 0;  //thinest
@@ -6158,6 +6733,26 @@ void Plate_analysis(void) {
         }
     }
 
+    /////////////////
+    //setting cross section height for each element, for shear and reactions purpose
+    for (i=0; i<mesh_element_no; i++)
+    {
+        body_prop_no = body_property[mesh_element[i].body_number - 1];
+        if (body_prop_no > -1)
+            body_prop = &pl_property[body_prop_no];
+        else body_prop = NULL;
+
+        if (body_prop != NULL) //WARNING, RC_flag should be inherited from plate
+        {
+            mesh_element[i].h = body_prop->h;
+            if (body_prop->RC_flag)
+            {
+                mesh_element[i].RC_flag = 1;
+            }
+        }
+    }
+    /////////////////
+
     char params0[32];
     int ULS_SLS_LC_NO;
 
@@ -6165,14 +6760,41 @@ void Plate_analysis(void) {
 
     //allocation space for block names
     block_names_no = 0;
-
+    //
     for (int sti = 0; sti < 5; sti++)
     {
-        //deflection_ini = 0;
-        //stress_ini = 0;
-        //epsilon_ini = 0;
+        double *supp1_sigx_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+        double *supp1_sigy_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+        double *supp1_sigxy_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+
+        double *supp2_sigx_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+        double *supp2_sigy_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+        double *supp2_sigxy_max=(double*)malloc(mesh_boundaries_no*sizeof(double));
+
+        double **inside1_sigx_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+        double **inside1_sigy_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+        double **inside1_sigxy_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+
+        for (i = 0; i < mesh_boundaries_no; i++)
+        {
+            inside1_sigx_max[i] = (double *) malloc(12 * sizeof(double));
+            inside1_sigy_max[i] = (double *) malloc(12 * sizeof(double));
+            inside1_sigxy_max[i] = (double *) malloc(12 * sizeof(double));
+        }
+
+        double **inside2_sigx_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+        double **inside2_sigy_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+        double **inside2_sigxy_max=(double**)malloc(mesh_boundaries_no*sizeof(double*));
+
+        for (i = 0; i < mesh_boundaries_no; i++)
+        {
+            inside2_sigx_max[i] = (double *) malloc(12 * sizeof(double));
+            inside2_sigy_max[i] = (double *) malloc(12 * sizeof(double));
+            inside2_sigxy_max[i] = (double *) malloc(12 * sizeof(double));
+        }
 
         if (sti<2) goto singles;
+
         switch (sti)
         {
             case 2:
@@ -6203,26 +6825,35 @@ void Plate_analysis(void) {
 
         for (int ci = 0; ci < ULS_SLS_LC_NO; ci++)
         {
-            //deflection_ini = 0;
-            //stress_ini = 0;
-            //epsilon_ini = 0;
-            //file_no=0;
-            //sti_no=0;
-
             if (ULS_SLS_LC[ci].flag == 2)
             {
                 file_no++;
-                sprintf(params, "%s%s%d.result", _plate_, params0, file_no);
+                //sprintf(params, "%s%s%d.result", _plate_, params0, file_no);
+                sprintf(params, "%s%s%d.result", _plate_, params0, ci + 1);
                 f = fopen(params, "rt");
 
                 if (f != NULL)
                 {
                     /////////////////////////
+                    //file exists
+                    //restoring total_load for a case
+                    total_load = 0.0;
+                    int first_case_file = case_files[sti];
+
+                    for (i = 0; i < zone_no; i++) {
+                        total_load += surface_load[first_case_file + ci][zone_property[i].k] * body_area[zone_property[i].k];
+                    }
+                    for (i = 0; i < plate_no; i++) {
+                        total_load += surface_load[first_case_file + ci][plate_property[i].k] * body_area[plate_property[i].k];
+                    }
+                    total_load += point_load[first_case_file + ci - 1];  //so we have total load for each combination of each state
+
                     sti_no++;
                     i_row = 0;
                     data_row = data_row_[i_row];
                     //deflection
-                    while (fgets(data_row, MaxTextLen, f)) {
+                    while (fgets(data_row, MaxTextLen, f))
+                    {
                         Perm = strstr(data_row, "Perm:");
                         if (Perm != NULL) {
                             strcpy(deflection_chapter[0], data_row_[!i_row]);
@@ -6315,7 +6946,8 @@ void Plate_analysis(void) {
 
                     //stress
                     perm_s_b = 0;
-                    while (fgets(data_row, MaxTextLen, f)) {
+                    while (fgets(data_row, MaxTextLen, f))
+                    {
                         Perm = strstr(data_row, "Perm:");
                         use_previous = strstr(data_row, "use previous");
                         if (Perm != NULL) {
@@ -6341,7 +6973,8 @@ void Plate_analysis(void) {
                                 } else { ; //TO DO - ERROR
                                 }
                             }
-                            for (i = 0; i < STRESS_NUMBER; i++) {
+                            for (i = 0; i < STRESS_NUMBER; i++)
+                            {
                                 stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
                                 stress_min[i] = BIGNOF;
                                 stress_max[i] = -BIGNOF;
@@ -6401,28 +7034,1108 @@ void Plate_analysis(void) {
                                             }
                                         }
                                     }
-                                    /////////////////////////
+
+                                    //////REACTIONS
+                                    //calculating shear forces and reaction for supported nodes and saving their envelopes
+                                    //////////////!!!!!!!!!!!!!!/////////
+                                    //reaction based on stress variant
+                                    //if ((sti!=2) || (ULSLC_flag[2]!=0)) // if ULSLC, flag must exist
+                                    //{
+                                    ////all elements done
+                                    ////we got:
+                                    //// stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    //// stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    //// stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    //// settling now Qx and Qy for element j for limit state i and min-max bi
+                                    //// checking if element number j belongs to mesh_boundaries[mesh_boundaries_no]
+                                    int last_node = 0;
+                                    double H = 0.15;
+                                    double h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                    0.15,
+                                                    0.15, 0.15, 0.15}; //TEMPORARY
+
+#ifdef REACTIONSNSEW
+                                    if ((stress[j] != NULL) && (j == 1)) //stress_yy
+                                    {
+                                        for (int jk = 0; jk < mesh_boundaries_no; jk++) {
+                                            if (mesh_boundary[jk].restraint > 5)  //6 simple supported, 7 fixed
+                                            {
+                                                if (mesh_boundary[jk].node1 > 0)  //node exists
+                                                {
+                                                    int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_adj_supp = 0;
+                                                    int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_inside = 0;
+                                                    int num_inside_NSEW = 4;
+                                                    int node1 = 0, node2 = 0;
+                                                    int jj;
+                                                    double stress1, stress2;
+
+
+                                                    //searching for all elements containing node1 for reaction procedure
+                                                    for (jj = 0; jj < mesh_element_no; jj++)
+                                                    {
+                                                        int found = 0;
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node1)
+                                                        {
+                                                            node1 = mesh_element[jj].node2;
+                                                            node2 = mesh_element[jj].node3;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        else if  (mesh_element[jj].node2 == mesh_boundary[jk].node1)
+                                                        {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node3;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        else if (mesh_element[jj].node3 == mesh_boundary[jk].node1)
+                                                        {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node2;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        if (found)
+                                                        {
+                                                            //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                            if (node1 > 0)
+                                                            {
+                                                                if (mesh_node[node1 - 1].restraint > 5)
+                                                                {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node1) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node1;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (node2 > 0)
+                                                            {
+                                                                if (mesh_node[node2 - 1].restraint > 5)
+                                                                {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node2) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node2;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    //calculating stresses for node1 in reaction procedure
+                                                    double supp_x, supp_y;      // Supported node coordinates (m)
+                                                    //double supp_sigx_min=0.0, supp_sigy_min=0.0;
+                                                    //double supp_sigx_max=0.0, supp_sigy_max=0.0;
+
+                                                    double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                                    double adj_supp_y[12];
+
+                                                    double inside_x[12];           // Array: x-coords of inside nodes
+                                                    double inside_y[12];
+
+                                                    //double h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                    //                          0.15,
+                                                    //                          0.15, 0.15, 0.15}; //TEMPORARY
+
+                                                    //double Q_vertical_min;             // Output: shear per unit length Q_x (N/m) for vertical edge (x=const); 0 if no vertical edge
+                                                    //double Q_vertical_max;
+                                                    //double Q_horizontal_min;
+                                                    //double Q_horizontal_max;
+                                                    double Q_foo;
+
+                                                    double Rz;  //reaction
+                                                    double Rzmax, Rzmin;
+                                                    BOOL is_simple;
+
+                                                    supp_x = mesh_node[mesh_boundary[jk].node1 - 1].x;
+                                                    supp_y = mesh_node[mesh_boundary[jk].node1 - 1].y;
+
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node1)
+                                                        {
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        } else if (mesh_element[jj].node2 == mesh_boundary[jk].node1)
+                                                        {
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        } else if (mesh_element[jj].node3 == mesh_boundary[jk].node1)
+                                                        {
+
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    for (jj = 0; jj < num_adj_supp; jj++) {
+                                                        adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                                        adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                                    }
+
+                                                    //calculating stresses for node1 in reaction procedure
+                                                    //we have :
+                                                    // inside_list[num_inside] = jj;
+                                                    // num_inside++;
+                                                    //mesh_boundary point 1 coordinates
+                                                    // mesh_boundary[jk].x1;
+                                                    // mesh_boundary[jk].y1;
+                                                    // we create virtual points where NSEW stresses will be calculated from mesh elements stress interpolation
+                                                    // first we try with distance NSEW_dist equal half of the distance between current boundary point and the next one
+                                                    // or if this is the last point in boundary series - distance between previous boundary point and the current one
+                                                    double NSEW_dist;
+                                                    POINTF pa, pb, pc, pp;
+                                                    double alpha, beta, gamma;
+                                                    //double s_value;
+
+                                                    if (mesh_boundary[jk].node2 > 0)  //next node exists
+                                                    {
+                                                        NSEW_dist = sqrt((mesh_boundary[jk].x2 - mesh_boundary[jk].x1) * (mesh_boundary[jk].x2 - mesh_boundary[jk].x1) +
+                                                                         (mesh_boundary[jk].y2 - mesh_boundary[jk].y1) * (mesh_boundary[jk].y2 - mesh_boundary[jk].y1)) / NSEW_dist_div;
+                                                    } else if ((jk > 0) && (mesh_boundary[jk - 1].node1 > 0))  //previous node exists
+                                                    {
+                                                        NSEW_dist = sqrt((mesh_boundary[jk].x1 - mesh_boundary[jk - 1].x1) * (mesh_boundary[jk].x1 - mesh_boundary[jk - 1].x1) +
+                                                                         (mesh_boundary[jk].y1 - mesh_boundary[jk - 1].y1) * (mesh_boundary[jk].y1 - mesh_boundary[jk - 1].y1)) / NSEW_dist_div;
+                                                    } else  //in case there is single point
+                                                    {
+                                                        if (UNITS == SI)
+                                                            NSEW_dist = 0.1;  //10 cm
+                                                        else
+                                                            NSEW_dist = 4.;   //4 inches
+                                                    }
+                                                    //searching for element which contains point NORTH, SOUTH, EAST and WETS
+                                                    int y_offset_i[4] = {1, -1, 0, 0};  //1 EAST, -1 WETS 0 NONE
+                                                    int x_offset_i[4] = {0, 0, 1, -1};  //0 NONE, 1 NORTH, -1 SOUTH
+                                                    int stress_selector[4] = {1, 1, 0, 0};  //1 stress_yy, 0 stress_xx
+
+                                                    for (int kk=0; kk<4; kk++) {
+                                                        inside1_sigx_max[jk][kk] = 0.;
+                                                        inside1_sigy_max[jk][kk] = 0.;
+                                                    }
+
+                                                    num_inside_NSEW = 4;
+                                                    int b_inside[4] = {0, 0, 0, 0};
+
+                                                    for (int kk = 0; kk < 4; kk++)   //N, S, E, W
+                                                    {
+                                                        pp.x = (float) (mesh_boundary[jk].x1 + NSEW_dist * x_offset_i[kk]);
+                                                        pp.y = (float) (mesh_boundary[jk].y1 + NSEW_dist * y_offset_i[kk]);
+
+                                                        for (jj = 0; jj < num_inside; jj++)
+                                                        {
+                                                            pa.x = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].x;
+                                                            pa.y = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].y;
+
+                                                            pb.x = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].x;
+                                                            pb.y = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].y;
+
+                                                            pc.x = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].x;
+                                                            pc.y = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].y;
+
+                                                            //if (is_point_in_triangle(pa, pb, pc, pp))
+                                                            if (isInside(&pa, &pb, &pc, &pp, &alpha, &beta, &gamma)) {
+                                                                inside_x[kk] = (mesh_boundary[jk].x1 + NSEW_dist * x_offset_i[kk]);
+                                                                inside_y[kk] = (mesh_boundary[jk].y1 + NSEW_dist * y_offset_i[kk]);
+                                                                b_inside[kk] = 1;
+                                                                //point inside, so now interpolation of stress_yy
+                                                                // Calculate and return the weighted average value
+                                                                if (stress_selector[kk]==0)
+                                                                    inside1_sigx_max[jk][kk] = ((alpha * stress[0][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[0][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[0][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                                else
+                                                                    inside1_sigy_max[jk][kk] = ((alpha * stress[1][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[1][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[1][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    int sti5 = 5;
+                                                    //calculating reactions for node1 in reaction procedure
+
+                                                    //// REACTION CAL:CULATION FOR NODE 1
+
+                                                    is_simple = (mesh_boundary[jk].restraint < 7) ? 1 : 0;
+                                                    point_b.x = mesh_boundary[jk].x1;
+                                                    point_b.y = mesh_boundary[jk].y1;
+                                                    point_c.x = mesh_boundary[jk].x2;
+                                                    point_c.y = mesh_boundary[jk].y2;
+
+                                                    mesh_boundary[jk].state1[sti5].Rz = compute_NSEW_reaction(point_b, point_c, mesh_boundary[jk].kos, mesh_boundary[jk].koc, H, is_simple, supp_x, supp_y, supp1_sigx_max[jk], supp1_sigy_max[jk], num_adj_supp, adj_supp_x, adj_supp_y, num_inside_NSEW, b_inside, h, inside_x, inside_y, inside1_sigx_max[jk], inside1_sigy_max[jk], &mesh_boundary[jk].state1[sti5].Qn);
+
+                                                    //if (last_node != mesh_boundary[jk].node1) {
+                                                        printf("node=%d\n", mesh_boundary[jk].node1);
+                                                        printf("H=%f\n", H);
+                                                        printf("supp.x=%f  supp.y=%f  supp1_sigx=%f  supp1_sigy=%f\n", supp_x, supp_y, supp1_sigx_max[j], supp1_sigy_max[j]);
+                                                        printf("num_adj_supp=%d\n", num_adj_supp);
+                                                        for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                            printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n", iii, adj_supp_x[iii], iii, adj_supp_y[iii]);
+                                                        }
+                                                        printf("num_inside_NSEW=%d\n", num_inside_NSEW);
+                                                        for (int iii = 0; iii < num_inside_NSEW; iii++) {
+                                                            if (b_inside[iii])
+                                                            printf("inside_x[%d]=%f  inside_y[%d]=%f  inside1_sigx[%d]=%f  inside1_sigy[%d]=%f\n", iii, inside_x[iii], iii, inside_y[iii], iii, inside1_sigx_max[jk][iii], iii, inside1_sigy_max[jk][iii]);
+                                                            else printf("[%d] ignored\n",iii);
+                                                        }
+
+                                                        printf("Results: Qn=%f Rz=%f\n\n", mesh_boundary[jk].state1[sti5].Qn, mesh_boundary[jk].state1[sti5].Rz);
+                                                    //}
+                                                    last_node = mesh_boundary[jk].node1;
+
+                                                }  //node1
+
+                                                if (mesh_boundary[jk].node2 > 0)  //node exists
+                                                {
+                                                    int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_adj_supp = 0;
+                                                    int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_inside = 0;
+                                                    int num_inside_NSEW = 4;
+                                                    int node1 = 0, node2 = 0;
+                                                    int jj;
+                                                    double stress1, stress2;
+
+                                                    //searching for all elements containing node2 for reaction procedure
+
+                                                    for (jj = 0; jj < mesh_element_no; jj++)
+                                                    {
+                                                        int found = 0;
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node2)
+                                                        {
+                                                            node1 = mesh_element[jj].node2;
+                                                            node2 = mesh_element[jj].node3;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        else if  (mesh_element[jj].node2 == mesh_boundary[jk].node2)
+                                                        {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node3;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        else if (mesh_element[jj].node3 == mesh_boundary[jk].node2)
+                                                        {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node2;
+                                                            inside_list[num_inside] = jj;
+                                                            num_inside++;
+                                                            found = 1;
+                                                        }
+                                                        if (found)
+                                                        {
+                                                            //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                            if (node1 > 0)
+                                                            {
+                                                                if (mesh_node[node1 - 1].restraint > 5)
+                                                                {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node1) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node1;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (node2 > 0)
+                                                            {
+                                                                if (mesh_node[node2 - 1].restraint > 5)
+                                                                {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node2) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node2;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    //calculating stresses for node2 in reaction procedure
+
+                                                    double supp_x, supp_y;      // Supported node coordinates (m)
+                                                    //double supp_sigx_min=0.0, supp_sigy_min=0.0;
+                                                    //double supp_sigx_max=0.0, supp_sigy_max=0.0;
+
+                                                    double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                                    double adj_supp_y[12];
+
+                                                    double inside_x[12];           // Array: x-coords of inside nodes
+                                                    double inside_y[12];
+
+                                                    double Q_foo;
+
+                                                    double Rz;  //reaction
+                                                    double Rzmax, Rzmin;
+                                                    BOOL is_simple;
+
+                                                    supp_x = mesh_node[mesh_boundary[jk].node2 - 1].x;
+                                                    supp_y = mesh_node[mesh_boundary[jk].node2 - 1].y;
+
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node2)
+                                                        {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        } else if (mesh_element[jj].node2 == mesh_boundary[jk].node2)
+                                                        {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        } else if (mesh_element[jj].node3 == mesh_boundary[jk].node2) {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    for (jj = 0; jj < num_adj_supp; jj++) {
+                                                        adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                                        adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                                    }
+
+                                                    //calculating stresses for node1 in reaction procedure
+                                                    //we have :
+                                                    // inside_ist[num_inside] = jj;
+                                                    // num_inside++;
+                                                    //mesh_boundary point 1 coordinates
+                                                    // mesh_boundary[jk].x1;
+                                                    // mesh_boundary[jk].y1;
+                                                    // we create virtual points where NSEW stresses will be calculated from mesh elements stress interpolation
+                                                    // first we try with distance NSEW_dist equal half of the distance between current boundary point and the next one
+                                                    // or if this is the last point in boundary series - distance between previous boundary point and the current one
+                                                    double NSEW_dist;
+                                                    POINTF pa, pb, pc, pp;
+                                                    double alpha, beta, gamma;
+                                                    //double s_value;
+
+                                                    if ((jk < (mesh_boundary_no - 1)) && (mesh_boundary[jk + 1].node2 > 0))  //node 2 of next boundary exists
+                                                    {
+                                                        NSEW_dist = sqrt((mesh_boundary[jk + 1].x2 - mesh_boundary[jk].x2) * (mesh_boundary[jk + 1].x2 - mesh_boundary[jk].x2) +
+                                                                         (mesh_boundary[jk + 1].y2 - mesh_boundary[jk].y2) * (mesh_boundary[jk + 1].y2 - mesh_boundary[jk].y2)) / NSEW_dist_div;
+                                                    } else if (mesh_boundary[jk].node1 > 0) //previous node exists
+                                                    {
+                                                        NSEW_dist = sqrt((mesh_boundary[jk].x2 - mesh_boundary[jk].x1) * (mesh_boundary[jk].x2 - mesh_boundary[jk].x1) +
+                                                                         (mesh_boundary[jk].y2 - mesh_boundary[jk].y1) * (mesh_boundary[jk].y2 - mesh_boundary[jk].y1)) / NSEW_dist_div;
+                                                    } else  //in case there is single point
+                                                    {
+                                                        if (UNITS == SI)
+                                                            NSEW_dist = 0.1;  //10 cm
+                                                        else
+                                                            NSEW_dist = 4.;   //4 inches
+                                                    }
+                                                    //searching for element which contains point NORTH, SOUTH, EAST and WETS
+                                                    int y_offset_i[4] = {1, -1, 0, 0};  //1 EAST, -1 WETS 0 NONE
+                                                    int x_offset_i[4] = {0, 0, 1, -1};  //0 NONE, 1 NORTH, -1 SOUTH
+                                                    int stress_selector[4] = {1, 1, 0, 0};  //1 stress_yy, 0 stress_xx
+
+                                                    for (int kk=0; kk<4; kk++) {
+                                                        inside2_sigx_max[jk][kk] = 0.;
+                                                        inside2_sigy_max[jk][kk] = 0.;
+                                                    }
+
+                                                    num_inside_NSEW = 4;
+                                                    int b_inside[4] = {0, 0, 0, 0};
+
+                                                    for (int kk = 0; kk < 4; kk++)   //N, S, E, W
+                                                    {
+                                                        pp.x = (float) (mesh_boundary[jk].x2 + NSEW_dist * x_offset_i[kk]);
+                                                        pp.y = (float) (mesh_boundary[jk].y2 + NSEW_dist * y_offset_i[kk]);
+
+                                                        for (jj = 0; jj < num_inside; jj++)
+                                                        {
+                                                            pa.x = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].x;
+                                                            pa.y = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].y;
+
+                                                            pb.x = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].x;
+                                                            pb.y = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].y;
+
+                                                            pc.x = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].x;
+                                                            pc.y = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].y;
+
+                                                            //if (is_point_in_triangle(pa, pb, pc, pp))
+                                                            if (isInside(&pa, &pb, &pc, &pp, &alpha, &beta, &gamma))
+                                                            {
+                                                                inside_x[kk] = (mesh_boundary[jk].x2 + NSEW_dist * x_offset_i[kk]);
+                                                                inside_y[kk] = (mesh_boundary[jk].y2 + NSEW_dist * y_offset_i[kk]);
+                                                                b_inside[kk] = 1;
+                                                                //point inside, so now interpolation of stress_yy
+                                                                // Calculate and return the weighted average value
+                                                                if (stress_selector[kk]==0)
+                                                                    inside2_sigx_max[jk][kk] = ((alpha * stress[0][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[0][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[0][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                                else
+                                                                    inside2_sigy_max[jk][kk] = ((alpha * stress[1][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[1][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[1][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    int sti5 = 5;
+                                                    //calculating reactions for node1 in reaction procedure
+                                                    //// REACTION CAL:CULATION FOR NODE 2
+
+                                                    is_simple = (mesh_boundary[jk].restraint < 7) ? 1 : 0;
+                                                    point_b.x = mesh_boundary[jk].x1;
+                                                    point_b.y = mesh_boundary[jk].y1;
+                                                    point_c.x = mesh_boundary[jk].x2;
+                                                    point_c.y = mesh_boundary[jk].y2;
+
+                                                    mesh_boundary[jk].state2[sti5].Rz = compute_NSEW_reaction(point_b, point_c, mesh_boundary[jk].kos, mesh_boundary[jk].koc, H, is_simple, supp_x, supp_y, supp2_sigx_max[jk], supp2_sigy_max[jk], num_adj_supp, adj_supp_x, adj_supp_y, num_inside_NSEW, b_inside, h, inside_x, inside_y, inside2_sigx_max[jk], inside2_sigy_max[jk], &mesh_boundary[jk].state2[sti5].Qn);
+
+                                                    //if (last_node != mesh_boundary[jk].node2) {
+                                                        printf("node=%d\n", mesh_boundary[jk].node2);
+                                                        printf("H=%f\n", H);
+                                                        printf("supp.x=%f  supp.y=%f  supp2_sigx=%f  supp2_sigy=%f\n", supp_x, supp_y, supp2_sigx_max[j], supp2_sigy_max[j]);
+                                                        printf("num_adj_supp=%d\n", num_adj_supp);
+                                                        for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                            printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n", iii, adj_supp_x[iii], iii, adj_supp_y[iii]);
+                                                        }
+                                                        printf("num_inside_NSEW=%d\n", num_inside_NSEW);
+                                                        for (int iii = 0; iii < num_inside_NSEW; iii++) {
+                                                            if (b_inside[iii])
+                                                            printf("inside_x[%d]=%f  inside_y[%d]=%f  inside2_sigx[%d]=%f  inside2_sigy[%d]=%f\n", iii, inside_x[iii], iii, inside_y[iii], iii, inside2_sigx_max[jk][iii], iii, inside2_sigy_max[jk][iii]);
+                                                            else printf("[%d] ignored\n",iii);
+                                                        }
+                                                        printf("Results: Qn=%f Rz=%f\n\n", mesh_boundary[jk].state2[sti5].Qn, mesh_boundary[jk].state2[sti5].Rz);
+                                                    //}
+                                                    last_node = mesh_boundary[jk].node2;
+
+                                                }  //node2
+                                            }  //restrain > 5
+                                            //////////////!!!!!!!!!!!!!//////////
+                                        }  //jk
+                                        ////////1///
+
+                                        //stresses are completed
+
+                                        /////////////////////////////////
+                                        //REACTIONS for combination, se they are collected as state no=5 (countiny from 0)
+                                        int last_node = 0;
+                                        int sti5 = 5;
+
+                                        //Rzmin = 0.0;
+                                        Rzmax = 0.0;
+
+                                        //Rzmin_back = 0.0;
+                                        Rzmax_back = 0.0;
+
+                                        printf("\nState %s-%d(%d)\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO);
+
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (mesh_boundary[i].restraint > 5) {
+                                                if (mesh_boundary[i].node1 != last_node) {
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz, mesh_boundary[i].state1[sti5].Qn);
+
+                                                    Rzmax += nofabs(mesh_boundary[i].state1[sti5].Rz);
+                                                }
+                                                last_node = mesh_boundary[i].node1;
+                                                if (mesh_boundary[i].node2 != last_node) {
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti5].Rz, mesh_boundary[i].state2[sti5].Qn);
+
+                                                    Rzmax += nofabs(mesh_boundary[i].state2[sti5].Rz);
+                                                }
+                                                last_node = mesh_boundary[i].node2;
+                                            }
+                                        }
+                                        printf("SUM:  Rz_total_i=%f\n", Rzmax);
+
+                                        //Rzmin_back = Rzmin;
+                                        Rzmax_back = Rzmax;
+
+                                        printf("\nTotal load in state %s-%d(%d):  %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, total_load);
+
+                                        load_ratio = total_load / Rzmax_back;
+
+                                        //Rzmin = 0.0;
+                                        Rzmax = 0.0;
+
+                                        printf("\nState %s-%d(%d) with correction ratio %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, load_ratio);
+
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (mesh_boundary[i].restraint > 5) {
+                                                if (mesh_boundary[i].node1 != last_node) {
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz * load_ratio, mesh_boundary[i].state1[sti5].Qn * load_ratio);
+
+                                                    Rzmax += (nofabs(mesh_boundary[i].state1[sti5].Rz) * load_ratio);
+                                                }
+                                                last_node = mesh_boundary[i].node1;
+                                                if (mesh_boundary[i].node2 != last_node) {
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti5].Rz * load_ratio, mesh_boundary[i].state2[sti5].Qn * load_ratio);
+
+                                                    Rzmax += nofabs(mesh_boundary[i].state2[sti5].Rz) * load_ratio;
+                                                }
+                                                last_node = mesh_boundary[i].node2;
+                                            }
+                                        }
+                                        printf("SUM:  Rz_total_i=%f\n", Rzmax);
+
+                                        //upgradeing state min max
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (ci == 0)  //first of combination
+                                            {
+                                                mesh_boundary[i].state1[sti].Qnmin = mesh_boundary[i].state1[sti5].Qn * load_ratio;
+                                                mesh_boundary[i].state1[sti].Qnmax = mesh_boundary[i].state1[sti5].Qn * load_ratio;
+                                                mesh_boundary[i].state1[sti].Rzmin = mesh_boundary[i].state1[sti5].Rz * load_ratio;
+                                                mesh_boundary[i].state1[sti].Rzmax = mesh_boundary[i].state1[sti5].Rz * load_ratio;
+
+                                                mesh_boundary[i].state2[sti].Qnmin = mesh_boundary[i].state2[sti5].Qn * load_ratio;
+                                                mesh_boundary[i].state2[sti].Qnmax = mesh_boundary[i].state2[sti5].Qn * load_ratio;
+                                                mesh_boundary[i].state2[sti].Rzmin = mesh_boundary[i].state2[sti5].Rz * load_ratio;
+                                                mesh_boundary[i].state2[sti].Rzmax = mesh_boundary[i].state2[sti5].Rz * load_ratio;
+                                            } else {
+                                                mesh_boundary[i].state1[sti].Qnmin = min(mesh_boundary[i].state1[sti].Qnmin, mesh_boundary[i].state1[sti5].Qn * load_ratio);
+                                                mesh_boundary[i].state1[sti].Qnmax = max(mesh_boundary[i].state1[sti].Qnmax, mesh_boundary[i].state1[sti5].Qn * load_ratio);
+                                                mesh_boundary[i].state1[sti].Rzmin = min(mesh_boundary[i].state1[sti].Rzmin, mesh_boundary[i].state1[sti5].Rz * load_ratio);
+                                                mesh_boundary[i].state1[sti].Rzmax = max(mesh_boundary[i].state1[sti].Rzmax, mesh_boundary[i].state1[sti5].Rz * load_ratio);
+
+                                                mesh_boundary[i].state2[sti].Qnmin = min(mesh_boundary[i].state2[sti].Qnmin, mesh_boundary[i].state2[sti5].Qn * load_ratio);
+                                                mesh_boundary[i].state2[sti].Qnmax = max(mesh_boundary[i].state2[sti].Qnmax, mesh_boundary[i].state2[sti5].Qn * load_ratio);
+                                                mesh_boundary[i].state2[sti].Rzmin = min(mesh_boundary[i].state2[sti].Rzmin, mesh_boundary[i].state2[sti5].Rz * load_ratio);
+                                                mesh_boundary[i].state2[sti].Rzmax = max(mesh_boundary[i].state2[sti].Rzmax, mesh_boundary[i].state2[sti5].Rz * load_ratio);
+                                            }
+                                        }
+                                    }
+#endif
+                                    ///////////////////////// 
+                                    if ((stress[j] != NULL) && (j == 3)) //stress_xy
+                                    {
+                                        for (int jk = 0; jk < mesh_boundaries_no; jk++)
+                                        {
+                                            if (mesh_boundary[jk].restraint > 5)  //6 simple supported, 7 fixed
+                                            {
+                                                if (mesh_boundary[jk].node1 > 0)  //node 1 exists
+                                                {
+                                                    int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_adj_supp = 0;
+                                                    int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    double inside_list_stress_x[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                                    double inside_list_stress_y[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                                    double inside_list_stress_xy[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+
+                                                    int num_inside = 0;
+                                                    int node1 = 0, node2 = 0;
+                                                    int jj;
+                                                    double stress1x, stress1y, stress1xy, stress2x, stress2y, stress2xy;
+                                                    //searching for all elements containing node1
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        int found = 0;
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node1) {
+                                                            node1 = mesh_element[jj].node2;
+                                                            node2 = mesh_element[jj].node3;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        } else if (mesh_element[jj].node2 == mesh_boundary[jk].node1) {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node3;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        } else if (mesh_element[jj].node3 == mesh_boundary[jk].node1) {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node2;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        }
+                                                        if (found) {
+                                                            //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                            if (node1 > 0) {
+                                                                if (mesh_node[node1 - 1].restraint > 5) {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node1) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node1;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                } else {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_inside; kk++)
+                                                                        if (inside_list[kk] == node1) break;
+                                                                    if (kk == num_inside)  //not found
+                                                                    {
+                                                                        inside_list[num_inside] = node1;
+                                                                        inside_list_stress_x[num_inside] = stress1x;
+                                                                        inside_list_stress_y[num_inside] = stress1y;
+                                                                        inside_list_stress_xy[num_inside] = stress1xy;
+                                                                        num_inside++;
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (node2 > 0) {
+                                                                if (mesh_node[node2 - 1].restraint > 5) {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node2) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node2;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                } else {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_inside; kk++)
+                                                                        if (inside_list[kk] == node2) break;
+                                                                    if (kk == num_inside)  //not found
+                                                                    {
+                                                                        inside_list[num_inside] = node2;
+                                                                        inside_list_stress_x[num_inside] = stress2x;
+                                                                        inside_list_stress_y[num_inside] = stress2y;
+                                                                        inside_list_stress_xy[num_inside] = stress2xy;
+                                                                        num_inside++;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    //calculating reactions for node1
+                                                    double supp_x, supp_y;      // Supported node coordinates (m)
+
+                                                    double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                                    double adj_supp_y[12];
+
+                                                    double inside_x[12];           // Array: x-coords of inside nodes
+                                                    double inside_y[12];
+
+                                                    double H = 0.15, h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                                              0.15,
+                                                                              0.15, 0.15, 0.15}; //TEMPORARY
+
+                                                    double Q_foo;
+
+                                                    double Rz;  //reaction
+                                                    double Rzmax, Rzmin;
+
+                                                    supp_x = mesh_node[mesh_boundary[jk].node1 - 1].x;
+                                                    supp_y = mesh_node[mesh_boundary[jk].node1 - 1].y;
+
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node1)
+                                                        {
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp1_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                        else if (mesh_element[jj].node2 == mesh_boundary[jk].node1)
+                                                        {
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp1_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                        else if (mesh_element[jj].node3 == mesh_boundary[jk].node1)
+                                                        {
+                                                            supp1_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp1_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp1_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    for (jj = 0; jj < num_adj_supp; jj++)
+                                                    {
+                                                        adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                                        adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                                    }
+                                                    for (jj = 0; jj < num_inside; jj++)
+                                                    {
+                                                        inside_x[jj] = mesh_node[inside_list[jj] - 1].x;
+                                                        inside_y[jj] = mesh_node[inside_list[jj] - 1].y;
+
+                                                        inside1_sigx_max[jk][jj] = inside_list_stress_x[jj]; //stress1x;  //just max
+                                                        inside1_sigy_max[jk][jj] = inside_list_stress_y[jj]; //stress1y;  //just max
+                                                        inside1_sigxy_max[jk][jj] = inside_list_stress_xy[jj]; //stress1xy;  //just max
+                                                    }
+
+                                                    int sti5 = 5;
+
+                                                    //// REACTIONS
+                                                    mesh_boundary[jk].state1[sti5].Rz1 = compute_support_reaction(H, supp_x,supp_y,supp1_sigx_max[jk],supp1_sigy_max[jk],supp1_sigxy_max[jk],num_adj_supp,adj_supp_x,adj_supp_y,num_inside,h,inside_x,inside_y,inside1_sigx_max[jk],inside1_sigy_max[jk],inside1_sigxy_max[jk],&mesh_boundary[jk].state1[sti5].Qn1);
+#ifndef NDEBUG
+                                                    //if (last_node != mesh_boundary[jk].node1)
+                                                    //{
+                                                    printf("ALTERNATIVE\n");
+                                                    printf("node=%d\n", mesh_boundary[jk].node1);
+                                                    printf("H=%f\n", H);
+                                                    printf("supp.x=%f  supp.y=%f  supp1_sigx=%f  supp1_sigy=%f  supp1_sigxy=%f\n",
+                                                           supp_x, supp_y, supp1_sigx_max[jk], supp1_sigy_max[jk], supp1_sigxy_max[jk]);
+                                                    printf("num_adj_supp=%d\n", num_adj_supp);
+                                                    for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                        printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n",iii,adj_supp_x[iii],iii, adj_supp_y[iii]);
+                                                    }
+                                                    printf("num_inside=%d\n", num_inside);
+                                                    for (int iii = 0; iii < num_inside; iii++) {
+                                                        printf("inside_x[%d]=%f  inside_y[%d]=%f  inside1_sigx[%d]=%f  inside1_sigy[%d]=%f  inside1_sigxy[%d]=%f\n",iii,inside_x[iii],iii,inside_y[iii],iii,inside1_sigx_max[j][iii],iii,inside1_sigy_max[j][iii],iii,inside1_sigxy_max[j][iii]);
+                                                    }
+
+                                                    printf("Results: Qn1=%f Rz1=%f\n\n", mesh_boundary[jk].state1[sti].Qn1, mesh_boundary[jk].state1[sti].Rz1);
+                                                    //}
+                                                    //last_node=mesh_boundary[jk].node1;
+#endif
+                                                }
+
+
+                                                if (mesh_boundary[jk].node2 > 0)  //node 2 exists
+                                                {
+                                                    int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    int num_adj_supp = 0;
+                                                    int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                                    double inside_list_stress_x[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                                    double inside_list_stress_y[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                                    double inside_list_stress_xy[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+
+                                                    int num_inside = 0;
+                                                    int node1 = 0, node2 = 0;
+                                                    int jj;
+                                                    double stress1x, stress1y, stress1xy, stress2x, stress2y, stress2xy;
+                                                    //searching for all elements containing node1
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        int found = 0;
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node2) {
+                                                            node1 = mesh_element[jj].node2;
+                                                            node2 = mesh_element[jj].node3;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        } else if (mesh_element[jj].node2 == mesh_boundary[jk].node2) {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node3;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        } else if (mesh_element[jj].node3 == mesh_boundary[jk].node2) {
+                                                            node1 = mesh_element[jj].node1;
+                                                            node2 = mesh_element[jj].node2;
+
+                                                            stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                            stress2x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress2y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            stress2xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            found = 1;
+                                                        }
+                                                        if (found) {
+                                                            //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                            if (node1 > 0) {
+                                                                if (mesh_node[node1 - 1].restraint > 5) {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node1) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node1;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                } else {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_inside; kk++)
+                                                                        if (inside_list[kk] == node1) break;
+                                                                    if (kk == num_inside)  //not found
+                                                                    {
+                                                                        inside_list[num_inside] = node1;
+                                                                        inside_list_stress_x[num_inside] = stress1x;
+                                                                        inside_list_stress_y[num_inside] = stress1y;
+                                                                        inside_list_stress_xy[num_inside] = stress1xy;
+                                                                        num_inside++;
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (node2 > 0) {
+                                                                if (mesh_node[node2 - 1].restraint > 5) {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_adj_supp; kk++)
+                                                                        if (adj_list[kk] == node2) break;
+                                                                    if (kk == num_adj_supp)  //not found
+                                                                    {
+                                                                        adj_list[num_adj_supp] = node2;
+                                                                        num_adj_supp++;
+                                                                    }
+                                                                } else {
+                                                                    int kk;
+                                                                    for (kk = 0; kk < num_inside; kk++)
+                                                                        if (inside_list[kk] == node2) break;
+                                                                    if (kk == num_inside)  //not found
+                                                                    {
+                                                                        inside_list[num_inside] = node2;
+                                                                        inside_list_stress_x[num_inside] = stress2x;
+                                                                        inside_list_stress_y[num_inside] = stress2y;
+                                                                        inside_list_stress_xy[num_inside] = stress2xy;
+                                                                        num_inside++;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    //calculating reactions for node2
+                                                    double supp_x, supp_y;      // Supported node coordinates (m)
+
+                                                    double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                                    double adj_supp_y[12];
+
+                                                    double inside_x[12];           // Array: x-coords of inside nodes
+                                                    double inside_y[12];
+
+                                                    double H = 0.15, h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                                              0.15,
+                                                                              0.15, 0.15, 0.15}; //TEMPORARY
+
+                                                    double Q_foo;
+
+                                                    double Rz;  //reaction
+                                                    double Rzmax, Rzmin;
+
+                                                    supp_x = mesh_node[mesh_boundary[jk].node2 - 1].x;
+                                                    supp_y = mesh_node[mesh_boundary[jk].node2 - 1].y;
+
+                                                    for (jj = 0; jj < mesh_element_no; jj++) {
+                                                        if (mesh_element[jj].node1 == mesh_boundary[jk].node2)
+                                                        {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            supp2_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                        else if (mesh_element[jj].node2 == mesh_boundary[jk].node2)
+                                                        {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            supp2_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                        else if (mesh_element[jj].node3 == mesh_boundary[jk].node2)
+                                                        {
+                                                            supp2_sigx_max[jk] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp2_sigy_max[jk] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            supp2_sigxy_max[jk] = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    for (jj = 0; jj < num_adj_supp; jj++)
+                                                    {
+                                                        adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                                        adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                                    }
+                                                    for (jj = 0; jj < num_inside; jj++)
+                                                    {
+                                                        inside_x[jj] = mesh_node[inside_list[jj] - 1].x;
+                                                        inside_y[jj] = mesh_node[inside_list[jj] - 1].y;
+
+                                                        inside2_sigx_max[jk][jj] = inside_list_stress_x[jj]; //stress1x;  //just max
+                                                        inside2_sigy_max[jk][jj] = inside_list_stress_y[jj]; //stress1y;  //just max
+                                                        inside2_sigxy_max[jk][jj] = inside_list_stress_xy[jj]; //stress1xy;  //just max
+                                                    }
+
+                                                    int sti5 = 5;
+
+                                                    //// REACTIONS
+                                                    mesh_boundary[jk].state2[sti5].Rz1 = compute_support_reaction(H, supp_x,supp_y,supp2_sigx_max[jk],supp2_sigy_max[jk],supp2_sigxy_max[jk],num_adj_supp,adj_supp_x,adj_supp_y,num_inside,h,inside_x,inside_y,inside2_sigx_max[jk],inside2_sigy_max[jk],inside2_sigxy_max[jk],&mesh_boundary[jk].state2[sti5].Qn1);
+#ifndef NDEBUG
+                                                    //if (last_node != mesh_boundary[jk].node1)
+                                                    //{
+                                                    printf("ALTERNATIVE\n");
+                                                    printf("node=%d\n", mesh_boundary[jk].node2);
+                                                    printf("H=%f\n", H);
+                                                    printf("supp.x=%f  supp.y=%f  supp2_sigx=%f  supp2_sigy=%f  supp2_sigxy=%f\n",
+                                                           supp_x, supp_y, supp2_sigx_max[jk], supp2_sigy_max[jk], supp2_sigxy_max[jk]);
+                                                    printf("num_adj_supp=%d\n", num_adj_supp);
+                                                    for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                        printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n",iii,adj_supp_x[iii],iii, adj_supp_y[iii]);
+                                                    }
+                                                    printf("num_inside=%d\n", num_inside);
+                                                    for (int iii = 0; iii < num_inside; iii++) {
+                                                        printf("inside_x[%d]=%f  inside_y[%d]=%f  inside2_sigx[%d]=%f  inside2_sigy[%d]=%f  inside2_sigxy[%d]=%f\n",iii,inside_x[iii],iii,inside_y[iii],iii,inside2_sigx_max[j][iii],iii,inside2_sigy_max[j][iii],iii,inside2_sigxy_max[j][iii]);
+                                                    }
+
+                                                    printf("Results: Qn1=%f Rz1=%f\n\n", mesh_boundary[jk].state2[sti].Qn1, mesh_boundary[jk].state2[sti].Rz1);
+                                                    //}
+                                                    //last_node=mesh_boundary[jk].node1;
+#endif
+                                                }
+
+                                            }
+                                        }
+
+                                        /////////////////////////////////
+                                        //REACTIONS for combination, se they are collected as state no=5 (countiny from 0)
+                                        int last_node = 0;
+                                        int sti5 = 5;
+
+                                        //Rzmin = 0.0;
+                                        Rzmax = 0.0;
+
+                                        //Rzmin_back = 0.0;
+                                        Rzmax_back = 0.0;
+#ifndef NDEBUG
+                                        printf("\nState %s-%d(%d)\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO);
+#endif
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (mesh_boundary[i].restraint > 5) {
+                                                if (mesh_boundary[i].node1 != last_node)
+                                                {
+#ifndef NDEBUG
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz1, mesh_boundary[i].state1[sti5].Qn1);
+#endif
+                                                    Rzmax += nofabs(mesh_boundary[i].state1[sti5].Rz1);
+                                                }
+                                                last_node = mesh_boundary[i].node1;
+                                                if (mesh_boundary[i].node2 != last_node)
+                                                {
+#ifndef NDEBUG
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti5].Rz1, mesh_boundary[i].state2[sti5].Qn1);
+#endif
+                                                    Rzmax += nofabs(mesh_boundary[i].state2[sti5].Rz1);
+                                                }
+                                                last_node = mesh_boundary[i].node2;
+                                            }
+                                        }
+#ifndef NDEBUG
+                                        printf("SUM:  Rz_total_i=%f\n", Rzmax);
+#endif
+                                        //Rzmin_back = Rzmin;
+                                        Rzmax_back = Rzmax;
+#ifndef NDEBUG
+                                        printf("\nTotal load in state %s-%d(%d):  %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, total_load);
+#endif
+                                        load_ratio = total_load / Rzmax_back;
+
+                                        //Rzmin = 0.0;
+                                        Rzmax = 0.0;
+#ifndef NDEBUG
+                                        printf("\nState %s-%d(%d) with correction ratio %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, load_ratio);
+#endif
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (mesh_boundary[i].restraint > 5) {
+                                                if (mesh_boundary[i].node1 != last_node)
+                                                {
+#ifndef NDEBUG
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz1 * load_ratio, mesh_boundary[i].state1[sti5].Qn1 * load_ratio);
+#endif
+                                                    Rzmax += (nofabs(mesh_boundary[i].state1[sti5].Rz1) * load_ratio);
+                                                }
+                                                last_node = mesh_boundary[i].node1;
+                                                if (mesh_boundary[i].node2 != last_node)
+                                                {
+#ifndef NDEBUG
+                                                    printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti5].Rz1 * load_ratio, mesh_boundary[i].state2[sti5].Qn1 * load_ratio);
+#endif
+                                                    Rzmax += nofabs(mesh_boundary[i].state2[sti5].Rz1) * load_ratio;
+                                                }
+                                                last_node = mesh_boundary[i].node2;
+                                            }
+                                        }
+#ifndef NDEBUG
+                                        printf("SUM:  Rz_total_i=%f\n", Rzmax);
+#endif
+                                        //upgradeing state min max
+                                        for (i = 0; i < mesh_boundaries_no; i++) {
+                                            if (ci == 0)  //first of combination
+                                            {
+                                                mesh_boundary[i].state1[sti].Qnmin1 = mesh_boundary[i].state1[sti5].Qn1 * load_ratio;
+                                                mesh_boundary[i].state1[sti].Qnmax1 = mesh_boundary[i].state1[sti5].Qn1 * load_ratio;
+                                                mesh_boundary[i].state1[sti].Rzmin1 = mesh_boundary[i].state1[sti5].Rz1 * load_ratio;
+                                                mesh_boundary[i].state1[sti].Rzmax1 = mesh_boundary[i].state1[sti5].Rz1 * load_ratio;
+
+                                                mesh_boundary[i].state2[sti].Qnmin1 = mesh_boundary[i].state2[sti5].Qn1 * load_ratio;
+                                                mesh_boundary[i].state2[sti].Qnmax1 = mesh_boundary[i].state2[sti5].Qn1 * load_ratio;
+                                                mesh_boundary[i].state2[sti].Rzmin1 = mesh_boundary[i].state2[sti5].Rz1 * load_ratio;
+                                                mesh_boundary[i].state2[sti].Rzmax1 = mesh_boundary[i].state2[sti5].Rz1 * load_ratio;
+                                            } else {
+                                                mesh_boundary[i].state1[sti].Qnmin1 = min(mesh_boundary[i].state1[sti].Qnmin1, mesh_boundary[i].state1[sti5].Qn1 * load_ratio);
+                                                mesh_boundary[i].state1[sti].Qnmax1 = max(mesh_boundary[i].state1[sti].Qnmax1, mesh_boundary[i].state1[sti5].Qn1 * load_ratio);
+                                                mesh_boundary[i].state1[sti].Rzmin1 = min(mesh_boundary[i].state1[sti].Rzmin1, mesh_boundary[i].state1[sti5].Rz1 * load_ratio);
+                                                mesh_boundary[i].state1[sti].Rzmax1 = max(mesh_boundary[i].state1[sti].Rzmax1, mesh_boundary[i].state1[sti5].Rz1 * load_ratio);
+
+                                                mesh_boundary[i].state2[sti].Qnmin1 = min(mesh_boundary[i].state2[sti].Qnmin1, mesh_boundary[i].state2[sti5].Qn1 * load_ratio);
+                                                mesh_boundary[i].state2[sti].Qnmax1 = max(mesh_boundary[i].state2[sti].Qnmax1, mesh_boundary[i].state2[sti5].Qn1 * load_ratio);
+                                                mesh_boundary[i].state2[sti].Rzmin1 = min(mesh_boundary[i].state2[sti].Rzmin1, mesh_boundary[i].state2[sti5].Rz1 * load_ratio);
+                                                mesh_boundary[i].state2[sti].Rzmax1 = max(mesh_boundary[i].state2[sti].Rzmax1, mesh_boundary[i].state2[sti5].Rz1 * load_ratio);
+                                            }
+                                        }
+                                    }
+                                    ///////////////////////// REACTIONS
                                 }
                             }
                             break;
                         }
+
                         i_row = !i_row;
                         data_row = data_row_[i_row];
                     }
 
                     i_row = 0;
                     data_row = data_row_[i_row];
-                    
+
                     //epsilon
                     perm_e_b = 0;
-                    while (fgets(data_row, MaxTextLen, f)) {
+                    while (fgets(data_row, MaxTextLen, f))
+                    {
                         Perm = strstr(data_row, "Perm:");
                         use_previous = strstr(data_row, "use previous");
-                        if (Perm != NULL) {
+                        if (Perm != NULL)
+                        {
                             strcpy(epsilon_chapter[0], data_row_[!i_row]);
                             epsilon_chapter[0][strlen(epsilon_chapter[0]) - 1] = '\0';
                             modify_chapter((char *) epsilon_chapter[0]);
-                            if (use_previous != NULL) {
+                            if (use_previous != NULL)
+                            {
                                 perm_e = perm_s;
                                 perm_e_node_no = perm_s_node_no;
                                 perm_e_index_no = perm_s_index_no;
@@ -6458,7 +8171,8 @@ void Plate_analysis(void) {
                             }
                             epsilon_ini = 1;
                             //epsilon 1...6
-                            for (j = 0; j < EPSILON_NUMBER; j++) {
+                            for (j = 0; j < EPSILON_NUMBER; j++)
+                            {
                                 for (i = 0; i < perm_e_index_no; i++) {
                                     fgets(data_row, MaxTextLen, f);
                                     ret = sscanf(data_row, "%lf", &epsilon[j][i]);
@@ -6499,8 +8213,8 @@ void Plate_analysis(void) {
                                             } else { ; //TO DO - ERROR
                                             }
                                         }
+                                        /////////////////////////
                                     }
-                                    /////////////////////////
                                 }
                             }
                             break;
@@ -6518,18 +8232,15 @@ void Plate_analysis(void) {
         }
 
         ///creating results for combinationsd
-        if (sti_no>0)
-        {
-            nom_max=1;
+        if (sti_no > 0) {
+            nom_max = 1;
             goto singles_multiples;
-        }
-        else
-        {
-            if (sti==2)  //ULSLC
+        } else {
+            if (sti == 2)  //ULSLC
             {
-                ULSLC_flag[2]=0;
-                nom_max=1;
-                for (int is=0; is<STRESS_NUMBER; is++) {
+                ULSLC_flag[2] = 0;
+                nom_max = 1;
+                for (int is = 0; is < STRESS_NUMBER; is++) {
                     min_stress[is] = min_stress_bak[is];
                     max_stress[is] = max_stress_bak[is];
                     min_stress_min[is] = min_stress_min_bak[is];
@@ -6542,11 +8253,11 @@ void Plate_analysis(void) {
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
                 utf8Upper(desired_layer_upper);
 
                 for (ii = 0; ii < No_Layers; ii++) {
-                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
                     utf8Upper(layer_name_upper);
 
                     if (strcmp(layer_name_upper, desired_layer_upper) == 0)
@@ -6555,25 +8266,24 @@ void Plate_analysis(void) {
                 }
                 if (ii < No_Layers) {
                     desired_layer_no = ii;
-                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    if (block_names)
+                        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS, MAX_L_BLOCKS_LEN);  //to remember only visible blocks
                     delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
                 }
 
 
                 goto singles_multiples;
-            }
-            else if (sti==3) //SLSLC
+            } else if (sti == 3) //SLSLC
             {
-                ULSLC_flag[3]=0;
+                ULSLC_flag[3] = 0;
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
                 utf8Upper(desired_layer_upper);
 
                 for (ii = 0; ii < No_Layers; ii++) {
-                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
                     utf8Upper(layer_name_upper);
 
                     if (strcmp(layer_name_upper, desired_layer_upper) == 0)
@@ -6581,25 +8291,24 @@ void Plate_analysis(void) {
                 }
                 if (ii < No_Layers) {
                     desired_layer_no = ii;
-                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    if (block_names)
+                        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
                     delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
                 }
 
                 continue;
-            }
-            else if (sti==4)  //QPSLSLC
+            } else if (sti == 4)  //QPSLSLC
             {
-                ULSLC_flag[4]=0;
+                ULSLC_flag[4] = 0;
 
                 sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+                memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
                 utf8Upper(desired_layer_upper);
 
                 for (ii = 0; ii < No_Layers; ii++) {
 
-                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+                    memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
                     utf8Upper(layer_name_upper);
 
                     if (strcmp(layer_name_upper, desired_layer_upper) == 0)
@@ -6607,357 +8316,693 @@ void Plate_analysis(void) {
                 }
                 if (ii < No_Layers) {
                     desired_layer_no = ii;
-                    get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                                     MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                    if (block_names)
+                        get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
                     delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
                 }
 
                 continue;
-            }
-            else continue;
+            } else continue;
         }
 
     singles:
-    nom_max=0;
+
+    nom_max = 0;
+
     //results
-        switch (sti)
-        {
-            case 0: //sls
-                sprintf(params, "%splate_sls.result", _plate_);
-                strncpy(SLS_ULS, "sls", 3);  //temporary
-                break;
-            case 1: //uls
-                sprintf(params, "%splate_uls.result", _plate_);
-                strncpy(SLS_ULS, "ULS", 3);  //temporary
-                break;
+    switch (sti)
+    {
+        case 0: //sls
+            sprintf(params, "%splate_sls.result", _plate_);
+            strncpy(SLS_ULS, "sls", 3);  //temporary
+            break;
+        case 1: //uls
+            sprintf(params, "%splate_uls.result", _plate_);
+            strncpy(SLS_ULS, "ULS", 3);  //temporary
+            break;
+    }
+    //results
+    f = fopen(params, "rt");
 
-            /*
-            case 2: //ulslc
-                sprintf(params, "%splate_ulslc1.result", _plate_);
-                strncpy(SLS_ULS, "ulslc", 5);  //temporary
-                break;
-            case 3: //slslc
-                sprintf(params, "%splate_slslc1.result", _plate_);
-                strncpy(SLS_ULS, "slslc", 5);  //temporary
-                break;
-            case 4: //qpslslc
-                sprintf(params, "%splate_qpslslc1.result", _plate_);
-                strncpy(SLS_ULS, "qpslslc", 7);  //temporary
-                break;
-            */
-        }
-        //results
-        f = fopen(params, "rt");
+    if (f == NULL)
+    {
 
-        if (f == NULL) {
+        ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_,
+                           12,
+                           params, 11, 1, 62);
+        no_error = FALSE;
+        goto pl_error1;
 
-            //if (lci<4) {
-                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_OPEN_RESULTS_FILE_,
-                                   12,
-                                   params, 11, 1, 62);
-                no_error = FALSE;
-                goto pl_error1;
-            //}
-            //else continue;  //qpslslc can not exist
-        }
+    }
 
-        i_row = 0;
-        data_row = data_row_[i_row];
-        //deflection
-        while (fgets(data_row, MaxTextLen, f)) {
-            Perm = strstr(data_row, "Perm:");
-            if (Perm != NULL) {
-                strcpy(deflection_chapter[0], data_row_[!i_row]);
-                deflection_chapter[0][strlen(deflection_chapter[0]) - 1] = '\0';
-                modify_chapter((char *) deflection_chapter[0]);
-                ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
-                if ((ret == 2) && (perm_d_node_no > 0) && (perm_d_index_no > 0)) {
-                    //perm_d = (PERM *) malloc(perm_d_node_no * sizeof(PERM *));
-                    perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
-                    for (i = 0; i < perm_d_node_no; i++) perm_d[i] = -1;
-                    perm_d_b = 1;
+    //restoring total_load for a case
+    total_load = 0.0;
+    for (i = 0; i < zone_no; i++) {
+        total_load += surface_load[sti][zone_property[i].k] * body_area[zone_property[i].k];
+    }
+    for (i = 0; i < plate_no; i++) {
+        total_load += surface_load[sti][plate_property[i].k] * body_area[plate_property[i].k];
+    }
+    total_load += point_load[sti];
+
+    i_row = 0;
+    data_row = data_row_[i_row];
+    //deflection
+    while (fgets(data_row, MaxTextLen, f))
+    {
+        Perm = strstr(data_row, "Perm:");
+        if (Perm != NULL) {
+            strcpy(deflection_chapter[0], data_row_[!i_row]);
+            deflection_chapter[0][strlen(deflection_chapter[0]) - 1] = '\0';
+            modify_chapter((char *) deflection_chapter[0]);
+            ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+            if ((ret == 2) && (perm_d_node_no > 0) && (perm_d_index_no > 0)) {
+                //perm_d = (PERM *) malloc(perm_d_node_no * sizeof(PERM *));
+                perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                for (i = 0; i < perm_d_node_no; i++) perm_d[i] = -1;
+                perm_d_b = 1;
+                for (i = 0; i < perm_d_index_no; i++) {
+                    fgets(data_row, MaxTextLen, f);
+                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                    //perm_d[node_number-1]=index_number-1;
+                    perm_d[node_number - 1] = i;
+                }
+                for (i = 0; i < DEFLECTION_NUMBER; i++) {
+                    deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
+                    deflection_min[i] = BIGNOF;
+                    deflection_max[i] = -BIGNOF;
+                }
+                //deflection 1...EPSILON_NUMBER
+                for (j = 0; j < DEFLECTION_NUMBER; j++) {
                     for (i = 0; i < perm_d_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                        //perm_d[node_number-1]=index_number-1;
-                        perm_d[node_number - 1] = i;
+                        ret = sscanf(data_row, "%lf", &deflection[j][i]);
+                        deflection_min[j] = min(deflection_min[j], deflection[j][i]);
+                        deflection_max[j] = max(deflection_max[j], deflection[j][i]);
                     }
-                    for (i = 0; i < DEFLECTION_NUMBER; i++) {
-                        deflection[i] = (double *) malloc(perm_d_index_no * sizeof(double) + 100);
-                        deflection_min[i]=BIGNOF;
-                        deflection_max[i]=-BIGNOF;
-                    }
-                    //deflection 1...EPSILON_NUMBER
-                    for (j = 0; j < DEFLECTION_NUMBER; j++) {
-                        for (i = 0; i < perm_d_index_no; i++) {
-                            fgets(data_row, MaxTextLen, f);
-                            ret = sscanf(data_row, "%lf", &deflection[j][i]);
-                            deflection_min[j] = min(deflection_min[j], deflection[j][i]);
-                            deflection_max[j] = max(deflection_max[j], deflection[j][i]);
-                        }
-                        if (j < (DEFLECTION_NUMBER - 1)) {
-                            fgets(data_row, MaxTextLen, f);
-                            strcpy(deflection_chapter[j + 1], data_row);
-                            deflection_chapter[j + 1][strlen(deflection_chapter[j + 1]) - 1] = '\0';
-                            modify_chapter((char *) deflection_chapter[j + 1]);
-                            fgets(data_row, MaxTextLen, f);
-                            /////////////////////////
-                            Perm = strstr(data_row, "Perm:");
-                            use_previous = strstr(data_row, "use previous");
-                            if (Perm != NULL) {
-                                if (use_previous != NULL) { ; //do nothing
-                                } else {
-                                    ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
-                                    if (ret == 2) {
-                                        if (perm_d_b) free(perm_d);
-                                        perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
-                                        for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
-                                        perm_d_b = 1;
-                                        for (i = 0; i < perm_d_index_no; i++) {
-                                            fgets(data_row, MaxTextLen, f);
-                                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                            perm_d[node_number - 1] = i;
-                                        }
-                                    } else { ; //TO DO - ERROR
+                    if (j < (DEFLECTION_NUMBER - 1)) {
+                        fgets(data_row, MaxTextLen, f);
+                        strcpy(deflection_chapter[j + 1], data_row);
+                        deflection_chapter[j + 1][strlen(deflection_chapter[j + 1]) - 1] = '\0';
+                        modify_chapter((char *) deflection_chapter[j + 1]);
+                        fgets(data_row, MaxTextLen, f);
+                        /////////////////////////
+                        Perm = strstr(data_row, "Perm:");
+                        use_previous = strstr(data_row, "use previous");
+                        if (Perm != NULL) {
+                            if (use_previous != NULL) { ; //do nothing
+                            } else {
+                                ret = sscanf(data_row + 6, "%d %d", &perm_d_node_no, &perm_d_index_no);
+                                if (ret == 2) {
+                                    if (perm_d_b) free(perm_d);
+                                    perm_d = (int *) malloc(perm_d_node_no * sizeof(int) + 100);
+                                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                                    perm_d_b = 1;
+                                    for (i = 0; i < perm_d_index_no; i++) {
+                                        fgets(data_row, MaxTextLen, f);
+                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                        perm_d[node_number - 1] = i;
                                     }
+                                } else { ; //TO DO - ERROR
                                 }
                             }
-                            /////////////////////////
+                        }
+                        /////////////////////////
+                    }
+                }
+                break;
+            }
+        }
+        i_row = !i_row;
+        data_row = data_row_[i_row];
+    }
+
+    i_row = 0;
+    data_row = data_row_[i_row];
+
+    //stress
+    perm_s_b = 0;
+    while (fgets(data_row, MaxTextLen, f))
+    {
+        Perm = strstr(data_row, "Perm:");
+        use_previous = strstr(data_row, "use previous");
+        if (Perm != NULL) {
+            strcpy(stress_chapter[0], data_row_[!i_row]);
+            stress_chapter[0][strlen(stress_chapter[0]) - 1] = '\0';
+            modify_chapter((char *) stress_chapter[0]);
+            if (use_previous != NULL) {
+                perm_s = perm_d;
+                perm_s_node_no = perm_d_node_no;
+                perm_s_index_no = perm_d_index_no;
+            } else {
+                ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
+                if (ret == 2) {
+                    perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                    perm_s_b = 1;
+                    for (i = 0; i < perm_s_index_no; i++) {
+                        fgets(data_row, MaxTextLen, f);
+                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                        //perm_s[node_number-1]=index_number-1;
+                        perm_s[node_number - 1] = i;
+                    }
+                } else { ; //TO DO - ERROR
+                }
+            }
+            for (i = 0; i < STRESS_NUMBER; i++) {
+                stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
+                stress_min[i] = BIGNOF;
+                stress_max[i] = -BIGNOF;
+            }
+            //stress 1...6
+            for (j = 0; j < STRESS_NUMBER; j++) {
+                for (i = 0; i < perm_s_index_no; i++) {
+                    fgets(data_row, MaxTextLen, f);
+                    ret = sscanf(data_row, "%lf", &stress[j][i]);
+                    stress_min[j] = min(stress_min[j], stress[j][i]);
+                    stress_max[j] = max(stress_max[j], stress[j][i]);
+                }
+                if (j < (STRESS_NUMBER - 1)) {
+                    fgets(data_row, MaxTextLen, f);
+                    strcpy(stress_chapter[j + 1], data_row);
+                    stress_chapter[j + 1][strlen(stress_chapter[j + 1]) - 1] = '\0';
+                    modify_chapter((char *) stress_chapter[j + 1]);
+                    fgets(data_row, MaxTextLen, f);
+                    /////////////////////////
+                    Perm = strstr(data_row, "Perm:");
+                    use_previous = strstr(data_row, "use previous");
+                    if (Perm != NULL) {
+                        if (use_previous != NULL) { ; //do nothing
+                        } else {
+                            ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
+                            if (ret == 2) {
+                                if (perm_s_b) free(perm_s);
+                                perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
+                                for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
+                                perm_s_b = 1;
+                                for (i = 0; i < perm_s_index_no; i++) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                    perm_s[node_number - 1] = i;
+                                }
+                            } else { ; //TO DO - ERROR
+                            }
                         }
                     }
+                    /////////////////////////
+                }
+            }
+            break;
+        }
+        i_row = !i_row;
+        data_row = data_row_[i_row];
+    }
+
+    i_row = 0;
+    data_row = data_row_[i_row];
+
+    //epsilon
+    perm_e_b = 0;
+    while (fgets(data_row, MaxTextLen, f))
+    {
+        Perm = strstr(data_row, "Perm:");
+        use_previous = strstr(data_row, "use previous");
+        if (Perm != NULL) {
+            strcpy(epsilon_chapter[0], data_row_[!i_row]);
+            epsilon_chapter[0][strlen(epsilon_chapter[0]) - 1] = '\0';
+            modify_chapter((char *) epsilon_chapter[0]);
+            if (use_previous != NULL) {
+                perm_e = perm_s;
+                perm_e_node_no = perm_s_node_no;
+                perm_e_index_no = perm_s_index_no;
+            } else {
+                ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                if (ret == 2) {
+                    perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                    for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
+                    perm_e_b = 1;
+                    for (i = 0; i < perm_e_index_no; i++) {
+                        fgets(data_row, MaxTextLen, f);
+                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                        perm_e[node_number - 1] = i;
+                    }
+                } else { ; //TO DO - ERROR
+                }
+            }
+            for (i = 0; i < EPSILON_NUMBER; i++) {
+                epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
+                epsilon_min[i] = BIGNOF;
+                epsilon_max[i] = -BIGNOF;
+            }
+            //epsilon 1...6
+            for (j = 0; j < EPSILON_NUMBER; j++) {
+                for (i = 0; i < perm_e_index_no; i++) {
+                    fgets(data_row, MaxTextLen, f);
+                    ret = sscanf(data_row, "%lf", &epsilon[j][i]);
+                    epsilon_min[j] = min(epsilon_min[j], epsilon[j][i]);
+                    epsilon_max[j] = max(epsilon_max[j], epsilon[j][i]);
+                }
+                if (j < (EPSILON_NUMBER - 1)) {
+                    fgets(data_row, MaxTextLen, f);
+                    strcpy(epsilon_chapter[j + 1], data_row);
+                    epsilon_chapter[j + 1][strlen(epsilon_chapter[j + 1]) - 1] = '\0';
+                    modify_chapter((char *) epsilon_chapter[j + 1]);
+                    fgets(data_row, MaxTextLen, f);
+                    /////////////////////////
+                    Perm = strstr(data_row, "Perm:");
+                    use_previous = strstr(data_row, "use previous");
+                    if (Perm != NULL) {
+                        if (use_previous != NULL) { ; //do nothing
+                        } else {
+                            ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
+                            if (ret == 2) {
+                                if (perm_e_b) free(perm_e);
+                                perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
+                                for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
+                                perm_e_b = 1;
+                                for (i = 0; i < perm_e_index_no; i++) {
+                                    fgets(data_row, MaxTextLen, f);
+                                    ret = sscanf(data_row, "%d %d", &node_number, &index_number);
+                                    perm_e[node_number - 1] = i;
+                                }
+                            } else { ; //TO DO - ERROR
+                            }
+                        }
+                    }
+                    /////////////////////////
+                }
+            }
+            break;
+        }
+        i_row = !i_row;
+        data_row = data_row_[i_row];
+    }
+
+    i_row = 0;
+    data_row = data_row_[i_row];
+
+    fclose(f);
+
+    singles_multiples:
+
+    my_sleep(10);
+
+    ////creating deflection blocks
+
+    Ldsp.kolor = static_colors.deformation_color;
+    Ldsp.typ = 64;
+
+    sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "deflection", SLS_ULS, combination_no);
+
+    memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
+    utf8Upper(desired_layer_upper);
+
+    for (ii = 0; ii < No_Layers; ii++) {
+        memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
+        utf8Upper(layer_name_upper);
+
+        if (strcmp(layer_name_upper, desired_layer_upper) == 0)
+            break;
+    }
+    if (ii < No_Layers) {
+        desired_layer_no = ii;
+        if (block_names)
+            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+        delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+    } else {
+        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                               12, (char *) "", 11, 1, 62);
+            no_error = FALSE;
+            goto pl_error1;
+        }
+        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                               12, (char *) "", 11, 1, 62);
+            no_error = FALSE;
+            goto pl_error1;
+        }
+        No_Layers++;
+        desired_layer_no = No_Layers - 1;
+        Layers[No_Layers - 1].on = 1;
+        Layers[No_Layers - 1].edit = 1;
+        Layers[No_Layers - 1].point = 1;
+        strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+        Layers[No_Layers - 1].color = Ldsp.kolor;
+    }
+
+    if ((sti == 2) && (ULSLC_flag[2] == 0)) // non existing ULSLC
+        goto stress_block;
+
+    for (i = 0; i < DEFLECTION_NUMBER; i++) {
+        if ((theta_ == 0) && (i == (DEFLECTION_NUMBER - 3)))
+            break;
+
+        Ldsp.warstwa = desired_layer_no;
+        w.warstwa = Ldsp.warstwa;
+        w.kolor = Ldsp.kolor;
+        w.blok = 1;
+
+        //from meters to drawing units
+        blok_origin.x = jednostkiObX(mesh_node[0].x);
+        blok_origin.y = jednostkiObY(mesh_node[0].y);
+
+
+        if (nom_max) {
+            bim = 2;
+            min_max = _min_;
+        } else {
+            bim = 1;
+            min_max = _nope_;
+        }
+
+        for (bi = 0; bi < bim; bi++) {
+
+            if (bi > 0) min_max = _max_;
+
+            if (nom_max) {
+                //checking bipolarity
+                if (bi == 0)  //potentially minimal
+                {
+                    if ((max_deflection_max[i] > 0.) && (min_deflection_min[i] >= 0.))
+                        continue;  //we do not create zero unipolar graph
+                }
+                if (bi == 1)  //potentially maximal
+                {
+                    if ((max_deflection_max[i] <= 0.) && (min_deflection_min[i] < 0))
+                        continue; //we do not create zero unipolar graph
+                }
+            }
+
+            sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, deflection_chapter[i], SLS_ULS, min_max, combination_no);
+
+            hiding = TRUE;
+            for (j = 0; j < block_names_no; j++) {
+                if (strcmp(block_names[j], block_name) == 0) {
+                    hiding = FALSE;
                     break;
                 }
             }
-            i_row = !i_row;
-            data_row = data_row_[i_row];
-        }
 
-        i_row = 0;
-        data_row = data_row_[i_row];
+            if (nom_max) deflection_amax = max(fabs(max_deflection_max[i]), fabs(min_deflection_min[i]));
+            else deflection_amax = max(fabs(deflection_max[i]), fabs(deflection_min[i]));
 
-        //stress
-        perm_s_b = 0;
-        while (fgets(data_row, MaxTextLen, f)) {
-            Perm = strstr(data_row, "Perm:");
-            use_previous = strstr(data_row, "use previous");
-            if (Perm != NULL) {
-                strcpy(stress_chapter[0], data_row_[!i_row]);
-                stress_chapter[0][strlen(stress_chapter[0]) - 1] = '\0';
-                modify_chapter((char *) stress_chapter[0]);
-                if (use_previous != NULL) {
-                    perm_s = perm_d;
-                    perm_s_node_no = perm_d_node_no;
-                    perm_s_index_no = perm_d_index_no;
-                } else {
-                    ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
-                    if (ret == 2) {
-                        perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
-                        for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
-                        perm_s_b = 1;
-                        for (i = 0; i < perm_s_index_no; i++) {
-                            fgets(data_row, MaxTextLen, f);
-                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                            //perm_s[node_number-1]=index_number-1;
-                            perm_s[node_number - 1] = i;
+            if (deflection_amax > 0.0) {
+                ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
+                if (ptr_block == NULL) {
+                    fclose(f);
+                    ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                                       (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char *) "", 11, 1, 62);
+                    no_error = FALSE;
+                    goto pl_error1;
+                }
+
+                for (j = 0; j < mesh_element_no; j++) {
+                    w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
+                    w.xy[1] = jednostkiObY(mesh_node[mesh_element[j].node1 - 1].y);
+
+                    w.xy[2] = jednostkiObX(mesh_node[mesh_element[j].node2 - 1].x);
+                    w.xy[3] = jednostkiObY(mesh_node[mesh_element[j].node2 - 1].y);
+
+                    w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
+                    w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
+
+                    if (nom_max) {
+                        if (bi == 0) {
+                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                            else gradient.c1 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                            else gradient.c2 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                            else gradient.c3 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                            gradient.c4 = getRGB(0.0, deflection_amax);
+
+                            fe_data.el_number = j + 1;
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) min_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                            fe_data.f2 = (float) min_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                            fe_data.f3 = (float) min_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            fe_data.f4 = 0.0f;
+                        } else {
+                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                            else gradient.c1 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                            else gradient.c2 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                            else gradient.c3 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                            gradient.c4 = getRGB(0.0, deflection_amax);
+
+                            fe_data.el_number = j + 1;
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) max_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                            fe_data.f2 = (float) max_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                            fe_data.f3 = (float) max_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            fe_data.f4 = 0.0f;
                         }
-                    } else { ; //TO DO - ERROR
+                    } else {
+                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
+                        else gradient.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
+                        else gradient.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
+                        else gradient.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                        gradient.c4 = getRGB(0.0, deflection_amax);
+
+                        fe_data.el_number = j + 1;
+                        fe_data.flag = 0;
+                        fe_data.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                        fe_data.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                        fe_data.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                        fe_data.f4 = 0.0f;
                     }
+
+                    w.lp = 6;
+                    w.gradient = 1;
+
+                    w.translucent = 1;
+                    translucency_ptr = (char *) w.xy;
+                    translucency_ptr += (w.lp * sizeof(float));
+                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                    adr = dodaj_obiekt((BLOK *) dane, &w);
                 }
-                for (i = 0; i < STRESS_NUMBER; i++) {
-                    stress[i] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
-                    stress_min[i]=BIGNOF;
-                    stress_max[i]=-BIGNOF;
-                }
-                //stress 1...6
-                for (j = 0; j < STRESS_NUMBER; j++)
-                {
-                    for (i = 0; i < perm_s_index_no; i++) {
-                        fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%lf", &stress[j][i]);
-                        stress_min[j] = min(stress_min[j], stress[j][i]);
-                        stress_max[j] = max(stress_max[j], stress[j][i]);
+
+                //colorbar
+                if (deflection_amax > 0.0) {
+                    w.xy[0] = (float) pl_min_x + 10.f;
+                    w.xy[1] = (float) pl_min_y - 10.f;
+
+                    w.xy[2] = w.xy[0] + 50.f;
+                    w.xy[3] = w.xy[1];
+
+                    w.xy[4] = w.xy[2];
+                    w.xy[5] = w.xy[3] - 5.f;
+
+                    w.xy[6] = w.xy[0];
+                    w.xy[7] = w.xy[5];
+
+                    if (nom_max) {
+                        if (bi == 0) {
+                            gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+
+                            fe_data.el_number = 0;
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) -min_deflection_min[i];
+                            fe_data.f2 = (float) -max_deflection_max[i];
+                            fe_data.f3 = (float) -max_deflection_max[i];
+                            fe_data.f4 = (float) -min_deflection_min[i];
+                        } else {
+                            gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+
+                            fe_data.el_number = 0;
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) -min_deflection_min[i];
+                            fe_data.f2 = (float) -max_deflection_max[i];
+                            fe_data.f3 = (float) -max_deflection_max[i];
+                            fe_data.f4 = (float) -min_deflection_min[i];
+                        }
+                    } else {
+                        gradient.c1 = getRGB(-deflection_min[i], deflection_amax);
+                        gradient.c2 = getRGB(-deflection_max[i], deflection_amax);
+                        gradient.c3 = getRGB(-deflection_max[i], deflection_amax);
+                        gradient.c4 = getRGB(-deflection_min[i], deflection_amax);
+
+                        fe_data.el_number = 0;
+                        fe_data.flag = 0;
+                        fe_data.f1 = (float) -deflection_min[i];
+                        fe_data.f2 = (float) -deflection_max[i];
+                        fe_data.f3 = (float) -deflection_max[i];
+                        fe_data.f4 = (float) -deflection_min[i];
                     }
-                    if (j < (STRESS_NUMBER - 1)) {
-                        fgets(data_row, MaxTextLen, f);
-                        strcpy(stress_chapter[j + 1], data_row);
-                        stress_chapter[j + 1][strlen(stress_chapter[j + 1]) - 1] = '\0';
-                        modify_chapter((char *) stress_chapter[j + 1]);
-                        fgets(data_row, MaxTextLen, f);
-                        /////////////////////////
-                        Perm = strstr(data_row, "Perm:");
-                        use_previous = strstr(data_row, "use previous");
-                        if (Perm != NULL) {
-                            if (use_previous != NULL) { ; //do nothing
+
+                    w.lp = 8;
+                    w.gradient = 1;
+                    w.translucent = 1;
+                    translucency_ptr = (char *) w.xy;
+                    translucency_ptr += (w.lp * sizeof(float));
+                    memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
+
+                    gradient_ptr = translucency_ptr + sizeof(unsigned char);
+                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+
+                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
+                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+
+                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                    adr = dodaj_obiekt((BLOK *) dane, &w);
+
+                    //adjust deflection to proper units
+                    if (i < 3)  //in [mm]
+                    {
+                        if (UNITS == SI) {
+                            if (nom_max) {
+                                deflection_min_ = min_deflection_min[i] * 1000.0; //in mm
+                                deflection_max_ = max_deflection_max[i] * 1000.0; //in mm
                             } else {
-                                ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
-                                if (ret == 2) {
-                                    if (perm_s_b) free(perm_s);
-                                    perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
-                                    for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
-                                    perm_s_b = 1;
-                                    for (i = 0; i < perm_s_index_no; i++) {
-                                        fgets(data_row, MaxTextLen, f);
-                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                        perm_s[node_number - 1] = i;
-                                    }
-                                } else { ; //TO DO - ERROR
-                                }
+                                deflection_min_ = deflection_min[i] * 1000.0; //in mm
+                                deflection_max_ = deflection_max[i] * 1000.0; //in mm
                             }
-                        }
-                        /////////////////////////
-                    }
-                }
-                break;
-            }
-            i_row = !i_row;
-            data_row = data_row_[i_row];
-        }
-
-        i_row = 0;
-        data_row = data_row_[i_row];
-
-        //epsilon
-        perm_e_b = 0;
-        while (fgets(data_row, MaxTextLen, f))
-        {
-            Perm = strstr(data_row, "Perm:");
-            use_previous = strstr(data_row, "use previous");
-            if (Perm != NULL) {
-                strcpy(epsilon_chapter[0], data_row_[!i_row]);
-                epsilon_chapter[0][strlen(epsilon_chapter[0]) - 1] = '\0';
-                modify_chapter((char *) epsilon_chapter[0]);
-                if (use_previous != NULL) {
-                    perm_e = perm_s;
-                    perm_e_node_no = perm_s_node_no;
-                    perm_e_index_no = perm_s_index_no;
-                } else {
-                    ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
-                    if (ret == 2) {
-                        perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
-                        for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
-                        perm_e_b = 1;
-                        for (i = 0; i < perm_e_index_no; i++) {
-                            fgets(data_row, MaxTextLen, f);
-                            ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                            perm_e[node_number - 1] = i;
-                        }
-                    } else { ; //TO DO - ERROR
-                    }
-                }
-                for (i = 0; i < EPSILON_NUMBER; i++) {
-                    epsilon[i] = (double *) malloc(perm_e_index_no * sizeof(double) + 100);
-                    epsilon_min[i]=BIGNOF;
-                    epsilon_max[i]=-BIGNOF;
-                }
-                //epsilon 1...6
-                for (j = 0; j < EPSILON_NUMBER; j++) {
-                    for (i = 0; i < perm_e_index_no; i++) {
-                        fgets(data_row, MaxTextLen, f);
-                        ret = sscanf(data_row, "%lf", &epsilon[j][i]);
-                        epsilon_min[j] = min(epsilon_min[j], epsilon[j][i]);
-                        epsilon_max[j] = max(epsilon_max[j], epsilon[j][i]);
-                    }
-                    if (j < (EPSILON_NUMBER - 1)) {
-                        fgets(data_row, MaxTextLen, f);
-                        strcpy(epsilon_chapter[j + 1], data_row);
-                        epsilon_chapter[j + 1][strlen(epsilon_chapter[j + 1]) - 1] = '\0';
-                        modify_chapter((char *) epsilon_chapter[j + 1]);
-                        fgets(data_row, MaxTextLen, f);
-                        /////////////////////////
-                        Perm = strstr(data_row, "Perm:");
-                        use_previous = strstr(data_row, "use previous");
-                        if (Perm != NULL) {
-                            if (use_previous != NULL) { ; //do nothing
+                            unit = _mm_;
+                        } else //IMP stays as is  in inches
+                        {
+                            if (nom_max) {
+                                deflection_min_ = min_deflection_min[i]; //in inch
+                                deflection_max_ = max_deflection_max[i]; //in inch
                             } else {
-                                ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
-                                if (ret == 2) {
-                                    if (perm_e_b) free(perm_e);
-                                    perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
-                                    for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
-                                    perm_e_b = 1;
-                                    for (i = 0; i < perm_e_index_no; i++) {
-                                        fgets(data_row, MaxTextLen, f);
-                                        ret = sscanf(data_row, "%d %d", &node_number, &index_number);
-                                        perm_e[node_number - 1] = i;
-                                    }
-                                } else { ; //TO DO - ERROR
-                                }
+                                deflection_min_ = deflection_min[i]; //in inch
+                                deflection_max_ = deflection_max[i]; //in inch
                             }
+                            unit = _inch_;
                         }
-                        /////////////////////////
+                    } else {
+                        //in radians
+                        if (nom_max) {
+                            deflection_min_ = min_deflection_min[i]; //in inch
+                            deflection_max_ = max_deflection_max[i]; //in inch
+                        } else {
+                            deflection_min_ = deflection_min[i]; //in inch
+                            deflection_max_ = deflection_max[i]; //in inch
+                        }
+                        unit = _rad_;
                     }
+
+                    T.warstwa = Ldsp.warstwa;
+                    T.kolor = Ldsp.kolor;
+                    T.italics = 0;
+                    T.underline = 0;
+                    T.wysokosc = (float) (zmwym.wysokosc * 0.5);
+                    T.kat = 0.0f;
+                    T.ukryty = 0;
+
+                    T.typ = 15;
+
+                    T.x = w.xy[0];
+                    T.y = w.xy[1] + 0.5f;
+                    T.justowanie = j_do_lewej;
+                    sprintf(T.text, "%.5f", deflection_min_);
+
+                    T.dl = strlen(T.text);
+                    T.n = T18 + T.dl;
+                    normalize_txt(&T);
+                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                    T.x = w.xy[2];
+                    T.y = w.xy[3] + 0.5f;
+                    T.justowanie = j_do_prawej;
+                    sprintf(T.text, "%.4f", deflection_max_);
+
+                    T.dl = strlen(T.text);
+                    T.n = T18 + T.dl;
+                    normalize_txt(&T);
+                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                    T.x = (w.xy[0] + w.xy[2]) / 2.f;
+                    T.y = w.xy[3] + 0.5f;
+                    T.justowanie = j_srodkowo;
+                    sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), deflection_chapter[i], min_max, unit);
+
+                    T.dl = strlen(T.text);
+                    T.n = T18 + T.dl;
+
+                    normalize_txt(&T);
+                    adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
+
+                    //changing back
+                    T.typ = 0;
                 }
-                break;
             }
-            i_row = !i_row;
-            data_row = data_row_[i_row];
         }
+    }
 
-        i_row = 0;
-        data_row = data_row_[i_row];
+    my_sleep(10);
 
-        fclose(f);
+    ////creating stress blocks
 
-singles_multiples:
+    Ldsp.kolor = static_colors.node_element_color;
+    Ldsp.typ = 64;
 
-        //allocation space for block names
-        //block_names_no = 0;
+    sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
 
-        my_sleep(10);
-        //strncpy(SLS_ULS, "sls", 3);  //temporary
-        //deflection blocks
-        //sprintf(desired_layer, "%s_%s", ptr_id, "deflection");
-        sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "deflection", SLS_ULS, combination_no);
+    memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
+    utf8Upper(desired_layer_upper);
 
-        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
-        utf8Upper(desired_layer_upper);
+    for (ii = 0; ii < No_Layers; ii++) {
+        memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
+        utf8Upper(layer_name_upper);
 
-        for (ii = 0; ii < No_Layers; ii++)
-        {
-            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
-            utf8Upper(layer_name_upper);
+        if (strcmp(layer_name_upper, desired_layer_upper) == 0)
+            break;
+    }
+    if (ii < No_Layers) {
+        desired_layer_no = ii;
+        if (block_names)
+            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+        delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+    } else {
+        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
 
-            if (strcmp(layer_name_upper, desired_layer_upper) == 0)
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                               12, (char *) "", 11, 1, 62);
+            no_error = FALSE;
+            goto pl_error1;
+        }
+        if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
+                               12, (char *) "", 11, 1, 62);
+            no_error = FALSE;
+            goto pl_error1;
+        }
+        No_Layers++;
+        desired_layer_no = No_Layers - 1;
+        Layers[No_Layers - 1].on = 1;
+        Layers[No_Layers - 1].edit = 1;
+        Layers[No_Layers - 1].point = 1;
+        strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+        Layers[No_Layers - 1].color = Ldsp.kolor;
+    }
+    stress_block:
+
+    if (perm_s != NULL) {
+
+        for (i = 0; i < STRESS_NUMBER; i++) {
+            if ((sigma_eq_ == 0) && (i == (STRESS_NUMBER - 1)))
                 break;
-        }
-        if (ii < No_Layers)
-        {
-            desired_layer_no = ii;
-            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
-            delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-        } else {
-            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
-                                   12, (char *) "", 11, 1, 62);
-                no_error = FALSE;
-                goto pl_error1;
-            }
-            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
-                                   12, (char *) "", 11, 1, 62);
-                no_error = FALSE;
-                goto pl_error1;
-            }
-            No_Layers++;
-            desired_layer_no = No_Layers - 1;
-            Layers[No_Layers - 1].on = 1;
-            Layers[No_Layers - 1].edit = 1;
-            Layers[No_Layers - 1].point = 1;
-            strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-            Layers[No_Layers - 1].color = Ldsp.kolor;
-        }
-
-        if ((sti==2) && (ULSLC_flag[2]==0)) // non existing ULSLC
-            goto stress_block;
-
-        for (i = 0; i < DEFLECTION_NUMBER; i++) 
-        {
-            if ((theta_==0) && (i==(DEFLECTION_NUMBER-3)))
-                break;
-
             Ldsp.warstwa = desired_layer_no;
             w.warstwa = Ldsp.warstwa;
             w.kolor = Ldsp.kolor;
@@ -6967,39 +9012,32 @@ singles_multiples:
             blok_origin.x = jednostkiObX(mesh_node[0].x);
             blok_origin.y = jednostkiObY(mesh_node[0].y);
 
-
-            if (nom_max)
-            {
-                bim=2;
-                min_max=_min_;
-            }
-            else
-            {
-                bim=1;
+            if (nom_max) {
+                bim = 2;
+                min_max = _min_;
+            } else {
+                bim = 1;
                 min_max = _nope_;
             }
 
-            for (bi=0; bi<bim; bi++)
-            {
+            for (bi = 0; bi < bim; bi++) {
+                if (bi > 0) min_max = _max_;
 
-                if (bi>0) min_max = _max_;
-
-                if (nom_max)
-                {
+                if (nom_max) {
                     //checking bipolarity
-                    if (bi==0)  //potentially minimal
+                    if (bi == 0)  //potentially minimal
                     {
-                      if ((max_deflection_max[i]>0.) && (min_deflection_min[i]>=0.))
-                      continue;  //we do not create zero unipolar graph
+                        if ((max_stress_max[i] > 0.) && (min_stress_min[i] >= 0.))
+                            do_nothing(); //continue;  //we do not create zero unipolar graph
                     }
-                    if (bi==1)  //potentially maximal
+                    if (bi == 1)  //potentially maximal
                     {
-                        if ((max_deflection_max[i]<=0.) && (min_deflection_min[i]<0))
-                        continue; //we do not create zero unipolar graph
+                        if ((max_stress_max[i] <= 0.) && (min_stress_min[i] < 0.))
+                            do_nothing(); //continue; //we do not create zero unipolar graph
                     }
                 }
 
-                sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, deflection_chapter[i], SLS_ULS, min_max, combination_no);
+                sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, stress_chapter[i], SLS_ULS, min_max, combination_no);
 
                 hiding = TRUE;
                 for (j = 0; j < block_names_no; j++) {
@@ -7009,15 +9047,21 @@ singles_multiples:
                     }
                 }
 
-                if (nom_max) deflection_amax = max(fabs(max_deflection_max[i]), fabs(min_deflection_min[i]));
-                else deflection_amax = max(fabs(deflection_max[i]), fabs(deflection_min[i]));
+                if (nom_max) stress_amax = max(fabs(max_stress_max[i]), fabs(min_stress_min[i]));
+                else stress_amax = max(fabs(stress_max[i]), fabs(stress_min[i]));
 
-                if (deflection_amax > 0.0) {
+                stress_min_RC = BIGNOD;
+                stress_max_RC = -BIGNOD;
+                stress_min_RC_rho = BIGNOD;
+                stress_max_RC_rho = -BIGNOD;
+                RC_flag_exists = FALSE;
+
+                if (stress_amax > 0.0) {
                     ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
                     if (ptr_block == NULL) {
                         fclose(f);
                         ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
-                                           (char *) _CANNOT_CREATE_DEFLECTION_BLOCK_, 12, (char *) "", 11, 1, 62);
+                                           (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, (char *) "", 11, 1, 62);
                         no_error = FALSE;
                         goto pl_error1;
                     }
@@ -7032,56 +9076,419 @@ singles_multiples:
                         w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
                         w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
 
-                        if (nom_max)
+                        if (nom_max) //ULS_SLS
                         {
-                            if (bi==0) {
-                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                                else gradient.c1 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
-                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                                else gradient.c2 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
-                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                                else gradient.c3 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
-                                gradient.c4 = getRGB(0.0, deflection_amax);
-
-                                fe_data.el_number = j + 1;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) min_deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) min_deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) min_deflection[i][perm_d[mesh_element[j].node3 - 1]];
-                                fe_data.f4 = 0.0f;
-                            }
-                            else
+                            BOOL RC_flag = FALSE;
+                            w.kolor = Ldsp.kolor;
+                            if (sti == 2) //ULS
                             {
-                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                                else gradient.c1 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
-                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                                else gradient.c2 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
-                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                                else gradient.c3 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
-                                gradient.c4 = getRGB(0.0, deflection_amax);
+                                //checking cross section
+                                body_prop_no = body_property[mesh_element[j].body_number - 1];
+                                if (body_prop_no > -1)
+                                    body_prop = &pl_property[body_prop_no];
+                                else body_prop = NULL;
+
+                                if (body_prop != NULL) //WARNING, RC_flag should be inherited from plate
+                                {
+                                    if (body_prop->RC_flag) {
+                                        //calculating reinforcement ratio and normalized compression stress
+                                        RC_flag = TRUE; //so there will be just one block for both min and max
+                                    }
+                                }
+                            }
+                            if ((RC_flag == TRUE) && (i < 3))  //only σ.xx, σ.yy, σ.zz
+                            {
+                                RC_flag_exists = TRUE;
+                                //changing kolor
+                                w.kolor = 255;  //this is indicator of showing percent for negatives, and stress for positives
+                                //double vmax_node[3];
+                                //double vmin_node[3];
+                                double v_node[3];
+                                double d;  //effective depth
+                                double M;  //moment of force
+                                double M_;  //absolute value moment of force
+                                double K;  //non-dimentional moment
+                                double z;  //lever arm
+                                double As, Asc;    //surface of reinforcing bars in tension, reinforcing bars in compression
+                                double p[3];  //reinforcement ratio in each node
+                                double sigma[3];  //effective stress in concrete in each node
+                                double cb; //concrete cross section b
+                                double cc;
+                                double h; //cross section height
+                                double bb; //width 1 m or 12 inch
+                                double fck, fcd, fyk, fyd;  //in ACI 318   fyd=fyk, fcd=fyd
+                                double n, m;
+                                double E_cm;
+                                double E_c;
+                                double E_s; // = 200;  //GPa in SI
+                                double dk;  //relative neutral axis depth
+                                double x; //neutral axis depth
+                                double I_cr; //cracked moment of inertia
+                                double R;  //moment strength paramete
+                                double fi;
+                                double a; //compression block depth
+                                double nac; //neutral axis
+                                double beta1;
+                                double epsilont; //tensile strain
+
+                                if (bi == 0) {
+                                    //vmin_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    //vmin_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    //vmin_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    v_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    v_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    v_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                } else {
+                                    //vmax_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    //vmax_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    //vmax_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                    v_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                    v_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                    v_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                }
+
+                                if (ret_standard == 1) //Eurocodes
+                                {
+                                    if (UNITS != SI)  //impoerial, need to be converted
+                                    {
+                                        //concrete
+                                        if (body_prop->fck > 0.) {
+                                            fck = body_prop->fck;
+                                            if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //psi
+                                            else fcd = body_prop->fck / 1.5;
+                                        } else {
+                                            if (body_prop->fcd > 0.) {
+                                                fcd = body_prop->fcd;
+                                                fck = fcd * 1.5;
+                                            } else {
+                                                fck = 4351.13; // equivalent of 30.0e6 Pa
+                                                fcd = fck / 1.5;
+                                            }
+                                        }
+                                        //steel
+                                        E_s = 29000000;  //psi
+
+                                        if (body_prop->fyk > 0.) {
+                                            fyk = body_prop->fyk;
+                                            if (body_prop->fyd > 0.) fyd = body_prop->fyd;  //psi
+                                            else fyd = body_prop->fyk / 1.15;
+                                        } else {
+                                            if (body_prop->fyd > 0.) {
+                                                fyd = body_prop->fyd; //psi
+                                                fyk = fyd * 1.15;
+                                            } else {
+                                                fyk = 58015.1; //equivalent of 400.0e6 Pa
+                                                fyd = fyk / 1.15;
+                                            }
+                                        }
+                                        if (body_prop->c > 0.) cc = body_prop->c;
+                                        else cc = 1.18;  //equivalent of 30 mm
+
+                                        h = body_prop->h;
+                                        d = h - cc;
+
+                                        //conversion to IS
+                                        //converstion from psi to Pa
+                                        fck *= 6894.76;
+                                        fcd *= 6894.76;
+                                        fyk *= 6894.76;
+                                        fyd *= 6894.76;
+                                        E_s *= 6894.76;
+
+                                        h *= 0.0254;   //inch to m
+                                        d *= 0.0254;   //inch to m
+                                        cc *= 0.0254;   //inch to m
+                                    } else  //SI
+                                    {
+                                        //concrete
+                                        if (body_prop->fck > 0.) {
+                                            fck = body_prop->fck;
+                                            if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa
+                                            else fcd = body_prop->fck * 1e6 / 1.5; //MPa to Pa
+                                        } else {
+                                            if (body_prop->fcd > 0.) {
+                                                fcd = body_prop->fcd * 1e6;  //MPa to Pa
+                                                fck = fcd * 1.5;
+                                            } else {
+                                                fck = 30.0e6;
+                                                fcd = fck / 1.5;
+                                            }
+                                        }
+
+                                        E_s = 200e9;  //Pa
+                                        //steel
+                                        if (body_prop->fyk > 0.) {
+                                            fyk = body_prop->fyk;
+                                            if (body_prop->fyd > 0.) fyd = body_prop->fyd * 1e6;  //MPa to Pa
+                                            else fyd = body_prop->fyk * 1e6 / 1.15; //MPa to Pa
+                                        } else {
+                                            if (body_prop->fyd > 0.) {
+                                                fyd = body_prop->fyd * 1e6; //MPa to Pa
+                                                fyk = fyd * 1.15;
+                                            } else {
+                                                fyk = 400.0e6;
+                                                fyd = fyk / 1.15;
+                                            }
+                                        }
+                                        if (body_prop->c > 0.) cc = body_prop->c;
+                                        else cc = 0.03;  //30 mm
+
+                                        h = body_prop->h;
+                                        d = h - cc;
+                                    }
+
+                                    for (int ni = 0; ni < 3; ni++) {
+                                        //reinforcement ratio
+                                        //M=v_node[ni]*h*h/6.;
+
+                                        M = v_node[ni] * body_prop->h * body_prop->h / 6.;
+
+                                        if (UNITS != SI)  //need to be converted
+                                        {
+                                            M *= 0.112985 * 1000.0 / 25.4;   //lbs-inch to Nm
+                                        }
+                                        M_ = fabs(M);
+
+                                        if (Check_if_Equal(M, 0.0)) {
+                                            sigma[ni] = 0.;
+                                            p[ni] = 0.;
+                                            continue;
+                                        }
+
+                                        double lambda = 0.8;  //λ
+                                        double eta = 1.0;  //η
+                                        double rhot, rhoc, total_rho, sigma_c_max;
+                                        int use_min_reinf = 1;
+
+                                        int ret_p = calculate_rebars_eurocode_simplified(M_, h, 1.0, cc, fck, fcd, fyd, eta, lambda, E_s, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+
+
+                                        if (ret_p == 0) {
+                                            p[ni] = total_rho;
+                                            sigma[ni] = sigma_c_max;
+                                        } else //Negative reinforcement area
+                                        {
+                                            p[ni] = 0.0;  //or NaN
+                                            sigma[ni] = 0.0;  //or NaN
+                                        }
+
+                                        if (UNITS != SI)  //need to be converted
+                                        {
+                                            sigma[ni] *= 0.000145038;  //Pa to psi
+                                        }
+
+                                        stress_min_RC = min(stress_min_RC, sigma[ni]);
+                                        stress_max_RC = max(stress_max_RC, sigma[ni]);
+
+                                        ps = p[ni] * (signbit(M) ? -1 : 1);
+                                        stress_min_RC_rho = min(stress_min_RC_rho, ps);
+                                        stress_max_RC_rho = max(stress_max_RC_rho, ps);
+                                    }
+                                } else // ASCE & ICC
+                                {
+                                    if (UNITS != SI)  //imperial, need to be converted
+                                    {
+                                        if (body_prop->fck > 0.) {
+                                            fck = body_prop->fck;
+                                            if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //ksi
+                                            else fcd = body_prop->fck / 1.5;
+                                        } else {
+                                            if (body_prop->fcd > 0.) {
+                                                fcd = body_prop->fcd;
+                                                fck = fcd * 1.5;
+                                            } else {
+                                                fck = 4351.13;  //psi
+                                                fcd = fck / 1.0;
+                                            }
+                                        }
+
+                                        E_s = 29.0e6;  //psi
+
+                                        if (body_prop->fyk > 0.) {
+                                            fyk = body_prop->fyk;
+                                            if (body_prop->fyd > 0.) fcd = body_prop->fyd;  //ksi
+                                            else fcd = body_prop->fyk / 1.15;
+                                        } else {
+                                            if (body_prop->fyd > 0.) {
+                                                fyd = body_prop->fyd;  //ksi
+                                                fyk = fyd * 1.15;
+                                            } else {
+                                                fyk = 60000.;  //psi
+                                                fyd = fyk / 1.0;
+                                            }
+                                        }
+
+                                        bb = 12.0;
+                                    } else //SI
+                                    {
+                                        if (body_prop->fck > 0.) {
+                                            fck = body_prop->fck;
+                                            if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa;
+                                            else fcd = body_prop->fck / 1.5;
+                                        } else {
+                                            if (body_prop->fcd > 0.) {
+                                                fcd = body_prop->fcd * 1e6;  //MPa to Pa;
+                                                fck = fcd * 1.5;
+                                            } else {
+                                                fck = 30.0e6;  //in Pa
+                                                fcd = fck / 1.0;
+                                            }
+                                        }
+
+                                        E_s = 200e9;  //Pa
+
+                                        if (body_prop->fyk > 0.) {
+                                            fyk = body_prop->fyk;
+                                            if (body_prop->fyd > 0.) fcd = body_prop->fyd * 1e6;  //MPa to Pa;
+                                            else fcd = body_prop->fyk / 1.15;
+                                        } else {
+                                            if (body_prop->fyd > 0.) {
+                                                fyd = body_prop->fyd * 1e6;  //MPa to Pa;;
+                                                fyk = fyd * 1.15;
+                                            } else {
+                                                fyk = 400.0e6; //in Pa
+                                                fyd = fyk / 1.0;
+                                            }
+                                        }
+                                        bb = 1.0;
+                                    }
+
+                                    h = body_prop->h;
+                                    if (body_prop->c > 0.) cc = body_prop->c;
+                                    else cc = 1.0;  //onr inch
+                                    fi = 0.9;
+                                    d = h - cc;
+
+                                    for (int ni = 0; ni < 3; ni++) {
+
+                                        if (fabs(v_node[ni]) > 11000) {
+                                            int abc = 0;
+                                        }
+                                        M = v_node[ni] * h * h / 6.;
+
+                                        if (UNITS != SI) {
+                                            //M *= 1000.0/304.8;   //Nm/m to in-lbs/ft
+                                            M *= 12.;
+                                        }
+
+                                        M_ = fabs(M);
+                                        if (Check_if_Equal(M, 0.0)) {
+                                            sigma[ni] = 0.;
+                                            p[ni] = 0.;
+                                            continue;
+                                        }
+
+                                        double rhot, rhoc, total_rho, sigma_c_max;
+                                        int use_min_reinf = 1;
+
+                                        int ret_p = calculate_rebars_aci_simplified_UNI(M_, h, bb, cc, fyk, fyd, fck, fcd, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
+                                        //int ret_p = calculate_rebars_aci_simplified_SI(M_, h, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
+
+                                        if (ret_p == 0) {
+                                            p[ni] = total_rho;
+                                            sigma[ni] = sigma_c_max;
+                                        } else {
+                                            p[ni] = 0.0;   //or NaN
+                                            sigma[ni] = 0.0;  //or Nan
+                                        }
+
+                                        stress_min_RC = min(stress_min_RC, sigma[ni]);
+                                        stress_max_RC = max(stress_max_RC, sigma[ni]);
+                                        ps = p[ni] * (signbit(M) ? -1 : 1);
+                                        stress_min_RC_rho = min(stress_min_RC_rho, ps);
+                                        stress_max_RC_rho = max(stress_max_RC_rho, ps);
+                                    }
+                                }
+
+                                if (bi == 0) {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                    gradient.c4 = getRGB(0.0, stress_amax);
+
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag = 1;
+
+                                    fe_data.f1 = (float) sigma[0];
+                                    fe_data.f2 = (float) sigma[1];
+                                    fe_data.f3 = (float) sigma[2];
+                                    fe_data.f4 = 0.0f;
+
+                                    fe_data_ex.f1 = (float) p[0];  //negative means %
+                                    fe_data_ex.f2 = (float) p[1];  //negative means %
+                                    fe_data_ex.f3 = (float) p[2];  //negative means %
+                                    fe_data_ex.f4 = 0.0f;
+                                } else {
+                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                    gradient.c4 = getRGB(0.0, stress_amax);
+
+                                    fe_data.el_number = j + 1;
+                                    fe_data.flag = 1;
+
+                                    fe_data.f1 = (float) sigma[0];
+                                    fe_data.f2 = (float) sigma[1];
+                                    fe_data.f3 = (float) sigma[2];
+                                    fe_data.f4 = 0.0f;
+
+                                    fe_data_ex.f1 = (float) p[0];  //negative means %
+                                    fe_data_ex.f2 = (float) p[1];  //negative means %
+                                    fe_data_ex.f3 = (float) p[2];  //negative means %
+                                    fe_data_ex.f4 = 0.0f;
+
+                                }
+                            } else if (bi == 0) {
+                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                gradient.c4 = getRGB(0.0, stress_amax);
 
                                 fe_data.el_number = j + 1;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) max_deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) max_deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) max_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                                fe_data.flag = 0;
+                                fe_data.f1 = (float) min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                fe_data.f4 = 0.0f;
+                            } else if (bi == 1) {
+                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                gradient.c4 = getRGB(0.0, stress_amax);
+
+                                fe_data.el_number = j + 1;
+                                fe_data.flag = 0;
+                                fe_data.f1 = (float) max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                fe_data.f2 = (float) max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                fe_data.f3 = (float) max_stress[i][perm_s[mesh_element[j].node3 - 1]];
                                 fe_data.f4 = 0.0f;
                             }
-                        } else
-                        {
-                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                            else gradient.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]],deflection_amax);
-                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                            else gradient.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]],deflection_amax);
-                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                            else gradient.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]],deflection_amax);
-                            gradient.c4 = getRGB(0.0, deflection_amax);
+                        } else {
+                            if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                            else gradient.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                            if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                            else gradient.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                            if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                            else gradient.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                            gradient.c4 = getRGB(0.0, stress_amax);
 
                             fe_data.el_number = j + 1;
-                            fe_data.flag=0;
-                            fe_data.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                            fe_data.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                            fe_data.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
+                            fe_data.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
+                            fe_data.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
                             fe_data.f4 = 0.0f;
                         }
 
@@ -7099,12 +9506,19 @@ singles_multiples:
                         fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
                         memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
 
-                        w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                        if (fe_data.flag == 1)  //extended
+                        {
+                            fe_data_ex_ptr = fe_data_ptr + sizeof(FE_DATA);
+                            memmove(fe_data_ex_ptr, &fe_data_ex, sizeof(FE_DATA_EX));
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA) + sizeof(FE_DATA_EX);
+                        } else {
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                        }
                         adr = dodaj_obiekt((BLOK *) dane, &w);
                     }
 
                     //colorbar
-                    if (deflection_amax > 0.0) {
+                    if (stress_amax > 0.0) {
                         w.xy[0] = (float) pl_min_x + 10.f;
                         w.xy[1] = (float) pl_min_y - 10.f;
 
@@ -7117,48 +9531,44 @@ singles_multiples:
                         w.xy[6] = w.xy[0];
                         w.xy[7] = w.xy[5];
 
-                        if (nom_max)
-                        {
-                            if (bi==0) {
-                                gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
-                                gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
-                                gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
-                                gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+                        if (nom_max) {
+                            if (bi == 0) {
+                                gradient.c1 = getRGB(min_stress_min[i], stress_amax);
+                                gradient.c2 = getRGB(max_stress_max[i], stress_amax);
+                                gradient.c3 = getRGB(max_stress_max[i], stress_amax);
+                                gradient.c4 = getRGB(min_stress_min[i], stress_amax);
 
                                 fe_data.el_number = 0;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) -min_deflection_min[i];
-                                fe_data.f2 = (float) -max_deflection_max[i];
-                                fe_data.f3 = (float) -max_deflection_max[i];
-                                fe_data.f4 = (float) -min_deflection_min[i];
-                            }
-                            else
-                            {
-                                gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
-                                gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
-                                gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
-                                gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+                                fe_data.flag = 0;
+                                fe_data.f1 = (float) min_stress_min[i];
+                                fe_data.f2 = (float) max_stress_max[i];
+                                fe_data.f3 = (float) max_stress_max[i];
+                                fe_data.f4 = (float) min_stress_min[i];
+                            } else {
+                                gradient.c1 = getRGB(min_stress_min[i], stress_amax);
+                                gradient.c2 = getRGB(max_stress_max[i], stress_amax);
+                                gradient.c3 = getRGB(max_stress_max[i], stress_amax);
+                                gradient.c4 = getRGB(min_stress_min[i], stress_amax);
 
                                 fe_data.el_number = 0;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) -min_deflection_min[i];
-                                fe_data.f2 = (float) -max_deflection_max[i];
-                                fe_data.f3 = (float) -max_deflection_max[i];
-                                fe_data.f4 = (float) -min_deflection_min[i];
+                                fe_data.flag = 0;
+                                fe_data.f1 = (float) min_stress_min[i];
+                                fe_data.f2 = (float) max_stress_max[i];
+                                fe_data.f3 = (float) max_stress_max[i];
+                                fe_data.f4 = (float) min_stress_min[i];
                             }
-                        } else
-                        {
-                            gradient.c1 = getRGB(-deflection_min[i], deflection_amax);
-                            gradient.c2 = getRGB(-deflection_max[i], deflection_amax);
-                            gradient.c3 = getRGB(-deflection_max[i], deflection_amax);
-                            gradient.c4 = getRGB(-deflection_min[i], deflection_amax);
+                        } else {
+                            gradient.c1 = getRGB(stress_min[i], stress_amax);
+                            gradient.c2 = getRGB(stress_max[i], stress_amax);
+                            gradient.c3 = getRGB(stress_max[i], stress_amax);
+                            gradient.c4 = getRGB(stress_min[i], stress_amax);
 
                             fe_data.el_number = 0;
-                            fe_data.flag=0;
-                            fe_data.f1 = (float) -deflection_min[i];
-                            fe_data.f2 = (float) -deflection_max[i];
-                            fe_data.f3 = (float) -deflection_max[i];
-                            fe_data.f4 = (float) -deflection_min[i];
+                            fe_data.flag = 0;
+                            fe_data.f1 = (float) stress_min[i];
+                            fe_data.f2 = (float) stress_max[i];
+                            fe_data.f3 = (float) stress_max[i];
+                            fe_data.f4 = (float) stress_min[i];
                         }
 
                         w.lp = 8;
@@ -7177,45 +9587,36 @@ singles_multiples:
                         w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
                         adr = dodaj_obiekt((BLOK *) dane, &w);
 
-                        //adjust deflection to proper units
-                        if (i < 3)  //in [mm]
+                        //adjust stress to proper units
+                        if (UNITS == SI) {
+                            if (nom_max) {
+                                if (bi == 0) {
+                                    stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
+                                    stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
+                                } else {
+                                    stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
+                                    stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
+                                }
+                            } else {
+                                stress_min_ = stress_min[i] * 0.000001; //in MPa
+                                stress_max_ = stress_max[i] * 0.000001; //in MPa
+                            }
+                            unit = _MPa_;
+                        } else //IMP stays as is  in inches
                         {
-                            if (UNITS == SI) {
-                                if (nom_max)
-                                {
-                                    deflection_min_ = min_deflection_min[i] * 1000.0; //in mm
-                                    deflection_max_ = max_deflection_max[i] * 1000.0; //in mm
+                            if (nom_max) {
+                                if (bi == 0) {
+                                    stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //in ksp
+                                    stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //in ksi
+                                } else {
+                                    stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //ksi mm
+                                    stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //ksi mm
                                 }
-                                else {
-                                    deflection_min_ = deflection_min[i] * 1000.0; //in mm
-                                    deflection_max_ = deflection_max[i] * 1000.0; //in mm
-                                }
-                                unit = _mm_;
-                            } else //IMP stays as is  in inches
-                            {
-                                if (nom_max)
-                                {
-                                    deflection_min_ = min_deflection_min[i]; //in inch
-                                    deflection_max_ = max_deflection_max[i]; //in inch
-                                }
-                                else {
-                                    deflection_min_ = deflection_min[i]; //in inch
-                                    deflection_max_ = deflection_max[i]; //in inch
-                                }
-                                unit = _inch_;
+                            } else {
+                                stress_min_ = stress_min[i] * 0.001; //in ksi
+                                stress_max_ = stress_max[i] * 0.001; //in ksi
                             }
-                        } else {
-                            //in radians
-                            if (nom_max)
-                            {
-                                deflection_min_ = min_deflection_min[i]; //in inch
-                                deflection_max_ = max_deflection_max[i]; //in inch
-                            }
-                            else {
-                                deflection_min_ = deflection_min[i]; //in inch
-                                deflection_max_ = deflection_max[i]; //in inch
-                            }
-                            unit = _rad_;
+                            unit = _ksi_;
                         }
 
                         T.warstwa = Ldsp.warstwa;
@@ -7226,12 +9627,12 @@ singles_multiples:
                         T.kat = 0.0f;
                         T.ukryty = 0;
 
-                        T.typ=15;
+                        T.typ = 15;
 
                         T.x = w.xy[0];
                         T.y = w.xy[1] + 0.5f;
                         T.justowanie = j_do_lewej;
-                        sprintf(T.text, "%.5f", deflection_min_);
+                        sprintf(T.text, "%.4f", stress_min_);
 
                         T.dl = strlen(T.text);
                         T.n = T18 + T.dl;
@@ -7241,7 +9642,7 @@ singles_multiples:
                         T.x = w.xy[2];
                         T.y = w.xy[3] + 0.5f;
                         T.justowanie = j_do_prawej;
-                        sprintf(T.text, "%.4f", deflection_max_);
+                        sprintf(T.text, "%.4f", stress_max_);
 
                         T.dl = strlen(T.text);
                         T.n = T18 + T.dl;
@@ -7251,752 +9652,18 @@ singles_multiples:
                         T.x = (w.xy[0] + w.xy[2]) / 2.f;
                         T.y = w.xy[3] + 0.5f;
                         T.justowanie = j_srodkowo;
-                        sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), deflection_chapter[i],min_max, unit);
+                        sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), stress_chapter[i], min_max, unit);
 
                         T.dl = strlen(T.text);
                         T.n = T18 + T.dl;
-
                         normalize_txt(&T);
                         adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
-                        //changing back
-                        T.typ=0;
-                    }
-                }
-            }
-        }
-
-        my_sleep(10);
-
-        //stress blocks
-        //sprintf(desired_layer, "%s_%s", ptr_id, "stress");
-        //strcpy(SLS_ULS, "sls"); //temporary
-        sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "stress", SLS_ULS, combination_no);
-
-        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
-        utf8Upper(desired_layer_upper);
-
-        for (ii = 0; ii < No_Layers; ii++) {
-            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
-            utf8Upper(layer_name_upper);
-
-            if (strcmp(layer_name_upper, desired_layer_upper) == 0)
-                break;
-        }
-        if (ii < No_Layers) {
-            desired_layer_no = ii;
-            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
-            delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-        } else {
-            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
-                                   12, (char *) "", 11, 1, 62);
-                no_error = FALSE;
-                goto pl_error1;
-            }
-            if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-
-                ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_,
-                                   12, (char *) "", 11, 1, 62);
-                no_error = FALSE;
-                goto pl_error1;
-            }
-            No_Layers++;
-            desired_layer_no = No_Layers - 1;
-            Layers[No_Layers - 1].on = 1;
-            Layers[No_Layers - 1].edit = 1;
-            Layers[No_Layers - 1].point = 1;
-            strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-            Layers[No_Layers - 1].color = Ldsp.kolor;
-        }
-
-stress_block:
-        if (perm_s != NULL) 
-        {
-            for (i = 0; i < STRESS_NUMBER; i++) 
-            {
-                if ((sigma_eq_==0) && (i==(STRESS_NUMBER-1)))
-                    break;
-                Ldsp.warstwa = desired_layer_no;
-                w.warstwa = Ldsp.warstwa;
-                w.kolor = Ldsp.kolor;
-                w.blok = 1;
-
-                //from meters to drawing units
-                blok_origin.x = jednostkiObX(mesh_node[0].x);
-                blok_origin.y = jednostkiObY(mesh_node[0].y);
-
-                if (nom_max)
-                {
-                    bim=2;
-                    min_max=_min_;
-                }
-                else
-                {
-                    bim=1;
-                    min_max = _nope_;
-                }
-
-                for (bi=0; bi<bim; bi++) 
-                {
-                    if (bi>0) min_max = _max_;
-
-                    if (nom_max)
-                    {
-                        //checking bipolarity
-                        if (bi==0)  //potentially minimal
-                        {
-                            if ((max_stress_max[i]>0.) && (min_stress_min[i]>=0.))
-                                do_nothing(); //continue;  //we do not create zero unipolar graph
-                        }
-                        if (bi==1)  //potentially maximal
-                        {
-                            if ((max_stress_max[i]<=0.) && (min_stress_min[i]<0.))
-                                do_nothing(); //continue; //we do not create zero unipolar graph
-                        }
-                    }
-
-                    sprintf(block_name, "%s$%s_%s%s_%d", ptr_id_short, stress_chapter[i], SLS_ULS, min_max, combination_no);
-
-                    hiding = TRUE;
-                    for (j = 0; j < block_names_no; j++) {
-                        if (strcmp(block_names[j], block_name) == 0) {
-                            hiding = FALSE;
-                            break;
-                        }
-                    }
-
-                    if (nom_max) stress_amax = max(fabs(max_stress_max[i]), fabs(min_stress_min[i]));
-                    else stress_amax = max(fabs(stress_max[i]), fabs(stress_min[i]));
-
-                    stress_min_RC=BIGNOD;
-                    stress_max_RC=-BIGNOD;
-                    stress_min_RC_rho=BIGNOD;
-                    stress_max_RC_rho=-BIGNOD;
-                    RC_flag_exists=FALSE;
-                    
-                    if (stress_amax > 0.0) {
-                        ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
-                        if (ptr_block == NULL) {
-                            fclose(f);
-                            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
-                                               (char *) _CANNOT_CREATE_STRESS_BLOCK_, 12, (char *) "", 11, 1, 62);
-                            no_error = FALSE;
-                            goto pl_error1;
-                        }
-
-                        for (j = 0; j < mesh_element_no; j++)
-                        {
-                            w.xy[0] = jednostkiObX(mesh_node[mesh_element[j].node1 - 1].x);
-                            w.xy[1] = jednostkiObY(mesh_node[mesh_element[j].node1 - 1].y);
-
-                            w.xy[2] = jednostkiObX(mesh_node[mesh_element[j].node2 - 1].x);
-                            w.xy[3] = jednostkiObY(mesh_node[mesh_element[j].node2 - 1].y);
-
-                            w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
-                            w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
-
-                            if (nom_max) //ULS_SLS
-                            {
-                                BOOL RC_flag=FALSE;
-                                w.kolor = Ldsp.kolor;
-                                if (sti==2) //ULS
-                                {
-                                    //checking cross section
-                                    body_prop_no=body_property[mesh_element[j].body_number-1];
-                                    if (body_prop_no>-1)
-                                        body_prop=&pl_property[body_prop_no];
-                                    else body_prop=NULL;
-
-                                    if (body_prop!=NULL) //WARNING, RC_flag should be inherited from plate
-                                    {
-                                        if (body_prop->RC_flag) {
-                                            //calculating reinforcement ratio and normalized compression stress
-                                            RC_flag = TRUE; //so there will be just one block for both min and max
-                                        }
-                                    }
-                                }
-                                if ((RC_flag==TRUE) && (i<3))  //only σ.xx, σ.yy, σ.zz
-                                {
-                                    RC_flag_exists=TRUE;
-                                    //changing kolor
-                                    w.kolor = 255;  //this is indicator of showing percent for negatives, and stress for positives
-                                    //double vmax_node[3];
-                                    //double vmin_node[3];
-                                    double v_node[3];
-                                    double d;  //effective depth
-                                    double M;  //moment of force
-                                    double M_;  //absolute value moment of force
-                                    double K;  //non-dimentional moment
-                                    double z;  //lever arm
-                                    double As, Asc;    //surface of reinforcing bars in tension, reinforcing bars in compression
-                                    double p[3];  //reinforcement ratio in each node
-                                    double sigma[3];  //effective stress in concrete in each node
-                                    double cb; //concrete cross section b
-                                    double cc;
-                                    double h; //cross section height
-                                    double bb; //width 1 m or 12 inch
-                                    double fck, fcd, fyk, fyd;  //in ACI 318   fyd=fyk, fcd=fyd
-                                    double n, m;
-                                    double E_cm;
-                                    double E_c;
-                                    double E_s; // = 200;  //GPa in SI
-                                    double dk;  //relative neutral axis depth
-                                    double x; //neutral axis depth
-                                    double I_cr; //cracked moment of inertia
-                                    double R;  //moment strength paramete
-                                    double fi;
-                                    double a; //compression block depth
-                                    double nac; //neutral axis
-                                    double beta1;
-                                    double epsilont; //tensile strain
-
-                                    if (bi==0) {
-                                        //vmin_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                        //vmin_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                        //vmin_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                        v_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                        v_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                        v_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                    }
-                                    else
-                                    {
-                                        //vmax_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                        //vmax_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                        //vmax_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                        v_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                        v_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                        v_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                    }
-
-                                    if (ret_standard==1) //Eurocodes
-                                    {
-                                        if (UNITS != SI)  //impoerial, need to be converted
-                                        {
-                                            //concrete
-                                            if (body_prop->fck > 0.) {
-                                                fck = body_prop->fck;
-                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //psi
-                                                else fcd = body_prop->fck / 1.5;
-                                            } else {
-                                                if (body_prop->fcd > 0.) {
-                                                    fcd = body_prop->fcd;
-                                                    fck = fcd * 1.5;
-                                                } else {
-                                                    fck = 4351.13; // equivalent of 30.0e6 Pa
-                                                    fcd = fck / 1.5;
-                                                }
-                                            }
-                                            //steel
-                                            E_s = 29000000;  //psi
-
-                                            if (body_prop->fyk > 0.) {
-                                                fyk = body_prop->fyk;
-                                                if (body_prop->fyd > 0.) fyd = body_prop->fyd;  //psi
-                                                else fyd = body_prop->fyk / 1.15;
-                                            } else {
-                                                if (body_prop->fyd > 0.) {
-                                                    fyd = body_prop->fyd; //psi
-                                                    fyk = fyd * 1.15;
-                                                } else {
-                                                    fyk = 58015.1; //equivalent of 400.0e6 Pa
-                                                    fyd = fyk / 1.15;
-                                                }
-                                            }
-                                            if (body_prop->c>0.) cc=body_prop->c;
-                                            else cc=1.18;  //equivalent of 30 mm
-
-                                            h = body_prop->h;
-                                            d=h-cc;
-
-                                            //conversion to IS
-                                            //converstion from psi to Pa
-                                            fck *= 6894.76;
-                                            fcd *= 6894.76;
-                                            fyk *= 6894.76;
-                                            fyd *= 6894.76;
-                                            E_s *= 6894.76;
-
-                                            h *= 0.0254;   //inch to m
-                                            d *= 0.0254;   //inch to m
-                                            cc*= 0.0254;   //inch to m
-                                        }
-                                        else  //SI
-                                        {
-                                            //concrete
-                                            if (body_prop->fck > 0.) {
-                                                fck = body_prop->fck;
-                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa
-                                                else fcd = body_prop->fck  * 1e6 / 1.5; //MPa to Pa
-                                            } else {
-                                                if (body_prop->fcd > 0.) {
-                                                    fcd = body_prop->fcd * 1e6;  //MPa to Pa
-                                                    fck = fcd * 1.5;
-                                                } else {
-                                                    fck = 30.0e6;
-                                                    fcd = fck / 1.5;
-                                                }
-                                            }
-
-                                            E_s = 200e9;  //Pa
-                                            //steel
-                                            if (body_prop->fyk > 0.) {
-                                                fyk = body_prop->fyk;
-                                                if (body_prop->fyd > 0.) fyd = body_prop->fyd * 1e6;  //MPa to Pa
-                                                else fyd = body_prop->fyk * 1e6 / 1.15; //MPa to Pa
-                                            } else {
-                                                if (body_prop->fyd > 0.) {
-                                                    fyd = body_prop->fyd * 1e6; //MPa to Pa
-                                                    fyk = fyd * 1.15;
-                                                } else {
-                                                    fyk = 400.0e6;
-                                                    fyd = fyk / 1.15;
-                                                }
-                                            }
-                                            if (body_prop->c>0.) cc=body_prop->c;
-                                            else cc=0.03;  //30 mm
-
-                                            h = body_prop->h;
-                                            d=h-cc;
-                                        }
-
-                                        for (int ni=0; ni<3; ni++)
-                                        {
-                                            //reinforcement ratio
-                                            //M=v_node[ni]*h*h/6.;
-
-                                            M=v_node[ni]*body_prop->h*body_prop->h/6.;
-
-                                            if (UNITS != SI)  //need to be converted
-                                            {
-                                               M*=0.112985 * 1000.0/25.4;   //lbs-inch to Nm
-                                            }
-                                            M_ = fabs(M);
-
-                                            if (Check_if_Equal(M,0.0))
-                                            {
-                                                sigma[ni]=0.;
-                                                p[ni]=0.;
-                                                continue;
-                                            }
-
-                                            double lambda = 0.8;  //λ
-                                            double eta = 1.0;  //η
-                                            double rhot, rhoc, total_rho, sigma_c_max;
-                                            int use_min_reinf = 1;
-
-                                            int ret_p = calculate_rebars_eurocode_simplified(M_, h, 1.0, cc, fck, fcd, fyd, eta, lambda, E_s, use_min_reinf, &As, &Asc, &rhot, &rhoc, &total_rho, &sigma_c_max);
-
-
-                                            if (ret_p==0)
-                                            {
-                                                p[ni] = total_rho;
-                                                sigma[ni]=sigma_c_max;
-                                            }
-                                            else //Negative reinforcement area
-                                            {
-                                                p[ni] = 0.0;  //or NaN
-                                                sigma[ni] = 0.0;  //or NaN
-                                            }
-
-                                            if (UNITS != SI)  //need to be converted
-                                            {
-                                                sigma[ni] *= 0.000145038;  //Pa to psi
-                                            }
-
-                                            stress_min_RC=min(stress_min_RC, sigma[ni]);
-                                            stress_max_RC=max(stress_max_RC, sigma[ni]);
-
-                                            ps = p[ni] * (signbit(M) ? -1:1);
-                                            stress_min_RC_rho=min(stress_min_RC_rho, ps);
-                                            stress_max_RC_rho=max(stress_max_RC_rho, ps);
-                                        }
-                                    }
-                                    else // ASCE & ICC
-                                    {
-                                        if (UNITS != SI)  //imperial, need to be converted
-                                        {
-                                            if (body_prop->fck > 0.) {
-                                                fck = body_prop->fck;
-                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd;  //ksi
-                                                else fcd = body_prop->fck / 1.5;
-                                            } else {
-                                                if (body_prop->fcd > 0.) {
-                                                    fcd = body_prop->fcd;
-                                                    fck = fcd * 1.5;
-                                                } else
-                                                {
-                                                    fck = 4351.13;  //psi
-                                                    fcd = fck / 1.0;
-                                                }
-                                            }
-
-                                            E_s = 29.0e6;  //psi
-
-                                            if (body_prop->fyk > 0.) {
-                                                fyk = body_prop->fyk;
-                                                if (body_prop->fyd > 0.) fcd = body_prop->fyd;  //ksi
-                                                else fcd = body_prop->fyk / 1.15;
-                                            } else {
-                                                if (body_prop->fyd > 0.) {
-                                                    fyd = body_prop->fyd;  //ksi
-                                                    fyk = fyd * 1.15;
-                                                } else {
-                                                    fyk = 60000.;  //psi
-                                                    fyd = fyk / 1.0;
-                                                }
-                                            }
-
-                                            bb=12.0;
-                                        }
-                                        else //SI
-                                        {
-                                            if (body_prop->fck > 0.) {
-                                                fck = body_prop->fck;
-                                                if (body_prop->fcd > 0.) fcd = body_prop->fcd * 1e6;  //MPa to Pa;
-                                                else fcd = body_prop->fck / 1.5;
-                                            } else {
-                                                if (body_prop->fcd > 0.) {
-                                                    fcd = body_prop->fcd * 1e6;  //MPa to Pa;
-                                                    fck = fcd * 1.5;
-                                                } else
-                                                {
-                                                    fck = 30.0e6;  //in Pa
-                                                    fcd = fck / 1.0;
-                                                }
-                                            }
-
-                                            E_s = 200e9;  //Pa
-
-                                            if (body_prop->fyk > 0.) {
-                                                fyk = body_prop->fyk;
-                                                if (body_prop->fyd > 0.) fcd = body_prop->fyd * 1e6;  //MPa to Pa;
-                                                else fcd = body_prop->fyk / 1.15;
-                                            } else {
-                                                if (body_prop->fyd > 0.) {
-                                                    fyd = body_prop->fyd * 1e6;  //MPa to Pa;;
-                                                    fyk = fyd * 1.15;
-                                                } else
-                                                {
-                                                    fyk = 400.0e6; //in Pa
-                                                    fyd = fyk / 1.0;
-                                                }
-                                            }
-                                            bb=1.0;
-                                        }
-
-                                        h = body_prop->h;
-                                        if (body_prop->c>0.) cc=body_prop->c;
-                                        else cc=1.0;  //onr inch
-                                        fi = 0.9;
-                                        d = h - cc;
-
-                                        for (int ni=0; ni<3; ni++) {
-
-                                            if (fabs(v_node[ni]) > 11000) {
-                                                int abc = 0;
-                                            }
-                                            M = v_node[ni] * h * h / 6.;
-
-                                            if (UNITS != SI)
-                                            {
-                                                //M *= 1000.0/304.8;   //Nm/m to in-lbs/ft
-                                                M *= 12.;
-                                            }
-
-                                            M_ = fabs(M);
-                                            if (Check_if_Equal(M,0.0))
-                                            {
-                                                sigma[ni]=0.;
-                                                p[ni]=0.;
-                                                continue;
-                                            }
-
-                                            double rhot, rhoc, total_rho, sigma_c_max;
-                                            int use_min_reinf = 1;
-
-                                            int ret_p = calculate_rebars_aci_simplified_UNI(M_, h, bb, cc, fyk, fyd, fck, fcd, use_min_reinf, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
-                                            //int ret_p = calculate_rebars_aci_simplified_SI(M_, h, cc, fyk, fyd, fck, fcd, &As, &Asc, &rhot, &rhoc,&total_rho, &sigma_c_max);
-
-                                            if (ret_p==0)
-                                            {
-                                                p[ni] = total_rho;
-                                                sigma[ni]=sigma_c_max;
-                                            }
-                                            else
-                                            {
-                                                p[ni] = 0.0;   //or NaN
-                                                sigma[ni] = 0.0;  //or Nan
-                                            }
-
-                                            stress_min_RC=min(stress_min_RC, sigma[ni]);
-                                            stress_max_RC=max(stress_max_RC, sigma[ni]);
-                                            ps = p[ni] * (signbit(M) ? -1:1);
-                                            stress_min_RC_rho=min(stress_min_RC_rho, ps);
-                                            stress_max_RC_rho=max(stress_max_RC_rho, ps);
-                                        }
-                                    }
-
-                                    if (bi==0)
-                                    {
-                                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                        else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
-                                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                        else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
-                                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                        else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
-                                        gradient.c4 = getRGB(0.0, stress_amax);
-
-                                        fe_data.el_number = j + 1;
-                                        fe_data.flag=1;
-
-                                        fe_data.f1 = (float) sigma[0];
-                                        fe_data.f2 = (float) sigma[1];
-                                        fe_data.f3 = (float) sigma[2];
-                                        fe_data.f4 = 0.0f;
-
-                                        fe_data_ex.f1 = (float) p[0];  //negative means %
-                                        fe_data_ex.f2 = (float) p[1];  //negative means %
-                                        fe_data_ex.f3 = (float) p[2];  //negative means %
-                                        fe_data_ex.f4 = 0.0f;
-                                    }
-                                    else
-                                    {
-                                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                        else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
-                                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                        else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
-                                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                        else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
-                                        gradient.c4 = getRGB(0.0, stress_amax);
-
-                                        fe_data.el_number = j + 1;
-                                        fe_data.flag=1;
-
-                                        fe_data.f1 = (float) sigma[0];
-                                        fe_data.f2 = (float) sigma[1];
-                                        fe_data.f3 = (float) sigma[2];
-                                        fe_data.f4 = 0.0f;
-
-                                        fe_data_ex.f1 = (float) p[0];  //negative means %
-                                        fe_data_ex.f2 = (float) p[1];  //negative means %
-                                        fe_data_ex.f3 = (float) p[2];  //negative means %
-                                        fe_data_ex.f4 = 0.0f;
-
-                                    }
-                                }
-                                else if (bi==0) 
-                                {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                    else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                    else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                    else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
-                                    gradient.c4 = getRGB(0.0, stress_amax);
-
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag=0;
-                                    fe_data.f1 = (float) min_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                    fe_data.f2 = (float) min_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                    fe_data.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                    fe_data.f4 = 0.0f;
-                                }
-                                else if (bi==1)
-                                {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                    else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]],stress_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                    else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]],stress_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                    else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]],stress_amax);
-                                    gradient.c4 = getRGB(0.0, stress_amax);
-
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag=0;
-                                    fe_data.f1 = (float) max_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                    fe_data.f2 = (float) max_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                    fe_data.f3 = (float) max_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                    fe_data.f4 = 0.0f;
-                                }
-                            }
-                            else {
-                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                else gradient.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                else gradient.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                else gradient.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                                gradient.c4 = getRGB(0.0, stress_amax);
-
-                                fe_data.el_number = j + 1;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                fe_data.f4 = 0.0f;
-                            }
-
-                            w.lp = 6;
-                            w.gradient = 1;
-
-                            w.translucent = 1;
-                            translucency_ptr = (char *) w.xy;
-                            translucency_ptr += (w.lp * sizeof(float));
-                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                            if (fe_data.flag==1)  //extended
-                            {
-                                fe_data_ex_ptr = fe_data_ptr + sizeof(FE_DATA);
-                                memmove(fe_data_ex_ptr, &fe_data_ex, sizeof(FE_DATA_EX));
-                                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA) + sizeof(FE_DATA_EX);
-                            }
-                            else
-                            {
-                                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                            }
-                            adr = dodaj_obiekt((BLOK *) dane, &w);
-
-                        }
-
-                        //colorbar
-                        if (stress_amax > 0.0) {
-                            w.xy[0] = (float) pl_min_x + 10.f;
-                            w.xy[1] = (float) pl_min_y - 10.f;
-
-                            w.xy[2] = w.xy[0] + 50.f;
-                            w.xy[3] = w.xy[1];
-
-                            w.xy[4] = w.xy[2];
-                            w.xy[5] = w.xy[3] - 5.f;
-
-                            w.xy[6] = w.xy[0];
-                            w.xy[7] = w.xy[5];
-
-                            if (nom_max)
-                            {
-                                if (bi==0) {
-                                    gradient.c1 = getRGB(min_stress_min[i], stress_amax);
-                                    gradient.c2 = getRGB(max_stress_max[i], stress_amax);
-                                    gradient.c3 = getRGB(max_stress_max[i], stress_amax);
-                                    gradient.c4 = getRGB(min_stress_min[i], stress_amax);
-
-                                    fe_data.el_number = 0;
-                                    fe_data.flag=0;
-                                    fe_data.f1 = (float) min_stress_min[i];
-                                    fe_data.f2 = (float) max_stress_max[i];
-                                    fe_data.f3 = (float) max_stress_max[i];
-                                    fe_data.f4 = (float) min_stress_min[i];
-                                }
-                                else
-                                {
-                                    gradient.c1 = getRGB(min_stress_min[i], stress_amax);
-                                    gradient.c2 = getRGB(max_stress_max[i], stress_amax);
-                                    gradient.c3 = getRGB(max_stress_max[i], stress_amax);
-                                    gradient.c4 = getRGB(min_stress_min[i], stress_amax);
-
-                                    fe_data.el_number = 0;
-                                    fe_data.flag=0;
-                                    fe_data.f1 = (float) min_stress_min[i];
-                                    fe_data.f2 = (float) max_stress_max[i];
-                                    fe_data.f3 = (float) max_stress_max[i];
-                                    fe_data.f4 = (float) min_stress_min[i];
-                                }
-                            }
-                            else {
-                                gradient.c1 = getRGB(stress_min[i], stress_amax);
-                                gradient.c2 = getRGB(stress_max[i], stress_amax);
-                                gradient.c3 = getRGB(stress_max[i], stress_amax);
-                                gradient.c4 = getRGB(stress_min[i], stress_amax);
-
-                                fe_data.el_number = 0;
-                                fe_data.flag=0;
-                                fe_data.f1 = (float) stress_min[i];
-                                fe_data.f2 = (float) stress_max[i];
-                                fe_data.f3 = (float) stress_max[i];
-                                fe_data.f4 = (float) stress_min[i];
-                            }
-
-                            w.lp = 8;
-                            w.gradient = 1;
-                            w.translucent = 1;
-                            translucency_ptr = (char *) w.xy;
-                            translucency_ptr += (w.lp * sizeof(float));
-                            memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
-
-                            gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
-
-                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
-
-                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
-                            adr = dodaj_obiekt((BLOK *) dane, &w);
-
-                            //adjust stress to proper units
-                            if (UNITS == SI) {
-                                if (nom_max)
-                                {
-                                    if (bi == 0)
-                                    {
-                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
-                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
-                                    }
-                                    else
-                                    {
-                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.000001; //in MPa
-                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.000001; //in MPa
-                                    }
-                                }
-                                else {
-                                    stress_min_ = stress_min[i] * 0.000001; //in MPa
-                                    stress_max_ = stress_max[i] * 0.000001; //in MPa
-                                }
-                                unit = _MPa_;
-                            } else //IMP stays as is  in inches
-                            {
-                                if (nom_max)
-                                {
-                                    if (bi == 0) 
-                                    {
-                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //in ksp
-                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //in ksi
-                                    }
-                                    else
-                                    {
-                                        stress_min_ = min(min_stress_min[i], stress_min_RC) * 0.001; //ksi mm
-                                        stress_max_ = max(max_stress_max[i], stress_max_RC) * 0.001; //ksi mm
-                                    }
-                                }
-                                else {
-                                    stress_min_ = stress_min[i] * 0.001; //in ksi
-                                    stress_max_ = stress_max[i] * 0.001; //in ksi
-                                }
-                                unit = _ksi_;
-                            }
-
-                            T.warstwa = Ldsp.warstwa;
-                            T.kolor = Ldsp.kolor;
-                            T.italics = 0;
-                            T.underline = 0;
-                            T.wysokosc = (float) (zmwym.wysokosc * 0.5);
-                            T.kat = 0.0f;
-                            T.ukryty = 0;
-
-                            T.typ=15;
-
+                        if (RC_flag_exists) {
                             T.x = w.xy[0];
-                            T.y = w.xy[1] + 0.5f;
+                            T.y = w.xy[5] - T.wysokosc - 0.5f;
                             T.justowanie = j_do_lewej;
-                            sprintf(T.text, "%.4f", stress_min_);
+                            sprintf(T.text, "%.2f", fabs(stress_min_RC_rho) * 100.);
 
                             T.dl = strlen(T.text);
                             T.n = T18 + T.dl;
@@ -8004,9 +9671,9 @@ stress_block:
                             adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
                             T.x = w.xy[2];
-                            T.y = w.xy[3] + 0.5f;
+                            T.y = w.xy[5] - T.wysokosc - 0.5f;
                             T.justowanie = j_do_prawej;
-                            sprintf(T.text, "%.4f", stress_max_);
+                            sprintf(T.text, "%.2f", fabs(stress_max_RC_rho) * 100.);
 
                             T.dl = strlen(T.text);
                             T.n = T18 + T.dl;
@@ -8014,67 +9681,926 @@ stress_block:
                             adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
                             T.x = (w.xy[0] + w.xy[2]) / 2.f;
-                            T.y = w.xy[3] + 0.5f;
+                            T.y = w.xy[5] + -T.wysokosc - 0.5f;
                             T.justowanie = j_srodkowo;
-                            sprintf(T.text, "%s  %s%s %s", Utf8StrMakeUprUtf8Str(SLS_ULS), stress_chapter[i],min_max,unit);
+                            sprintf(T.text, "%s", "ρ [%]");
 
                             T.dl = strlen(T.text);
                             T.n = T18 + T.dl;
                             normalize_txt(&T);
                             adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
-                            if (RC_flag_exists)
-                            {
-                                T.x = w.xy[0];
-                                T.y = w.xy[5] - T.wysokosc - 0.5f;
-                                T.justowanie = j_do_lewej;
-                                sprintf(T.text, "%.2f", fabs(stress_min_RC_rho) * 100.);
-
-                                T.dl = strlen(T.text);
-                                T.n = T18 + T.dl;
-                                normalize_txt(&T);
-                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-                                T.x = w.xy[2];
-                                T.y = w.xy[5] - T.wysokosc - 0.5f;
-                                T.justowanie = j_do_prawej;
-                                sprintf(T.text, "%.2f", fabs(stress_max_RC_rho) * 100.);
-
-                                T.dl = strlen(T.text);
-                                T.n = T18 + T.dl;
-                                normalize_txt(&T);
-                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-                                T.x = (w.xy[0] + w.xy[2]) / 2.f;
-                                T.y = w.xy[5] + - T.wysokosc - 0.5f;
-                                T.justowanie = j_srodkowo;
-                                sprintf(T.text, "%s", "ρ [%]");
-
-                                T.dl = strlen(T.text);
-                                T.n = T18 + T.dl;
-                                normalize_txt(&T);
-                                adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
-
-                            }
-                            //changing back
-                            T.typ=0;
                         }
+                        //changing back
+                        T.typ = 0;
                     }
+
+                    /////REACTIONS
+
+                    //reaction based on stress variant, but just for SLS and ULS
+                    //if ((sti!=2) || (ULSLC_flag[2]!=0)) // if ULSLC, flag must exist
+                    if (sti < 2)
+                    {
+                        ////all elements done
+                        ////we got:
+                        //// stress[i][perm_s[mesh_element[j].node1 - 1]];
+                        //// stress[i][perm_s[mesh_element[j].node2 - 1]];
+                        //// stress[i][perm_s[mesh_element[j].node3 - 1]];
+                        //// settling now Qx and Qy for element j for limit state i and min-max bi
+                        //// checking if element number j belongs to mesh_boundaries[mesh_boundaries_no]
+                        int last_node = 0;
+                        double H = 0.15;
+                        double h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                        0.15,
+                                        0.15, 0.15, 0.15}; //TEMPORARY
+#ifdef REACTIONSNSEW
+                        if ((stress[i] != NULL) && (i == 1)) //stress_yy
+                        {
+                            for (j = 0; j < mesh_boundaries_no; j++) {
+                                if (mesh_boundary[j].restraint > 5)  //6 simple supported, 7 fixed
+                                {
+                                    if (mesh_boundary[j].node1 > 0)  //node exists
+                                    {
+                                        int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        int num_adj_supp = 0;
+                                        int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        int num_inside = 0;
+                                        int num_inside_NSEW = 4;
+                                        int node1 = 0, node2 = 0;
+                                        int jj;
+                                        double stress1, stress2;
+
+                                        if (mesh_boundary[j].node1 == 24)
+                                        {
+                                            int a=0;
+                                        }
+
+                                        //searching for all elements containing node1 for reaction procedure
+                                        for (jj = 0; jj < mesh_element_no; jj++)
+                                        {
+                                            int found = 0;
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node1)
+                                            {
+                                                node1 = mesh_element[jj].node2;
+                                                node2 = mesh_element[jj].node3;
+                                                inside_list[num_inside] = jj;
+                                                num_inside++;
+                                                found = 1;
+                                            }
+                                            else if  (mesh_element[jj].node2 == mesh_boundary[j].node1)
+                                            {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node3;
+                                                inside_list[num_inside] = jj;
+                                                num_inside++;
+                                                found = 1;
+                                            }
+                                            else if (mesh_element[jj].node3 == mesh_boundary[j].node1)
+                                            {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node2;
+                                                inside_list[num_inside] = jj;
+                                                num_inside++;
+                                                found = 1;
+                                            }
+                                            if (found)
+                                            {
+                                                //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                if (node1 > 0)
+                                                {
+                                                    if (mesh_node[node1 - 1].restraint > 5)
+                                                    {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node1) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node1;
+                                                            num_adj_supp++;
+                                                        }
+                                                    }
+                                                }
+                                                if (node2 > 0)
+                                                {
+                                                    if (mesh_node[node2 - 1].restraint > 5)
+                                                    {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node2) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node2;
+                                                            num_adj_supp++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        //calculating stresses for node1 in reaction procedure
+                                        double supp_x, supp_y;      // Supported node coordinates (m)
+                                        //double supp_sigx_min=0.0, supp_sigy_min=0.0;
+                                        //double supp_sigx_max=0.0, supp_sigy_max=0.0;
+
+                                        double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                        double adj_supp_y[12];
+
+                                        double inside_x[12];           // Array: x-coords of inside nodes
+                                        double inside_y[12];
+
+                                        //double H = 0.15, h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                        //                          0.15,
+                                        //                          0.15, 0.15, 0.15}; //TEMPORARY
+
+                                        //double Q_vertical_min;             // Output: shear per unit length Q_x (N/m) for vertical edge (x=const); 0 if no vertical edge
+                                        //double Q_vertical_max;
+                                        //double Q_horizontal_min;
+                                        //double Q_horizontal_max;
+                                        double Q_foo;
+
+                                        double Rz;  //reaction
+                                        double Rzmax, Rzmin;
+                                        BOOL is_simple;
+
+                                        supp_x = mesh_node[mesh_boundary[j].node1 - 1].x;
+                                        supp_y = mesh_node[mesh_boundary[j].node1 - 1].y;
+
+                                        for (jj = 0; jj < mesh_element_no; jj++) {
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                break;
+                                            } else if (mesh_element[jj].node2 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                break;
+                                            } else if (mesh_element[jj].node3 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                        }
+
+                                        for (jj = 0; jj < num_adj_supp; jj++) {
+                                            adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                            adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                        }
+
+                                        //calculating stresses for node1 in reaction procedure
+                                        //we have :
+                                        // inside_list[num_inside] = jj;
+                                        // num_inside++;
+                                        //mesh_boundary point 1 coordinates
+                                        // mesh_boundary[jk].x1;
+                                        // mesh_boundary[jk].y1;
+                                        // we create virtual points where NSEW stresses will be calculated from mesh elements stress interpolation
+                                        // first we try with distance NSEW_dist equal half of the distance between current boundary point and the next one
+                                        // or if this is the last point in boundary series - distance between previous boundary point and the current one
+                                        double NSEW_dist;
+                                        POINTF pa, pb, pc, pp;
+                                        double alpha, beta, gamma;
+                                        //double s_value;
+
+                                        if (mesh_boundary[j].node2 > 0)  //next node exists
+                                        {
+                                            NSEW_dist = sqrt((mesh_boundary[j].x2 - mesh_boundary[j].x1) * (mesh_boundary[j].x2 - mesh_boundary[j].x1) +
+                                                             (mesh_boundary[j].y2 - mesh_boundary[j].y1) * (mesh_boundary[j].y2 - mesh_boundary[j].y1)) / NSEW_dist_div;
+                                        } else if ((j > 0) && (mesh_boundary[j - 1].node1 > 0))  //previous node exists
+                                        {
+                                            NSEW_dist = sqrt((mesh_boundary[j].x1 - mesh_boundary[j - 1].x1) * (mesh_boundary[j].x1 - mesh_boundary[j - 1].x1) +
+                                                             (mesh_boundary[j].y1 - mesh_boundary[j - 1].y1) * (mesh_boundary[j].y1 - mesh_boundary[j - 1].y1)) / NSEW_dist_div;
+                                        } else  //in case there is single point
+                                        {
+                                            if (UNITS == SI)
+                                                NSEW_dist = 0.1;  //10 cm
+                                            else
+                                                NSEW_dist = 4.;   //4 inches
+                                        }
+                                        //searching for element which contains point NORTH, SOUTH, EAST and WETS
+                                        int y_offset_i[4] = {1, -1, 0, 0};  //1 EAST, -1 WETS 0 NONE
+                                        int x_offset_i[4] = {0, 0, 1, -1};  //0 NONE, 1 NORTH, -1 SOUTH
+                                        int stress_selector[4] = {1, 1, 0, 0};  //1 stress_yy, 0 stress_xx
+
+                                        for (int kk=0; kk<4; kk++) {
+                                            inside1_sigx_max[j][kk] = 0.;
+                                            inside1_sigy_max[j][kk] = 0.;
+                                        }
+
+                                        num_inside_NSEW = 4;
+                                        int b_inside[4] = {0, 0, 0, 0};
+
+                                        for (int kk = 0; kk < 4; kk++)   //N, S, E, W
+                                        {
+                                            pp.x = (float) (mesh_boundary[j].x1 + NSEW_dist * x_offset_i[kk]);
+                                            pp.y = (float) (mesh_boundary[j].y1 + NSEW_dist * y_offset_i[kk]);
+
+                                            for (jj = 0; jj < num_inside; jj++)
+                                            {
+                                                pa.x = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].x;
+                                                pa.y = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].y;
+
+                                                pb.x = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].x;
+                                                pb.y = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].y;
+
+                                                pc.x = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].x;
+                                                pc.y = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].y;
+
+                                                //if (is_point_in_triangle(pa, pb, pc, pp))
+                                                if (isInside(&pa, &pb, &pc, &pp, &alpha, &beta, &gamma))
+                                                {
+                                                    inside_x[kk] = (mesh_boundary[j].x1 + NSEW_dist * x_offset_i[kk]);
+                                                    inside_y[kk] = (mesh_boundary[j].y1 + NSEW_dist * y_offset_i[kk]);
+                                                    b_inside[kk] = 1;
+                                                    //point inside, so now interpolation of stress_yy
+                                                    // Calculate and return the weighted average value
+                                                    if (stress_selector[kk]==0)  //stress_xx
+                                                        inside1_sigx_max[j][kk] = ((alpha * stress[0][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[0][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[0][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                    else
+                                                        inside1_sigy_max[j][kk] = ((alpha * stress[1][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[1][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[1][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        //calculating reactions for node1 in reaction procedure
+
+                                        //// REACTION CAL:CULATION FOR NODE 1
+
+                                        is_simple = (mesh_boundary[j].restraint < 7) ? 1 : 0;
+                                        point_b.x = mesh_boundary[j].x1;
+                                        point_b.y = mesh_boundary[j].y1;
+                                        point_c.x = mesh_boundary[j].x2;
+                                        point_c.y = mesh_boundary[j].y2;
+
+                                        mesh_boundary[j].state1[sti].Rz = compute_NSEW_reaction(point_b, point_c, mesh_boundary[j].kos, mesh_boundary[j].koc, H, is_simple, supp_x, supp_y, supp1_sigx_max[j], supp1_sigy_max[j], num_adj_supp, adj_supp_x, adj_supp_y, num_inside_NSEW, b_inside, h, inside_x, inside_y, inside1_sigx_max[j], inside1_sigy_max[j], &mesh_boundary[j].state1[sti].Qn);
+
+                                        //if (last_node != mesh_boundary[j].node1) {
+                                            printf("node=%d\n", mesh_boundary[j].node1);
+                                            printf("H=%f\n", H);
+                                            printf("supp.x=%f  supp.y=%f  supp1_sigx=%f  supp1_sigy=%f\n", supp_x, supp_y, supp1_sigx_max[j], supp1_sigy_max[j]);
+                                            printf("num_adj_supp=%d\n", num_adj_supp);
+                                            for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n", iii, adj_supp_x[iii], iii, adj_supp_y[iii]);
+                                            }
+                                            printf("num_inside_NSEW=%d\n", num_inside_NSEW);
+                                            for (int iii = 0; iii < num_inside_NSEW; iii++) {
+                                                if (b_inside[iii])
+                                                    printf("inside_x[%d]=%f  inside_y[%d]=%f  inside1_sigx[%d]=%f  inside1_sigy[%d]=%f\n", iii, inside_x[iii], iii, inside_y[iii], iii, inside1_sigx_max[j][iii], iii, inside1_sigy_max[j][iii]);
+                                                else printf("[%d] ignored\n",iii);
+                                            }
+
+                                            printf("Results: Qn=%f Rz=%f\n\n", mesh_boundary[j].state1[sti].Qn, mesh_boundary[j].state1[sti].Rz);
+                                        //}
+                                        last_node = mesh_boundary[j].node1;
+
+                                        if (mesh_boundary[j].node2 > 0)  //node exists
+                                        {
+                                            int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                            int num_adj_supp = 0;
+                                            int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                            int num_inside = 0;
+                                            int num_inside_NSEW = 4;
+                                            int node1 = 0, node2 = 0;
+                                            int jj;
+                                            double stress1, stress2;
+                                            //searching for all elements containing node2 for reaction procedure
+
+
+                                            for (jj = 0; jj < mesh_element_no; jj++)
+                                            {
+                                                int found = 0;
+                                                if (mesh_element[jj].node1 == mesh_boundary[j].node2)
+                                                {
+                                                    node1 = mesh_element[jj].node2;
+                                                    node2 = mesh_element[jj].node3;
+                                                    inside_list[num_inside] = jj;
+                                                    num_inside++;
+                                                    found = 1;
+                                                }
+                                                else if  (mesh_element[jj].node2 == mesh_boundary[j].node2)
+                                                {
+                                                    node1 = mesh_element[jj].node1;
+                                                    node2 = mesh_element[jj].node3;
+                                                    inside_list[num_inside] = jj;
+                                                    num_inside++;
+                                                    found = 1;
+                                                }
+                                                else if (mesh_element[jj].node3 == mesh_boundary[j].node2)
+                                                {
+                                                    node1 = mesh_element[jj].node1;
+                                                    node2 = mesh_element[jj].node2;
+                                                    inside_list[num_inside] = jj;
+                                                    num_inside++;
+                                                    found = 1;
+                                                }
+                                                if (found)
+                                                {
+                                                    //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                    if (node1 > 0)
+                                                    {
+                                                        if (mesh_node[node1 - 1].restraint > 5)
+                                                        {
+                                                            int kk;
+                                                            for (kk = 0; kk < num_adj_supp; kk++)
+                                                                if (adj_list[kk] == node1) break;
+                                                            if (kk == num_adj_supp)  //not found
+                                                            {
+                                                                adj_list[num_adj_supp] = node1;
+                                                                num_adj_supp++;
+                                                            }
+                                                        }
+                                                    }
+                                                    if (node2 > 0)
+                                                    {
+                                                        if (mesh_node[node2 - 1].restraint > 5)
+                                                        {
+                                                            int kk;
+                                                            for (kk = 0; kk < num_adj_supp; kk++)
+                                                                if (adj_list[kk] == node2) break;
+                                                            if (kk == num_adj_supp)  //not found
+                                                            {
+                                                                adj_list[num_adj_supp] = node2;
+                                                                num_adj_supp++;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            //calculating stresses for node2 in reaction procedure
+
+                                            double supp_x, supp_y;      // Supported node coordinates (m)
+                                            //double supp_sigx_min=0.0, supp_sigy_min=0.0;
+                                            //double supp_sigx_max=0.0, supp_sigy_max=0.0;
+
+                                            double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                            double adj_supp_y[12];
+
+                                            double inside_x[12];           // Array: x-coords of inside nodes
+                                            double inside_y[12];
+
+                                            double Q_foo;
+
+                                            double Rz;  //reaction
+                                            double Rzmax, Rzmin;
+                                            BOOL is_simple;
+
+                                            supp_x = mesh_node[mesh_boundary[j].node2 - 1].x;
+                                            supp_y = mesh_node[mesh_boundary[j].node2 - 1].y;
+
+                                            for (jj = 0; jj < mesh_element_no; jj++) {
+                                                if (mesh_element[jj].node1 == mesh_boundary[j].node2)
+                                                {
+                                                    supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                    supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                    break;
+                                                } else if (mesh_element[jj].node2 == mesh_boundary[j].node2)
+                                                {
+                                                    supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                    supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                    break;
+                                                } else if (mesh_element[jj].node3 == mesh_boundary[j].node2)
+                                                {
+                                                    supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                    supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                    break;
+                                                }
+                                            }
+
+                                            for (jj = 0; jj < num_adj_supp; jj++) {
+                                                adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                                adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                            }
+
+                                            //calculating stresses for node2 in reaction procedure
+                                            //we have :
+                                            // inside_list[num_inside] = jj;
+                                            // num_inside++;
+                                            //mesh_boundary point 1 coordinates
+                                            // mesh_boundary[jk].x1;
+                                            // mesh_boundary[jk].y1;
+                                            // we create virtual points where NSEW stresses will be calculated from mesh elements stress interpolation
+                                            // first we try with distance NSEW_dist equal half of the distance between current boundary point and the next one
+                                            // or if this is the last point in boundary series - distance between previous boundary point and the current one
+                                            double NSEW_dist;
+                                            POINTF pa, pb, pc, pp;
+                                            double alpha, beta, gamma;
+                                            //double s_value;
+
+                                            if ((j < (mesh_boundary_no - 1)) && (mesh_boundary[j + 1].node2 > 0))  //node 2 of next boundary exists
+                                            {
+                                                NSEW_dist = sqrt((mesh_boundary[j + 1].x2 - mesh_boundary[j].x2) * (mesh_boundary[j + 1].x2 - mesh_boundary[j].x2) +
+                                                                 (mesh_boundary[j + 1].y2 - mesh_boundary[j].y2) * (mesh_boundary[j + 1].y2 - mesh_boundary[j].y2)) / NSEW_dist_div;
+                                            } else if (mesh_boundary[j].node1 > 0) //previous node exists
+                                            {
+                                                NSEW_dist = sqrt((mesh_boundary[j].x2 - mesh_boundary[j].x1) * (mesh_boundary[j].x2 - mesh_boundary[j].x1) +
+                                                                 (mesh_boundary[j].y2 - mesh_boundary[j].y1) * (mesh_boundary[j].y2 - mesh_boundary[j].y1)) / NSEW_dist_div;
+                                            } else  //in case there is single point
+                                            {
+                                                if (UNITS == SI)
+                                                    NSEW_dist = 0.1;  //10 cm
+                                                else
+                                                    NSEW_dist = 4.;   //4 inches
+                                            }
+                                            //searching for element which contains point NORTH, SOUTH, EAST and WETS
+                                            int y_offset_i[4] = {1, -1, 0, 0};  //1 EAST, -1 WETS 0 NONE
+                                            int x_offset_i[4] = {0, 0, 1, -1};  //0 NONE, 1 NORTH, -1 SOUTH
+                                            int stress_selector[4] = {1, 1, 0, 0};  //1 stress_yy, 0 stress_xx
+
+                                            for (int kk=0; kk<4; kk++) {
+                                                inside2_sigx_max[j][kk] = 0.;
+                                                inside2_sigy_max[j][kk] = 0.;
+                                            }
+
+                                            num_inside_NSEW = 4;
+                                            int b_inside[4] = {0, 0, 0, 0};
+
+                                            for (int kk = 0; kk < 4; kk++)   //N, S, E, W
+                                            {
+                                                pp.x = (float) (mesh_boundary[j].x2 + NSEW_dist * x_offset_i[kk]);
+                                                pp.y = (float) (mesh_boundary[j].y2 + NSEW_dist * y_offset_i[kk]);
+
+                                                for (int jj = 0; jj < num_inside; jj++) {
+                                                    pa.x = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].x;
+                                                    pa.y = (float) mesh_node[mesh_element[inside_list[jj]].node1 - 1].y;
+
+                                                    pb.x = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].x;
+                                                    pb.y = (float) mesh_node[mesh_element[inside_list[jj]].node2 - 1].y;
+
+                                                    pc.x = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].x;
+                                                    pc.y = (float) mesh_node[mesh_element[inside_list[jj]].node3 - 1].y;
+
+                                                    //if (is_point_in_triangle(pa, pb, pc, pp))
+                                                    if (isInside(&pa, &pb, &pc, &pp, &alpha, &beta, &gamma)) {
+                                                        inside_x[kk] = (mesh_boundary[j].x2 + NSEW_dist * x_offset_i[kk]);
+                                                        inside_y[kk] = (mesh_boundary[j].y2 + NSEW_dist * y_offset_i[kk]);
+                                                        b_inside[kk] = 1;
+                                                        //point inside, so now interpolation of stress_yy
+                                                        // Calculate and return the weighted average value
+                                                        if (stress_selector[kk]==0)
+                                                            inside2_sigx_max[j][kk] = ((alpha * stress[0][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[0][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[0][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                        else
+                                                            inside2_sigy_max[j][kk] = ((alpha * stress[1][perm_s[mesh_element[inside_list[jj]].node1 - 1]]) + (beta * stress[1][perm_s[mesh_element[inside_list[jj]].node2 - 1]]) + (gamma * stress[1][perm_s[mesh_element[inside_list[jj]].node3 - 1]]));
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            //calculating reactions for node1 in reaction procedure
+
+                                            //// REACTION CAL:CULATION FOR NODE 1
+
+                                            is_simple = (mesh_boundary[j].restraint < 7) ? 1 : 0;
+                                            point_b.x = mesh_boundary[j].x1;
+                                            point_b.y = mesh_boundary[j].y1;
+                                            point_c.x = mesh_boundary[j].x2;
+                                            point_c.y = mesh_boundary[j].y2;
+
+                                            mesh_boundary[j].state2[sti].Rz = compute_NSEW_reaction(point_b, point_c, mesh_boundary[j].kos, mesh_boundary[j].koc, H, is_simple, supp_x, supp_y, supp2_sigx_max[j], supp2_sigy_max[j], num_adj_supp, adj_supp_x, adj_supp_y, num_inside_NSEW, b_inside, h, inside_x, inside_y, inside2_sigx_max[j], inside2_sigy_max[j], &mesh_boundary[j].state2[sti].Qn);
+
+                                            //if (last_node != mesh_boundary[j].node2) {
+                                                printf("node=%d\n", mesh_boundary[j].node2);
+                                                printf("H=%f\n", H);
+                                                printf("supp.x=%f  supp.y=%f  supp2_sigx=%f  supp2_sigy=%f\n", supp_x, supp_y, supp2_sigx_max[j], supp2_sigy_max[j]);
+                                                printf("num_adj_supp=%d\n", num_adj_supp);
+                                                for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                    printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n", iii, adj_supp_x[iii], iii, adj_supp_y[iii]);
+                                                }
+                                                printf("num_inside_NSEW=%d\n", num_inside_NSEW);
+                                                for (int iii = 0; iii < num_inside_NSEW; iii++) {
+                                                    if (b_inside[iii])
+                                                    printf("inside_x[%d]=%f  inside_y[%d]=%f  inside2_sigx[%d]=%f  inside2_sigy[%d]=%f\n", iii, inside_x[iii], iii, inside_y[iii], iii, inside2_sigx_max[j][iii], iii, inside2_sigy_max[j][iii]);
+                                                    else printf("[%d] ignored\n",iii);
+                                                }
+                                                printf("Results: Qn=%f Rz=%f\n\n", mesh_boundary[j].state2[sti].Qn, mesh_boundary[j].state2[sti].Rz);
+                                            //}
+                                            last_node = mesh_boundary[j].node2;
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+#endif
+                        if ((stress[i] != NULL) && (i == 3)) //stress_xy
+                        {
+                            printf("TRACE 1\n");
+                            for (j = 0; j < mesh_boundaries_no; j++)
+                            {
+                                if (mesh_boundary[j].restraint > 5)  //6 simple supported, 7 fixed
+                                {
+                                    if (mesh_boundary[j].node1 > 0)  //node 1 exists
+                                    {
+                                        int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        int num_adj_supp = 0;
+                                        int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        double inside_list_stress_x[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                        double inside_list_stress_y[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                        double inside_list_stress_xy[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+
+                                        int num_inside = 0;
+                                        int node1 = 0, node2 = 0;
+                                        int jj;
+                                        double stress1x, stress1y, stress1xy, stress2x, stress2y, stress2xy;
+                                        //searching for all elements containing node1
+                                        for (jj = 0; jj < mesh_element_no; jj++) {
+                                            int found = 0;
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node1) {
+                                                node1 = mesh_element[jj].node2;
+                                                node2 = mesh_element[jj].node3;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            } else if (mesh_element[jj].node2 == mesh_boundary[j].node1) {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node3;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            } else if (mesh_element[jj].node3 == mesh_boundary[j].node1) {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node2;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            }
+                                            if (found) {
+                                                //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                if (node1 > 0) {
+                                                    if (mesh_node[node1 - 1].restraint > 5) {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node1) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node1;
+                                                            num_adj_supp++;
+                                                        }
+                                                    } else {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_inside; kk++)
+                                                            if (inside_list[kk] == node1) break;
+                                                        if (kk == num_inside)  //not found
+                                                        {
+                                                            inside_list[num_inside] = node1;
+                                                            inside_list_stress_x[num_inside] = stress1x;
+                                                            inside_list_stress_y[num_inside] = stress1y;
+                                                            inside_list_stress_xy[num_inside] = stress1xy;
+                                                            num_inside++;
+                                                        }
+                                                    }
+                                                }
+                                                if (node2 > 0) {
+                                                    if (mesh_node[node2 - 1].restraint > 5) {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node2) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node2;
+                                                            num_adj_supp++;
+                                                        }
+                                                    } else {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_inside; kk++)
+                                                            if (inside_list[kk] == node2) break;
+                                                        if (kk == num_inside)  //not found
+                                                        {
+                                                            inside_list[num_inside] = node2;
+                                                            inside_list_stress_x[num_inside] = stress2x;
+                                                            inside_list_stress_y[num_inside] = stress2y;
+                                                            inside_list_stress_xy[num_inside] = stress2xy;
+                                                            num_inside++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        //calculating reactions for node1
+                                        double supp_x, supp_y;      // Supported node coordinates (m)
+
+                                        double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                        double adj_supp_y[12];
+
+                                        double inside_x[12];           // Array: x-coords of inside nodes
+                                        double inside_y[12];
+
+                                        double H = 0.15, h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                                  0.15,
+                                                                  0.15, 0.15, 0.15}; //TEMPORARY
+
+                                        double Q_foo;
+
+                                        double Rz;  //reaction
+                                        double Rzmax, Rzmin;
+
+                                        supp_x = mesh_node[mesh_boundary[j].node1 - 1].x;
+                                        supp_y = mesh_node[mesh_boundary[j].node1 - 1].y;
+
+                                        for (jj = 0; jj < mesh_element_no; jj++) {
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                supp1_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                            else if (mesh_element[jj].node2 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                supp1_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                            else if (mesh_element[jj].node3 == mesh_boundary[j].node1)
+                                            {
+                                                supp1_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                supp1_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                supp1_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                        }
+
+                                        for (jj = 0; jj < num_adj_supp; jj++)
+                                        {
+                                            adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                            adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                        }
+                                        for (jj = 0; jj < num_inside; jj++)
+                                        {
+                                            inside_x[jj] = mesh_node[inside_list[jj] - 1].x;
+                                            inside_y[jj] = mesh_node[inside_list[jj] - 1].y;
+
+                                            inside1_sigx_max[j][jj] = inside_list_stress_x[jj]; //stress1x;  //just max
+                                            inside1_sigy_max[j][jj] = inside_list_stress_y[jj]; //stress1y;  //just max
+                                            inside1_sigxy_max[j][jj] = inside_list_stress_xy[jj]; //stress1xy;  //just max
+                                        }
+
+                                        //// REACTIONS
+                                        mesh_boundary[j].state1[sti].Rz1 = compute_support_reaction(H, supp_x,supp_y,supp1_sigx_max[j],supp1_sigy_max[j],supp1_sigxy_max[j],num_adj_supp,adj_supp_x,adj_supp_y,num_inside,h,inside_x,inside_y,inside1_sigx_max[j],inside1_sigy_max[j],inside1_sigxy_max[j],&mesh_boundary[j].state1[sti].Qn1);
+#ifndef NDEBUG
+                                        //if (last_node != mesh_boundary[j].node1)
+                                        //{
+                                            printf("ALTERNATIVE\n");
+                                            printf("node=%d\n", mesh_boundary[j].node1);
+                                            printf("H=%f\n", H);
+                                            printf("supp.x=%f  supp.y=%f  supp1_sigx=%f  supp1_sigy=%f  supp1_sigxy=%f\n",
+                                                   supp_x, supp_y, supp1_sigx_max[j], supp1_sigy_max[j], supp1_sigxy_max[j]);
+                                            printf("num_adj_supp=%d\n", num_adj_supp);
+                                            for (int iii = 0; iii < num_adj_supp; iii++) {
+                                                printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n",iii,adj_supp_x[iii],iii, adj_supp_y[iii]);
+                                            }
+                                            printf("num_inside=%d\n", num_inside);
+                                            for (int iii = 0; iii < num_inside; iii++) {
+                                                printf("inside_x[%d]=%f  inside_y[%d]=%f  inside1_sigx[%d]=%f  inside1_sigy[%d]=%f  inside1_sigxy[%d]=%f\n",iii,inside_x[iii],iii,inside_y[iii],iii,inside1_sigx_max[j][iii],iii,inside1_sigy_max[j][iii],iii,inside1_sigxy_max[j][iii]);
+                                            }
+
+                                            printf("Results: Qn1=%f Rz1=%f\n\n", mesh_boundary[j].state1[sti].Qn1, mesh_boundary[j].state1[sti].Rz1);
+                                        //}
+                                        //last_node=mesh_boundary[j].node1;
+#endif
+                                    }
+
+
+                                    if (mesh_boundary[j].node2 > 0)  //node 2 exists
+                                    {
+                                        int adj_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        int num_adj_supp = 0;
+                                        int inside_list[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                                        double inside_list_stress_x[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                        double inside_list_stress_y[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+                                        double inside_list_stress_xy[12] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0};
+
+                                        int num_inside = 0;
+                                        int node1 = 0, node2 = 0;
+                                        int jj;
+                                        double stress1x, stress1y, stress1xy, stress2x, stress2y, stress2xy;
+                                        //searching for all elements containing node1
+                                        for (jj = 0; jj < mesh_element_no; jj++) {
+                                            int found = 0;
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node2) {
+                                                node1 = mesh_element[jj].node2;
+                                                node2 = mesh_element[jj].node3;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            } else if (mesh_element[jj].node2 == mesh_boundary[j].node2) {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node3;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            } else if (mesh_element[jj].node3 == mesh_boundary[j].node2) {
+                                                node1 = mesh_element[jj].node1;
+                                                node2 = mesh_element[jj].node2;
+
+                                                stress1x = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1y = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                stress1xy = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+
+                                                stress2x = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress2y = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                stress2xy = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                found = 1;
+                                            }
+                                            if (found) {
+                                                //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
+                                                if (node1 > 0) {
+                                                    if (mesh_node[node1 - 1].restraint > 5) {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node1) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node1;
+                                                            num_adj_supp++;
+                                                        }
+                                                    } else {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_inside; kk++)
+                                                            if (inside_list[kk] == node1) break;
+                                                        if (kk == num_inside)  //not found
+                                                        {
+                                                            inside_list[num_inside] = node1;
+                                                            inside_list_stress_x[num_inside] = stress1x;
+                                                            inside_list_stress_y[num_inside] = stress1y;
+                                                            inside_list_stress_xy[num_inside] = stress1xy;
+                                                            num_inside++;
+                                                        }
+                                                    }
+                                                }
+                                                if (node2 > 0) {
+                                                    if (mesh_node[node2 - 1].restraint > 5) {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_adj_supp; kk++)
+                                                            if (adj_list[kk] == node2) break;
+                                                        if (kk == num_adj_supp)  //not found
+                                                        {
+                                                            adj_list[num_adj_supp] = node2;
+                                                            num_adj_supp++;
+                                                        }
+                                                    } else {
+                                                        int kk;
+                                                        for (kk = 0; kk < num_inside; kk++)
+                                                            if (inside_list[kk] == node2) break;
+                                                        if (kk == num_inside)  //not found
+                                                        {
+                                                            inside_list[num_inside] = node2;
+                                                            inside_list_stress_x[num_inside] = stress2x;
+                                                            inside_list_stress_y[num_inside] = stress2y;
+                                                            inside_list_stress_xy[num_inside] = stress2xy;
+                                                            num_inside++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        //calculating reactions for node1
+                                        double supp_x, supp_y;      // Supported node coordinates (m)
+
+                                        double adj_supp_x[12];         // Array: x-coords of adj supported nodes
+                                        double adj_supp_y[12];
+
+                                        double inside_x[12];           // Array: x-coords of inside nodes
+                                        double inside_y[12];
+
+                                        double H = 0.15, h[12] = {0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
+                                                                  0.15,
+                                                                  0.15, 0.15, 0.15}; //TEMPORARY
+
+                                        double Q_foo;
+
+                                        double Rz;  //reaction
+                                        double Rzmax, Rzmin;
+
+                                        supp_x = mesh_node[mesh_boundary[j].node2 - 1].x;
+                                        supp_y = mesh_node[mesh_boundary[j].node2 - 1].y;
+
+                                        for (jj = 0; jj < mesh_element_no; jj++) {
+                                            if (mesh_element[jj].node1 == mesh_boundary[j].node2)
+                                            {
+                                                supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                supp2_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node1 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                            else if (mesh_element[jj].node2 == mesh_boundary[j].node2)
+                                            {
+                                                supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                supp2_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node2 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                            else if (mesh_element[jj].node3 == mesh_boundary[j].node2)
+                                            {
+                                                supp2_sigx_max[j] = stress[0][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                supp2_sigy_max[j] = stress[1][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                supp2_sigxy_max[j] = stress[3][perm_s[mesh_element[jj].node3 - 1]];// * 1.0e-6;
+                                                break;
+                                            }
+                                        }
+
+                                        for (jj = 0; jj < num_adj_supp; jj++)
+                                        {
+                                            adj_supp_x[jj] = mesh_node[adj_list[jj] - 1].x;
+                                            adj_supp_y[jj] = mesh_node[adj_list[jj] - 1].y;
+                                        }
+                                        for (jj = 0; jj < num_inside; jj++)
+                                        {
+                                            inside_x[jj] = mesh_node[inside_list[jj] - 1].x;
+                                            inside_y[jj] = mesh_node[inside_list[jj] - 1].y;
+
+                                            inside2_sigx_max[j][jj] = inside_list_stress_x[jj]; //stress1x;  //just max
+                                            inside2_sigy_max[j][jj] = inside_list_stress_y[jj]; //stress1y;  //just max
+                                            inside2_sigxy_max[j][jj] = inside_list_stress_xy[jj]; //stress1xy;  //just max
+                                        }
+
+                                        //// REACTIONS
+                                        mesh_boundary[j].state2[sti].Rz1 = compute_support_reaction(H, supp_x,supp_y,supp2_sigx_max[j],supp2_sigy_max[j],supp2_sigxy_max[j],num_adj_supp,adj_supp_x,adj_supp_y,num_inside,h,inside_x,inside_y,inside2_sigx_max[j],inside2_sigy_max[j],inside2_sigxy_max[j],&mesh_boundary[j].state2[sti].Qn1);
+#ifndef NDEBUG
+                                        //if (last_node != mesh_boundary[j].node1)
+                                        //{
+                                        printf("ALTERNATIVE\n");
+                                        printf("node=%d\n", mesh_boundary[j].node2);
+                                        printf("H=%f\n", H);
+                                        printf("supp.x=%f  supp.y=%f  supp2_sigx=%f  supp2_sigy=%f  supp2_sigxy=%f\n",
+                                               supp_x, supp_y, supp2_sigx_max[j], supp2_sigy_max[j], supp2_sigxy_max[j]);
+                                        printf("num_adj_supp=%d\n", num_adj_supp);
+                                        for (int iii = 0; iii < num_adj_supp; iii++) {
+                                            printf("adj_supp_x[%d]=%f  adj_supp_y[%d]=%f\n",iii,adj_supp_x[iii],iii, adj_supp_y[iii]);
+                                        }
+                                        printf("num_inside=%d\n", num_inside);
+                                        for (int iii = 0; iii < num_inside; iii++) {
+                                            printf("inside_x[%d]=%f  inside_y[%d]=%f  inside2_sigx[%d]=%f  inside2_sigy[%d]=%f  inside2_sigxy[%d]=%f\n",iii,inside_x[iii],iii,inside_y[iii],iii,inside2_sigx_max[j][iii],iii,inside2_sigy_max[j][iii],iii,inside2_sigxy_max[j][iii]);
+                                        }
+
+                                        printf("Results: Qn1=%f Rz1=%f\n\n", mesh_boundary[j].state2[sti].Qn1, mesh_boundary[j].state2[sti].Rz1);
+                                        //}
+                                        //last_node=mesh_boundary[j].node1;
+#endif
+                                    }
+
+                                }
+                            }
+
+                        }
+
+                    }
+                    ////////////REACTIONS
                 }
             }
         }
+    }
 
         my_sleep(10);
-        //epsilon blocks
-        //sprintf(desired_layer, "%s_%s", ptr_id, "epsilon");
-        //strcpy(SLS_ULS, "sls"); //temporary
+
+        ////creating epsilon blocks
+
+        Ldsp.kolor = static_colors.node_element_color;
+        Ldsp.typ = 64;
+
         sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "epsilon", SLS_ULS, combination_no);
 
-        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer)+1);
+        memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
         utf8Upper(desired_layer_upper);
 
         for (ii = 0; ii < No_Layers; ii++) {
-            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name)+1);
+            memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
             utf8Upper(layer_name_upper);
 
             if (strcmp(layer_name_upper, desired_layer_upper) == 0)
@@ -8082,8 +10608,8 @@ stress_block:
         }
         if (ii < No_Layers) {
             desired_layer_no = ii;
-            get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,
-                             MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+            if (block_names)
+                get_blocks_setup(desired_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
             delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
         } else {
             if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
@@ -8109,14 +10635,12 @@ stress_block:
             Layers[No_Layers - 1].color = Ldsp.kolor;
         }
 
-        if ((sti==2) && (ULSLC_flag[2]==0)) // non existing ULSLC
+        if ((sti == 2) && (ULSLC_flag[2] == 0)) // non existing ULSLC
             goto end_block;
 
-        if (perm_e != NULL) 
-        {
-            for (i = 0; i < EPSILON_NUMBER; i++) 
-            {
-                if (epsilon_==0)
+        if (perm_e != NULL) {
+            for (i = 0; i < EPSILON_NUMBER; i++) {
+                if (epsilon_ == 0)
                     break;
 
                 Ldsp.warstwa = desired_layer_no;
@@ -8127,32 +10651,27 @@ stress_block:
                 blok_origin.x = jednostkiObX(mesh_node[0].x);
                 blok_origin.y = jednostkiObY(mesh_node[0].y);
 
-                if (nom_max)
-                {
-                    bim=2;
-                    min_max=_min_;
-                }
-                else
-                {
-                    bim=1;
+                if (nom_max) {
+                    bim = 2;
+                    min_max = _min_;
+                } else {
+                    bim = 1;
                     min_max = _nope_;
                 }
 
-                for (bi=0; bi<bim; bi++) 
-                {
-                    if (bi>0) min_max = _max_;
+                for (bi = 0; bi < bim; bi++) {
+                    if (bi > 0) min_max = _max_;
 
-                    if (nom_max)
-                    {
+                    if (nom_max) {
                         //checking bipolarity
-                        if (bi==0)  //potentially minimal
+                        if (bi == 0)  //potentially minimal
                         {
-                            if ((max_epsilon_max[i]>0.) && (min_epsilon_min[i]>=0.))
+                            if ((max_epsilon_max[i] > 0.) && (min_epsilon_min[i] >= 0.))
                                 continue;  //we do not create zero unipolar graph
                         }
-                        if (bi==1)  //potentially maximal
+                        if (bi == 1)  //potentially maximal
                         {
-                            if ((max_epsilon_max[i]<=0.) && (min_epsilon_min[i]<0))
+                            if ((max_epsilon_max[i] <= 0.) && (min_epsilon_min[i] < 0))
                                 continue; //we do not create zero unipolar graph
                         }
                     }
@@ -8168,7 +10687,7 @@ stress_block:
                     }
                     if (nom_max) epsilon_amax = max(fabs(max_epsilon_max[i]), fabs(min_epsilon_min[i]));
                     else epsilon_amax = max(fabs(epsilon_max[i]), fabs(epsilon_min[i]));
-                    
+
                     if (epsilon_amax > 0.0) {
                         ptr_block = add_block(blok_origin.x, blok_origin.y, B_GRAPH, block_name, hiding);
                         if (ptr_block == NULL) {
@@ -8190,44 +10709,39 @@ stress_block:
                             w.xy[4] = jednostkiObX(mesh_node[mesh_element[j].node3 - 1].x);
                             w.xy[5] = jednostkiObY(mesh_node[mesh_element[j].node3 - 1].y);
 
-                            if (nom_max)
-                            {
-                                if (bi==0) 
-                                {
+                            if (nom_max) {
+                                if (bi == 0) {
                                     if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                                    else gradient.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]],epsilon_amax);
+                                    else gradient.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
                                     if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                                    else gradient.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]],epsilon_amax);
+                                    else gradient.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
                                     if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                                    else gradient.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]],epsilon_amax);
+                                    else gradient.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
                                     gradient.c4 = getRGB(0.0, epsilon_amax);
 
                                     fe_data.el_number = j + 1;
-                                    fe_data.flag=0;
+                                    fe_data.flag = 0;
                                     fe_data.f1 = (float) min_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
                                     fe_data.f2 = (float) min_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
                                     fe_data.f3 = (float) min_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
                                     fe_data.f4 = 0.0f;
-                                }
-                                else
-                                {
+                                } else {
                                     if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                                    else gradient.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]],epsilon_amax);
+                                    else gradient.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
                                     if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                                    else gradient.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]],epsilon_amax);
+                                    else gradient.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
                                     if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                                    else gradient.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]],epsilon_amax);
+                                    else gradient.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
                                     gradient.c4 = getRGB(0.0, epsilon_amax);
 
                                     fe_data.el_number = j + 1;
-                                    fe_data.flag=0;
+                                    fe_data.flag = 0;
                                     fe_data.f1 = (float) max_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
                                     fe_data.f2 = (float) max_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
                                     fe_data.f3 = (float) max_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
                                     fe_data.f4 = 0.0f;
                                 }
-                            }
-                            else {
+                            } else {
                                 if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
                                 else gradient.c1 = getRGB(epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
                                 if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
@@ -8237,7 +10751,7 @@ stress_block:
                                 gradient.c4 = getRGB(0.0, epsilon_amax);
 
                                 fe_data.el_number = j + 1;
-                                fe_data.flag=0;
+                                fe_data.flag = 0;
                                 fe_data.f1 = (float) epsilon[i][perm_e[mesh_element[j].node1 - 1]];
                                 fe_data.f2 = (float) epsilon[i][perm_e[mesh_element[j].node2 - 1]];
                                 fe_data.f3 = (float) epsilon[i][perm_e[mesh_element[j].node3 - 1]];
@@ -8277,44 +10791,40 @@ stress_block:
                             w.xy[6] = w.xy[0];
                             w.xy[7] = w.xy[5];
 
-                            if (nom_max)
-                            {
-                                if (bi==0) {
+                            if (nom_max) {
+                                if (bi == 0) {
                                     gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
                                     gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
                                     gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
                                     gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
                                     fe_data.el_number = 0;
-                                    fe_data.flag=0;
+                                    fe_data.flag = 0;
                                     fe_data.f1 = (float) min_epsilon_min[i];
                                     fe_data.f2 = (float) max_epsilon_max[i];
                                     fe_data.f3 = (float) max_epsilon_max[i];
                                     fe_data.f4 = (float) min_epsilon_min[i];
-                                }
-                                else
-                                {
+                                } else {
                                     gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
                                     gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
                                     gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
                                     gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
                                     fe_data.el_number = 0;
-                                    fe_data.flag=0;
+                                    fe_data.flag = 0;
                                     fe_data.f1 = (float) min_epsilon_min[i];
                                     fe_data.f2 = (float) max_epsilon_max[i];
                                     fe_data.f3 = (float) max_epsilon_max[i];
                                     fe_data.f4 = (float) min_epsilon_min[i];
                                 }
-                            }
-                            else {
+                            } else {
                                 gradient.c1 = getRGB(epsilon_min[i], epsilon_amax);
                                 gradient.c2 = getRGB(epsilon_max[i], epsilon_amax);
                                 gradient.c3 = getRGB(epsilon_max[i], epsilon_amax);
                                 gradient.c4 = getRGB(epsilon_min[i], epsilon_amax);
 
                                 fe_data.el_number = 0;
-                                fe_data.flag=0;
+                                fe_data.flag = 0;
                                 fe_data.f1 = (float) epsilon_min[i];
                                 fe_data.f2 = (float) epsilon_max[i];
                                 fe_data.f3 = (float) epsilon_max[i];
@@ -8345,7 +10855,7 @@ stress_block:
                             T.kat = 0.0f;
                             T.ukryty = 0;
 
-                            T.typ=15;
+                            T.typ = 15;
 
                             T.x = w.xy[0];
                             T.y = w.xy[1] + 0.5f;
@@ -8370,7 +10880,7 @@ stress_block:
                             T.x = (w.xy[0] + w.xy[2]) / 2.f;
                             T.y = w.xy[3] + 0.5f;
                             T.justowanie = j_srodkowo;
-                            sprintf(T.text, "%s  %s%s", Utf8StrMakeUprUtf8Str(SLS_ULS), epsilon_chapter[i],min_max);
+                            sprintf(T.text, "%s  %s%s", Utf8StrMakeUprUtf8Str(SLS_ULS), epsilon_chapter[i], min_max);
 
                             T.dl = strlen(T.text);
                             T.n = T18 + T.dl;
@@ -8378,22 +10888,21 @@ stress_block:
                             adr = dodaj_obiekt((BLOK *) dane, (void *) &T);
 
                             //changing back
-                            T.typ=0;
+                            T.typ = 0;
                         }
                     }
                 }
             }
         }
 
-end_block:
+        end_block:
 
         pl_error2:
 
-        if (sti==1)  //ULS
+        if (sti == 1)  //ULS
         {
             //stress backup
-            for (int is = 0; is < STRESS_NUMBER; is++)
-            {
+            for (int is = 0; is < STRESS_NUMBER; is++) {
                 min_stress_min_bak[is] = stress_min[is];
                 max_stress_max_bak[is] = stress_max[is];
                 min_stress_bak[is] = (double *) malloc(perm_s_index_no * sizeof(double) + 100);
@@ -8476,18 +10985,1001 @@ end_block:
                 max_epsilon[i] = NULL;
             }
         }
+
+        //REACTIONS just for SLS and ULS
+        if (sti < 2)
+        {
+            int last_node = 0;
+
+#ifdef REACIONSNSEW
+
+            Rzmin = 0.0;
+            Rzmax = 0.0;
+
+            Rzmin_back = 0.0;
+            Rzmax_back = 0.0;
+
+#ifndef NDEBUG
+            printf("\nState %s\n", SLS_ULS);
+#endif
+
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5) {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rz, mesh_boundary[i].state1[sti].Qn);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state1[sti].Rz);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rz, mesh_boundary[i].state2[sti].Qn);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state2[sti].Rz);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz_total=%f\n", Rzmax);
+#endif
+
+            Rzmin_back = Rzmin;
+            Rzmax_back = Rzmax;
+#ifndef NDEBUG
+            printf("\nTotal load in state %s:  %f\n", SLS_ULS, total_load);
+#endif
+            load_ratio = total_load / Rzmax_back;
+
+            Rzmin = 0.0;
+            Rzmax = 0.0;
+#ifndef NDEBUG
+            printf("\nState %s with correction ratio %f\n", SLS_ULS, load_ratio);
+#endif
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5)
+                {
+                    mesh_boundary[i].state1[sti].Qn *= load_ratio;
+                    mesh_boundary[i].state1[sti].Rz *= load_ratio;
+                    mesh_boundary[i].state2[sti].Qn *= load_ratio;
+                    mesh_boundary[i].state2[sti].Rz *= load_ratio;
+
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rz, mesh_boundary[i].state1[sti].Qn);
+#endif
+                        Rzmax += (nofabs(mesh_boundary[i].state1[sti].Rz));
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rz, mesh_boundary[i].state2[sti].Qn);
+#endif
+                        Rzmax += (nofabs(mesh_boundary[i].state2[sti].Rz));
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz_total=%f\n", Rzmax);
+#endif
+#endif
+            //ALTERNATIVE
+
+            last_node = 0;
+
+            Rzmin = 0.0;
+            Rzmax = 0.0;
+
+            Rzmin_back = 0.0;
+            Rzmax_back = 0.0;
+#ifndef NDEBUG
+            printf("\nALTERNATIVE\n", SLS_ULS);
+            printf("\nState %s\n", SLS_ULS);
+#endif
+
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5)
+                {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rz1, mesh_boundary[i].state1[sti].Qn1);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state1[sti].Rz1);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rz1, mesh_boundary[i].state2[sti].Qn1);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state2[sti].Rz1);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz1_total=%f\n", Rzmax);
+#endif
+            Rzmin_back = Rzmin;
+            Rzmax_back = Rzmax;
+#ifndef NDEBUG
+            printf("\nTotal load in state %s:  %f\n", SLS_ULS, total_load);
+#endif
+            load_ratio = total_load / Rzmax_back;
+
+            Rzmin = 0.0;
+            Rzmax = 0.0;
+#ifndef NDEBUG
+            printf("\nState %s with correction ratio %f\n", SLS_ULS, load_ratio);
+#endif
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5)
+                {
+                    mesh_boundary[i].state1[sti].Qn1 *= load_ratio;
+                    mesh_boundary[i].state1[sti].Rz1 *= load_ratio;
+                    mesh_boundary[i].state2[sti].Qn1 *= load_ratio;
+                    mesh_boundary[i].state2[sti].Rz1 *= load_ratio;
+
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rz1, mesh_boundary[i].state1[sti].Qn1);
+#endif
+                        Rzmax += (nofabs(mesh_boundary[i].state1[sti].Rz1));
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rz1, mesh_boundary[i].state2[sti].Qn1);
+#endif
+                        Rzmax += (nofabs(mesh_boundary[i].state2[sti].Rz1));
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz1_total=%f\n", Rzmax);
+#endif
+        }
+        else if ((sti!=2) || (ULSLC_flag[2]!=0)) // if ULSLC, flag must exist
+        {
+            int last_node = 0;
+
+#ifdef REACIONSNSEW
+            Rzmin = 0.0;
+#ifndef NDEBUG
+            printf("\nState %s\n", SLS_ULS);
+            printf("\nMIN\n");
+#endif
+
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5) {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rzmin, mesh_boundary[i].state1[sti].Qnmin);
+#endif
+                        Rzmin += nofabs(mesh_boundary[i].state1[sti].Rzmin);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rzmin, mesh_boundary[i].state2[sti].Qnmin);
+#endif
+                        Rzmin += nofabs(mesh_boundary[i].state2[sti].Rzmin);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz_total_min=%f\n", Rzmin);
+#endif
+
+            last_node = 0;
+            Rzmax = 0.0;
+
+#ifndef NDEBUG
+            printf("\nMAX\n");
+#endif
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5)
+                {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rzmax, mesh_boundary[i].state1[sti].Qnmax);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state1[sti].Rzmax);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rzmax, mesh_boundary[i].state2[sti].Qnmax);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state2[sti].Rzmax);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz_total_max=%f\n", Rzmax);
+#endif
+#endif
+            //ALTERNATIVE
+
+            last_node = 0;
+            Rzmin = 0.0;
+#ifndef NDEBUG
+            printf("\nALTERNATIVE\n", SLS_ULS);
+            printf("\nState %s\n", SLS_ULS);
+            printf("\nMIN\n");
+#endif
+
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5) {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rzmin1, mesh_boundary[i].state1[sti].Qnmin1);
+#endif
+                        Rzmin += nofabs(mesh_boundary[i].state1[sti].Rzmin1);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rzmin1, mesh_boundary[i].state2[sti].Qnmin1);
+#endif
+                        Rzmin += nofabs(mesh_boundary[i].state2[sti].Rzmin1);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz1_total_min=%f\n", Rzmin);
+#endif
+            last_node = 0;
+            Rzmax = 0.0;
+#ifndef NDEBUG
+            printf("\nMAX\n");
+#endif
+
+            for (i = 0; i < mesh_boundaries_no; i++) {
+                if (mesh_boundary[i].restraint > 5) {
+                    if (mesh_boundary[i].node1 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti].Rzmax1, mesh_boundary[i].state1[sti].Qnmax1);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state1[sti].Rzmax1);
+                    }
+                    last_node = mesh_boundary[i].node1;
+                    if (mesh_boundary[i].node2 != last_node)
+                    {
+#ifndef NDEBUG
+                        printf("node=%d  Rz1=%f  Qn1=%f\n", mesh_boundary[i].node2, mesh_boundary[i].state2[sti].Rzmax1, mesh_boundary[i].state2[sti].Qnmax1);
+#endif
+                        Rzmax += nofabs(mesh_boundary[i].state2[sti].Rzmax1);
+                    }
+                    last_node = mesh_boundary[i].node2;
+                }
+            }
+#ifndef NDEBUG
+            printf("SUM:  Rz1_total_max=%f\n", Rzmax);
+#endif
+        }
+
+        ////creating reaction blocks
+
+        Ldsp.blok = Ldsp1.blok = 1;
+        Ldsp.kolor = Ldsp1.kolor =static_colors.reaction_color;
+        Ldsp.typ = Ldsp1.typ = 64;  //thick
+        /////////////////////
+        //Layers
+        if (sti == 0) //selecting and creating layer if doesn't exist
+        {
+            sprintf(desired_layer, "%s_%s", ptr_id, "reactions");
+
+            memcpy(desired_layer_upper, desired_layer, strlen(desired_layer) + 1);
+            utf8Upper(desired_layer_upper);
+
+            for (ii = 0; ii < No_Layers; ii++) {
+                memcpy(layer_name_upper, Layers[ii].name, strlen(Layers[ii].name) + 1);
+                utf8Upper(layer_name_upper);
+
+                if (strcmp(layer_name_upper, desired_layer_upper) == 0)
+                    break;
+            }
+            if (ii < No_Layers) {
+                desired_reactions_layer_no = ii;
+                if (block_names)
+                    get_blocks_setup(desired_reactions_layer_no, block_names, &block_names_no, MAX_L_BLOCKS,MAX_L_BLOCKS_LEN);  //to remember only visible blocks
+                delete_all_from_layer_atrybut(desired_reactions_layer_no, ANieOkreslony);
+            } else {
+                if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                    ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_, 12,
+                                       (char *) "", 11, 1, 62);
+                    no_error = FALSE;
+                    goto pl_error1;
+                }
+                if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+
+                    ret = ask_question(1, (char *) "", (char *) confirm, (char *) "", (char *) _CANNOT_CREATE_NEW_LAYER_, 12,
+                                       (char *) "", 11, 1, 62);
+                    no_error = FALSE;
+                    goto pl_error1;
+                }
+                No_Layers++;
+                desired_reactions_layer_no = No_Layers - 1;
+                Layers[No_Layers - 1].on = 1;
+                Layers[No_Layers - 1].edit = 1;
+                Layers[No_Layers - 1].point = 1;
+                strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+                Layers[No_Layers - 1].color = Ldsp.kolor;
+            }
+        }
+
+        Ldsp.warstwa = Ldsp1.warstwa = desired_reactions_layer_no;
+
+        if (UNITS==SI)
+        {
+            jednostkiObX=jednostkiObXm;
+            jednostkiObY=jednostkiObYm;
+        }
+        else
+        {
+            jednostkiObX=jednostkiObXi;
+            jednostkiObY=jednostkiObYi;
+        }
+
+
+        //from meters to drawing units
+        blok_origin.x = jednostkiObX(mesh_node[0].x);
+        blok_origin.y = jednostkiObY(mesh_node[0].y);
+
+        sprintf(block_name, "%s$Qn_%s_%d", ptr_id_short, SLS_ULS, combination_no);
+
+        //checking if any of Qn exists
+        char block_name_part[MAX_L_BLOCKS_LEN];
+        BOOL reaction_block_exists=FALSE;
+        sprintf(block_name_part, "%s$Qn", ptr_id_short);
+        for (j = 0; j < block_names_no; j++) {
+            if (strstr(block_names[j], block_name_part) !=NULL) {
+                reaction_block_exists = TRUE;
+                break;
+            }
+        }
+
+        if ((reaction_block_exists==FALSE) && (sti==2)) //block doesn't exist and it's ULSLC
+            hiding = FALSE;
+        else {
+            hiding = TRUE;
+            for (j = 0; j < block_names_no; j++) {
+                if (strcmp(block_names[j], block_name) == 0) {
+                    hiding = FALSE;
+                    break;
+                }
+            }
+        }
+
+        ptr_block = add_block(blok_origin.x, blok_origin.y, 'E', block_name, hiding);
+        if (ptr_block == NULL) {
+            fclose(f);
+            ret = ask_question(1, (char *) "", (char *) confirm, (char *) "",
+                               (char *) _CANNOT_CREATE_REACTIONS_BLOCK_, 12, (char *) "", 11, 1, 62);
+            no_error = FALSE;
+            goto pl_error3;
+        }
+
+        //Ldsp.x1=(float)blok_origin.x; //TEST
+        //Ldsp.y1=(float)blok_origin.y;
+        //Ldsp.x2=blok_origin.x+100;
+        //Ldsp.y2=blok_origin.y+100;
+        //adr = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp);
+        SPLINE s=Splinedef;
+        SPLINE s1=Splinedef;
+        s.warstwa=s1.warstwa=Ldsp.warstwa;
+        s.kolor=s1.kolor=Ldsp.kolor;
+        s.typ=s1.typ=Ldsp.typ;
+        s.blok=s1.blok=Ldsp.blok;
+
+        double edge_x1, edge_y1, edge_x2, edge_y2;
+        double r_edge_x1, r_edge_y1, r_edge_x2, r_edge_y2;
+
+        double edge_x01;
+        double edge_y01;
+
+        double Qn1, Qn2, Qn1m, Qn2m, Qn01, Qn02, Qn01m, Qn02m;
+        double Qn1graph, Qn2graph, Qn1mgraph, Qn2mgraph;
+        double Rz1, Rz2, Rz1m, Rz2m;
+        double Rzsum, Rzsummin;
+        double Qnave, Qnavemin;
+        double edge_dl, edge_l;
+        const double TOL = 1e-9;
+        double Qnexplus, Qnexminus;
+        double Qnmexplus, Qnmexminus;
+        double dxexplus, dxexminus, dxmexplus, dxmexminus;
+        double x1dspexplus,y1dspexplus,x2dspexplus,y2dspexplus;
+        double x1dspexminus,y1dspexminus,x2dspexminus,y2dspexminus;
+        double x1mdspexplus,y1mdspexplus,x2mdspexplus,y2mdspexplus;
+        double x1mdspexminus,y1mdspexminus,x2mdspexminus,y2mdspexminus;
+
+        double Qngraphmax=50.0;   //50 mm on drawing, no more, for reasonable graphic view
+
+        int edge=0;
+        i = 0;
+        while (i < mesh_boundaries_no)
+        {
+            if (mesh_boundary[i].edge!=edge) //new edge
+            {
+                edge=mesh_boundary[i].edge;
+                int jj=0;
+                int last_node=0;
+                Rzsum=Rzsummin=0.;
+                Qnave=Qnavemin=0.;
+                Qnexplus=Qnexminus=0.;
+                Qnmexplus=Qnmexminus=0.;
+                edge_l=0.;
+                dxexplus=dxexminus=dxmexplus=dxmexminus=-1.;  //set initially out of range
+                while ((edge==mesh_boundary[i].edge) && (i < mesh_boundaries_no))
+                {
+                    if (mesh_boundary[i].restraint > 5)
+                    {
+                        edge_x1 = jednostkiObX(mesh_boundary[i].x1);
+                        edge_y1 = jednostkiObY(mesh_boundary[i].y1);
+                        edge_x2 = jednostkiObX(mesh_boundary[i].x2);
+                        edge_y2 = jednostkiObY(mesh_boundary[i].y2);
+
+                        r_edge_x1 = mesh_boundary[i].x1;
+                        r_edge_y1 = mesh_boundary[i].y1;
+                        r_edge_x2 = mesh_boundary[i].x2;
+                        r_edge_y2 = mesh_boundary[i].y2;
+
+                        double kos1;
+                        double koc1;
+
+                        if (mesh_boundary[i].inverted)
+                        {
+                            kos1 = -mesh_boundary[i].koc;  //sin(θ-90°)=-cos(θ)
+                            koc1 = mesh_boundary[i].kos; //cos(θ-90°)=sin(θ)
+                        }
+                        else
+                        {
+                            kos1 = mesh_boundary[i].koc;  //sin(θ+90°)=cos(θ)
+                            koc1 = -mesh_boundary[i].kos; //cos(θ+90°)=-sin(θ)
+                        }
+
+                        double x1dsp, y1dsp, x2dsp, y2dsp;
+                        double x1dspm, y1dspm, x2dspm, y2dspm;
+
+                        if (sti<2)
+                        {
+                            Qn1=(mesh_boundary[i].state1[sti].Qn1 / unit_factors_pl->R_f);
+                            Qn2=(mesh_boundary[i].state2[sti].Qn1 / unit_factors_pl->R_f);
+
+                            Qn1graph = Qn1 / shear_magnitude;
+                            Qn2graph = Qn2 / shear_magnitude;
+                            //limiting graphs
+                            if (getSignFloat(Qn1graph)==1) Qn1graph=min(Qn1graph, Qngraphmax);
+                            else Qn1graph=max(Qn1graph, -Qngraphmax);
+                            if (getSignFloat(Qn2graph)==1) Qn2graph=min(Qn2graph, Qngraphmax);
+                            else Qn2graph=max(Qn2graph, -Qngraphmax);
+
+                            Rz1=(mesh_boundary[i].state1[sti].Rz1 / unit_factors_pl->R_f);
+                            Rz2=(mesh_boundary[i].state2[sti].Rz1 / unit_factors_pl->R_f);
+                            Rotate_Point(kos1, koc1, edge_x1, edge_y1, edge_x1 + Qn1graph, edge_y1, &x1dsp, &y1dsp);
+                            Rotate_Point(kos1, koc1, edge_x2, edge_y2, edge_x2 + Qn2graph, edge_y2, &x2dsp, &y2dsp);
+
+                            if (Qnexplus<Qn1)
+                            {
+                                Qnexplus=Qn1;
+                                if (jj==0) dxexplus=0.;
+                                else dxexplus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1dspexplus=edge_x1;
+                                y1dspexplus=edge_y1;
+                                x2dspexplus=x1dsp;
+                                y2dspexplus=y1dsp;
+                            }
+
+                            if (Qnexminus>Qn1)
+                            {
+                                Qnexminus=Qn1;
+                                if (jj==0) dxexminus=0.;
+                                else dxexminus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1dspexminus=edge_x1;
+                                y1dspexminus=edge_y1;
+                                x2dspexminus=x1dsp;
+                                y2dspexminus=y1dsp;
+                            }
+
+                            if (Qnexplus<Qn2)
+                            {
+                                Qnexplus=Qn2;
+                                if (jj==0) dxexplus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxexplus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1dspexplus=edge_x2;
+                                y1dspexplus=edge_y2;
+                                x2dspexplus=x2dsp;
+                                y2dspexplus=y2dsp;
+                            }
+
+                            if (Qnexminus>Qn2)
+                            {
+                                Qnexminus=Qn2;
+                                if (jj==0) dxexminus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxexminus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1dspexminus=edge_x2;
+                                y1dspexminus=edge_y2;
+                                x2dspexminus=x2dsp;
+                                y2dspexminus=y2dsp;
+                            }
+                        }
+                        else
+                        {  //max
+                            Qn1=(mesh_boundary[i].state1[sti].Qnmax1 / unit_factors_pl->R_f);
+                            Qn2=(mesh_boundary[i].state2[sti].Qnmax1 / unit_factors_pl->R_f);
+                            Qn1graph = Qn1 / shear_magnitude;
+                            Qn2graph = Qn2 / shear_magnitude;
+                            //limiting graphs
+                            if (getSignFloat(Qn1graph)==1) Qn1graph=min(Qn1graph, Qngraphmax);
+                            else Qn1graph=max(Qn1graph, -Qngraphmax);
+                            if (getSignFloat(Qn2graph)==1) Qn2graph=min(Qn2graph, Qngraphmax);
+                            else Qn2graph=max(Qn2graph, -Qngraphmax);
+
+                            Rz1=(mesh_boundary[i].state1[sti].Rzmax1 / unit_factors_pl->R_f);
+                            Rz2=(mesh_boundary[i].state2[sti].Rzmax1 / unit_factors_pl->R_f);
+                            Rotate_Point(kos1, koc1, edge_x1, edge_y1, edge_x1 + Qn1graph, edge_y1, &x1dsp, &y1dsp);
+                            Rotate_Point(kos1, koc1, edge_x2, edge_y2, edge_x2 + Qn2graph, edge_y2, &x2dsp, &y2dsp);
+
+                            //min
+                            Qn1m=(mesh_boundary[i].state1[sti].Qnmin1 / unit_factors_pl->R_f);
+                            Qn2m=(mesh_boundary[i].state2[sti].Qnmin1 / unit_factors_pl->R_f);
+                            Qn1mgraph = Qn1m / shear_magnitude;
+                            Qn2mgraph = Qn2m / shear_magnitude;
+                            //limiting graphs
+                            if (getSignFloat(Qn1mgraph)==1) Qn1mgraph=min(Qn1mgraph, Qngraphmax);
+                            else Qn1mgraph=max(Qn1mgraph, -Qngraphmax);
+                            if (getSignFloat(Qn2mgraph)==1) Qn2mgraph=min(Qn2mgraph, Qngraphmax);
+                            else Qn2mgraph=max(Qn2mgraph, -Qngraphmax);
+
+                            Rz1m=(mesh_boundary[i].state1[sti].Rzmin1 / unit_factors_pl->R_f);
+                            Rz2m=(mesh_boundary[i].state2[sti].Rzmin1 / unit_factors_pl->R_f);
+                            Rotate_Point(kos1, koc1, edge_x1, edge_y1, edge_x1 + Qn1mgraph, edge_y1, &x1dspm, &y1dspm);
+                            Rotate_Point(kos1, koc1, edge_x2, edge_y2, edge_x2 + Qn2mgraph, edge_y2, &x2dspm, &y2dspm);
+
+                            if (Qnexplus<Qn1)
+                            {
+                                Qnexplus=Qn1;
+                                if (jj==0) dxexplus=0.;
+                                else dxexplus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1dspexplus=edge_x1;
+                                y1dspexplus=edge_y1;
+                                x2dspexplus=x1dsp;
+                                y2dspexplus=y1dsp;
+                            }
+
+                            if (Qnexminus>Qn1)
+                            {
+                                Qnexminus=Qn1;
+                                if (jj==0) dxexminus=0.;
+                                else dxexminus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1dspexminus=edge_x1;
+                                y1dspexminus=edge_y1;
+                                x2dspexminus=x1dsp;
+                                y2dspexminus=y1dsp;
+                            }
+
+                            if (Qnexplus<Qn2)
+                            {
+                                Qnexplus=Qn2;
+                                if (jj==0) dxexplus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxexplus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1dspexplus=edge_x2;
+                                y1dspexplus=edge_y2;
+                                x2dspexplus=x2dsp;
+                                y2dspexplus=y2dsp;
+                            }
+
+                            if (Qnexminus>Qn2)
+                            {
+                                Qnexminus=Qn2;
+                                if (jj==0) dxexminus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxexminus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1dspexminus=edge_x2;
+                                y1dspexminus=edge_y2;
+                                x2dspexminus=x2dsp;
+                                y2dspexminus=y2dsp;
+                            }
+
+                            //for minimums
+                            if (Qnmexplus<Qn1m)
+                            {
+                                Qnmexplus=Qn1m;
+                                if (jj==0) dxmexplus=0.;
+                                else dxmexplus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1mdspexplus=edge_x1;
+                                y1mdspexplus=edge_y1;
+                                x2mdspexplus=x1dsp;
+                                y2mdspexplus=y1dsp;
+                            }
+
+                            if (Qnmexminus>Qn1m)
+                            {
+                                Qnmexminus=Qn1m;
+                                if (jj==0) dxmexminus=0.;
+                                else dxmexminus=sqrt((edge_x1-edge_x01)*(edge_x1-edge_x01)+(edge_y1-edge_y01)*(edge_y1-edge_y01));
+                                x1mdspexminus=edge_x1;
+                                y1mdspexminus=edge_y1;
+                                x2mdspexminus=x1dsp;
+                                y2mdspexminus=y1dsp;
+                            }
+
+                            if (Qnmexplus<Qn2m)
+                            {
+                                Qnmexplus=Qn2m;
+                                if (jj==0) dxmexplus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxmexplus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1mdspexplus=edge_x2;
+                                y1mdspexplus=edge_y2;
+                                x2mdspexplus=x2dsp;
+                                y2mdspexplus=y2dsp;
+                            }
+
+                            if (Qnexminus>Qn2m)
+                            {
+                                Qnmexminus=Qn2m;
+                                if (jj==0) dxmexminus=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                                else dxmexminus=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01));
+                                x1mdspexminus=edge_x2;
+                                y1mdspexminus=edge_y2;
+                                x2mdspexminus=x2dsp;
+                                y2mdspexminus=y2dsp;
+                            }
+                            Ldspm.x1=(float)x1dspm;
+                            Ldspm.y1=(float)y1dspm;
+                            Ldspm.x2=(float)x2dspm;
+                            Ldspm.y2=(float)y2dspm;
+                        }
+                        Ldsp.x1=(float)x1dsp;
+                        Ldsp.y1=(float)y1dsp;
+                        Ldsp.x2=(float)x2dsp;
+                        Ldsp.y2=(float)y2dsp;
+
+                        if (jj==0) {
+                            Ldsp1.x1 = (float) edge_x1;
+                            Ldsp1.y1 = (float) edge_y1;
+                            Ldsp1.x2 = Ldsp.x1;
+                            Ldsp1.y2 = Ldsp.y1;
+                            adr = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+
+                            //label
+                            LINIA Le=Ldef;
+                            Le.x1=(float)edge_x1;
+                            Le.y1=(float)edge_y1;
+                            Le.x2=(float)edge_x2;
+                            Le.y2=(float)edge_y2;
+                            double dx=0.;
+                            if (!Check_if_Equal(Qn1, 0.0))
+                               draw_label(&Ldsp1, &Le, dx, 0, 0, Qn1, r_precision, FALSE, "", "");
+
+                            Qn01=Qn1;
+
+                            //min
+                            if (sti>1)
+                            {
+                                Ldsp1.x1 = (float) edge_x1;
+                                Ldsp1.y1 = (float) edge_y1;
+                                Ldsp1.x2 = Ldspm.x1;
+                                Ldsp1.y2 = Ldspm.y1;
+                                adr = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+
+                                //min label
+                                Le.x1=(float)edge_x1;
+                                Le.y1=(float)edge_y1;
+                                Le.x2=(float)edge_x2;
+                                Le.y2=(float)edge_y2;
+                                if (!Check_if_Equal(Qn1m, 0.0))
+                                {
+                                    if ((getSignFloat(Qn1m)!=getSignFloat(Qn1)) || (fabs(Qn1m)>fabs(Qn1)))
+                                        draw_label(&Ldsp1, &Le, dx, 0, 0, Qn1m, r_precision, FALSE, "", "");
+                                }
+                                Qn01m=Qn1m;
+                            }
+
+                            edge_x01=edge_x1;
+                            edge_y01=edge_y1;
+                        }
+
+                        edge_dl=sqrt((r_edge_x2-r_edge_x1)*(r_edge_x2-r_edge_x1)+(r_edge_y2-r_edge_y1)*(r_edge_y2-r_edge_y1))/2.;
+
+                        Qnave+=Qn1*edge_dl;
+                        Qnave+=Qn2*edge_dl;
+
+                        if (sti>1)
+                        {
+                            Qnavemin+=Qn1m*edge_dl;
+                            Qnavemin+=Qn2m*edge_dl;
+                        }
+
+                        if (last_node!=mesh_boundary[i].node1)
+                        {
+                            s.xy[jj] = Ldsp.x1;
+
+                            if (sti>1)  //set only if it's challenging s
+                            {
+                                if ((getSignFloat(Qn1m)!=getSignFloat(Qn1)) || (fabs(Qn1m)>fabs(Qn1)))
+                                    s1.xy[jj] = Ldspm.x1;
+                                else
+                                    s1.xy[jj] = (float)edge_x1;
+                            }
+
+                            jj++;
+                            s.xy[jj] = Ldsp.y1;
+
+                            if (sti>1) //set only if it's challenging s
+                            {
+                                if ((getSignFloat(Qn1m)!=getSignFloat(Qn1)) || (fabs(Qn1m)>fabs(Qn1)))
+                                    s1.xy[jj] = Ldspm.y1;
+                                else
+                                    s1.xy[jj] = (float)edge_y1;
+                            }
+
+                            jj++;
+                            Rzsum+=Rz1;
+                            if (sti>1)
+                            {
+                                Rzsummin+=Rz1m;
+                            }
+                        }
+                        last_node=mesh_boundary[i].node1;
+                        s.xy[jj]=Ldsp.x2;
+
+                        if (sti>1) //set only if it's challenging s
+                        {
+                            if ((getSignFloat(Qn2m)!=getSignFloat(Qn2)) || (fabs(Qn2m)>fabs(Qn2)))
+                                s1.xy[jj] = Ldspm.x2;
+                            else
+                                s1.xy[jj] = (float)edge_x2;
+                        }
+
+                        jj++;
+                        s.xy[jj]=Ldsp.y2;
+
+                        if (sti>1) //set only if it's challenging s
+                        {
+                            if ((getSignFloat(Qn2m)!=getSignFloat(Qn2)) || (fabs(Qn2m)>fabs(Qn2)))
+                                s1.xy[jj] = Ldspm.y2;
+                            else
+                                s1.xy[jj] = (float)edge_y2;
+                        }
+
+                        jj++;
+                        Rzsum+=Rz2;
+
+                        if (sti>1)
+                        {
+                            Rzsummin+=Rz2m;
+                        }
+                        last_node=mesh_boundary[i].node2;
+                        edge_l+=sqrt((r_edge_x2-r_edge_x1)*(r_edge_x2-r_edge_x1)+(r_edge_y2-r_edge_y1)*(r_edge_y2-r_edge_y1));
+                    }
+                    i++;
+                }
+                if (jj>0)
+                {
+                    s.lp = jj;
+                    s.xy[s.lp]=0.75f;
+                    s.n = 8 + (s.lp + 1 ) * sizeof(float);
+                    s.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
+                    s.closed=0;
+                    adr = dodaj_obiekt((BLOK *) dane, (void *) &s);
+
+                    Ldsp1.x1 = Ldsp.x2;
+                    Ldsp1.y1 = Ldsp.y2;
+                    Ldsp1.x2 = (float) edge_x2;
+                    Ldsp1.y2 = (float) edge_y2;
+                    adr = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+
+                    //label
+                    LINIA Le=Ldef;
+                    Le.x1=(float)edge_x1;
+                    Le.y1=(float)edge_y1;
+                    Le.x2=(float)edge_x2;
+                    Le.y2=(float)edge_y2;
+                    double dx=sqrt((edge_x2-edge_x1)*(edge_x2-edge_x1)+(edge_y2-edge_y1)*(edge_y2-edge_y1));
+                    if (!Check_if_Equal(Qn2, 0.0))
+                        draw_label(&Ldsp1, &Le, dx, 0, 0, Qn2, r_precision, FALSE, "", "");
+
+                    Qn02=Qn2;
+
+                    //extreme maximums
+                    if ((Qnexplus>Qn01) && (Qnexplus>Qn02) && (!Check_if_Equal(Qnexplus, 0.0)))
+                    {
+                        Ldsp1.x1 = (float)x1dspexplus;
+                        Ldsp1.y1 = (float)y1dspexplus;
+                        Ldsp1.x2 = (float)x2dspexplus;
+                        Ldsp1.y2 = (float)y2dspexplus;
+                        draw_label(&Ldsp1, &Le, dxexplus, 0, 0, Qnexplus, r_precision, FALSE, "", "");
+                    }
+
+                    if ((Qnexminus<Qn01) && (Qnexminus<Qn02) && (!Check_if_Equal(Qnexminus, 0.0)))
+                    {
+                        Ldsp1.x1 = (float)x1dspexminus;
+                        Ldsp1.y1 = (float)y1dspexminus;
+                        Ldsp1.x2 = (float)x2dspexminus;
+                        Ldsp1.y2 = (float)y2dspexminus;
+                        draw_label(&Ldsp1, &Le, dxexminus, 0, 0, Qnexminus, r_precision, FALSE, "", "");
+                    }
+
+                    double d=1.5; //2.0;  //the distance from supporting edge in mm on drawing
+                    double d1=0.5 + zmwym.wysokosc * 0.5;
+                    //the sum
+                    Ldsp1.x1=(float)edge_x01;
+                    Ldsp1.y1=(float)edge_y01;
+                    Ldsp1.x2=(float)edge_x2;
+                    Ldsp1.y2=(float)edge_y2;
+                    PLINIA PL1;
+                    parametry_lini(&Ldsp1, &PL1);
+                    dx=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01))/2.;
+
+                    Ldsp1.x1=Ldsp1.x1-(float)(d*PL1.sin);
+                    Ldsp1.y1=Ldsp1.y1+(float)(d*PL1.cos);
+                    Ldsp1.x2=Ldsp1.x2-(float)(d*PL1.sin);
+                    Ldsp1.y2=Ldsp1.y2+(float)(d*PL1.cos);
+
+                    if (!Check_if_Equal(Rzsum, 0.0))
+                       draw_label(&Ldsp1, &Le, dx, 0, 0, Rzsum, r_precision, FALSE, "", "Σ");
+
+                    //average value
+                    Ldsp1.x1=Ldsp1.x1-(float)(d1*PL1.sin);
+                    Ldsp1.y1=Ldsp1.y1+(float)(d1*PL1.cos);
+                    Ldsp1.x2=Ldsp1.x2-(float)(d1*PL1.sin);
+                    Ldsp1.y2=Ldsp1.y2+(float)(d1*PL1.cos);
+
+                    if (edge_l>TOL) Qnave /= edge_l;
+                    if (!Check_if_Equal(Qnave, 0.0))
+                       draw_label(&Ldsp1, &Le, dx, 0, 0, Qnave, r_precision, FALSE, "", "μ");
+
+                    //min
+                    if (sti>1)
+                    {
+                        s1.lp = jj;
+                        s1.xy[s1.lp]=0.75f;
+                        s1.n = 8 + (s1.lp + 1 ) * sizeof(float);
+                        s1.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
+                        s1.closed=0;
+                        adr = dodaj_obiekt((BLOK *) dane, (void *) &s1);
+
+                        Ldsp1.x1 = Ldspm.x2;
+                        Ldsp1.y1 = Ldspm.y2;
+                        Ldsp1.x2 = (float) edge_x2;
+                        Ldsp1.y2 = (float) edge_y2;
+                        adr = dodaj_obiekt((BLOK *) dane, (void *) &Ldsp1);
+
+                        //min label
+                        Le.x1=(float)edge_x1;
+                        Le.y1=(float)edge_y1;
+                        Le.x2=(float)edge_x2;
+                        Le.y2=(float)edge_y2;
+
+                        if (!Check_if_Equal(Qn2m, 0.0))
+                        {
+                            if ((getSignFloat(Qn2m)!=getSignFloat(Qn2)) || (fabs(Qn2m)>fabs(Qn2)))
+                                draw_label(&Ldsp1, &Le, dx, 0, 0, Qn2m, r_precision, FALSE, "", "");
+                        }
+
+                        Qn02m=Qn2m;
+
+                        //extreme minimums
+                        if ((Qnmexplus>Qn01m) && (Qnmexplus>Qn02m) && (!Check_if_Equal(Qnmexplus, 0.0)))
+                        {
+                            if ((getSignFloat(Qnmexplus)!=getSignFloat(Qnexplus)) || (fabs(Qnmexplus)>fabs(Qnexplus)))
+                            {
+                                Ldsp1.x1 = (float) x1mdspexplus;
+                                Ldsp1.y1 = (float) y1mdspexplus;
+                                Ldsp1.x2 = (float) x2mdspexplus;
+                                Ldsp1.y2 = (float) y2mdspexplus;
+                                draw_label(&Ldsp1, &Le, dxmexplus, 0, 0, Qnmexplus, r_precision, FALSE, "", "");
+                            }
+                        }
+
+                        if ((Qnmexminus<Qn01m) && (Qnexminus<Qn02m) && (!Check_if_Equal(Qnmexminus, 0.0)))
+                        {
+                            if ((getSignFloat(Qnmexminus)!=getSignFloat(Qnexminus)) || (fabs(Qnmexminus)>fabs(Qnexminus)))
+                            {
+                                Ldsp1.x1 = (float) x1mdspexminus;
+                                Ldsp1.y1 = (float) y1mdspexminus;
+                                Ldsp1.x2 = (float) x2mdspexminus;
+                                Ldsp1.y2 = (float) y2mdspexminus;
+                                draw_label(&Ldsp1, &Le, dxmexminus, 0, 0, Qnmexminus, r_precision, FALSE, "", "");
+                            }
+                        }
+
+                        //the min sum
+                        Ldsp1.x1=(float)edge_x01;
+                        Ldsp1.y1=(float)edge_y01;
+                        Ldsp1.x2=(float)edge_x2;
+                        Ldsp1.y2=(float)edge_y2;
+                        parametry_lini(&Ldsp1, &PL1);
+                        dx=sqrt((edge_x2-edge_x01)*(edge_x2-edge_x01)+(edge_y2-edge_y01)*(edge_y2-edge_y01))/2.;
+
+                        Ldsp1.x1=Ldsp1.x1-(float)(d*PL1.sin);
+                        Ldsp1.y1=Ldsp1.y1+(float)(d*PL1.cos);
+                        Ldsp1.x2=Ldsp1.x2-(float)(d*PL1.sin);
+                        Ldsp1.y2=Ldsp1.y2+(float)(d*PL1.cos);
+
+                        if (!Check_if_Equal(Rzsummin, 0.0))
+                        {
+                            if ((getSignFloat(Rzsummin)!=getSignFloat(Rzsum)) || (fabs(Rzsummin)>fabs(Rzsum)))
+                               draw_label(&Ldsp1, &Le, dx, 0, 0, Rzsummin, r_precision, FALSE, "", "Σ");
+                        }
+
+                        //average min value
+                        Ldsp1.x1=Ldsp1.x1-(float)(d1*PL1.sin);
+                        Ldsp1.y1=Ldsp1.y1+(float)(d1*PL1.cos);
+                        Ldsp1.x2=Ldsp1.x2-(float)(d1*PL1.sin);
+                        Ldsp1.y2=Ldsp1.y2+(float)(d1*PL1.cos);
+
+                        if (edge_l>TOL) Qnavemin /= edge_l;
+                        if (!Check_if_Equal(Qnavemin, 0.0))
+                        {
+                            if ((getSignFloat(Qnavemin)!=getSignFloat(Qnave)) || (fabs(Qnavemin)>fabs(Qnave)))
+                                draw_label(&Ldsp1, &Le, dx, 0, 0, Qnavemin, r_precision, FALSE, "", "μ");
+                        }
+                    }
+                }
+            }
+        }
+
+pl_error3:
+        ////reactions block end
+
+        free(supp1_sigx_max);
+        free(supp1_sigy_max);
+        free(supp1_sigxy_max);
+
+        free(supp2_sigx_max);
+        free(supp2_sigy_max);
+        free(supp2_sigxy_max);
+
+        for (i = 0; i < mesh_boundaries_no; i++) {
+            free(inside1_sigx_max[i]);
+            free(inside1_sigy_max[i]);
+            free(inside1_sigxy_max[i]);
+
+            free(inside2_sigx_max[i]);
+            free(inside2_sigy_max[i]);
+            free(inside2_sigxy_max[i]);
+        }
+
+        free(inside1_sigx_max);
+        free(inside1_sigy_max);
+        free(inside1_sigxy_max);
+
+        free(inside2_sigx_max);
+        free(inside2_sigy_max);
+        free(inside2_sigxy_max);
     }  //sti done
 
-    for (i = 0; i < STRESS_NUMBER; i++)
-    {
+    for (i = 0; i < STRESS_NUMBER; i++) {
         if (min_stress_bak[i] != NULL) {
             free(min_stress_bak[i]);
             min_stress_bak[i] = NULL;
         }
     }
 
-    for (i = 0; i < STRESS_NUMBER; i++)
-    {
+    for (i = 0; i < STRESS_NUMBER; i++) {
         if (max_stress_bak[i] != NULL) {
             free(max_stress[i]);
             max_stress_bak[i] = NULL;
@@ -8496,7 +11988,7 @@ end_block:
 
     free(perm_s_bak);
 
-pl_error1:
+    pl_error1:
 
     if (mesh_node) free(mesh_node);
     if (mesh_element) free(mesh_element);
@@ -8504,10 +11996,10 @@ pl_error1:
 
     if (body_property) free(body_property);
 
-pl_error:
+    pl_error:
 
 
-    if (was_refreshed==FALSE) {
+    if (was_refreshed == FALSE) {
         ///removing Ablok flags and refresh
         zmien_atrybut_undo(dane, dane + dane_size);
         blokzap(ADP, ADK, Ablok, COPY_PUT, 1);
@@ -8527,6 +12019,19 @@ pl_error:
         report[0] = '\0';
     }
 
+    if (body_area != NULL) {
+        free(body_area);
+        body_area = NULL;
+    }
+
+    if (surface_load[0] != NULL) {
+        for (i = 0; i < 64; i++) {
+            if (surface_load[i] != NULL) {
+                free(surface_load[i]);
+                surface_load[i] = NULL;
+            }
+        }
+    }
 
     if (st_uniform_load_comb) free(st_uniform_load_comb);
     if (st_uniform_load_cons) free(st_uniform_load_cons);
@@ -8541,13 +12046,19 @@ pl_error:
     if (hole_property) free(hole_property);
     if (wall_property) free(wall_property);
     if (zone_property) free(zone_property);
+
+    // Free the allocated memory when no longer needed
+    for (int i = 0; i < MAX_L_BLOCKS; i++) {
+        free(block_names[i]);
+    }
+    free(block_names);
     ////////////////
 
-push:
+    push:
     redraw();
 
     my_sleep(100);
     return;
-}
 
+}
 #undef __O_PLATE__

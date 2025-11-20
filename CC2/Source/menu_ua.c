@@ -393,7 +393,7 @@ char _NO_[4] = "Н";
 
 const char *_EDIT_[] = { u8"Рухатити", u8"Рухатити Z", u8"Обертати", u8"Обертати XZ", u8"Обертати YZ", u8"Масштаб", u8"Дзеркало", u8"->пропустити", u8"-----"};
 
-char* loading_program[] = { u8"Програма завантаження", u8"Завантаження ресурсів..." , u8"Будь ласка, зачекайте. Завантаження файлу: ", u8"Підключення до хмари..."};
+//char* loading_program[] = { u8"Програма завантаження", u8"Завантаження ресурсів..." , u8"Будь ласка, зачекайте. Завантаження файлу: ", u8"Підключення до хмари..."};
 
 #define _NO_MOUSE_ u8"Миша не встановлена !!!!!\n"
 
@@ -3339,9 +3339,10 @@ static POLE pmPrecision[] = {
         {u8"точність Навантаження\0\0", L'Н',733,NULL},
         {u8"точність Теплового навантаження\0\0",L'Т',752,NULL},
         {u8"точність наПруги\0 \0",     L'П',800,NULL},
+        {u8"точність Реакції\0 \0",L'Р',763,NULL},
 };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 8,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 static POLE pmThermal[] = {
        {u8"Глибина розрізу\0 \0",L'Г',764,NULL},
@@ -3364,28 +3365,36 @@ static POLE pmStaticColors[] = {
        {u8"֎Вібрації\0інше\0",                      L'В',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"Лінійне навантаження\0 \0",L'Л',733,NULL},
 	   {u8"Поверхневе навантаження\0 \0",L'П',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmReactionMagnitude[] = {
+       {u8"Зосереджені сили реакції\0 \0",L'З',762,NULL},
+	   {u8"Розподілені сили реакції\0 \0",L'Р',864,NULL},
+	  };
+
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
+
 
 static POLE pmStressMagnitude[] = {
        {u8"напруження в Сталі/деревині\0 \0",L'С',775,NULL},
 	   {u8"напруження в Залізобетоні\0 \0",L'З',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"масштаб Сили\0\0",           L'С',727,NULL},
@@ -3398,7 +3407,7 @@ static POLE pmMagnitude[] = {
        {u8"масштаб сил зсуву\0\0",      L'Б',759,NULL},
        {u8"масштаб момЕнтів\0\0",       L'Е',760,NULL},
        {u8"масштаб Деформації\0\0",     L'Д',761,NULL},
-       {u8"масштаб сил Реакції\0\0",    L'Р',762,NULL},
+       {u8"масштаб сил Реакції\0\0",    L'Р',762,&mReactionMagnitude},
        {u8"масштаб моментів опор\0\0",  L'У',763,NULL},
        {u8"масштаб наПружень\0 \0",     L'П',800,&mStressMagnitude},
        {u8"масштаб % армування\0 \0",   L'%',823,NULL},

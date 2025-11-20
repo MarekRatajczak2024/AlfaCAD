@@ -95,7 +95,7 @@ static TBuffer *GetBufSpec (char  *P)
   ptrs_buffer->Size < 0 ||
       P + ptrs_buffer->Size > BufHeapTab[DRAWING_NUMBER].BufHeapEnd)
   {
-    Internal_Error (__LINE__, __FILE__) ;
+    Internal_Error (__LINE__, (char*)__FILE__) ;
   }
   return ptrs_buffer ;
 }

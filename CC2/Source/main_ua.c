@@ -108,4 +108,11 @@ POLE pmenug[] = {
 #define _BITMAPS_ u8"Бітмапи"
 #define _PLUGINS_ u8"плагіни"
 #define _PLUGIN_BITMAPS_ u8"plugins/bitmaps"
+
+#define _NO_MOUSE_ u8"Миша не встановлена !!!!!\n"
+
+char* loading_program[] = { u8"Програма завантаження", u8"Завантаження ресурсів..." , u8"Будь ласка, зачекайте. Завантаження файлу: ", u8"Підключення до хмари..."};
+
+
+
 #endif

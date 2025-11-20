@@ -19,6 +19,7 @@
 #define ALLEGWIN
 #include <allegext.h>
 #include<stdlib.h>
+#include<stdio.h>
 #include<math.h>
 #include "bib_e.h"
 #include "rysuj_e.h"
@@ -41,6 +42,7 @@ extern void Destroy_Blocks_Array(void);
 extern int Get_EllipticalArc_Points (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double df_sangle, double df_eangle, double xy[]);
 extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double df_sangle0, double df_eangle0, double *x1, double *y1, double *x2, double *y2);
 extern void set_global_hidden_blocks_visibility(BOOL block_visibility);
+extern int get_block_limit_state(char *base_component_name);
 
 static int get_maxy_point 	(void *) ;
 
@@ -2314,7 +2316,123 @@ void shift_layer_numbers(int layer_no)
     return;
 }
 
-void get_blocks_setup(int layer_no, char *block_names[][65], int *block_names_no0, int max_no, int max_len)
+int get_associated_blocks_adr(char *block_name_orig, char *component_name_orig, int limit_state0, BLOK **adr)
+{
+    int block_no=0;
+    char  *adp,  *adk;
+    adp = dane ;
+    adk = dane + dane_size ;
+    NAGLOWEK *nag;
+    BLOK *b;
+    T_Desc_Ex_Block *ptrs_desc_bl ;
+    LINIA *L;
+    int max_len=63;
+    int limit_state;
+    int load_combination, load_combination0;
+    char *ptr, *ptr1, *ptr_c;
+    int ret;
+
+    char *component_name;
+    char this_block_name[64];
+    char component[64];
+    char component0[64];
+    char component_name0[64];
+    char block_name0[64];
+
+    strncpy(component_name0, component_name_orig, 63);
+    strncpy(block_name0, block_name_orig, 63);
+
+    ptr1=strrchr(component_name0,'_');
+    if (ptr1!=NULL)
+    {
+        ret = sscanf(ptr1 + 1, "%d", &load_combination0);
+        if (ret<1) load_combination0=0;
+    }
+    else load_combination0=0;
+
+    strncpy(component0, component_name_orig, 63);
+    component0[63]='\0';
+    strcpy(component,"");
+
+    ptr_c=strchr(component0,'_');
+    if (ptr_c!=NULL) *ptr_c='\0';
+
+    nag = (NAGLOWEK*)adp;
+    while ((nag->obiekt != Okoniec) && (adp < adk))
+    {
+        if ((nag->atrybut != Ausuniety) && (nag->atrybut != Abad))
+        {
+            if (nag->obiekt == OdBLOK)
+            {
+                b = (BLOK *) nag;
+                if (b->kod_obiektu == B_GRAPH) {
+                    if ((B3 + b->dlugosc_opisu_obiektu) != b->n)
+                    {
+                        if (nag->atrybut != Ausuniety)
+                        {
+                            L = (LINIA *) ((char *) nag + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu);
+                            if (L->obiekt != OdBLOK)
+                            {
+                                if (b->dlugosc_opisu_obiektu > 17)
+                                {
+                                    ptrs_desc_bl = (T_Desc_Ex_Block *) (&b->opis_obiektu[0]);
+                                    if (ptrs_desc_bl->sz_type [0] != '\0')
+                                    {
+                                        strncpy(this_block_name, ptrs_desc_bl->sz_type, max(63, ptrs_desc_bl->len + 1));
+                                        //checking block name syntax
+                                        ptr = strchr(this_block_name, '$');
+                                        if (ptr != NULL)
+                                        {
+                                            *ptr = '\0';
+                                            if (strcmp(this_block_name, block_name0) == 0)  //same plate
+                                            {
+                                                component_name = (ptr + 1);
+                                                if (strcmp(component_name, component_name0) !=0) //not the same component
+                                                {
+                                                    //checking load combination
+                                                    ptr1=strrchr(component_name,'_');
+                                                    if (ptr1!=NULL)
+                                                    {
+                                                        ret = sscanf(ptr1 + 1, "%d", &load_combination);
+                                                        if (ret<1) load_combination=0;
+                                                    }
+                                                    else load_combination=0;
+                                                    if (load_combination==load_combination0)  //same load combination
+                                                    {
+                                                        limit_state = get_block_limit_state(component_name);
+                                                        if (limit_state != limit_state0) //not the same state
+                                                        {
+                                                            strncpy(component, component_name, 63);
+                                                            component[63] = '\0';
+                                                            ptr_c = strchr(component, '_');
+                                                            if (ptr_c != NULL) *ptr_c = '\0';
+                                                            if (strcmp(component, component0) == 0)  //same component
+                                                            {
+                                                                adr[limit_state] = b;
+                                                                block_no++;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        adp += nag->n + sizeof(NAGLOWEK);  //data block is not merged with another block
+
+        nag = (NAGLOWEK*)adp;
+    }
+
+    return block_no;
+}
+
+void get_blocks_setup(int layer_no, char **block_names, int *block_names_no0, int max_no, int max_len)
 {
     char  *adp,  *adk;
     adp = dane ;
@@ -2350,7 +2468,7 @@ void get_blocks_setup(int layer_no, char *block_names[][65], int *block_names_no
                                         {
                                             ptrs_desc_bl = (T_Desc_Ex_Block *) (&b->opis_obiektu[0]);
                                             memmove(block_names[block_names_no], ptrs_desc_bl->sz_type, min(max_len,ptrs_desc_bl->len));
-                                            block_names[block_names_no][max_len]='\0';
+                                            block_names[block_names_no][max_len-1]='\0';
                                             block_names_no++;
                                         }
                                     }

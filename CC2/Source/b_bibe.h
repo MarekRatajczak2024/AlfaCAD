@@ -109,6 +109,7 @@ typedef struct DRAWING_PARAMS
     double thermal_magnitude;
     double load_magnitude;
     double flood_magnitude;
+    double shear_magnitude;
     double force_magnitude;
     double moment_magnitude;
     double displacement_magnitude;
@@ -121,6 +122,7 @@ typedef struct DRAWING_PARAMS
     double displacement_precision;
     double rotation_precision;
     double stress_precision;
+    double r_precision;
 
     double n_magnitude;
     double v_magnitude;

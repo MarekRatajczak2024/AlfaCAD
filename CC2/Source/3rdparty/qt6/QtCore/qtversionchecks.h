@@ -35,7 +35,7 @@
 #  define QT7_ONLY(...)
 #  define QT6_ONLY(...)         __VA_ARGS__
 #else
-#  error Qt major version not 6 or 7
+#  ////error Qt major version not 6 or 7
 #endif
 
 /* Macro and tag type to help overload resolution on functions

@@ -481,7 +481,7 @@ static char* komunikaty_kom[] =
 /*213*/u8"Enter the rescaling factor for the resulting shear forces: ",
 /*214*/u8"Enter the rescaling factor for the resulting bending moments: ",
 /*215*/u8"Enter the rescaling factor for the resulting displacements: ",
-/*216*/u8"Enter the rescaling factor for the resulting support reaction forces: ",
+/*216*/u8"Enter the rescaling factor for the resulting support concentrated reaction forces: ",
 /*217*/u8"Enter the rescaling factor for the resulting support reaction moments: ",
 /*218*/u8"Enter section depth rescaling factor: ",
 /*219*/u8"Enter the rescaling factor for the resulting stresses (steel, timber): ",
@@ -490,6 +490,8 @@ static char* komunikaty_kom[] =
 /*222*/u8"Enter the rescaling factor for the resulting reinforcement percentage: ",
 /*223*/u8"Enter surface load rescaling factor: ",
 /*224*/u8"Enter the rescaling factor for the resulting stresses (RC): ",
+/*225*/u8"Enter the rescaling factor for the resulting support distributed reaction forces: ",
+/*226*/u8"Enter reactions precision: ",
 "",
 "",
 };
@@ -1244,6 +1246,7 @@ static char confirm[] = u8"Confirm";
 #define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Unable to create deflection block"
 #define _CANNOT_CREATE_STRESS_BLOCK_ u8"Unable to create stress block"
 #define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Unable to create strain block"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Unable to create reactions block"
 
 #define _PROCEED_PLATE_FEM_ u8"Proceed static analysis of the plate?"
 

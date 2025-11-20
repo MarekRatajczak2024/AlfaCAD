@@ -1705,7 +1705,7 @@ void zmien_atrybut(char  *adr, char  *adrk, int aold, int anew)
        nag->atrybut=anew;
        if ((nag->obiekt==Opcx) && (anew==Ausuniety)) deleted_pcx=TRUE;
 	   if ((nag->obiekt == Owwielokat) && (((WIELOKAT *)nag)->empty_typ==0) && (((WIELOKAT*)nag)->pattern == 1) && (anew == Ausuniety)) deleted_pattern = TRUE;
-	   if (((nag->obiekt == Otekst) /*|| (nag->obiekt == Otekst3D)*/) &&
+	   if ((nag->obiekt == Otekst) &&
 		   (PTRS__Text_Style[((TEXT*)nag)->czcionka]->type == 2))
 		   deleted_TTF = TRUE;
      } 
@@ -2786,7 +2786,7 @@ void undo_blok(void)
 	rysuj_obiekt((char*)adr,COPY_PUT,1);
 	if (nag->obiekt==Opcx)  undeleted_pcx=TRUE;
 	if ((nag->obiekt == Owwielokat) && (((WIELOKAT*)nag)->empty_typ == 0) && (((WIELOKAT*)nag)->pattern == 1)) undeleted_pattern = TRUE;
-	if (((nag->obiekt == Otekst) /*|| (nag->obiekt == Otekst3D)*/) &&
+	if ((nag->obiekt == Otekst) &&
 		(PTRS__Text_Style[((TEXT*)nag)->czcionka]->type == 2))
 		undeleted_TTF = TRUE;
 	

@@ -41,6 +41,7 @@
 #endif
 #include<stdio.h>
 #include<string.h>
+#include<math.h>
 #include<fcntl.h>
 #include<glyph.h>
 #include "alfa_cursors.h"
@@ -186,7 +187,8 @@ static int graphic_drv;
 static char font_file_name[12]="font.ini";
 static char font_name[MAXPATH];
 static char font_name1[MAXPATH];
-static char sk1[32];
+//static 
+char sk1[32];
 FILE *stru_ini;
 static BOOL music_avail;
 
@@ -342,6 +344,19 @@ extern void set_editbox_geometry_win(int x, int y);
 extern void set_editbox_geometry_line_win(int x, int y);
 extern int GoRegtestCall(int(*ptr)(int));
 #endif
+
+//additionally in bibrys
+extern void Rysuj(void);
+extern void Edycja(void);
+extern void Blok(void);
+extern void Change_Properties(void);
+extern void Spline_Amendment(void);
+extern void Change_Vectors(void);
+
+extern void set_scrsave_time (void);
+extern int	getdisk(void);
+/////////////
+
 
 extern BITMAP *qmark;
 extern char *qmark_p;
@@ -2095,6 +2110,8 @@ extern BITMAP *icon_displacements_mag;
 extern char *icon_displacements_mag_p;
 extern BITMAP *icon_reactions_xy;
 extern char *icon_reactions_xy_p;
+extern BITMAP *icon_shear;
+extern char *icon_shear_p;
 extern BITMAP *icon_reactions_m;
 extern char *icon_reactions_m_p;
 
@@ -2270,6 +2287,13 @@ extern BITMAP *icon_SLS;
 extern char *icon_SLS_p;
 extern BITMAP *icon_QPSLS;
 extern char *icon_QPSLS_p;
+
+extern BITMAP *icon_ULSLC;
+extern char *icon_ULSLC_p;
+extern BITMAP *icon_SLSLC;
+extern char *icon_SLSLC_p;
+extern BITMAP *icon_QPSLSLC;
+extern char *icon_QPSLSLC_p;
 
 extern BITMAP *icon_mousewheel;
 extern char *icon_mousewheel_p;
@@ -3120,6 +3144,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_moments_mag,"moments_mag",&icon_moments_mag_p },
         {&icon_displacements_mag,"displacements_mag",&icon_displacements_mag_p },
         {&icon_reactions_xy,"reactions_xy",&icon_reactions_xy_p },
+        {&icon_shear,"shear",&icon_shear_p },
         {&icon_reactions_m,"reactions_m",&icon_reactions_m_p },
         {&icon_thermal_y,"thermal_y",&icon_thermal_y_p },
         {&icon_thermal_t,"thermal_t",&icon_thermal_t_p },
@@ -3181,8 +3206,11 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_perc_mag,"perc_mag",&icon_perc_mag_p },
         {&icon_cross_section_forces,"cross_section_forces",&icon_cross_section_forces_p },
         {&icon_ULS,"ULS",&icon_ULS_p },
+        {&icon_ULSLC,"ULSLC",&icon_ULSLC_p },
         {&icon_SLS,"SLS",&icon_SLS_p },
+        {&icon_SLSLC,"SLSLC",&icon_SLSLC_p },
         {&icon_QPSLS,"QPSLS",&icon_QPSLS_p },
+        {&icon_QPSLSLC,"QPSLSLC",&icon_QPSLSLC_p },
         {&icon_resilience,"resilience",&icon_resilience_p },
         {&icon_mousewheel,"mousewheel",&icon_mousewheel_p },
         {&icon_mousewheelnatural,"mousewheelnatural",&icon_mousewheelnatural_p },
@@ -3269,7 +3297,8 @@ void noopg(void)
 static void nooop(void)
 {}
 
-#include "bibrys.c"
+
+////#include "bibrys.c"
 
 extern void Biblioteka(void);
 

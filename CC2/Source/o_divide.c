@@ -150,7 +150,7 @@ void undo_divide_proc (void)
   {
      nag = (NAGLOWEK*)(dane + l_erase) ;
      rysuj_obiekt ((char *)nag, COPY_PUT, 0) ;
-	 if ((nag->obiekt == Otekst) /*|| (nag->obiekt == Otekst3D)*/)
+	 if (nag->obiekt == Otekst)
 	 {
 		 if (PTRS__Text_Style[((TEXT*)nag)->czcionka]->type == 2) TTF_redraw = TRUE;
 	 }
@@ -1380,7 +1380,7 @@ BOOL divide_pline (BLOK *ptrs_block, void *ptr_object, double df_x, double df_y,
   {
     if (TRUE == Check_if_Equal (df_line_rem, 0))
     {
-      if ((nag->obiekt == Olinia))// || (nag->obiekt == Olinia3D))
+      if (nag->obiekt == Olinia)
       {
 	b_divide = make_divide (DIVIDE_PL_1, df_x_end, df_y_end, &l_off, (void *)ptrs_line) ;
       }

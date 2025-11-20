@@ -409,6 +409,7 @@ set(Source_Files
     "../../../CC2/Source/pcx.c"
     "../../../CC2/Source/pcxdlg.c"
     #"../../../CC2/Source/Qeditor.cpp"
+    "../../../CC2/Source/bibrys.c"
     "../../../CC2/Source/rysuj.c"
     "../../../CC2/Source/Strlwr1.c"
     "../../../CC2/Source/Strupr1.c"
@@ -492,6 +493,7 @@ set(Source_Files
     "../../../CC2/Source/o_section_block.c"
     "../../../CC2/Source/o_section_block.h"
     "../../../CC2/Source/o_plate.c"
+    "../../../CC2/Source/o_plate_reactions.c"
     "../../../CC2/Source/o_plate.h"
 
     "../../../allegro5-4.4.3/addons/jpgalleg/src/jpgalleg.c"
@@ -500,7 +502,6 @@ set(Source_Files
     "../../../allegro5-4.4.3/addons/jpgalleg/src/error.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/init.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/io.c"
-
 
     #"../../../CC2/Source/present_window.cpp"
     #"../../../CC2/Source/present_window.h"

@@ -231,7 +231,7 @@ static BOOL check_if_break_line (void *ptr_data, LINIA **ptrs_begin_line, LINIA 
   LINIA *ptrs_line ;
 
   nag = (NAGLOWEK*)ptr_data ;
-  if ((nag->obiekt != Olinia) /*&& (nag->obiekt != Olinia3D)*/)
+  if (nag->obiekt != Olinia)
   {
     return FALSE ;
   }
@@ -242,7 +242,7 @@ static BOOL check_if_break_line (void *ptr_data, LINIA **ptrs_begin_line, LINIA 
   while (ad!=-1)
   {
     nag = (NAGLOWEK*)(dane + ad) ;
-    if ((nag->obiekt == Olinia /*|| nag->obiekt == Olinia3D*/) &&
+    if (nag->obiekt == Olinia &&
 	(nag->atrybut == Anormalny || nag->atrybut == Aoblok || nag->atrybut==Apoblok
       || nag->atrybut==Appoblok || nag->atrybut==Apppoblok ))
     {

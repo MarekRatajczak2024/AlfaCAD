@@ -42,7 +42,7 @@ static POLE pmDem[]={
 /*0*/	 {u8"",' ',0,NULL},
 /*1*/	 {_ALFACAD_,' ',0,NULL},
 /*2*/	 {u8"",' ',0,NULL},
-/*3*/    {u8"© Marek Ratajczak, 2020-2024",' ',0,NULL},
+/*3*/    {u8"© Marek Ratajczak, 2020-2025",' ',0,NULL},
  /*4*/  	 {u8"",' ',0,NULL},
 /*5*/	// {u8"marek.ratajczak@markventurecapital.com",' ',0,NULL},
 /*5*/	 {u8"author@alfacad.net",' ',0,NULL},

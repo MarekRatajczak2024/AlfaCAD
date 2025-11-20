@@ -31,7 +31,7 @@ CAPTION "About"
 FONT 8, "System", 0, 0, 0x0
 BEGIN
     ICON            IDI_ALFA,IDC_ALFA,14,9,20,20
-    LTEXT           "AlfaCad Version 2.5",IDC_STATIC_A,49,10,119,8
+    LTEXT           "AlfaCad Version 2.8",IDC_STATIC_A,49,10,119,8
     LTEXT           "Copyright (C) Marek Ratajczak 2020",IDC_STATIC_A,49,20,119,8
     DEFPUSHBUTTON   "OK",1,195,6,30,11
 END

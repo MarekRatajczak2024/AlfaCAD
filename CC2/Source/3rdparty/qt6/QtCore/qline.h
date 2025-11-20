@@ -14,7 +14,7 @@ class QLineF;
  * class QLine
  *******************************************************************************/
 
-class Q_CORE_EXPORT QLine
+class /*Q_CORE_EXPORT*/ QLine
 {
 public:
     constexpr inline QLine();
@@ -188,7 +188,7 @@ Q_CORE_EXPORT QDataStream &operator>>(QDataStream &, QLine &);
 /*******************************************************************************
  * class QLineF
  *******************************************************************************/
-class Q_CORE_EXPORT QLineF
+class /*Q_CORE_EXPORT*/ QLineF
 {
 public:
 

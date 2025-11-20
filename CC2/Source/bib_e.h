@@ -1627,7 +1627,9 @@ struct
     char *graph_data;
     char *section_data;
     SECTION_GRAPH_DATA ULS;
+    //SECTION_GRAPH_DATA ULSLC;
     SECTION_GRAPH_DATA SLS;
+    //SECTION_GRAPH_DATA SLSLC;
     SECTION_GRAPH_DATA QPSLS;
 } ALL_SECTION_GRAPH_DATA;
 typedef  ALL_SECTION_GRAPH_DATA  *ALL_SECTION_GRAPH_DATA_;
@@ -1643,6 +1645,7 @@ struct
   char *component_name;
   double xminp, xmaxp, yminp, ymaxp;
   float factor;
+  int limit_state; //0 SLS, 1 ULS, 2 ULSLC, 3 SLSLC, 4 QPSLSLC   - for consistency
 } PLATE_GRAPH_DATA;
 
 
@@ -2683,7 +2686,7 @@ typedef struct tagRECT {
 #define S4def {Anormalny,Owwielokat,0,0,0,1,0,0, 40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/
 #define S43Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 56, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0,0,0,0,0} /*czworokat 3D*/
 //#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0, 8,0,0,0,0,0,0,0,0} /*Bezier spline 4 points*/
-#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
+#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
 #define Defzmwym {7,7,3,1,.01,10,0,0,1,0,0,0,0 }
 #define Defzvector {3,1,0,0,0,0,0,0,0,0.01,0.01,0.01,0.001}
 #define Defsel {0,0,0,0,0,0,0,0,7}  //5

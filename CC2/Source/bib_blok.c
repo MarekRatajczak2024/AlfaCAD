@@ -5401,7 +5401,7 @@ static void transformacja_obiekt (void *ad,double x,double y,double k1,double k2
   Change = TRUE;
   Set_Auto_Backup (TRUE);
   nag=(NAGLOWEK*)ad;
-  if ((nag->obiekt == Otekst) /*|| (nag->obiekt == Otekst3D)*/)
+  if (nag->obiekt == Otekst)
   {
 	  if (PTRS__Text_Style[((TEXT*)nag)->czcionka]->type == 2) TTF_redraw = TRUE;
   }

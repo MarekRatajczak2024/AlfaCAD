@@ -358,6 +358,7 @@ extern double depth_magnitude; //units per mm  default 1 mm of section depth per
 extern double thermal_magnitude;
 extern double load_magnitude; //units per mm  default 10kN/m load per 1 mm on drawing paper
 extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude; //units per mm  default 10kN/m shear/reaction per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -370,6 +371,7 @@ extern double displacement_precision;
 extern double rotation_precision;
 extern double load_precision;
 extern double stress_precision;
+extern double r_precision;
 
 extern double n_magnitude;
 extern double v_magnitude;
@@ -2214,6 +2216,8 @@ BITMAP *icon_displacements_mag;
 char *icon_displacements_mag_p;
 BITMAP *icon_reactions_xy;
 char *icon_reactions_xy_p;
+BITMAP *icon_shear;
+char *icon_shear_p;
 BITMAP *icon_reactions_m;
 char *icon_reactions_m_p;
 
@@ -2388,6 +2392,13 @@ BITMAP *icon_SLS;
 char *icon_SLS_p;
 BITMAP *icon_QPSLS;
 char *icon_QPSLS_p;
+
+BITMAP *icon_ULSLC;
+char *icon_ULSLC_p;
+BITMAP *icon_SLSLC;
+char *icon_SLSLC_p;
+BITMAP *icon_QPSLSLC;
+char *icon_QPSLSLC_p;
 
 BITMAP *icon_mousewheel;
 char *icon_mousewheel_p;
@@ -4342,6 +4353,7 @@ int Restore_params(void)
     thermal_magnitude=Drawing_Params[DRAWING_NUMBER].thermal_magnitude;
     load_magnitude=Drawing_Params[DRAWING_NUMBER].load_magnitude;
     flood_magnitude=Drawing_Params[DRAWING_NUMBER].flood_magnitude;
+    shear_magnitude=Drawing_Params[DRAWING_NUMBER].shear_magnitude;
     force_magnitude=Drawing_Params[DRAWING_NUMBER].force_magnitude;
     moment_magnitude=Drawing_Params[DRAWING_NUMBER].moment_magnitude;
     displacement_magnitude=Drawing_Params[DRAWING_NUMBER].displacement_magnitude;
@@ -4354,6 +4366,7 @@ int Restore_params(void)
     displacement_precision=Drawing_Params[DRAWING_NUMBER].displacement_precision;
     rotation_precision=Drawing_Params[DRAWING_NUMBER].rotation_precision;
     stress_precision=Drawing_Params[DRAWING_NUMBER].stress_precision;
+    r_precision=Drawing_Params[DRAWING_NUMBER].r_precision;
 
     n_magnitude=Drawing_Params[DRAWING_NUMBER].n_magnitude;
     v_magnitude=Drawing_Params[DRAWING_NUMBER].v_magnitude;
@@ -4502,6 +4515,7 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].thermal_magnitude=thermal_magnitude;
     Drawing_Params[DRAWING_NUMBER].load_magnitude=load_magnitude;
     Drawing_Params[DRAWING_NUMBER].flood_magnitude=flood_magnitude;
+    Drawing_Params[DRAWING_NUMBER].shear_magnitude=shear_magnitude;
     Drawing_Params[DRAWING_NUMBER].force_magnitude=force_magnitude;
     Drawing_Params[DRAWING_NUMBER].moment_magnitude=moment_magnitude;
     Drawing_Params[DRAWING_NUMBER].displacement_magnitude=displacement_magnitude;
@@ -4514,6 +4528,7 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].displacement_precision=displacement_precision;
     Drawing_Params[DRAWING_NUMBER].rotation_precision=rotation_precision;
     Drawing_Params[DRAWING_NUMBER].stress_precision=stress_precision;
+    Drawing_Params[DRAWING_NUMBER].r_precision=r_precision;
 
     Drawing_Params[DRAWING_NUMBER].n_magnitude=n_magnitude;
     Drawing_Params[DRAWING_NUMBER].v_magnitude=v_magnitude;

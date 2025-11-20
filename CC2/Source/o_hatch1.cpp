@@ -341,7 +341,6 @@ static BOOL make_nodes_ob_ob (long_long l_off_ob1,
 /*---------------------------LINE--------------------------------*/
 /*LL*/
   if ((nag1->obiekt == Olinia && nag2->obiekt == Olinia))
-  //|| (nag1->obiekt == Olinia3D && nag2->obiekt == Olinia3D))
   {
     i_inter = IntersectionLL ((LINIA *)nag1, (LINIA *)nag2, df_x, df_y, df_t1, df_t2) ;
   }

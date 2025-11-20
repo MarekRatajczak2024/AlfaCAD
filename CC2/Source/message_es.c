@@ -56,7 +56,7 @@ static char* errors_kom[] =
 /* 8*/u8"Disco lleno o operación de disco fallida",
 /* 9*/u8"Formato incorrecto de número entero positivo",
 /* 10*/u8"Archivo de configuración de inicio de trazador incorrecto o faltante",
-/* 11*/u8"No se puede cargar el archivo de fuente. Formato de archivo de fuente incorrecto",
+/* 11*/u8"No se pudo cargar el archivo de fuente. Formato de archivo de fuente incorrecto",
 /* 12*/u8"No hay suficiente memoria para cargar el archivo de fuentes",
 /* 13*/u8"Pantalla más allá del formato de dibujo",
 /* 14*/u8"El proceso hijo no comenzó",
@@ -81,7 +81,7 @@ static char* errors_kom[] =
 /* 33*/u8"Memoria insuficiente",
 /* 34*/u8"Radio de arco demasiado pequeño o formato de número incorrecto",
 /* 35*/u8"Formato de número real distinto de cero incorrecto",
-/* 36*/u8"No se pueden crear más capas",
+/* 36*/u8"No se pudo crear más capas",
 /* 37*/u8"La capa actual no puede ser invisible",
 /* 38*/u8"Formato de datos incorrecto, radio de arco <= 0 ",
 /* 39*/u8"Formato de datos incorrecto, radio del círculo <= 0 ",
@@ -97,7 +97,7 @@ static char* errors_kom[] =
 /* 49*/u8"Archivo no encontrado",
 /* 50*/u8"Precaución: Los objetos del último bloque están en la capa '-V'",
 /* 51*/u8"Formato incorrecto del archivo de configuración ALFACAD.INI ",
-/* 52*/u8"No se puede realizar la operación.",
+/* 52*/u8"No se pudo realizar la operación.",
 /* 53*/u8"Ningún objeto eliminado.",
 /* 54*/u8"Precaución: Los objetos del último bloque están en la capa '-E'",
 /* 55*/u8"Cifras incorrectas",
@@ -481,7 +481,7 @@ static char* komunikaty_kom[] =
 /*213*/u8"Ingrese un factor de cambio de escala para las fuerzas cortantes resultantes: ",
 /*214*/u8"Ingrese el factor de cambio de escala para los momentos flectores resultantes: ",
 /*215*/u8"Ingrese el factor de reescalado para los desplazamientos resultantes: ",
-/*216*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción de apoyo resultantes: ",
+/*216*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción concentradas de apoyo resultantes: ",
 /*217*/u8"Ingrese el factor de reescalado para los momentos de reacción de soporte resultantes: ",
 /*218*/u8"Ingrese el factor de reescalado de profundidad de la sección: ",
 /*219*/u8"Ingrese el factor de reescalado para las tensiones resultantes (acero, madera): ",
@@ -489,7 +489,9 @@ static char* komunikaty_kom[] =
 /*221*/u8"Ingrese el factor exagerado de la deformación de los modos de vibración modal: ",
 /*222*/u8"Ingrese el factor de reescalado para el porcentaje de refuerzo resultante: ",
 /*223*/u8"Ingrese el factor de reescalado de carga superficial: ",
-/*224*/u8"Enter the rescaling factor for the resulting stresses (hormigón armado): ",
+/*224*/u8"Ingrese el factor de reescalado para las tensiones resultantes (hormigón armado): ",
+/*225*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción distribuidas de apoyo resultantes: ",
+/*226*/u8"Ingrese la precisión de las reacciones: ",
 "",
 "",
 };
@@ -934,8 +936,8 @@ static char confirm[] = u8"Confirmar";
 
 #ifdef __O_SECTION_DATA__
 static char confirm[] = u8"Confirmar";
-#define _CANNOT_OPEN_ u8"No se puede abrir "
-#define _CANNOT_READ_ u8"No se puede leer "
+#define _CANNOT_OPEN_ u8"No se pudo abrir "
+#define _CANNOT_READ_ u8"No se pudo leer "
 #define _DEFAULT_TAKEN_ u8"Se adoptaron parámetros estándar de madera"
 #endif
 
@@ -968,7 +970,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _thermal_load_inside_element_ u8"no en todo el elemento con coordenadas de nodos:"
 #define _unknown_standard_ u8"Estándar desconocido"
 #define _element_graph_data_failed_ u8"No se pudo crear el bloque de datos de las fuerzas resultantes para el elemento"
-#define _cannot_create_folder_ u8"No se puede crear el directorio de archivos"
+#define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
 
 #define _FRAME3DD_ u8"%FRAME:"
 #define _FRAME3DD_PL u8"%RAMA:"
@@ -986,22 +988,22 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define __FRAME3DD__ "Frame3dd"
 
 static char confirm[] = u8"Confirmar";
-#define _CANNOT_CREATE_DEFORMATION_BLOCK_ u8"No se puede crear un bloque de forma deformada"
-#define _CANNOT_CREATE_FORCE_BLOCK_ u8"No se puede crear un bloque de gráfico de fuerza"
-#define _CANNOT_CREATE_MOMENT_BLOCK_ u8"No se puede crear un bloque de gráfico de momento"
-#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se puede crear un bloque de gráfico de estrés"
-#define _CANNOT_CREATE_SHEAR_STRESS_BLOCK_ u8"No se puede crear un bloque de gráfico de estrés cortante"
-#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se puede abrir el archivo de resultados"
-#define _CANNOT_CREATE_RESULTS_PDF_FILE_ u8"No se puede crear el archivo de resultados PDF"
-#define _CANNOT_OPEN_RESULTS_PDF_FILE_ u8"No se puede abrir el archivo PDF de resultados"
+#define _CANNOT_CREATE_DEFORMATION_BLOCK_ u8"No se pudo crear un bloque de forma deformada"
+#define _CANNOT_CREATE_FORCE_BLOCK_ u8"No se pudo crear un bloque de gráfico de fuerza"
+#define _CANNOT_CREATE_MOMENT_BLOCK_ u8"No se pudo crear un bloque de gráfico de momento"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se pudo crear un bloque de gráfico de estrés"
+#define _CANNOT_CREATE_SHEAR_STRESS_BLOCK_ u8"No se pudo crear un bloque de gráfico de estrés cortante"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+#define _CANNOT_CREATE_RESULTS_PDF_FILE_ u8"No se pudo crear el archivo de resultados PDF"
+#define _CANNOT_OPEN_RESULTS_PDF_FILE_ u8"No se pudo abrir el archivo PDF de resultados"
 #define _INSTALL_PDF_VIEWER_ u8"Instalar el visor de PDF \"Okular\" o \"Evince\", por favor"
 
-#define _CANNOT_OPEN_DEFORMATION_DATA_FILE_ u8"No se puede abrir el archivo de datos de deformación"
-#define _CANNOT_OPEN_RESULTS_DATA_FILE_ u8"No se puede abrir el archivo de datos de resultados"
-#define _CANNOT_OPEN_DYNAMIC_RESULTS_DATA_FILE_ u8"No se puede abrir el archivo de datos de resultados dinámicos"
-#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pueden crear nodos y bloques de elementos"
-#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"No se puede crear el bloque de reacciones"
-#define _CANNOT_CREATE_NEW_LAYER_ u8"No se puede crear una nueva capa. Ya se han creado muchas capas"
+#define _CANNOT_OPEN_DEFORMATION_DATA_FILE_ u8"No se pudo abrir el archivo de datos de deformación"
+#define _CANNOT_OPEN_RESULTS_DATA_FILE_ u8"No se pudo abrir el archivo de datos de resultados"
+#define _CANNOT_OPEN_DYNAMIC_RESULTS_DATA_FILE_ u8"No se pudo abrir el archivo de datos de resultados dinámicos"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pudo crear nodos y bloques de elementos"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"No se pudo crear el bloque de reacciones"
+#define _CANNOT_CREATE_NEW_LAYER_ u8"No se pudo crear una nueva capa. Ya se han creado muchas capas"
 
 char *frame3dd[]={
  /*0*/ u8"finalización sin errores",
@@ -1227,8 +1229,8 @@ char *frame3dd[]={
 #define _PLATE_UA u8"%ПЛИТА:"
 #define _PLATE_ES u8"%LOSA:"
 
-#define _cannot_create_folder_ u8"No se puede crear el directorio de archivos"
-#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se puede abrir el archivo de resultados"
+#define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
 
 static char confirm[] = u8"Confirmar";
 
@@ -1236,14 +1238,15 @@ static char confirm[] = u8"Confirmar";
 #define _ElmerGrid_error_ u8"Error de ElmerGrid"
 #define _ElmerSolver_error_ u8"Error de ElmerSolver"
 
-#define _CANNOT_OPEN_RESULTS_FILE_ u8"No se puede abrir el archivo de resultados"
-#define _CANNOT_READ_RESULTS_FILE_ u8"No se puede leer el archivo de resultados"
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+#define _CANNOT_READ_RESULTS_FILE_ u8"No se pudo leer el archivo de resultados"
 
-#define _CANNOT_CREATE_NEW_LAYER_ u8"No se puede crear una nueva capa. Ya se han creado muchas capas"
-#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pueden crear nodos y bloques de elementos"
-#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"No se puede crear un bloque de deflexión"
-#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se puede crear un bloque de tensión"
-#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"No se puede crear un bloque de deformación cortante"
+#define _CANNOT_CREATE_NEW_LAYER_ u8"No se pudo crear una nueva capa. Ya se han creado muchas capas"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pudo crear nodos y bloques de elementos"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"No se pudo crear un bloque de deflexión"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se pudo crear un bloque de tensión"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"No se pudo crear un bloque de deformación cortante"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"No se pudo crear un bloque de reacciones"
 
 #define _PROCEED_PLATE_FEM_ u8"¿Proceder a un análisis estático de losa?"
 

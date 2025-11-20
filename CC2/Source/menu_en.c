@@ -50,6 +50,10 @@ char about_pre[32] = u8"\n\nQuote of the day ";
 char _about_[16] = u8"about ";
 #endif
 
+#ifndef NULL
+#define NULL		((void *)(0))
+#endif
+
 #ifdef __BIBRYS__
 
 POLE pmNie_Tak_[] = {
@@ -391,7 +395,7 @@ char _NO_[4] = "N";
 
 const char *_EDIT_[] = {u8"Move", u8"move Z", u8"Rotate", u8"rotate XZ", u8"rotate YZ", u8"Scale", u8"Mirror", u8"->skip", u8"-----"};
 
-char* loading_program[] = { u8"Loading program", u8"Loading resources...", u8"Please wait. Downloading file: ", u8"Connecting to the cloud..."};
+//char* loading_program[] = { u8"Loading program", u8"Loading resources...", u8"Please wait. Downloading file: ", u8"Connecting to the cloud..."};
 
 #define _NO_MOUSE_ "Mouse not installed !!!!!\n"
 
@@ -3348,13 +3352,14 @@ static POLE pmPrecision[] = {
        {u8"Force precision\0 \0",L'F',727,NULL},
 	   {u8"Moment precision\0 \0",L'M',728,NULL},
 	   {u8"Displacement precision\0 \0",L'D',730,NULL},
-	   {u8"Rotation precision\0 \0",L'R',731,NULL},
+	   {u8"Prescribed rotation precision\0 \0",L'P',731,NULL},
        {u8"Load precision\0 \0",L'L',733,NULL},
        {u8"Thermal load precision\0 \0",L'T',752,NULL},
        {u8"Stress precision\0 \0",L'S',800,NULL},
+       {u8"Reaction precision\0 \0",L'R',763,NULL},
        };
 
-static TMENU mPrecision = { 7,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
+static TMENU mPrecision = { 8,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,18,0,0,0,(POLE(*)[]) &pmPrecision,NULL,NULL };
 
 
 static POLE pmThermal[] = {
@@ -3379,28 +3384,35 @@ static POLE pmStaticColors[] = {
        {u8"֎Vibrations\0other\0",           L'V',814,&mKolorSTATIC},
 	  };
 
-static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
+static TMENU mStaticColors = { 11,0,0,10,30,7,TADD | ICONS ,CMNU,CMBR,CMTX,0, 26,0,0,0,(POLE(*)[]) &pmStaticColors,NULL,NULL };
 
 static POLE pmLoadMagnitude[] = {
        {u8"Linear load\0 \0",L'L',733,NULL},
 	   {u8"Surface load\0 \0",L'S',845,NULL},
 	  };
 
-static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+static TMENU mLoadMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 43,0,0,0,(POLE(*)[]) &pmLoadMagnitude,NULL,NULL };
+
+static POLE pmReactionMagnitude[] = {
+       {u8"Concentrated reaction forces rescaling\0 \0",L'C',762,NULL},
+	   {u8"Distributed reaction forces rescaling\0 \0",L'D',864,NULL},
+	  };
+
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
        {u8"stress in Steel/timber\0 \0",L'S',775,NULL},
 	   {u8"stress in reinforced Concrete\0 \0",L'C',6,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,46,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"Force rescaling\0 \0",                       L'F',727,NULL},
@@ -3413,7 +3425,7 @@ static POLE pmMagnitude[] = {
        {u8"shear forces rescaling\0 \0",                L'V',759,NULL},
        {u8"Bending moments rescaling\0 \0",             L'B',760,NULL},
        {u8"deformation rescaling\0 \0",                 L'U',761,NULL},
-       {u8"reaction forces rescaling\0 \0",             L'X',762,NULL},
+       {u8"reaction forces rescaling\0 \0",             L'X',762,&mReactionMagnitude},
        {u8"reaction moments rescaling\0 \0",            L'Z',763,NULL},
        {u8"Stress rescaling\0 \0",                      L'S',800,&mStressMagnitude},
        {u8"reinforcement % rescaling\0 \0",             L'%',823,NULL},

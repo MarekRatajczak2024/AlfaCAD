@@ -132,8 +132,10 @@ extern void enable_F11(void);
 
 extern void Get_Limits(long_long off, long_long offk, int atrybut, double *xmin, double *xmax, double *ymin, double *ymax);
 extern void out_circle_cur_on(double X, double Y);
+extern void utf8Upper(char* text);
 
 extern void *obiekt_wybrany_select (unsigned int Bobjects);
+extern int get_associated_blocks_adr(char *block_name, char *component_name, int limit_state, BLOK **adr);
 
 extern int theta_, sigma_eq_, epsilon_;
 
@@ -165,6 +167,7 @@ extern double moment_magnitude;
 extern double displacement_magnitude;
 extern double load_magnitude;
 extern double flood_magnitude;
+extern double shear_magnitude;
 
 BOOL PINNABLE=TRUE;
 
@@ -172,8 +175,8 @@ double n_magnitude=1.0; //10;
 double v_magnitude=10.0; //10;
 double m_magnitude=10.0; //10;
 double d_magnitude=10.0;
-double r_magnitude=10.0; //10;
-double rm_magnitude=50.0; //0.001;
+double r_magnitude=10.0; //reactions 10;
+double rm_magnitude=50.0; //reaction moment 0.001;
 double s_magnitude=5.0; //10;  //stress
 double src_magnitude=1.0; //stress in reinforced concrete
 double q_magnitude=250.0; //vibrations
@@ -226,7 +229,7 @@ double rm_precision0=0.01;
 
 //double dim_precision_imp0=0.0001;
 //double t_precision_imp0=0.001;
-double r_precision_imp0=0.01;
+double r_precision_imp0=0.001;
 double rm_precision_imp0=0.01;
 
 double m0999 = 1.0; //0.99999;
@@ -289,7 +292,7 @@ int ST_LOAD_FACTORS_MAX=100;
 int ST_MASS_NODE_MAX=100;
 int ST_MASS_ELEMENT_MAX=100;
 
-char T_text[64];
+static char T_text[64];
 
 unsigned char st_layers[256];
 unsigned int st_layer[8];
@@ -340,7 +343,9 @@ static double cskos=0, cskoc=0;
 //static float ex1, ey1, ex2, ey2;
 static ALL_SECTION_GRAPH_DATA *all_section_graph_data_p[2]={NULL, NULL};
 static int mpair0;
-static PLATE_GRAPH_DATA plate_graph_data;
+static PLATE_GRAPH_DATA *plate_graph_data;
+static PLATE_GRAPH_DATA plate_graph_data_base;
+static PLATE_GRAPH_DATA plate_graph_data_state[5];  //0 SLS, 1 ULS, 2 ULSLC, 3 SLSLC, 4 QPSLSLC   - for consistency
 
 static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
 static char section_params_st[128];
@@ -777,14 +782,23 @@ int *load_flag;
 
 //static char *global_block=NULL;
 
+
 POLE pmSelect_State[] = {
-        {u8"ULS",L'U',825,NULL},
-        {u8"SLS",L'S',826,NULL},
-        {u8"QPSLS",L'Q',827,NULL},
+        {u8"ULSLC",L'U',861,NULL},
+        {u8"SLSLC",L'S',862,NULL},
+        {u8"QPSLSLC",L'Q',863,NULL},
+};
+
+POLE pmSelect_State_Plate[] = {
+        {u8"ULSLC",L'U',861,NULL},
+        {u8"SLSLC",L'S',862,NULL},
+        {u8"QPSLSLC",L'Q',863,NULL},
+        {u8"SLS",L'A',826,NULL},
+        {u8"ULS",L'Y',825,NULL},
 };
 
 static TMENU mSelect_State = { 3,0,0,5,20,7, ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
-
+static TMENU mSelect_State_Plate = { 5,0,0,5,20,7, ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State_Plate,NULL,NULL };
 
 int copy(const char* in_path, const char* out_path){
     size_t n;
@@ -871,7 +885,7 @@ static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BO
 }
 
 
-char *dodaj_obiekt_(BLOK * adb,void  *ad)
+static char *dodaj_obiekt_(BLOK * adb,void  *ad)
 {
     BLOK *blok;
     char *ad1;
@@ -1147,7 +1161,7 @@ void get_xy_margins(LINIA *Le, double *x1, double *y1, double *x2, double *y2)
 }
 
 
-int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix)
+int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix)
 {
     TEXT T=Tdef;
     double x, y;
@@ -1156,6 +1170,7 @@ int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar
     double x1, y1, x2, y2;
     double kos, koc, dlx;
     double lb, le;
+    char *ptr;
 
     parametry_lini(L, &PL);
     parametry_lini(Le, &PL1);
@@ -1164,7 +1179,11 @@ int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar
     lb=jednostkiOb(r1);
     le=PL1.dl-jednostkiOb(r2);
 
-    set_decimal_format(T.text, vpar, precision);
+    strcpy(T.text, prefix);
+    ptr=T.text+strlen(prefix);
+
+    //set_decimal_format(T.text, vpar, precision);
+    set_decimal_format(ptr, vpar, precision);
 
     if ((strcmp(T.text,"0")==0) || (strcmp(T.text,"-0")==0)) return 0;
 
@@ -9049,7 +9068,7 @@ void Static_analysis(void) {
                                             Dxy = sqrt(Dx * Dx + Dy * Dy);
 
                                             if (!Check_if_Equal2(Dxy, Dxy0)) {
-                                                if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "")) {
+                                                if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "", "")) {
                                                     Ldsp_.typ = 68;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     Ldsp_.typ = 64;
@@ -9076,7 +9095,7 @@ void Static_analysis(void) {
                                             Dxy = sqrt(Dx * Dx + Dy * Dy);
 
                                             if (!Check_if_Equal2(Dxy, Dxy0)) {
-                                                if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) /*Dxy*/, def_precision, FALSE, "")) {
+                                                if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) /*Dxy*/, def_precision, FALSE, "", "")) {
                                                     Ldsp_.typ = 68;
                                                     ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                     Ldsp_.typ = 64;
@@ -9136,7 +9155,7 @@ void Static_analysis(void) {
                                                 Dxy = sqrt(Dx * Dx + Dy * Dy);
 
                                                 if (!Check_if_Equal2(Dxy, Dxy01)) {
-                                                    if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "")) {
+                                                    if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy), def_precision, FALSE, "", "")) {
                                                         Ldsp_.typ = 68;
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         Ldsp_.typ = 64;
@@ -9163,7 +9182,7 @@ void Static_analysis(void) {
                                                 Dxy = sqrt(Dx * Dx + Dy * Dy);
 
                                                 if (!Check_if_Equal2(Dxy, Dxy01)) {
-                                                    if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) , def_precision, FALSE, "")) {
+                                                    if (draw_label(&Ldsp_, &Le, x, 0, 0, fabs(Dy) , def_precision, FALSE, "", "")) {
                                                         Ldsp_.typ = 68;
                                                         ptr_l = dodaj_obiekt_((BLOK *) dane, (void *) &Ldsp_);
                                                         Ldsp_.typ = 64;
@@ -9484,10 +9503,10 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
                                                     if (Check_if_Equal(NxM, Nxm)) {
                                                         if ((PL.dl * 2 / 3 - xd) < xdmin)
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                     } else {
                                                         if (!Check_if_Equal(Nx, Nx0))
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                     }
                                                     Nx0 = Nx;
                                                 }
@@ -9509,10 +9528,10 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
                                                     if (Check_if_Equal(NxM, Nxm)) {
                                                         if ((PL.dl * 2 / 3 - xd) < xdmin)
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                     } else {
                                                         if (!Check_if_Equal(Nx, Nx0))
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                     }
                                                     Nx0 = Nx;
                                                 }
@@ -9568,10 +9587,10 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
                                                         if (Check_if_Equal(NxM, Nxm)) {
                                                             if ((PL.dl * 2 / 3 - xd) < xdmin)
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                         } else {
                                                             if (!Check_if_Equal(Nx, Nx01))
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                         }
                                                         Nx01 = Nx;
                                                     }
@@ -9593,10 +9612,10 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal(Nx, NxM)) || (Check_if_Equal(Nx, Nxm)))) {
                                                         if (Check_if_Equal(NxM, Nxm)) {
                                                             if ((PL.dl * 2 / 3 - xd) < xdmin)
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                         } else {
                                                             if (!Check_if_Equal(Nx, Nx01))
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Nx, force_precision, FALSE, "", "");
                                                         }
                                                         Nx01 = Nx;
                                                     }
@@ -9926,10 +9945,10 @@ void Static_analysis(void) {
                                                       Check_if_Equal(jednostkiOb(x), PL.dl)) || cfm[inx])) {
                                                     if (Check_if_Equal(VyM, Vym)) {
                                                         if ((PL.dl * 3 / 5 - xd) < xdmin)
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                     } else {
                                                         if (!Check_if_Equal(Vy, Vy0))
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                     }
                                                     Vy0 = Vy;
                                                 }
@@ -9953,10 +9972,10 @@ void Static_analysis(void) {
                                                       Check_if_Equal(jednostkiOb(x), PL.dl)) || cfm[inx])) {
                                                     if (Check_if_Equal(VyM, Vym)) {
                                                         if ((PL.dl * 3 / 5 - xd) < xdmin)
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                     } else {
                                                         if (!Check_if_Equal(Vy, Vy0))
-                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                     }
                                                     Vy0 = Vy;
                                                 }
@@ -10014,10 +10033,10 @@ void Static_analysis(void) {
                                                           Check_if_Equal(jednostkiOb(x), PL.dl)) || cfp[inx])) {
                                                         if (Check_if_Equal(VyM, Vym)) {
                                                             if ((PL.dl * 3 / 5 - xd) < xdmin)
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                         } else {
                                                             if (!Check_if_Equal(Vy, Vy01))
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                         }
                                                         Vy01 = Vy;
                                                     }
@@ -10041,10 +10060,10 @@ void Static_analysis(void) {
                                                           Check_if_Equal(jednostkiOb(x), PL.dl)) || cfp[inx])) {
                                                         if (Check_if_Equal(VyM, Vym)) {
                                                             if ((PL.dl * 3 / 5 - xd) < xdmin)
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                         } else {
                                                             if (!Check_if_Equal(Vy, Vy01))
-                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "");
+                                                                draw_label(&Ldsp_, &Le, x, 0, 0, Vy, force_precision, FALSE, "", "");
                                                         }
                                                         Vy01 = Vy;
                                                     }
@@ -10368,7 +10387,7 @@ void Static_analysis(void) {
                                                  (Check_if_Equal(x, 0.0) ||
                                                   Check_if_Equal(jednostkiOb(x), PL.dl)) || cfm[inx])) {
                                                 if (!Check_if_Equal(Mz, Mz0))
-                                                    draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "");
+                                                    draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "", "");
                                                 Mz0 = Mz;
                                             }
                                         } else {
@@ -10387,7 +10406,7 @@ void Static_analysis(void) {
                                                  (Check_if_Equal(x, 0.0) ||
                                                   Check_if_Equal(jednostkiOb(x), PL.dl)) || cfm[inx])) {
                                                 if (!Check_if_Equal(Mz, Mz0))
-                                                    draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "");
+                                                    draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "", "");
                                                 Mz0 = Mz;
                                             }
 
@@ -10433,7 +10452,7 @@ void Static_analysis(void) {
                                                      (Check_if_Equal(x, 0.0) ||
                                                       Check_if_Equal(jednostkiOb(x), PL.dl)) || cfp[inx])) {
                                                     if (!Check_if_Equal(Mz, Mz01))
-                                                        draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "", "");
                                                     Mz01 = Mz;
                                                 }
                                             } else {
@@ -10452,7 +10471,7 @@ void Static_analysis(void) {
                                                      (Check_if_Equal(x, 0.0) ||
                                                       Check_if_Equal(jednostkiOb(x), PL.dl)) || cfp[inx])) {
                                                     if (!Check_if_Equal(Mz, Mz01))
-                                                        draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, 0, 0, Mz, moment_precision, FALSE, "", "");
                                                     Mz01 = Mz;
                                                 }
 
@@ -10949,7 +10968,7 @@ void Static_analysis(void) {
                                                      ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                       (Check_if_Equal2(dr[inx].x, le)) || cfp[inx]))) {
                                                     if (!Check_if_Equal(Sp, Sp0))
-                                                        draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "", "");
                                                     Sp0 = Sp;
                                                 }
 
@@ -10971,7 +10990,7 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                      (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                     if (!Check_if_Equal(Sm, Sm0))
-                                                        draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "", "");
                                                     Sm0 = Sm;
                                                 }
 
@@ -11003,7 +11022,7 @@ void Static_analysis(void) {
                                                      ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                       (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                     if (!Check_if_Equal(Sp, Sp0))
-                                                        draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "", "");
                                                     Sp0 = Sp;
                                                 }
 
@@ -11045,7 +11064,7 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                      (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                     if (!Check_if_Equal(Sm, Sm0))
-                                                        draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "", "");
                                                     Sm0 = Sm;
                                                 }
 
@@ -11122,7 +11141,7 @@ void Static_analysis(void) {
                                                          ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                           (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                         if (!Check_if_Equal(Sp, Sp0))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "", "");
                                                         Sp0 = Sp;
                                                     }
 
@@ -11144,7 +11163,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                         if (!Check_if_Equal(Sm, Sm01))
-                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "");
+                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "", "");
                                                         Sm01 = Sm;
                                                     }
 
@@ -11176,7 +11195,7 @@ void Static_analysis(void) {
                                                          ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                           (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                         if (!Check_if_Equal(Sp, Sp01))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "");
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, "", "");
                                                         Sp01 = Sp;
                                                     }
 
@@ -11219,7 +11238,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                         if (!Check_if_Equal(Sm, Sm01))
-                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "");
+                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, "", "");
                                                         Sm01 = Sm;
                                                     }
 
@@ -11480,7 +11499,7 @@ void Static_analysis(void) {
                                                          ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                           (Check_if_Equal2(dr[inx].x, le)) || cfp[inx]))) {
                                                         if (!Check_if_Equal(Sp, Sp0))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix);
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix, "");
                                                         Sp0 = Sp;
                                                     }
 
@@ -11502,7 +11521,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                         if (!Check_if_Equal(Sm, Sm0))
-                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix);
+                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix, "");
                                                         Sm0 = Sm;
                                                     }
 
@@ -11534,7 +11553,7 @@ void Static_analysis(void) {
                                                          ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                           (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                         if (!Check_if_Equal(Sp, Sp0))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix);
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix, "");
                                                         Sp0 = Sp;
                                                     }
 
@@ -11576,7 +11595,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                         if (!Check_if_Equal(Sm, Sm0))
-                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix);
+                                                            draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix, "");
                                                         Sm0 = Sm;
                                                     }
 
@@ -11736,7 +11755,7 @@ void Static_analysis(void) {
                                                              ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                               (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                             if (!Check_if_Equal(Sp, Sp0))
-                                                                draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix);
+                                                                draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix, "");
                                                             Sp0 = Sp;
                                                         }
 
@@ -11758,7 +11777,7 @@ void Static_analysis(void) {
                                                             ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                              (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                             if (!Check_if_Equal(Sm, Sm01))
-                                                                draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix);
+                                                                draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix, "");
                                                             Sm01 = Sm;
                                                         }
 
@@ -11790,7 +11809,7 @@ void Static_analysis(void) {
                                                              ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                               (Check_if_Equal2(dr[inx].x, le))) || cfp[inx])) {
                                                             if (!Check_if_Equal(Sp, Sp01))
-                                                                draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix);
+                                                                draw_label(&Ldsp_, &Le, x, r1, r2, Sp, stress_precision, FALSE, p_suffix, "");
                                                             Sp01 = Sp;
                                                         }
 
@@ -11833,7 +11852,7 @@ void Static_analysis(void) {
                                                             ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                              (Check_if_Equal2(dr[inx].x, le))) || cfm[inx]) {
                                                             if (!Check_if_Equal(Sm, Sm01))
-                                                                draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix);
+                                                                draw_label(&Ldsp1_, &Le, x, r1, r2, Sm, stress_precision, FALSE, m_suffix, "");
                                                             Sm01 = Sm;
                                                         }
 
@@ -12210,7 +12229,7 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                      (Check_if_Equal2(dr[inx].x, le)))) {
                                                     if (!Check_if_Equal(Ss, Ss0))
-                                                        draw_label(&Ldsp_, &Le, x, r1, r2, fabs(Ss), stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, r1, r2, fabs(Ss), stress_precision, FALSE, "", "");
                                                     Ss0 = Ss;
                                                 }
 
@@ -12232,7 +12251,7 @@ void Static_analysis(void) {
                                                     ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                      (Check_if_Equal2(dr[inx].x, le)))) {
                                                     if (!Check_if_Equal(Ss, Ss0))
-                                                        draw_label(&Ldsp_, &Le, x, r1, r2, fabs(Ss), stress_precision, FALSE, "");
+                                                        draw_label(&Ldsp_, &Le, x, r1, r2, fabs(Ss), stress_precision, FALSE, "", "");
                                                     Ss0 = Ss;
                                                 }
 
@@ -12323,7 +12342,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le)))) {
                                                         if (!Check_if_Equal(Ss, Ss0))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix);
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix, "");
                                                         Ss0 = Ss;
                                                     }
 
@@ -12345,7 +12364,7 @@ void Static_analysis(void) {
                                                         ((Check_if_Equal2(dr[inx].x, lb)) ||
                                                          (Check_if_Equal2(dr[inx].x, le)))) {
                                                         if (!Check_if_Equal(Ss, Ss0))
-                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix);
+                                                            draw_label(&Ldsp_, &Le, x, r1, r2, pAss, p_shear_precision, FALSE, p_suffix, "");
                                                         Ss0 = Ss;
                                                     }
 
@@ -13531,15 +13550,24 @@ static void  cur_point_on(double x,double y)
     double c_value;
     long x0, y0;
 
-    if ((x>=plate_graph_data.xminp) && (x<=plate_graph_data.xmaxp) &&
-        (y>=plate_graph_data.yminp) && (y<=plate_graph_data.ymaxp))
+    if (plate_graph_data->b==NULL)
+    {
+        sprintf(force_text, "%s", "no data");
+        width = TTF_text_len(force_text);
+        height = HEIGHT;
+        show_forces(x, y, width, height, force_text);
+        return;
+    }
+
+    if ((x>=plate_graph_data->xminp) && (x<=plate_graph_data->xmaxp) &&
+        (y>=plate_graph_data->yminp) && (y<=plate_graph_data->ymaxp))
     {
         //showing the circle of pointer
         out_circle_cur_on(X, Y);
 
         //searching for element
-        adp=plate_graph_data.adp;
-        adk=plate_graph_data.adk;
+        adp=plate_graph_data->adp;
+        adk=plate_graph_data->adk;
         nag=(NAGLOWEK*)adp;
         while (adp<adk)
         {
@@ -13565,7 +13593,7 @@ static void  cur_point_on(double x,double y)
                         if (((FE_DATA*)fe_data_ptr)->el_number>0)
                         {
                             // Calculate and return the weighted average value
-                            c_value = ((alpha * ((FE_DATA *) fe_data_ptr)->f1) + (beta * ((FE_DATA *) fe_data_ptr)->f2) + (gamma * ((FE_DATA *) fe_data_ptr)->f3)) * plate_graph_data.factor;
+                            c_value = ((alpha * ((FE_DATA *) fe_data_ptr)->f1) + (beta * ((FE_DATA *) fe_data_ptr)->f2) + (gamma * ((FE_DATA *) fe_data_ptr)->f3)) * plate_graph_data->factor;
                             sprintf(force_text, "%s=%.4f", VALUE_NAME, c_value);
                             width = TTF_text_len(force_text);
                             height = HEIGHT;
@@ -13592,7 +13620,8 @@ static void  cur_point_on(double x,double y)
             nag=(NAGLOWEK*)adp;
         }
     }
-    //out_cur_on(x,y);
+    else
+        out_cur_on(x,y);
 }
 
 
@@ -13709,7 +13738,7 @@ static void redcr_point (char typ)
         CUR_oN = CUR_ON ;   CUR_ON = cur_point_on;
         SW[0] = SERV[73] ;  SERV[73] = sel_t ;
         SW[1] = SERV[81] ;  SERV[81] = sel_d ;
-        menupini (&mSelect_State, _SELECT_STATE_, _SELECT_STATE_C_, 828) ;
+        menupini (&mSelect_State_Plate, _SELECT_STATE_, _SELECT_STATE_C_, 828) ;
         CUR_ON (X, Y) ;
     }
     else
@@ -13771,11 +13800,25 @@ static void* obiekt_wybrany(unsigned* typ)
 #define SETULS 0
 #define SETSLS 1
 #define SETQPSLS 2
+//#define SETULSLC 3
+//#define SETSLSLC 4
+//#define SETQPSLSLC 5
 
 void do_state (int lstate)
 {
-    limit_state=lstate;
+    int frame_limit_states[5]={0,1,2,0,0};
+    limit_state=frame_limit_states[lstate];
     menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State.pola)[limit_state].txt);
+    CUR_OFF(X,Y);
+    CUR_ON(X,Y);
+}
+
+void do_state_plate (int lstate)
+{
+    int plate_limit_states[5]={2,3,4,0,1};
+    limit_state=plate_limit_states[lstate];
+    menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State_Plate.pola)[limit_state].txt);
+    plate_graph_data=&plate_graph_data_state[limit_state];
     CUR_OFF(X,Y);
     CUR_ON(X,Y);
 }
@@ -13806,19 +13849,7 @@ void  Show_Plate_Point(void)
                 }
                 break;
             case evCommandP:
-                if (ev->Number == SETULS)
-                {
-                    do_state (0) ;
-                }
-                else
-                if (ev->Number == SETSLS )
-                {
-                    do_state (1) ;
-                }
-                else if (ev->Number == SETQPSLS )
-                {
-                    do_state (2) ;
-                }
+                    do_state_plate (ev->Number) ;
                 break;
             default :
                 break ;
@@ -13857,19 +13888,7 @@ void Show_Cross_Section (void) //ALL_SECTION_GRAPH_DATA *all_section_graph_data)
                 }
                 break;
             case evCommandP:
-                if (ev->Number == SETULS)
-                {
-                    do_state (0) ;
-                }
-                else
-                if (ev->Number == SETSLS )
-                {
-                    do_state (1) ;
-                }
-                else if (ev->Number == SETQPSLS )
-                {
-                    do_state (2) ;
-                }
+                    do_state (ev->Number) ;
                 break;
             default :
                 break ;
@@ -13878,6 +13897,118 @@ void Show_Cross_Section (void) //ALL_SECTION_GRAPH_DATA *all_section_graph_data)
     komunikat_str_short("", FALSE, TRUE);
     remove_short_notice();
     redcr_section (1) ;
+}
+
+int get_block_limit_state(char *base_component_name)
+{
+    char component_name[32];
+    char *ptr_ls;
+
+    strcpy(component_name, base_component_name);
+    utf8Upper(component_name);
+    ptr_ls = strstr(component_name, "QPSLC");
+    if (ptr_ls != NULL) return 4;
+    else
+    {
+        ptr_ls = strstr(component_name, "SLSLC");
+        if (ptr_ls != NULL) return 3;
+        else
+        {
+            ptr_ls = strstr(component_name, "ULSLC");
+            if (ptr_ls != NULL) return 2;
+            else
+            {
+                ptr_ls = strstr(component_name, "SLS");
+                if (ptr_ls != NULL) return 1;
+                else
+                {
+                    ptr_ls = strstr(component_name, "ULS");
+                    if (ptr_ls != NULL) return 0;
+                    else
+                    {
+                        return -1;  //error
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+int get_plate_graph_data(BLOK *ptrs_block, PLATE_GRAPH_DATA *plate_graph_data_base)
+{   T_Desc_Ex_Block *ptrs_desc_bl ;
+    char block_name[64];
+    char *ptr;
+
+    ptrs_desc_bl = (T_Desc_Ex_Block *)(&ptrs_block->opis_obiektu [0]) ;
+    if (ptrs_desc_bl->sz_type [0] != '\0')
+    {
+        strncpy(block_name, ptrs_desc_bl->sz_type, 40);
+        //checking block name syntax
+        ptr = strchr(block_name, '$');
+        if (ptr != NULL) {
+            *ptr = '\0';
+
+            plate_graph_data_base->b = (char *) ptrs_block;
+            plate_graph_data_base->adp =
+                    (char *) ptrs_block + B3 + sizeof(NAGLOWEK) + ptrs_block->dlugosc_opisu_obiektu;
+            plate_graph_data_base->adk = (char *) ptrs_block + sizeof(NAGLOWEK) + ptrs_block->n;
+            plate_graph_data_base->plate_name = block_name;
+            plate_graph_data_base->component_name = (ptr + 1);
+//extracting limit state from component_name
+            plate_graph_data_base->limit_state = get_block_limit_state(plate_graph_data_base->component_name);
+
+            plate_graph_data_base->xminp = plate_graph_data_base->xmaxp = plate_graph_data_base->yminp = plate_graph_data_base->ymaxp = 0.0;
+            Get_Limits(plate_graph_data_base->adp - dane, plate_graph_data_base->adk - dane, ANieOkreslony,
+                       &plate_graph_data_base->xminp, &plate_graph_data_base->xmaxp, &plate_graph_data_base->yminp,
+                       &plate_graph_data_base->ymaxp);
+
+            if ((Jednostki == 1) ||   //mm
+                (Jednostki == 10) || //cm
+                (Jednostki == 1000) || //m
+                (Jednostki == 1000000)) //km
+                UNITS = SI;
+            else UNITS = IMP;
+
+            if (strstr(plate_graph_data_base->component_name, "δ") != NULL) {
+                if (UNITS == SI)
+                    plate_graph_data_base->factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                else plate_graph_data_base->factor = 1.0f;
+            } else if (strstr(plate_graph_data_base->component_name, "θ") != NULL) {
+                plate_graph_data_base->factor = 1.0f;  //rotational deflection in rad
+            } else if (strstr(plate_graph_data_base->component_name, "deflection") != NULL)  //older version - legacy
+            {
+                if ((strstr(plate_graph_data_base->component_name, " 1") != NULL) ||
+                    (strstr(plate_graph_data_base->component_name, " 2") != NULL) ||
+                    (strstr(plate_graph_data_base->component_name, " 2") != NULL)) {  //in x,y,z axis
+                    if (UNITS == SI)
+                        plate_graph_data_base->factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                    else plate_graph_data_base->factor = 1.0f;
+                }
+//about x,y,z axis
+                else plate_graph_data_base->factor = 1.0f;
+            } else if ((strstr(plate_graph_data_base->component_name, "σ") != NULL) ||
+                       (strstr(plate_graph_data_base->component_name, "τ") != NULL)) {
+                if (UNITS == SI) plate_graph_data_base->factor = 0.000001f;
+                else plate_graph_data_base->factor = 0.001f;
+            } else if (strstr(plate_graph_data_base->component_name, "stress") != NULL)  //older version - legacy
+            {
+                if (UNITS == SI) plate_graph_data_base->factor = 0.000001f;
+                else plate_graph_data_base->factor = 0.001f;
+            } else if (strstr(plate_graph_data_base->component_name, "ε") != NULL) {
+                if (UNITS == SI) plate_graph_data_base->factor = 1.0f;
+                else plate_graph_data_base->factor = 1.0f;
+            } else if (strstr(plate_graph_data_base->component_name, "epsilon") != NULL) //older version - legacy
+            {
+                if (UNITS == SI) plate_graph_data_base->factor = 1.0f;
+                else plate_graph_data_base->factor = 1.0f;
+            } else plate_graph_data_base->factor = 1.0f;
+
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void Cross_section_forces(void)
@@ -13908,6 +14039,9 @@ void Cross_section_forces(void)
     char block_name[64];
     char *ptr;
     //PLATE_GRAPH_DATA plate_graph_data;
+    int ret;
+
+    for (int i=0; i<5; i++) plate_graph_data_state[i].limit_state=-1;  //undefined
 
     Semaphore = FALSE;
 
@@ -13958,7 +14092,7 @@ void Cross_section_forces(void)
 
                 all_section_graph_data_p[1]=&all_section_graph_data[1];
 
-                plate_graph_data.b=NULL;
+                plate_graph_data_base.b=NULL;
 
                 global_any_choice=TRUE;
 
@@ -14245,13 +14379,19 @@ void Cross_section_forces(void)
                                                     if (ptr!=NULL)
                                                     {
                                                         *ptr='\0';
-                                                        plate_graph_data.b=(char*)ptrs_block;
-                                                        plate_graph_data.adp=(char*)ptrs_block+B3+sizeof(NAGLOWEK)+ptrs_block->dlugosc_opisu_obiektu;
-                                                        plate_graph_data.adk=(char*)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n;
-                                                        plate_graph_data.plate_name=block_name;
-                                                        plate_graph_data.component_name = (ptr + 1);
-                                                        plate_graph_data.xminp=plate_graph_data.xmaxp=plate_graph_data.yminp=plate_graph_data.ymaxp=0.0;
-                                                        Get_Limits(plate_graph_data.adp-dane, plate_graph_data.adk-dane, ANieOkreslony, &plate_graph_data.xminp, &plate_graph_data.xmaxp, &plate_graph_data.yminp, &plate_graph_data.ymaxp);
+                                                        ret = get_plate_graph_data(ptrs_block, &plate_graph_data_base);
+                                                        
+                                                        /*
+                                                        plate_graph_data_base.b=(char*)ptrs_block;
+                                                        plate_graph_data_base.adp=(char*)ptrs_block+B3+sizeof(NAGLOWEK)+ptrs_block->dlugosc_opisu_obiektu;
+                                                        plate_graph_data_base.adk=(char*)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n;
+                                                        plate_graph_data_base.plate_name=block_name;
+                                                        plate_graph_data_base.component_name = (ptr + 1);
+                                                        //extracting limit state from component_name
+                                                        plate_graph_data_base.limit_state = get_block_limit_state(plate_graph_data_base.component_name);
+
+                                                        plate_graph_data_base.xminp=plate_graph_data_base.xmaxp=plate_graph_data_base.yminp=plate_graph_data_base.ymaxp=0.0;
+                                                        Get_Limits(plate_graph_data_base.adp-dane, plate_graph_data_base.adk-dane, ANieOkreslony, &plate_graph_data_base.xminp, &plate_graph_data_base.xmaxp, &plate_graph_data_base.yminp, &plate_graph_data_base.ymaxp);
 
                                                         if ((Jednostki == 1) ||   //mm
                                                         (Jednostki == 10) || //cm
@@ -14260,51 +14400,89 @@ void Cross_section_forces(void)
                                                         UNITS=SI;
                                                         else UNITS=IMP;
 
-                                                        if (strstr(plate_graph_data.component_name, "δ")!=NULL)
+                                                        if (strstr(plate_graph_data_base.component_name, "δ")!=NULL)
                                                         {
-                                                            if (UNITS == SI) plate_graph_data.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
-                                                            else plate_graph_data.factor = 1.0f;
+                                                            if (UNITS == SI) plate_graph_data_base.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                                                            else plate_graph_data_base.factor = 1.0f;
                                                         }
-                                                        else if (strstr(plate_graph_data.component_name, "θ")!=NULL)
+                                                        else if (strstr(plate_graph_data_base.component_name, "θ")!=NULL)
                                                         {
-                                                            plate_graph_data.factor = 1.0f;  //rotational deflection in rad
+                                                            plate_graph_data_base.factor = 1.0f;  //rotational deflection in rad
                                                         }
-                                                        else if (strstr(plate_graph_data.component_name, "deflection")!=NULL)
+                                                        else if (strstr(plate_graph_data_base.component_name, "deflection")!=NULL)  //older version - legacy
                                                         {
-                                                            if ((strstr(plate_graph_data.component_name," 1")!=NULL) ||
-                                                                (strstr(plate_graph_data.component_name," 2")!=NULL) ||
-                                                                (strstr(plate_graph_data.component_name," 2")!=NULL))
+                                                            if ((strstr(plate_graph_data_base.component_name," 1")!=NULL) ||
+                                                                (strstr(plate_graph_data_base.component_name," 2")!=NULL) ||
+                                                                (strstr(plate_graph_data_base.component_name," 2")!=NULL))
                                                             {  //in x,y,z axis
-                                                                if (UNITS == SI) plate_graph_data.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
-                                                                else plate_graph_data.factor = 1.0f;
+                                                                if (UNITS == SI) plate_graph_data_base.factor = 1000.0f;  //sign - was used in data to show deflection down as blue
+                                                                else plate_graph_data_base.factor = 1.0f;
                                                             }
                                                                 //about x,y,z axis
-                                                            else plate_graph_data.factor = 1.0f;
+                                                            else plate_graph_data_base.factor = 1.0f;
                                                         }
-                                                        else if ((strstr(plate_graph_data.component_name, "σ")!=NULL) ||
-                                                                (strstr(plate_graph_data.component_name, "τ")!=NULL))
+                                                        else if ((strstr(plate_graph_data_base.component_name, "σ")!=NULL) ||
+                                                                (strstr(plate_graph_data_base.component_name, "τ")!=NULL))
                                                         {
-                                                            if (UNITS == SI) plate_graph_data.factor = 0.000001f;
-                                                            else plate_graph_data.factor = 0.001f;
+                                                            if (UNITS == SI) plate_graph_data_base.factor = 0.000001f;
+                                                            else plate_graph_data_base.factor = 0.001f;
                                                         }
-                                                        else if (strstr(plate_graph_data.component_name, "stress")!=NULL) {
-                                                            if (UNITS == SI) plate_graph_data.factor = 0.000001f;
-                                                            else plate_graph_data.factor = 0.001f;
+                                                        else if (strstr(plate_graph_data_base.component_name, "stress")!=NULL)  //older version - legacy
+                                                        {
+                                                            if (UNITS == SI) plate_graph_data_base.factor = 0.000001f;
+                                                            else plate_graph_data_base.factor = 0.001f;
                                                         }
-                                                        else if (strstr(plate_graph_data.component_name, "ε")!=NULL) {
-                                                            if (UNITS == SI) plate_graph_data.factor = 1.0f;
-                                                            else plate_graph_data.factor = 1.0f;
+                                                        else if (strstr(plate_graph_data_base.component_name, "ε")!=NULL) {
+                                                            if (UNITS == SI) plate_graph_data_base.factor = 1.0f;
+                                                            else plate_graph_data_base.factor = 1.0f;
                                                         }
-                                                        else if (strstr(plate_graph_data.component_name, "epsilon")!=NULL) {
-                                                            if (UNITS == SI) plate_graph_data.factor = 1.0f;
-                                                            else plate_graph_data.factor = 1.0f;
+                                                        else if (strstr(plate_graph_data_base.component_name, "epsilon")!=NULL) //older version - legacy
+                                                        {
+                                                            if (UNITS == SI) plate_graph_data_base.factor = 1.0f;
+                                                            else plate_graph_data_base.factor = 1.0f;
                                                         }
-                                                        else plate_graph_data.factor = 1.0f;
+                                                        else plate_graph_data_base.factor = 1.0f;
+                                                         */
 
-                                                        strncpy(VALUE_NAME, plate_graph_data.component_name,15);
+                                                        strncpy(VALUE_NAME, plate_graph_data_base.component_name,15);
                                                         VALUE_NAME[15]='\0';
                                                         char *ptr_vn=strchr(VALUE_NAME,'_');
                                                         if (ptr_vn!=NULL) *ptr_vn='\0';
+
+                                                        //assigning graph_data_base
+                                                        if ((ret) && ((plate_graph_data_base.b!=NULL) && (plate_graph_data_base.limit_state>=0)))
+                                                        {
+                                                            memmove(&plate_graph_data_state[plate_graph_data_base.limit_state], &plate_graph_data_base, sizeof(PLATE_GRAPH_DATA));
+                                                            plate_graph_data=&plate_graph_data_state[plate_graph_data_base.limit_state];
+                                                        }
+                                                        //searching for associated blocks
+                                                        int mask = 1 << plate_graph_data_base.limit_state;
+                                                        BLOK *b_adr[5]={NULL, NULL, NULL, NULL, NULL};  //5 states zeroing
+                                                        //will be searching to get same components for other states
+                                                        b_adr[plate_graph_data_base.limit_state]=ptrs_block;
+                                                        ret = get_associated_blocks_adr(plate_graph_data_base.plate_name, plate_graph_data_base.component_name, plate_graph_data_base.limit_state, b_adr);
+
+                                                        int this_limit_state=plate_graph_data_base.limit_state;
+
+                                                        if (ret>0)
+                                                        {
+                                                            for (int i = 0; i < 5; i++)
+                                                            {
+                                                                if (i != this_limit_state)
+                                                                {
+                                                                    if (b_adr[i] != NULL)
+                                                                    {
+                                                                        ret = get_plate_graph_data(b_adr[i], &plate_graph_data_base);
+                                                                        //assigning graph_data_base
+                                                                        if ((ret) && ((plate_graph_data_base.b != NULL) && (plate_graph_data_base.limit_state >= 0)))
+                                                                        {
+                                                                            memmove(&plate_graph_data_state[plate_graph_data_base.limit_state],&plate_graph_data_base,sizeof(PLATE_GRAPH_DATA));
+                                                                            //plate_graph_data=&plate_graph_data_state[plate_graph_data_base.limit_state];
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -14328,9 +14506,9 @@ void Cross_section_forces(void)
                     komunikat_str_short("", FALSE, TRUE);
                     remove_short_notice();
                 }
-                else if (plate_graph_data.b!=NULL)
+                else if ((plate_graph_data!=NULL) && (plate_graph_data->b!=NULL))
                 {
-                    sprintf(block_name,"%s %s", plate_graph_data.plate_name, plate_graph_data.component_name);
+                    sprintf(block_name,"%s %s", plate_graph_data->plate_name, plate_graph_data->component_name);
                     komunikat_str_short(block_name, TRUE, TRUE);
                     Show_Plate_Point();
                     komunikat_str_short("", FALSE, TRUE);

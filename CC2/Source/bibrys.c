@@ -15,10 +15,15 @@
 */
 
 #define __BIBRYS__
+#include <forwin.h>
 #include "o_graphf.h"
-#include "menu.h"
+#include <stdio.h>
 #include <math.h>
+#include <allegext.h>
+#include "bib_e.h"
+#include "rysuj_e.h"
 #include "alfaplugin_manager.h"
+#include "menu.h"
 
 extern void Rysuj_zbrojenie(void);
 extern void Zapamietaj(void);
@@ -140,7 +145,20 @@ extern void set_plugin_func_in_COMNDm(int poz, void *plugin_f);
 extern int get_selection(void);
 extern int set_selection(int new_selection);
 
+extern BOOL Check_if_Equal (double x, double y);
+extern double Atan2 (double, double) ;
+extern void Rotate_Point(double si, double co,
+    double x1, double y1,  /*center point*/
+    double x2, double y2, double *x, double *y); /*rotate point*/
+
 extern TMENU mInsetAux;
+
+extern BOOL Semaphore; //////!!!
+extern char sk1[32];
+
+static void nooop(void)
+{
+}
 
 static int  nooop1(void)
 {

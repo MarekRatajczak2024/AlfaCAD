@@ -59,8 +59,10 @@ QT_END_NAMESPACE
 
 #if !__has_builtin(__builtin_available)
 #include <initializer_list>
-#include <QtCore/qoperatingsystemversion.h>
-#include <QtCore/qversionnumber.h>
+#include <qoperatingsystemversion.h>
+//#include <QtCore/qoperatingsystemversion.h>
+#include <qversionnumber.h>
+//#include <QtCore/qversionnumber.h>
 
 QT_BEGIN_NAMESPACE
 

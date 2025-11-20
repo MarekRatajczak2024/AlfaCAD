@@ -1289,7 +1289,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    if (stricmp (key_name, IC_SHEET) == 0 )
    {
 
-	 change_bs2s(&ret_string);
+	 change_bs2s(ret_string);
      strcpy(Current_File_Directory, ret_string);
      if (Current_File_Directory [strlen (Current_File_Directory) - 1] != '\\')
       {
@@ -1304,7 +1304,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    if (stricmp (key_name, IC_EXPLORER_EXE) == 0 )
     {
  
-	 change_bs2s(&ret_string);
+	 change_bs2s(ret_string);
 
      strcpy(EXPLORER_EXE, ret_string);
      strupr(EXPLORER_EXE);
@@ -1313,7 +1313,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    if (stricmp (key_name, IC_LOG) == 0 )
     {
 	 
-	 change_bs2s(&ret_string);
+	 change_bs2s(ret_string);
 
       strcpy(log_dir, ret_string);
       strupr(log_dir);
@@ -1322,7 +1322,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    if (stricmp (key_name, IC_BLOK) == 0 )
     {
  
-	 change_bs2s(&ret_string);
+	 change_bs2s(ret_string);
 
       strcpy(bloki_dir, ret_string);
       strupr(bloki_dir);
@@ -1330,7 +1330,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    else
    if (stricmp (key_name, IC_KATALOG) == 0 )
     {
-       change_bs2s(&ret_string);
+       change_bs2s(ret_string);
 
       strcpy(katalogi_dir, ret_string);
       strupr(katalogi_dir);
@@ -1338,7 +1338,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    else
    if (stricmp (key_name, IC_TTF_FONTS) == 0 )
    {
-       change_bs2s(&ret_string);
+       change_bs2s(ret_string);
        strcpy(default_path_TTF, ret_string);
        if (default_path_TTF[strlen(default_path_TTF)]!='/')
            strcat(&default_path_TTF,"/");
@@ -1346,7 +1346,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    else
    if (stricmp (key_name, IC_OTF_FONTS) == 0 )
    {
-       change_bs2s(&ret_string);
+       change_bs2s(ret_string);
        strcpy(default_path_OTF, ret_string);
        if (default_path_OTF[strlen(default_path_OTF)]!='/')
            strcat(&default_path_OTF,"/");
@@ -1355,7 +1355,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
    if (stricmp (key_name, IC_BIBLIOTEKA) == 0 )
     {
 
-	 change_bs2s(&ret_string);
+	 change_bs2s(ret_string);
 
      strcpy(biblioteka_cfg, ret_string);
      strupr(biblioteka_cfg);

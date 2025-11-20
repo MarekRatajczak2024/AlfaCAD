@@ -141,7 +141,8 @@ static BOOL get_spec_off (int f,
                           long *ptrl_spec_off)
 /*---------------------------------------------------------------------*/
 {
-  long l_off, l_off1, l_date_size ;
+  long l_off, l_off1;
+  int l_date_size ;
   int i_layersno ;
   BOOL b_ret ;
   double l_add_file;
@@ -192,6 +193,10 @@ static BOOL get_spec_off (int f,
 
     if (marker==1234567)
         l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 3 + sizeof(double) * 32 ;
+    else if (marker==1234568)
+        l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 5 + sizeof(double) * 31 ;
+    else if (marker==1234569)
+        l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 7 + sizeof(double) * 40 ;
     else
         l_off1 = l_off + sizeof(int) * 4 + sizeof(float) * 2 + sizeof(double) * 31 ;
 

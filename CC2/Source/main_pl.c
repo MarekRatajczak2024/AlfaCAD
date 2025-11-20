@@ -112,4 +112,9 @@ POLE pmenug[] = {
 #define _PLUGINS_ u8"plugins"
 #define _PLUGIN_BITMAPS_ u8"plugins/bitmaps"
 
+#define _NO_MOUSE_ "Nie jest zainstalowana mysz !!!!!\n"
+
+
+char* loading_program[] = { u8"Ładowanie programu", u8"Ładowanie okna..." , u8"Proszę czekać. Trwa pobieranie pliku: ", u8"Łączenie z chmurą..."};
+
 #endif

@@ -84,6 +84,7 @@ typedef struct
     int flag;
     double x;
     double y;
+    int restraint;
 } MESH_NODE;
 
 typedef struct
@@ -95,18 +96,47 @@ typedef struct
     int node2;
     int node3;
     int node4;
+    double h;
+    int RC_flag;
 } MESH_ELEMENT;
 
+typedef struct {
+    //double Qxmin; //min shear force from the moment in xx direction
+    //double Qxmax; //max shear force from the moment in xx direction
+    //double Qymin; //min shear force from the moment in yy direction
+    //double Qymax; //max shear force from the moment in yy direction
+    double Qn; //shear force per unit length (N/m)
+    double Qnmin; //min shear force per unit length (N/m)
+    double Qnmax; //max shear force per unit length (N/m)
+    double Rz;  //based on stresses
+    double Rzmin;  //based on stresses
+    double Rzmax;  //based on stresses
+    //alternative
+    double Qn1; //shear force per unit length (N/m)
+    double Qnmin1; //min shear force per unit length (N/m)
+    double Qnmax1; //max shear force per unit length (N/m)
+    double Rz1;  //based on stresses
+    double Rzmin1;  //based on stresses
+    double Rzmax1;  //based on stresses
+} SHEAR_FORCES;
 
 typedef struct
 {
-    int n1;
-    int n2;
-    int n3;
-    int n4;
-    int n5;
-    int n6;
-    int n7;
+    int no;
+    int edge;
+    int element1;
+    int element2;
+    int flag;
+    int node1;
+    int node2;
+    int restraint;
+    int inverted;
+    double kos, koc;
+    double x1, y1, x2, y2;
+    SHEAR_FORCES state1[6];  //the last is for temporary buffer
+    SHEAR_FORCES state2[6];
+    SHEAR_FORCES state11[6];
+    SHEAR_FORCES state22[6];
 } MESH_BOUNDARY;
 
 typedef struct
@@ -121,6 +151,12 @@ typedef struct
     int n;
     int i;
 } PERM;
+
+typedef struct
+{
+    double surface_load;
+    double point_load;
+} TOTAL_LOAD;
 
 /*
 typedef struct

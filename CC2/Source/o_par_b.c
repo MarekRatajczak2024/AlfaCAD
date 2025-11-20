@@ -118,6 +118,7 @@ extern double depth_magnitude; //units per mm  default 1 mm of section depth per
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude; //units per mm  default 10kN/m force per 1 mm on drawing paper
 extern double flood_magnitude; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude; //units per mm  default 1kN/m shear/reaction per 1 mm on drawing paper
 extern double force_magnitude; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -128,16 +129,18 @@ extern double depth_magnitude0; //units per mm  default 1 mm of section depth pe
 extern double thermal_magnitude0; //units per mm  default 1 Celsius per 1 mm on drawing paper
 extern double load_magnitude0; //units per mm  default 10kN/m load per 1 mm on drawing paper
 extern double flood_magnitude0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double shear_magnitude0; //units per mm  default 1kN/m² shear/reaction per 1 mm on drawing paper
 extern double force_magnitude0; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
 extern double rotation_magnitude0;
 
-extern double radius_magnitude_imp0;
-extern double depth_magnitude_imp0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
-extern double thermal_magnitude_imp0; //units per mm  default 1 Celsius per 1 mm on drawing paper
-extern double load_magnitude_imp0; //units per mm  default 10kN/m load per 1 mm on drawing paper
-extern double flood_magnitude_imp0; //units per mm  default 10kN/m² load per 1 mm on drawing paper
+extern double radius_magnitude_imp0; //units per mm  default inch of radius per 1 mm on drawing paper
+extern double depth_magnitude_imp0;//units per mm  default inch of section depth per 1 mm on drawing paper
+extern double thermal_magnitude_imp0; //units per mm  default Fahrenheit deg per 1 mm on drawing paper
+extern double load_magnitude_imp0; //units per mm  default lbf/in load per 1 mm on drawing paper
+extern double flood_magnitude_imp0; //units per mm  default lbf/in² load per 1 mm on drawing paper
+extern double shear_magnitude_imp0; //units per mm  default 1kN/m² shear/reaction per 1 mm on drawing paper
 extern double force_magnitude_imp0; //units per mm  default 10kN force per 1 mm on drawing paper
 extern double moment_magnitude_imp0; //units per mm  default 10kNm force per 1 mm radius on drawing paper
 extern double displacement_magnitude_imp0; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
@@ -150,6 +153,30 @@ extern double displacement_precision;
 extern double rotation_precision;
 extern double load_precision;
 extern double stress_precision;
+extern double r_precision;
+extern double rm_precision;
+
+extern double thermal_precision0;
+extern double force_precision0;
+extern double moment_precision0;
+extern double displacement_precision0;
+extern double rotation_precision0;
+extern double load_precision0;
+extern double stress_precision0;
+extern double r_precision0;
+extern double rm_precision0;
+
+/*
+extern double thermal_precision_imp0;
+extern double force_precision_imp0;
+extern double moment_precision_imp0;
+extern double displacement_precision_imp0;
+extern double rotation_precision_imp0;
+extern double load_precision_imp0;
+extern double stress_precision_imp0;
+extern double r_precision_imp0;
+extern double rm_precision_imp0;
+*/
 
 extern double n_magnitude;
 extern double v_magnitude;
@@ -619,10 +646,11 @@ static void kolorS(void)
     if (i_color >= 16) {
         strcpy(&sk, "");
 
-        sprintf(sk, u8"%s%#ld", _OTHER_COLOR_, i_color);
+        sprintf(sk, u8"%s%d", _OTHER_COLOR_, i_color);
 
         sk1 = strpbrk(sk, " ");
     } else {
+        if (i_color==0) i_color=16;
         return_menu_par0((*mKolorSTATIC.pola)[i_color-1].txt, &sk);
         sk1 = strpbrk(sk, " ");
     }
@@ -730,7 +758,7 @@ static void kolorSX(void)
     if (i_color >= 16) {
         strcpy(&sk, "");
 
-        sprintf(sk, u8"%s%#ld", _OTHER_COLOR_, i_color);
+        sprintf(sk, u8"%s%d", _OTHER_COLOR_, i_color);
 
         sk1 = strpbrk(sk, " ");
     } else {
@@ -894,7 +922,7 @@ void DokladX(void)
   double d ;
 
   sk [0] = '\0' ;
-  DF_to_String (sk, "%-6.4f", 1 / DokladnoscF, 0) ;
+  DF_to_String (sk, "%lg", 1 / DokladnoscF, 0) ;
   if (!get_string (sk, "", MaxTextLen, 0, 39)) goto restore ;
   if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
   {
@@ -913,7 +941,7 @@ void DokladX(void)
   Ymax = Y_max + Ymin ;
   if (X>Xmax) X=Xmax;
   if (Y>Ymax) Y=Ymax;
-  DF_to_String (sk, "%-6.4f", d, 6) ;
+  DF_to_String (sk, "%lg", d, 6) ;
   strcat (sk, " mm") ;
   menu_par_new ((*mParametry.pola)[3].txt, sk) ;
   menu_par_new ((*mDokladnosc.pola)[5].txt, sk) ;
@@ -932,7 +960,7 @@ void Change_Precision(int kom_no, double *parameter, int menu_number)
     double d ;
 
     sk [0] = '\0' ;
-    DF_to_String (sk, "%-6.4f", *parameter, 0) ;
+    DF_to_String (sk, "%lg", *parameter, 0) ;
     if (!get_string (sk, "", MaxTextLen, 0, kom_no)) goto restore ;
     if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
     {
@@ -946,7 +974,7 @@ void Change_Precision(int kom_no, double *parameter, int menu_number)
     }
 
     *parameter=d;
-    DF_to_String (sk, "%-6.4f", d, 6) ;
+    DF_to_String (sk, "%lg", d, 6) ;
     menu_par_new ((*mPrecision.pola)[menu_number].txt, sk) ;
     drawp (&mParametry) ;
     go_refresh=TRUE;
@@ -966,7 +994,7 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
     double d ;
 
     sk [0] = '\0' ;
-    DF_to_String (sk, "%-6.4f", *parameter, 0) ;
+    DF_to_String (sk, "%lg", *parameter, 0) ;
     if (!get_string (sk, "", MaxTextLen, 0, kom_no)) goto restore ;
     if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
     {
@@ -980,28 +1008,37 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
     }
 
     *parameter=d;
-    DF_to_String (sk, "%-6.4f", d, 6) ;
+    DF_to_String (sk, "%lg", d, 6) ;
     if (menu_number==4)
     {
-        sprintf(sk, "%-6.4f/%-6.4f", load_magnitude, flood_magnitude) ;
+        sprintf(sk, "%lg/%lg", load_magnitude, flood_magnitude) ;
         menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
-        DF_to_String (sk, "%-6.4f", load_magnitude, 6) ;
+        DF_to_String (sk, "%lg", load_magnitude, 6) ;
         menu_par_new ((*mLoadMagnitude.pola)[0].txt, sk) ;
-        DF_to_String (sk, "%-6.4f", flood_magnitude, 6) ;
+        DF_to_String (sk, "%lg", flood_magnitude, 6) ;
         menu_par_new ((*mLoadMagnitude.pola)[1].txt, sk) ;
     }
-    if (menu_number==12)
+    else if (menu_number==12)
     {
-        sprintf(sk, "%-6.4f/%-6.4f", s_magnitude, src_magnitude) ;
+        sprintf(sk, "%lg/%lg", s_magnitude, src_magnitude) ;
         menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
-        DF_to_String (sk, "%-6.4f", s_magnitude, 6) ;
+        DF_to_String (sk, "%lg", s_magnitude, 6) ;
         menu_par_new ((*mStressMagnitude.pola)[0].txt, sk) ;
-        DF_to_String (sk, "%-6.4f", src_magnitude, 6) ;
+        DF_to_String (sk, "%lg", src_magnitude, 6) ;
         menu_par_new ((*mStressMagnitude.pola)[1].txt, sk) ;
+    }
+    else if (menu_number==10)
+    {
+        sprintf(sk, "%lg/%lg", r_magnitude, shear_magnitude) ;
+        menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
+        DF_to_String (sk, "%lg", r_magnitude, 6) ;
+        menu_par_new ((*mReactionMagnitude.pola)[0].txt, sk) ;
+        DF_to_String (sk, "%lg", shear_magnitude, 6) ;
+        menu_par_new ((*mReactionMagnitude.pola)[1].txt, sk) ;
     }
     else
     {
-        DF_to_String (sk, "%-6.4f", d, 6) ;
+        DF_to_String (sk, "%lg", d, 6) ;
         menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
     }
     drawp (&mParametry) ;
@@ -1063,6 +1100,11 @@ void Moment_Precision(void)
     Change_Precision(206, &moment_precision, 1);
 }
 
+void Reaction_Precision(void)
+{
+    Change_Precision(226, &r_precision, 7);
+}
+
 void Displacement_Magnitude(void)
 {
     Change_Magnitude(201, &displacement_magnitude, 2);
@@ -1102,6 +1144,10 @@ void D_Magnitude(void)
 void R_Magnitude(void)
 {
     Change_Magnitude(216, &r_magnitude, 10);
+}
+void QN_Magnitude(void)
+{
+    Change_Magnitude(225, &shear_magnitude, 10);
 }
 void RM_Magnitude(void)
 {
@@ -1146,6 +1192,7 @@ void reset_magnitude_SI(void)
         thermal_magnitude=thermal_magnitude0;
         load_magnitude=load_magnitude0;
         flood_magnitude=flood_magnitude0;
+        shear_magnitude=shear_magnitude0;
         force_magnitude=force_magnitude0;
         moment_magnitude=moment_magnitude0;
         displacement_magnitude=displacement_magnitude0;
@@ -1163,6 +1210,19 @@ void reset_magnitude_SI(void)
         sp_magnitude=sp_magnitude0;
         sm_magnitude=sm_magnitude0;
         p_magnitude=p_magnitude0;
+
+        /*
+        //precision  -  maybe in the future
+        thermal_precision=thermal_precision0;
+        force_precision=force_precision0;
+        moment_precision=moment_precision0;
+        stress_precision=stress_precision0;
+        displacement_precision=displacement_precision0;
+        rotation_precision=rotation_precision0;
+        load_precision=load_precision0;
+        r_precision=r_precision0;
+        rm_precision=rm_precision0;
+         */
 
         uaktualnij_polap();
         Change = TRUE;
@@ -1188,6 +1248,7 @@ void reset_magnitude_IMP(void)
         thermal_magnitude=thermal_magnitude_imp0;
         load_magnitude=load_magnitude_imp0;
         flood_magnitude=flood_magnitude_imp0;
+        shear_magnitude=shear_magnitude_imp0;
         force_magnitude=force_magnitude_imp0;
         moment_magnitude=moment_magnitude_imp0;
         displacement_magnitude=displacement_magnitude_imp0;
@@ -1205,6 +1266,20 @@ void reset_magnitude_IMP(void)
         sp_magnitude=sp_magnitude_imp0;
         sm_magnitude=sm_magnitude_imp0;
         p_magnitude=p_magnitude_imp0;
+
+        /*
+        //precision  -  maybe in the future
+        thermal_precision=thermal_precision_imp0;
+        force_precision=force_precision_imp0;
+        moment_precision=moment_precision_imp0;
+        stress_precision=stress_precision_imp0;
+        displacement_precision=displacement_precision_imp0;
+        rotation_precision=rotation_precision_imp0;
+        load_precision=load_precision_imp0;
+        r_precision=r_precision_imp0;
+        rm_precision=rm_precision_imp0;
+         */
+
 
         uaktualnij_polap();
         Change = TRUE;
@@ -1350,7 +1425,7 @@ int ret;
   {
 	  strcpy(&sk, "");
 
-	  sprintf(sk, u8"%s%#ld", _OTHER_COLOR_,sektory_arkusza_ext.frame_color);
+	  sprintf(sk, u8"%s%d", _OTHER_COLOR_,sektory_arkusza_ext.frame_color);
 
 	  sk1 = strpbrk(sk, " ");
   }
@@ -1373,7 +1448,7 @@ int ret;
   {
 	  strcpy(&sk, "");
 
-	  sprintf(sk, u8"%s%#ld", _OTHER_COLOR_,sektory_arkusza_ext.sector_color);
+	  sprintf(sk, u8"%s%d", _OTHER_COLOR_,sektory_arkusza_ext.sector_color);
 
 	  sk1 = strpbrk(sk, " ");
   }
@@ -1416,8 +1491,15 @@ int ret;
     menu_par_new((*mMagnitude.pola)[8].txt, sk);
     sprintf(sk, "%lg", d_magnitude);
     menu_par_new((*mMagnitude.pola)[9].txt, sk);
-    sprintf(sk, "%lg", r_magnitude);
+
+    sprintf(sk, "%lg/%lg", r_magnitude, shear_magnitude);
     menu_par_new((*mMagnitude.pola)[10].txt, sk);
+
+    sprintf(sk, "%lg", r_magnitude);
+    menu_par_new((*mReactionMagnitude.pola)[0].txt, sk);
+    sprintf(sk, "%lg", shear_magnitude);
+    menu_par_new((*mReactionMagnitude.pola)[1].txt, sk);
+
     sprintf(sk, "%lg", rm_magnitude);
     menu_par_new((*mMagnitude.pola)[11].txt, sk);
     sprintf(sk, "%lg/%lg", s_magnitude, src_magnitude);
@@ -1447,6 +1529,8 @@ int ret;
     menu_par_new((*mPrecision.pola)[5].txt, sk);
     sprintf(sk, "%lg", stress_precision);
     menu_par_new((*mPrecision.pola)[6].txt, sk);
+    sprintf(sk, "%lg", r_precision);
+    menu_par_new((*mPrecision.pola)[7].txt, sk);
 
     unsigned int static_colors_ptr[]={static_colors.node_element_color, static_colors.tension_color, static_colors.compression_color, static_colors.shear_color, static_colors.moment_color, static_colors.deformation_color, static_colors.reaction_color,
                                       static_stress_colors.axial_stress_plus_color, static_stress_colors.axial_stress_minus_color, static_stress_colors.shear_stress_color, static_colors.dynamic_color };
@@ -1462,7 +1546,7 @@ int ret;
         if (i_menu_color >= 16) {
             strcpy(&sk, "");
 
-            sprintf(sk, u8"%s%#ld", _OTHER_COLOR_, static_colors_ptr[i]);
+            sprintf(sk, u8"%s%d", _OTHER_COLOR_, static_colors_ptr[i]);
 
             sk1 = strpbrk(sk, " ");
         } else {
@@ -1995,13 +2079,13 @@ static void (* COMND[])(void)={
 /*99 kursorB */	     kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB,
 /*109 uklad */       Uklad_kartezjanski, Uklad_geodezyjny,
                      Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, nooop/*Load_Magnitude*/, Thermal_Magnitude,
-                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, R_Magnitude, RM_Magnitude, nooop, P_Magnitude, Q_Magnitude,
+                     N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, nooop, RM_Magnitude, nooop, P_Magnitude, Q_Magnitude,
                      nooop,nooop, nooop,
 
-                     Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision,
+                     Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision, Reaction_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
-                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP,
+                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP, R_Magnitude, QN_Magnitude
 };
 
 /*----------------------------------------------------*/

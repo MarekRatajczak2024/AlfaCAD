@@ -13,7 +13,7 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
-#ifndef BIT64  //LINUX
+#ifndef BIT64
 #include "o_transform_win.cpp"
 #else
 #ifdef LINUX

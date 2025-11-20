@@ -482,7 +482,7 @@ static char* komunikaty_kom[] =
 /*213*/u8"Wprowadź współczynnik przeskalowania wynikowych sił ścinających: ",
 /*214*/u8"Wprowadź współczynnik przeskalowania wynikowych momentów gnących: ",
 /*215*/u8"Wprowadź współczynnik przeskalowania wynikowych przemieszczeń: ",
-/*216*/u8"Wprowadź współczynnik przeskalowania wynikowych sił reakcji podpór: ",
+/*216*/u8"Wprowadź współczynnik przeskalowania wynikowych skupionych sił reakcji podpór: ",
 /*217*/u8"Wprowadź współczynnik przeskalowania wynikowych momentów reakcji podpór: ",
 
 /*218*/u8"Wprowadź współczynnik przeskalowania głębokości przekroju: ",
@@ -492,6 +492,8 @@ static char* komunikaty_kom[] =
 /*222*/u8"Wprowadź współczynnik przeskalowania dla wynikowego procentu zbrojenia: ",
 /*223*/u8"Wprowadź współczynnik przeskalowania obciążenia płaszczyznowego: ",
 /*224*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń (żelbet):",
+/*225*/u8"Wprowadź współczynnik przeskalowania wynikowych rozproszonych sił reakcji podpór: ",
+/*226*/u8"Wprowadź precyzję reakcji: ",
 "",
 "",
 };
@@ -1241,6 +1243,7 @@ static char confirm[] = u8"Potwierdź";
 #define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Nie można utworzyć bloku odkształceń"
 #define _CANNOT_CREATE_STRESS_BLOCK_ u8"Nie można utworzyć bloku naprężeń"
 #define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Nie można utworzyć bloku odkształceń postaciowych"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Nie można utworzyć bloku reakcji"
 
 #define _PROCEED_PLATE_FEM_ u8"Przeprowadzić analizę statyczną wskazanej płyty?"
 
