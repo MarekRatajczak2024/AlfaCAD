@@ -458,22 +458,22 @@ POLE pmTree[] = {
 static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
 
 POLE pmLastFiles[] = {
-	{u8"1   \0 \0",'1',0,NULL},
-	{u8"2   \0 \0",'2',0,NULL},
-	{u8"3   \0 \0",'3',0,NULL},
-	{u8"4   \0 \0",'4',0,NULL},
-	{u8"5   \0 \0",'5',0,NULL},
-	{u8"6   \0 \0",'6',0,NULL},
-	{u8"7   \0 \0",'7',0,NULL},
-	{u8"8   \0 \0",'8',0,NULL},
-	{u8"9   \0 \0",'9',0,NULL},
-    {u8"0   \0 \0",'0',0,NULL},
-	{u8"Й   \0 \0",L'Й',0,NULL},
-	{u8"Ц   \0 \0",L'Ц',0,NULL},
-	{u8"У   \0 \0",L'У',0,NULL},
-	{u8"К   \0 \0",L'К',0,NULL},
-	{u8"Е   \0 \0",L'Е',0,NULL},
-	{u8"Н   \0 \0",L'Н',0,NULL},
+	{u8"1 \0\0",'1',0,NULL},
+	{u8"2 \0\0",'2',0,NULL},
+	{u8"3 \0\0",'3',0,NULL},
+	{u8"4 \0\0",'4',0,NULL},
+	{u8"5 \0\0",'5',0,NULL},
+	{u8"6 \0\0",'6',0,NULL},
+	{u8"7 \0\0",'7',0,NULL},
+	{u8"8 \0\0",'8',0,NULL},
+	{u8"9 \0\0",'9',0,NULL},
+    {u8"0 \0\0",'0',0,NULL},
+	{u8"Й \0\0",L'Й',0,NULL},
+	{u8"Ц \0\0",L'Ц',0,NULL},
+	{u8"У \0\0",L'У',0,NULL},
+	{u8"К \0\0",L'К',0,NULL},
+	{u8"Е \0\0",L'Е',0,NULL},
+	{u8"Н \0\0",L'Н',0,NULL},
 };
 
 static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };

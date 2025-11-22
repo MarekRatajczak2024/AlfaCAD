@@ -6962,7 +6962,7 @@ void Plate_analysis(void) {
                                 ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
                                 if (ret == 2) {
                                     perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
-                                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                                    for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
                                     perm_s_b = 1;
                                     for (i = 0; i < perm_s_index_no; i++) {
                                         fgets(data_row, MaxTextLen, f);
@@ -8143,7 +8143,7 @@ void Plate_analysis(void) {
                                 ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
                                 if (ret == 2) {
                                     perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
-                                    for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
+                                    for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
                                     perm_e_b = 1;
                                     for (i = 0; i < perm_e_index_no; i++) {
                                         fgets(data_row, MaxTextLen, f);
@@ -8458,7 +8458,7 @@ void Plate_analysis(void) {
                 ret = sscanf(data_row + 6, "%d %d", &perm_s_node_no, &perm_s_index_no);
                 if (ret == 2) {
                     perm_s = (int *) malloc(perm_s_node_no * sizeof(int) + 100);
-                    for (i = 0; i < perm_d_node_no; i++) perm_s[i] = -1;
+                    for (i = 0; i < perm_s_node_no; i++) perm_s[i] = -1;
                     perm_s_b = 1;
                     for (i = 0; i < perm_s_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
@@ -8539,7 +8539,7 @@ void Plate_analysis(void) {
                 ret = sscanf(data_row + 6, "%d %d", &perm_e_node_no, &perm_e_index_no);
                 if (ret == 2) {
                     perm_e = (int *) malloc(perm_e_node_no * sizeof(int) + 100);
-                    for (i = 0; i < perm_d_node_no; i++) perm_e[i] = -1;
+                    for (i = 0; i < perm_e_node_no; i++) perm_e[i] = -1;
                     perm_e_b = 1;
                     for (i = 0; i < perm_e_index_no; i++) {
                         fgets(data_row, MaxTextLen, f);
@@ -9132,16 +9132,10 @@ void Plate_analysis(void) {
                                 double epsilont; //tensile strain
 
                                 if (bi == 0) {
-                                    //vmin_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                    //vmin_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                    //vmin_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
                                     v_node[0] = min_stress[i][perm_s[mesh_element[j].node1 - 1]];
                                     v_node[1] = min_stress[i][perm_s[mesh_element[j].node2 - 1]];
                                     v_node[2] = min_stress[i][perm_s[mesh_element[j].node3 - 1]];
                                 } else {
-                                    //vmax_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                    //vmax_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                    //vmax_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
                                     v_node[0] = max_stress[i][perm_s[mesh_element[j].node1 - 1]];
                                     v_node[1] = max_stress[i][perm_s[mesh_element[j].node2 - 1]];
                                     v_node[2] = max_stress[i][perm_s[mesh_element[j].node3 - 1]];
@@ -9401,11 +9395,11 @@ void Plate_analysis(void) {
                                 }
 
                                 if (bi == 0) {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
                                     else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
                                     else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
                                     else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
                                     gradient.c4 = getRGB(0.0, stress_amax);
 
@@ -9422,11 +9416,11 @@ void Plate_analysis(void) {
                                     fe_data_ex.f3 = (float) p[2];  //negative means %
                                     fe_data_ex.f4 = 0.0f;
                                 } else {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
                                     else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
                                     else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
                                     else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
                                     gradient.c4 = getRGB(0.0, stress_amax);
 
@@ -9445,11 +9439,11 @@ void Plate_analysis(void) {
 
                                 }
                             } else if (bi == 0) {
-                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
                                 else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
                                 else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
                                 else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
                                 gradient.c4 = getRGB(0.0, stress_amax);
 
@@ -9460,11 +9454,11 @@ void Plate_analysis(void) {
                                 fe_data.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
                                 fe_data.f4 = 0.0f;
                             } else if (bi == 1) {
-                                if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
                                 else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
                                 else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
+                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
                                 else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
                                 gradient.c4 = getRGB(0.0, stress_amax);
 
@@ -10711,11 +10705,11 @@ void Plate_analysis(void) {
 
                             if (nom_max) {
                                 if (bi == 0) {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
                                     else gradient.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
                                     else gradient.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
                                     else gradient.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
                                     gradient.c4 = getRGB(0.0, epsilon_amax);
 
@@ -10726,11 +10720,11 @@ void Plate_analysis(void) {
                                     fe_data.f3 = (float) min_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
                                     fe_data.f4 = 0.0f;
                                 } else {
-                                    if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
                                     else gradient.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                                    if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
                                     else gradient.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                                    if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
                                     else gradient.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
                                     gradient.c4 = getRGB(0.0, epsilon_amax);
 

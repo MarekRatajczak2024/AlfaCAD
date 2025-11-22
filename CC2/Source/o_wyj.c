@@ -345,6 +345,10 @@ extern int Get_Mouse_Wheel(void);
 extern void Set_Mouse_Wheel(int wheel);
 
 extern void  Odczyt_licznikow(void);
+extern void Test_Menu (TMENU *) ;
+extern int findlentopxl(const char *s, int max_pxl);
+extern int TTF_text_len(char *text);
+extern int utf8len(const char *s);
 #ifdef MACOS
 extern int send_AppleScript_Exit(pid_t pid);
 extern pid_t get_e_pid(void);
@@ -6378,9 +6382,19 @@ void uaktualnij_pola_file (void)
   int max_xdl;
   int pos;
   int max_n;
+  int m_len;
+  int c_len;
+  int ch_len;
+  int m_len_max;
+  int c_len_max;
+  int ch_len_max;
 
-  max_xdl=33;
+  max_xdl=64;  //this must be dynamic
+  //estimating necessary width
   max_n = 0;
+  m_len_max=0;
+  c_len_max=0;
+  ch_len_max=0;
   for (i=0; i<MAXHISTORYFILES; i++)
   {
     strcpy(sk1, Previous_File[i]);
@@ -6388,17 +6402,59 @@ void uaktualnij_pola_file (void)
 	max_n++;
     ptrsz_lab = sk1;
 
-	pos = findfpostopxl(ptrsz_lab, 24 * WIDTH);
+    c_len=utf8len(ptrsz_lab);
+    if (c_len>c_len_max) c_len_max=c_len;
 
-	st = &ptrsz_lab[pos];
-	memmove(&ptrsz_lab[6], st, strlen(st) + 1); //z '\0' na koncu
-	ptrsz_lab[3] = '.';
-	ptrsz_lab[4] = '.';
-	ptrsz_lab[5] = '.';
+    ch_len=strlen(ptrsz_lab);
+    if (ch_len>ch_len_max) ch_len_max=ch_len;
 
-	menu_par_new((*mLastFiles.pola)[i].txt, ptrsz_lab) ;
+    m_len= TTF_text_len(ptrsz_lab);
+    if (m_len>m_len_max) m_len_max=m_len;
   }
-  mLastFiles.xdl=max_xdl;
+
+    max_xdl=(int)(((float)m_len_max/(float)WIDTH)+0.5);
+    if (max_xdl>POLE_TXT_MAX) max_xdl=POLE_TXT_MAX;
+    //testing
+    mLastFiles.xdl=max_xdl;
+    mLastFiles.max = MAXHISTORYFILES;
+    Test_Menu(&mLastFiles);
+    if (mLastFiles.xpcz<0) max_xdl-=(int)(((float)mLastFiles.xpcz/(float)WIDTH)+0.5);
+
+    if (max_xdl>64) max_xdl=64;
+
+    mLastFiles.xdl=max_xdl;
+
+    max_n = 0;
+
+    for (i=0; i<MAXHISTORYFILES; i++) {
+        strcpy(sk1, Previous_File[i]);
+        if (strlen(sk1) == 0) continue;
+        max_n++;
+        ptrsz_lab = sk1;
+
+        m_len = TTF_text_len(ptrsz_lab);
+
+        if ((m_len + 2 * WIDTH) > max_xdl) {
+            pos = findfpostopxl(ptrsz_lab, (max_xdl - 4) * WIDTH);
+
+            int d_ch_len=(POLE_TXT_MAX-4)-strlen(&ptrsz_lab[pos]);
+            if (d_ch_len<0)
+                pos-=d_ch_len;
+
+            if (pos > 0) {
+                st = &ptrsz_lab[pos];
+                memmove(&ptrsz_lab[0], st, strlen(st) + 1); //z '\0' na koncu
+                ptrsz_lab[0] = '.';
+                ptrsz_lab[1] = '.';
+                ptrsz_lab[2] = '.';
+            }
+        }
+
+        ch_len=strlen(ptrsz_lab);
+        menu_par_new((*mLastFiles.pola)[i].txt, ptrsz_lab) ;
+    }
+
+  //mLastFiles.xdl=max_xdl;
   mLastFiles.max = max_n;
   if (mLastFiles.max == 0) mQuit.max = 13;
   else mQuit.max = 14;
