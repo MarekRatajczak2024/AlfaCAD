@@ -1366,6 +1366,7 @@ extern char *icon_slab_force_p;
 extern char *icon_slab_geo_red_p;
 extern char *icon_slab_geo_black_p;
 extern char *icon_slab_fem_p;
+extern char *icon_shield_fem_p;
 extern char *icon_slab_edge_rolled_p;
 extern char *icon_slab_edge_hinged_p;
 extern char *icon_slab_edge_free_p;
@@ -3468,7 +3469,7 @@ static char *get_icons_p(int number)
         /*837*/   icon_UA_JA_p, icon_UA_I_p, icon_UA_O_p, icon_hourglass_p, icon_pin_to_flex_d48_p,
         /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
         /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p, icon_slab_force_p,
-        /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p, icon_ULSLC_p, icon_SLSLC_p, icon_QPSLSLC_p, icon_shear_p
+        /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p, icon_ULSLC_p, icon_SLSLC_p, icon_QPSLSLC_p, icon_shear_p, icon_shield_fem_p,
     };
    
 	if (number>1999)
@@ -9020,7 +9021,7 @@ static int  commenu(TMENU *menu)
 }
 
 /*funkcja wyboru wspolrzednych poprzez getcom*/
-int  getwsp(TMENU *menu)
+int getwsp(TMENU *menu)
 { char flag,opwinr;
   int n;
 
@@ -9780,10 +9781,11 @@ void ch_edge_inversion(void)
     ((LINIA *) object_info_ad)->obiektt3  = !((LINIA *) object_info_ad)->obiektt3;
     rysuj_obiekt(object_info_ad, COPY_PUT, 1);
     Change = TRUE;
+    TTF_redraw = TRUE;
     return;
 }
 
-int edge_type[]={5,6,7};
+int edge_type[]={5,6,7, 4};
 
 void ch_edge (void)
 {
@@ -9802,6 +9804,7 @@ void ch_edge (void)
         menu_par_new((*mInfoAboutA.pola)[menu_n].txt, view_edge_tab[((LINIA *)object_info_ad)->obiektt2]);
         (*mInfoAbout.pola)[menu_n].iconno=edge_icon[((LINIA *)ad)->obiektt2];
         Change = TRUE;
+        TTF_redraw = TRUE;
     }
     baronoff_(&mInfoAboutA);
     baronoff(&mInfoAboutA);
@@ -10003,7 +10006,7 @@ static TMENU mObjectSelected = { 0,0,0,10,30,7,ICONS,CMNU,CMBR,CMTX,0,19,0,0,0,(
 
 int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845, 856};
 
-int edge_icon[]={0, 0, 0, 0, 0, 851, 850, 852};
+int edge_icon[]={0, 0, 0, 0, 849, 851, 850, 852};
 int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818};
 extern char *vector_txt[];
 extern char *point_txt[];
@@ -11092,7 +11095,6 @@ void ch_radius (void)
         case Oluk:
             sprintf(sk_info, "%-12.9f", r0);
             r1 = jednostkiOb(r0);
-            sprintf(sk_info, "%-12.9f", r1);
             ((LUK *) object_info_ad)->r = (float) r1;
             //menu update
             menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
@@ -11101,7 +11103,6 @@ void ch_radius (void)
         case Osolidarc:
             sprintf(sk_info, "%-12.9f", r0);
             r1 = jednostkiOb(r0);
-            sprintf(sk_info, "%-12.9f", r1);
             ((SOLIDARC *) object_info_ad)->r = (float) r1;
             //menu update
             menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
@@ -11169,7 +11170,6 @@ void ch_radiusy (void)
         case Ofilledellipse:
             sprintf(sk_info, "%-12.9f", r0);
             r1 = jednostkiOb(r0);
-            sprintf(sk_info, "%-12.9f", r1);
             ((ELLIPSE *) object_info_ad)->ry = (float) r1;
             //menu update
             menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);

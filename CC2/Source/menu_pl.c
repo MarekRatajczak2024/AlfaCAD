@@ -1668,14 +1668,15 @@ static POLE pmPLine[] = {
           {u8"Brak podpory\0", L'B', 851,NULL},
           {u8"podpora Przegubowa\0", L'P', 850,NULL},
           {u8"podpora Sztywna\0", L'S', 852,NULL},
-          //{u8"podpora ruchoma\0", L'R', 849,NULL},
+          {u8"podpora ruchoma\0", L'R', 849,NULL},
           {u8"Odwróć podporę\0", L'O', 853,NULL},
 };
 
 POLE pmEdgeType[] = {
           {u8"Brak podpory\0", L'B', 851,NULL},
           {u8"podpora Przegubowa\0", L'P', 850,NULL},
-          {u8"podpora Sztywna\0", L'S', 852,NULL}
+          {u8"podpora Sztywna\0", L'S', 852,NULL},
+          {u8"podpora przesuwna\0", L'R', 849,NULL}
           };
 
 static POLE pmLine_Con[] = {
@@ -1802,10 +1803,10 @@ static POLE pmVector[] = {
           {u8"obciążenie Termiczne\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"Rozmiar węzła (promień)\0\0",L'0',786,NULL},
 
-          {u8"Kontur płyty\0\0",L'K',846,NULL},
-          {u8"otwór w płycie\0\0",L'L',844,NULL},
+          {u8"Kontur płyty lub tarczy\0\0",L'K',846,NULL},
+          {u8"otwór w płycie lub tarczy\0\0",L'L',844,NULL},
           {u8"ściana pod płytą\0\0",L'W',843,NULL},
-          {u8"strefa płyty\0\0",L'Z',842,NULL},
+          {u8"strefa płyty lub tarczy\0\0",L'Z',842,NULL},
           {u8"obciążenie powierzchniowe płyty\0\0",L'Q',845,&mLoad_Char},
           {u8"obciążenie skupione płyty\0\0",L'F',856,&mLoad_Char},
 };
@@ -1886,7 +1887,7 @@ static POLE pmPLukm[] = {
           {u8"Brak podpory\0", L'B', 851,NULL},
           {u8"podpora Przegubowa\0", L'P', 850,NULL},
           {u8"podpora Sztywna\0", L'S', 852,NULL},
-          //{u8"podpora ruchoma\0", L'R', 849,NULL},
+          {u8"podpora Ruchoma\0", L'R', 849,NULL},
           {u8"Odwróć podporę\0", L'O', 853,NULL},
 };
 
@@ -3496,7 +3497,7 @@ char error_message_background[64] = u8"Brak wzorców w tym katalogu";
 
 char* view_width_tab[] = { u8"B.C.",u8"C.",u8"G.",u8"B.G.",u8"NG.", "", "", u8"ukryta " };
 
-char* view_edge_tab[] = {u8"Brak podpory", u8"", u8"", u8"", u8"", u8"Brak podpory", u8"podpora Przegubowa", u8"podpora Sztywna"};
+char* view_edge_tab[] = {u8"Brak podpory", u8"", u8"", u8"", u8"podpora przesuwna", u8"Brak podpory", u8"podpora Przegubowa", u8"podpora Sztywna"};
 char* view_edgeinverted_tab[] = {u8"Regularna", u8"Odwrócona"};
 
 char* view_type_tab[] = {

@@ -348,6 +348,7 @@ static PLATE_GRAPH_DATA plate_graph_data_base;
 static PLATE_GRAPH_DATA plate_graph_data_state[5];  //0 SLS, 1 ULS, 2 ULSLC, 3 SLSLC, 4 QPSLSLC   - for consistency
 
 static int limit_state=0;  //0 ULS, 1 SLS, 2 QPSLS
+static int plate_limit_state=0;  //0 ULSLC, 1 SLSLC, 2 QPSLSSLC, 3 SLS, 4 ULS
 static char section_params_st[128];
 static double last_l=0;
 static double last_l1=0;
@@ -366,7 +367,13 @@ char *SI="SI";
 char *IMP="IMP";
 
 char VALUE_NAME[16];
-char *VALUE_NAME1="ρ";
+char *VALUE_NAME1=u8"ρ";
+char *VALUE_NAME2=u8"ρl";
+char *VALUE_NAME3=u8"ρc";
+char *VALUE_NAME4=u8"ρθ";
+char *VALUE_NAME5=u8"ρx";
+char *VALUE_NAME6=u8"ρy";
+char *DEGREE=u8"°";
 
 //load;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
 //variant;  //0 undefined, 1..255 number of load character with different factors
@@ -3668,6 +3675,12 @@ void Static_analysis(void) {
             }
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Otekst);
+    }
+
+    if (strlen(ptr_id_short)==0)
+    {
+        sprintf(report_row, "%s", _FRAME_ID_NOT_FOUND_);
+        strcat(report, report_row);
     }
     /////////////////
 
@@ -13540,21 +13553,30 @@ static void  cur_point_on(double x,double y)
     char force_text[MaxTextLen];
     char force_text1[MaxTextLen];
     int width, height;
-    FE_DATA fe_data;
-    FE_DATA_EX fe_data_ex;
+    FE_DATA3 fe_data3;
+    FE_DATA4 fe_data4;
+    FE_DATA3_EX fe_data3_ex, fe_data3_ex1, fe_data3_ex2, fe_data3_ex3, fe_data3_ex4;
+    FE_DATA4_EX fe_data4_ex, fe_data4_ex1, fe_data4_ex2;
     char *fe_data_ptr;
-    char *fe_data_ex_ptr;
+    char *fe_data_ex_ptr, *fe_data_ex1_ptr, *fe_data_ex2_ptr, *fe_data_ex3_ptr, *fe_data_ex4_ptr;
     char *gradient_ptr;
     char *translucency_ptr;
     double alpha, beta, gamma;
     double c_value;
     long x0, y0;
 
+
+    sprintf(force_text, "%s", (*mSelect_State_Plate.pola)[plate_limit_state].txt);  //state
+    width = TTF_text_len(force_text);
+    height = HEIGHT;;
+
     if (plate_graph_data->b==NULL)
     {
-        sprintf(force_text, "%s", "no data");
-        width = TTF_text_len(force_text);
-        height = HEIGHT;
+        sprintf(force_text1, "%s", "no data");
+        width = max(width, TTF_text_len(force_text1));
+        strcat(force_text,"\n");
+        strcat(force_text,force_text1);
+        height += HEIGHT;
         show_forces(x, y, width, height, force_text);
         return;
     }
@@ -13588,24 +13610,88 @@ static void  cur_point_on(double x,double y)
                         translucency_ptr += (w->lp * sizeof(float));
 
                         gradient_ptr=translucency_ptr+sizeof(unsigned char);
-                        fe_data_ptr=gradient_ptr+sizeof(GRADIENT);
+                        fe_data_ptr=gradient_ptr+sizeof(GRADIENT3);
 
-                        if (((FE_DATA*)fe_data_ptr)->el_number>0)
+
+                        if (((FE_DATA3*)fe_data_ptr)->el_number>0)
                         {
                             // Calculate and return the weighted average value
-                            c_value = ((alpha * ((FE_DATA *) fe_data_ptr)->f1) + (beta * ((FE_DATA *) fe_data_ptr)->f2) + (gamma * ((FE_DATA *) fe_data_ptr)->f3)) * plate_graph_data->factor;
-                            sprintf(force_text, "%s=%.4f", VALUE_NAME, c_value);
-                            width = TTF_text_len(force_text);
-                            height = HEIGHT;
-                            if (((FE_DATA*)fe_data_ptr)->flag==1)  //extended data
+                            c_value = ((alpha * ((FE_DATA3 *) fe_data_ptr)->f1) + (beta * ((FE_DATA3 *) fe_data_ptr)->f2) + (gamma * ((FE_DATA3 *) fe_data_ptr)->f3)) * plate_graph_data->factor;
+                            sprintf(force_text1, "%s=%.4f", VALUE_NAME, c_value);
+                            width = max(width, TTF_text_len(force_text1));
+                            strcat(force_text,"\n");
+                            strcat(force_text,force_text1);
+                            height += HEIGHT;
+                            if (((FE_DATA3*)fe_data_ptr)->flag==1)  //extended data
                             {
-                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA);
-                                c_value = ((alpha * ((FE_DATA_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
                                 sprintf(force_text1, "%s=%.4f%%", VALUE_NAME1, c_value);
                                 width = max(width, TTF_text_len(force_text1));
                                 strcat(force_text,"\n");
                                 strcat(force_text,force_text1);
                                 height += HEIGHT;
+                            }
+                            else if (((FE_DATA3*)fe_data_ptr)->flag==2)  //extended twice
+                            {
+                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
+                                fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+                            }
+                            else if (((FE_DATA3*)fe_data_ptr)->flag==3)  //extended triple and now even five times
+                            {
+                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
+                                fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
+                                fe_data_ex2_ptr=fe_data_ex1_ptr+sizeof(FE_DATA3_EX);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f3));  //angle
+                                sprintf(force_text1, "%s=%.4f%s", VALUE_NAME4, c_value, DEGREE);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
+                                fe_data_ex3_ptr=fe_data_ex2_ptr+sizeof(FE_DATA3_EX);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME5, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
+                                fe_data_ex4_ptr=fe_data_ex3_ptr+sizeof(FE_DATA3_EX);
+                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f3)) * 100;  //%
+                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME6, c_value);
+                                width = max(width, TTF_text_len(force_text1));
+                                strcat(force_text,"\n");
+                                strcat(force_text,force_text1);
+                                height += HEIGHT;
+
                             }
                             //sprintf(force_text1, "el: %d", ((FE_DATA*)fe_data_ptr)->el_number);
                             //strcat(force_text,"\n");
@@ -13817,6 +13903,7 @@ void do_state_plate (int lstate)
 {
     int plate_limit_states[5]={2,3,4,0,1};
     limit_state=plate_limit_states[lstate];
+    plate_limit_state=lstate;
     menu_par_new((*menup.pola)[get_MPMAX()].txt,(*mSelect_State_Plate.pola)[limit_state].txt);
     plate_graph_data=&plate_graph_data_state[limit_state];
     CUR_OFF(X,Y);

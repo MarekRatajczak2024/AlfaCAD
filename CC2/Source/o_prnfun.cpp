@@ -171,7 +171,7 @@ extern void reset_last_polygon_vectors(void);
 
 extern BOOL draw_polygon_to_drive_pattern(int numpoints, double* xy0);
 extern BOOL draw_rectangle_to_drive_pattern(double* xy0);
-extern BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy0, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print);
+extern BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy0, unsigned char translucency, GRADIENT4 *gradient, Print_Rect *window_to_print);
 
 extern BITMAP* load_memory_pcx(AL_CONST void* buffer, PALETTE* pal);
 extern BITMAP* load_memory_png(AL_CONST void* buffer, int bufsize, RGB* pal);
@@ -4220,7 +4220,14 @@ if (draw_logo==TRUE)
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
 
       //edges
-      if (((LINIA*)nag)->obiektt2==6) {
+      if (((LINIA*)nag)->obiektt2==4) {
+                memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+                if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+                else V.style = V_EDGE_ROLL_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+      }
+      else if (((LINIA*)nag)->obiektt2==6) {
           memmove(&V, ((LINIA*)nag), sizeof(LINIA));
           if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
           else V.style = V_EDGE_SIMPLE_INV;
@@ -4466,7 +4473,22 @@ if (draw_logo==TRUE)
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
 
         //edges
-        if (((LUK*)nag)->obiektt2==6) {
+        if (((LUK*)nag)->obiektt2==4) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+            else V.style = V_EDGE_ARC_ROLL_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LUK*)nag)->obiektt2==6) {
             V.warstwa=((LUK*)nag)->warstwa;
             V.kolor=((LUK*)nag)->kolor;
             V.typ=((LUK*)nag)->typ;
@@ -4643,7 +4665,14 @@ if (draw_logo==TRUE)
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
 
         //edges
-        if (((LINIA*)nag)->obiektt2==6) {
+        if (((LINIA*)nag)->obiektt2==4) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+            else V.style = V_EDGE_ROLL_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==6) {
             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
             else V.style = V_EDGE_SIMPLE_INV;
@@ -4890,7 +4919,22 @@ if (draw_logo==TRUE)
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
 
             //edges
-            if (((LUK*)nag)->obiektt2==6) {
+            if (((LUK*)nag)->obiektt2==4) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                else V.style = V_EDGE_ARC_ROLL_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==6) {
                 V.warstwa=((LUK*)nag)->warstwa;
                 V.kolor=((LUK*)nag)->kolor;
                 V.typ=((LUK*)nag)->typ;
@@ -5034,7 +5078,14 @@ if (draw_logo==TRUE)
 	  if (frozen) { if (!linia_frozen((LINIA *)nag, frozen-1)) break; }
 
         //edges
-        if (((LINIA*)nag)->obiektt2==6) {
+        if (((LINIA*)nag)->obiektt2==4) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+            else V.style = V_EDGE_ROLL_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==6) {
             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
             else V.style = V_EDGE_SIMPLE_INV;
@@ -5290,7 +5341,22 @@ if (draw_logo==TRUE)
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
 
             //edges
-            if (((LUK*)nag)->obiektt2==6) {
+            if (((LUK*)nag)->obiektt2==4) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                else V.style = V_EDGE_ARC_ROLL_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==6) {
                 V.warstwa=((LUK*)nag)->warstwa;
                 V.kolor=((LUK*)nag)->kolor;
                 V.typ=((LUK*)nag)->typ;
@@ -5489,7 +5555,14 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
 	   if (!linia_wybrana ((LINIA *)nag)) break ;   //!!!!!!!!!!!!!
 
         //edges
-        if (((LINIA*)nag)->obiektt2==6) {
+        if (((LINIA*)nag)->obiektt2==4) {
+            memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+            if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+            else V.style = V_EDGE_ROLL_INV;
+            Draw_Vector_To_Drive(&V, &window_to_print);
+            break;
+        }
+        else if (((LINIA*)nag)->obiektt2==6) {
             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
             else V.style = V_EDGE_SIMPLE_INV;
@@ -5618,7 +5691,22 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
 	  if(!luk_wybrany_prn ((LUK*)nag)) break;
 
             //edges
-            if (((LUK*)nag)->obiektt2==6) {
+            if (((LUK*)nag)->obiektt2==4) {
+                V.warstwa=((LUK*)nag)->warstwa;
+                V.kolor=((LUK*)nag)->kolor;
+                V.typ=((LUK*)nag)->typ;
+                V.x1=((LUK*)nag)->x;
+                V.y1=((LUK*)nag)->y;
+                V.r=((LUK*)nag)->r;
+                V.angle1=((LUK*)nag)->kat1;
+                V.angle2=((LUK*)nag)->kat2;
+                V.magnitude1=0.0f;
+                if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                else V.style = V_EDGE_ARC_ROLL_INV;
+                Draw_Vector_To_Drive(&V, &window_to_print);
+                break;
+            }
+            else if (((LUK*)nag)->obiektt2==6) {
                 V.warstwa=((LUK*)nag)->warstwa;
                 V.kolor=((LUK*)nag)->kolor;
                 V.typ=((LUK*)nag)->typ;
@@ -8705,7 +8793,7 @@ void Draw_Solid_Pattern(int numpoints, double* xy0, char* s_pattern, int t_print
 
 //void Draw_Solid_Pattern(int numpoints, double* xy0, char* s_pattern, int t_printer, int bw, int grey, float origin_x_, float origin_y_)
 
-void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print)
+void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT4 *gradient, Print_Rect *window_to_print)
 {
     int ret;
     int fgray_saturation=0;

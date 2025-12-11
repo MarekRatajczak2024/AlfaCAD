@@ -2877,16 +2877,22 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
     else {
         //lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
         switch (ad->obiektt2) {
+            case 4:
+                memmove(&V, ad, sizeof(LINIA));
+                if (ad->obiektt3==0)  V.style = V_EDGE_ROLL;
+                else V.style = V_EDGE_ROLL_INV;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
             case 6:
                 memmove(&V, ad, sizeof(LINIA));
-                if (ad->obiektt3==0)  V.style = V_EDGE_SIMPLE; //18;
-                else V.style = V_EDGE_SIMPLE_INV; //19;
+                if (ad->obiektt3==0)  V.style = V_EDGE_SIMPLE;
+                else V.style = V_EDGE_SIMPLE_INV;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             case 7:
                 memmove(&V, ad, sizeof(LINIA));
-                if (ad->obiektt3==0)  V.style = V_EDGE_FIXED; //20;
-                else V.style = V_EDGE_FIXED_INV; //21;
+                if (ad->obiektt3==0)  V.style = V_EDGE_FIXED;
+                else V.style = V_EDGE_FIXED_INV;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
 
@@ -4013,6 +4019,20 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
     {
         //DrawArc(pikseleX0(ad->x), pikseleY0(ad->y), ad->kat1, ad->kat2, pikseleDX(ad->r), COPY_PUT);
         switch (ad->obiektt2) {
+            case 4:
+                V.warstwa = ad->warstwa;
+                V.kolor = ad->kolor;
+                V.typ = ad->typ;
+                V.x1 = ad->x;
+                V.y1 = ad->y;
+                V.r = ad->r;
+                V.angle1 = ad->kat1;
+                V.angle2 = ad->kat2;
+                V.magnitude1 = 0.0f;
+                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                else V.style = V_EDGE_ARC_ROLL_INV;
+                Draw_Vector(&V, mode, kolor, 0);
+                break;
             case 6:
                 V.warstwa = ad->warstwa;
                 V.kolor = ad->kolor;
@@ -4023,8 +4043,8 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
                 V.angle1 = ad->kat1;
                 V.angle2 = ad->kat2;
                 V.magnitude1 = 0.0f;
-                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE; //22;
-                else V.style = V_EDGE_ARC_SIMPLE_INV; //23;
+                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                else V.style = V_EDGE_ARC_SIMPLE_INV;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             case 7:
@@ -4037,8 +4057,8 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
                 V.angle1 = ad->kat1;
                 V.angle2 = ad->kat2;
                 V.magnitude1 = 0.0f;
-                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED; //24;
-                else V.style = V_EDGE_ARC_FIXED_INV; //25;
+                if (ad->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                else V.style = V_EDGE_ARC_FIXED_INV;
                 Draw_Vector(&V, mode, kolor, 0);
                 break;
             default:
@@ -4690,7 +4710,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
                     }
                 }
 
-                if (!ignore_p) Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+                if (!ignore_p) Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT4*)gradient_ptr);
 
             }
             else
@@ -4851,7 +4871,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
           }
 
 
-          Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency, (GRADIENT*)gradient_ptr) ;
+          Draw_Solid (NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), NULL, translucency, (GRADIENT4*)gradient_ptr) ;
 
 
       }

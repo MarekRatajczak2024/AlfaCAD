@@ -611,7 +611,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             }
 
 
-            if (v->style==4) _precision_=force_precision;
+            if ((v->style==4) || (v->style==18)) _precision_=force_precision;
             else _precision_=displacement_precision;
 
             parametry_lini((LINIA*)v, &PL);
@@ -641,7 +641,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             Vtxt.y=(v->y1+v->y2)/2+n*((Vtxt.wysokosc+ra/4)*kos1);
 
 
-            if (v->style==4)    //displacement doesn't have any load type
+            if ((v->style==4) || (v->style==18))   //displacement doesn't have any load type
             {
                 if (v->variant > 0)
                     sprintf(&Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);

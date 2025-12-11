@@ -4052,7 +4052,7 @@ static void	explode_block (void*	ptr_ob)
 	 nag->blok = NoElemBlok	;
     if (nag->obiekt != OdBLOK)
      {
-      if ((nag->obiektt2==O2BlockHatch25) || (nag->obiektt2==O2BlockHatch50) || (nag->obiektt2==O2BlockAparat))
+      if ((nag->obiektt2==O2BlockHatch25) /*|| (nag->obiektt2==O2BlockHatch50)*/ || (nag->obiektt2==O2BlockAparat))
        {
         ;  //nic nie jest robione
        }
@@ -7751,21 +7751,21 @@ void Hatch_Brick	(int hatch_type)
 	 case	1:	LiniaG.obiektt2=O2BlockHatch25;	 //25
 				LiniaG.obiektt3=O3Thin;				 //24
 				break;
-	 case	2:	LiniaG.obiektt2=O2BlockHatch50;	 //50
-				LiniaG.obiektt3=O3Bold;				 //36.5
-				break;
+	 //case	2:	LiniaG.obiektt2=O2BlockHatch50;	 //50
+	 //			LiniaG.obiektt3=O3Bold;				 //36.5
+	 //			break;
 	 case	3:	LiniaG.obiektt2=O2BlockAparat;	 //37
 				LiniaG.obiektt3=O3Bold;				 //18
 				break;
-    case	4:	LiniaG.obiektt2=O2BlockHatch50;	 //50
-				LiniaG.obiektt3=O3Thin;				 //8
-				break;
+    //case	4:	LiniaG.obiektt2=O2BlockHatch50;	 //50
+	//			LiniaG.obiektt3=O3Thin;				 //8
+	//			break;
     case	5:	LiniaG.obiektt2=O2BlockHatch25;	 //24.5
 				LiniaG.obiektt3=0;    				 //36.3
 				break;
-	 case	6:	LiniaG.obiektt2=O2BlockHatch50;	 //24.5
-				LiniaG.obiektt3=0;    				 //23.8
-				break;
+	 //case	6:	LiniaG.obiektt2=O2BlockHatch50;	 //24.5
+	//			LiniaG.obiektt3=0;    				 //23.8
+	//			break;
 	 case	7:	LiniaG.obiektt2=O2BlockAparat;	 //49.5
 				LiniaG.obiektt3=0;  				    //11.3
 				break;
@@ -7815,7 +7815,7 @@ void Hatch_Arm_Filigran(double kat_zb, double rozstaw_zb, double ls_zb_x, double
   LiniaG.typ=typ_linii;
   LiniaG.kolor=kolor_linii;
   LiniaG.warstwa=warstwa;
-  LiniaG.obiektt2=O2BlockHatch50;
+  LiniaG.obiektt2=O2BlockHatch25; //O2BlockHatch50;
   add_zbior_2=0;
   comput_area = -1	;
   out_pole_ignore=TRUE;

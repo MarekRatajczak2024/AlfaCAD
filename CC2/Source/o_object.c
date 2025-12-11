@@ -1723,6 +1723,51 @@ void zmien_atrybut(char  *adr, char  *adrk, int aold, int anew)
   }
 }
 
+void zmien_atrybut_for_objects(char  *adr, char  *adrk, int aold, int anew, int objects)
+{
+	NAGLOWEK *nag;
+	BLOK  *b;
+
+	int btyp[] = {0, Blinia, Btekst, Bluk, Bokrag, Bkolo, Bwwielokat, Bpoint, 0, Bsolidarc, Bellipticalarc, Bellipse, Bfilledellipse, Bspline, Bvector, Bpcx, 0};
+
+	if (adr == NULL || adrk == NULL)
+	{
+		return;
+	}
+
+	if (adrk < adr)
+	{
+		return;
+	}
+
+	nag=(NAGLOWEK*)adr;
+	while ((adr<=adrk) && (nag->obiekt!=Okoniec))
+	{
+		if (btyp[nag->obiekt] & objects)  //only selected objects
+		{
+			if (TRUE == Check_Attribute (nag->atrybut, aold))
+			{
+				nag->atrybut=anew;
+				if ((nag->obiekt==Opcx) && (anew==Ausuniety)) deleted_pcx=TRUE;
+				if ((nag->obiekt == Owwielokat) && (((WIELOKAT *)nag)->empty_typ==0) && (((WIELOKAT*)nag)->pattern == 1) && (anew == Ausuniety)) deleted_pattern = TRUE;
+				if ((nag->obiekt == Otekst) &&
+					(PTRS__Text_Style[((TEXT*)nag)->czcionka]->type == 2))
+					deleted_TTF = TRUE;
+			}
+		}
+		switch(nag->obiekt)
+		{ case OdBLOK :
+			b=(BLOK *)adr;
+			adr+=sizeof(NAGLOWEK)+B3+b->dlugosc_opisu_obiektu;
+			break;
+		default :
+			adr+=nag->n+sizeof(NAGLOWEK);
+			break;
+		}
+		nag=(NAGLOWEK*)adr;
+	}
+}
+
 void *find_hatch_solid_pattern(char* adr, char* adrk)
 {
 	NAGLOWEK* nag;

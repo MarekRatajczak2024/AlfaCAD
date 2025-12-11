@@ -599,6 +599,7 @@ void movmem_(void *src,void * dest,long nbyte);
 extern void usun_obiekt(void  *);
 extern void  *korekta_obiekt(void  *ad,void  *obiekt);
 extern void zmien_atrybut(char *,char *,int ,int );
+extern void zmien_atrybut_for_objects(char *,char *,int ,int, int );
 extern void zmien_atrybut_undo(char *,char * );
 extern void usun_blok(char *,char *);
 extern void out_kolo(OKRAG *);
@@ -857,7 +858,7 @@ extern int help(TMENU *menu);
 /*o_loadf*/
 
 /*b_clip*/
-extern void Draw_Solid(int numpoints, T_PixelTVal* polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char* s_pattern, int translucency, GRADIENT *gradient);
+extern void Draw_Solid(int numpoints, T_PixelTVal* polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char* s_pattern, int translucency, GRADIENT4 *gradient);
 
 /*o_calculator*/
 extern int calculator (char *buf, int *retval_no, double *buf_ret);

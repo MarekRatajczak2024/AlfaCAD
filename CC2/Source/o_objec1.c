@@ -1564,7 +1564,7 @@ BOOL get_texts_hatch (char  **adp_l,char  **adk_l)
     else
     {
       if ((L->obiekt==Otekst) && (L->atrybut != Abad) && (L->atrybut != Ausuniety)
-        && ((L->obiektt2==O2BlockHatch25) || (L->obiektt2==O2BlockHatch50) || (L->obiektt2==O2BlockAparat))
+        && ((L->obiektt2==O2BlockHatch25) /*|| (L->obiektt2==O2BlockHatch50)*/ || (L->obiektt2==O2BlockAparat))
         && (Layers[L->warstwa].on==TRUE) && (Layers[L->warstwa].edit==TRUE))
       { 
          L->atrybut = Ablok;
@@ -1617,7 +1617,7 @@ BOOL get_texts_hatch_cur_layer (char  **adp_l,char  **adk_l)
     else
     {
       if ((L->obiekt==Otekst) && (L->atrybut != Abad) && (L->atrybut != Ausuniety)
-        && ((L->obiektt2==O2BlockHatch25) || (L->obiektt2==O2BlockHatch50) || (L->obiektt2==O2BlockAparat))
+        && ((L->obiektt2==O2BlockHatch25) /*|| (L->obiektt2==O2BlockHatch50)*/ || (L->obiektt2==O2BlockAparat))
         && (Layers[L->warstwa].on==TRUE) && (Layers[L->warstwa].edit==TRUE))
       {
        if (L->warstwa==Current_Layer)
@@ -1673,7 +1673,7 @@ BOOL get_hatch_lines (char  **adp_l,char  **adk_l)
     else
     {
       if ((L->obiekt==Olinia) && (L->atrybut != Abad) && (L->atrybut != Ausuniety)
-        && ((L->obiektt2==O2BlockHatch25) || (L->obiektt2==O2BlockHatch50) || (L->obiektt2==O2BlockAparat))
+        && ((L->obiektt2==O2BlockHatch25) /*|| (L->obiektt2==O2BlockHatch50)*/ || (L->obiektt2==O2BlockAparat))
         && (Layers[L->warstwa].on==TRUE) && (Layers[L->warstwa].edit==TRUE))
       { 
          L->atrybut = Ablok;

@@ -657,6 +657,14 @@ BOOL Check_Pline (BLOK *ptrs_pl)
   LUK * ptrs_arc ;
   SPLINE * ptrs_spline;
   int i_flags ;
+  BLOK *bint;
+  BOOL is_plate=FALSE;
+
+    if (ptrs_pl->kod_obiektu== B_PLINE)
+    {
+        if ((ptrs_pl->opis_obiektu[0] == PL_PLATE) || (ptrs_pl->opis_obiektu[0] == PL_SHIELD))
+            is_plate=TRUE;
+    }
 
   b_ret = FALSE ;
   if (FALSE == check_head_pline (ptrs_pl))
@@ -678,18 +686,28 @@ BOOL Check_Pline (BLOK *ptrs_pl)
     switch (nag->obiekt)
     {
       case OdBLOK :
-	break ;
+          bint=(BLOK*)nag;
+          if (bint->kod_obiektu== B_PLINE)
+          {
+              if ((bint->opis_obiektu[0] == PL_PLATE) || (bint->opis_obiektu[0] == PL_SHIELD))
+                  is_plate=TRUE;
+          }
+            break ;
       case Olinia :
-	ptrs_line = (LINIA*)nag ;
-	ptrs_line->obiektt2 = 0;
-	ptrs_line->obiektt3 = 0;
+	    ptrs_line = (LINIA*)nag ;
+        if (!is_plate)
+        {
+            ptrs_line->obiektt2 = 0;  //don't do that anymore if  plate or shield
+            ptrs_line->obiektt3 = 0;
+        }
 
 	if (TRUE == Check_if_Equal2 (ptrs_line->x1, df_x_pl_beg) &&
 	    TRUE == Check_if_Equal2 (ptrs_line->y1, df_y_pl_beg))
 	{
 	  df_x_pl_beg = ptrs_line->x2 ;
 	  df_y_pl_beg = ptrs_line->y2 ;
-	  ptrs_line->obiektt3 = RightDir ;
+      //only if not plate or shield
+	  if (!is_plate) ptrs_line->obiektt3 = RightDir ;
 	}
 	else
 	if (TRUE == Check_if_Equal2 (ptrs_line->x2, df_x_pl_beg) &&
@@ -697,7 +715,7 @@ BOOL Check_Pline (BLOK *ptrs_pl)
 	{
 	  df_x_pl_beg = ptrs_line->x1 ;
 	  df_y_pl_beg = ptrs_line->y1 ;
-	  ptrs_line->obiektt3 = O3LeftDir ;
+        if (!is_plate) ptrs_line->obiektt3 = O3LeftDir ;
 	}
 	else
 	{
@@ -739,7 +757,7 @@ BOOL Check_Pline (BLOK *ptrs_pl)
 	{
 	  df_x_pl_beg = df_x2 ;
 	  df_y_pl_beg = df_y2 ;
-	  ptrs_arc->obiektt3 = RightDir ;
+        if (!is_plate) ptrs_arc->obiektt3 = RightDir ;
 	}
 	else
 	if (TRUE == Check_if_Equal2 (df_x2, df_x_pl_beg) &&
@@ -747,7 +765,7 @@ BOOL Check_Pline (BLOK *ptrs_pl)
 	{
 	  df_x_pl_beg = df_x1 ;
 	  df_y_pl_beg = df_y1 ;
-	  ptrs_arc->obiektt3 = O3LeftDir ;
+        if (!is_plate) ptrs_arc->obiektt3 = O3LeftDir ;
 	}
 	else
 	{

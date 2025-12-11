@@ -100,7 +100,6 @@ extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* 
 
 extern void set_decimal_format(char *text, double l, double precision);
 
-//extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area, double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow );
 extern BOOL  hatch_proc_test (long_long l_offb, long_long l_offe, double df_pointx, double df_pointy, T_PTR_Hatch_Param ptrs_hatch_param, int comput_area, double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
 
 extern BOOL Check_if_Equal (double x, double y);
@@ -120,10 +119,18 @@ extern double Angle_Normal (double angle);
 extern void utf8Upper(char* text);
 extern int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma);
 extern void Rotate_Point(double si, double co, double x1, double y1, /*center point*/ double x2, double y2, double *x, double *y); /*rotate point*/
-//int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix);
-//extern double r_magnitude;
+
+extern BOOL glb_silent;
+
+#ifdef LINUX
+extern int run_with_timeout(char* command, int timeout);
+#else
+extern DWORD run_with_timeout(char* command, int timeout);
+#endif
 
 static char T_text[64];
+
+#define TIMEOUT_SECONDS 15
 
 static int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix)
 {
@@ -146,7 +153,6 @@ static int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, doub
     strcpy(T.text, prefix);
     ptr=T.text+strlen(prefix);
 
-    //set_decimal_format(T.text, vpar, precision);
     set_decimal_format(ptr, vpar, precision);
 
     if ((strcmp(T.text,"0")==0) || (strcmp(T.text,"-0")==0)) return 0;
@@ -163,22 +169,22 @@ static int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, doub
         T.warstwa = L->warstwa;
         T.kolor = L->kolor;
         T.czcionka = zmwym.czcionka;
-        T.wysokosc = zmwym.wysokosc * 0.5;
+        T.wysokosc = (float)zmwym.wysokosc * 0.5;
 
         if (Check_if_Equal(L->y1,L->y2))
         {
             if ((Check_if_Equal2(dlx, PL1.dl) || Check_if_Equal2(dlx, le)) && (L->x1 > L->x2))
-                T.kat = (Pi_ * (PL.kat + 180) / 180);
+                T.kat = (float)(Pi_ * (PL.kat + 180) / 180);
             else if ((Check_if_Equal2(dlx, 0.0) || Check_if_Equal2(dlx, lb)) && (L->x2 > L->x1))
-                T.kat = (Pi_ * (PL.kat + 180) / 180);
+                T.kat = (float)(Pi_ * (PL.kat + 180) / 180);
             else
                 T.kat = Pi_ * PL.kat / 180;
         }
         else {
             if ((Check_if_Equal2(dlx, PL1.dl) || Check_if_Equal2(dlx, le)) && (L->y1 > L->y2))
-                T.kat = (Pi_ * (PL.kat + 180) / 180);
+                T.kat = (float)(Pi_ * (PL.kat + 180) / 180);
             else if ((Check_if_Equal2(dlx, 0.0) || Check_if_Equal2(dlx, lb)) && (L->y2 > L->y1))
-                T.kat = (Pi_ * (PL.kat + 180) / 180);
+                T.kat = (float)(Pi_ * (PL.kat + 180) / 180);
             else
                 T.kat = Pi_ * PL.kat / 180;
         }
@@ -309,12 +315,12 @@ extern char *UNITS;
 extern char *SI;
 extern char *IMP;
 
-char *unit;
-char *_mm_="[mm]";
-char *_inch_="[\"]";
-char *_rad_="[rad]";
-char *_MPa_="[MPa]";
-char *_ksi_="[ksi]";
+static char *unit;
+static char *_mm_="[mm]";
+static char *_inch_="[\"]";
+static char *_rad_="[rad]";
+static char *_MPa_="[MPa]";
+static char *_ksi_="[ksi]";
 
 #define DEFLECTION_NUMBER 6
 #define STRESS_NUMBER 7
@@ -338,9 +344,9 @@ static PL_EDGE *pl_edge=NULL;
 static PL_LOAD *pl_load=NULL;
 static PL_LOAD *pl_point_load=NULL;
 static GEO_LINE *geo_line=NULL;
-LINIA Ldsp = Ldef;
-LINIA Ldspm = Ldef;
-LINIA Ldsp1 = Ldef;
+static LINIA Ldsp = Ldef;
+static LINIA Ldspm = Ldef;
+static LINIA Ldsp1 = Ldef;
 
 #define MAX_L_BLOCKS 16
 #define MAX_L_BLOCKS_LEN 64
@@ -380,23 +386,25 @@ static PLATE_PROPERTY *hole_property=NULL;
 static PLATE_PROPERTY *wall_property=NULL;
 static PLATE_PROPERTY *zone_property=NULL;
 
-int pl_node_no=0;
-int pl_node_emb_no=0;
-int pl_edge_no=0;
-int plate_no=0;
-int hole_no=0;
-int wall_no=0;
-int zone_no=0;
-int pl_load_no=0;  //uniforme
-int pl_point_load_no=0;
-int mesh_node_no=0;
-int mesh_element_no=0;
-int mesh_boundary_no=0;
-int geo_line_no=0;
+static int pl_node_no=0;
+static int pl_node_emb_no=0;
+static int pl_edge_no=0;
+static int plate_no=0;
+static int hole_no=0;
+static int wall_no=0;
+static int zone_no=0;
+static int pl_load_no=0;  //uniforme
+static int pl_point_load_no=0;
+static int mesh_node_no=0;
+static int mesh_element_no=0;
+static int mesh_boundary_no=0;
+static int geo_line_no=0;
 
 
-int pllc_node_force_moment_no=0;
-int pllc_uniform_load_no=0;
+//int pllc_node_force_moment_no=0;
+int pllc_pl_load_no=0;
+
+#define MAX_PLATE_NO 100
 
 int PL_PROPERTY_MAX=10;
 int PL_LOAD_FACTORS_MAX=100;
@@ -409,12 +417,12 @@ int PL_PLATE_MAX=10;
 int PL_HOLE_MAX=10;
 int PL_WALL_MAX=10;
 int PL_ZONE_MAX=10;
-int GEO_LINE_MAX=1000;
+static int GEO_LINE_MAX=1000;
 
-float dxl=0.1f;
-float dxr=0.25f;
+static float dxl=0.1f;
+static float dxr=0.25f;
 
-float dxl_min=0.1f;
+static float dxl_min=0.1f;
 
 
 extern int combi_uls_no;
@@ -431,7 +439,7 @@ extern int *MC_ULSLC;
 extern int *MC_SLSLC;
 extern int *MC_QPSLSLC;
 
-COMBINATION *ULS_SLS_LC;
+static COMBINATION *ULS_SLS_LC;
 
 extern COMBINATION EUROCODE_ULSLC[];
 extern int EUROCODE_MC_ULSLC[];
@@ -508,7 +516,7 @@ unsigned char str2load(char *ptr)
 #define Utf8Char unsigned char	// must be 1 byte, 8 bits, can be char, the UTF consortium specify unsigned
 extern Utf8Char* Utf8StrMakeUprUtf8Str(const Utf8Char *pUtf8);
 
-void add_load_factors_pl(void)
+static void add_load_factors_pl(void)
 {
     pl_load_factors_no++;
     if (pl_load_factors_no==PL_LOAD_FACTORS_MAX)
@@ -520,7 +528,7 @@ void add_load_factors_pl(void)
     memmove(&pl_load_factors[pl_load_factors_no], &load_factors[0], sizeof(ST_LOAD_FACTORS));
 }
 
-void add_property_pl(void)
+static void add_property_pl(void)
 {
     pl_property_no++;
     if (pl_property_no==PL_PROPERTY_MAX) {
@@ -533,7 +541,7 @@ void add_property_pl(void)
     else pl_property[pl_property_no].c=1.18; //[in]
 }
 
-void add_node_pl(void)
+static void add_node_pl(void)
 {
     pl_node_no++;
     if (pl_node_no==PL_NODE_MAX) {
@@ -542,16 +550,16 @@ void add_node_pl(void)
     }
 }
 
-void add_node_emb_pl(void)
+static void add_node_emb_pl(void)
 {
     pl_node_emb_no++;
     if (pl_node_emb_no==PL_NODE_EMB_MAX) {
         PL_NODE_EMB_MAX+=10;
-        pl_node_emb=realloc(pl_node, PL_NODE_EMB_MAX * sizeof(PL_NODE_EMB));
+        pl_node_emb=realloc(pl_node_emb, PL_NODE_EMB_MAX * sizeof(PL_NODE_EMB));
     }
 }
 
-void add_edge(void)
+static void add_edge_pl(void)
 {
     pl_edge_no++;
     if (pl_edge_no==PL_EDGE_MAX) {
@@ -560,7 +568,7 @@ void add_edge(void)
     }
 }
 
-void add_plate_property(void)
+static void add_plate_property(void)
 {
     plate_no++;
     if (plate_no==PL_PLATE_MAX) {
@@ -569,7 +577,7 @@ void add_plate_property(void)
     }
 }
 
-void add_hole_property(void)
+static void add_hole_property(void)
 {
     hole_no++;
     if (hole_no==PL_HOLE_MAX) {
@@ -578,7 +586,7 @@ void add_hole_property(void)
     }
 }
 
-void add_wall_property(void)
+static void add_wall_property(void)
 {
     wall_no++;
     if (wall_no==PL_WALL_MAX) {
@@ -587,7 +595,7 @@ void add_wall_property(void)
     }
 }
 
-void add_zone_property(void)
+static void add_zone_property(void)
 {
     zone_no++;
     if (zone_no==PL_ZONE_MAX) {
@@ -596,7 +604,7 @@ void add_zone_property(void)
     }
 }
 
-void add_load_pl(void)
+static void add_load_pl(void)
 {
     pl_load_no++;
     if (pl_load_no==PL_LOAD_MAX) {
@@ -605,7 +613,7 @@ void add_load_pl(void)
     }
 }
 
-void add_point_load_pl(void)
+static void add_point_load_pl(void)
 {
     pl_point_load_no++;
     if (pl_point_load_no==PL_POINT_LOAD_MAX) {
@@ -614,7 +622,7 @@ void add_point_load_pl(void)
     }
 }
 
-void add_geo_line(void)
+static void add_geo_line(void)
 {
     geo_line_no++;
     if (geo_line_no==GEO_LINE_MAX)
@@ -680,6 +688,10 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
             pl_edge[pl_edge_no].type = 0;  //line
             pl_edge[pl_edge_no].inverted = 0;
 
+            //calculate midpoint
+            pl_edge[pl_edge_no].xm = (L->x1+L->x2)/2.0f;
+            pl_edge[pl_edge_no].ym = (L->y1+L->y2)/2.0f;
+
             for (i = 0; i < pl_node_no; i++)  //node1
             {
                 if ((Check_if_Equal(L->x1, pl_node[i].x)) && (Check_if_Equal(L->y1, pl_node[i].y))) {
@@ -716,7 +728,9 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
             {
                 pl_edge[pl_edge_no].restraint = max(6, L->obiektt2);  //6 is default
             }
-            else pl_edge[pl_edge_no].restraint = L->obiektt2;  //could be check logically, 0, 5,6 or 7
+            else pl_edge[pl_edge_no].restraint = L->obiektt2;  //could be check logically, 0, 4,5,6 or 7
+
+            pl_edge[pl_edge_no].adr=(char*)L;
             //// to match with next element
             last_x = L->x2;
             last_y = L->y2;
@@ -726,7 +740,7 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
                 line_place(L, &pl_min_x, &pl_min_y, &pl_max_x, &pl_max_y);
             }
 
-            add_edge();
+            add_edge_pl();
 
             el_no++;
             adp += sizeof(NAGLOWEK) + L->n;
@@ -745,6 +759,16 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
             y1 = l->y + l->r * sin(l->kat1);
             x2 = l->x + l->r * cos(l->kat2);
             y2 = l->y + l->r * sin(l->kat2);
+
+            //calculate midpoint
+            double a1 = Angle_Normal (l->kat1) ;
+            double a2 = Angle_Normal (l->kat2) ;
+            if(a1>a2) a2+=Pi2;
+            pl_edge[pl_edge_no].xm=(float)(l->x+l->r*cos((a1+a2)/2.));
+            pl_edge[pl_edge_no].ym=(float)(l->y+l->r*sin((a1+a2)/2.));
+
+            //pl_edge[pl_edge_no].xm = l->x + l->r * cos((l->kat2+l->kat1)/2.0f);
+            //pl_edge[pl_edge_no].ym = l->y + l->r * sin((l->kat2+l->kat1)/2.0f);
 
             if ((Check_if_Equal(x1, last_x) == TRUE) && (Check_if_Equal(y1, last_y) == TRUE))
                 pl_edge[pl_edge_no].inverted = 0;
@@ -801,7 +825,9 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
 
             //pl_edge[pl_edge_no].inverted = 0;  //has to be confronted with the endpoint of previous segment
 
-            pl_edge[pl_edge_no].restraint = L->obiektt2;  //could be check logically, 0, 5,6 or 7
+            pl_edge[pl_edge_no].restraint = l->obiektt2;  //could be check logically, 0, 4,5,6 or 7
+
+            pl_edge[pl_edge_no].adr=(char*)l;
             //// to match with next element
 
             if (pl_edge[pl_edge_no].inverted==1)
@@ -820,7 +846,7 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
                 luk_place(l, &pl_min_x, &pl_min_y, &pl_max_x, &pl_max_y);
             }
 
-            add_edge();
+            add_edge_pl();
 
             el_no++;
             adp += sizeof(NAGLOWEK) + l->n;
@@ -840,12 +866,44 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
 
     if (el_no > 2) {
         //check if closed
-        if ((pl_edge[*first].node1==pl_edge[*last-1].node2) ||
-            (pl_edge[*first].node1==pl_edge[*last-1].node1) ||
-            (pl_edge[*first].node2==pl_edge[*last-1].node1) ||
-            (pl_edge[*first].node2==pl_edge[*last-1].node2))
-            *is_closed=TRUE;
-
+        if (pl_edge[*first].type==0) //line
+        {
+            if (pl_edge[*last - 1].type==0) //line
+            {
+                if ((pl_edge[*first].node1 == pl_edge[*last - 1].node2) ||
+                    (pl_edge[*first].node1 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node2 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node2 == pl_edge[*last - 1].node2))
+                    *is_closed = TRUE;
+            }
+            else //circle
+            {
+                if ((pl_edge[*first].node1 == pl_edge[*last - 1].node3) ||
+                    (pl_edge[*first].node1 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node2 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node2 == pl_edge[*last - 1].node3))
+                    *is_closed = TRUE;
+            }
+        }
+        else  //circle
+        {
+            if (pl_edge[*last - 1].type==0) //line
+            {
+                if ((pl_edge[*first].node1 == pl_edge[*last - 1].node2) ||
+                    (pl_edge[*first].node1 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node3 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node3 == pl_edge[*last - 1].node2))
+                    *is_closed = TRUE;
+            }
+            else //circle
+            {
+                if ((pl_edge[*first].node1 == pl_edge[*last - 1].node3) ||
+                    (pl_edge[*first].node1 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node3 == pl_edge[*last - 1].node1) ||
+                    (pl_edge[*first].node3 == pl_edge[*last - 1].node3))
+                    *is_closed = TRUE;
+            }
+        }
         return 1;
     }
     else if (style==2)
@@ -901,7 +959,7 @@ static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BO
     return (char*)ptrs_block ;
 }
 
-void my_free(void* adr)
+static void my_free(void* adr)
 {
     return;
 }
@@ -932,7 +990,7 @@ static void do_nothing(void)
 char *chapters[]={u8"δ.x", u8"δ.y", u8"δ.z", u8"θ.xx", u8"θ.yy", u8"θ.zz", u8"σ.x", u8"σ.y", u8"σ.z", u8"τ.xy", u8"τ.xz", u8"τ.yz", u8"σ.eq",
                   u8"ε.xx", u8"ε.yy", u8"ε.zz", u8"ε.xy", u8"ε.xz", u8"ε.yz"};
 
-void modify_chapter(char *chapter)
+static void modify_chapter(char *chapter)
 {
     //changing block name and colorbar description
          if (strstr(chapter, "deflection 1")) strcpy(chapter, chapters[0]);else if (strstr(chapter, "deflection 2")) strcpy(chapter, chapters[1]);
@@ -957,7 +1015,7 @@ void modify_chapter(char *chapter)
 
 }
 
-void embed_node(int load_no, double geo_units_factor)
+static void embed_node(int load_no, double geo_units_factor)
 {
     int k;
 //check if point must be embeded
@@ -1016,7 +1074,7 @@ void embed_node(int load_no, double geo_units_factor)
  * Returns:
  *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
  */
-int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
+static int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
                               double fck, double fcd, double fyd,
                               double eta, double lambda, double Es, int use_min_reinf,
                               double *As, double *As_prime, double *rho, double *rho_prime,
@@ -1126,7 +1184,7 @@ int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc
 /**
  * Example usage with test data
  */
-int foo_test_p_eurocode() {
+static int foo_test_p_eurocode() {
     // Test case: K > 0.283
     double M = 150000.0; // Nm (adjusted to force K > 0.283)
     double h = 0.1;      // m
@@ -1179,7 +1237,7 @@ int foo_test_p_eurocode() {
  * Returns:
  *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
  */
-int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
+static int calculate_rebars_aci_simplified_SI(double M, double h, double cc,
                                     double fyk, double fyd, double fck, double fcd,
                                     double *As, double *As_prime, double *rho, double *rho_prime,
                                     double *total_rho, double *sigma_c_max)
@@ -1299,7 +1357,7 @@ doubly_reinforced:
 /**
  * Example usage with provided data
  */
-int foo_p_aci() {
+static int foo_p_aci() {
     // Test case
     double M = 218000.0; // Nm/m
     double h = 0.15;     // m (adjusted for d = 0.13)
@@ -1326,7 +1384,7 @@ int foo_p_aci() {
 //#include <stdio.h>
 
 // Simplified ACI 318-19 procedure for RC section (SI: Pa, m, Nm; Imperial: psi, in, lbf-in)
-int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, double b, double c,
+static int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, double b, double c,
                                     double fck, double fcd, double fyd, double eta, double lambda,
                                     double Es, int use_min_reinf, int is_si_units,
                                     double *As, double *As_prime, double *rho, double *rho_prime,
@@ -1380,7 +1438,7 @@ int calculate_rebars_aci_simplified_UNI_with_N(double M, double N, double h, dou
 }
 
 // Example test
-int foo_test_with_N() {
+static int foo_test_with_N() {
     double M_si = 37919.83, N_si = -47070.49; // Nm, N
     double M_imp = 335573.0, N_imp = -10580.0; // lbf-in, lbf
     double h = 0.3, b = 0.3, c = 0.04; // m (SI) or in (Imperial)
@@ -1430,7 +1488,7 @@ int foo_test_with_N() {
  * Returns:
  *   0 on success, -1 if infeasible (negative reinforcement areas or invalid neutral axis)
  */
-int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
+static int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
                                     double fyk, double fyd, double fck, double fcd, int use_min_reinf,
                                     double *As, double *As_prime, double *rho, double *rho_prime,
                                     double *total_rho, double *sigma_c_max) {
@@ -1597,7 +1655,7 @@ int calculate_rebars_aci_simplified_UNI(double M, double h, double b, double cc,
 /**
  * Example usage with provided data
  */
-int foo_test_UNI() {
+static int foo_test_UNI() {
     // Test case (SI units)
     double M = 218000.0; // Nm/m
     double h = 0.15;     // m
@@ -1641,7 +1699,7 @@ int foo_test_UNI() {
     return 0;
 }
 
-void correct_pline(char *adp, char *adk)
+static void correct_pline(char *adp, char *adk)
 {  NAGLOWEK *nag;
     LINIA *L;
     LUK *l;
@@ -1735,12 +1793,12 @@ static int qsort_by_val(const void *e1, const void *e2)
 }
 
 // Function to calculate the area of a triangle given its vertex coordinates
-double calculateTriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
+static double calculateTriangleArea(double x1, double y1, double x2, double y2, double x3, double y3) {
     double area = 0.5 * fabs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
     return area;
 }
 
-double nofabs(double value) {
+static double nofabs(double value) {
     return value;
 }
 
@@ -1824,6 +1882,8 @@ void Plate_analysis(void) {
     int sif_body;
     int sif_material;
     int sif_body_force;
+    int sif_body_zone[100];
+    int sif_body_plate[100];
     int sif_boundary_condition;
     int sif_boundary_condition_simple;
     int sif_boundary_condition_fixed;
@@ -1840,10 +1900,10 @@ void Plate_analysis(void) {
     int mesh_nodes_no, mesh_elements_no, mesh_boundaries_no, total_mesh_boundaries_no, mesh_101_boundaries_no, max_element_nodes, mesh_202_boundaries_no, mesh_303_boundaries_no, flag101_no, flag202_no, flag303_no;
     double mesh_node_z;
     double koc, kos;
-    char desired_layer[maxlen_w];
-    char desired_layer_upper[maxlen_w];
-    char layer_name_upper[maxlen_w];
-    char desired_layer_bak[maxlen_w];
+    char desired_layer[maxlen_w+2];
+    char desired_layer_upper[maxlen_w+2];
+    char layer_name_upper[maxlen_w+2];
+    char desired_layer_bak[maxlen_w+2];
     int desired_layer_no, desired_reactions_layer_no;
     char block_name[MaxTextLen];
     char *ptr_block;
@@ -1892,9 +1952,11 @@ void Plate_analysis(void) {
     char stress_chapter[STRESS_NUMBER][MaxTextLen];
     char epsilon_chapter[EPSILON_NUMBER][MaxTextLen];
     WIELOKAT w = Stdef;
-    GRADIENT gradient;
-    FE_DATA fe_data;
-    FE_DATA_EX fe_data_ex;
+    GRADIENT4 gradient4;
+    GRADIENT3 gradient3;
+    FE_DATA3 fe_data3;
+    FE_DATA4 fe_data4;
+    FE_DATA3_EX fe_data3_ex;
     char *fe_data_ptr;
     char *fe_data_ex_ptr;
     char *gradient_ptr;
@@ -1940,7 +2002,7 @@ void Plate_analysis(void) {
 
     float (*jednostkiObX)(double mob);
     float (*jednostkiObY)(double mob);
-    ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
+    //ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
     double Rzmin=0.0;
     double Rzmax=0.0;
     double Rzmin_back=0.0;
@@ -2011,6 +2073,9 @@ void Plate_analysis(void) {
         return;
     }
 
+    glb_silent=TRUE;
+
+    komunikat_str_short(_PREPARING_DATA_, FALSE, TRUE);
 
     // Allocate memory for 16 char pointers (for the array of strings)
     block_names = (char **)malloc(MAX_L_BLOCKS * sizeof(char *));
@@ -2556,9 +2621,20 @@ void Plate_analysis(void) {
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Otekst);
     }
+
+    if (strlen(ptr_id_short)==0)
+    {
+        sprintf(report_row, "%s", _PLATE_ID_NOT_FOUND_);
+        strcat(report, report_row);
+    }
     /////////////////
     ////searching for plate, hole, wall and zone polyline
     //searching for nodes size
+
+    pl_min_x = 99999.;
+    pl_min_y = 99999.;
+    pl_max_x = -99999.;
+    pl_max_y = -99999.;
 
     body_number = 0;
     ////searching for plates
@@ -2568,10 +2644,6 @@ void Plate_analysis(void) {
             b = (BLOK *) nag;
             if (b->kod_obiektu == B_PLINE) {
                 if (b->opis_obiektu[0] == PL_PLATE) {
-                    pl_min_x = 99999.;
-                    pl_min_y = 99999.;
-                    pl_max_x = -99999.;
-                    pl_max_y = -99999.;
 
                     if (create_plate(b, 0, plate_no, body_number, &first, &last, &property_number, &is_closed)) {
                         if (is_closed) {
@@ -2692,9 +2764,9 @@ void Plate_analysis(void) {
         strcat(report, report_row);
         //goto pl_error;
     }
-    else if (plate_no > 1)  //to many plates - TEMPORARY
+    else if (plate_no > MAX_PLATE_NO)  //to many plates - TEMPORARY
     {
-        sprintf(report_row, "%s%s", _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_,rn);
+        sprintf(report_row, "%s %d%s", _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_,MAX_PLATE_NO,rn);
         strcat(report, report_row);
         //goto pl_error;
     }
@@ -2719,7 +2791,6 @@ void Plate_analysis(void) {
                 pl_load[pl_load_no].body = -1;  //not yet assigned
                 pl_load[pl_load_no].body_no = -1;  //not yet assigned
                 pl_load[pl_load_no].type = 0;  //uniformly distributed load
-
 
                 if (v->variant > 0)
                     pl_load[pl_load_no].factor_record = factor_record(v->load, v->variant);
@@ -2830,7 +2901,7 @@ void Plate_analysis(void) {
             {
                 ADPB = (char *) zone_property[j].adr;
                 ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
-                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                 //BOOL found = FALSE;
                 missed = FALSE;
                 for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
@@ -3130,7 +3201,7 @@ void Plate_analysis(void) {
         {
             ADPB = (char *) zone_property[j].adr;
             ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
-            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
             //BOOL found = FALSE;
             missed = FALSE;
             for (k=hole_property[i].first_edge; k<hole_property[i].last_edge; k++)
@@ -3209,7 +3280,7 @@ void Plate_analysis(void) {
                 ADPB = (char *) plate_property[j].adr;
                 ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
 
-                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                 //BOOL found = FALSE;
                 missed = FALSE;
                 for (k = hole_property[i].first_edge; k < hole_property[i].last_edge; k++) {
@@ -3248,7 +3319,7 @@ void Plate_analysis(void) {
         {
             ADPB = (char *) zone_property[j].adr;
             ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
-            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
             //BOOL found = FALSE;
             missed = FALSE;
             for (k=wall_property[i].first_edge; k<wall_property[i].last_edge; k++)
@@ -3326,7 +3397,7 @@ void Plate_analysis(void) {
             for (j = 0; j < plate_no; j++) {
                 ADPB = (char *) plate_property[j].adr;
                 ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
-                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                 //BOOL found = FALSE;
                 missed = FALSE;
                 for (k = wall_property[i].first_edge; k < wall_property[i].last_edge; k++) {
@@ -3368,7 +3439,7 @@ void Plate_analysis(void) {
             {
                 ADPB = (char *) plate_property[j].adr;
                 ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
-                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                 //BOOL found = FALSE;
                 missed = FALSE;
                 for (k = zone_property[i].first_edge; k < zone_property[i].last_edge; k++) {
@@ -3441,7 +3512,7 @@ void Plate_analysis(void) {
         {
             ADPB = (char *) wall_property[j].adr;
             ADKB = ADPB + sizeof(NAGLOWEK) + wall_property[j].adr->n - 1;
-            zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+            zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
             ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1, &s_hatch_param,
                                    1, 0, 0, 0, 0, 0);
             if (pl_load[i].type==0)
@@ -3472,7 +3543,7 @@ void Plate_analysis(void) {
             {
                 ADPB = (char *) zone_property[j].adr;
                 ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
-                zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                 ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
                                        &s_hatch_param,
                                        1, 0, 0, 0, 0, 0);
@@ -3504,7 +3575,7 @@ void Plate_analysis(void) {
                 for (j = 0; j < plate_no; j++) {
                     ADPB = (char *) plate_property[j].adr;
                     ADKB = ADPB + sizeof(NAGLOWEK) + plate_property[j].adr->n - 1;
-                    zmien_atrybut(ADPB, ADKB, Aoblok, Ablok);
+                    zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
                     ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
                                            &s_hatch_param, 1, 0, 0, 0, 0, 0);
                     if (pl_load[i].type == 0)
@@ -3614,19 +3685,19 @@ void Plate_analysis(void) {
     if (my_file_exists(params)) unlink(params);
     sprintf(params, "%splate_uls.result", _plate_);
     if (my_file_exists(params)) unlink(params);
-    sprintf(params, "%splate_ulslc.result", _plate_, i);
+    sprintf(params, "%splate_ulslc.result", _plate_);
     if (my_file_exists(params)) unlink(params);
     for (i = 0; i < 28; i++) {
         sprintf(params, "%splate_ulslc%d.result", _plate_, i);
         if (my_file_exists(params)) unlink(params);
     }
-    sprintf(params, "%splate_slslc.result", _plate_, i);
+    sprintf(params, "%splate_slslc.result", _plate_);
     if (my_file_exists(params)) unlink(params);
     for (i = 0; i < 13; i++) {
         sprintf(params, "%splate_slslc%d.result", _plate_, i);
         if (my_file_exists(params)) unlink(params);
     }
-    sprintf(params, "%splate_qpslslc.result", _plate_, i);
+    sprintf(params, "%splate_qpslslc.result", _plate_);
     if (my_file_exists(params)) unlink(params);
     for (i = 0; i < 8; i++) {
         sprintf(params, "%splate_qpslslc%d.result", _plate_, i);
@@ -4166,6 +4237,39 @@ void Plate_analysis(void) {
     fprintf(f, "End\n\n");
     */
 
+    /*  //almost good, but solver is crashing
+    fprintf(f, "Solver 2\n");
+    fprintf(f, "  Equation = \"Modes equations\"\n");
+    fprintf(f, "  Procedure = \"Smitc\" \"SmitcSolver\"\n");
+    fprintf(f, "  Linear System Solver = \"Iterative\"\n");
+
+    fprintf(f, "  Linear System Max Iterations = 300\n");
+    fprintf(f, "  Linear System Residual Output = 1\n");
+    fprintf(f, "  Linear System Iterative Method = BiCGStab\n");
+    fprintf(f, "  Linear System Preconditioning = none\n");
+    fprintf(f, "  Linear System Convergence Tolerance = 1e-8\n");
+    fprintf(f, "  Linear System Residual Output = 10\n");
+
+    fprintf(f, "  Nonlinear System Max Iterations = 1\n");
+
+    fprintf(f, "! The defaults are True for the following 2 keywords:\n");
+    fprintf(f, "!  Linear System Scaling = False\n");
+    fprintf(f, "!  Optimize Bandwidth = False\n");
+
+    fprintf(f, "! \"Harmonic analysis\" cannot be combined with other linear strategies such\n");
+    fprintf(f, "! as block preconditioning.\n");
+    fprintf(f, "  Harmonic Analysis = True\n");
+
+    fprintf(f, "! \"Harmonic mode\" create a fully functional linear system that can then be\n");
+    fprintf(f, "! treated with other linear strategies.\n");
+    fprintf(f, "  Harmonic Mode = Logical True\n");
+
+    fprintf(f, "! We may toggle the system to be solved as a real one\n");
+    fprintf(f, "! For harmonic mode the default is True\n");
+    fprintf(f, "!  Linear System Complex = False\n");
+    fprintf(f, "End\n\n");
+    */
+
     sif_body = 0;
 
     for (i = 0; i < zone_no; i++) {
@@ -4175,6 +4279,7 @@ void Plate_analysis(void) {
         fprintf(f, "  Equation = 1\n");
         fprintf(f, "  Material = %d\n", zone_property[i].property_number);
         fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
+        sif_body_zone[i]=sif_body; //TO DO - dynamic
         ////fprintf(f, "  Normalize By Area = Logical True\n");
         fprintf(f, "End\n\n");
         sif_body++;
@@ -4187,6 +4292,7 @@ void Plate_analysis(void) {
         fprintf(f, "  Equation = 1\n");
         fprintf(f, "  Material = %d\n", plate_property[i].property_number);
         fprintf(f, "  Body Force = %d\n", sif_body + 1); //TO DO
+        sif_body_plate[i]=sif_body; //TO DO - dynamic
         ////fprintf(f, "  Normalize By Area = Logical True\n");
         fprintf(f, "End\n\n");
         sif_body++;
@@ -4199,7 +4305,9 @@ void Plate_analysis(void) {
     fprintf(f, "End\n\n");
 
     sif_material = 0;
-    for (i = 0; i < zone_no; i++) {
+    for (i = 0; i < zone_no; i++)
+    {
+        this_property = -1;
         //searching for properties
         for (j = 0; j < pl_property_no; j++) {
             if (pl_property[j].n == zone_property[i].property_number) {
@@ -4207,18 +4315,31 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Material %d\n", sif_material + 1);
-        fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
-        fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
-        fprintf(f, "  Density = %g\n", pl_property[this_property].d);
-        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1);
-        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
-        fprintf(f, "  Thickness = %s\n", par[1]);
-        fprintf(f, "End\n\n");
-        sif_material++;
+        if (this_property == -1)
+        {
+            sprintf(report_row, "%s %d%s%s", _property_not_defined_, zone_property[i].property_number, rn,rn);
+            strcat(report, report_row);
+            fclose(f);
+            goto pl_error;
+        }
+        /*
+        else {
+            fprintf(f, "Material %d\n", sif_material + 1);
+            fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
+            fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
+            fprintf(f, "  Density = %g\n", pl_property[this_property].d);
+            fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1);
+            set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+            fprintf(f, "  Thickness = %s\n", par[1]);
+            fprintf(f, "End\n\n");
+            sif_material++;
+        }
+         */
     }
 
-    for (i = 0; i < plate_no; i++) {
+    for (i = 0; i < plate_no; i++)
+    {
+        this_property = -1;
         //searching for properties
         for (j = 0; j < pl_property_no; j++) {
             if (pl_property[j].n == plate_property[i].property_number) {
@@ -4226,15 +4347,41 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Material %d\n", sif_material + 1);
-        fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
-        fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
-        fprintf(f, "  Density = %g\n", pl_property[this_property].d);
-        fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1.);
-        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+        if (this_property == -1)
+        {
+            sprintf(report_row, "%s %d%s%s", _property_not_defined_, plate_property[i].property_number, rn,rn);
+            strcat(report, report_row);
+            fclose(f);
+            goto pl_error;
+        }
+        /*
+        else {
+            fprintf(f, "Material %d\n", sif_material + 1);
+            fprintf(f, "  Name = \"Material %d\"\n", sif_material + 1);
+            fprintf(f, "  Youngs modulus = %g\n", pl_property[this_property].E);
+            fprintf(f, "  Density = %g\n", pl_property[this_property].d);
+            fprintf(f, "  Poisson ratio = %f\n", (pl_property[this_property].E / (2. * pl_property[this_property].G)) - 1.);
+            set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+            fprintf(f, "  Thickness = %s\n", par[1]);
+            fprintf(f, "End\n\n");
+            sif_material++;
+        }
+         */
+    }
+
+    //now it's seperated from zones and shields
+    for (i = 0; i < pl_property_no; i++)
+    {
+        sif_material=pl_property[i].n;
+        fprintf(f, "Material %d\n", sif_material);
+        fprintf(f, "  Name = \"Material %d\"\n", sif_material);
+        fprintf(f, "  Youngs modulus = %g\n", pl_property[i].E);
+        fprintf(f, "  Density = %g\n", pl_property[i].d);
+        fprintf(f, "  Poisson ratio = %f\n", (pl_property[i].E / (2. * pl_property[i].G)) - 1.);
+        set_decimal_format(par[1], pl_property[i].h, dim_precision_pl);
         fprintf(f, "  Thickness = %s\n", par[1]);
         fprintf(f, "End\n\n");
-        sif_material++;
+        //sif_material++;
     }
 
 
@@ -4245,7 +4392,7 @@ void Plate_analysis(void) {
 
     //simply supported edges
     for (i = 0; i < pl_edge_no; i++) {
-        if (pl_edge[i].restraint == 6) sif_boundary_condition_simple++;
+        if ((pl_edge[i].restraint == 6) || (pl_edge[i].restraint == 4)) sif_boundary_condition_simple++;
         else if (pl_edge[i].restraint == 7) sif_boundary_condition_fixed++;
     }
 
@@ -4253,16 +4400,17 @@ void Plate_analysis(void) {
         fprintf(f, "Boundary Condition %d\n", sif_boundary_condition + 1);
         sprintf(par[1], "  Target Boundaries(%d) =", sif_boundary_condition_simple);
         for (i = 0; i < pl_edge_no; i++) {
-            if (pl_edge[i].restraint == 6) {
+            if ((pl_edge[i].restraint == 6) || (pl_edge[i].restraint == 4))
+            {
                 sprintf(par[2], " %d", pl_edge[i].k + 1);
                 strcat(par[1], par[2]);
             }
         }
         fprintf(f, "%s\n", par[1]);
         fprintf(f, "  Name = \"Boundary Condition %d\"\n", sif_boundary_condition + 1);
-        fprintf(f, "  Displacement 1 = 0\n");
-        fprintf(f, "  Displacement 2 = 0\n");
-        fprintf(f, "  Displacement 3 = 0\n");
+        //fprintf(f, "  Displacement 1 = 0\n");
+        //fprintf(f, "  Displacement 2 = 0\n");
+        //fprintf(f, "  Displacement 3 = 0\n");
         fprintf(f, "  Deflection 1 = 0\n");
         fprintf(f, "  Deflection 2 = 0\n");
         fprintf(f, "  Deflection 3 = 0\n");
@@ -4271,7 +4419,7 @@ void Plate_analysis(void) {
         fprintf(f, "  u 3 = 0\n");
         ////fprintf(f, "  Normalize By Area = Logical True\n");
         ////fprintf(f, "  Resultant Force = Logical True\n");
-        fprintf(f, "End\n");
+        fprintf(f, "End\n\n");
 
         sif_boundary_condition++;
     }
@@ -4287,12 +4435,12 @@ void Plate_analysis(void) {
         }
         fprintf(f, "%s\n", par[1]);
         fprintf(f, "  Name = \"Boundary Condition %d\"\n", sif_boundary_condition + 1);
-        fprintf(f, "  Displacement 1 = 0\n");
-        fprintf(f, "  Displacement 2 = 0\n");
-        fprintf(f, "  Displacement 3 = 0\n");
-        fprintf(f, "  Displacement 4 = 0\n");
-        fprintf(f, "  Displacement 5 = 0\n");
-        fprintf(f, "  Displacement 6 = 0\n");
+        //fprintf(f, "  Displacement 1 = 0\n");
+        //fprintf(f, "  Displacement 2 = 0\n");
+        //fprintf(f, "  Displacement 3 = 0\n");
+        //fprintf(f, "  Displacement 4 = 0\n");
+        //fprintf(f, "  Displacement 5 = 0\n");
+        //fprintf(f, "  Displacement 6 = 0\n");
         fprintf(f, "  Deflection 1 = 0\n");
         fprintf(f, "  Deflection 2 = 0\n");
         fprintf(f, "  Deflection 3 = 0\n");
@@ -4306,7 +4454,7 @@ void Plate_analysis(void) {
         fprintf(f, "  dnu 2 = 0\n");
         fprintf(f, "  dnu 3 = 0\n");
         ////fprintf(f, "  Normalize By Area = Logical True\n");
-        fprintf(f, "End\n");
+        fprintf(f, "End\n\n");
 
         sif_boundary_condition++;
     }
@@ -4389,6 +4537,7 @@ void Plate_analysis(void) {
     else combi_flag = 1;
 
     //nodes forces and moments
+    /*
     pllc_node_force_moment_no = 0;
     for (i = 0; i < pl_point_load_no; i++) {
         //if (TestBit(st_layer, st_node_force_moment[i].layer)) {
@@ -4397,16 +4546,17 @@ void Plate_analysis(void) {
             flag_ = load_flag[pl_load_factors[pl_point_load[i].factor_record].load];
             flag_ = load_flag[pl_load_factors[pl_point_load[i].factor_record].load];
         } else {
-            gamma_l = pl_load_factors[abs(pl_point_load[i].factor_record)].gamma;
-            flag_ = load_flag[pl_load_factors[abs(pl_point_load[i].factor_record)].load];
+            gamma_l = load_factors[abs(pl_point_load[i].factor_record)].gamma;
+            flag_ = load_flag[load_factors[abs(pl_point_load[i].factor_record)].load];
         }
         combi_flag |= flag_;
         pllc_node_force_moment_no++;
         //}
     }
+    */
 
     //plate uniform load
-    pllc_uniform_load_no = 0;
+    pllc_pl_load_no = 0;
     for (i = 0; i < pl_load_no; i++) {
         //if (TestBit(st_layer, pl_load[i].layer)) {
         if (pl_load[i].factor_record >= 0) {
@@ -4414,10 +4564,10 @@ void Plate_analysis(void) {
             flag_ = load_flag[pl_load_factors[pl_load[i].factor_record].load];
         } else {
             gamma_l = pl_load_factors[abs(pl_load[i].factor_record)].gamma;
-            flag_ = load_flag[pl_load_factors[abs(pl_load[i].factor_record)].load];
+            flag_ = load_flag[load_factors[abs(pl_load[i].factor_record)].load];
         }
         combi_flag |= flag_;
-        pllc_uniform_load_no++;
+        pllc_pl_load_no++;
         //}
     }
     /////////////////////////
@@ -4507,10 +4657,10 @@ void Plate_analysis(void) {
     printf("%d\t\t# number of static load cases\n", combinations_number);
 
     //ST_UNIFORM_LOAD *st_uniform_load_comb=NULL, *st_uniform_load_cons=NULL;
-    int st_uniform_load_no_cons;
+    //int st_uniform_load_no_cons;
 
-    st_uniform_load_comb = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
-    st_uniform_load_cons = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
+    //st_uniform_load_comb = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
+    //st_uniform_load_cons = malloc((pl_load_no + 1) * sizeof(ST_UNIFORM_LOAD));
 
     int case_number = 0;
 
@@ -4530,8 +4680,8 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Body Force %d\n", sif_body_force + 1);
-        fprintf(f, "  Name = \"BodyForce %d\"\n", sif_body_force + 1);
+        fprintf(f, "Body Force %d\n", sif_body_zone[i] + 1);
+        fprintf(f, "  Name = \"BodyForce zone%d\"\n", sif_body_zone[i] + 1);
         ////fprintf(f, "  Normalize By Area = Logical True\n");
         strcpy(load_formula, "");
 
@@ -4581,7 +4731,7 @@ void Plate_analysis(void) {
             {
                 if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
                     (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
-                     (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                     (pl_load[j].body == 0) && (pl_load[j].body_no == zone_property[i].pn)))  //inherited load on plate
                 {
                     set_decimal_format(par[1], -pl_load[j].magnitude1 * unit_factors_pl->q_f,
                                        load_precision);  //is assumed that magnitude1=magnitude2
@@ -4632,7 +4782,7 @@ void Plate_analysis(void) {
                 strcat(load_formula, load_formula0);
                 f_no++;
 
-                point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
+                point_load[case_number-1]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
             }
         }
 
@@ -4655,8 +4805,8 @@ void Plate_analysis(void) {
                 break;
             }
         }
-        fprintf(f, "Body Force %d\n", sif_body_force + 1);
-        fprintf(f, "  Name = \"BodyForce %d\"\n", sif_body_force + 1);
+        fprintf(f, "Body Force %d\n", sif_body_plate[i] + 1);
+        fprintf(f, "  Name = \"BodyForce plate%d\"\n", sif_body_plate[i] + 1);
 
         strcpy(load_formula, "");
 
@@ -4705,7 +4855,7 @@ void Plate_analysis(void) {
                 strcat(load_formula, load_formula0);
                 f_no++;
 
-                point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
+                point_load[case_number-1]+= (pl_load[j].magnitude1 * unit_factors_pl->F_f);
             }
         }
 
@@ -4727,6 +4877,8 @@ void Plate_analysis(void) {
     case_files[1]=case_number;
     case_number++;
     sif_body_force = 0;
+
+    ////strcpy(all_formula, "");
 
     for (i = 0; i < zone_no; i++) {
         //searching for properties
@@ -4768,9 +4920,9 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0)
-                            gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                        else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                        if (pl_load[j].factor_record >= 0)
+                            gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                        else gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
 
                         set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
                                            load_precision);  //is assumed that magnitude1=magnitude2
@@ -4790,11 +4942,11 @@ void Plate_analysis(void) {
             {
                 if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
                     (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
-                     (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                     (pl_load[j].body == 0) && (pl_load[j].body_no ==  zone_property[i].pn)))  //inherited load on plate
                 {
-                    if (pl_load[i].factor_record >= 0)
-                        gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                    else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                    if (pl_load[j].factor_record >= 0)
+                        gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                    else gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
 
                     set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
                                        load_precision);  //is assumed that magnitude1=magnitude2
@@ -4808,10 +4960,13 @@ void Plate_analysis(void) {
             }
         }
 
+        fprintf(f, "Body Force %d\n", sif_body_zone[i] + 1);  //repeating entire block
+        fprintf(f, "  Name = \"BodyForce zone%d\"\n", sif_body_zone[i] + 1);
+
         if (strlen(load_formula) > 0)
         {
-            fprintf(f, "Body Force %d::", sif_body_force + 1);
-            fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+            //fprintf(f, "Body Force %d::", sif_body_zone[i] + 1);
+            fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
         }
 
         ///////////////// Concentrated Load
@@ -4822,9 +4977,9 @@ void Plate_analysis(void) {
         {
             if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
             {
-                if (pl_load[i].factor_record >= 0)
-                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                if (pl_load[j].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
 
                 strcpy(load_formula0, "");
                 set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
@@ -4834,16 +4989,19 @@ void Plate_analysis(void) {
                 strcat(load_formula, load_formula0);
                 f_no++;
 
-                point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
             }
         }
 
         if (f_no>0)
         {
-            fprintf(f, "Body Force %d::", sif_body_force + 1);
-            fprintf(f, "Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+            //fprintf(f, "Body Force %d::", sif_body_zone[i] + 1);
+            fprintf(f, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
         }
         //////// concentrated load
+        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+        fprintf(f, "  Thickness = Real %s\n", par[1]);
+        fprintf(f, "End\n\n");
 
         sif_body_force++;
     }
@@ -4875,9 +5033,9 @@ void Plate_analysis(void) {
         {
             if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
             {
-                if (pl_load[i].factor_record >= 0)
-                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                if (pl_load[j].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
 
                 set_decimal_format(par[1], -pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f,
                                    load_precision);  //is assumed that magnitude1=magnitude2
@@ -4890,10 +5048,14 @@ void Plate_analysis(void) {
                 surface_load[case_number-1][plate_property[i].k] += (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->q_f);
             }
         }
+
+        fprintf(f, "Body Force %d\n", sif_body_plate[i] + 1);
+        fprintf(f, "  Name = \"BodyForce shield%d\"\n", sif_body_plate[i] + 1);
+
         if (strlen(load_formula) > 0)
         {
-            fprintf(f, "Body Force %d::", sif_body_force + 1);
-            fprintf(f, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+            //fprintf(f, "Body Force %d::", sif_body_plate[i] + 1);
+            fprintf(f, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
         }
 
         ///////////////// Concentrated Load
@@ -4904,9 +5066,9 @@ void Plate_analysis(void) {
         {
             if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
             {
-                if (pl_load[i].factor_record >= 0)
-                    gamma_l = pl_load_factors[pl_load[i].factor_record].gamma;
-                else gamma_l = load_factors[abs(pl_load[i].factor_record)].gamma;
+                if (pl_load[j].factor_record >= 0)
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                else gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
 
                 strcpy(load_formula0, "");
                 set_decimal_format(par[0], milimetryobx(pl_load[j].x1) * geo_units_factor, dim_precision_pl);
@@ -4916,16 +5078,18 @@ void Plate_analysis(void) {
                 strcat(load_formula, load_formula0);
                 f_no++;
 
-                point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
             }
         }
 
         if (f_no>0)
-        {
-            fprintf(f, "Body Force %d::", sif_body_force + 1);
-            fprintf(f, "Point Load (%d, 9) = Real %s\n", f_no, load_formula);
+        {//fprintf(f, "Body Force %d::", sif_body_plate[i] + 1);
+            fprintf(f, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
         }
         //////// concentrated load
+        set_decimal_format(par[1], pl_property[this_property].h, dim_precision_pl);
+        fprintf(f, "  Thickness = Real %s\n", par[1]);
+        fprintf(f, "End\n\n");
 
         sif_body_force++;
     }
@@ -4979,6 +5143,21 @@ void Plate_analysis(void) {
 
             strcpy(all_formula, "");
 
+            for (j = 0; j < pl_load_no; j++)
+            {
+                if (pl_load[j].factor_record >= 0) {
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                    flag = load_flag[pl_load_factors[pl_load[j].factor_record].load];
+                } else {
+                    gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
+                    flag = load_flag[load_factors[abs(pl_load[j].factor_record)].load];
+                }
+                if (flag & ULSLC[ci].mask) {
+                    pl_load[j].take_it = 1;
+                    //zone_case_variable_load_no[i]++;
+                } else pl_load[j].take_it = 0;
+            }
+
             for (i = 0; i < zone_no; i++) {
                 //searching for properties
                 for (j = 0; j < pl_property_no; j++) {
@@ -4987,8 +5166,14 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                //strcat(all_formula, par[0]);
+
+                sprintf(par[0], "Body Force %d\n", sif_body_zone[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce zone%d\"\n", sif_body_zone[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
+
 
                 strcpy(load_formula, "");
 
@@ -5018,14 +5203,17 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if ((pl_load[j].take_it == 1) &&   //active
+                                (pl_load[j].type == 0) && //uniformly distributed
+                                (pl_load[j].body == 3) && //zone
+                                (pl_load[j].body_no == i)) //zone number
                             {
-                                if (pl_load[i].factor_record >= 0) {
-                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                if (pl_load[j].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                    load = pl_load_factors[pl_load[j].factor_record].load;
                                 } else {
-                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                    combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                    load = load_factors[abs(pl_load[j].factor_record)].load;
                                 }
 
                                 int combi_factor;
@@ -5060,16 +5248,17 @@ void Plate_analysis(void) {
                 {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
-                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
-                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        if ((pl_load[j].take_it == 1) && //active
+                            (pl_load[j].type == 0) &&   //uniformly distributed
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone and number
+                             (pl_load[j].body == 0) && (pl_load[j].body_no ==  zone_property[i].pn)))  //inherited load on plate and number
                         {
-                            if (pl_load[i].factor_record >= 0) {
-                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            if (pl_load[j].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                load = pl_load_factors[pl_load[j].factor_record].load;
                             } else {
-                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                                combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                load = load_factors[abs(pl_load[j].factor_record)].load;
                             }
 
                             int combi_factor;
@@ -5100,10 +5289,11 @@ void Plate_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
+
                 strcpy(load_formula, "");
                 int f_no=0;
 
@@ -5111,13 +5301,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5145,17 +5335,23 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -5168,8 +5364,13 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                //strcat(all_formula, par[0]);
+
+                sprintf(par[0], "Body Force %d\n", sif_body_plate[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce shield%d\"\n", sif_body_plate[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
 
                 strcpy(load_formula, "");
 
@@ -5187,15 +5388,18 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
+                    if ((pl_load[j].take_it == 1) && //active
+                        (pl_load[j].type==0) && //uniformly distributed
+                        (pl_load[j].body == 0) && //plate
+                        (pl_load[j].body_no == i)) //plate number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5226,7 +5430,7 @@ void Plate_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
@@ -5237,13 +5441,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5270,17 +5474,22 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -5352,6 +5561,22 @@ void Plate_analysis(void) {
 
             strcpy(all_formula, "");
 
+            for (j = 0; j < pl_load_no; j++)
+            {
+                if (pl_load[j].factor_record >= 0) {
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                    flag = load_flag[pl_load_factors[pl_load[j].factor_record].load];
+                } else {
+                    gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
+                    flag = load_flag[load_factors[abs(pl_load[j].factor_record)].load];
+                }
+                if (flag & SLSLC[ci].mask) {
+                    pl_load[j].take_it = 1;
+                    //zone_case_variable_load_no[i]++;
+                } else pl_load[j].take_it = 0;
+            }
+
+
             for (i = 0; i < zone_no; i++) {
                 //searching for properties
                 for (j = 0; j < pl_property_no; j++) {
@@ -5360,8 +5585,13 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                //strcat(all_formula, par[0]);
+
+                sprintf(par[0], "Body Force %d\n", sif_body_zone[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce zone%d\"\n", sif_body_zone[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
 
                 strcpy(load_formula, "");
 
@@ -5392,14 +5622,17 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if ((pl_load[j].take_it == 1) &&  //active
+                                (pl_load[j].type == 0) && //uniformly distributed
+                                (pl_load[j].body == 3) && //zone
+                                (pl_load[j].body_no == i)) //zone number
                             {
-                                if (pl_load[i].factor_record >= 0) {
-                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                if (pl_load[j].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                    load = pl_load_factors[pl_load[j].factor_record].load;
                                 } else {
-                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                    combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                    load = load_factors[abs(pl_load[j].factor_record)].load;
                                 }
 
                                 int combi_factor;
@@ -5434,16 +5667,17 @@ void Plate_analysis(void) {
                 {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
-                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
-                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        if ((pl_load[j].take_it == 1) && //active
+                            (pl_load[j].type == 0) &&   //uniformly distributed
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone and number
+                            (pl_load[j].body == 0) && (pl_load[j].body_no ==  zone_property[i].pn)))  //inherited load on plate and number
                         {
-                            if (pl_load[i].factor_record >= 0) {
-                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            if (pl_load[j].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                load = pl_load_factors[pl_load[j].factor_record].load;
                             } else {
-                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                                combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                load = load_factors[abs(pl_load[j].factor_record)].load;
                             }
 
                             int combi_factor;
@@ -5475,7 +5709,7 @@ void Plate_analysis(void) {
 
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
@@ -5486,13 +5720,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5519,17 +5753,22 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -5542,8 +5781,13 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                //strcat(all_formula, par[0]);
+
+                sprintf(par[0], "Body Force %d\n", sif_body_plate[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce shield%d\"\n", sif_body_plate[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
 
                 strcpy(load_formula, "");
 
@@ -5560,15 +5804,18 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
+                    if ((pl_load[j].take_it == 1) && //active
+                        (pl_load[j].type==0) && //uniformly distributed
+                        (pl_load[j].body == 0) && //plate
+                        (pl_load[j].body_no == i)) //plate number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5599,7 +5846,7 @@ void Plate_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
@@ -5610,13 +5857,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5643,17 +5890,22 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -5726,6 +5978,21 @@ void Plate_analysis(void) {
 
             strcpy(all_formula, "");
 
+            for (j = 0; j < pl_load_no; j++)
+            {
+                if (pl_load[j].factor_record >= 0) {
+                    gamma_l = pl_load_factors[pl_load[j].factor_record].gamma;
+                    flag = load_flag[pl_load_factors[pl_load[j].factor_record].load];
+                } else {
+                    gamma_l = load_factors[abs(pl_load[j].factor_record)].gamma;
+                    flag = load_flag[load_factors[abs(pl_load[j].factor_record)].load];
+                }
+                if (flag & QPSLSLC[ci].mask) {
+                    pl_load[j].take_it = 1;
+                    //zone_case_variable_load_no[i]++;
+                } else pl_load[j].take_it = 0;
+            }
+
             for (i = 0; i < zone_no; i++) {
                 //searching for properties
                 for (j = 0; j < pl_property_no; j++) {
@@ -5734,8 +6001,12 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                //strcat(all_formula, par[0]);
+                sprintf(par[0], "Body Force %d\n", sif_body_zone[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce zone%d\"\n", sif_body_zone[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
 
                 strcpy(load_formula, "");
 
@@ -5765,14 +6036,17 @@ void Plate_analysis(void) {
                     } else {
                         for (j = 0; j < pl_load_no; j++) //all load
                         {
-                            if (pl_load[j].type == 0 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //uniformly distributed, zone and number
+                            if ((pl_load[j].take_it == 1) && //active
+                                (pl_load[j].type == 0) && //uniformly distributed
+                                (pl_load[j].body == 3) && //zone
+                                (pl_load[j].body_no == i)) //zone number
                             {
-                                if (pl_load[i].factor_record >= 0) {
-                                    combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                    load = pl_load_factors[pl_load[i].factor_record].load;
+                                if (pl_load[j].factor_record >= 0) {
+                                    combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                    load = pl_load_factors[pl_load[j].factor_record].load;
                                 } else {
-                                    combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                    load = load_factors[abs(pl_load[i].factor_record)].load;
+                                    combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                    load = load_factors[abs(pl_load[j].factor_record)].load;
                                 }
 
                                 int combi_factor;
@@ -5807,16 +6081,17 @@ void Plate_analysis(void) {
                 {
                     for (j = 0; j < pl_load_no; j++) //all load
                     {
-                        if ((pl_load[j].type == 0) &&   //uniformly distributed, zone and number
-                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone
-                             (pl_load[j].body == 0) && (pl_load[j].body_no == 0)))  //inherited load on plate
+                        if ((pl_load[j].take_it == 1) && //active
+                            (pl_load[j].type == 0) &&   //uniformly distributed
+                            (((pl_load[j].body == 3) && (pl_load[j].body_no == i)) ||  //local load on zone and number
+                            (pl_load[j].body == 0) && (pl_load[j].body_no ==  zone_property[i].pn)))  //inherited load on plate and number
                         {
-                            if (pl_load[i].factor_record >= 0) {
-                                combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                                load = pl_load_factors[pl_load[i].factor_record].load;
+                            if (pl_load[j].factor_record >= 0) {
+                                combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                                load = pl_load_factors[pl_load[j].factor_record].load;
                             } else {
-                                combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                                load = load_factors[abs(pl_load[i].factor_record)].load;
+                                combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                                load = load_factors[abs(pl_load[j].factor_record)].load;
                             }
 
                             int combi_factor;
@@ -5847,7 +6122,7 @@ void Plate_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
@@ -5858,13 +6133,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 3) && (pl_load[j].body_no == i)) //concentrated, zone and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5891,17 +6166,22 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[zone_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_zone[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -5914,8 +6194,12 @@ void Plate_analysis(void) {
                         break;
                     }
                 }
-                sprintf(par[0], "Body Force %d::", sif_body_force + 1);
+                //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                //strcat(all_formula, par[0]);
+                sprintf(par[0], "Body Force %d\n", sif_body_plate[i] + 1);
+                sprintf(par[1], "  Name = \"BodyForce shield%d\"\n", sif_body_plate[i] + 1);
                 strcat(all_formula, par[0]);
+                strcat(all_formula, par[1]);
 
                 strcpy(load_formula, "");
 
@@ -5932,15 +6216,18 @@ void Plate_analysis(void) {
 
                 for (j = 0; j < pl_load_no; j++) //all load
                 {
-                    if (pl_load[j].type==0 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //uniformly distributed, plate and number
+                    if ((pl_load[j].take_it == 1) && //active
+                        (pl_load[j].type==0) && //uniformly distributed
+                        (pl_load[j].body == 0) &&  //plate
+                        (pl_load[j].body_no == i)) //plate number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -5971,7 +6258,7 @@ void Plate_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
-                    sprintf(all_load_formula, "Normal Pressure = Real MATC \"%s\"\n", load_formula);
+                    sprintf(all_load_formula, "  Normal Pressure = Real MATC \"%s\"\n", load_formula);
                 strcat(all_formula, all_load_formula);
 
                 ///////////////// Concentrated Load
@@ -5982,13 +6269,13 @@ void Plate_analysis(void) {
                 {
                     if (pl_load[j].type==1 && (pl_load[j].body == 0) && (pl_load[j].body_no == i)) //concentrated, plate and number
                     {
-                        if (pl_load[i].factor_record >= 0)
+                        if (pl_load[j].factor_record >= 0)
                         {
-                            combi_load_factor = &pl_load_factors[pl_load[i].factor_record];
-                            load = pl_load_factors[pl_load[i].factor_record].load;
+                            combi_load_factor = &pl_load_factors[pl_load[j].factor_record];
+                            load = pl_load_factors[pl_load[j].factor_record].load;
                         } else {
-                            combi_load_factor = &load_factors[abs(pl_load[i].factor_record)];
-                            load = load_factors[abs(pl_load[i].factor_record)].load;
+                            combi_load_factor = &load_factors[abs(pl_load[j].factor_record)];
+                            load = load_factors[abs(pl_load[j].factor_record)].load;
                         }
 
                         int combi_factor;
@@ -6015,17 +6302,22 @@ void Plate_analysis(void) {
                         strcat(load_formula, load_formula0);
                         f_no++;
 
-                        point_load[plate_property[i].k]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
+                        point_load[case_number-1]+= (pl_load[j].magnitude1 * gamma_l * unit_factors_pl->F_f);
                     }
                 }
 
                 if (f_no>0)
                 {
-                    sprintf(par[0], "Body Force %d::", sif_body_force + 1);
-                    sprintf(all_load_formula, "%sPoint Load (%d, 9) = Real %s\n", par[0], f_no, load_formula);
+                    //sprintf(par[0], "Body Force %d::", sif_body_plate[i] + 1);
+                    sprintf(all_load_formula, "  Point Load (%d, 9) = Real %s\n", f_no, load_formula);
                     strcat(all_formula, all_load_formula);
                 }
                 //////// concentrated load
+                set_decimal_format(par[0], pl_property[this_property].h, dim_precision_pl);
+                sprintf(par[1], "  Thickness = Real %s\n", par[0]);
+                sprintf(par[2], "End\n\n");
+                strcat(all_formula, par[1]);
+                strcat(all_formula, par[2]);
 
                 sif_body_force++;
             }
@@ -6063,23 +6355,37 @@ void Plate_analysis(void) {
     ClearErr();
     ClearInfo();
 
+    komunikat_str_short(_BUILDING_MESH_, FALSE, TRUE);
+
     sprintf(params, "%splate.geo", _STATIC_);
     if (my_file_exists(params)) {
         //generating msh
         //  gmsh Static/plate.geo -o Static/plate.msh -2
-        sprintf(params, "%splate.geo -o %splate.msh -2 > %sgmsh.log", _STATIC_, _STATIC_, _STATIC_);
+        sprintf(params, "%splate.geo -o %splate.msh -2 > %sgmsh.log 2>&1", _STATIC_, _STATIC_, _STATIC_);
         sprintf(program, "%sgmsh", _ELMER_);
         //execute gmsh
 #ifdef LINUX
-        runcode = SystemSilent(program, params);
-        runcode_short = runcode >> 8;
+        //runcode = SystemSilent(program, params);
+        //runcode_short = runcode >> 8;
+
+        //ALTERNATIVE with timeout
+        strcat(program," ");
+        strcat(program,params);
+        runcode_short = run_with_timeout(program, TIMEOUT_SECONDS);
+        runcode = runcode_short;
 #else
-        runcode = RunSilent(program, params);
+        //runcode = RunSilent(program, params);
+        //runcode_short = runcode >> 8;
+
+        //ALTERNATIVE with timeout
+        strcat(program," ");
+        strcat(program,params);
+        runcode = run_with_timeout(program, TIMEOUT_SECONDS);
         runcode_short = runcode >> 8;
 #endif
         printf("\ngmsh runcode:%lu runcode_short:%d\n", runcode, runcode_short);
         sprintf(params, "%splate.msh", _STATIC_);
-        if ((runcode_short > 1/*!= 0*/) || (!my_file_exists(params))) {
+        if ((runcode_short != 0) || (!my_file_exists(params))) {
             ret = ask_question(2, (char *) "Log", (char *) "OK", (char *) "", (char *) "gmsh", 12, (char *) _gmsh_error_,
                                11, 1, 0);
             if (ret==0)
@@ -6091,10 +6397,12 @@ void Plate_analysis(void) {
             goto pl_error;
         }
 
-        if (my_file_exists(params)) {
+        if (my_file_exists(params))
+        {
+            komunikat_str_short(_BUILDING_GRID_, FALSE, TRUE);
             //generating mesh
             // ElmerGrid 14 2 Static/plate.msh -out Static/plate
-            sprintf(params, "14 2 %splate.msh -out %splate -unite > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);  //-merge 1.e-8
+            sprintf(params, "14 2 %splate.msh -out %splate -unite -merge 1.0e-10 > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);  //-merge 1.e-8
             sprintf(program, "%s%sElmerGrid", _ELMER_, _BIN_);
             //execute ElmerGrid
 #ifdef LINUX
@@ -6118,13 +6426,22 @@ void Plate_analysis(void) {
                 goto pl_error;
             }
 
-            if (my_file_exists(params)) {
+            if (my_file_exists(params))
+            {
+                komunikat_str_short(_SOLVING_,FALSE, TRUE);
+
                 sprintf(params, "%s%splate.sif  > %ssolver.log", _STATIC_, _plate_, _STATIC_);
                 //execute ElmerSolver, it will save results in plate folder
 #ifdef LINUX
                 sprintf(program, "%s%sElmerSolver", _ELMER_, _BIN_);
                 runcode = SystemSilent(program, params);
                 runcode_short = runcode >> 8;
+
+                //ALTERNATIVE with timeout
+                //strcat(program," ");
+                //strcat(program,params);
+                //runcode_short = run_with_timeout(program, TIMEOUT_SECONDS);
+                //runcode = runcode_short;
 #else
                 sprintf(program,"%s%sElmerSolver.exe", _ELMER_, _BIN_);
                 runcode = RunSilent(program, params);
@@ -6148,6 +6465,7 @@ void Plate_analysis(void) {
         }
     }
 
+    komunikat_str_short(_GEOMETRY_, FALSE, TRUE);
     //getting geometry
     //mesh.header
     //5079   9894   592   //number of nodes in mesh.nodes   number of elements in mesh.elements  number of boundaries in mesh.baunday
@@ -6194,31 +6512,31 @@ void Plate_analysis(void) {
     mesh_element = (MESH_ELEMENT *) malloc(mesh_elements_no * sizeof(MESH_ELEMENT) + 100);
     mesh_boundary = (MESH_BOUNDARY *) malloc(mesh_boundaries_no * sizeof(MESH_BOUNDARY) + 1000);
 
-    MESH_BOUNDARY mesh_boundary_ini={0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,
-        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
-        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
-        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
-        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}}};
+    MESH_BOUNDARY mesh_boundary_ini= { 0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0, 0.0, 0.0,
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}},
+        {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}} };
 
 
     for (i=0; i<mesh_boundaries_no; i++)
@@ -6589,23 +6907,37 @@ void Plate_analysis(void) {
     */
 
     for (i = 0; i < pl_edge_no; i++) {
-        Lt.x1 = (float) pl_node[pl_edge[i].node1].x;
-        Lt.y1 = (float) pl_node[pl_edge[i].node1].y;
-        Lt.x2 = (float) pl_node[pl_edge[i].node2].x;
-        Lt.y2 = (float) pl_node[pl_edge[i].node2].y;
+        if (pl_edge[i].type==0) //line
+        {
+            Lt.x1 = (float) pl_node[pl_edge[i].node1].x;
+            Lt.y1 = (float) pl_node[pl_edge[i].node1].y;
+            Lt.x2 = (float) pl_node[pl_edge[i].node2].x;
+            Lt.y2 = (float) pl_node[pl_edge[i].node2].y;
 
-        if ((Check_if_Equal(Lt.x1, Lt.x2)) && (Check_if_Equal(Lt.y1, Lt.y2))) {
-            PL.kat = 0;
-            psize = Get_Point_Size() / 2.0;
-            T.x = (float) (Lt.x1 + psize);
-            T.y = (float) (Lt.y1 + psize);
-        } else {
+            if ((Check_if_Equal(Lt.x1, Lt.x2)) && (Check_if_Equal(Lt.y1, Lt.y2))) {
+                PL.kat = 0;
+                psize = Get_Point_Size() / 2.0;
+                T.x = (float) (Lt.x1 + psize);
+                T.y = (float) (Lt.y1 + psize);
+            } else {
+                parametry_lini(&Lt, &PL);
+                T.kat = Pi_ * PL.kat / 180;
+                //T.x = Lt.x1 + ((Lt.x2 - Lt.x1) / 3);
+                //T.y = Lt.y1 + ((Lt.y2 - Lt.y1) / 3);
+                T.x = (float) ((Lt.x1 + Lt.x2) / 2.);
+                T.y = (float) ((Lt.y1 + Lt.y2) / 2.);
+            }
+        }
+        else //arc
+        {
+            Lt.x1 = (float) pl_node[pl_edge[i].node1].x;
+            Lt.y1 = (float) pl_node[pl_edge[i].node1].y;
+            Lt.x2 = (float) pl_node[pl_edge[i].node3].x;
+            Lt.y2 = (float) pl_node[pl_edge[i].node3].y;
             parametry_lini(&Lt, &PL);
             T.kat = Pi_ * PL.kat / 180;
-            //T.x = Lt.x1 + ((Lt.x2 - Lt.x1) / 3);
-            //T.y = Lt.y1 + ((Lt.y2 - Lt.y1) / 3);
-            T.x = (float) ((Lt.x1 + Lt.x2) / 2.);
-            T.y = (float) ((Lt.y1 + Lt.y2) / 2.);
+            T.x = pl_edge[i].xm;
+            T.y = pl_edge[i].ym;
         }
 
         sprintf(T.text, "%d", i + 1);
@@ -6793,6 +7125,8 @@ void Plate_analysis(void) {
             inside2_sigxy_max[i] = (double *) malloc(12 * sizeof(double));
         }
 
+        char building_blocks[MaxTextLen];
+
         if (sti<2) goto singles;
 
         switch (sti)
@@ -6823,6 +7157,9 @@ void Plate_analysis(void) {
         stress_ini = 0;
         epsilon_ini = 0;
 
+        sprintf(building_blocks,"%s %s", _BUILDING_BLOCKS_, SLS_ULS);
+        komunikat_str_short(building_blocks, FALSE, TRUE);
+
         for (int ci = 0; ci < ULS_SLS_LC_NO; ci++)
         {
             if (ULS_SLS_LC[ci].flag == 2)
@@ -6846,7 +7183,7 @@ void Plate_analysis(void) {
                     for (i = 0; i < plate_no; i++) {
                         total_load += surface_load[first_case_file + ci][plate_property[i].k] * body_area[plate_property[i].k];
                     }
-                    total_load += point_load[first_case_file + ci - 1];  //so we have total load for each combination of each state
+                    total_load += point_load[first_case_file + ci];  //so we have total load for each combination of each state
 
                     sti_no++;
                     i_row = 0;
@@ -7058,7 +7395,7 @@ void Plate_analysis(void) {
                                     if ((stress[j] != NULL) && (j == 1)) //stress_yy
                                     {
                                         for (int jk = 0; jk < mesh_boundaries_no; jk++) {
-                                            if (mesh_boundary[jk].restraint > 5)  //6 simple supported, 7 fixed
+                                            if ((mesh_boundary[jk].restraint > 5) || (mesh_boundary[jk].restraint == 4)) //4 rolled, 6 simple supported, 7 fixed
                                             {
                                                 if (mesh_boundary[jk].node1 > 0)  //node exists
                                                 {
@@ -7105,7 +7442,7 @@ void Plate_analysis(void) {
                                                             //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                             if (node1 > 0)
                                                             {
-                                                                if (mesh_node[node1 - 1].restraint > 5)
+                                                                if ((mesh_node[node1 - 1].restraint > 5) || ((mesh_node[node1 - 1].restraint == 4))
                                                                 {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
@@ -7119,7 +7456,7 @@ void Plate_analysis(void) {
                                                             }
                                                             if (node2 > 0)
                                                             {
-                                                                if (mesh_node[node2 - 1].restraint > 5)
+                                                                if ((mesh_node[node2 - 1].restraint > 5) || ((mesh_node[node2 - 1].restraint == 4))
                                                                 {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
@@ -7341,7 +7678,7 @@ void Plate_analysis(void) {
                                                             //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                             if (node1 > 0)
                                                             {
-                                                                if (mesh_node[node1 - 1].restraint > 5)
+                                                                if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
                                                                 {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
@@ -7355,7 +7692,7 @@ void Plate_analysis(void) {
                                                             }
                                                             if (node2 > 0)
                                                             {
-                                                                if (mesh_node[node2 - 1].restraint > 5)
+                                                                if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
                                                                 {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
@@ -7542,7 +7879,8 @@ void Plate_analysis(void) {
                                         printf("\nState %s-%d(%d)\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO);
 
                                         for (i = 0; i < mesh_boundaries_no; i++) {
-                                            if (mesh_boundary[i].restraint > 5) {
+                                            if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                                            {
                                                 if (mesh_boundary[i].node1 != last_node) {
                                                     printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz, mesh_boundary[i].state1[sti5].Qn);
 
@@ -7572,7 +7910,8 @@ void Plate_analysis(void) {
                                         printf("\nState %s-%d(%d) with correction ratio %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, load_ratio);
 
                                         for (i = 0; i < mesh_boundaries_no; i++) {
-                                            if (mesh_boundary[i].restraint > 5) {
+                                            if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                                            {
                                                 if (mesh_boundary[i].node1 != last_node) {
                                                     printf("node=%d  Rz=%f  Qn=%f\n", mesh_boundary[i].node1, mesh_boundary[i].state1[sti5].Rz * load_ratio, mesh_boundary[i].state1[sti5].Qn * load_ratio);
 
@@ -7621,7 +7960,7 @@ void Plate_analysis(void) {
                                     {
                                         for (int jk = 0; jk < mesh_boundaries_no; jk++)
                                         {
-                                            if (mesh_boundary[jk].restraint > 5)  //6 simple supported, 7 fixed
+                                            if ((mesh_boundary[jk].restraint > 5) || (mesh_boundary[jk].restraint == 4)) //4 rolling, 6 simple supported, 7 fixed
                                             {
                                                 if (mesh_boundary[jk].node1 > 0)  //node 1 exists
                                                 {
@@ -7679,7 +8018,8 @@ void Plate_analysis(void) {
                                                         if (found) {
                                                             //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                             if (node1 > 0) {
-                                                                if (mesh_node[node1 - 1].restraint > 5) {
+                                                                if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
+                                                                {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
                                                                         if (adj_list[kk] == node1) break;
@@ -7703,7 +8043,8 @@ void Plate_analysis(void) {
                                                                 }
                                                             }
                                                             if (node2 > 0) {
-                                                                if (mesh_node[node2 - 1].restraint > 5) {
+                                                                if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
+                                                                {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
                                                                         if (adj_list[kk] == node2) break;
@@ -7873,7 +8214,8 @@ void Plate_analysis(void) {
                                                         if (found) {
                                                             //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                             if (node1 > 0) {
-                                                                if (mesh_node[node1 - 1].restraint > 5) {
+                                                                if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
+                                                                {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
                                                                         if (adj_list[kk] == node1) break;
@@ -7897,7 +8239,8 @@ void Plate_analysis(void) {
                                                                 }
                                                             }
                                                             if (node2 > 0) {
-                                                                if (mesh_node[node2 - 1].restraint > 5) {
+                                                                if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
+                                                                {
                                                                     int kk;
                                                                     for (kk = 0; kk < num_adj_supp; kk++)
                                                                         if (adj_list[kk] == node2) break;
@@ -8027,7 +8370,8 @@ void Plate_analysis(void) {
                                         printf("\nState %s-%d(%d)\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO);
 #endif
                                         for (i = 0; i < mesh_boundaries_no; i++) {
-                                            if (mesh_boundary[i].restraint > 5) {
+                                            if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                                            {
                                                 if (mesh_boundary[i].node1 != last_node)
                                                 {
 #ifndef NDEBUG
@@ -8062,7 +8406,8 @@ void Plate_analysis(void) {
                                         printf("\nState %s-%d(%d) with correction ratio %f\n", SLS_ULS, ci + 1, ULS_SLS_LC_NO, load_ratio);
 #endif
                                         for (i = 0; i < mesh_boundaries_no; i++) {
-                                            if (mesh_boundary[i].restraint > 5) {
+                                            if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                                            {
                                                 if (mesh_boundary[i].node1 != last_node)
                                                 {
 #ifndef NDEBUG
@@ -8341,6 +8686,10 @@ void Plate_analysis(void) {
             strncpy(SLS_ULS, "ULS", 3);  //temporary
             break;
     }
+
+    sprintf(building_blocks,"%s %s", _BUILDING_BLOCKS_, SLS_ULS);
+    komunikat_str_short(building_blocks, FALSE, TRUE);
+
     //results
     f = fopen(params, "rt");
 
@@ -8731,51 +9080,51 @@ void Plate_analysis(void) {
 
                     if (nom_max) {
                         if (bi == 0) {
-                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                            else gradient.c1 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
-                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                            else gradient.c2 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
-                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                            else gradient.c3 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
-                            gradient.c4 = getRGB(0.0, deflection_amax);
+                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, deflection_amax);
+                            else gradient3.c1 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, deflection_amax);
+                            else gradient3.c2 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, deflection_amax);
+                            else gradient3.c3 = getRGB(-min_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                            //gradient.c4 = getRGB(0.0, deflection_amax);
 
-                            fe_data.el_number = j + 1;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) min_deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                            fe_data.f2 = (float) min_deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                            fe_data.f3 = (float) min_deflection[i][perm_d[mesh_element[j].node3 - 1]];
-                            fe_data.f4 = 0.0f;
+                            fe_data3.el_number = j + 1;
+                            fe_data3.flag = 0;
+                            fe_data3.f1 = (float) min_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                            fe_data3.f2 = (float) min_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                            fe_data3.f3 = (float) min_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            //fe_data.f4 = 0.0f;
                         } else {
-                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                            else gradient.c1 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
-                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                            else gradient.c2 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
-                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                            else gradient.c3 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
-                            gradient.c4 = getRGB(0.0, deflection_amax);
+                            if (perm_d[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, deflection_amax);
+                            else gradient3.c1 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, deflection_amax);
+                            else gradient3.c2 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                            if (perm_d[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, deflection_amax);
+                            else gradient3.c3 = getRGB(-max_deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                            //gradient.c4 = getRGB(0.0, deflection_amax);
 
-                            fe_data.el_number = j + 1;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) max_deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                            fe_data.f2 = (float) max_deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                            fe_data.f3 = (float) max_deflection[i][perm_d[mesh_element[j].node3 - 1]];
-                            fe_data.f4 = 0.0f;
+                            fe_data3.el_number = j + 1;
+                            fe_data3.flag = 0;
+                            fe_data3.f1 = (float) max_deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                            fe_data3.f2 = (float) max_deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                            fe_data3.f3 = (float) max_deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                            //fe_data.f4 = 0.0f;
                         }
                     } else {
-                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, deflection_amax);
-                        else gradient.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
-                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, deflection_amax);
-                        else gradient.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
-                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, deflection_amax);
-                        else gradient.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
-                        gradient.c4 = getRGB(0.0, deflection_amax);
+                        if (perm_d[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, deflection_amax);
+                        else gradient3.c1 = getRGB(-deflection[i][perm_d[mesh_element[j].node1 - 1]], deflection_amax);
+                        if (perm_d[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, deflection_amax);
+                        else gradient3.c2 = getRGB(-deflection[i][perm_d[mesh_element[j].node2 - 1]], deflection_amax);
+                        if (perm_d[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, deflection_amax);
+                        else gradient3.c3 = getRGB(-deflection[i][perm_d[mesh_element[j].node3 - 1]], deflection_amax);
+                        //gradient.c4 = getRGB(0.0, deflection_amax);
 
-                        fe_data.el_number = j + 1;
-                        fe_data.flag = 0;
-                        fe_data.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
-                        fe_data.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
-                        fe_data.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
-                        fe_data.f4 = 0.0f;
+                        fe_data3.el_number = j + 1;
+                        fe_data3.flag = 0;
+                        fe_data3.f1 = (float) deflection[i][perm_d[mesh_element[j].node1 - 1]];
+                        fe_data3.f2 = (float) deflection[i][perm_d[mesh_element[j].node2 - 1]];
+                        fe_data3.f3 = (float) deflection[i][perm_d[mesh_element[j].node3 - 1]];
+                        //fe_data.f4 = 0.0f;
                     }
 
                     w.lp = 6;
@@ -8787,12 +9136,12 @@ void Plate_analysis(void) {
                     memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                     gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                    memmove(gradient_ptr, &gradient3, sizeof(GRADIENT3));
 
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT3);
+                    memmove(fe_data_ptr, &fe_data3, sizeof(FE_DATA3));
 
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT3) + sizeof(FE_DATA3);
                     adr = dodaj_obiekt((BLOK *) dane, &w);
                 }
 
@@ -8812,42 +9161,42 @@ void Plate_analysis(void) {
 
                     if (nom_max) {
                         if (bi == 0) {
-                            gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
-                            gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
-                            gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
-                            gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient4.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient4.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient4.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient4.c4 = getRGB(-min_deflection_min[i], deflection_amax);
 
-                            fe_data.el_number = 0;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) -min_deflection_min[i];
-                            fe_data.f2 = (float) -max_deflection_max[i];
-                            fe_data.f3 = (float) -max_deflection_max[i];
-                            fe_data.f4 = (float) -min_deflection_min[i];
+                            fe_data4.el_number = 0;
+                            fe_data4.flag = 0;
+                            fe_data4.f1 = (float) -min_deflection_min[i];
+                            fe_data4.f2 = (float) -max_deflection_max[i];
+                            fe_data4.f3 = (float) -max_deflection_max[i];
+                            fe_data4.f4 = (float) -min_deflection_min[i];
                         } else {
-                            gradient.c1 = getRGB(-min_deflection_min[i], deflection_amax);
-                            gradient.c2 = getRGB(-max_deflection_max[i], deflection_amax);
-                            gradient.c3 = getRGB(-max_deflection_max[i], deflection_amax);
-                            gradient.c4 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient4.c1 = getRGB(-min_deflection_min[i], deflection_amax);
+                            gradient4.c2 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient4.c3 = getRGB(-max_deflection_max[i], deflection_amax);
+                            gradient4.c4 = getRGB(-min_deflection_min[i], deflection_amax);
 
-                            fe_data.el_number = 0;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) -min_deflection_min[i];
-                            fe_data.f2 = (float) -max_deflection_max[i];
-                            fe_data.f3 = (float) -max_deflection_max[i];
-                            fe_data.f4 = (float) -min_deflection_min[i];
+                            fe_data4.el_number = 0;
+                            fe_data4.flag = 0;
+                            fe_data4.f1 = (float) -min_deflection_min[i];
+                            fe_data4.f2 = (float) -max_deflection_max[i];
+                            fe_data4.f3 = (float) -max_deflection_max[i];
+                            fe_data4.f4 = (float) -min_deflection_min[i];
                         }
                     } else {
-                        gradient.c1 = getRGB(-deflection_min[i], deflection_amax);
-                        gradient.c2 = getRGB(-deflection_max[i], deflection_amax);
-                        gradient.c3 = getRGB(-deflection_max[i], deflection_amax);
-                        gradient.c4 = getRGB(-deflection_min[i], deflection_amax);
+                        gradient4.c1 = getRGB(-deflection_min[i], deflection_amax);
+                        gradient4.c2 = getRGB(-deflection_max[i], deflection_amax);
+                        gradient4.c3 = getRGB(-deflection_max[i], deflection_amax);
+                        gradient4.c4 = getRGB(-deflection_min[i], deflection_amax);
 
-                        fe_data.el_number = 0;
-                        fe_data.flag = 0;
-                        fe_data.f1 = (float) -deflection_min[i];
-                        fe_data.f2 = (float) -deflection_max[i];
-                        fe_data.f3 = (float) -deflection_max[i];
-                        fe_data.f4 = (float) -deflection_min[i];
+                        fe_data4.el_number = 0;
+                        fe_data4.flag = 0;
+                        fe_data4.f1 = (float) -deflection_min[i];
+                        fe_data4.f2 = (float) -deflection_max[i];
+                        fe_data4.f3 = (float) -deflection_max[i];
+                        fe_data4.f4 = (float) -deflection_min[i];
                     }
 
                     w.lp = 8;
@@ -8858,12 +9207,12 @@ void Plate_analysis(void) {
                     memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                     gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                    memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                    memmove(gradient_ptr, &gradient4, sizeof(GRADIENT4));
 
-                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                    memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                    fe_data_ptr = gradient_ptr + sizeof(GRADIENT4);
+                    memmove(fe_data_ptr, &fe_data4, sizeof(FE_DATA4));
 
-                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                    w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT4) + sizeof(FE_DATA4);
                     adr = dodaj_obiekt((BLOK *) dane, &w);
 
                     //adjust deflection to proper units
@@ -9395,95 +9744,95 @@ void Plate_analysis(void) {
                                 }
 
                                 if (bi == 0) {
-                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                    else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                    else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                    else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                                    gradient.c4 = getRGB(0.0, stress_amax);
+                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, stress_amax);
+                                    else gradient3.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, stress_amax);
+                                    else gradient3.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, stress_amax);
+                                    else gradient3.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                    //gradient.c4 = getRGB(0.0, stress_amax);
 
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag = 1;
+                                    fe_data3.el_number = j + 1;
+                                    fe_data3.flag = 1;
 
-                                    fe_data.f1 = (float) sigma[0];
-                                    fe_data.f2 = (float) sigma[1];
-                                    fe_data.f3 = (float) sigma[2];
-                                    fe_data.f4 = 0.0f;
+                                    fe_data3.f1 = (float) sigma[0];
+                                    fe_data3.f2 = (float) sigma[1];
+                                    fe_data3.f3 = (float) sigma[2];
+                                    //fe_data.f4 = 0.0f;
 
-                                    fe_data_ex.f1 = (float) p[0];  //negative means %
-                                    fe_data_ex.f2 = (float) p[1];  //negative means %
-                                    fe_data_ex.f3 = (float) p[2];  //negative means %
-                                    fe_data_ex.f4 = 0.0f;
+                                    fe_data3_ex.f1 = (float) p[0];  //negative means %
+                                    fe_data3_ex.f2 = (float) p[1];  //negative means %
+                                    fe_data3_ex.f3 = (float) p[2];  //negative means %
+                                    //fe_data_ex.f4 = 0.0f;
                                 } else {
-                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                    else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                    else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                    else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                                    gradient.c4 = getRGB(0.0, stress_amax);
+                                    if (perm_s[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, stress_amax);
+                                    else gradient3.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                    if (perm_s[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, stress_amax);
+                                    else gradient3.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                    if (perm_s[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, stress_amax);
+                                    else gradient3.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                    //gradient.c4 = getRGB(0.0, stress_amax);
 
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag = 1;
+                                    fe_data3.el_number = j + 1;
+                                    fe_data3.flag = 1;
 
-                                    fe_data.f1 = (float) sigma[0];
-                                    fe_data.f2 = (float) sigma[1];
-                                    fe_data.f3 = (float) sigma[2];
-                                    fe_data.f4 = 0.0f;
+                                    fe_data3.f1 = (float) sigma[0];
+                                    fe_data3.f2 = (float) sigma[1];
+                                    fe_data3.f3 = (float) sigma[2];
+                                    //fe_data.f4 = 0.0f;
 
-                                    fe_data_ex.f1 = (float) p[0];  //negative means %
-                                    fe_data_ex.f2 = (float) p[1];  //negative means %
-                                    fe_data_ex.f3 = (float) p[2];  //negative means %
-                                    fe_data_ex.f4 = 0.0f;
+                                    fe_data3_ex.f1 = (float) p[0];  //negative means %
+                                    fe_data3_ex.f2 = (float) p[1];  //negative means %
+                                    fe_data3_ex.f3 = (float) p[2];  //negative means %
+                                    //fe_data_ex.f4 = 0.0f;
 
                                 }
                             } else if (bi == 0) {
-                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                else gradient.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                else gradient.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                else gradient.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                                gradient.c4 = getRGB(0.0, stress_amax);
+                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, stress_amax);
+                                else gradient3.c1 = getRGB(min_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, stress_amax);
+                                else gradient3.c2 = getRGB(min_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, stress_amax);
+                                else gradient3.c3 = getRGB(min_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                //gradient.c4 = getRGB(0.0, stress_amax);
 
-                                fe_data.el_number = j + 1;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) min_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) min_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                fe_data.f4 = 0.0f;
+                                fe_data3.el_number = j + 1;
+                                fe_data3.flag = 0;
+                                fe_data3.f1 = (float) min_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                fe_data3.f2 = (float) min_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                fe_data3.f3 = (float) min_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                //fe_data.f4 = 0.0f;
                             } else if (bi == 1) {
-                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                                else gradient.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                                else gradient.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                                else gradient.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                                gradient.c4 = getRGB(0.0, stress_amax);
+                                if (perm_s[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, stress_amax);
+                                else gradient3.c1 = getRGB(max_stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, stress_amax);
+                                else gradient3.c2 = getRGB(max_stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                                if (perm_s[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, stress_amax);
+                                else gradient3.c3 = getRGB(max_stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                                //gradient.c4 = getRGB(0.0, stress_amax);
 
-                                fe_data.el_number = j + 1;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) max_stress[i][perm_s[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) max_stress[i][perm_s[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) max_stress[i][perm_s[mesh_element[j].node3 - 1]];
-                                fe_data.f4 = 0.0f;
+                                fe_data3.el_number = j + 1;
+                                fe_data3.flag = 0;
+                                fe_data3.f1 = (float) max_stress[i][perm_s[mesh_element[j].node1 - 1]];
+                                fe_data3.f2 = (float) max_stress[i][perm_s[mesh_element[j].node2 - 1]];
+                                fe_data3.f3 = (float) max_stress[i][perm_s[mesh_element[j].node3 - 1]];
+                                //fe_data.f4 = 0.0f;
                             }
                         } else {
-                            if (perm_s[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, stress_amax);
-                            else gradient.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
-                            if (perm_s[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, stress_amax);
-                            else gradient.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
-                            if (perm_s[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, stress_amax);
-                            else gradient.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
-                            gradient.c4 = getRGB(0.0, stress_amax);
+                            if (perm_s[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, stress_amax);
+                            else gradient3.c1 = getRGB(stress[i][perm_s[mesh_element[j].node1 - 1]], stress_amax);
+                            if (perm_s[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, stress_amax);
+                            else gradient3.c2 = getRGB(stress[i][perm_s[mesh_element[j].node2 - 1]], stress_amax);
+                            if (perm_s[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, stress_amax);
+                            else gradient3.c3 = getRGB(stress[i][perm_s[mesh_element[j].node3 - 1]], stress_amax);
+                            //gradient.c4 = getRGB(0.0, stress_amax);
 
-                            fe_data.el_number = j + 1;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
-                            fe_data.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
-                            fe_data.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
-                            fe_data.f4 = 0.0f;
+                            fe_data3.el_number = j + 1;
+                            fe_data3.flag = 0;
+                            fe_data3.f1 = (float) stress[i][perm_s[mesh_element[j].node1 - 1]];
+                            fe_data3.f2 = (float) stress[i][perm_s[mesh_element[j].node2 - 1]];
+                            fe_data3.f3 = (float) stress[i][perm_s[mesh_element[j].node3 - 1]];
+                            //fe_data.f4 = 0.0f;
                         }
 
                         w.lp = 6;
@@ -9495,18 +9844,18 @@ void Plate_analysis(void) {
                         memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                         gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                        memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                        memmove(gradient_ptr, &gradient3, sizeof(GRADIENT3));
 
-                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                        memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT3);
+                        memmove(fe_data_ptr, &fe_data3, sizeof(FE_DATA3));
 
-                        if (fe_data.flag == 1)  //extended
+                        if (fe_data3.flag == 1)  //extended
                         {
-                            fe_data_ex_ptr = fe_data_ptr + sizeof(FE_DATA);
-                            memmove(fe_data_ex_ptr, &fe_data_ex, sizeof(FE_DATA_EX));
-                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA) + sizeof(FE_DATA_EX);
+                            fe_data_ex_ptr = fe_data_ptr + sizeof(FE_DATA3);
+                            memmove(fe_data_ex_ptr, &fe_data3_ex, sizeof(FE_DATA3_EX));
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT3) + sizeof(FE_DATA3) + sizeof(FE_DATA3_EX);
                         } else {
-                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT3) + sizeof(FE_DATA3);
                         }
                         adr = dodaj_obiekt((BLOK *) dane, &w);
                     }
@@ -9527,42 +9876,42 @@ void Plate_analysis(void) {
 
                         if (nom_max) {
                             if (bi == 0) {
-                                gradient.c1 = getRGB(min_stress_min[i], stress_amax);
-                                gradient.c2 = getRGB(max_stress_max[i], stress_amax);
-                                gradient.c3 = getRGB(max_stress_max[i], stress_amax);
-                                gradient.c4 = getRGB(min_stress_min[i], stress_amax);
+                                gradient4.c1 = getRGB(min_stress_min[i], stress_amax);
+                                gradient4.c2 = getRGB(max_stress_max[i], stress_amax);
+                                gradient4.c3 = getRGB(max_stress_max[i], stress_amax);
+                                gradient4.c4 = getRGB(min_stress_min[i], stress_amax);
 
-                                fe_data.el_number = 0;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) min_stress_min[i];
-                                fe_data.f2 = (float) max_stress_max[i];
-                                fe_data.f3 = (float) max_stress_max[i];
-                                fe_data.f4 = (float) min_stress_min[i];
+                                fe_data4.el_number = 0;
+                                fe_data4.flag = 0;
+                                fe_data4.f1 = (float) min_stress_min[i];
+                                fe_data4.f2 = (float) max_stress_max[i];
+                                fe_data4.f3 = (float) max_stress_max[i];
+                                fe_data4.f4 = (float) min_stress_min[i];
                             } else {
-                                gradient.c1 = getRGB(min_stress_min[i], stress_amax);
-                                gradient.c2 = getRGB(max_stress_max[i], stress_amax);
-                                gradient.c3 = getRGB(max_stress_max[i], stress_amax);
-                                gradient.c4 = getRGB(min_stress_min[i], stress_amax);
+                                gradient4.c1 = getRGB(min_stress_min[i], stress_amax);
+                                gradient4.c2 = getRGB(max_stress_max[i], stress_amax);
+                                gradient4.c3 = getRGB(max_stress_max[i], stress_amax);
+                                gradient4.c4 = getRGB(min_stress_min[i], stress_amax);
 
-                                fe_data.el_number = 0;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) min_stress_min[i];
-                                fe_data.f2 = (float) max_stress_max[i];
-                                fe_data.f3 = (float) max_stress_max[i];
-                                fe_data.f4 = (float) min_stress_min[i];
+                                fe_data4.el_number = 0;
+                                fe_data4.flag = 0;
+                                fe_data4.f1 = (float) min_stress_min[i];
+                                fe_data4.f2 = (float) max_stress_max[i];
+                                fe_data4.f3 = (float) max_stress_max[i];
+                                fe_data4.f4 = (float) min_stress_min[i];
                             }
                         } else {
-                            gradient.c1 = getRGB(stress_min[i], stress_amax);
-                            gradient.c2 = getRGB(stress_max[i], stress_amax);
-                            gradient.c3 = getRGB(stress_max[i], stress_amax);
-                            gradient.c4 = getRGB(stress_min[i], stress_amax);
+                            gradient4.c1 = getRGB(stress_min[i], stress_amax);
+                            gradient4.c2 = getRGB(stress_max[i], stress_amax);
+                            gradient4.c3 = getRGB(stress_max[i], stress_amax);
+                            gradient4.c4 = getRGB(stress_min[i], stress_amax);
 
-                            fe_data.el_number = 0;
-                            fe_data.flag = 0;
-                            fe_data.f1 = (float) stress_min[i];
-                            fe_data.f2 = (float) stress_max[i];
-                            fe_data.f3 = (float) stress_max[i];
-                            fe_data.f4 = (float) stress_min[i];
+                            fe_data4.el_number = 0;
+                            fe_data4.flag = 0;
+                            fe_data4.f1 = (float) stress_min[i];
+                            fe_data4.f2 = (float) stress_max[i];
+                            fe_data4.f3 = (float) stress_max[i];
+                            fe_data4.f4 = (float) stress_min[i];
                         }
 
                         w.lp = 8;
@@ -9573,12 +9922,12 @@ void Plate_analysis(void) {
                         memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                         gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                        memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                        memmove(gradient_ptr, &gradient4, sizeof(GRADIENT4));
 
-                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                        memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                        fe_data_ptr = gradient_ptr + sizeof(GRADIENT4);
+                        memmove(fe_data_ptr, &fe_data4, sizeof(FE_DATA4));
 
-                        w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                        w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT4) + sizeof(FE_DATA4);
                         adr = dodaj_obiekt((BLOK *) dane, &w);
 
                         //adjust stress to proper units
@@ -9711,7 +10060,7 @@ void Plate_analysis(void) {
                         if ((stress[i] != NULL) && (i == 1)) //stress_yy
                         {
                             for (j = 0; j < mesh_boundaries_no; j++) {
-                                if (mesh_boundary[j].restraint > 5)  //6 simple supported, 7 fixed
+                                if ((mesh_boundary[j].restraint > 5) || (mesh_boundary[j].restraint == 4)) //4 rolling, 6 simple supported, 7 fixed
                                 {
                                     if (mesh_boundary[j].node1 > 0)  //node exists
                                     {
@@ -9762,7 +10111,7 @@ void Plate_analysis(void) {
                                                 //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                 if (node1 > 0)
                                                 {
-                                                    if (mesh_node[node1 - 1].restraint > 5)
+                                                    if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
                                                     {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
@@ -9776,7 +10125,7 @@ void Plate_analysis(void) {
                                                 }
                                                 if (node2 > 0)
                                                 {
-                                                    if (mesh_node[node2 - 1].restraint > 5)
+                                                    if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
                                                     {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
@@ -9995,7 +10344,7 @@ void Plate_analysis(void) {
                                                     //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                     if (node1 > 0)
                                                     {
-                                                        if (mesh_node[node1 - 1].restraint > 5)
+                                                        if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
                                                         {
                                                             int kk;
                                                             for (kk = 0; kk < num_adj_supp; kk++)
@@ -10009,7 +10358,7 @@ void Plate_analysis(void) {
                                                     }
                                                     if (node2 > 0)
                                                     {
-                                                        if (mesh_node[node2 - 1].restraint > 5)
+                                                        if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
                                                         {
                                                             int kk;
                                                             for (kk = 0; kk < num_adj_supp; kk++)
@@ -10184,7 +10533,7 @@ void Plate_analysis(void) {
                             printf("TRACE 1\n");
                             for (j = 0; j < mesh_boundaries_no; j++)
                             {
-                                if (mesh_boundary[j].restraint > 5)  //6 simple supported, 7 fixed
+                                if ((mesh_boundary[j].restraint > 5) || (mesh_boundary[j].restraint == 4)) //4 rolling, 6 simple supported, 7 fixed
                                 {
                                     if (mesh_boundary[j].node1 > 0)  //node 1 exists
                                     {
@@ -10242,7 +10591,8 @@ void Plate_analysis(void) {
                                             if (found) {
                                                 //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                 if (node1 > 0) {
-                                                    if (mesh_node[node1 - 1].restraint > 5) {
+                                                    if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
+                                                    {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
                                                             if (adj_list[kk] == node1) break;
@@ -10266,7 +10616,8 @@ void Plate_analysis(void) {
                                                     }
                                                 }
                                                 if (node2 > 0) {
-                                                    if (mesh_node[node2 - 1].restraint > 5) {
+                                                    if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
+                                                    {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
                                                             if (adj_list[kk] == node2) break;
@@ -10434,7 +10785,8 @@ void Plate_analysis(void) {
                                             if (found) {
                                                 //check if node1 and node2 are adjacent supported nodes, or inside (non-supported) neighboring nodes
                                                 if (node1 > 0) {
-                                                    if (mesh_node[node1 - 1].restraint > 5) {
+                                                    if ((mesh_node[node1 - 1].restraint > 5) || (mesh_node[node1 - 1].restraint == 4))
+                                                    {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
                                                             if (adj_list[kk] == node1) break;
@@ -10458,7 +10810,8 @@ void Plate_analysis(void) {
                                                     }
                                                 }
                                                 if (node2 > 0) {
-                                                    if (mesh_node[node2 - 1].restraint > 5) {
+                                                    if ((mesh_node[node2 - 1].restraint > 5) || (mesh_node[node2 - 1].restraint == 4))
+                                                    {
                                                         int kk;
                                                         for (kk = 0; kk < num_adj_supp; kk++)
                                                             if (adj_list[kk] == node2) break;
@@ -10484,7 +10837,7 @@ void Plate_analysis(void) {
                                             }
                                         }
 
-                                        //calculating reactions for node1
+                                        //calculating reactions for node2
                                         double supp_x, supp_y;      // Supported node coordinates (m)
 
                                         double adj_supp_x[12];         // Array: x-coords of adj supported nodes
@@ -10705,51 +11058,51 @@ void Plate_analysis(void) {
 
                             if (nom_max) {
                                 if (bi == 0) {
-                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                                    else gradient.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                                    else gradient.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                                    else gradient.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
-                                    gradient.c4 = getRGB(0.0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, epsilon_amax);
+                                    else gradient3.c1 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
+                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, epsilon_amax);
+                                    else gradient3.c2 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
+                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, epsilon_amax);
+                                    else gradient3.c3 = getRGB(min_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
+                                    //gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag = 0;
-                                    fe_data.f1 = (float) min_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
-                                    fe_data.f2 = (float) min_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
-                                    fe_data.f3 = (float) min_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
-                                    fe_data.f4 = 0.0f;
+                                    fe_data3.el_number = j + 1;
+                                    fe_data3.flag = 0;
+                                    fe_data3.f1 = (float) min_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                    fe_data3.f2 = (float) min_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                    fe_data3.f3 = (float) min_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                    //fe_data.f4 = 0.0f;
                                 } else {
-                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                                    else gradient.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                                    else gradient.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                                    else gradient.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
-                                    gradient.c4 = getRGB(0.0, epsilon_amax);
+                                    if (perm_e[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, epsilon_amax);
+                                    else gradient3.c1 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
+                                    if (perm_e[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, epsilon_amax);
+                                    else gradient3.c2 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
+                                    if (perm_e[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, epsilon_amax);
+                                    else gradient3.c3 = getRGB(max_epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
+                                    //gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                                    fe_data.el_number = j + 1;
-                                    fe_data.flag = 0;
-                                    fe_data.f1 = (float) max_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
-                                    fe_data.f2 = (float) max_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
-                                    fe_data.f3 = (float) max_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
-                                    fe_data.f4 = 0.0f;
+                                    fe_data3.el_number = j + 1;
+                                    fe_data3.flag = 0;
+                                    fe_data3.f1 = (float) max_epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                    fe_data3.f2 = (float) max_epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                    fe_data3.f3 = (float) max_epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                    //fe_data.f4 = 0.0f;
                                 }
                             } else {
-                                if (perm_e[mesh_element[j].node1 - 1] == -1) gradient.c1 = getRGB(0, epsilon_amax);
-                                else gradient.c1 = getRGB(epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
-                                if (perm_e[mesh_element[j].node2 - 1] == -1) gradient.c2 = getRGB(0, epsilon_amax);
-                                else gradient.c2 = getRGB(epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
-                                if (perm_e[mesh_element[j].node3 - 1] == -1) gradient.c3 = getRGB(0, epsilon_amax);
-                                else gradient.c3 = getRGB(epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
-                                gradient.c4 = getRGB(0.0, epsilon_amax);
+                                if (perm_e[mesh_element[j].node1 - 1] == -1) gradient3.c1 = getRGB(0, epsilon_amax);
+                                else gradient3.c1 = getRGB(epsilon[i][perm_e[mesh_element[j].node1 - 1]], epsilon_amax);
+                                if (perm_e[mesh_element[j].node2 - 1] == -1) gradient3.c2 = getRGB(0, epsilon_amax);
+                                else gradient3.c2 = getRGB(epsilon[i][perm_e[mesh_element[j].node2 - 1]], epsilon_amax);
+                                if (perm_e[mesh_element[j].node3 - 1] == -1) gradient3.c3 = getRGB(0, epsilon_amax);
+                                else gradient3.c3 = getRGB(epsilon[i][perm_e[mesh_element[j].node3 - 1]], epsilon_amax);
+                                //gradient.c4 = getRGB(0.0, epsilon_amax);
 
-                                fe_data.el_number = j + 1;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) epsilon[i][perm_e[mesh_element[j].node1 - 1]];
-                                fe_data.f2 = (float) epsilon[i][perm_e[mesh_element[j].node2 - 1]];
-                                fe_data.f3 = (float) epsilon[i][perm_e[mesh_element[j].node3 - 1]];
-                                fe_data.f4 = 0.0f;
+                                fe_data3.el_number = j + 1;
+                                fe_data3.flag = 0;
+                                fe_data3.f1 = (float) epsilon[i][perm_e[mesh_element[j].node1 - 1]];
+                                fe_data3.f2 = (float) epsilon[i][perm_e[mesh_element[j].node2 - 1]];
+                                fe_data3.f3 = (float) epsilon[i][perm_e[mesh_element[j].node3 - 1]];
+                                //fe_data.f4 = 0.0f;
                             }
 
                             w.lp = 6;
@@ -10761,12 +11114,12 @@ void Plate_analysis(void) {
                             memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                             gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                            memmove(gradient_ptr, &gradient3, sizeof(GRADIENT3));
 
-                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT3);
+                            memmove(fe_data_ptr, &fe_data3, sizeof(FE_DATA3));
 
-                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT3) + sizeof(FE_DATA3);
                             adr = dodaj_obiekt((BLOK *) dane, &w);
 
                         }
@@ -10787,42 +11140,42 @@ void Plate_analysis(void) {
 
                             if (nom_max) {
                                 if (bi == 0) {
-                                    gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
-                                    gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
-                                    gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
-                                    gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient4.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient4.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient4.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient4.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
-                                    fe_data.el_number = 0;
-                                    fe_data.flag = 0;
-                                    fe_data.f1 = (float) min_epsilon_min[i];
-                                    fe_data.f2 = (float) max_epsilon_max[i];
-                                    fe_data.f3 = (float) max_epsilon_max[i];
-                                    fe_data.f4 = (float) min_epsilon_min[i];
+                                    fe_data4.el_number = 0;
+                                    fe_data4.flag = 0;
+                                    fe_data4.f1 = (float) min_epsilon_min[i];
+                                    fe_data4.f2 = (float) max_epsilon_max[i];
+                                    fe_data4.f3 = (float) max_epsilon_max[i];
+                                    fe_data4.f4 = (float) min_epsilon_min[i];
                                 } else {
-                                    gradient.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
-                                    gradient.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
-                                    gradient.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
-                                    gradient.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient4.c1 = getRGB(min_epsilon_min[i], epsilon_amax);
+                                    gradient4.c2 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient4.c3 = getRGB(max_epsilon_max[i], epsilon_amax);
+                                    gradient4.c4 = getRGB(min_epsilon_min[i], epsilon_amax);
 
-                                    fe_data.el_number = 0;
-                                    fe_data.flag = 0;
-                                    fe_data.f1 = (float) min_epsilon_min[i];
-                                    fe_data.f2 = (float) max_epsilon_max[i];
-                                    fe_data.f3 = (float) max_epsilon_max[i];
-                                    fe_data.f4 = (float) min_epsilon_min[i];
+                                    fe_data4.el_number = 0;
+                                    fe_data4.flag = 0;
+                                    fe_data4.f1 = (float) min_epsilon_min[i];
+                                    fe_data4.f2 = (float) max_epsilon_max[i];
+                                    fe_data4.f3 = (float) max_epsilon_max[i];
+                                    fe_data4.f4 = (float) min_epsilon_min[i];
                                 }
                             } else {
-                                gradient.c1 = getRGB(epsilon_min[i], epsilon_amax);
-                                gradient.c2 = getRGB(epsilon_max[i], epsilon_amax);
-                                gradient.c3 = getRGB(epsilon_max[i], epsilon_amax);
-                                gradient.c4 = getRGB(epsilon_min[i], epsilon_amax);
+                                gradient4.c1 = getRGB(epsilon_min[i], epsilon_amax);
+                                gradient4.c2 = getRGB(epsilon_max[i], epsilon_amax);
+                                gradient4.c3 = getRGB(epsilon_max[i], epsilon_amax);
+                                gradient4.c4 = getRGB(epsilon_min[i], epsilon_amax);
 
-                                fe_data.el_number = 0;
-                                fe_data.flag = 0;
-                                fe_data.f1 = (float) epsilon_min[i];
-                                fe_data.f2 = (float) epsilon_max[i];
-                                fe_data.f3 = (float) epsilon_max[i];
-                                fe_data.f4 = (float) epsilon_min[i];
+                                fe_data4.el_number = 0;
+                                fe_data4.flag = 0;
+                                fe_data4.f1 = (float) epsilon_min[i];
+                                fe_data4.f2 = (float) epsilon_max[i];
+                                fe_data4.f3 = (float) epsilon_max[i];
+                                fe_data4.f4 = (float) epsilon_min[i];
                             }
 
                             w.lp = 8;
@@ -10833,12 +11186,12 @@ void Plate_analysis(void) {
                             memmove(translucency_ptr, &HalfTranslucency, sizeof(unsigned char));
 
                             gradient_ptr = translucency_ptr + sizeof(unsigned char);
-                            memmove(gradient_ptr, &gradient, sizeof(GRADIENT));
+                            memmove(gradient_ptr, &gradient4, sizeof(GRADIENT4));
 
-                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT);
-                            memmove(fe_data_ptr, &fe_data, sizeof(FE_DATA));
+                            fe_data_ptr = gradient_ptr + sizeof(GRADIENT4);
+                            memmove(fe_data_ptr, &fe_data4, sizeof(FE_DATA4));
 
-                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT) + sizeof(FE_DATA);
+                            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char) + sizeof(GRADIENT4) + sizeof(FE_DATA4);
                             adr = dodaj_obiekt((BLOK *) dane, &w);
 
                             T.warstwa = Ldsp.warstwa;
@@ -10998,7 +11351,8 @@ void Plate_analysis(void) {
 #endif
 
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5) {
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                {
                     if (mesh_boundary[i].node1 != last_node)
                     {
 #ifndef NDEBUG
@@ -11034,7 +11388,7 @@ void Plate_analysis(void) {
             printf("\nState %s with correction ratio %f\n", SLS_ULS, load_ratio);
 #endif
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5)
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
                 {
                     mesh_boundary[i].state1[sti].Qn *= load_ratio;
                     mesh_boundary[i].state1[sti].Rz *= load_ratio;
@@ -11078,7 +11432,7 @@ void Plate_analysis(void) {
 #endif
 
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5)
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
                 {
                     if (mesh_boundary[i].node1 != last_node)
                     {
@@ -11114,7 +11468,7 @@ void Plate_analysis(void) {
             printf("\nState %s with correction ratio %f\n", SLS_ULS, load_ratio);
 #endif
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5)
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
                 {
                     mesh_boundary[i].state1[sti].Qn1 *= load_ratio;
                     mesh_boundary[i].state1[sti].Rz1 *= load_ratio;
@@ -11155,7 +11509,8 @@ void Plate_analysis(void) {
 #endif
 
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5) {
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                {
                     if (mesh_boundary[i].node1 != last_node)
                     {
 #ifndef NDEBUG
@@ -11185,7 +11540,7 @@ void Plate_analysis(void) {
             printf("\nMAX\n");
 #endif
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5)
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
                 {
                     if (mesh_boundary[i].node1 != last_node)
                     {
@@ -11220,7 +11575,8 @@ void Plate_analysis(void) {
 #endif
 
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5) {
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                {
                     if (mesh_boundary[i].node1 != last_node)
                     {
 #ifndef NDEBUG
@@ -11249,7 +11605,8 @@ void Plate_analysis(void) {
 #endif
 
             for (i = 0; i < mesh_boundaries_no; i++) {
-                if (mesh_boundary[i].restraint > 5) {
+                if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
+                {
                     if (mesh_boundary[i].node1 != last_node)
                     {
 #ifndef NDEBUG
@@ -11428,7 +11785,7 @@ void Plate_analysis(void) {
                 dxexplus=dxexminus=dxmexplus=dxmexminus=-1.;  //set initially out of range
                 while ((edge==mesh_boundary[i].edge) && (i < mesh_boundaries_no))
                 {
-                    if (mesh_boundary[i].restraint > 5)
+                    if ((mesh_boundary[i].restraint > 5) || (mesh_boundary[i].restraint == 4))
                     {
                         edge_x1 = jednostkiObX(mesh_boundary[i].x1);
                         edge_y1 = jednostkiObY(mesh_boundary[i].y1);
@@ -12027,8 +12384,8 @@ pl_error3:
         }
     }
 
-    if (st_uniform_load_comb) free(st_uniform_load_comb);
-    if (st_uniform_load_cons) free(st_uniform_load_cons);
+    //if (st_uniform_load_comb) free(st_uniform_load_comb);
+    //if (st_uniform_load_cons) free(st_uniform_load_cons);
 
     if (pl_property) free(pl_property);
     if (pl_load_factors)free(pl_load_factors);
@@ -12042,11 +12399,15 @@ pl_error3:
     if (zone_property) free(zone_property);
 
     // Free the allocated memory when no longer needed
-    for (int i = 0; i < MAX_L_BLOCKS; i++) {
-        free(block_names[i]);
+    for (i = 0; i < MAX_L_BLOCKS; i++) {
+        if (block_names[i]) {free(block_names[i]); block_names[i]=NULL;}
     }
-    free(block_names);
+    if (block_names) {free(block_names); block_names=NULL;}
     ////////////////
+
+    remove_short_notice();
+
+    glb_silent=FALSE;
 
     push:
     redraw();

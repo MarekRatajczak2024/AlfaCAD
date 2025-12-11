@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <iostream>
 #include <set>
 #include <string>
@@ -49,7 +51,7 @@ class Strings
 {
 public:
 
-    static String WideStringToString__(const WString& wstr)
+    static String WideStringToString_1(const WString& wstr)
     {
         if (wstr.empty())
         {
@@ -418,7 +420,7 @@ String WStringToString(const WString& widestr) {
     return sstr;
 }
 
-void utf8Upper__(char* text)
+void utf8Upper_(char* text)
 {
 
     String s_text = convertToString(text);
@@ -427,7 +429,7 @@ void utf8Upper__(char* text)
     strcpy(text, s_text_u.c_str());
 }
 
-void utf8Lower__(char* text)
+void utf8Lower_(char* text)
 {
 
     String s_text = convertToString(text);
@@ -438,21 +440,16 @@ void utf8Lower__(char* text)
 
 void utf8Upper(unsigned char* text)
 {
-    unsigned char *text_;
-    text_=Utf8StrMakeUprUtf8Str(text);
-    if (text_ != NULL)
+    if (unsigned char* text_ = Utf8StrMakeUprUtf8Str(text); text_ != nullptr)
     {
         strcpy((char*)text, (char*)text_);
         free(text_);
     }
-    
 }
 
 void utf8Lower(unsigned char* text)
 {
-    unsigned char *text_;
-    text_=Utf8StrMakeLwrUtf8Str(text);
-    if (text_ != NULL)
+    if (unsigned char* text_ = Utf8StrMakeLwrUtf8Str(text); text_ != nullptr)
     {
         strcpy((char*)text, (char*)text_);
         free(text_);

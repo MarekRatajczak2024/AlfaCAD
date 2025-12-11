@@ -73,6 +73,7 @@
 #include "main.h"
 #include "o_static.h"
 #include "o_plate.h"
+#include "o_shield.h"
 #include "o_animate_dynamics.h"
 
 #include "icon_yes_d.h"
@@ -2321,6 +2322,8 @@ extern BITMAP *icon_slab_geo_black;
 extern char *icon_slab_geo_black_p;
 extern BITMAP *icon_slab_fem;
 extern char *icon_slab_fem_p;
+extern BITMAP *icon_shield_fem;
+extern char *icon_shield_fem_p;
 extern BITMAP *icon_slab_edge_rolled;
 extern char *icon_slab_edge_rolled_p;
 extern BITMAP *icon_slab_edge_hinged;
@@ -3226,6 +3229,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_slab_geo_red,"slab_geo_red",&icon_slab_geo_red_p },
         {&icon_slab_geo_black,"slab_geo_black",&icon_slab_geo_black_p },
         {&icon_slab_fem,"slab_fem",&icon_slab_fem_p },
+        {&icon_shield_fem,"shield_fem",&icon_shield_fem_p },
         {&icon_slab_edge_rolled,"slab_edge_rolled",&icon_slab_edge_rolled_p },
         {&icon_slab_edge_hinged,"slab_edge_hinged",&icon_slab_edge_hinged_p },
         {&icon_slab_edge_free,"slab_edge_free",&icon_slab_edge_free_p },
@@ -3308,7 +3312,7 @@ extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, Shield_analysis, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
 
 //#define WOOD 28 //26   //the number of function for wood choice
 int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);

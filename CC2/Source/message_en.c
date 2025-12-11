@@ -670,6 +670,7 @@ static char* komunikaty0[] =
 /*169*/u8"Indicate frame or truss element",
 /*170*/u8"Place the section line at the desired element coordinates. Click to save the values to the clipboard",
 /*171*/u8"Indicate the plate diagram for static analysis (FEM)",
+/*172*/u8"Indicate the shield diagram for static analysis (FEM)",
 };
 
 static char* messages_str[] =
@@ -959,7 +960,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _PROCEED_STATIC_ u8"Proceed static analysis of the specified frame or truss?"
 
 #define _incorrectly_defined_ u8"incorrectly defined"
-#define _property_not_defined_ u8"property not defined"
+#define _property_not_defined_ u8"property not defined or defined incorrectly"
 #define _reaction_not_associated_ u8"reaction not associated with any known node"
 #define _reaction_not_enough_in_Y_ u8"Structure insufficiently supported in Y axis. Add missing support."
 #define _reaction_not_enough_in_X_ u8"Structure insufficiently supported in X axis. Add missing support."
@@ -977,6 +978,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _FRAME3DD_UA u8"%КАРКАС:"
 #define _FRAME3DD_ES u8"%MARCO:"
 
+#define _FRAME_ID_NOT_FOUND_ u8"'%FRAME: ID' not found"
 
 #define _Yes_ "Yes"
 #define _No_ "No"
@@ -1005,7 +1007,6 @@ static char confirm[] = u8"Confirm";
 #define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Unable to create nodes and elements block"
 #define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Unable to create reactions block"
 #define _CANNOT_CREATE_NEW_LAYER_ u8"Unable to create new layer. To many layers already created"
-
 
 char *frame3dd[]={
     /*0*/ u8"error-free completion",
@@ -1230,6 +1231,8 @@ char *frame3dd[]={
 #define _PLATE_UA u8"%ПЛИТА:"
 #define _PLATE_ES u8"%LOSA:"
 
+#define _property_not_defined_ u8"property not defined or defined incorrectly"
+
 #define _cannot_create_folder_ u8"Cannot create file directory"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
 static char confirm[] = u8"Confirm";
@@ -1256,7 +1259,7 @@ static char confirm[] = u8"Confirm";
 #define _THE_WALL_ u8"The wall"
 #define _THE_ZONE_ u8"The zone"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"The number of plate polylines is equal 0"
-#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"The number of plate polylines is greater than 1\n Such solution has not been implemented yet."
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"The number of plate polylines is greater than"
 #define _NO_LOAD_ASSIGNED_ u8"No load assigned and no '%g' declared for self weight load"
 
 #define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Hole not assigned to any zone or plate"
@@ -1265,6 +1268,13 @@ static char confirm[] = u8"Confirm";
 
 #define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"The zone is contained within another zone, what is not yet allowed"
 
+#define _PLATE_ID_NOT_FOUND_ u8"'%PLATE: ID' not found"
+#define _PREPARING_DATA_ u8"Structure review and data preparation"
+#define _BUILDING_MESH_ u8"Building mesh"
+#define _BUILDING_GRID_ u8"Preparing grid for solver"
+#define _SOLVING_ u8"Solving"
+#define _GEOMETRY_ u8"Geometry"
+#define _BUILDING_BLOCKS_ u8"Building blocks for "
 
 #define _Yes_ "Yes"
 #define _No_ "No"
@@ -1277,6 +1287,74 @@ static char confirm[] = u8"Confirm";
 #define _CANNOT_PROCEED_IN_32BIT_ u8"The plate looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
 #define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
 #define _unknown_standard_ u8"Unknown standard"
+
+#endif
+
+#ifdef __O_SHIELD__
+
+#define _SHIELD_ u8"%SHIELD:"
+#define _SHIELD_PL u8"%TARCZA:"
+#define _SHIELD_UA u8"%ЩИТ:"
+#define _SHIELD_ES u8"%ESCUDO:"
+
+#define _property_not_defined_ u8"property not defined or defined incorrectly"
+
+#define _cannot_create_folder_ u8"Cannot create file directory"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
+static char confirm[] = u8"Confirm";
+
+#define _gmsh_error_ u8"gmsh error"
+#define _ElmerGrid_error_ u8"ElmerGrid error"
+#define _ElmerSolver_error_ u8"ElmerSolver error"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Cannot open results file"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Unable to read results file"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Unable to create new layer. To many layers already created"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Unable to create nodes and elements block"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Unable to create deflection block"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Unable to create stress block"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Unable to create strain block"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Unable to create reactions block"
+
+#define _PROCEED_SHIELD_FEM_ u8"Proceed static analysis of the shield?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"polyline is not closed"
+#define _THE_SHIELD_ u8"The shield"
+#define _THE_HOLE_ u8"The hole"
+#define _THE_WALL_ u8"The wall"
+#define _THE_ZONE_ u8"The zone"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"The number of shield polylines is equal 0"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"The number of shield polylines is greater than"
+#define _NO_LOAD_ASSIGNED_ u8"No load assigned and no '%g' declared for self weight load"
+
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Hole not assigned to any zone or shield"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Wall not assigned to any zone or shield"
+#define _THE_ZONE_NOT_ASSIGNED_TO_SHIELD_ u8"Zone not assigned to any shield"
+
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"The zone is contained within another zone, what is not yet allowed"
+
+#define _SHIELD_ID_NOT_FOUND_ u8"'%SHIELD: ID' not found"
+#define _PREPARING_DATA_ u8"Structure review and data preparation"
+#define _BUILDING_MESH_ u8"Building mesh"
+#define _BUILDING_GRID_ u8"Preparing grid for solver"
+#define _SOLVING_ u8"Solving"
+#define _GEOMETRY_ u8"Geometry"
+#define _BUILDING_BLOCKS_ u8"Building blocks for "
+
+#define _Yes_ "Yes"
+#define _No_ "No"
+#define _YES_NO_ESC_ u8"YNyn\033"
+#define _YES_ 'Y'
+#define _yes_ 'y'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"The shield looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
+#define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
+#define _unknown_standard_ u8"Unknown standard"
+
+#define _load_not_associated_ u8"not associated with any edge"
 
 #endif
 

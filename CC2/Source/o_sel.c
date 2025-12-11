@@ -1741,7 +1741,7 @@ void wskaz(int info)
 		  || ad->obiektt2 == O2BlockAparat /*podczas wymiarowania wskazano element nalezacy do aparatu*/
 		  || ad->obiektt2 == O2BlockSpecial /*podczas wymiarowania wskazano element nalezacy do bloku specjalnego - TERMAT*/
 		  || ad->obiektt2 == O2BlockHatch25
-		  || ad->obiektt2 == O2BlockHatch50)))/*podczas wymiarowania wskazano element nalezacy do bloku wypelnienia - TERMAT*/
+		  /*|| ad->obiektt2 == O2BlockHatch50*/)))/*podczas wymiarowania wskazano element nalezacy do bloku wypelnienia - TERMAT*/
 	&& (typ = sprawdz_obiekt (ad, typL, info1)) != 0
 	&& TRUE == INITIAL_SEL_TEST (ad))
     {

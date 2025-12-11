@@ -671,6 +671,7 @@ static char* komunikaty0[] =
 /*169*/u8"Вкажіть елемент каркаса або ферми",
 /*170*/u8"Розташуйте лінію перетину за потрібними координатами елемента. Натисніть, щоб зберегти значення в буфер обміну",
 /*171*/u8"Вкажіть схему плити для статичного розрахунку (МКЕ)",
+/*172*/u8"Вкажіть схему щита для статичного розрахунку (МКЕ)",
 };
 
 static char* messages_str[] =
@@ -993,7 +994,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _PROCEED_STATIC_ u8"Продовжити статичний розрахунок зазначеної рами чи ферми?"
 
 #define _incorrectly_defined_ u8"неправильно визначено"
-#define _property_not_defined_ u8"властивість не визначена"
+#define _property_not_defined_ u8"властивість не визначена або визначена неправильно"
 #define _reaction_not_associated_ u8"реакція не пов'язана з жодним відомим вузлом"
 #define _reaction_not_enough_in_Y_ u8"Конструкція недостатньо підтримується по осі Y. Додайте відсутню опору."
 #define _reaction_not_enough_in_X_ u8"Конструкція недостатньо підтримується по осі X. Додайте відсутню опору."
@@ -1010,6 +1011,8 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
 #define _FRAME3DD_ES u8"%MARCO:"
+
+#define _FRAME_ID_NOT_FOUND_ u8"'%КАРКАС: ID' не знайдено"
 
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
@@ -1262,6 +1265,8 @@ char *frame3dd[]={
 #define _PLATE_UA u8"%ПЛИТА:"
 #define _PLATE_ES u8"%LOSA:"
 
+#define _property_not_defined_ u8"властивість не визначена або визначена неправильно"
+
 #define _cannot_create_folder_ u8"Не вдається створити каталог файлів"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Неможливо відкрити файл результатів"
 static char confirm[] = u8"Підтвердьте";
@@ -1288,7 +1293,7 @@ static char confirm[] = u8"Підтвердьте";
 #define _THE_WALL_ u8"Стіна"
 #define _THE_ZONE_ u8"Зона"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Кількість поліліній плит дорівнює 0"
-#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"Кількість поліліній плит перекриття перевищує 1. Таке рішення ще не реалізовано."
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"Кількість поліліній плит перекриття перевищує"
 #define _NO_LOAD_ASSIGNED_ u8"Навантаження не призначено, і для власної ваги не заявлено значення «%g»"
 
 #define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Отвір не призначено жодній зоні чи плиті"
@@ -1296,6 +1301,14 @@ static char confirm[] = u8"Підтвердьте";
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Зона не призначена жодній плиті перекриття"
 
 #define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Зона знаходиться всередині іншої зони, що поки що заборонено"
+
+#define _PLATE_ID_NOT_FOUND_ u8"'%ПЛИТА: ID' не знайдено"
+#define _PREPARING_DATA_ u8"Перегляд структури та підготовка даних"
+#define _BUILDING_MESH_ u8"Побудова сітки"
+#define _BUILDING_GRID_ u8"Підготовка сітки для розв'язувача"
+#define _SOLVING_ u8"Розв'язування"
+#define _GEOMETRY_ u8"Геометрія"
+#define _BUILDING_BLOCKS_ u8"Блоки для "
 
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
@@ -1308,6 +1321,74 @@ static char confirm[] = u8"Підтвердьте";
 #define _CANNOT_PROCEED_IN_32BIT_ u8"Плата виглядає нормально, але обчислювальний модуль Elmer FEM не працює в 32-бітній системі"
 #define _BUY_NEW_COMPUTER_  u8"Купіть новий комп'ютер"
 #define _unknown_standard_ u8"Невідомий стандарт"
+
+#endif
+
+#ifdef __O_SHIELD__
+
+#define _SHIELD_ u8"%SHIELD:"
+#define _SHIELD_PL u8"%TARCZA:"
+#define _SHIELD_UA u8"%ЩИТ:"
+#define _SHIELD_ES u8"%ESCUDO:"
+
+#define _property_not_defined_ u8"властивість не визначена або визначена неправильно"
+
+#define _cannot_create_folder_ u8"Не вдається створити каталог файлів"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Неможливо відкрити файл результатів"
+static char confirm[] = u8"Підтвердьте";
+
+#define _gmsh_error_ u8"Помилка gmsh"
+#define _ElmerGrid_error_ u8"Помилка ElmerGrid"
+#define _ElmerSolver_error_ u8"Помилка ElmerSolver"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Не вдається відкрити файл результатів"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Не вдалося прочитати файл результатів"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Неможливо створити новий шар. Для багатьох уже створених шарів"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Неможливо створити блок вузлів і елементів"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Неможливо створити блок відхилення"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Неможливо створити блок напружень"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Неможливо створити блок зсувних деформацій"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Неможливо створити блок реакцій"
+
+#define _PROCEED_SHIELD_FEM_ u8"Продовжити статичний розрахунок зазначеної плити?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"полілінія не замкнута"
+#define _THE_SHIELD_ u8"Плита"
+#define _THE_HOLE_ u8"Отвір"
+#define _THE_WALL_ u8"Стіна"
+#define _THE_ZONE_ u8"Зона"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Кількість поліліній плит дорівнює 0"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"Кількість поліліній плит перекриття перевищує"
+#define _NO_LOAD_ASSIGNED_ u8"Навантаження не призначено, і для власної ваги не заявлено значення «%g»"
+
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Отвір не призначено жодній зоні чи плиті"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Стіна не призначена жодній зоні чи плиті"
+#define _THE_ZONE_NOT_ASSIGNED_TO_SHIELD_ u8"Зона не призначена жодній плиті перекриття"
+
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Зона знаходиться всередині іншої зони, що поки що заборонено"
+
+#define _SHIELD_ID_NOT_FOUND_ u8"'%ЩИТ: ID' не знайдено"
+#define _PREPARING_DATA_ u8"Перегляд структури та підготовка даних"
+#define _BUILDING_MESH_ u8"Побудова сітки"
+#define _BUILDING_GRID_ u8"Підготовка сітки для розв'язувача"
+#define _SOLVING_ u8"Розв'язування"
+#define _GEOMETRY_ u8"Геометрія"
+#define _BUILDING_BLOCKS_ u8"Блоки для "
+
+#define _Yes_ u8"Так"
+#define _No_ u8"Ні"
+#define _YES_NO_ESC_ u8"ТНтн\033"
+#define _YES_ L'Т'
+#define _yes_ L'т'
+#define _NO_ L'Н'
+#define _no_ L'н'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Плата виглядає нормально, але обчислювальний модуль Elmer FEM не працює в 32-бітній системі"
+#define _BUY_NEW_COMPUTER_  u8"Купіть новий комп'ютер"
+#define _unknown_standard_ u8"Невідомий стандарт"
+
+#define _load_not_associated_ u8"не пов'язаний з жодним ребром"
 
 #endif
 

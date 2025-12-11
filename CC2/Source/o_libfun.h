@@ -11,7 +11,8 @@ extern void Set_Block_Change_Mode (void *ptr_ob, int mode);
 extern void Rotate_Point (double si, double co, double x1, double y1, double x2, double y2, double *x, double *y); /*rotate point*/
 extern void Change_Global_Ptr (long n);
 extern void Ini_Global_Object (void);
-extern double Angle_Normal (double angle)    ;
+extern double Angle_Normal (double angle);
+extern double Angle_Simple (double angle);
 extern double Angle_Normal_Grid (double angle);
 extern double Grid_to_Rad (double angle);
 extern double Rad_to_Grid (double angle);

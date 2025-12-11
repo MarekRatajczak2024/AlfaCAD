@@ -671,6 +671,7 @@ static char* komunikaty0[] =
 /*169*/u8"Wskaż element ramy lub kratownicy",
 /*170*/u8"Umieść linię przekrojową w żądanych współrzędnych elementu. Kliknij aby zapisać wartości w schowku",
 /*171*/u8"Wskaż schemat płyty do analizy statycznej (MES)",
+/*172*/u8"Wskaż schemat tarczy do analizy statycznej (MES)",
 };
 
 static char* messages_str[] =
@@ -958,7 +959,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _PROCEED_STATIC_ u8"Przeprowadzić analizę statyczną wskazanej ramy lub kratownicy?"
 
 #define _incorrectly_defined_ u8"błędnie zdefiniowana"
-#define _property_not_defined_ u8"właściwość nie zdefiniowana"
+#define _property_not_defined_ u8"właściwość nie zdefiniowana lub zdefiniowana niepoprawnie"
 #define _reaction_not_associated_ u8"reakcja niezwiązana z żadnym znanym węzłem"
 #define _reaction_not_enough_in_Y_ u8"Konstrukcja nie jest wystarczająco podparta w osi Y. Dodaj brakujące podparcie."
 #define _reaction_not_enough_in_X_ u8"Konstrukcja nie jest wystarczająco podparta w osi X. Dodaj brakujące podparcie."
@@ -975,6 +976,8 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
 #define _FRAME3DD_ES u8"%MARCO:"
+
+#define _FRAME_ID_NOT_FOUND_ u8"'%RAMA: ID' nie znaleziono"
 
 #define _Yes_ "Tak"
 #define _No_ "Nie"
@@ -1227,6 +1230,8 @@ char *frame3dd[]={
 #define _PLATE_UA u8"%ПЛИТА:"
 #define _PLATE_ES u8"%LOSA:"
 
+#define _property_not_defined_ u8"właściwość nie zdefiniowana lub zdefiniowana niepoprawnie"
+
 #define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
 static char confirm[] = u8"Potwierdź";
@@ -1253,7 +1258,7 @@ static char confirm[] = u8"Potwierdź";
 #define _THE_WALL_ u8"Sciana"
 #define _THE_ZONE_ u8"Strefa"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Liczba polilinii płyt jest równa 0"
-#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"Liczba polilinii płyt jest większa od 1\n Takiego rozwiązania jeszcze nie wdrożono."
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"Liczba polilinii płyt jest większa od"
 #define _NO_LOAD_ASSIGNED_ u8"Nie przypisano obciążenia i nie zadeklarowano „%g” dla obciażenia ciężarem własnym"
 
 #define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Otwór nie jest przypisany do żadnej strefy ani płyty"
@@ -1261,6 +1266,14 @@ static char confirm[] = u8"Potwierdź";
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Strefa nie jest przypisana do żadnej płyty"
 
 #define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Strefa znajduje się w innej strefie, co nie jest jeszcze dozwolone"
+
+#define _PLATE_ID_NOT_FOUND_ u8"'%PŁYTA: ID' nie znaleziono"
+#define _PREPARING_DATA_ u8"Przegląd struktury i przygotowanie danych"
+#define _BUILDING_MESH_ u8"Budowanie siatki"
+#define _BUILDING_GRID_ u8"Przygotowywanie siatki dla solvera"
+#define _SOLVING_ u8"Rozwiązywanie układu"
+#define _GEOMETRY_ u8"Geometria"
+#define _BUILDING_BLOCKS_ u8"Budowanie bloków dla "
 
 #define _Yes_ "Tak"
 #define _No_ "Nie"
@@ -1275,6 +1288,77 @@ static char confirm[] = u8"Potwierdź";
 #define _unknown_standard_ u8"Nieznany standard"
 
 #endif
+
+#ifdef __O_SHIELD__
+
+#define _SHIELD_ u8"%SHIELD:"
+#define _SHIELD_PL u8"%TARCZA:"
+#define _SHIELD_UA u8"%ЩИТ:"
+#define _SHIELD_ES u8"%ESCUDO:"
+
+#define _property_not_defined_ u8"właściwość nie zdefiniowana lub zdefiniowana niepoprawnie"
+
+#define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
+static char confirm[] = u8"Potwierdź";
+
+#define _gmsh_error_ u8"Błąd gmsh"
+#define _ElmerGrid_error_ u8"Błąd ElmerGrid"
+#define _ElmerSolver_error_ u8"Błąd ElmerSolver"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"Nie można otworzyć pliku z wynikami"
+#define _CANNOT_READ_RESULTS_FILE_ u8"Nie można odczytać pliku wyników"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Nie można utworzyć nowej warstwy. Utworzono już zbyt wiele warstw"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Nie można utworzyć bloku węzłów i elementów"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"Nie można utworzyć bloku odkształceń"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Nie można utworzyć bloku naprężeń"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Nie można utworzyć bloku odkształceń postaciowych"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Nie można utworzyć bloku reakcji"
+
+#define _PROCEED_SHIELD_FEM_ u8"Przeprowadzić analizę statyczną wskazanej płyty?"
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"polilinia nie jest zamknięta"
+#define _THE_SHIELD_ u8"Płyta"
+#define _THE_HOLE_ u8"Otwór"
+#define _THE_WALL_ u8"Sciana"
+#define _THE_ZONE_ u8"Strefa"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"Liczba polilinii płyt jest równa 0"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"Liczba polilinii płyt jest większa od"
+#define _NO_LOAD_ASSIGNED_ u8"Nie przypisano obciążenia i nie zadeklarowano „%g” dla obciażenia ciężarem własnym"
+
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Otwór nie jest przypisany do żadnej strefy ani płyty"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Ściana nie jest przypisana do żadnej strefy ani płyty"
+#define _THE_ZONE_NOT_ASSIGNED_TO_SHIELD_ u8"Strefa nie jest przypisana do żadnej płyty"
+
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"Strefa znajduje się w innej strefie, co nie jest jeszcze dozwolone"
+
+#define _SHIELD_ID_NOT_FOUND_ u8"'%TARCZA: ID' Nie znaleziono"
+#define _PREPARING_DATA_ u8"Przegląd struktury i przygotowanie danych"
+#define _BUILDING_MESH_ u8"Budowanie siatki"
+#define _BUILDING_GRID_ u8"Przygotowywanie siatki dla solvera"
+#define _SOLVING_ u8"Rozwiązywanie układu"
+#define _GEOMETRY_ u8"Geometria"
+#define _BUILDING_BLOCKS_ u8"Budowanie bloków dla "
+
+#define _Yes_ "Tak"
+#define _No_ "Nie"
+#define _YES_NO_ESC_ u8"TNtn\033"
+#define _YES_ 'T'
+#define _yes_ 't'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym"
+#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer"
+#define _unknown_standard_ u8"Nieznany standard"
+
+#define _load_not_associated_ u8"niepowiązane z żadną z krawędzi"
+
+#endif
+
+
+
 
 #ifdef __O_TEXT3PDF__
 #define _CANNOT_CREATE_PDF_ u8"błąd: nie można utworzyć dokumentu PDF\n"

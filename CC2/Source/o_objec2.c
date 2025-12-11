@@ -105,7 +105,7 @@ void Set_Object_T2_Flag (int flag, long_long offp, long_long offk)
   {
     nag =(NAGLOWEK*)(dane + off) ;
 
-    if ((flag==O2BlockPline) && ((nag->obiektt2==O2BlockSpecial) || (nag->obiektt2==O2BlockAparat)))
+    if ((flag==O2BlockPline) && ((nag->obiektt2==O2BlockAparat) || (nag->obiektt2>=O2ROLL_EDGE)))
      {
        ;
      }

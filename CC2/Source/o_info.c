@@ -477,7 +477,7 @@ void Info_about_object(char *ad)
 	 menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
 
-     if (((LINIA *)ad)->obiektt2>4)
+     if (((LINIA *)ad)->obiektt2>3)  //4 is roll, 5 is free, 6 is simple, 7 is fixed
      {
         strcpy(sk,view_edge_tab[((LINIA *)ad)->obiektt2]);
         menu_par_new((*mInfoAbout.pola)[iEdge].txt, sk) ;
@@ -786,7 +786,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
 
-     if (((LINIA *)ad)->obiektt2>4)
+     if (((LINIA *)ad)->obiektt2>3)  //4 is roll, 5 is free, 6 is simple, 7 is fixed
      {
          strcpy(sk,view_edge_tab[((LINIA *)ad)->obiektt2]);
          menu_par_new((*mInfoAbout.pola)[iEdge].txt, sk) ;

@@ -88,19 +88,19 @@ static int MaxNoBlock=1000;
 #define MAX_CLIENT_BITMAP 64
 #define FIRST_CLIENT_BITMAP_NO 1000
 
-#define V_EDGE_SIMPLE 21 //18
-#define V_EDGE_SIMPLE_INV 22  //19
-#define V_EDGE_FIXED 23 //20
-#define V_EDGE_FIXED_INV 24 //21
-#define V_EDGE_ARC_SIMPLE 25 //22
-#define V_EDGE_ARC_SIMPLE_INV 26 //23
-#define V_EDGE_ARC_FIXED 27 //24
-#define V_EDGE_ARC_FIXED_INV 28 //25
-
-#define V_EDGE_ROLL 26
-#define V_EDGE_ROLL_INV 27
-#define V_EDGE_ARC_ROLL 28
-#define V_EDGE_ARC_ROLL_INV 29
+#define V_EDGE_SIMPLE 21
+#define V_EDGE_SIMPLE_INV 22
+#define V_EDGE_FIXED 23
+#define V_EDGE_FIXED_INV 24
+#define V_EDGE_ARC_SIMPLE 25
+#define V_EDGE_ARC_SIMPLE_INV 26
+#define V_EDGE_ARC_FIXED 27
+#define V_EDGE_ARC_FIXED_INV 28
+//rolling edges
+#define V_EDGE_ROLL 29
+#define V_EDGE_ROLL_INV 30
+#define V_EDGE_ARC_ROLL 31
+#define V_EDGE_ARC_ROLL_INV 32
 
 #define V_SLAB_PLATE 21
 #define V_SLAB_SPACE 22
@@ -514,8 +514,8 @@ enum OBIEKTT1BL { OB1NOCHANGE = 0 , OB1CHANGE_SCALE= 1, OB1CHANGE_DRAG = 2,
           (dyskusyjna jest sprawa ostatniego elementu galezi)*/
 
 /*----------------------------------------------------------------------------------------------------------------------------------*/
-enum OBIEKTT2        { O2NieOkreslony=-1, O2NoBlockS,O2BlockDim, O2BlockPline, O2BlockAparat, O2BlockDXF, O2BlockSpecial, O2BlockHatch25, O2BlockHatch50} ;
-enum OBIEKTT2_PLATE  { O2FREE_EDGE=5, O2HINGED_EDGE=6, O2FIXED_EDGE=7};
+enum OBIEKTT2        { O2NieOkreslony=-1, O2NoBlockS,O2BlockDim, O2BlockPline, O2BlockAparat, O2BlockDXF, O2BlockSpecial, O2BlockHatch25 /*, O2BlockHatch50*/} ;
+enum OBIEKTT2_PLATE  { O2ROLL_EDGE=4, O2FREE_EDGE=5, O2HINGED_EDGE=6, O2FIXED_EDGE=7};
 
 enum OBIEKTT3_PLATE  {O3REGULAR_EDGE=0, O3INVERTED_EDGE=1};
 /*----------------------------------------------------------------------------------------------------------------------------------*/
@@ -558,7 +558,7 @@ enum Block_Type { B_DIM = 'W', B_DIM1 = '\01', B_DIM2 = '2', B_DIM3 = '3', B_EXP
 
 enum Pline_Type { PL_OTHER = 0, PL_PLINE = 1, PL_POLYGON = 'P', PL_RECTANGLE = 'R', PL_HATCH = 'H',
                 PL_ELLIPSE = 'E', PL_SKETCH = 'S', PL_TRACE = 'T', PL_CURVE = 'C',
-                PL_ELLIPSE_FILL = 2, PL_ELLIPSE_ARC = 3, PL_PLATE  = 'A', PL_HOLE = 'B', PL_WALL = 'W', PL_ZONE = 'Z', PL_SIEC = 'n', PL_SHADOW = 13, PL_SOLIDARC=14} ;
+                PL_ELLIPSE_FILL = 2, PL_ELLIPSE_ARC = 3, PL_PLATE  = 'A', PL_SHIELD  = 'A', PL_HOLE = 'B', PL_WALL = 'W', PL_ZONE = 'Z', PL_SIEC = 'n', PL_SHADOW = 13, PL_SOLIDARC=14} ;
                 
 
 
@@ -3210,8 +3210,14 @@ typedef struct {
     unsigned int c1;
     unsigned int c2;
     unsigned int c3;
+} GRADIENT3;
+
+typedef struct {
+    unsigned int c1;
+    unsigned int c2;
+    unsigned int c3;
     unsigned int c4;
-} GRADIENT;
+} GRADIENT4;
 
 typedef struct {
     unsigned int c1;
@@ -3228,12 +3234,22 @@ typedef struct
 {
     //unsigned flag:4;
     unsigned el_number:30;
-    unsigned flag:2;  //0 normal  1 extended
+    unsigned flag:2;  //0 normal  1 extended, 2 extended twice, 3 extended tripple
     float f1;  //for stress is stress
     float f2;
     float f3;
     float f4;
-} FE_DATA;
+} FE_DATA4;
+
+typedef struct
+{
+    //unsigned flag:4;
+    unsigned el_number:30;
+    unsigned flag:2;  //0 normal  1 extended, 2 extended twice, 3 extended tripple
+    float f1;  //for stress is stress
+    float f2;
+    float f3;
+} FE_DATA3;
 
 typedef struct
 {
@@ -3241,7 +3257,14 @@ typedef struct
     float f2;
     float f3;
     float f4;
-} FE_DATA_EX;
+} FE_DATA4_EX;
+
+typedef struct
+{
+    float f1;  //for stress is reinforcement ratio
+    float f2;
+    float f3;
+} FE_DATA3_EX;
 
 /*
 typedef struct

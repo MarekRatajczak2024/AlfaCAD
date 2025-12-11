@@ -670,6 +670,7 @@ static char* komunikaty0[] =
 /*169*/u8"Indicar el elemento del marco o cercha",
 /*170*/u8"Posicione la línea de sección en las coordenadas deseado del elemento. Haga clic para guardar los valores en el portapapeles",
 /*171*/u8"Indique un diagrama de losa para análisis estático (FEM)",
+/*172*/u8"Indique un diagrama de escudo para análisis estático (FEM)",
 };
 
 static char* messages_str[] =
@@ -959,7 +960,7 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _PROCEED_STATIC_ u8"¿Proceder a un análisis estático del marco o cercha indicada?"
 
 #define _incorrectly_defined_ u8"definido incorrectamente"
-#define _property_not_defined_ u8"propiedad no definida"
+#define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
 #define _reaction_not_associated_ u8"reacción no asociada con ningún nodo conocido"
 #define _reaction_not_enough_in_Y_ u8"Estructura insuficientemente soportada en el eje Y. Agregar soporte faltante."
 #define _reaction_not_enough_in_X_ u8"Estructura insuficientemente soportada en el eje X. Agregar soporte faltante."
@@ -976,6 +977,8 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
 #define _FRAME3DD_ES u8"%MARCO:"
+
+#define _FRAME_ID_NOT_FOUND_ u8"'%MARCO: ID' not found"
 
 #define _Yes_ "Sí"
 #define _No_ "No"
@@ -1229,6 +1232,8 @@ char *frame3dd[]={
 #define _PLATE_UA u8"%ПЛИТА:"
 #define _PLATE_ES u8"%LOSA:"
 
+#define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
+
 #define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
 
@@ -1256,7 +1261,7 @@ static char confirm[] = u8"Confirmar";
 #define _THE_WALL_ u8"La pared"
 #define _THE_ZONE_ u8"La zona"
 #define _THE_PLATE_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"El número de polilíneas de losas es igual a 0"
-#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ONE_ u8"El número de polilíneas de losas es mayor que 1\n. Esta solución aún no se ha implementado."
+#define _THE_PLATE_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"El número de polilíneas de losas es mayor que"
 #define _NO_LOAD_ASSIGNED_ u8"No se ha asignado ninguna carga y no se ha declarado ningún '%g' para el peso propio"
 
 #define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_PLATE_ u8"Agujero no asignado a ninguna zona ni losa"
@@ -1264,6 +1269,14 @@ static char confirm[] = u8"Confirmar";
 #define _THE_ZONE_NOT_ASSIGNED_TO_PLATE_ u8"Zona no asignada a ninguna losa"
 
 #define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"La zona está contenida dentro de otra zona, lo cual aún no está permitido"
+
+#define _PLATE_ID_NOT_FOUND_ u8"'%LOSA: ID' no encontrado"
+#define _PREPARING_DATA_ u8"Revisión de la estructura y preparación de datos"
+#define _BUILDING_MESH_ u8"Creación de la malla"
+#define _BUILDING_GRID_ u8"Preparación de la malla para el solucionador"
+#define _SOLVING_ u8"Resolución"
+#define _GEOMETRY_ u8"Geometría"
+#define _BUILDING_BLOCKS_ u8"Componentes para "
 
 #define _Yes_ "Sí"
 #define _No_ "No"
@@ -1276,6 +1289,83 @@ static char confirm[] = u8"Confirmar";
 #define _CANNOT_PROCEED_IN_32BIT_ u8"La losa parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
 #define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva"
 #define _unknown_standard_ u8"Estándar desconocido"
+
+#endif
+
+#ifdef __O_SHIELD__
+
+#define _SHIELD_ u8"%SHIELD:"
+#define _SHIELD_PL u8"%TARCZA:"
+#define _SHIELD_UA u8"%ЩИТ:"
+#define _SHIELD_ES u8"%ESCUDO:"
+
+#define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
+
+#define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+
+static char confirm[] = u8"Confirmar";
+
+#define _gmsh_error_ u8"Error de gmsh"
+#define _ElmerGrid_error_ u8"Error de ElmerGrid"
+#define _ElmerSolver_error_ u8"Error de ElmerSolver"
+
+#define _CANNOT_OPEN_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+#define _CANNOT_READ_RESULTS_FILE_ u8"No se pudo leer el archivo de resultados"
+
+#define _CANNOT_CREATE_NEW_LAYER_ u8"No se pudo crear una nueva capa. Ya se han creado muchas capas"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pudo crear nodos y bloques de elementos"
+#define _CANNOT_CREATE_DEFLECTION_BLOCK_ u8"No se pudo crear un bloque de deflexión"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se pudo crear un bloque de tensión"
+#define _CANNOT_CREATE_STRAIN_BLOCK_ u8"No se pudo crear un bloque de deformación cortante"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"No se pudo crear un bloque de reacciones"
+
+#define _PROCEED_SHIELD_FEM_ u8"¿Proceder a un análisis estático de losa?"
+
+#define _SHIELD_ID_NOT_FOUND_ u8"'%ESCUDO: ID' no encontrado"
+#define _PREPARING_DATA_ u8"Revisión de la estructura y preparación de datos"
+#define _BUILDING_MESH_ u8"Construyendo la malla"
+#define _BUILDING_GRID_ u8"Preparando la malla para el solucionador"
+#define _SOLVING_ u8"Resolviendo"
+#define _GEOMETRY_ u8"Geometría"
+#define _BUILDING_BLOCKS_ u8"Componentes para "
+
+#define _POLYLINE_IS_NOT_CLOSED_ u8"la polilínea no está cerrada"
+#define _THE_SHIELD_ u8"El Escudo"
+#define _THE_HOLE_ u8"El agujero"
+#define _THE_WALL_ u8"La pared"
+#define _THE_ZONE_ u8"La zona"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_EQUAL_ZERO_ u8"El número de polilíneas de losas es igual a 0"
+#define _THE_SHIELD_POLYLINE_NUMBER_IS_GREATER_THAN_ u8"El número de polilíneas de losas es mayor que"
+#define _NO_LOAD_ASSIGNED_ u8"No se ha asignado ninguna carga y no se ha declarado ningún '%g' para el peso propio"
+
+#define _THE_HOLE_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Agujero no asignado a ninguna zona ni losa"
+#define _THE_WALL_NOT_ASSIGNED_TO_ZONE_OR_SHIELD_ u8"Muro no asignado a ninguna zona ni losa"
+#define _THE_ZONE_NOT_ASSIGNED_TO_SHIELD_ u8"Zona no asignada a ninguna losa"
+
+#define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"La zona está contenida dentro de otra zona, lo cual aún no está permitido"
+
+#define _SHIELD_ID_NOT_FOUND_ u8"'%SHIELD: ID' not found"
+#define _PREPARING_DATA_ u8"Structure review and data preparation"
+#define _BUILDING_MESH_ u8"Building mesh"
+#define _BUILDING_GRID_ u8"Preparing grid for solver"
+#define _SOLVING_ u8"Solving"
+#define _GEOMETRY_ u8"Geometry"
+#define _BUILDING_BLOCKS_ u8"Building blocks for "
+
+#define _Yes_ "Sí"
+#define _No_ "No"
+#define _YES_NO_ESC_ u8"SNsn\033"
+#define _YES_ 'S'
+#define _yes_ 's'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define _CANNOT_PROCEED_IN_32BIT_ u8"La losa parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
+#define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva"
+#define _unknown_standard_ u8"Estándar desconocido"
+
+#define _load_not_associated_ u8"no asociado con ningún borde"
 
 #endif
 

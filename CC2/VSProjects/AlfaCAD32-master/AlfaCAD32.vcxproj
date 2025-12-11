@@ -323,6 +323,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>DebugUA/AlfaCADUA4Win.exe</OutputFile>
@@ -367,6 +368,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>DebugUA/AlfaCADES4Win.exe</OutputFile>
@@ -411,6 +413,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>Debug/AlfaCADPL4Win.exe</OutputFile>
@@ -456,6 +459,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>Release/AlfaCAD4Win.exe</OutputFile>
@@ -500,6 +504,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>ReleaseUA/AlfaCADUA4Win.exe</OutputFile>
@@ -544,6 +549,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>ReleaseES/AlfaCADES4Win.exe</OutputFile>
@@ -588,6 +594,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <CompileAsManaged>false</CompileAsManaged>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <OutputFile>ReleasePl/AlfaCADPL4Win.exe</OutputFile>
@@ -4270,6 +4277,8 @@
     <ClCompile Include="..\..\Source\o_plate.c" />
     <ClCompile Include="..\..\Source\o_plate_reactions.c" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
+    <ClCompile Include="..\..\Source\o_shield.c" />
+    <ClCompile Include="..\..\Source\o_shield_reactions.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />
     <ClCompile Include="..\..\Source\RT_section_CA_si.c" />
@@ -4289,6 +4298,7 @@
     <ClInclude Include="..\..\..\CC2\Source\unicode.h" />
     <ClInclude Include="..\..\..\zlib\zlib.h" />
     <ClInclude Include="..\..\include\djgpp\dos_dos.h" />
+    <ClInclude Include="..\..\Source\o_shield.h" />
     <ClInclude Include="MyFileDialog.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

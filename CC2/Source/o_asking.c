@@ -569,8 +569,96 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[2].flags &= ~BUTTON_HIDDEN;
             break;
 
-        case 6:
+        case 5:
+            ////TEMPORARY
+            /*
+            buttons[3].flags |= BUTTON_HIDDEN;
+            buttons[4].flags |= BUTTON_HIDDEN;
+            buttons[5].flags |= BUTTON_HIDDEN;
+            */
 
+            buttons[3].flags &= ~BUTTON_HIDDEN;
+            buttons[4].flags &= ~BUTTON_HIDDEN;
+            buttons[5].flags &= ~BUTTON_HIDDEN;
+
+            buttons[6].flags |= BUTTON_HIDDEN;
+            buttons[7].flags |= BUTTON_HIDDEN;
+            buttons[8].flags |= BUTTON_HIDDEN;
+
+            buttons[9].flags &= ~BUTTON_HIDDEN;
+            //buttons[10].flags &= ~BUTTON_HIDDEN;
+            buttons[10].flags |= BUTTON_HIDDEN;
+            buttons[11].flags &= ~BUTTON_HIDDEN;
+            ///////////
+
+            asking_dlg_static.SizeButtonT=12; //6;
+            asking_dlg_static.SizeImageT=5;
+            asking_dlg_static.SizeComboBoxT=1;
+
+            buttons[0].x = DXBox1_/2 - (DXBut1) + DXShift + Xp1 - 3;
+            buttons[0].name2 = 100;
+            buttons[0].flags &= ~BUTTON_HIDDEN;
+            buttons[1].x = DXBox1_/2 + DXShift + Xp1 + 3;
+            buttons[1].name2 = 101;
+            buttons[1].flags &= ~BUTTON_HIDDEN;
+
+            buttons[2].flags |= BUTTON_HIDDEN;
+
+            images_as[1].y1=images_as[2].y1=images_as[3].y1=images_as[4].y1=images_as[5].y1=images_as[6].y1=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y);
+
+            images_as[7].y1=images_as[8].y1=images_as[6].y1-20;
+
+
+            combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
+            combobox_as [1].y=images_as[7].y1+HEIGHT/(wsp_y);
+
+
+            buttons[3].y=buttons[4].y=buttons[5].y=buttons[6].y=buttons[7].y=buttons[0].y-15;
+            buttons[3].x=images_as[1].x1+13/wsp_x;
+            buttons[4].x=images_as[2].x1+13/wsp_x;
+            buttons[5].x=images_as[3].x1+13/wsp_x;
+            images_as[4].x1=images_as[7].x1=DXBox1_-25;
+            //images_as[8].x1=DXBox1_+5;
+            combobox_as [0].x=DXBox1_-42;
+            combobox_as [1].x=DXBox1_-42;
+
+            del=(WIDTH-7)*2;
+            if (del>4) del=4;
+
+            del1=WIDTH-9;
+            if (del1>0) del1=0;
+
+            /*
+            images_as[5].x1=buttons[1].x+DXBut1 + WIDTH/4 + del; // - abs(WIDTH-12)/wsp_x;
+            buttons[6].x=images_as[5].x1+15/wsp_x;
+            buttons[6].check=*geometric_stiffness;
+
+            images_as[6].x1=buttons[1].x+DXBut1 + WIDTH/4+18 + del; // - abs(WIDTH-12)/wsp_x;
+            buttons[7].x=images_as[6].x1+15/wsp_x-del1;
+            buttons[7].check=*inertia;
+
+            buttons[8].x=images_as[8].x1+15/wsp_x-del1;
+            buttons[8].y=images_as[8].y1+40/wsp_y-del1;
+            buttons[8].check=!(*PINNABLE);
+            */
+
+            buttons[9].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[9].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 20);
+            buttons[9].check=*theta_;
+
+            /*
+            buttons[10].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[10].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 8);
+            buttons[10].check=*sigma_eq_;
+            */
+
+            buttons[11].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[11].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y + 4);
+            buttons[11].check=*epsilon_;
+
+            break;
+
+        case 6:
             ////TEMPORARY
             /*
             buttons[3].flags |= BUTTON_HIDDEN;

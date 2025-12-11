@@ -1662,7 +1662,7 @@ static POLE pmPLine[] = {
           {u8"Sin soporte\0", L'S', 851,NULL},
           {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
           {u8"Soporte rígida\0", L'P', 852,NULL},
-          //{u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
+          {u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
           {u8"Voltear el soporte\0", L'V', 853,NULL},
 };
 
@@ -1670,6 +1670,7 @@ POLE pmEdgeType[] = {
           {u8"Sin soporte\0", L'S', 851,NULL},
           {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
           {u8"Soporte rígida\0", L'P', 852,NULL},
+          {u8"support Móvil\0", L'M', 849,NULL}
           };
 
 
@@ -1796,10 +1797,10 @@ static POLE pmVector[] = {
           {u8"carga Térmica\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"tamaño del nodo (radio)\0\0",L'0',786,NULL},
 
-          {u8"Placa de losa\0\0",L'P',846,NULL},
-          {u8"apertura de Losa\0\0",L'L',844,NULL},
+          {u8"la Losa o escudo\0\0",L'L',846,NULL},
+          {u8"Espacio en placa o escudo\0\0",L'E',844,NULL},
           {u8"La pared debajo de la losa\0\0",L'W',843,NULL},
-          {u8"Zona de losa\0\0",L'Z',842,NULL},
+          {u8"Zona de losa o escudo\0\0",L'Z',842,NULL},
           {u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
           {u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
 };
@@ -1878,7 +1879,7 @@ static POLE pmPLukm[] = {
         {u8"Sin soporte\0", L'S', 851,NULL},
         {u8"Soporte fijo con bisagras\0", L'F', 850,NULL},
         {u8"Soporte rígida\0", L'P', 852,NULL},
-        //{u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
+        {u8"Soporte móvil con bisagras\0", L'M', 849,NULL},
         {u8"Voltear el soporte\0", L'V', 853,NULL},
         };
 
@@ -3495,7 +3496,7 @@ char error_message_background[64] = u8"No hay archivos de fondo en esta carpeta"
 
 char* view_width_tab[] = { u8"m.d.",u8"d.",u8"G.",u8"M.G.",u8"E.G.", "", "", u8"escondida " };
 
-char* view_edge_tab[] = {u8"Sin soporte", u8"", u8"", u8"", u8"", u8"Sin soporte", u8"Soporte fijo con bisagras", u8"Soporte rígida"};
+char* view_edge_tab[] = {u8"Sin soporte", u8"", u8"", u8"", u8"Soporte enrollado", u8"Sin soporte", u8"Soporte fijo con bisagras", u8"Soporte rígida"};
 char* view_edgeinverted_tab[] = {u8"Regular", u8"Invertido"};
 
 char* view_type_tab[] = {

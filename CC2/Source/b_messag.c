@@ -160,7 +160,7 @@ void InfoList(int n)
 {
   struct viewporttype viewinfo;
 
- // int a;
+  if ((glb_silent == TRUE) && (n>0)) return;
 
   getviewsettings (&viewinfo);
   setviewport(0, 0, getmaxx(),getmaxy(), 1);

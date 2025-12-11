@@ -2430,6 +2430,8 @@ BITMAP *icon_slab_geo_black;
 char *icon_slab_geo_black_p;
 BITMAP *icon_slab_fem;
 char *icon_slab_fem_p;
+BITMAP *icon_shield_fem;
+char *icon_shield_fem_p;
 BITMAP *icon_slab_edge_rolled;
 char *icon_slab_edge_rolled_p;
 BITMAP *icon_slab_edge_hinged;
@@ -5401,6 +5403,8 @@ void Koniec(void)
    report_mem_leak_cpp_();
 
    DoneArgs();
+
+   my_sleep(100);
 
 #ifndef MACOS
    quick_exit(0);

@@ -1244,7 +1244,7 @@ int getupattern(void)
 extern void Clear_View (void) ;
 extern void Image_Free (void) ;
 extern void Save_View (void) ;
-extern void Draw_Solid (int numpoints, T_PixelTVal* polypoints, unsigned pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT *gradient) ;
+extern void Draw_Solid (int numpoints, T_PixelTVal* polypoints, unsigned pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT4 *gradient) ;
 extern void Draw_Kolo (long_long xr,long_long yr,long_long R) ;
 extern BOOL Point_in_Solid (WIELOKAT *ptr_w, double x, double y) ;
 extern BOOL Check_DArea_in_Last_Solid (void) ;
@@ -5264,9 +5264,10 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
 {
     LINIA L=Ldef;
     WIELOKAT w=Stdef;
+    OKRAG k=Kdef;
 
-    L.warstwa = w.warstwa = v->warstwa;
-    L.kolor = w.kolor = vkolor; //v->kolor;
+    L.warstwa = w.warstwa = k.warstwa = v->warstwa;
+    L.kolor = w.kolor = k.kolor = vkolor; //v->kolor;
 
     if (v->style<V_EDGE_SIMPLE)
     {
@@ -5290,6 +5291,18 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
 
         if (linia_visible(&L))
             rysuj_obiekt_(&L, mode, kolor);
+    }
+    else if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV) || (v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+    {
+
+        if (v->style == V_EDGE_ROLL)  //roll edge
+            psize *= -1;
+        k.x=x0 + psize * 0.5 * koc1;
+        k.y=y0 - psize * 0.5 * kos1;
+        k.r=fabs(psize * 0.5);
+
+        if (Check_Draw_Pieslice (&k))
+            rysuj_obiekt_(&k, mode, kolor);
     }
     else
     {
@@ -5456,18 +5469,28 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
             parametry_lini(&Lt1, &PL1);
 
             //angle=Angle_Normal(PL1.kat*Pi2/180);
+            //angle=Angle_Normal(PL1.kat*Pi2/180);
             //koc=cos(angle);
             //kos=sin(angle);
 
-            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV)) PL1.kat+=180;
+            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV) || (v->style==V_EDGE_ARC_ROLL_INV)) PL1.kat+=180;
 
             angle = Angle_Normal(-(PL1.kat) * Pi / 180);
             if (fabs(angle - Pi2) < 0.00001) angle = 0;
             if (fabs(angle) < 0.00001) angle = 0;
-            koc1 = cos(angle - katS);
-            koc2 = cos(angle + katS);
-            kos1 = sin(angle - katS);
-            kos2 = sin(angle + katS);
+
+            if ((v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+            {
+                koc1 = koc2 = cos(angle);
+                kos1 = kos2 = sin(angle);
+            }
+            else
+            {
+                koc1 = cos(angle - katS);
+                koc2 = cos(angle + katS);
+                kos1 = sin(angle - katS);
+                kos2 = sin(angle + katS);
+            }
 
             n1 = -1;
 
@@ -5541,6 +5564,8 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             angle=Angle_Normal(-angle0);
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
@@ -5560,10 +5585,17 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
             break;
     }
 
-    koc1=cos(angle-katS);
-    koc2=cos(angle+katS);
-    kos1=sin(angle-katS);
-    kos2=sin(angle+katS);
+    if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV))
+    {
+        koc1 = koc2 = cos(angle);
+        kos1 = kos2 = sin(angle);
+    }
+    else {
+        koc1 = cos(angle - katS);
+        koc2 = cos(angle + katS);
+        kos1 = sin(angle - katS);
+        kos2 = sin(angle + katS);
+    }
 
     angle_rev=Angle_Normal(angle+Pi_);
 
@@ -5719,6 +5751,8 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                 case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
                 case V_EDGE_FIXED:  //fixed edge
                 case V_EDGE_FIXED_INV:  //fixed edge reversed
+                case V_EDGE_ROLL:  //roll edge
+                case V_EDGE_ROLL_INV:  //roll edge reversed
                     if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
@@ -6186,6 +6220,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
         case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
             if (ptrs_vector->angle2<ptrs_vector->angle1)
                 kata2=ptrs_vector->angle2+Pi2;
             else kata2=ptrs_vector->angle2;
@@ -6516,6 +6552,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
                ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.1;  //just to simulate
                else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.1;  //just to simulate
@@ -7082,7 +7120,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
         case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
-
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
             switch (ptrs_vector->style)
             {
                 case 5:
@@ -7163,6 +7202,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
                 case V_EDGE_ARC_FIXED:  //fixed edge
                 case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+                case V_EDGE_ARC_ROLL:  //roll edge
+                case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
                     grubosc = (ptrs_vector->typ & 224) / 32;
                     linestyle(grubosc * 32 + 1);
                     kats=ptrs_vector->angle2-Pi_/2;
@@ -7448,6 +7489,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             L1.typ=ptrs_vector->typ; //64;
             rysuj_obiekt_(&L1, mode, kolor);
 
@@ -9004,7 +9047,7 @@ if (ctx_ok==TRUE)
                                          if (!w->gradient) my_fillpoly(4, PolyPointsMon, translucency, kolory.paper);
                                          else {
                                              NumPoints=w->lp/2;
-                                             Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+                                             Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT4*)gradient_ptr);
                                          }
 
 
@@ -9113,7 +9156,7 @@ if (ctx_ok==TRUE)
                                      }
                                  }
 
-                                 if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+                                 if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT4*)gradient_ptr);
 
                                  if (w->translucent == 1)
                                  {
@@ -10409,6 +10452,13 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 		}
         //L->widoczny=lineC (pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
         switch (L->obiektt2) {
+            case 4:
+                memmove(&V, L, sizeof(LINIA));
+                if (L->obiektt3==0)  V.style = V_EDGE_ROLL;
+                else V.style = V_EDGE_ROLL_INV;
+                if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
+                    Draw_Vector(&V, COPY_PUT, 1, 0);
+                break;
            case 6:
                memmove(&V, L, sizeof(LINIA));
                 if (L->obiektt3==0)  V.style = V_EDGE_SIMPLE;
@@ -10776,7 +10826,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
            if (!w->gradient) my_fillpoly(4, PolyPointsMon, translucency, kolory.paper);
            else {
                NumPoints=w->lp/2;
-               Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+               Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT4*)gradient_ptr);
            }
 
 
@@ -10905,7 +10955,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 
 		  if (w->pattern == 0)
 		  {
-			if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT*)gradient_ptr);
+			if (!ignore_p)  Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), NULL, translucency, (GRADIENT4*)gradient_ptr);
               //set_mode_solid();
 		  }
 		   else
@@ -11129,6 +11179,20 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 	   //DrawArc(pikseleX0(l->x),pikseleY0(l->y),l->kat1,l->kat2,pikseleDX(l->r), mode);
        switch (l->obiektt2)
        {
+           case 4:
+               V.warstwa=l->warstwa;
+               V.kolor=l->kolor;
+               V.typ=l->typ;
+               V.x1=l->x;
+               V.y1=l->y;
+               V.r=l->r;
+               V.angle1=l->kat1;
+               V.angle2=l->kat2;
+               V.magnitude1=0.0f;
+               if (l->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+               else V.style = V_EDGE_ARC_ROLL_INV;
+               Draw_Vector(&V, COPY_PUT, 1, 0);
+               break;
            case 6:
                V.warstwa=l->warstwa;
                V.kolor=l->kolor;

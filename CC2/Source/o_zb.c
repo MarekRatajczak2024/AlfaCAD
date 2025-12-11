@@ -22,6 +22,8 @@
 #include <stdint.h>
 #else
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 #endif
 #include<fcntl.h>
 #include<string.h>
@@ -1237,7 +1239,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 }
 
 
-static BOOL ver4_1_to_4_2(long_long off, long_long offk)
+static BOOL ver4_1_to_4_2(long_long off, long_long offk)  //FOR THE FUTURE
 {
     NAGLOWEK *nag;
     long_long ad, size;
@@ -3693,6 +3695,51 @@ DWORD SystemSilentS(char* strstrParams)
     return ret;  //TO CHECK
 }
 
+
+void timeout_handler(int signum) {
+    // This handler will be called in the parent process if the alarm goes off.
+    // It does not handle the killing of the child directly, which happens in the main logic.
+}
+#ifdef LINUX
+int run_with_timeout(char* command, int timeout) {
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("fork failed");
+        return -1;
+    } else if (pid == 0) {
+        // Child process
+        // Execute the command using execl, sh -c is used to run the command string
+        execl("/bin/sh", "sh", "-c", command, (char *) NULL);
+        perror("execl failed"); // If execl returns, an error occurred
+        exit(1);
+    } else {
+        // Parent process
+        int status;
+        // Set up a signal handler for the alarm
+        signal(SIGALRM, timeout_handler);
+        alarm(timeout); // Set the alarm
+
+        // Wait for the child process to change state (terminate)
+        if (waitpid(pid, &status, 0) == -1) {
+            perror("waitpid failed");
+            return -1;
+        }
+
+        alarm(0); // Cancel the alarm if the child terminated in time
+
+        if (WIFEXITED(status)) {
+            return WEXITSTATUS(status); // Return the child's exit status
+        } else {
+            // Child didn't exit normally, likely killed by timeout
+            kill(pid, SIGKILL); // Ensure the child is terminated
+            printf("Command timed out and was killed.\n");
+            return 137; // Common exit code for processes killed by SIGKILL
+        }
+    }
+}
+#endif
+
 BOOL test_python(void)
 {
     FILE *pp;
@@ -3871,6 +3918,61 @@ BOOL Copy_File(char *ptrsz_fnd, char *ptrsz_fns)
     sprintf(command,"/bin/cp -f %s %s",ptrsz_fns,ptrsz_fnd);
     return system(command);
 }
+#endif
+
+#ifndef LINUX
+	//#include <windows.h>
+	//#include <stdio.h>
+
+	DWORD run_with_timeout(char* command, int timeout) {
+    	STARTUPINFO si;
+    	PROCESS_INFORMATION pi;
+    	DWORD exit_code;
+
+    	LPCSTR cmd=command;
+    	DWORD timeout_ms=timeout*1000;
+
+    	get_console();
+
+    	ZeroMemory(&si, sizeof(si));
+    	si.cb = sizeof(si);
+    	ZeroMemory(&pi, sizeof(pi));
+
+    	// Create the child process.
+    	if (!CreateProcess(NULL,   // No module name (use command line)
+						   (LPSTR)cmd,      // Command line
+						   NULL,           // Process handle not inheritable
+						   NULL,           // Thread handle not inheritable
+						   FALSE,          // Set handle inheritance to FALSE
+						   0,              // No creation flags
+						   NULL,           // Use parent's environment block
+						   NULL,           // Use parent's starting directory
+						   &si,            // Pointer to STARTUPINFO structure
+						   &pi)            // Pointer to PROCESS_INFORMATION structure
+		) {
+    		fprintf(stderr, "CreateProcess failed (%d).\n", GetLastError());
+    		return 1;
+		}
+
+    	// Wait until child process exits or timeout occurs.
+    	DWORD wait_status = WaitForSingleObject(pi.hProcess, timeout_ms);
+
+    	if (wait_status == WAIT_TIMEOUT) {
+    		fprintf(stderr, "Command timed out. Terminating process.\n");
+    		TerminateProcess(pi.hProcess, 1); // Force termination
+    		exit_code = 137; // Custom exit code to indicate timeout
+    	} else {
+    		GetExitCodeProcess(pi.hProcess, &exit_code);
+    	}
+
+    	// Close process and thread handles.
+    	CloseHandle(pi.hProcess);
+    	CloseHandle(pi.hThread);
+
+    	free_console();
+
+    	return exit_code;
+    }
 #endif
 
 int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *buf, int lenmax, int *object_no, BOOL b_current_ver)
@@ -5237,12 +5339,15 @@ error1:
 			ver4_0_to_4_1(0, l - 1, (char*)&block_type);
 			l += (dane_size - dane_size00);
 		}
+
+        /*  //THIS IS FOR THE FUTURE
         else if (alfab_version < verb4_2)
         {
             dane_size00 = dane_size;
             if (FALSE == ver4_1_to_4_2(0, l - 1));
             l += (dane_size - dane_size00);
         }
+         */
 
 		//changin text styles indexes, has to be done always
 		if (FALSE == change_textstyle_indexes(0, l-1))

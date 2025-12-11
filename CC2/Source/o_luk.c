@@ -86,7 +86,7 @@ enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
 
 enum DRAW_ARC_TYPE
 { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
-	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_FLIP_SUPPORT, /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/ ARC_rev_Y, ARC_rev_N } ;
+	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_ROLL_EDGE, IDM_FLIP_SUPPORT, /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/ ARC_rev_Y, ARC_rev_N } ;
 
 extern int last_pline_delete (void) ;
 static int last_parc_delete (void) ;
@@ -165,7 +165,7 @@ static BOOL set_arc_continue_param (void) ;
 static TMENU mLukm={9, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLukm,NULL,NULL};
 
 static TMENU mPLukm={12, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
-static TMENU mPLukmSlab={16, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
+static TMENU mPLukmSlab={17, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
 
 static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
 
@@ -505,15 +505,21 @@ static void  cur_on(double x,double y)
     { mvcurb.mvc=0;
         switch (LukG.obiektt2)
         {
+            case 4:
+                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_ROLL;
+                else VectorG.style = V_EDGE_ARC_ROLL_INV;
+                VectorG.typ=LiniaG.typ;
+                outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
+                break;
             case 6:
-                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_SIMPLE; //22;
-                else VectorG.style = V_EDGE_ARC_SIMPLE_INV; //23;
+                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_SIMPLE;
+                else VectorG.style = V_EDGE_ARC_SIMPLE_INV;
                 VectorG.typ=LiniaG.typ;
                 outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
                 break;
             case 7:
-                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_FIXED; //24;
-                else VectorG.style = V_EDGE_ARC_FIXED_INV; //25;
+                if (LiniaG.obiektt3 == 0) VectorG.style = V_EDGE_ARC_FIXED;
+                else VectorG.style = V_EDGE_ARC_FIXED_INV;
                 VectorG.typ=LiniaG.typ;
                 outarcvectoror(&LukG, &VectorG, COPY_PUT, 1);
                 break;
@@ -598,7 +604,7 @@ int getwsp_pl (double *X0, double *Y0)
 }
 
 
-int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_rev, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_FLIP_SUPPORT, ARC_rev_Y, ARC_rev_N};
+int arc_command[]={ARC_Con, ARC_P3, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_rev, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_ROLL_EDGE,IDM_FLIP_SUPPORT, ARC_rev_Y, ARC_rev_N};
 
 int getwsp_tr (double *X0, double *Y0, int d_line)
 /*----------------------------------------------*/
@@ -2701,23 +2707,30 @@ int PLine_Arc_Command_Proc (int ev_nr, BLOK *blk_adr)
        */
       case IDM_FREE_EDGE:
           LiniaG.obiektt2=O2FREE_EDGE;
-          LiniaG.obiektt3=O3REGULAR_EDGE;
+          ////LiniaG.obiektt3=O3REGULAR_EDGE;
           LukG.obiektt2=O2FREE_EDGE;
-          LukG.obiektt3=O3REGULAR_EDGE;
+          ////LukG.obiektt3=O3REGULAR_EDGE;
           ret_val = PL_MODE_CONTINUE ;
           break;
       case IDM_PINNED_EDGE:
           LiniaG.obiektt2=O2HINGED_EDGE;
-          LiniaG.obiektt3=O3REGULAR_EDGE;
+          ////LiniaG.obiektt3=O3REGULAR_EDGE;
           LukG.obiektt2=O2HINGED_EDGE;
-          LukG.obiektt3=O3REGULAR_EDGE;
+          ////LukG.obiektt3=O3REGULAR_EDGE;
           ret_val = PL_MODE_CONTINUE ;
           break;
       case IDM_FIXED_EDGE:
           LiniaG.obiektt2=O2FIXED_EDGE;
-          LiniaG.obiektt3=O3REGULAR_EDGE;
+          ////LiniaG.obiektt3=O3REGULAR_EDGE;
           LukG.obiektt2=O2FIXED_EDGE;
-          LukG.obiektt3=O3REGULAR_EDGE;
+          ////LukG.obiektt3=O3REGULAR_EDGE;
+          ret_val = PL_MODE_CONTINUE ;
+          break;
+      case IDM_ROLL_EDGE:
+          LiniaG.obiektt2=O2ROLL_EDGE;
+          ////LiniaG.obiektt3=O3REGULAR_EDGE;
+          LukG.obiektt2=O2ROLL_EDGE;
+          ////LukG.obiektt3=O3REGULAR_EDGE;
           ret_val = PL_MODE_CONTINUE ;
           break;
       case IDM_FLIP_SUPPORT:

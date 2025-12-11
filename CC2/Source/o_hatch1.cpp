@@ -1042,9 +1042,8 @@ BOOL hatch_proc_test (long_long l_offb0, long_long l_offe0,
   int shadows_no, solidarc_shadows_no, arc_shadows_no, el_shadows_no;
 
     ////// TEST in WINDOWS
-    l_offb0 = 0;
-    l_offe0 = dane_size;
-    //////
+    //l_offb0 = 0;
+    //l_offe0 = dane_size;
 
   l_offb = l_offb0;
   l_offe = l_offe0;

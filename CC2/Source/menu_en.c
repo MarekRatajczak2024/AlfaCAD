@@ -1671,14 +1671,15 @@ static POLE pmPLine[] = {
           {u8"No support edge\0", L'N', 851,NULL},
           {u8"Pinned support edge\0", L'P', 850,NULL},
           {u8"Fixed support edge\0", L'F', 852,NULL},
-          //{u8"Movable support edge\0", L'M', 849,NULL},
+          {u8"Movable support edge\0", L'M', 849,NULL},
           {u8"flip Support\0", L'S', 853,NULL},
 };
 
 POLE pmEdgeType[] = {
             {u8"No support edge\0", L'N', 851,NULL},
             {u8"Pinned support edge\0", L'P', 850,NULL},
-            {u8"Fixed support edge\0", L'F', 852,NULL}
+            {u8"Fixed support edge\0", L'F', 852,NULL},
+            {u8"Movable support edge\0", L'M', 849,NULL}
           };
 
 static POLE pmLine_Con[] = {
@@ -1803,12 +1804,12 @@ static POLE pmVector[] = {
           {u8"Thermal load\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"node size (radius)\0\0",L'0',786,NULL},
 
-          {u8"slab Plate\0\0",L'P',846,NULL},
-          {u8"slab Space\0\0",L'S',844,NULL},
-          {u8"slab Wall\0\0",L'W',843,NULL},
-          {u8"slab Zone\0\0",L'Z',842,NULL},
-          {u8"slab surface load\0\0",L'Q',845,&mLoad_Char},
-          {u8"slab concentrated force Load\0\0",L'L',856,&mLoad_Char},
+          {u8"slab Plate or shield\0\0",L'P',846,NULL},
+          {u8"Space in plate or shield\0\0",L'S',844,NULL},
+          {u8"Wall under plate\0\0",L'W',843,NULL},
+          {u8"Zone in plate or shield\0\0",L'Z',842,NULL},
+          {u8"plate surface load\0\0",L'Q',845,&mLoad_Char},
+          {u8"plate concentrated force Load\0\0",L'L',856,&mLoad_Char},
 };
 
 static POLE pmVector_Con[] = {
@@ -1885,7 +1886,7 @@ static POLE pmPLukm[] = {
           {u8"No support edge\0", L'N', 851,NULL},
           {u8"Pinned support edge\0", L'P', 850,NULL},
           {u8"Fixed support edge\0", L'F', 852,NULL},
-          //{u8"Movable support edge\0", L'M', 849,NULL},
+          {u8"Movable support edge\0", L'M', 849,NULL},
           {u8"flip Support\0", L'S', 853,NULL},
 };
 
@@ -3509,7 +3510,7 @@ char error_message_background[64] = u8"No background files in this folder";
 
 char* view_width_tab[] = { u8"v.t.",u8"t.",u8"T.",u8"v.T.",u8"e.T.", "", "", u8"hidden " };
 
-char* view_edge_tab[] = {u8"No support edge", u8"", u8"", u8"", u8"", u8"No support edge", u8"Pinned support edge", u8"Fixed support edge"};
+char* view_edge_tab[] = {u8"No support edge", u8"", u8"", u8"", u8"Rolled edge", u8"No support edge", u8"Pinned support edge", u8"Fixed support edge"};
 char* view_edgeinverted_tab[] = {u8"Regular", u8"Inverted"};
 
 char* view_type_tab[] = {

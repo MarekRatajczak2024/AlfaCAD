@@ -77,7 +77,7 @@ extern unsigned char *GetBMPpallete(void);
 extern void Draw_Solid_Pattern(int numpoints, double* xy, char* s_pattern, int t_printer, int bw, int grey, float origin_x, float origin_y);
 extern void Draw_Solidarc_Pattern(int numpoints, double* xy, char* s_pattern, int t_printer, int bw, int grey, float origin_x, float origin_y);
 extern BOOL Draw_Line_To_Prn_Pattern(double x1, double y1, double x2, double y2);
-extern void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print);
+extern void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned char translucency, GRADIENT4 *gradient, Print_Rect *window_to_print);
 
 
 extern double get_matrix_head_xp(void);
@@ -292,6 +292,8 @@ static POINTF last_trace_point[2], next_trace_point[2];
 typedef COLOR_ COLOR[256];
 
 typedef char T768[768];
+
+static BOOL first ;
 
 void set_trace_block_begin(char *adr)
 {
@@ -1532,7 +1534,7 @@ BOOL draw_polygon_to_drive_pattern(int numpoints, double* xy0)
 }
 
 
-BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char translucency, GRADIENT *gradient, Print_Rect *window_to_print)
+BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char translucency, GRADIENT4 *gradient, Print_Rect *window_to_print)
 {
     int kolorA, kolorB;
 
@@ -1603,7 +1605,7 @@ BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char tran
         return TRUE;
     }
 
-    if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT));
+    if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT4));
 
     for (int k=0; k<numpoints; k++)
     {
@@ -2103,7 +2105,7 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 
      gradient_ptr=translucency_ptr+sizeof(unsigned char);
 
-     Draw_Solid_Gradient(ptr_w->lp, ptr_w->xy, Layers[ptr_w->warstwa].bw, Layers[ptr_w->warstwa].grey, translucency, (GRADIENT*)gradient_ptr, window_to_print);
+     Draw_Solid_Gradient(ptr_w->lp, ptr_w->xy, Layers[ptr_w->warstwa].bw, Layers[ptr_w->warstwa].grey, translucency, (GRADIENT4*)gradient_ptr, window_to_print);
 
     return TRUE;
  }
@@ -2547,14 +2549,15 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
 {
     LINIA L=Ldef;
     WIELOKAT w=Stdef;
+    OKRAG k=Kdef;
     int ret;
 
     L.x1=x1;
     L.y1=y1;
     L.x2=x2;
     L.y2=y2;
-    L.warstwa=w.warstwa=v->warstwa;
-    L.kolor=w.kolor=v->kolor;
+    L.warstwa=w.warstwa=k.warstwa=v->warstwa;
+    L.kolor=w.kolor=k.kolor=v->kolor;
 
     if (v->style<V_EDGE_SIMPLE) {
         L.typ = 64;
@@ -2574,7 +2577,17 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
         line_width_type = Line_Width(L.typ);
         ret = Draw_Line_To_Drive(&L);
     }
+    else if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV) || (v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+    {
 
+        if (v->style == V_EDGE_ROLL)  //roll edge
+            psize *= -1;
+        k.x=x0 + psize * 0.5 * koc1;
+        k.y=y0 - psize * 0.5 * kos1;
+        k.r=fabs(psize * 0.5);
+
+        ret = Draw_Fill_Circle_To_Drive(&k);
+    }
     else {
         w.xy[2] = x0;
         w.xy[3] = y0;
@@ -2726,15 +2739,23 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
             //koc=cos(angle);
             //kos=sin(angle);
 
-            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV)) PL1.kat+=180;
+            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV) || (v->style==V_EDGE_ARC_ROLL_INV)) PL1.kat+=180;
 
             angle = Angle_Normal(-(PL1.kat) * Pi / 180);
             if (fabs(angle - Pi2) < 0.00001) angle = 0;
             if (fabs(angle) < 0.00001) angle = 0;
-            koc1 = cos(angle - katS);
-            koc2 = cos(angle + katS);
-            kos1 = sin(angle - katS);
-            kos2 = sin(angle + katS);
+
+            if ((v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+            {
+                koc1 = koc2 = cos(angle);
+                kos1 = kos2 = sin(angle);
+            }
+            else {
+                koc1 = cos(angle - katS);
+                koc2 = cos(angle + katS);
+                kos1 = sin(angle - katS);
+                kos2 = sin(angle + katS);
+            }
 
             n1 = -1;
 
@@ -2811,6 +2832,8 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             angle=Angle_Normal(-angle0);
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
@@ -2830,10 +2853,17 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             break;
     }
 
-    koc1=cos(angle-katS);
-    koc2=cos(angle+katS);
-    kos1=sin(angle-katS);
-    kos2=sin(angle+katS);
+    if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV))
+    {
+        koc1 = koc2 = cos(angle);
+        kos1 = kos2 = sin(angle);
+    }
+    else {
+        koc1 = cos(angle - katS);
+        koc2 = cos(angle + katS);
+        kos1 = sin(angle - katS);
+        kos2 = sin(angle + katS);
+    }
 
     angle_rev=Angle_Normal(angle+Pi_);
 
@@ -2974,6 +3004,8 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                 case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
                 case V_EDGE_FIXED:  //fixed edge
                 case V_EDGE_FIXED_INV:  //fixed edge reversed
+                case V_EDGE_ROLL:  //roll edge
+                case V_EDGE_ROLL_INV:  //roll edge reversed
                     if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
@@ -3318,6 +3350,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
         case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
             if (ptrs_vector->angle2<ptrs_vector->angle1)
                 kata2=ptrs_vector->angle2+Pi2;
             else kata2=ptrs_vector->angle2;
@@ -3635,6 +3669,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
                 ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.01;  //just to simulate
             else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.01;  //just to simulate
@@ -4156,6 +4192,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
         case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
 
             if (ptrs_vector->style==5)
             {
@@ -4242,7 +4280,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else if ((ptrs_vector->style==V_EDGE_ARC_SIMPLE) ||  //simple supported edge
                      (ptrs_vector->style==V_EDGE_ARC_SIMPLE_INV) ||  //simple supported edge flipped
                      (ptrs_vector->style==V_EDGE_ARC_FIXED) ||  //fixed edge
-                     (ptrs_vector->style==V_EDGE_ARC_FIXED_INV))  //fixed edge flipped
+                     (ptrs_vector->style==V_EDGE_ARC_FIXED_INV) ||  //fixed edge flipped
+                     (ptrs_vector->style==V_EDGE_ARC_ROLL) ||  //roll edge
+                     (ptrs_vector->style==V_EDGE_ARC_ROLL_INV))  //roll edge flipped
             {
                 grubosc = (ptrs_vector->typ & 224) / 32;
                 linestyle(grubosc * 32 + 1);
@@ -4502,6 +4542,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             L1.typ=ptrs_vector->typ; //64;
             line_width_type = Line_Width (L1.typ);
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
@@ -7421,10 +7463,7 @@ BOOL Draw_Spline_To_Drive(SPLINE *S)
 			TotL += (long)sqrt((float)((S->xy[i + 2] - S->xy[i]) * (S->xy[i + 2] - S->xy[i])) + (float)((S->xy[i + 3] - S->xy[i + 1]) * (S->xy[i + 3] - S->xy[i + 1])));
 		}
 
-		if (typ == 0)
-			npts = 8 + TotL / d__luk; //identical as for arc
-		else
-			npts = TotL / 8; //lenght of pattern
+        npts = 8 + TotL / 30;
 
 		if (npts > NPA)
 		{
@@ -7433,9 +7472,9 @@ BOOL Draw_Spline_To_Drive(SPLINE *S)
 
 		calc_bspline(S->lp, S->npts, S->xy, npts, out_x, out_y);
 
+
 		for (i = 0; i < (npts - 1); i++)
 		{
-
 			L.x1 = out_x[i];
 			L.y1 = out_y[i];
 			L.x2 = out_x[i + 1];
@@ -8887,9 +8926,6 @@ static BOOL draw_wzorzec (double x0, double y0, double len,
 
 
 /*----------draw_arc_drv----------------------------------------*/
-
-
-static BOOL first ;
 
 static BOOL linen_plt_typ_wzor ( double x1, double y1, double x2, double y2, int typ, int kolor0, BOOL bw, BOOL grey)
 /*-----------------------------------------------------------------------------------------------------------------*/

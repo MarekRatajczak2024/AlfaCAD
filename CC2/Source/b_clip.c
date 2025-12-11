@@ -820,7 +820,7 @@ void setTriangleVertexColors(double m1, double m2, double m3, double max_m, unsi
     colors[2] = getRGB(m3, max_m);
 }
 
-void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT *gradient)
+void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT4 *gradient)
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 {
   int num_wy ;
@@ -843,7 +843,7 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
 	  return;
   }
 
-  if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT));
+  if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT4));
 
   if (FALSE == Clip_Solid0 (numpoints, polypoints, &num_wy, poly_wy))
   {

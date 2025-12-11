@@ -469,6 +469,7 @@ void Set_PTR__GTMPLAST(char *last)
     PTR__GTMPLAST=last;
 }
 
+
 double Angle_Normal (double angle)
 /*-------------------------------*/
 {
@@ -485,6 +486,13 @@ double Angle_Normal (double angle)
   ////  angle = 0 ;
   ////}
   return angle;
+}
+
+double Angle_Simple (double angle)
+{
+    double angle1=Angle_Normal (angle);
+    if (angle1>=Pi) angle1-=Pi;
+    return angle1;
 }
 
 double Double_Normal (double param)

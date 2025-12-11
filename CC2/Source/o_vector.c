@@ -2842,6 +2842,8 @@ beginning:
             redcr0 (1) ;
             LiniaG.obiektt2=O2FREE_EDGE;
             LiniaG.obiektt3=O3REGULAR_EDGE;
+            //LukG.obiektt2=O2FREE_EDGE;   //not necessary, it should remember the last settings
+            //LukG.obiektt3=O3REGULAR_EDGE;
             PLATE=1;
             HOLE=0;
             WALL=0;

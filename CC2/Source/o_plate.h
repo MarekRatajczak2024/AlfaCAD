@@ -36,9 +36,11 @@ typedef struct
     int node2;
     int node3;
     int type;  //0 line, 1 arc
+    float xm, ym;  //midpoint
     int inverted; //0 regular, 1 inverted
-    int restraint;  //0 or 5 free, 6 simple support, 7 fixed
+    int restraint;  //0 or 5 free, 4 is rolling support, 6 simple support, 7 fixed
     int k;
+    char *adr;
 } PL_EDGE;
 
 typedef struct
@@ -118,6 +120,25 @@ typedef struct {
     double Rz1;  //based on stresses
     double Rzmin1;  //based on stresses
     double Rzmax1;  //based on stresses
+    //shield
+    //double Qx; //shear force per unit length (N/m)
+    //double Qy; //shear force per unit length (N/m)
+    //double Qxmin; //min shear force per unit length (N/m)
+    //double Qxmax; //max shear force per unit length (N/m)
+    //double Qymin; //min shear force per unit length (N/m)
+    //double Qymax; //max shear force per unit length (N/m)
+    double Rx;  //based on stresses
+    double Ry;  //based on stresses
+    double Rn;  //based on stresses per unit length
+    double Rt;  //based on stresses per unit length
+    double Rxmin;  //based on stresses
+    double Rxmax;  //based on stresses
+    double Rymin;  //based on stresses
+    double Rymax;  //based on stresses
+    double Rnmin;  //based on stresses per unit length
+    double Rnmax;  //based on stresses per unit length
+    double Rtmin;  //based on stresses per unit length
+    double Rtmax;  //based on stresses per unit length
 } SHEAR_FORCES;
 
 typedef struct
@@ -132,6 +153,7 @@ typedef struct
     int restraint;
     int inverted;
     double kos, koc;
+    double l1, l2;
     double x1, y1, x2, y2;
     SHEAR_FORCES state1[6];  //the last is for temporary buffer
     SHEAR_FORCES state2[6];
