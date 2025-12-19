@@ -40,6 +40,8 @@ extern int get_palette_color(int color);
 
 extern void fillpolypattern(int numpoints, AL_CONST int* polypoints, char* s_pattern, long origin_x, long origin_y);
 extern void my_fillpoly(int numpoints, int* polypoints, int translucency, int kolory_paper);
+extern void set_mode_trans();
+extern int GTRANSLUCENCY;
 
 void Clip_Solid (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
 BOOL Clip_Solid0 (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
@@ -820,6 +822,26 @@ void setTriangleVertexColors(double m1, double m2, double m3, double max_m, unsi
     colors[2] = getRGB(m3, max_m);
 }
 
+/**
+* Lightens a 24-bit RGB integer (0xRRGGBB).
+* factor: 0.0 (no change) to 1.0 (pure white)
+*/
+unsigned int lighten_color(unsigned int color, float factor) {
+    // 1. Extract RGB components
+    unsigned int r = (color >> 16) & 0xFF;
+    unsigned int g = (color >> 8) & 0xFF;
+    unsigned int b = color & 0xFF;
+
+    // 2. Apply linear tint: NewValue = OldValue + (255 - OldValue) * factor
+    // We cast to int to ensure correct math before packing back
+    r = (unsigned int)(r + (255 - r) * factor);
+    g = (unsigned int)(g + (255 - g) * factor);
+    b = (unsigned int)(b + (255 - b) * factor);
+
+    // 3. Recombine into 24-bit integer
+    return (r << 16) | (g << 8) | b;
+}
+
 void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid, BOOL hatch_solid, double origin_x, double origin_y, char *s_pattern, int translucency, GRADIENT4 *gradient)
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 {
@@ -830,6 +852,8 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
 #pragma pack(1)
   V3D_f v_f[8];
   GRADIENT8 gradient8;
+  unsigned int gradient8_c1,gradient8_c2,gradient8_c3,gradient8_c4,gradient8_c5,gradient8_c6,gradient8_c7,gradient8_c8;
+  float factor = 1.f-(float)GTRANSLUCENCY/255.f;
 
   int wl, wg, wp, wd;
 
@@ -868,6 +892,9 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
           if (gradient==NULL) my_fillpoly(num_wy, poly_wy, translucency, kolory.paper);
           else
           {
+
+              //set_trans_blender(0, 0, 0, (int)GTRANSLUCENCY);
+              //set_mode_trans();
               
               /*
               v[0].x=ftofix((float)poly_wy[0]);
@@ -928,72 +955,94 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
                   triangle3d(screenplay, POLYTYPE_GRGB, NULL, &v[0], &v[1], &v[2]);
               }
               */
- 
+              //////////////////////////
+              gradient8_c1=lighten_color(gradient8.c1, factor);
+              gradient8_c2=lighten_color(gradient8.c2, factor);
+              gradient8_c3=lighten_color(gradient8.c3, factor);
+              //////////////////////////
               v_f[0].x=(float)poly_wy[0];
               v_f[0].y=(float)poly_wy[1];
               v_f[0].z=0.0f;
               v_f[0].u=0;
               v_f[0].v=0;
-              v_f[0].c=gradient8.c1;
+              //v_f[0].c=gradient8.c1;
+              v_f[0].c=gradient8_c1;
 
               v_f[1].x=(float)poly_wy[2];
               v_f[1].y=(float)poly_wy[3];
               v_f[1].z=0.0f;  //0
               v_f[1].u=0;
               v_f[1].v=0;
-              v_f[1].c=gradient8.c2;
+              //v_f[1].c=gradient8.c2;
+              v_f[1].c=gradient8_c2;
 
               v_f[2].x=(float)poly_wy[4];
               v_f[2].y=(float)poly_wy[5];
               v_f[2].z=0.0f;
               v_f[2].u=0;
               v_f[2].v=0;
-              v_f[2].c=gradient8.c3;
+              //v_f[2].c=gradient8.c3;
+              v_f[2].c=gradient8_c3;
 
               if (num_wy>3)
               {
+                  gradient8_c4=lighten_color(gradient8.c4, factor);
+
                   v_f[3].x = (float) poly_wy[6];
                   v_f[3].y = (float) poly_wy[7];
                   v_f[3].z = 0.0f;  //0
                   v_f[3].u = 0;
                   v_f[3].v = 0;
-                  v_f[3].c = gradient8.c4;
+                  //v_f[3].c = gradient8.c4;
+                  v_f[3].c = gradient8_c4;
 
                   if (num_wy>4)
                   {
+                      gradient8_c5=lighten_color(gradient8.c5, factor);
+
                       v_f[4].x = (float) poly_wy[8];
                       v_f[4].y = (float) poly_wy[9];
                       v_f[4].z = 0.0f;  //0
                       v_f[4].u = 0;
                       v_f[4].v = 0;
-                      v_f[4].c = gradient8.c5;
+                      //v_f[4].c = gradient8.c5;
+                      v_f[4].c = gradient8_c5;
 
                       if (num_wy>5)
                       {
+                          gradient8_c6=lighten_color(gradient8.c6, factor);
+
                           v_f[5].x = (float) poly_wy[10];
                           v_f[5].y = (float) poly_wy[11];
                           v_f[5].z = 0.0f;  //0
                           v_f[5].u = 0;
                           v_f[5].v = 0;
-                          v_f[5].c = gradient8.c6;
+                          //v_f[5].c = gradient8.c6;
+                          v_f[5].c = gradient8_c6;
                       }
                       if (num_wy>6)
                       {
+                          gradient8_c7=lighten_color(gradient8.c7, factor);
+
                           v_f[6].x = (float) poly_wy[12];
                           v_f[6].y = (float) poly_wy[13];
                           v_f[6].z = 0.0f;  //0
                           v_f[6].u = 0;
                           v_f[6].v = 0;
-                          v_f[6].c = gradient8.c7;
+                          //v_f[6].c = gradient8.c7;
+                          v_f[6].c = gradient8_c7;
                       }
                       if (num_wy>7)
                       {
+                          gradient8_c8=lighten_color(gradient8.c8, factor);
+
                           v_f[7].x = (float) poly_wy[14];
                           v_f[7].y = (float) poly_wy[15];
                           v_f[7].z = 0.0f;  //0
                           v_f[7].u = 0;
                           v_f[7].v = 0;
-                          v_f[7].c = gradient8.c8;
+                          //v_f[7].c = gradient8.c8;
+                          v_f[7].c = gradient8_c8;
                       }
 
                       ////polygon3d_f(screenplay, POLYTYPE_GRGB, NULL, num_wy, (V3D_f **)v_f);   //this is crashing
@@ -1024,6 +1073,8 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
               else {
                   triangle3d_f(screenplay, POLYTYPE_GRGB, NULL, &v_f[0], &v_f[1], &v_f[2]);
               }
+
+              //solid_mode();
           }
       }
   }

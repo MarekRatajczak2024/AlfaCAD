@@ -5426,6 +5426,7 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
     double angle;
     double katS=Pi_*25.0/180;
     char keym;
+    double shift;
 
     //T_Point P;
 
@@ -5443,7 +5444,10 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
     else df_seg_len_dens = df_seg_len;
 
     i = 0 ;
-    df_l0 = -df_seg_len_dens/2; //0 ;
+
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens/shift; //1 or 2 ;   //first arrow will start at the beginning of the edge
     do
     {
         if (!redraw_obj)
@@ -5459,7 +5463,13 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
 
         df_line_rem = measure_arcvector(l, b_first_end, df_l0, df_seg_len_dens, &df_x, &df_y);
 
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x1+v->r*cos(v->angle2);
+            df_y=v->y1+v->r*sin(v->angle2);
+        }
+
+        if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
             Lt1.x1 = df_x;
@@ -5505,7 +5515,7 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
         df_l0 += df_seg_len_dens ;
         i++ ;
     }
-    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
 
     return 1;
 ending:
@@ -5533,6 +5543,7 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     LINIA Lt1;
     double del_angle;
 	char keym;
+    double shift;
 
     df_psize = Get_Point_Size () *view_vector_scale;
 
@@ -5605,7 +5616,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
         df_seg_len_dens=df_seg_len/2.0;
     else df_seg_len_dens=df_seg_len;
 
-    df_l0 = -df_seg_len_dens/2; //0 ;
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens / shift; // 1 or 2;  first arrow will start at the beginning of the edge
     do
     {
 		if (!redraw_obj)
@@ -5620,7 +5633,14 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
 		}
 
         df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len_dens, &df_x, &df_y) ;
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
+
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x2;
+            df_y=v->y2;
+        }
+
+        if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
             if ((Check_if_Equal(angle, Pi_ / 2)) || (Check_if_Equal(angle, Pi_ * 3 / 2))) //vertical
@@ -5925,7 +5945,7 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
         i++ ;
 
     }
-    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
 
 	return 1;
 
@@ -13783,6 +13803,11 @@ void ini_cursor_busy(void)
     if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
     else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
     else  alfa_mouse_busy_sprite = icon_hourglass_mem;
+}
+
+void reset_cursor(void)
+{
+    CUR_ON = cur_on;
 }
 
  void ini_e (void)

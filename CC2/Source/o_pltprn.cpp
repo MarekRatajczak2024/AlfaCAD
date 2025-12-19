@@ -189,6 +189,7 @@ extern "C" {
 	extern BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal);
 
 	extern int TRANSLUCENCY;
+    extern int GTRANSLUCENCY;
     int PRINT_TRANSLUCENCY=255;
 	extern void set_mode_solid();
 
@@ -263,6 +264,7 @@ extern "C" {
     extern double measure_arcvector (LUK *ptrs_arc, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
     extern point intersectionPoint(point a1,point a2,point b1,point b2);
     extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
+    extern unsigned int lighten_color(unsigned int color, float factor);
 
     extern char *load_symbol[];
 
@@ -787,7 +789,7 @@ static void sort_solid_point (WIELOKAT *ptr_w_s, WIELOKAT *ptr_w)
     {
       if (ptr_w->xy [j + 1] > y_max  &&
 	  ptr_w->xy [j + 1] < y_max_l  &&
-	  FALSE == Check_if_Equal (ptr_w->xy [j + 1], y_max_l))
+	  FALSE == Check_if_Equal(ptr_w->xy [j + 1], y_max_l))
       {
 		b_found = TRUE ;
 		x_max = ptr_w->xy [j] ;
@@ -1552,6 +1554,8 @@ BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char tran
     int *poly_wy;
     int wl, wg, wp, wd;
     int ik;
+    unsigned int gradient8_c1,gradient8_c2,gradient8_c3,gradient8_c4,gradient8_c5,gradient8_c6,gradient8_c7,gradient8_c8;
+    float factor = 1.f-(float)GTRANSLUCENCY/255.f;
 #define MaxNumPolygonPoints 200
 
     if (print_inversion == TRUE)
@@ -1645,71 +1649,96 @@ BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char tran
     //kolorB = 0x000000FF;
     //my_soft_polygon(allegro_prn_bmp, numpoints/2, pxy, kolorA, 255, kolorB);
 
+    //////////////////////////
+    gradient8_c1=lighten_color(gradient8.c1, factor);
+    gradient8_c2=lighten_color(gradient8.c2, factor);
+    gradient8_c3=lighten_color(gradient8.c3, factor);
+    //////////////////////////
+
     v_f[0].x=(float)poly_wy[0];
     v_f[0].y=(float)poly_wy[1];
     v_f[0].z=0.0f;
     v_f[0].u=0;
     v_f[0].v=0;
-    v_f[0].c=gradient8.c1;
+    //v_f[0].c=gradient8.c1;
+    v_f[0].c=gradient8_c1;
 
     v_f[1].x=(float)poly_wy[2];
     v_f[1].y=(float)poly_wy[3];
     v_f[1].z=0.0f;  //0
     v_f[1].u=0;
     v_f[1].v=0;
-    v_f[1].c=gradient8.c2;
+    //v_f[1].c=gradient8.c2;
+    v_f[1].c=gradient8_c2;
 
     v_f[2].x=(float)poly_wy[4];
     v_f[2].y=(float)poly_wy[5];
     v_f[2].z=0.0f;
     v_f[2].u=0;
     v_f[2].v=0;
-    v_f[2].c=gradient8.c3;
+    //v_f[2].c=gradient8.c3;
+    v_f[2].c=gradient8_c3;
 
     if (num_wy>3)
     {
+        gradient8_c4=lighten_color(gradient8.c4, factor);
+
         v_f[3].x = (float)poly_wy[6];
         v_f[3].y = (float)poly_wy[7];
         v_f[3].z = 0.0f;  //0
         v_f[3].u = 0;
         v_f[3].v = 0;
-        v_f[3].c = gradient8.c4;
+        //v_f[3].c = gradient8.c4;
+
+        v_f[3].c = gradient8_c4;
 
         if (num_wy>4)
         {
+            gradient8_c5=lighten_color(gradient8.c5, factor);
+
             v_f[4].x = (float)poly_wy[8];
             v_f[4].y = (float)poly_wy[9];
             v_f[4].z = 0.0f;  //0
             v_f[4].u = 0;
             v_f[4].v = 0;
-            v_f[4].c = gradient8.c5;
+            //v_f[4].c = gradient8.c5;
+            v_f[4].c = gradient8_c5;
 
             if (num_wy>5)
             {
+                gradient8_c6=lighten_color(gradient8.c6, factor);
+
                 v_f[5].x = (float)poly_wy[10];
                 v_f[5].y = (float)poly_wy[11];
                 v_f[5].z = 0.0f;  //0
                 v_f[5].u = 0;
                 v_f[5].v = 0;
-                v_f[5].c = gradient8.c6;
+                //v_f[5].c = gradient8.c6;
+                v_f[5].c = gradient8_c6;
             }
             if (num_wy>6)
             {
+                gradient8_c7=lighten_color(gradient8.c7, factor);
+
                 v_f[6].x = (float)poly_wy[12];
                 v_f[6].y = (float)poly_wy[13];
                 v_f[6].z = 0.0f;  //0
                 v_f[6].u = 0;
                 v_f[6].v = 0;
-                v_f[6].c = gradient8.c7;
+                //v_f[6].c = gradient8.c7;
+                v_f[6].c = gradient8_c7;
             }
             if (num_wy>7)
             {
+                gradient8_c8=lighten_color(gradient8.c8, factor);
+
                 v_f[7].x = (float)poly_wy[14];
                 v_f[7].y = (float)poly_wy[15];
                 v_f[7].z = 0.0f;  //0
                 v_f[7].u = 0;
                 v_f[7].v = 0;
-                v_f[7].c = gradient8.c8;
+                //v_f[7].c = gradient8.c8;
+                v_f[7].c = gradient8_c8;
             }
 
             ////polygon3d_f(screenplay, POLYTYPE_GRGB, NULL, num_wy, (V3D_f **)v_f);   //this is crashing
@@ -1742,7 +1771,7 @@ BOOL draw_polygon_to_drive_gradient(int numpoints, float *xy, unsigned char tran
     }
 
         free(poly_wy);
-        solid_mode();
+        //solid_mode();
 
     return TRUE;
 }
@@ -2046,6 +2075,7 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 
   char* translucency_ptr, *translucency_w1_ptr, *translucency_w2_ptr;
   int kolory_paper, colorB, kolor256, r,g,b;
+  float tolerance=0.0001;
 
   T_PTR_Prn_Ini_Date* ptrs__prn_ini_date_;
 
@@ -2297,8 +2327,16 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 
          df_dist = df__width_fill;
 
-
          memcpy((void *) &w0, (void *) ptr_w, sizeof(WIELOKAT));
+
+         //solid correction
+         for (int j=0; j<w0.lp; j+=2)
+         {
+             //x axis
+             if (fabs(w0.xy[j+2]-w0.xy[j])<tolerance) w0.xy[j+2]=w0.xy[j];
+             //y axis
+             if (fabs(w0.xy[j+3]-w0.xy[j+1])<tolerance) w0.xy[j+3]=w0.xy[j+1];
+         }
 
          memcpy((void *) &w, (void *) &w0, sizeof(WIELOKAT));
 
@@ -2307,11 +2345,14 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 
          sort_solid_point(&w, &w0);  //????
 
+         w.lp=w0.lp;
+
          x1 = w.xy[0];
          y1 = w.xy[1];
          intersect_solid(x1, y1, ptr_w, &x2, &y2);
 
-         for (i = 2; i < (int) w.lp; i += 2) {
+         for (i = 2; i < (int) w.lp; i += 2)
+         {
              xy[0] = x1;
              xy[1] = y1;
              xy[2] = x2;
@@ -2704,6 +2745,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
     double del_angle;
     double angle;
     double katS=Pi_*25.0/180;
+    double shift;
 
     //T_Point P;
 
@@ -2721,12 +2763,21 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
     else df_seg_len_dens = df_seg_len;
 
     i = 0 ;
-    df_l0 = -df_seg_len_dens/2; //0 ;
+
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens/shift; //1 or 2 ;   //first arrow will start at the beginning of the edge
     do
     {
         df_line_rem = measure_arcvector(l, b_first_end, df_l0, df_seg_len_dens, &df_x, &df_y);
 
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4))   //or maybe df_seg_len_dens/2
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x1+v->r*cos(v->angle2);
+            df_y=v->y1+v->r*sin(v->angle2);
+        }
+
+        if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
             Lt1.x1 = df_x;
@@ -2770,7 +2821,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
         df_l0 += df_seg_len_dens ;
         i++ ;
     }
-    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
 
 }
 
@@ -2795,6 +2846,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     PLINIA PL1;
     LINIA Lt1;
     double del_angle;
+    double shift;
 
 
     df_psize = Get_Point_Size ();
@@ -2873,12 +2925,20 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
         df_seg_len_dens=df_seg_len/2.0;
     else df_seg_len_dens=df_seg_len;
 
-    df_l0 = -df_seg_len/2;
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens / shift; // 1 or 2;  first arrow will start at the beginning of the edge
     do
     {
 
         df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len_dens, &df_x, &df_y) ;
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len_dens/4 /*0*/))
+
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x2;
+            df_y=v->y2;
+        }
+        if (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
             if ((Check_if_Equal(angle, Pi_/2))   || (Check_if_Equal(angle, Pi_*3/2)))  //vertical
@@ -3176,7 +3236,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             i++ ;
         }
     }
-    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2)) ;
+    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
 }
 
 

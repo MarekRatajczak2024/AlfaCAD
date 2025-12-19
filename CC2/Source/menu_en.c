@@ -510,7 +510,7 @@ static POLE pmCzcionkaEkranTTF[] = {
    {u8"Width factor\0 \0", 'W',230,NULL},
 };
 
-TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,30,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };
+TMENU mCzcionkaEkranTTF = { 3,0,0,30,20,7,ICONS | TADD,CMNU,CMBR,CMTX,0,32 /*30*/,0,0,0,(POLE(*)[]) &pmCzcionkaEkranTTF,NULL,NULL };
 
 static POLE pmWindow[] = {
    {u8"expand Horizontally",'H',467,NULL},
@@ -529,7 +529,7 @@ static POLE pmDialogCursor[] = {
    {u8"Huge",'H',832,NULL},
 };
 
-static TMENU mDialogCursor = { 3,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };
+static TMENU mDialogCursor = { 3,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,27 /*25*/,0,0,0,(POLE(*)[]) &pmDialogCursor,NULL,NULL };
 
 #define smallcursor u8"Small"
 #define bigcursor u8"Big"
@@ -540,7 +540,7 @@ static POLE pmMenuCursor[] = {
    {u8"Cursor",'C',822,NULL},
 };
 
-static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,35,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };
+static TMENU mMenuCursor = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,37 /*35*/,0,0,0,(POLE(*)[]) &pmMenuCursor,NULL,NULL };
 
 #define barstyle u8"Bar"
 #define cursorstyle u8"Cursor"
@@ -554,29 +554,38 @@ static POLE pmTranslucency[] = {
    {u8"50%",'5',541,NULL},
    {u8"40%",'4',540,NULL},
    {u8"30%",'3',539,NULL},
+   {u8"20%",'2',666,NULL},
+   {u8"10%",'1',664,NULL},
 };
 
 
-static TMENU mTranslucency = { 8,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };
+static TMENU mTranslucency = { 10,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };
+static TMENU mGTranslucency = { 10,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmTranslucency,NULL,NULL };
 
+static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,30 /*28*/,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
-static TMENU mDemoSelect = { 2,0,0,7,62,9,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
-
-static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,33,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };
+static TMENU mAutoPan = { 2,0,0,7,33,11,ICONS,CMNU,CMBR,CMTX,0,35 /*33*/,0,0,0,(POLE(*)[]) & pmTak_Nie,NULL,NULL };
 
 static POLE pmMouseWheel[] = {
    {u8"Natural",'N',834,NULL},
    {u8"Regular",'R',835,NULL},
 };
 
-static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };
+static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,41 /*39*/,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };
 
+static POLE pmOpacity[] = {
+   {u8"Fills",'F',866,&mTranslucency},
+   {u8"Gradients",'G',867,&mGTranslucency},
+};
+
+static TMENU mOpacity =  { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmOpacity,NULL,NULL };
 
 POLE pmOpcje[] = {
 {u8"Drawing board configuration\0",'D',109,NULL},
 {u8"auto Pan\0Yes\0 ",'P',145, &mAutoPan},  //PAN
 {u8"Auto-panning increment\0",'A',110,NULL},
-{u8"Opacity of fills\0",'O',542,&mTranslucency},
+//{u8"Opacity of fills\0",'O',542,&mTranslucency},
+{u8"Opacity of fills/gradients\0",'O',542,&mOpacity},
 {u8"desktop Font\0 ",'F',111,&mCzcionkaEkranTTF},
 {u8"desktop Background\0",'B',527,NULL},
 {u8"dialog Cursor\0",'C',590,&mDialogCursor},
@@ -3798,24 +3807,25 @@ static POLE pmArray_polar_rot[] = {
 
 #ifdef __BIBWYM_B_
 
-static POLE pmKierunek[7] = {
+static POLE pmKierunek[] = {
 		{u8"0°",'0',203,NULL},
 		{u8"90°",'9',204,NULL},
 		{u8"Parallel to",'P',205,NULL},
 		{u8"at an angle To",'T',206,NULL},
 		{u8"at an angle X",'X',207,NULL},
 		{u8"Angle dim.",'A',208,NULL},
+        {u8"Circle/arc dim.",'C',202,NULL},
         {u8"Leader dim.",'L',678,NULL} };
 
-static TMENU mKierunek = { 7,0,0,5,72,6,ICONS,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmKierunek,NULL,NULL };
+static TMENU mKierunek = { 8,0,0,5,72,6,ICONS,CMNU,CMBR,CMTX,0,9,0,0,0,(POLE(*)[]) &pmKierunek,NULL,NULL };
 
-static POLE pmWym_luk_o[2] = {
+static POLE pmWym_luk_o[] = {
 		{u8"R",'R',209,NULL},
 		{u8"L",'L',201,NULL} };
 
 static TMENU mWym_luk_o = { 2,0,0,5,72,6,ICONS,CMNU,CMBR,CMTX,0,5,0,0,0,(POLE(*)[]) &pmWym_luk_o,NULL,NULL };
 
-static POLE pmWym_okrag_o[2] = {
+static POLE pmWym_okrag_o[] = {
 		{u8"D",'D',211,NULL},
 		{u8"R",'R',212,NULL} };
 
@@ -3832,29 +3842,29 @@ static POLE pmWymiarujm[] = {
 
 #define _NEW_ u8"new"
 
-static POLE pmStrzalka[3] = {
+static POLE pmStrzalka[] = {
 	  {u8"Arrowheads",'A',189,NULL},
 	  {u8"Ticks",'T',190,NULL},
 	  {u8"Dots",'D',191,NULL} };
 
-static POLE pmKierunekT[3] = {
+static POLE pmKierunekT[] = {
 	{u8"Parallel",'P',192,NULL},
     {u8"Collinear",'C',696,NULL},
 	{u8"Horizontal",'H',193,NULL} };
 
-static POLE pmAddLine[2] = {
+static POLE pmAddLine[] = {
 	{u8"Fixed length",'F',194,NULL},
 	{u8"Align to object",'A',195,NULL} };
 
 
-static POLE pmLFormat[4] = {
+static POLE pmLFormat[] = {
 	{u8"Decimal",'D',0,NULL},
     {u8"Engineering",'E',0,NULL},
 	{u8"Architectural",'A',0,NULL},
     {u8"Fractional",'F',0,NULL},
 };
 
-static POLE pmFractions[9] = {
+static POLE pmFractions[] = {
     {u8"0",   '0',0,NULL},
 	{u8"1/2",  '2',0,NULL},
     {u8"1/4",  '4',0,NULL},

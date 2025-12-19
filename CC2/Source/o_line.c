@@ -103,7 +103,8 @@ static void  cur_off__ (double x,double y)
 */
 static void  cur_on(double x,double y)
 /*----------------------------------------*/
-{
+{   int v_style=VectorG.style;
+
     LiniaG.x2=x; LiniaG.y2=y;
     switch (LiniaG.obiektt2) {
         case 4:
@@ -129,6 +130,7 @@ static void  cur_on(double x,double y)
         break;
     }
     cursor_on(x, y);
+    VectorG.style=v_style;
 }
 
 /*

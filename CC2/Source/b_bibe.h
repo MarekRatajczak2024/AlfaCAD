@@ -69,6 +69,7 @@ typedef struct DRAWING_PARAMS
 	double local_y;
 	double angle_l;
 	int TRANSLUCENCY;
+    int GTRANSLUCENCY;
 	SEKTORY_EXT sektory_arkusza_ext;
 	int KursorS;
 	BOOL ciagniecie_linii;

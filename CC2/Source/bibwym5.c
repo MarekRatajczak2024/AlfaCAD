@@ -295,7 +295,9 @@ static void  punkt(void)
   int out_kat ;
 
   void *adr,*adr1;
-  typ=Blinia | Bluk | Bokrag | Bkolo | Bwymiarowanie | Btekst | Bwwielokat ;
+  if (wym_kata==3)
+      typ=Bluk | Bokrag | Bkolo | Bwymiarowanie | Btekst;
+  else typ=Blinia | Bluk | Bokrag | Bkolo | Bwymiarowanie | Btekst | Bwwielokat ;
   if ((adr=select_w(&typ,&adr1))==NULL)
   {
     return;

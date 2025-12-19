@@ -338,8 +338,8 @@ static int wyznacz_tekst(BOOL draw)
   T.y=y;
   T.dl=strlen(&T.text[0]);
   T.n=T18+T.dl;
-  T.width = 0.0;
-  T.height = 0.0;
+  T.width = 0;
+  T.height = 0;
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
   else if(WymInter)
   {
@@ -486,8 +486,8 @@ static int wyznacz_tekst_clock(void)
   T.y=y;
   T.dl=strlen(&T.text[0]);
   T.n=T18+T.dl;
-  T.width = 0.0;
-  T.height = 0.0;
+  T.width = 0;
+  T.height = 0;
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
   else if(WymInter)
   {

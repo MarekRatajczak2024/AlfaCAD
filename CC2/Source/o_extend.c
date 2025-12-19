@@ -1287,6 +1287,7 @@ BOOL check_if_point_on_line_segment(double p1x, double p1y, double p2x, double p
     return (fabs(ac + bc - ab) < EPSILON);
 }
 
+
 BOOL no_trim_ellpticalarc(ELLIPTICALARC *ea, double px, double py)
 {   double df_angle;
     double df_angle1, df_angle2;

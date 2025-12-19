@@ -2435,8 +2435,8 @@ void TEXT_TEST(void)
 	strcpy(T.text, "TEST");
 	T.dl = strlen(T.text);
 	T.n = T18 + T.dl;
-	T.width = 0.0;
-	T.height = 0.0;
+	T.width = 0;
+	T.height = 0;
 	outtextxy_w_(&T, XOR_PUT);
 
 }

@@ -169,6 +169,40 @@ static TMENU mPLukmSlab={17, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COM
 
 static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
 
+// Helper to normalize angle into [0, 2*PI)
+double normalizeAngle(double angle) {
+    double a = fmod(angle, 2.0 * M_PI);
+    if (a < 0) a += 2.0 * M_PI;
+    return a;
+}
+
+BOOL check_if_point_on_arc_segment(double xc, double yc, double r, double startAngle, double endAngle, double x, double y)
+{
+    double EPSILON=10.0/DF_PRECISION;
+    // 1. Radial Check
+    double dx = x - xc;
+    double dy = y - yc;
+    double dist = hypot(dx, dy); // hypot(x,y) = sqrt(x*x + y*y)
+
+    if (fabs(dist - r) > EPSILON) {
+        return FALSE;
+    }
+
+    // 2. Angular Check
+    double pointAngle = normalizeAngle(atan2(dy, dx));
+    double start = normalizeAngle(startAngle);
+    double end = normalizeAngle(endAngle);
+
+    if (start <= end) {
+        // Simple case: no wrap-around (e.g., 0.5 to 1.5)
+        return (pointAngle >= start - EPSILON && pointAngle <= end + EPSILON);
+    } else {
+        // Wrap-around case (e.g., 5.0 to 1.0)
+        return (pointAngle >= start - EPSILON || pointAngle <= end + EPSILON);
+    }
+}
+
+
 BOOL Get_reversed(void)
 {
     return arc_reversed;
@@ -493,7 +527,7 @@ static void  cur_off(double x,double y)
 }
 
 static void  cur_on(double x,double y)
-{
+{   int v_style=VectorG.style;
     BOOL reversed=Get_reversed();
     //redraw_trace();
     (*parl[ns_arc])(&pl,&LukG,x,y,0, FALSE, &reversed);
@@ -531,6 +565,7 @@ static void  cur_on(double x,double y)
     }
 
     cursor_on(x,y);
+    VectorG.style=v_style;
 }
 
 static void redcr(char typ)

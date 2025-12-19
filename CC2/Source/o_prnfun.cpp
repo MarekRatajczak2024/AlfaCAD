@@ -4130,8 +4130,8 @@ if (draw_logo==TRUE)
  strcpy(T.text,st);
  T.dl=strlen(T.text);
  T.n=T18+T.dl;
- T.width = 0.0;
- T.height = 0.0;
+ T.width = 0;
+ T.height = 0;
  if (tekst_wybrany_prn (&T))
   {
 	df_width_line = s__Fonts_Style[T.czcionka].df_width_line;

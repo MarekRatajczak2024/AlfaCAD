@@ -643,6 +643,7 @@ static int free_mouse = 0;
 
 int TRANSLUCENCY = 179; //128
 int HALFTRANSLUCENCY = 179;
+int GTRANSLUCENCY = 255;
 
 #ifndef LINUX
 static HDC win_dc;

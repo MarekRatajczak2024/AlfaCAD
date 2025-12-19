@@ -201,6 +201,7 @@ extern void Open_Backgrounds(void);
 extern T_Prototype  s__prot;
 
 extern int TRANSLUCENCY;
+extern int GTRANSLUCENCY;
 extern BOOL BIGCURSOR;
 extern BOOL BAR_POINTER;
 extern void set_dialog_cursor(BOOL bigsmall);
@@ -2450,6 +2451,11 @@ char *icon_slab_fem_a_p;
 BITMAP *icon_view_log_d_48;
 char *icon_view_log_d_48_p;
 
+BITMAP *icon_solid_translucent;
+char *icon_solid_translucent_p;
+BITMAP *icon_solid_gtranslucent;
+char *icon_solid_gtranslucent_p;
+
 BITMAP *icon_SI;
 char *icon_SI_p;
 BITMAP *icon_IMP;
@@ -4311,6 +4317,7 @@ int Restore_params(void)
 	l_kr = put_angle_l(Drawing_Params[DRAWING_NUMBER].angle_l);
 
 	TRANSLUCENCY = Drawing_Params[DRAWING_NUMBER].TRANSLUCENCY;
+    GTRANSLUCENCY = Drawing_Params[DRAWING_NUMBER].GTRANSLUCENCY;
 
 	memcpy(&sektory_arkusza_ext, &Drawing_Params[DRAWING_NUMBER].sektory_arkusza_ext, sizeof(SEKTORY_EXT));
 	KursorS = Drawing_Params[DRAWING_NUMBER].KursorS;
@@ -6039,15 +6046,29 @@ void Expand_last(void)
 
 void Translucency(void)
 {
-	int n;
+	int n, m;
     char sk [MaxTextLen] = "";
-	int translucency_tab[] = { 255, 230, 204, 179, 153, 128, 102, 77 };
+	int translucency_tab[] = { 255, 230, 204, 179, 153, 128, 102, 77, 51, 26};
 
-	n = mTranslucency.poz + mTranslucency.foff;
-	TRANSLUCENCY = translucency_tab[n];
-	set_trans_blender(0, 0, 0, TRANSLUCENCY);
+    m = mOpacity.poz + mOpacity.foff;
+    if (m==0)
+    {
+        n = mTranslucency.poz + mTranslucency.foff;
+        TRANSLUCENCY = translucency_tab[n];
+        set_trans_blender(0, 0, 0, TRANSLUCENCY);
+        sprintf(sk, "%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5));
+        menu_par_new((*mOpacity.pola)[0].txt, sk);
+    }
+    else
+    {
+        n = mGTranslucency.poz + mGTranslucency.foff;
+        GTRANSLUCENCY = translucency_tab[n];
+        set_trans_blender(0, 0, 0, GTRANSLUCENCY);
+        sprintf(sk, "%d%%", (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
+        menu_par_new((*mOpacity.pola)[1].txt, sk);
+    }
 
-    sprintf(sk, "%d%%", (int)((TRANSLUCENCY*100/255)+0.5));
+    sprintf(sk, "%d%%/%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5), (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
     menu_par_new((*mOpcje.pola)[3].txt, sk);
 
 	redraw();
@@ -6370,7 +6391,7 @@ static void WheelRegular(void)
 static void (*COMNDO[])(void)=
 {
   Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
-  Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, DialogCursorS, DialogCursorB, DialogCursorEB,
+  Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, Translucency,Translucency, DialogCursorS, DialogCursorB, DialogCursorEB,
   DemoModeOn, DemoModeOff,
   nooop, wysokosc_znaku_TTF, width_factor_TTF,
   auto_pan_on, auto_pan_off, MenuCursorB, MenuCursorP, DesktopFontTTF,DesktopFontOTF, WheelNatural, WheelRegular
@@ -6496,8 +6517,13 @@ void Opcje(void)
   if (strlen (sk) > 6) sk [6] = '\0' ;
   menu_par_new ((*mOpcje.pola)[2].txt, sk) ;
 
-  sprintf(sk, "%d%%", (int)((TRANSLUCENCY*100/255)+0.5));
+
+  sprintf(sk, "%d%%/%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5), (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
   menu_par_new((*mOpcje.pola)[3].txt, sk);
+    sprintf(sk, "%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5));
+    menu_par_new((*mOpacity.pola)[0].txt, sk);
+    sprintf(sk, "%d%%", (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
+    menu_par_new((*mOpacity.pola)[1].txt, sk);
 
   sprintf(sk, "%s", Czcionka_Pulpitu);
   menu_par_new((*mOpcje.pola)[4].txt, sk);

@@ -55,6 +55,8 @@ extern double get_block_angle(void);
 extern double Angle_Normal(double angle);
 extern double Angle_Normal_Grid (double angle);
 extern void set_Px_Py(double Px_, double Py_);
+extern void Rotate_Point (double, double, double, double, double, double, double *,double *) ;
+extern BOOL Check_if_Equal (double x, double y);
 
 typedef
   struct
@@ -99,7 +101,7 @@ static long ll;
 static double angle_l_rect=0.0;
 static double angle_l00=0.0;
 static int insertion_point=0;
-
+static double base_point_x, base_point_y;
 
 void set_angle_l_rect(double angle)
 {
@@ -172,8 +174,8 @@ int LinR(double x1,double y1,double x2,double y2)
 { LINIA L=Ldef;
   L.warstwa=Current_Layer;
   L.kolor=LiniaG.kolor;
-  L.x1=x1; L.y1=y1;
-  L.x2=x2; L.y2=y2;
+  L.x1=(float)x1; L.y1=(float)y1;
+  L.x2=(float)x2; L.y2=(float)y2;
   L.typ=LiniaG.typ;
   L.blok= ElemBlok; 
   L.obiektt1 = 0;
@@ -181,37 +183,64 @@ int LinR(double x1,double y1,double x2,double y2)
    if (dodaj_obiekt((BLOK*)dane, (void*)&L)==NULL) return 0;
   else return 1;
 }
+/*
+int TexR(double x,double y, int no)
+{ TEXT T=Tdef;
+    T.warstwa=Current_Layer;
+    T.kolor=LiniaG.kolor;
+    T.x=(float)x; T.y=(float)y;
+    T.blok= ElemBlok;
+    T.obiektt1 = 0;
+    T.obiektt2 = O2BlockPline;
+    sprintf(T.text,"%d",no);
+    T.czcionka=zmwym.czcionka;
+    T.wysokosc=(float)zmwym.wysokosc;
+    T.kat=0;
+    T.dl=strlen(&T.text[0]);
+    T.n=T18+T.dl;
+    T.width = 0;
+    T.height = 0;
+    if (dodaj_obiekt((BLOK*)dane, (void*)&T)==NULL) return 0;
+    else return 1;
+}
+*/
 
-static int Ins_rectangle(PRECTANGLE *prectangle)         
-{ char tekst_p[60];
-  char tekst_p1[60];
-  int i;
-  int l_kr;
-  int LengthT;
-  TEXT TextGa=Tdef;
-  double angle_l, sina, cosa;
-  double dy_typ = 3;
-  double dy_komentarz = 3;
-  char typ_bloku [30] = "";
-  double xx, yy;
+static int Ins_rectangle(PRECTANGLE *prectangle)
+{
+  //char tekst_p[60];
+  //char tekst_p1[60];
+  //int i;
+  //int l_kr;
+  //int LengthT;
+  //TEXT TextGa=Tdef;
+  //double angle_l, sina, cosa;
+  //double dy_typ = 3;
+  //double dy_komentarz = 3;
+  //char typ_bloku [30] = "";
+  //double xx, yy;
 
-  xx=prectangle->x1;
-  yy=prectangle->y1;
+  //xx=prectangle->x1;
+  //yy=prectangle->y1;
 
   if (FALSE == add_block())
    {
     return 0;
    }
-  angle_l=get_angle_l(); 
-  sina=get_sina();
-  cosa=get_cosa();
-  
-  
-  if(!LinR(prectangle->x1,prectangle->y1,prectangle->x2,prectangle->y2)) return 0;
-  if(!LinR(prectangle->x2,prectangle->y2,prectangle->x3,prectangle->y3)) return 0;
-  if(!LinR(prectangle->x3,prectangle->y3,prectangle->x4,prectangle->y4)) return 0;
-  if(!LinR(prectangle->x4,prectangle->y4,prectangle->x1,prectangle->y1)) return 0;
-  
+
+  //angle_l=get_angle_l();
+  //sina=get_sina();
+  //cosa=get_cosa();
+
+    if (!LinR(prectangle->x1, prectangle->y1, prectangle->x2, prectangle->y2)) return 0;
+    if (!LinR(prectangle->x2, prectangle->y2, prectangle->x3, prectangle->y3)) return 0;
+    if (!LinR(prectangle->x3, prectangle->y3, prectangle->x4, prectangle->y4)) return 0;
+    if (!LinR(prectangle->x4, prectangle->y4, prectangle->x1, prectangle->y1)) return 0;
+
+    //for tests only
+    //if (!TexR(prectangle->x1, prectangle->y1,1)) return 0;
+    //if (!TexR(prectangle->x2, prectangle->y2,2)) return 0;
+    //if (!TexR(prectangle->x3, prectangle->y3,3)) return 0;
+    //if (!TexR(prectangle->x4, prectangle->y4,4)) return 0;
 
   return 1;
 }
@@ -704,7 +733,6 @@ static BOOL get_rectangle_size (void)
    }
 }
 
-
 static void redcrRECT (int type)
 /*----------------------------*/
 {
@@ -785,10 +813,10 @@ static void redcrRECT (int type)
       
       if (strwyj == 0)
       {
-	df_x1 = s_window.x2 - s_window.x1 ;
-	df_y1 = s_window.y2 - s_window.y1 ;
-      }	
-	
+	     df_x1 = s_window.x2 - s_window.x1 ;
+	     df_y1 = s_window.y2 - s_window.y1 ;
+      }
+
 	if (angle_l==0)
 	{
 	/*nalezy uzaleznic kierunek generowania od sposobu definiowania okna*/
@@ -798,12 +826,15 @@ static void redcrRECT (int type)
 	  prectangle.x3=fabs(df_x1);	prectangle.y3=-fabs(df_y1);
 	  prectangle.x4=0;			prectangle.y4=-fabs(df_y1);
 	  /*przesuniecie prectangle*/
+           base_point_x=prectangle.x3;
+           base_point_y=prectangle.y3;
 	  if (df_x1>0)
 	   {
 	   prectangle.x1-=df_x1;
 	   prectangle.x2-=df_x1;
 	   prectangle.x3-=df_x1;
 	   prectangle.x4-=df_x1;
+           base_point_x=prectangle.x1;
 	   }
 	  if (df_y1<0)
 	   {
@@ -811,7 +842,10 @@ static void redcrRECT (int type)
 	   prectangle.y2-=df_y1;
 	   prectangle.y3-=df_y1;
 	   prectangle.y4-=df_y1;
-	   } 
+
+           base_point_y=prectangle.y1;
+	   }
+
 	}
 	else
 	 {
@@ -827,6 +861,47 @@ static void redcrRECT (int type)
 	    prectangle.y3=-(df_x1*sina)-(df_y1*cosa);
 	    prectangle.x4=df_y1*sina;
 	    prectangle.y4=-df_y1*cosa;
+
+          base_point_x=prectangle.x1;
+          base_point_y=prectangle.y1;
+
+          if (s_window.x2>s_window.x1)
+          {
+              if (s_window.y2 < s_window.y1)  /*1-3*/
+              {
+                  base_point_x=prectangle.x4;  //done
+                  base_point_y=prectangle.y4;
+              }
+              else
+              {
+                  base_point_x=prectangle.x2;  //done //???
+                  base_point_y=prectangle.y2;
+              }
+          }
+          else
+          {
+              if (s_window.y2>s_window.y1)  /*3-1*/
+              {
+                  //4 or 1
+                  double l2=(X-prectangle.x2)*(X-prectangle.x2)+(Y-prectangle.y2)*(Y-prectangle.y2);
+                  double l3=(X-prectangle.x3)*(X-prectangle.x3)+(Y-prectangle.y3)*(Y-prectangle.y3);
+                  if (l2<l3)
+                  {
+                      base_point_x = prectangle.x1;
+                      base_point_y = prectangle.y1;
+                  }
+                  else
+                  {
+                      base_point_x = prectangle.x4;
+                      base_point_y = prectangle.y4;
+                  }
+              }
+              else
+              {
+                  base_point_x=prectangle.x2;
+                  base_point_y=prectangle.y2;
+              }
+          }
 	  }
 	  else
 	  {
@@ -848,7 +923,7 @@ static void redcrRECT (int type)
 	      }
 	   }
 	    else
-	    { 
+	    {
 	     if (s_window.y2>s_window.y1)  /*3-1*/
 	     {
   	      prectangle.x1=0;  			prectangle.y1=0;
@@ -862,9 +937,9 @@ static void redcrRECT (int type)
 	       prectangle.x4=0;				prectangle.y4=0;
 	       prectangle.x3=L1window.x2-s_window.x2;	prectangle.y3=L1window.y2-s_window.y2;
 	       prectangle.x2=-s_window.x2+s_window.x1;	prectangle.y2=-s_window.y2+s_window.y1;
-	      } 
-	    } 
-	  }  
+	      }
+	    }
+	  }
 	 }
       break ;
     case 7 :
@@ -917,6 +992,7 @@ aa:
     goto aa ;
   }
   redcrRECT (5) ;
+
   ds=dane_size;
   CUR_ON(X, Y);
   Ins_rectangle(&prectangle);
@@ -928,7 +1004,8 @@ aa:
   l_kr = put_angle_lr(angle_l_rect, angle_l00);
 
 
-  if (insertion_point==1) {
+  if (insertion_point==1)
+  {
       if (PrzesunB(0, 0) == ESC) {
           zmien_atrybut(ADP, ADK, Ablok, Ausuniety);
           usun_blok(ADP, ADK);
@@ -939,7 +1016,12 @@ aa:
           transformacja_blok(ADP, ADK, X - 0, Y - 0, 0, 0, Tprzesuw, 0);
       }
   }
-  else transformacja_blok(ADP, ADK, X - 0, Y - 0, 0, 0, Tprzesuw, 0);
+  else
+  {
+      if (strwyj == 1)
+          transformacja_blok(ADP, ADK, s_window.x1-base_point_x, s_window.y1-base_point_y, 0, 0, Tprzesuw, 0);
+      else transformacja_blok(ADP, ADK, X - 0, Y - 0, 0, 0, Tprzesuw, 0);
+  }
 
 
      blokzap(ADP,ADK,Ablok,COPY_PUT,1);

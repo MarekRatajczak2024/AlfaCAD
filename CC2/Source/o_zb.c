@@ -148,6 +148,7 @@ extern void  SetDefaultStyles(void);
 extern int ReadBlockStyles(int f);
 
 extern int TRANSLUCENCY;
+extern int GTRANSLUCENCY;
 extern char *Get_File_Ext(char *fn);
 
 extern int solid_pattern_library_no;
@@ -1703,6 +1704,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   int s_len, s_ext_len;
   int null_var_int;
   float null_var_float;
+  int16_t null_var_short_int;
   int pattern_library_no_var_int;
   PRIV_PRN_WINDOW prn_window;
   int units;
@@ -1885,10 +1887,17 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
   l_kr=put_znacznik_aplikacji(0);
 
-  
-  if (proc_io(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
 
-  if ((TRANSLUCENCY < 77) || (TRANSLUCENCY > 255))  TRANSLUCENCY = 179;
+  
+  //if (proc_io(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
+  if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
+  TRANSLUCENCY=(int)null_var_short_int;
+  if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
+  if (null_var_short_int>0) GTRANSLUCENCY=(int)null_var_short_int;
+     else GTRANSLUCENCY=255;
+
+  if ((TRANSLUCENCY < 26) || (TRANSLUCENCY > 255))  TRANSLUCENCY = 179;
+  if ((GTRANSLUCENCY < 26) || (GTRANSLUCENCY > 255))  GTRANSLUCENCY = 255;
 
   reset_trans_blender();
   
@@ -2349,6 +2358,7 @@ static BOOL write_param (int f, int *error_code1)
   double dl_z_b_2;
   double zn_b1d ;
   int null_var_int;
+  int16_t null_var_short_int;
   float null_var_float;
   int  pattern_library_no_var_int;
   char null_var_char;
@@ -2452,7 +2462,11 @@ static BOOL write_param (int f, int *error_code1)
   if (write (f, &local_x, sizeof(double)) != sizeof(double)) return FALSE ;
   if (write (f, &local_y, sizeof(double)) != sizeof(double)) return FALSE ;
 
-  if (write(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
+  null_var_short_int=TRANSLUCENCY;
+  if (write(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
+
+  null_var_short_int=GTRANSLUCENCY;
+  if (write(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
 
   //saving the number of embeded patterns
   pattern_library_no_var_int = 1;

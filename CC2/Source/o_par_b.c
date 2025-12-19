@@ -1730,8 +1730,8 @@ int generowanie_ramki_sektorow()
 	T.blok = 1;
 	T.kolor = sektory_arkusza_ext.sector_color;
 	T.justowanie = j_centralnie;
-	T.width = 0.0;
-	T.height = 0.0;
+	T.width = 0;
+	T.height = 0;
 
 
 	linia_ramka = sektory_arkusza_ext.frame_line * 32;
@@ -1919,8 +1919,8 @@ int generowanie_ramki_sektorow()
 					LengthT = strlen(T.text);
 					T.dl = LengthT;
 					T.n = T18 + T.dl;
-					T.width = 0.0;
-					T.height = 0.0;
+					T.width = 0;
+					T.height = 0;
 					if (dodaj_obiekt((BLOK*)dane, (void*)&T) == NULL) return 0;
 				}
 				odl += sektory_arkusza_ext.dy;
@@ -1949,8 +1949,8 @@ int generowanie_ramki_sektorow()
 					LengthT = strlen(T.text);
 					T.dl = LengthT;
 					T.n = T18 + T.dl;
-					T.width = 0.0;
-					T.height = 0.0;
+					T.width = 0;
+					T.height = 0;
 					if (dodaj_obiekt((BLOK*)dane, (void*)&T) == NULL) return 0;
 				}
 				odl += sektory_arkusza_ext.dy;

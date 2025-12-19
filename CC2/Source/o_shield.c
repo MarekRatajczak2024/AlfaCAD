@@ -123,10 +123,12 @@ extern void utf8Upper(char* text);
 extern int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma);
 extern void Rotate_Point(double si, double co, double x1, double y1, /*center point*/ double x2, double y2, double *x, double *y); /*rotate point*/
 
-extern void najblizszyL_ (double *x, double *y, void *adr);
-extern void najblizszyl_ (double *x, double *y, void *adr);
+extern BOOL check_if_point_on_line_segment(double p1x, double p1y, double p2x, double p2y, double px, double py);
+extern BOOL check_if_point_on_arc_segment(double xc, double yc, double r, double startAngle, double endAngle, double x, double y);
+
 extern TMENU mVector;
 extern BOOL glb_silent;
+extern double Atan2 (double y, double x);
 
 #ifdef LINUX
 extern int run_with_timeout(char* command, int timeout);
@@ -3915,273 +3917,208 @@ void Shield_analysis(void) {
                     ////marking zone
                     for (j = 0; j < zone_no; j++)
                     {
-                        ADPB = (char *) zone_property[j].adr;
-                        ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
-                        zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
-                        ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
-                                               &s_hatch_param,
-                                               1, 0, 0, 0, 0, 0);
-                        if (sh_load[i].type > 0)   //two points of distribution or range
-                            ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
-                                                   &s_hatch_param,
-                                                   1, 0, 0, 0, 0, 0);
-                        else ret2 = ret1;  //same point
-                        zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
-                        if ((ret1 == 1) && (ret2 == 1)) {
-                            //check if wall belongs to zone or shield
-                            sh_load[i].body = 3; //zone
-                            sh_load[i].body_no = j;
-                            sh_load[i].point_body = 3; //zone
-                            sh_load[i].point_body_no = j;
-                            sh_load[i].point_edge_no = 0;   //not installed on edge
-
-                            if (sh_load[i].type == 0)  //point load
-                                embed_node(i, geo_units_factor);
-                            else if (sh_load[i].type == 2)  //distributed load
+                            BOOL found=FALSE;
+                            //checking holes in the zone
+                            for (int jh = 0; jh < hole_no; jh++)
                             {
-                                ////Point(6) = {0.02, 0.12, 0, lc};
-                                ////Point(7) = {0.04, 0.18, 0, lc};
-                                ////Line(5) = {6, 7};
-                                ////Curve{5} In Surface{1};
-                                embed_nodes_edge(i, 3 /*zone*/, j /*number*/, zone_property[j].body_number, geo_units_factor);
-                            }
-
-                            zone_property[j].load++;
-                            break;
-                        } else
-                            // trying to embed point on curve, for example:   -> this doesn't work:  Point{2} In Curve{2};
-                            // so instead of inserting new point, the segment is divided into 2, it means new sh_edge must be inserted after effected sh_edge
-                            // then all xxx_property[i].first_edge and .last edge must be shifted by 1 if .first_edge > effected sh_edge
-                        {
-                            for (int jk = zone_property[j].first_edge; jk < zone_property[j].last_edge; jk++) {
-                                double loadx1, loady1, loadx2, loady2;
-                                loadx1 = sh_load[i].x1;
-                                loady1 = sh_load[i].y1;
-                                loadx2 = sh_load[i].x2;
-                                loady2 = sh_load[i].y2;
-                                if (sh_edge[jk].type == 0)  //line
+                                if ((hole_property[jh].ps == 3) && (hole_property[jh].pn == j)) //zone and this zone
                                 {
-                                    Xbak = X;
-                                    Ybak = Y;
-                                    X = loadx1;
-                                    Y = loady1;
-                                    najblizszyL_(&loadx1, &loady1, sh_edge[jk].adr);
-                                    X = Xbak;
-                                    Y = Ybak;
-                                    if ((Check_if_Equal(sh_load[i].x1, loadx1) == TRUE) && (Check_if_Equal(sh_load[i].y1, loady1) == TRUE)) //point on edge
+                                    for (int jk = hole_property[jh].first_edge; jk < hole_property[jh].last_edge; jk++)
                                     {
-                                        sh_load[i].body = 3; //zone
-                                        sh_load[i].body_no = j;
-                                        sh_load[i].point_body = 3; //zone
-                                        sh_load[i].point_body_no = j;
-                                        sh_load[i].point_edge_no = jk;
-
-                                        zone_property[j].load++;
-
-                                        //checking if point exists
-                                        int kk;
-                                        for (kk = 0; kk < sh_node_no; kk++) {
-                                            if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
-                                                break;
-                                        }
-                                        if (sh_load[i].type == 0)  //point load, so extra point is needed if necessary
+                                        double loadx1, loady1, loadx2, loady2;
+                                        loadx1 = sh_load[i].x1;
+                                        loady1 = sh_load[i].y1;
+                                        loadx2 = sh_load[i].x2;
+                                        loady2 = sh_load[i].y2;
+                                        if (sh_edge[jk].type == 0)  //line
                                         {
-                                            if (kk == sh_node_no) //needs to add new point
-                                            {
+                                            Xbak = X;
+                                            Ybak = Y;
+                                            X = loadx1;
+                                            Y = loady1;
+
+                                            X = Xbak;
+                                            Y = Ybak;
+                                            if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx1, loady1)) {
+                                                sh_load[i].body = 3; //zone
+                                                sh_load[i].body_no = j;
+                                                sh_load[i].point_body = 3; //zone
+                                                sh_load[i].point_body_no = j;
+                                                sh_load[i].point_edge_no = jk;
+
+                                                zone_property[j].load++;
+
+                                                //checking if point exists
+                                                int kk;
+                                                for (kk = 0; kk < sh_node_no; kk++) {
+                                                    if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                        break;
+                                                }
+                                                if (sh_load[i].type == 0)  //point load, so extra point is needed if necessary
+                                                {
+                                                    if (kk == sh_node_no) //needs to add new point
+                                                    {
+                                                        //adding point
+                                                        //embed_node_edge(i, geo_units_factor);
+                                                        sh_node[sh_node_no].x = loadx1;
+                                                        sh_node[sh_node_no].y = loady1;
+                                                        sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
+
+                                                        double xx01 = sh_node[sh_edge[jk].node1].x;
+                                                        double yy01 = sh_node[sh_edge[jk].node1].y;
+                                                        double xx02 = sh_node[sh_edge[jk].node2].x;
+                                                        double yy02 = sh_node[sh_edge[jk].node2].y;
+
+                                                        //spitting edge
+                                                        //SH_EDGE sh_edge_buf;
+                                                        memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
+
+                                                        sh_edge[jk].node2 = sh_node_no;
+                                                        //calculate midpoint
+                                                        sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node1].x + loadx1) / 2.0f;
+                                                        sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node1].y + loady1) / 2.0f;
+
+                                                        sh_edge_buf.node1 = sh_node_no;
+                                                        sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + loadx1) / 2.0f;
+                                                        sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + loady1) / 2.0f;
+                                                        add_node_sh();
+
+                                                        //inserting sh_edge_buf
+                                                        insert_sh_edge(jk + 1, &sh_edge_buf, xx01, yy01, xx02, yy02, loadx1, loady1, TRUE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
+
+                                                        found = TRUE;
+                                                        break;
+                                                    }
+                                                } else if (sh_load[i].type == 2) //linear uniformly or trapezoidally distributed load
+                                                {
+                                                    //checking the second point to make sure the load lays on edge
+                                                    Xbak = X;
+                                                    Ybak = Y;
+                                                    X = loadx2;
+                                                    Y = loady2;
+
+                                                    X = Xbak;
+                                                    Y = Ybak;
+                                                    if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx2, loady2)) {
+                                                        //load can be assigned to the edge
+                                                        sh_load[i].k = shield_no + hole_no + wall_no + jk;
+                                                    } else {
+                                                        sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(sh_load[i].x1), milimetryoby(sh_load[i].y1),
+                                                                milimetryobx(sh_load[i].x2), milimetryoby(sh_load[i].y2),
+                                                                (*mVector.pola)[sh_load[i].style + 1].txt, _load_not_associated_, rn);
+                                                        strcat(report, report_row);
+
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        } else //arc
+                                        {
+                                            if (jk == 17) {
+                                                int a = 0;
+                                            }
+                                            Xbak = X;
+                                            Ybak = Y;
+                                            X = loadx1;
+                                            Y = loady1;
+
+                                            double xs = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                            double ys = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                            double xe = sh_node[sh_edge[jk].node3].x - sh_node[sh_edge[jk].node2].x;
+                                            double ye = sh_node[sh_edge[jk].node3].y - sh_node[sh_edge[jk].node2].y;
+
+                                            double r_edge = sqrt(xs * xs + ys * ys);
+                                            double kat1_edge = (float) Atan2(ys, xs);
+                                            double kat2_edge = (float) Atan2(ye, xe);
+
+                                            X = Xbak;
+                                            Y = Ybak;
+                                            if (check_if_point_on_arc_segment(sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, r_edge, kat1_edge, kat2_edge, loadx1, loady1)) {
+                                                sh_load[i].body = 3; //zone
+                                                sh_load[i].body_no = j;
+                                                sh_load[i].point_body = 3; //zone
+                                                sh_load[i].point_body_no = j;
+                                                sh_load[i].point_edge_no = jk;
+
+                                                zone_property[j].load++;
+
+                                                //checking if point exists
+                                                int kk;
+                                                for (kk = 0; kk < sh_node_no; kk++) {
+                                                    if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                        break;
+                                                }
+                                                if (kk < sh_node_no) break;  //no needs to add new point
+
                                                 //adding point
                                                 //embed_node_edge(i, geo_units_factor);
                                                 sh_node[sh_node_no].x = loadx1;
                                                 sh_node[sh_node_no].y = loady1;
                                                 sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
 
-                                                double xx01=sh_node[sh_edge[jk].node1].x;
-                                                double yy01=sh_node[sh_edge[jk].node1].y;
-                                                double xx02=sh_node[sh_edge[jk].node2].x;
-                                                double yy02=sh_node[sh_edge[jk].node2].y;
-
                                                 //spitting edge
                                                 //SH_EDGE sh_edge_buf;
                                                 memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
 
-                                                sh_edge[jk].node2 = sh_node_no;
+                                                sh_edge[jk].node3 = sh_node_no;
                                                 //calculate midpoint
-                                                sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node1].x + loadx1) / 2.0f;
-                                                sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node1].y + loady1) / 2.0f;
+                                                double dx, dy, kat1, kat2, r, a1, a2;
 
+                                                dx = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                                dy = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat1=Pi_;
+                                                //else
+                                                kat1 = atan2(dy, dx);
+
+                                                dx = loadx1 - sh_node[sh_edge[jk].node2].x;
+                                                dy = loady1 - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                                //else
+                                                kat2 = atan2(dy, dx);
+
+                                                a1 = Angle_Normal(kat1);
+                                                a2 = Angle_Normal(kat2);
+                                                r = sqrt(dx * dx + dy * dy);
+                                                if (a1 > a2) a2 += Pi2;
+                                                sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                                sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                                //new segment
                                                 sh_edge_buf.node1 = sh_node_no;
-                                                sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + loadx1) / 2.0f;
-                                                sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + loady1) / 2.0f;
+
+                                                a1 = a2;
+                                                dx = sh_node[sh_edge_buf.node3].x - sh_node[sh_edge[jk].node2].x;
+                                                dy = sh_node[sh_edge_buf.node3].y - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                                //else
+                                                kat2 = atan2(dy, dx);
+                                                a2 = Angle_Normal(kat2);
+                                                if (a1 > a2) a2 += Pi2;
+                                                sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                                sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                                //node 2 is common for both parts
                                                 add_node_sh();
 
                                                 //inserting sh_edge_buf
-                                                insert_sh_edge(jk + 1, &sh_edge_buf, xx01, yy01, xx02, yy02, loadx1, loady1, TRUE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
-                                            }
+                                                insert_sh_edge(jk + 1, &sh_edge_buf, 0, 0, 0, 0, 0, 0, FALSE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
 
-                                        }
-                                        else if (sh_load[i].type == 2) //linear uniformly or trapezoidally distributed load
-                                        {
-                                            //checking the second point to make sure the load lays on edge
-                                            Xbak = X;
-                                            Ybak = Y;
-                                            X = loadx2;
-                                            Y = loady2;
-                                            najblizszyL_(&loadx2, &loady2, sh_edge[jk].adr);
-                                            X = Xbak;
-                                            Y = Ybak;
-                                            if ((Check_if_Equal(sh_load[i].x2, loadx2) == TRUE) && (Check_if_Equal(sh_load[i].y2, loady2) == TRUE)) //point on edge
-                                            {
-                                                //load can be assigned to the edge
-                                                sh_load[i].k = shield_no + hole_no + wall_no + jk;
-                                            }
-                                            else
-                                                {
-                                                sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(sh_load[i].x1), milimetryoby(sh_load[i].y1),
-                                                        milimetryobx(sh_load[i].x2), milimetryoby(sh_load[i].y2),
-                                                        (*mVector.pola)[sh_load[i].style + 1].txt, _load_not_associated_, rn);
-                                                strcat(report, report_row);
+                                                found = TRUE;
 
                                                 break;
                                             }
-                                        }
-                                    }
-                                } else //arc
-                                {
-                                    if (jk == 17) {
-                                        int a = 0;
-                                    }
-                                    Xbak = X;
-                                    Ybak = Y;
-                                    X = loadx1;
-                                    Y = loady1;
-                                    najblizszyl_(&loadx1, &loady1, sh_edge[jk].adr);
-                                    X = Xbak;
-                                    Y = Ybak;
-                                    if ((Check_if_Equal2(sh_load[i].x1, loadx1) == TRUE) && (Check_if_Equal(sh_load[i].y1, loady1) == TRUE)) //point on edge
-                                    {
-                                        sh_load[i].body = 3; //zone
-                                        sh_load[i].body_no = j;
-                                        sh_load[i].point_body = 3; //zone
-                                        sh_load[i].point_body_no = j;
-                                        sh_load[i].point_edge_no = jk;
-
-                                        zone_property[j].load++;
-
-                                        //checking if point exists
-                                        int kk;
-                                        for (kk = 0; kk < sh_node_no; kk++) {
-                                            if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
-                                                break;
-                                        }
-                                        if (kk < sh_node_no) break;  //no needs to add new point
-
-                                        //adding point
-                                        //embed_node_edge(i, geo_units_factor);
-                                        sh_node[sh_node_no].x = loadx1;
-                                        sh_node[sh_node_no].y = loady1;
-                                        sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
-
-                                        //spitting edge
-                                        //SH_EDGE sh_edge_buf;
-                                        memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
-
-                                        sh_edge[jk].node3 = sh_node_no;
-                                        //calculate midpoint
-                                        double dx, dy, kat1, kat2, r, a1, a2;
-
-                                        dx = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
-                                        dy = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
-                                        //if (Check_if_Equal(dx,0.)) kat1=Pi_;
-                                        //else
-                                        kat1 = atan2(dy, dx);
-
-                                        dx = loadx1 - sh_node[sh_edge[jk].node2].x;
-                                        dy = loady1 - sh_node[sh_edge[jk].node2].y;
-                                        //if (Check_if_Equal(dx,0.)) kat2=Pi_;
-                                        //else
-                                        kat2 = atan2(dy, dx);
-
-                                        a1 = Angle_Normal(kat1);
-                                        a2 = Angle_Normal(kat2);
-                                        r = sqrt(dx * dx + dy * dy);
-                                        if (a1 > a2) a2 += Pi2;
-                                        sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
-                                        sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
-
-                                        //new segment
-                                        sh_edge_buf.node1 = sh_node_no;
-
-                                        a1 = a2;
-                                        dx = sh_node[sh_edge_buf.node3].x - sh_node[sh_edge[jk].node2].x;
-                                        dy = sh_node[sh_edge_buf.node3].y - sh_node[sh_edge[jk].node2].y;
-                                        //if (Check_if_Equal(dx,0.)) kat2=Pi_;
-                                        //else
-                                        kat2 = atan2(dy, dx);
-                                        a2 = Angle_Normal(kat2);
-                                        if (a1 > a2) a2 += Pi2;
-                                        sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
-                                        sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
-
-                                        //node 2 is common for both parts
-                                        add_node_sh();
-
-                                        //inserting sh_edge_buf
-                                        insert_sh_edge(jk + 1, &sh_edge_buf, 0, 0, 0, 0, 0, 0, FALSE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
-
-                                        if (sh_load[i].type == 0)  //point load
-                                        {
-                                            break;
-                                        } else  //distributed load
-                                        {
-                                            break;
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
-                    //if assigned to zone, won't be assigned to shield
-                    if (j == zone_no)  //not found in zones
-                    {
-                        ////marking shield
-                        for (j = 0; j < shield_no; j++) {
-                            ADPB = (char *) shield_property[j].adr;
-                            ADKB = ADPB + sizeof(NAGLOWEK) + shield_property[j].adr->n - 1;
-                            zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
-                            ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
-                                                   &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                            if (sh_load[i].type > 0)  //two points of distribution or range
-                                ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
-                                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
-                            else ret2 = ret1;  //same point
-                            zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
 
-                            if ((ret1 == 1) && (ret2 == 1)) {
-                                sh_load[i].body = 0; //shield
-                                sh_load[i].body_no = j;
-                                sh_load[i].point_body = 0; //shield
-                                sh_load[i].point_body_no = j;
-                                sh_load[i].point_edge_no = 0;  //not installed on edge
-
-                                if (sh_load[i].type == 0)  //point load
-                                    embed_node(i, geo_units_factor);
-
-                                else if (sh_load[i].type == 2)  //distributed load
-                                {
-                                    ////Point(6) = {0.02, 0.12, 0, lc};
-                                    ////Point(7) = {0.04, 0.18, 0, lc};
-                                    ////Line(5) = {6, 7};
-                                    ////Curve{5} In Surface{1};
-                                    embed_nodes_edge(i, 0 /*shield*/, j /*number*/, zone_property[j].body_number, geo_units_factor);
-                                }
-
-                                shield_property[j].load++;
-                                break;
-                            } else
-                                // trying to embed point on curve, for example:   -> this doesn't work:  Point{2} In Curve{2};
-                                // so instead of inserting new point, the segment is divided into 2, it means new sh_edge must be inserted after effected sh_edge
-                                // then all xxx_property[i].first_edge and .last edge must be shifted by 1 if .first_edge > effected sh_edge
+                            // trying to embed point on curve, for example:   -> this doesn't work:  Point{2} In Curve{2};
+                            // so instead of inserting new point, the segment is divided into 2, it means new sh_edge must be inserted after effected sh_edge
+                            // then all xxx_property[i].first_edge and .last edge must be shifted by 1 if .first_edge > effected sh_edge
+                            if (found==FALSE) //not found in holes
                             {
-                                for (int jk = shield_property[j].first_edge; jk < shield_property[j].last_edge; jk++) {
+                                for (int jk = zone_property[j].first_edge; jk < zone_property[j].last_edge; jk++)
+                                {
                                     double loadx1, loady1, loadx2, loady2;
                                     loadx1 = sh_load[i].x1;
                                     loady1 = sh_load[i].y1;
@@ -4193,10 +4130,445 @@ void Shield_analysis(void) {
                                         Ybak = Y;
                                         X = loadx1;
                                         Y = loady1;
-                                        najblizszyL_(&loadx1, &loady1, sh_edge[jk].adr);
+
                                         X = Xbak;
                                         Y = Ybak;
-                                        if ((Check_if_Equal(sh_load[i].x1, loadx1) == TRUE) && (Check_if_Equal(sh_load[i].y1, loady1) == TRUE)) //point on edge
+                                        if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx1, loady1)) {
+                                            sh_load[i].body = 3; //zone
+                                            sh_load[i].body_no = j;
+                                            sh_load[i].point_body = 3; //zone
+                                            sh_load[i].point_body_no = j;
+                                            sh_load[i].point_edge_no = jk;
+
+                                            zone_property[j].load++;
+
+                                            //checking if point exists
+                                            int kk;
+                                            for (kk = 0; kk < sh_node_no; kk++) {
+                                                if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                    break;
+                                            }
+                                            if (sh_load[i].type == 0)  //point load, so extra point is needed if necessary
+                                            {
+                                                if (kk == sh_node_no) //needs to add new point
+                                                {
+                                                    //adding point
+                                                    //embed_node_edge(i, geo_units_factor);
+                                                    sh_node[sh_node_no].x = loadx1;
+                                                    sh_node[sh_node_no].y = loady1;
+                                                    sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
+
+                                                    double xx01 = sh_node[sh_edge[jk].node1].x;
+                                                    double yy01 = sh_node[sh_edge[jk].node1].y;
+                                                    double xx02 = sh_node[sh_edge[jk].node2].x;
+                                                    double yy02 = sh_node[sh_edge[jk].node2].y;
+
+                                                    //spitting edge
+                                                    //SH_EDGE sh_edge_buf;
+                                                    memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
+
+                                                    sh_edge[jk].node2 = sh_node_no;
+                                                    //calculate midpoint
+                                                    sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node1].x + loadx1) / 2.0f;
+                                                    sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node1].y + loady1) / 2.0f;
+
+                                                    sh_edge_buf.node1 = sh_node_no;
+                                                    sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + loadx1) / 2.0f;
+                                                    sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + loady1) / 2.0f;
+                                                    add_node_sh();
+
+                                                    //inserting sh_edge_buf
+                                                    insert_sh_edge(jk + 1, &sh_edge_buf, xx01, yy01, xx02, yy02, loadx1, loady1, TRUE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
+
+                                                    found = TRUE;
+                                                    break;
+                                                }
+                                            } else if (sh_load[i].type == 2) //linear uniformly or trapezoidally distributed load
+                                            {
+                                                //checking the second point to make sure the load lays on edge
+                                                Xbak = X;
+                                                Ybak = Y;
+                                                X = loadx2;
+                                                Y = loady2;
+
+                                                X = Xbak;
+                                                Y = Ybak;
+                                                if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx2, loady2)) {
+                                                    //load can be assigned to the edge
+                                                    sh_load[i].k = shield_no + hole_no + wall_no + jk;
+
+                                                    found = TRUE;
+                                                } else {
+                                                    sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(sh_load[i].x1), milimetryoby(sh_load[i].y1),
+                                                            milimetryobx(sh_load[i].x2), milimetryoby(sh_load[i].y2),
+                                                            (*mVector.pola)[sh_load[i].style + 1].txt, _load_not_associated_, rn);
+                                                    strcat(report, report_row);
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    } else //arc
+                                    {
+                                        if (jk == 17) {
+                                            int a = 0;
+                                        }
+                                        Xbak = X;
+                                        Ybak = Y;
+                                        X = loadx1;
+                                        Y = loady1;
+
+                                        double xs = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                        double ys = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                        double xe = sh_node[sh_edge[jk].node3].x - sh_node[sh_edge[jk].node2].x;
+                                        double ye = sh_node[sh_edge[jk].node3].y - sh_node[sh_edge[jk].node2].y;
+
+                                        double r_edge = sqrt(xs * xs + ys * ys);
+                                        double kat1_edge = (float) Atan2(ys, xs);
+                                        double kat2_edge = (float) Atan2(ye, xe);
+
+                                        X = Xbak;
+                                        Y = Ybak;
+                                        if (check_if_point_on_arc_segment(sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, r_edge, kat1_edge, kat2_edge, loadx1, loady1)) {
+                                            sh_load[i].body = 3; //zone
+                                            sh_load[i].body_no = j;
+                                            sh_load[i].point_body = 3; //zone
+                                            sh_load[i].point_body_no = j;
+                                            sh_load[i].point_edge_no = jk;
+
+                                            zone_property[j].load++;
+
+                                            //checking if point exists
+                                            int kk;
+                                            for (kk = 0; kk < sh_node_no; kk++) {
+                                                if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                    break;
+                                            }
+                                            if (kk < sh_node_no) break;  //no needs to add new point
+
+                                            //adding point
+                                            //embed_node_edge(i, geo_units_factor);
+                                            sh_node[sh_node_no].x = loadx1;
+                                            sh_node[sh_node_no].y = loady1;
+                                            sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
+
+                                            //spitting edge
+                                            //SH_EDGE sh_edge_buf;
+                                            memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
+
+                                            sh_edge[jk].node3 = sh_node_no;
+                                            //calculate midpoint
+                                            double dx, dy, kat1, kat2, r, a1, a2;
+
+                                            dx = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                            dy = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                            //if (Check_if_Equal(dx,0.)) kat1=Pi_;
+                                            //else
+                                            kat1 = atan2(dy, dx);
+
+                                            dx = loadx1 - sh_node[sh_edge[jk].node2].x;
+                                            dy = loady1 - sh_node[sh_edge[jk].node2].y;
+                                            //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                            //else
+                                            kat2 = atan2(dy, dx);
+
+                                            a1 = Angle_Normal(kat1);
+                                            a2 = Angle_Normal(kat2);
+                                            r = sqrt(dx * dx + dy * dy);
+                                            if (a1 > a2) a2 += Pi2;
+                                            sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                            sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                            //new segment
+                                            sh_edge_buf.node1 = sh_node_no;
+
+                                            a1 = a2;
+                                            dx = sh_node[sh_edge_buf.node3].x - sh_node[sh_edge[jk].node2].x;
+                                            dy = sh_node[sh_edge_buf.node3].y - sh_node[sh_edge[jk].node2].y;
+                                            //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                            //else
+                                            kat2 = atan2(dy, dx);
+                                            a2 = Angle_Normal(kat2);
+                                            if (a1 > a2) a2 += Pi2;
+                                            sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                            sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                            //node 2 is common for both parts
+                                            add_node_sh();
+
+                                            //inserting sh_edge_buf
+                                            insert_sh_edge(jk + 1, &sh_edge_buf, 0, 0, 0, 0, 0, 0, FALSE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
+
+                                            found = TRUE;
+
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (found==FALSE)
+                            {
+                                ADPB = (char *) zone_property[j].adr;
+                                ADKB = ADPB + sizeof(NAGLOWEK) + zone_property[j].adr->n - 1;
+                                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
+                                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                                       &s_hatch_param,
+                                                       1, 0, 0, 0, 0, 0);
+                                if (sh_load[i].type > 0)   //two points of distribution or range
+                                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                                           &s_hatch_param,
+                                                           1, 0, 0, 0, 0, 0);
+                                else ret2 = ret1;  //same point
+                                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+                                if ((ret1 == 1) && (ret2 == 1))
+                                {
+                                    //check if wall belongs to zone or shield
+                                    sh_load[i].body = 3; //zone
+                                    sh_load[i].body_no = j;
+                                    sh_load[i].point_body = 3; //zone
+                                    sh_load[i].point_body_no = j;
+                                    sh_load[i].point_edge_no = 0;   //not installed on edge
+
+                                    if (sh_load[i].type == 0)  //point load
+                                        embed_node(i, geo_units_factor);
+                                    else if (sh_load[i].type == 2)  //distributed load
+                                    {
+                                        ////Point(6) = {0.02, 0.12, 0, lc};
+                                        ////Point(7) = {0.04, 0.18, 0, lc};
+                                        ////Line(5) = {6, 7};
+                                        ////Curve{5} In Surface{1};
+                                        embed_nodes_edge(i, 3, j, zone_property[j].body_number, geo_units_factor);
+                                    }
+
+                                    zone_property[j].load++;
+                                    break;
+                                }
+                            }
+                    }
+                    //if assigned to zone, won't be assigned to shield
+                    if (j == zone_no)  //not found in zones
+                    {
+                        ////marking shield
+                        for (j = 0; j < shield_no; j++)
+                        {
+                            BOOL found=FALSE;
+                            //checking holes in the zone
+                            for (int jh = 0; jh < hole_no; jh++)
+                            {
+                                if ((hole_property[jh].ps == 0) && (hole_property[jh].pn == j)) //shield and this shield
+                                {
+                                    for (int jk = hole_property[jh].first_edge; jk < hole_property[jh].last_edge; jk++)
+                                    {
+                                        double loadx1, loady1, loadx2, loady2;
+                                        loadx1 = sh_load[i].x1;
+                                        loady1 = sh_load[i].y1;
+                                        loadx2 = sh_load[i].x2;
+                                        loady2 = sh_load[i].y2;
+                                        if (sh_edge[jk].type == 0)  //line
+                                        {
+                                            Xbak = X;
+                                            Ybak = Y;
+                                            X = loadx1;
+                                            Y = loady1;
+
+                                            X = Xbak;
+                                            Y = Ybak;
+                                            if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx1, loady1)) {
+                                                sh_load[i].body = 0; //shield
+                                                sh_load[i].body_no = j;
+                                                sh_load[i].point_body = 0; //shield
+                                                sh_load[i].point_body_no = j;
+                                                sh_load[i].point_edge_no = jk;
+
+                                                shield_property[j].load++;
+
+                                                //checking if point exists
+                                                int kk;
+                                                for (kk = 0; kk < sh_node_no; kk++) {
+                                                    if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                        break;
+                                                }
+                                                if (sh_load[i].type == 0)  //point load, so extra point is needed if necessary
+                                                {
+                                                    if (kk == sh_node_no) //needs to add new point
+                                                    {
+                                                        //adding point
+                                                        //embed_node_edge(i, geo_units_factor);
+                                                        sh_node[sh_node_no].x = loadx1;
+                                                        sh_node[sh_node_no].y = loady1;
+                                                        sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
+
+                                                        double xx01 = sh_node[sh_edge[jk].node1].x;
+                                                        double yy01 = sh_node[sh_edge[jk].node1].y;
+                                                        double xx02 = sh_node[sh_edge[jk].node2].x;
+                                                        double yy02 = sh_node[sh_edge[jk].node2].y;
+
+                                                        //spitting edge
+                                                        //SH_EDGE sh_edge_buf;
+                                                        memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
+
+                                                        sh_edge[jk].node2 = sh_node_no;
+                                                        //calculate midpoint
+                                                        sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node1].x + loadx1) / 2.0f;
+                                                        sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node1].y + loady1) / 2.0f;
+
+                                                        sh_edge_buf.node1 = sh_node_no;
+                                                        sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + loadx1) / 2.0f;
+                                                        sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + loady1) / 2.0f;
+                                                        add_node_sh();
+
+                                                        //inserting sh_edge_buf
+                                                        insert_sh_edge(jk + 1, &sh_edge_buf, xx01, yy01, xx02, yy02, loadx1, loady1, TRUE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
+
+                                                        found = TRUE;
+                                                        break;
+                                                    }
+                                                } else if (sh_load[i].type == 2) //linear uniformly or trapezoidally distributed load
+                                                {
+                                                    //checking the second point to make sure the load lays on edge
+                                                    Xbak = X;
+                                                    Ybak = Y;
+                                                    X = loadx2;
+                                                    Y = loady2;
+
+                                                    X = Xbak;
+                                                    Y = Ybak;
+                                                    if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx2, loady2)) {
+                                                        //load can be assigned to the edge
+                                                        sh_load[i].k = shield_no + hole_no + wall_no + jk;
+                                                    } else {
+                                                        sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(sh_load[i].x1), milimetryoby(sh_load[i].y1),
+                                                                milimetryobx(sh_load[i].x2), milimetryoby(sh_load[i].y2),
+                                                                (*mVector.pola)[sh_load[i].style + 1].txt, _load_not_associated_, rn);
+                                                        strcat(report, report_row);
+
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        } else //arc
+                                        {
+                                            if (jk == 17) {
+                                                int a = 0;
+                                            }
+                                            Xbak = X;
+                                            Ybak = Y;
+                                            X = loadx1;
+                                            Y = loady1;
+
+                                            double xs = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                            double ys = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                            double xe = sh_node[sh_edge[jk].node3].x - sh_node[sh_edge[jk].node2].x;
+                                            double ye = sh_node[sh_edge[jk].node3].y - sh_node[sh_edge[jk].node2].y;
+
+                                            double r_edge = sqrt(xs * xs + ys * ys);
+                                            double kat1_edge = (float) Atan2(ys, xs);
+                                            double kat2_edge = (float) Atan2(ye, xe);
+
+                                            X = Xbak;
+                                            Y = Ybak;
+                                            if (check_if_point_on_arc_segment(sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, r_edge, kat1_edge, kat2_edge, loadx1, loady1)) {
+                                                sh_load[i].body = 0; //shield
+                                                sh_load[i].body_no = j;
+                                                sh_load[i].point_body = 0; //shield
+                                                sh_load[i].point_body_no = j;
+                                                sh_load[i].point_edge_no = jk;
+
+                                                zone_property[j].load++;
+
+                                                //checking if point exists
+                                                int kk;
+                                                for (kk = 0; kk < sh_node_no; kk++) {
+                                                    if ((Check_if_Equal(sh_node[kk].x, loadx1) == TRUE) && (Check_if_Equal(sh_node[kk].y, loady1) == TRUE)) //point in point
+                                                        break;
+                                                }
+                                                if (kk < sh_node_no) break;  //no needs to add new point
+
+                                                //adding point
+                                                //embed_node_edge(i, geo_units_factor);
+                                                sh_node[sh_node_no].x = loadx1;
+                                                sh_node[sh_node_no].y = loady1;
+                                                sh_node[sh_node_no].d = sh_node[sh_edge[jk].node2].d; //setting the division for FE
+
+                                                //spitting edge
+                                                //SH_EDGE sh_edge_buf;
+                                                memmove(&sh_edge_buf, &sh_edge[jk], sizeof(SH_EDGE));
+
+                                                sh_edge[jk].node3 = sh_node_no;
+                                                //calculate midpoint
+                                                double dx, dy, kat1, kat2, r, a1, a2;
+
+                                                dx = sh_node[sh_edge[jk].node1].x - sh_node[sh_edge[jk].node2].x;
+                                                dy = sh_node[sh_edge[jk].node1].y - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat1=Pi_;
+                                                //else
+                                                kat1 = atan2(dy, dx);
+
+                                                dx = loadx1 - sh_node[sh_edge[jk].node2].x;
+                                                dy = loady1 - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                                //else
+                                                kat2 = atan2(dy, dx);
+
+                                                a1 = Angle_Normal(kat1);
+                                                a2 = Angle_Normal(kat2);
+                                                r = sqrt(dx * dx + dy * dy);
+                                                if (a1 > a2) a2 += Pi2;
+                                                sh_edge[jk].xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                                sh_edge[jk].ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                                //new segment
+                                                sh_edge_buf.node1 = sh_node_no;
+
+                                                a1 = a2;
+                                                dx = sh_node[sh_edge_buf.node3].x - sh_node[sh_edge[jk].node2].x;
+                                                dy = sh_node[sh_edge_buf.node3].y - sh_node[sh_edge[jk].node2].y;
+                                                //if (Check_if_Equal(dx,0.)) kat2=Pi_;
+                                                //else
+                                                kat2 = atan2(dy, dx);
+                                                a2 = Angle_Normal(kat2);
+                                                if (a1 > a2) a2 += Pi2;
+                                                sh_edge_buf.xm = (float) (sh_node[sh_edge[jk].node2].x + r * cos((a1 + a2) / 2.));
+                                                sh_edge_buf.ym = (float) (sh_node[sh_edge[jk].node2].y + r * sin((a1 + a2) / 2.));
+
+                                                //node 2 is common for both parts
+                                                add_node_sh();
+
+                                                //inserting sh_edge_buf
+                                                insert_sh_edge(jk + 1, &sh_edge_buf, 0, 0, 0, 0, 0, 0, FALSE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
+
+                                                found = TRUE;
+
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // trying to embed point on curve, for example:   -> this doesn't work:  Point{2} In Curve{2};
+                            // so instead of inserting new point, the segment is divided into 2, it means new sh_edge must be inserted after effected sh_edge
+                            // then all xxx_property[i].first_edge and .last edge must be shifted by 1 if .first_edge > effected sh_edge
+                            if (found==FALSE) //not found in holes
+                            {
+                                for (int jk = shield_property[j].first_edge; jk < shield_property[j].last_edge; jk++)
+                                {
+                                    double loadx1, loady1, loadx2, loady2;
+                                    loadx1 = sh_load[i].x1;
+                                    loady1 = sh_load[i].y1;
+                                    loadx2 = sh_load[i].x2;
+                                    loady2 = sh_load[i].y2;
+                                    if (sh_edge[jk].type == 0)  //line
+                                    {
+                                        Xbak = X;
+                                        Ybak = Y;
+                                        X = loadx1;
+                                        Y = loady1;
+
+                                        X = Xbak;
+                                        Y = Ybak;
+
+                                        if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx1, loady1))
                                         {
                                             sh_load[i].body = 0; //shield
                                             sh_load[i].body_no = j;
@@ -4244,6 +4616,8 @@ void Shield_analysis(void) {
                                                     //inserting sh_edge_buf
                                                     insert_sh_edge(jk + 1, &sh_edge_buf, xx01, yy01, xx02, yy02, loadx1, loady1, TRUE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
 
+                                                    found = TRUE;
+                                                    break;
                                                 }
                                             } else if (sh_load[i].type == 2) //linear uniformly or trapezoidally distributed load
                                             {
@@ -4252,13 +4626,14 @@ void Shield_analysis(void) {
                                                 Ybak = Y;
                                                 X = loadx2;
                                                 Y = loady2;
-                                                najblizszyL_(&loadx2, &loady2, sh_edge[jk].adr);
+
                                                 X = Xbak;
                                                 Y = Ybak;
-                                                if ((Check_if_Equal(sh_load[i].x2, loadx2) == TRUE) && (Check_if_Equal(sh_load[i].y2, loady2) == TRUE)) //point on edge
-                                                {
+                                                if (check_if_point_on_line_segment(sh_node[sh_edge[jk].node1].x, sh_node[sh_edge[jk].node1].y, sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, loadx2, loady2))
+                                                    {
                                                     //load can be assigned to the edge
                                                     sh_load[i].k = jk;
+                                                    found = TRUE;
                                                     break;
                                                 } else {
                                                     /*
@@ -4281,11 +4656,21 @@ void Shield_analysis(void) {
                                         Ybak = Y;
                                         X = loadx1;
                                         Y = loady1;
-                                        najblizszyl_(&loadx1, &loady1, sh_edge[jk].adr);
+
+                                        double xs=sh_node[sh_edge[jk].node1].x-sh_node[sh_edge[jk].node2].x;
+                                        double ys=sh_node[sh_edge[jk].node1].y-sh_node[sh_edge[jk].node2].y;
+                                        double xe=sh_node[sh_edge[jk].node3].x-sh_node[sh_edge[jk].node2].x;
+                                        double ye=sh_node[sh_edge[jk].node3].y-sh_node[sh_edge[jk].node2].y;
+
+                                        double r_edge=sqrt(xs*xs+ys*ys);
+                                        double kat1_edge = (float)Atan2(ys, xs);
+                                        double kat2_edge = (float)Atan2(ye, xe);
+
                                         X = Xbak;
                                         Y = Ybak;
-                                        if ((Check_if_Equal2(sh_load[i].x1, loadx1) == TRUE) && (Check_if_Equal(sh_load[i].y1, loady1) == TRUE)) //point on edge
-                                        {
+
+                                        if (check_if_point_on_arc_segment(sh_node[sh_edge[jk].node2].x, sh_node[sh_edge[jk].node2].y, r_edge, kat1_edge, kat2_edge, loadx1, loady1))
+                                            {
                                             sh_load[i].body = 0; //shield
                                             sh_load[i].body_no = j;
                                             sh_load[i].point_body = 0; //shield
@@ -4355,15 +4740,48 @@ void Shield_analysis(void) {
                                             //inserting sh_edge_buf
                                             insert_sh_edge(jk + 1, &sh_edge_buf, 0, 0, 0, 0, 0, 0, FALSE);  //sh_edge[jk] stays, was already modified, loadx1, loady1 is split point
 
-                                            if (sh_load[i].type == 0)  //point load
-                                            {
-                                                break;
-                                            } else  //distributed load
-                                            {
-                                                break;
-                                            }
+                                            found = TRUE;
+
+                                            break;
                                         }
                                     }
+                                }
+                            }
+                            if (found==FALSE)
+                            {
+                                ADPB = (char *) shield_property[j].adr;
+                                ADKB = ADPB + sizeof(NAGLOWEK) + shield_property[j].adr->n - 1;
+                                zmien_atrybut_for_objects(ADPB, ADKB, Aoblok, Ablok, Blinia | Bluk);
+                                ret1 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x1, df_y1,
+                                                       &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                                if (sh_load[i].type > 0)  //two points of distribution or range
+                                    ret2 = hatch_proc_test((long_long) (ADPB - dane), (long_long) (ADKB - dane), df_x2, df_y2,
+                                                           &s_hatch_param, 1, 0, 0, 0, 0, 0);
+                                else ret2 = ret1;  //same point
+                                zmien_atrybut(ADPB, ADKB, Ablok, Aoblok);
+
+                                if ((ret1 == 1) && (ret2 == 1))
+                                {
+                                    sh_load[i].body = 0; //shield
+                                    sh_load[i].body_no = j;
+                                    sh_load[i].point_body = 0; //shield
+                                    sh_load[i].point_body_no = j;
+                                    sh_load[i].point_edge_no = 0;  //not installed on edge
+
+                                    if (sh_load[i].type == 0)  //point load
+                                        embed_node(i, geo_units_factor);
+
+                                    else if (sh_load[i].type == 2)  //distributed load
+                                    {
+                                        ////Point(6) = {0.02, 0.12, 0, lc};
+                                        ////Point(7) = {0.04, 0.18, 0, lc};
+                                        ////Line(5) = {6, 7};
+                                        ////Curve{5} In Surface{1};
+                                        embed_nodes_edge(i, 0, j , zone_property[j].body_number, geo_units_factor);
+                                    }
+
+                                    shield_property[j].load++;
+                                    break;
                                 }
                             }
                         }
@@ -6507,8 +6925,10 @@ void Shield_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");
@@ -6811,8 +7231,10 @@ void Shield_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");
@@ -7247,8 +7669,10 @@ void Shield_analysis(void) {
 
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");
@@ -7551,8 +7975,10 @@ void Shield_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");
@@ -7988,8 +8414,10 @@ void Shield_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");
@@ -8295,8 +8723,10 @@ void Shield_analysis(void) {
                     }
                 }
                 if (strlen(load_formula) > 0)
+                {
                     sprintf(all_load_formula, "  Body Force 2 = Real MATC \"%s\"\n", load_formula);
-                strcat(all_formula, all_load_formula);
+                    strcat(all_formula, all_load_formula);
+                }
 
                 ///////////////// Concentrated Load
                 strcpy(load_formula, "");

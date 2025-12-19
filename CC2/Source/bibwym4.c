@@ -351,8 +351,8 @@ static int W_t (BOOL b_graph_value)
 
   T.dl=strlen(T.text);
   T.n=T18+T.dl;
-  T.width = 0.0;
-  T.height = 0.0;
+  T.width = 0;
+  T.height = 0;
   T.atrybut=Anormalny;
 
   //updating parameters

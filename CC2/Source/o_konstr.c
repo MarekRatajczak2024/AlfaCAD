@@ -260,8 +260,8 @@ void Wymiarowanie_polilinii1(char *adr0, int opcja)
           sprintf(Tn[new_texts-1].text,"%.0f",len_pline);
           Tn[new_texts-1].dl=strlen(Tn[new_texts-1].text);
           Tn[new_texts-1].n=T18+Tn[new_texts-1].dl;
-		  Tn[new_texts - 1].width = 0.0;
-		  Tn[new_texts - 1].height = 0.0;
+		  Tn[new_texts - 1].width = 0;
+		  Tn[new_texts - 1].height = 0;
           Tn[new_texts-1].blok=1;
           Tn[new_texts-1].warstwa=Current_Layer;
           Tn[new_texts-1].ukryty=0;
@@ -316,8 +316,8 @@ void Wymiarowanie_polilinii1(char *adr0, int opcja)
           sprintf(Tn[new_texts-1].text,"%.0f",len_pline);
           Tn[new_texts-1].dl=strlen(Tn[new_texts-1].text);
           Tn[new_texts-1].n=T18+Tn[new_texts-1].dl;
-		  Tn[new_texts - 1].width = 0.0;
-		  Tn[new_texts - 1].height = 0.0;
+		  Tn[new_texts - 1].width = 0;
+		  Tn[new_texts - 1].height = 0;
           Tn[new_texts-1].blok=1;
           Tn[new_texts-1].warstwa=Current_Layer;
           Tn[new_texts-1].ukryty=0;
@@ -366,8 +366,8 @@ void Wymiarowanie_polilinii1(char *adr0, int opcja)
      sprintf(Tn1.text,"%s l=%.0f",zb_glowne,poliline_length);
      Tn1.dl=strlen(Tn1.text);
      Tn1.n=T18+Tn1.dl;
-	 Tn1.width = 0.0;
-	 Tn1.height = 0.0;
+	 Tn1.width = 0;
+	 Tn1.height = 0;
      Tn1.blok=1;
      Tn1.warstwa=Current_Layer;
      Tn1.ukryty=0;

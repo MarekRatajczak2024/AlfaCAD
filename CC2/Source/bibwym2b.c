@@ -159,6 +159,14 @@ static void  kierunektext(void)
     CUR_OFF_ON();
 }
 
+static void  kierunekrad(void)
+{
+    WymNowy();
+    wym_kata=3;
+    menu_par_new((*mWymiarujm.pola)[0].txt,"R,D");
+    CUR_OFF_ON();
+}
+
 static void  wymiarowanier(void)
 { wym_luku=0;
   menu_par_new((*mWymiarujm.pola)[5].txt,"R");
@@ -218,6 +226,7 @@ static void  kierunekX(void)
 
   katp=kat.kat;
   sprintf (st, "%lg", katp) ;
+  wym_kata=0;
   menu_par_new((*mWymiarujm.pola)[0].txt,st);
 }
 

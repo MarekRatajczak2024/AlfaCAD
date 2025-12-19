@@ -4940,6 +4940,7 @@ void reset_cursor_pos(void) {
 	//set_forget_mouse(mouse_x0, mouse_y0);
     set_forget_mouse(getmaxx()/2, getmaxy()/2);
 #endif
+    my_sleep(10);
 }
 
 int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)

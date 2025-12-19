@@ -235,30 +235,28 @@ static void usun(void)
   Lsw=0;
 }
 
-static void  (*COMNDmw[16])(void);
+//static void  (*COMNDmw[])(void);
 
 /*--------------------------------------------*/
 #include "bibwym2b.c"
-/*  katy  */
+/*  angles  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
 #include "bibwym3.c"
-/*  strzalka  */
+/*  arrowhead  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
 #include "bibwym4.c"
-/*  cursor - l,r,t,b, mysz  */
+/*  cursor - l,r,t,b, mouse  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
 #include "bibwym5.c"
-/*  punkt  */
+/*  point  */
 /*--------------------------------------------*/
 
 
-static void (*COMNDmw[16])(void)={
-/*0  mWymiarujm 7*/   nooop,(void (*)(void))WymNowy,usun,edwym,zmienne,wymiarowanier,wymiarowaniel,
-		       wymiarowanied,wymiarowaniero,
-/*8  mKier      13*/   kierunek0,kierunek90,kierunekr,kierunekXk,kierunekX,kierunekkat, kierunektext };
+static void (*COMNDmw[])(void)={nooop,(void (*)(void))WymNowy,usun,edwym,zmienne,wymiarowanier,wymiarowaniel,
+		       wymiarowanied,wymiarowaniero, kierunek0,kierunek90,kierunekr,kierunekXk,kierunekX,kierunekkat, kierunekrad, kierunektext };
 
 static void redcrLD(char typ)
 {
@@ -301,7 +299,6 @@ static void redcrLD(char typ)
         Cur_ond(X, Y);
     }
 }
-
 
 static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex_no, POINTD *vertices, int line_no, BOOL mleader_text_location, double et_x, double et_y, double mtext_h)
 {
@@ -460,8 +457,8 @@ static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex
     T.kat=0.0;
     T.dl=strlen(T.text);
     T.n=T18+T.dl;
-    T.width = 0.0;
-    T.height = 0.0;
+    T.width = 0;
+    T.height = 0;
     T.obiektt2 = O2BlockDim;
     T.obiektt3 = O3NoWymRoz;
     //setting text length

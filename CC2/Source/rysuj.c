@@ -356,6 +356,8 @@ extern void Change_Vectors(void);
 
 extern void set_scrsave_time (void);
 extern int	getdisk(void);
+
+extern void reset_cursor(void);
 /////////////
 
 
@@ -2342,6 +2344,11 @@ extern char *icon_slab_fem_a_p;
 extern BITMAP *icon_view_log_d_48;
 extern char *icon_view_log_d_48_p;
 
+extern BITMAP *icon_solid_translucent;
+extern char *icon_solid_translucent_p;
+extern BITMAP *icon_solid_gtranslucent;
+extern char *icon_solid_gtranslucent_p;
+
 extern BITMAP *icon_SI;
 extern char *icon_SI_p;
 extern BITMAP *icon_IMP;
@@ -3241,6 +3248,9 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_SI,"SI",&icon_SI_p },
         {&icon_SI,"IMP",&icon_IMP_p },
         {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
+        {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
+        {&icon_solid_translucent,"solid_translucent",&icon_solid_translucent_p },
+        {&icon_solid_gtranslucent,"solid_gtranslucent",&icon_solid_gtranslucent_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -6056,6 +6066,8 @@ if (child==0)
 
   while(1)
    {
+       reset_cursor(); //this is just for a case if cursor is not reset after some function
+       CUR_ON(X,Y);
 
        if (go_reset_if_resized==TRUE) reset_if_resized();
 

@@ -3586,7 +3586,7 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     double df_l0;
     double df_line_rem;
     BOOL b_first_end=TRUE;
-    double df_seg_len;
+    double df_seg_len, df_seg_len_dens;
     double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
     double df_psize;
     point a1, a2, b1, b2, p;
@@ -3599,10 +3599,9 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     PLINIA PL1;
     LINIA Lt1;
     double del_angle;
-
+    double shift;
 
     df_psize = Get_Point_Size ();
-
 
     if (v->style!=15) df_seg_len=df_psize;
     else df_seg_len=df_psize*0.66;  //THERMAL
@@ -3651,11 +3650,24 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     angle_rev=Angle_Normal(angle+Pi_);
 
     i = 0 ;
-    df_l0 = -df_seg_len/2; //0 ;
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        df_seg_len_dens=df_seg_len/2.0;
+    else df_seg_len_dens=df_seg_len;
+
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens / shift; // 1 or 2;  first arrow will start at the beginning of the edge
     do
     {
-        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len, &df_x, &df_y) ;
-        if (TRUE == Check_if_GT (df_line_rem, df_seg_len/2 /*0*/))
+        df_line_rem = measure_vector (x1, y1, x2, y2, b_first_end, df_l0,  df_seg_len_dens, &df_x, &df_y) ;
+
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x2;
+            df_y=v->y2;
+        }
+
+        if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
             if (Check_if_Equal(angle, Pi_/2))  //vertical
@@ -3935,11 +3947,11 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
             if (v->style!=15) draw_arrow_to_DXF(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc1, kos1, koc2, kos2, n1*ra, v);
             else draw_wave_to_DXF(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v);
-            df_l0 += df_seg_len ;
+            df_l0 += df_seg_len_dens ;
             i++ ;
         }
     }
-    while (TRUE == Check_if_GT (df_line_rem, df_seg_len/2)) ;
+    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
 }
 
 
