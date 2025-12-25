@@ -139,6 +139,7 @@ class PISZ_OBJECTS : virtual public PISZ_GRUPA
     int RysujPoint(T_Point* p, int *p_block_sufix);
     int RysujVector(AVECTOR* v, int *v_block_sufix);
     int RysujImage(B_PCX *b_pcx);
+    void make_arcarrows_to_DXF(LUK *l, AVECTOR *v, double kat);
     void make_arrows_to_DXF(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat);
     void draw_wave_to_DXF(double x0, double y0, double x1, double y1, double x2, double y2, double koc, double kos, double n1, double ra, AVECTOR *v);
     void draw_arrow_to_DXF(double x0, double y0, double x1, double y1, double x2, double y2, double koc1, double kos1, double koc2, double kos2, double psize, AVECTOR *v);

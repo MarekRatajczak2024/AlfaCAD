@@ -2803,16 +2803,22 @@ int Okno_D (void)
   while(1)
    { ev=Get_Event_Point(NULL, &X0, &Y0);
      if(ev->What == evKeyDown &&  ev->Number==0)
-      { redcr(1);
-	return 0;
+      {
+         redcr(1);
+	     return 0;
       }
      if (ev->What == evKeyDown &&  ev->Number==ENTER)
       {
-	x01=X0;
-	y01=Y0;
-	n=oknok_d();
-	redcr(1);
-	return n;
+        x01=X0;
+        y01=Y0;
+        n=oknok_d();
+        redcr(1);
+        if (n==0)
+        {
+            redcr(0);
+            continue;
+        }
+        return n;
       }
    }
 }

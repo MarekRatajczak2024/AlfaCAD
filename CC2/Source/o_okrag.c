@@ -21,6 +21,7 @@
 #include<string.h>
 #include<stdlib.h>
 #include<math.h>
+#include <float.h> // Required for FLT_MAX and DBL_MAX
 #include<stdio.h>
 #include "bib_e.h"
 #include "rysuj_e.h"
@@ -82,6 +83,8 @@ static t_circle_TTR  s__circle_TTR = { 0,0, 0,0, 10, 0,0, 0,0 };
 static char *ptrsz__circle_type;
 static double df__rad_TTR = 10 ;
 
+static double df_x0, df_y0;
+
 static TMENU mCircle= {5, 0,0,19,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr, 0,0,0,&pmCircle, NULL,NULL} ;
 
 static void set_circle_mode (int) ;
@@ -92,14 +95,115 @@ static void out_circle_rad_param (BOOL) ;
 void circle_cen_rad_dia(double, double);
 static void redcr_circle(int);
 static void out_circle(OKRAG *, int, int);
-static void circle_ttr(double, double, BOOL);
+static BOOL circle_ttr(double, double, BOOL);
 
 static int strwyj;
 static double Rstr;
 
-
-
 /*-----------------------------------------------------------------------*/
+
+static BOOL circle_center_TTR_OL(/*t_circle_TTR *ptrs__circle_TTR,*/ OKRAG *o, LINIA *l, const double *x0,  const double *y0, double r, double *x,  double *y)
+{
+    double dx = l->x2 - l->x1;
+    double dy = l->y2 - l->y1;
+    double L = sqrt(dx * dx + dy * dy);
+    if (L == 0) return FALSE;
+
+    // Normal vector (a, b) and line constant c for ax + by + c_orig = 0
+    double a = -dy / L;
+    double b = dx / L;
+    double c_orig = -(a * l->x1 + b * l->y1);
+
+    double R = o->r + r;
+    double best_x, best_y;
+    double min_dist = DBL_MAX;
+    BOOL found = FALSE;
+
+    double offsets[2] = { r, -r };
+
+    for (int i = 0; i < 2; i++) {
+        double cc = c_orig + offsets[i];
+
+        // Shortest distance from circle center (x, y) to this offset line
+        double dist_to_line = fabs(a * o->x + b * o->y + cc);
+
+        // A tangent circle only exists if the expanded radius can reach the line
+        if (dist_to_line <= R) {
+            double sol_x[2], sol_y[2];
+
+            if (fabs(a) > fabs(b)) {
+                double m = -b / a, k = -cc / a - o->x;
+                double AA = m * m + 1, BB = 2 * m * k - 2 * o->y, CC = k * k + o->y * o->y - R * R;
+                double det = sqrt(fmax(0, BB * BB - 4 * AA * CC));
+                sol_y[0] = (-BB + det) / (2 * AA); sol_y[1] = (-BB - det) / (2 * AA);
+                sol_x[0] = (-b * sol_y[0] - cc) / a; sol_x[1] = (-b * sol_y[1] - cc) / a;
+            } else {
+                double m = -a / b, k = -cc / b - o->y;
+                double AA = m * m + 1, BB = 2 * m * k - 2 * o->x, CC = k * k + o->x * o->x - R * R;
+                double det = sqrt(fmax(0, BB * BB - 4 * AA * CC));
+                sol_x[0] = (-BB + det) / (2 * AA); sol_x[1] = (-BB - det) / (2 * AA);
+                sol_y[0] = (-a * sol_x[0] - cc) / b; sol_y[1] = (-a * sol_x[1] - cc) / b;
+            }
+
+            for (int j = 0; j < 2; j++) {
+                double d = hypot(sol_x[j] - *x0, sol_y[j] - *y0);
+                if (d < min_dist) {
+                    min_dist = d;
+                    best_x = sol_x[j];
+                    best_y = sol_y[j];
+                    found = TRUE;
+                }
+            }
+        }
+    }
+
+    if (found) {
+        *x = best_x;
+        *y = best_y;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static BOOL circle_center_TTR_OO(/*t_circle_TTR *ptrs__circle_TTR,*/ OKRAG *o1, OKRAG *o2, const double *x0,  const double *y0, double r, double *x,  double *y)
+{
+    // 1. Calculate side lengths of the triangle formed by the centers
+    double side_a = o2->r + r;
+    double side_b = o1->r + r;
+    double dx = o2->x - o1->x;
+    double dy = o2->y - o1->y;
+    double side_c = hypot(dx, dy);
+
+    // Check for existence: third circle must be able to touch both
+    if (side_c > (side_a + side_b) || side_c < fabs(side_a - side_b) || side_c == 0) return FALSE;
+
+    // 2. Use Law of Cosines to find the angle at center 1
+    double cos_alpha = (side_b * side_b + side_c * side_c - side_a * side_a) / (2 * side_b * side_c);
+    double alpha = acos(cos_alpha);
+
+    // 3. Base angle of the vector connecting center 1 and center 2
+    double base_angle = atan2(dy, dx);
+
+    // 4. Calculate the two possible center points
+    double sol1_x = o1->x + side_b * cos(base_angle + alpha);
+    double sol1_y = o1->y + side_b * sin(base_angle + alpha);
+    double sol2_x = o1->x + side_b * cos(base_angle - alpha);
+    double sol2_y = o1->y + side_b * sin(base_angle - alpha);
+
+    // 5. Select the one closer to the provided "desire position" <*x, *y>
+    double dist1 = hypot(sol1_x - *x0, sol1_y - *y0);
+    double dist2 = hypot(sol2_x - *x0, sol2_y - *y0);
+
+    if (dist1 < dist2) {
+        *x = sol1_x;
+        *y = sol1_y;
+    } else {
+        *x = sol2_x;
+        *y = sol2_y;
+    }
+    return TRUE;
+}
 
 
 static BOOL circle_center_TTR_LL(t_circle_TTR *ptrs__circle_TTR, double *cx0, double *cy0, double *tx, double *ty)
@@ -466,9 +570,8 @@ static BOOL circle_center_TTR_LL(t_circle_TTR *ptrs__circle_TTR, double *cx0, do
 	return TRUE;
 }
 
-static void
-circle_TTR_LL_proc (t_circle_TTR *ptrs__circle_TTR)
-//-------------------------------------------------
+static void circle_TTR_LL_proc (t_circle_TTR *ptrs__circle_TTR)
+//-------------------------------------------------------------
 {
   LINIA *ptrs_line1, *ptrs_line2 ;
   double df_xi, df_yi, df_t1i, df_t2i ;
@@ -507,26 +610,40 @@ circle_TTR_LL_proc (t_circle_TTR *ptrs__circle_TTR)
 		 {
 			 Cur_offd(X, Y);
 			out_krz(df_x, df_y);
-			circle_ttr(df_x, df_y, TRUE);
-			OkragG.x = s__circle.df_xc;
-			OkragG.y = s__circle.df_yc;
-			OkragG.r = s__circle.df_rad;
+			if (circle_ttr(df_x, df_y, TRUE))
+            {
+                OkragG.x = s__circle.df_xc;
+                OkragG.y = s__circle.df_yc;
+                OkragG.r = s__circle.df_rad;
+            }
+            else
+            {
+                //error
+                redcr_circle(1);
+                CUR_ON(X, Y);
+                return;
+            }
 		 }
 		 else
 		 {
-			 
-
 			 Cur_offd(X, Y);
 			 out_krz(df_x, df_y);
 
 			 s__circle_TTR.df_rad= Double_to_Float(Rstr);
 
-			 circle_ttr(df_x, df_y, FALSE);
+			 if (circle_ttr(df_x, df_y, FALSE))
+             {
+                 OkragG.x = s__circle.df_xc;
+                 OkragG.y = s__circle.df_yc;
 
-			 OkragG.x = s__circle.df_xc;
-			 OkragG.y = s__circle.df_yc;
-
-			 OkragG.r = Double_to_Float(Rstr);
+                 OkragG.r = Double_to_Float(Rstr);
+             }
+             else
+             {//error
+                 redcr_circle(1);
+                 CUR_ON(X, Y);
+                 return;
+             }
 		 }
 
 
@@ -556,6 +673,199 @@ circle_TTR_LL_proc (t_circle_TTR *ptrs__circle_TTR)
 
 }
 
+static void circle_TTR_OO_proc (t_circle_TTR *ptrs__circle_TTR)  //ptrs__circle_TTR  for consistency, and maybe future extrensions
+//------------------------------------------------------------
+{
+    //OKRAG *ptrs_circle1, *ptrs_circle2 ;
+    //double df_xi, df_yi, df_t1i, df_t2i ;
+    EVENT *ev;
+    double df_x, df_y;
+    
+    //ptrs_circle1 = (OKRAG*)ptrs__circle_TTR->ptr_ob1 ;
+    //ptrs_circle2 = (OKRAG*)ptrs__circle_TTR->ptr_ob2 ;
+
+    redcr_circle(0);
+    while (1)
+    {
+        strwyj = 0;
+        ev = Get_Event_Point(NULL, &df_x, &df_y);
+        if (ev->What == evKeyDown && ev->Number == 0)
+        {
+            Cur_offd(X, Y);
+            redcr_circle(1);
+            CUR_ON(X, Y);
+            return;
+        }
+        if ((ev->What == evKeyDown && ev->Number == ENTER) || strwyj)
+        {
+
+            if (!strwyj)
+            {
+                Cur_offd(X, Y);
+                out_krz(df_x, df_y);
+                if (circle_ttr(df_x, df_y, TRUE))
+                {
+                    OkragG.x = s__circle.df_xc;
+                    OkragG.y = s__circle.df_yc;
+                    OkragG.r = s__circle.df_rad;
+                }
+                else
+                {
+                    //error
+                    redcr_circle(1);
+                    CUR_ON(X, Y);
+                    return;
+                }
+            }
+            else
+            {
+                Cur_offd(X, Y);
+                out_krz(df_x, df_y);
+
+                s__circle_TTR.df_rad= Double_to_Float(Rstr);
+
+                if (circle_ttr(df_x, df_y, FALSE)) {
+                    OkragG.x = s__circle.df_xc;
+                    OkragG.y = s__circle.df_yc;
+                    OkragG.r = Double_to_Float(Rstr);
+                }
+                else
+                {//error
+                    redcr_circle(1);
+                    CUR_ON(X, Y);
+                    return;
+                }
+            }
+
+            if (b_okrag == FALSE)
+            {
+                OkragG.obiekt = Okolo;
+                rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
+            }
+            else
+            {
+                out_circle(&OkragG, COPY_PUT, 0);
+            }
+            /*----------------------*/
+            if (OkragG.r) {
+                rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
+                if (dodaj_obiekt(NULL, &OkragG) == NULL);
+            }
+
+            OkragG.obiekt = Ookrag;
+            /*----------------------*/
+
+            redcr_circle(1);
+            CUR_ON(X, Y);
+            return;
+        }
+    }
+
+}
+
+
+static void circle_TTR_OL_proc (t_circle_TTR *ptrs__circle_TTR)  //ptrs__circle_TTR  for consistency, and maybe future extrensions
+//-----------------------------------------------------------------
+{
+    //OKRAG *ptrs_circle;
+    //LINIA *ptrs_line;
+    double df_xi, df_yi, df_t1i, df_t2i ;
+    EVENT *ev;
+    double df_x, df_y;
+
+    //if (((NAGLOWEK*)(ptrs__circle_TTR->ptr_ob1))->obiekt==Olinia)
+    //{
+    //    ptrs_line = (LINIA*)ptrs__circle_TTR->ptr_ob1 ;
+    //    ptrs_circle = (OKRAG*)ptrs__circle_TTR->ptr_ob2 ;
+    //}
+    //else
+    //{
+    //    ptrs_circle = (OKRAG *) ptrs__circle_TTR->ptr_ob1;
+    //    ptrs_line = (LINIA *) ptrs__circle_TTR->ptr_ob2;
+    //}
+
+    redcr_circle(0);
+    while (1)
+    {
+        strwyj = 0;
+        ev = Get_Event_Point(NULL, &df_x, &df_y);
+        if (ev->What == evKeyDown && ev->Number == 0)
+        {
+            Cur_offd(X, Y);
+            redcr_circle(1);
+            CUR_ON(X, Y);
+            return;
+        }
+        if ((ev->What == evKeyDown && ev->Number == ENTER) || strwyj)
+        {
+
+            if (!strwyj)
+            {
+                Cur_offd(X, Y);
+                out_krz(df_x, df_y);
+                if (circle_ttr(df_x, df_y, TRUE))
+                {
+                    OkragG.x = s__circle.df_xc;
+                    OkragG.y = s__circle.df_yc;
+                    OkragG.r = s__circle.df_rad;
+                }
+                else
+                {
+                    //error
+                    redcr_circle(1);
+                    CUR_ON(X, Y);
+                    return;
+                }
+            }
+            else
+            {
+                Cur_offd(X, Y);
+                out_krz(df_x, df_y);
+
+                s__circle_TTR.df_rad= Double_to_Float(Rstr);
+
+                if (circle_ttr(df_x, df_y, FALSE))
+                {
+                    OkragG.x = s__circle.df_xc;
+                    OkragG.y = s__circle.df_yc;
+
+                    OkragG.r = Double_to_Float(Rstr);
+                }
+                else
+                {//error
+                    redcr_circle(1);
+                    CUR_ON(X, Y);
+                    return;
+                }
+            }
+
+
+            if (b_okrag == FALSE)
+            {
+                OkragG.obiekt = Okolo;
+                rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
+            }
+            else
+            {
+                out_circle(&OkragG, COPY_PUT, 0);
+            }
+            /*----------------------*/
+            if (OkragG.r) {
+                rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
+                if (dodaj_obiekt(NULL, &OkragG) == NULL);
+            }
+
+            OkragG.obiekt = Ookrag;
+            /*----------------------*/
+
+            redcr_circle(1);
+            CUR_ON(X, Y);
+            return;
+        }
+    }
+
+}
+
 
 static void circle_TTR_proc (t_circle_TTR *ptrs__circle_TTR)
 //---------------------------------------------------------
@@ -568,10 +878,17 @@ static void circle_TTR_proc (t_circle_TTR *ptrs__circle_TTR)
   {
      circle_TTR_LL_proc (ptrs__circle_TTR) ;
   }
-  else
-  if (Olinia == ptrs_ob1->obiekt &&
-      (Ookrag == ptrs_ob2->obiekt || Okolo == ptrs_ob2->obiekt))
+  else if ((Ookrag == ptrs_ob1->obiekt || Okolo == ptrs_ob1->obiekt || Oluk == ptrs_ob1->obiekt) &&
+      (Ookrag == ptrs_ob2->obiekt || Okolo == ptrs_ob2->obiekt || Oluk == ptrs_ob2->obiekt))
   {
+     circle_TTR_OO_proc (ptrs__circle_TTR) ;
+  }
+  else if (((Ookrag == ptrs_ob1->obiekt || Okolo == ptrs_ob1->obiekt || Oluk == ptrs_ob1->obiekt) &&
+           (Olinia == ptrs_ob2->obiekt)) ||
+           ((Olinia == ptrs_ob1->obiekt) &&
+           (Ookrag == ptrs_ob2->obiekt || Okolo == ptrs_ob2->obiekt || Oluk == ptrs_ob2->obiekt)))
+  {
+      circle_TTR_OL_proc (ptrs__circle_TTR) ;
   }
 }
 
@@ -676,6 +993,12 @@ aa:
 	  }
   }
 
+  df_x0=df_x;
+  df_y0=df_y;
+
+    line_g.x1=(float)df_x0;
+    line_g.y1=(float)df_y0;
+
   CUR_OFF(X, Y);
   sel.cur = 1;
   CUR_OFF = out_sel_off;
@@ -690,8 +1013,6 @@ aa:
   s__circle_TTR.df_rad = df__rad_TTR ;
   circle_TTR_proc (&s__circle_TTR) ;
 }
-
-
 
 static void circle_3p(double df_x, double df_y)
 /*---------------------------------------------*/
@@ -725,32 +1046,140 @@ static void circle_3p(double df_x, double df_y)
 	s__circle.df_yc = yp + y0;
 }
 
-static void circle_ttr(double df_x, double df_y, BOOL setrad)
-/*---------------------------------------------*/
+static BOOL circle_ttr(double df_x, double df_y, BOOL setrad)
+/*---------------------------------------------------------*/
   {
 
 	  double x0, y0, tx, ty, r;
-	  
-	  if (circle_center_TTR_LL(&s__circle_TTR, &x0, &y0, &tx, &ty) == TRUE)
-	  {
-		  s__circle.df_xc = x0;
-		  s__circle.df_yc = y0;
-		  s__circle_TTR.df_xc = x0;
-		  s__circle_TTR.df_yc = y0;
-		  
-		  if(setrad)
-		  {
-			  r = sqrt((df_x - s__circle_TTR.df_xr)*(df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr)*(df_y - s__circle_TTR.df_yr));
-			  s__circle_TTR.df_rad= Double_to_Float(r);
-			  
-		  }
-		  
-		  s__circle.df_rad = s__circle_TTR.df_rad;
+      float tr;
 
-		  line_g.x1 = s__circle_TTR.df_xr;
-		  line_g.y1 = s__circle_TTR.df_yr;
-	  }
+      line_g.x1 = (float)df_x0;
+      line_g.y1 = (float)df_y0;
+      
+      if ((((NAGLOWEK*)(s__circle_TTR.ptr_ob1))->obiekt==Olinia) &&
+         (((NAGLOWEK*)(s__circle_TTR.ptr_ob2))->obiekt==Olinia)) 
+      {
+          if (circle_center_TTR_LL(&s__circle_TTR, &x0, &y0, &tx, &ty) == TRUE) {
+              s__circle.df_xc = x0;
+              s__circle.df_yc = y0;
+              s__circle_TTR.df_xc = x0;
+              s__circle_TTR.df_yc = y0;
+
+              if (setrad) {
+                  r = sqrt((df_x - s__circle_TTR.df_xr) * (df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr) * (df_y - s__circle_TTR.df_yr));
+                  s__circle_TTR.df_rad = Double_to_Float(r);
+              }
+
+              s__circle.df_rad = s__circle_TTR.df_rad;
+
+              line_g.x1 = (float)s__circle_TTR.df_xr;
+              line_g.y1 = (float)s__circle_TTR.df_yr;
+          }
+      }
+      else if (((NAGLOWEK*)(s__circle_TTR.ptr_ob1))->obiekt==Olinia) //first is line, second is circle, arc or disk
+      {
+          if (setrad) {
+              //r = sqrt((df_x - s__circle_TTR.df_xr) * (df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr) * (df_y - s__circle_TTR.df_yr));
+              r=sqrt((df_x-df_x0)*(df_x-df_x0)+(df_y-df_y0)*(df_y-df_y0));
+              s__circle_TTR.df_rad = Double_to_Float(r);
+          }
+
+          if (circle_center_TTR_OL(/*&s__circle_TTR,*/ (OKRAG*)(s__circle_TTR.ptr_ob2), (LINIA*)(s__circle_TTR.ptr_ob1), &df_x0, &df_y0, s__circle_TTR.df_rad, &x0, &y0) == TRUE) {
+              s__circle.df_xc = x0;
+              s__circle.df_yc = y0;
+              s__circle_TTR.df_xc = x0;
+              s__circle_TTR.df_yc = y0;
+
+              s__circle.df_rad = s__circle_TTR.df_rad;
+
+              //line_g.x1 = (float)df_x0;
+              //line_g.y1 = (float)df_y0;
+          }
+          else return FALSE;
+          //line_g.x1 = (float)df_x0;
+          //line_g.y1 = (float)df_y0;
+      }
+      else if (((NAGLOWEK*)(s__circle_TTR.ptr_ob2))->obiekt==Olinia) //second is line, first is circle, arc or disk
+      {
+          if (setrad) {
+              //r = sqrt((df_x - s__circle_TTR.df_xr) * (df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr) * (df_y - s__circle_TTR.df_yr));
+              r=sqrt((df_x-df_x0)*(df_x-df_x0)+(df_y-df_y0)*(df_y-df_y0));
+              s__circle_TTR.df_rad = Double_to_Float(r);
+          }
+
+          if (circle_center_TTR_OL(/*&s__circle_TTR,*/ (OKRAG*)(s__circle_TTR.ptr_ob1), (LINIA*)(s__circle_TTR.ptr_ob2), &df_x0, &df_y0, s__circle_TTR.df_rad, &x0, &y0) == TRUE) {
+              s__circle.df_xc = x0;
+              s__circle.df_yc = y0;
+              s__circle_TTR.df_xc = x0;
+              s__circle_TTR.df_yc = y0;
+
+              s__circle.df_rad = s__circle_TTR.df_rad;
+
+              //line_g.x1 = (float)df_x0;
+              //line_g.y1 = (float)df_y0;
+          }
+          else return FALSE;
+          //line_g.x1 = (float)df_x0;
+          //line_g.y1 = (float)df_y0;
+
+      }
+      else  //assumed they are circles, arcs or disks
+      {
+          if (setrad) {
+              //r = sqrt((df_x - s__circle_TTR.df_xr) * (df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr) * (df_y - s__circle_TTR.df_yr));
+              r=sqrt((df_x-df_x0)*(df_x-df_x0)+(df_y-df_y0)*(df_y-df_y0));
+              s__circle_TTR.df_rad = Double_to_Float(r);
+          }
+
+          if (circle_center_TTR_OO(/*&s__circle_TTR,*/ (OKRAG*)(s__circle_TTR.ptr_ob1), (OKRAG*)(s__circle_TTR.ptr_ob2), &df_x0, &df_y0, s__circle_TTR.df_rad, &x0, &y0) == TRUE) {
+              s__circle.df_xc = x0;
+              s__circle.df_yc = y0;
+              s__circle_TTR.df_xc = x0;
+              s__circle_TTR.df_yc = y0;
+
+              s__circle.df_rad = s__circle_TTR.df_rad;
+
+              //line_g.x1 = (float)df_x0;
+              //line_g.y1 = (float)df_y0;
+          }
+          else return FALSE;
+          //line_g.x1 = (float)df_x0;
+          //line_g.y1 = (float)df_y0;
+      }
+
+      //line_g.x1 = (float)df_x0;
+      //line_g.y1 = (float)df_y0;
+      return TRUE;
   }
+
+  /*
+static void circle_oottr(double df_x, double df_y, BOOL setrad)
+//-------------------------------------------------------------
+{
+
+    double x0, y0, tx, ty, r;
+
+    if (circle_center_OOTTR_LL(&s__circle_TTR, &x0, &y0, &tx, &ty) == TRUE)
+    {
+        s__circle.df_xc = x0;
+        s__circle.df_yc = y0;
+        s__circle_TTR.df_xc = x0;
+        s__circle_TTR.df_yc = y0;
+
+        if(setrad)
+        {
+            r = sqrt((df_x - s__circle_TTR.df_xr)*(df_x - s__circle_TTR.df_xr) + (df_y - s__circle_TTR.df_yr)*(df_y - s__circle_TTR.df_yr));
+            s__circle_TTR.df_rad= Double_to_Float(r);
+
+        }
+
+        s__circle.df_rad = s__circle_TTR.df_rad;
+
+        line_g.x1 = s__circle_TTR.df_xr;
+        line_g.y1 = s__circle_TTR.df_yr;
+    }
+}
+*/
 
 static void out_circle_rad_param (BOOL b_draw)
 //------------------------------------------
@@ -962,12 +1391,14 @@ static void  cur_on(double x,double y)
             out_circle (&OkragG,COPY_PUT,0);
             break ;
         case CIR_TTR:
-            circle_ttr(x, y, TRUE);  //_ttr
-            OkragG.x = s__circle.df_xc;
-            OkragG.y = s__circle.df_yc;
-            OkragG.r = s__circle.df_rad;
-            mvcurb.mvc = 0;
-            out_circle(&OkragG, COPY_PUT, 1);
+            if (circle_ttr(x, y, TRUE))  //_ttr
+            {
+                OkragG.x = s__circle.df_xc;
+                OkragG.y = s__circle.df_yc;
+                OkragG.r = s__circle.df_rad;
+                mvcurb.mvc = 0;
+                out_circle(&OkragG, COPY_PUT, 1);
+            }
             break;
         default:
             break;

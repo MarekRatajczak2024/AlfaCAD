@@ -414,7 +414,6 @@ static float dxr=0.25f;   //this could be dynamic from 0.25 to 2.5;
 
 static float dxl_min=0.1f;  //this could be dynamic from 0.1f fo 1.0f
 
-
 extern int combi_uls_no;
 extern int combi_sls_no;
 extern int combi_qpsls_no;

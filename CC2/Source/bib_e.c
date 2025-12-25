@@ -5197,12 +5197,7 @@ double Dist_PP_f (float x1, float y1, float x2, float y2)
     return sqrt ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) ;
 }
 
-
-double measure_arcvector (LUK *ptrs_arc,
-                           BOOL b_first_end,
-                           double df_l0, double df_dl,
-                           double *df_x, double *df_y)
-/*----------------------------------------------------*/
+double measure_arcvector (LUK *ptrs_arc, BOOL b_first_end, double df_l0, double df_dl,double *df_x, double *df_y)
 {
     double df_line_len ;
     double df_d_angle, df_angle ;
@@ -5231,7 +5226,6 @@ double measure_arcvector (LUK *ptrs_arc,
 }
 
 double measure_vector (float x1, float y1, float x2, float y2, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y)
-/*----------------------------------------------------------------------------------------------------------------------------------------*/
 {
     double df_line_len ;
     double df_t ;
@@ -5427,6 +5421,7 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
     double katS=Pi_*25.0/180;
     char keym;
     double shift;
+    double THE_END=0. ; /*-df_seg_len/2.*/
 
     //T_Point P;
 
@@ -5515,7 +5510,7 @@ int make_arcarrows(LUK *l, AVECTOR *v, double kat, int mode, int kolor, int vkol
         df_l0 += df_seg_len_dens ;
         i++ ;
     }
-    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 
     return 1;
 ending:
@@ -5544,6 +5539,7 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     double del_angle;
 	char keym;
     double shift;
+    double THE_END=0. ; /*-df_seg_len/2.*/
 
     df_psize = Get_Point_Size () *view_vector_scale;
 
@@ -5945,7 +5941,7 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
         i++ ;
 
     }
-    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 
 	return 1;
 

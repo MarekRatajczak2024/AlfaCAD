@@ -516,17 +516,17 @@ static LISTBOX listbox [3] =
 {
   { XpGrFiles + DXIL, YpGrFiles + DYLabS - DYIL,
     DXGrFiles - 2 * DXIL , DYListBox ,
-    10, LIST_DRIVE_MAX, FLB_BAROFF | FLB_LIST, 0, 0, 14,
+    10, 10, LIST_DRIVE_MAX, FLB_BAROFF | FLB_LIST, 0, 0, 14,
     COLOR_NULL, COLOR_NULL, COLOR_NULL, 1, NULL, NULL , ID_FILE},
 
   { XpGrDirectories+ DXIL, YpGrDirectories+ DYLabS - DYIL,
     DXGrDirectories - 2 * DXIL , DYListBox ,
-    10, 0, 0, 0, 0, 2,
+    10, 10, 0, 0, 0, 0, 2,
     COLOR_NULL, COLOR_NULL, COLOR_NULL, 1, NULL, NULL , ID_DRIVE},
 
   { XpGrSpecification+ DXIL, YpGrSpecification+ DYLabS - DYIL,
     DXGrSpecification- 2 * DXIL , DYListBox ,
-    2, 0, 0, 0, 0, Max_Spec_List_Len - 1 ,
+    2, 2, 0, 0, 0, 0, Max_Spec_List_Len - 1 ,
     COLOR_NULL, COLOR_NULL, COLOR_NULL, 1, NULL, NULL, ID_SPECIFICATION},
 };
 

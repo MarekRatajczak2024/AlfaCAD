@@ -7916,7 +7916,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
   double e_h1 = -1, e_w1 = -1;
   double e_k1; // , e_obk1; //e_ax1, e_ay1, e_az1;
   BOOL e_wspx_ok=FALSE, e_h_ok=FALSE, e_obk_ok=FALSE;
-  char buf[MAXLINE], buf10[MAXLINE], buf1[MAXLINE]; // e_text[MAXLINE];
+  char buf[MAXLINE], buf10[MAXLINE*2], buf1[MAXLINE]; // e_text[MAXLINE];
   char buf11[MAXLINE*2];
   TEXT t=Tdef;
   double rectangle_width, horizontal_width;

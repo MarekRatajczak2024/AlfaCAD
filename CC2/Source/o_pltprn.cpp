@@ -2746,6 +2746,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
     double angle;
     double katS=Pi_*25.0/180;
     double shift;
+    double THE_END=0. ; /*-df_seg_len/2.*/
 
     //T_Point P;
 
@@ -2821,7 +2822,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
         df_l0 += df_seg_len_dens ;
         i++ ;
     }
-    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 
 }
 
@@ -2847,10 +2848,9 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     LINIA Lt1;
     double del_angle;
     double shift;
-
+    double THE_END=0. ; /*-df_seg_len/2.*/
 
     df_psize = Get_Point_Size ();
-
 
     if (v->style!=15) df_seg_len=df_psize;
     else df_seg_len=df_psize*0.66;  //THERMAL
@@ -3236,7 +3236,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             i++ ;
         }
     }
-    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
+    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 }
 
 
@@ -5495,6 +5495,8 @@ BOOL Draw_png_To_Drive(B_PCX *pcx, int t_drive)
 	int delta_x, delta_y;
 
 	BITMAP* buffer;
+
+    if ( type__drive == PLT_DRIVE) return TRUE;  //ignoreg
 
 	ptrs__prn_ini_date_ = get_ptrs__prn_ini_date();
 	double condensed_wsp = get_condensed_wsp();

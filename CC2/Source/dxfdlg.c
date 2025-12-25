@@ -209,7 +209,7 @@ static BUTTON buttons[] =
   },
 };
 
-#define NoUnits 5
+#define NoUnits 8
 
 #ifdef UKRAINIAN
 static char *units[] = {
@@ -317,19 +317,19 @@ static LISTBOX listbox[] =
 {
 {
 	0, 0, 0, 0,
-	NoUnits, 0, 0, 0, 0, 2,
+	NoUnits, 0, 0, 0, 0, 0, 2,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, units, ID_UNITS, 0
   },
 	{
 	0, 0, 0, 0,
-	NoScales, 10, 0, 0, 0, 10,
+	NoScales, 15, 15, 0, 0, 0, 10,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, scales, ID_SCALES, 0
   },
 	{
 	0, 0, 0, 0,
-	NoFormats, 10, 0, 0, 0, 13,
+	NoFormats, 16, 16, 0, 0, 0, 13,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, formats, ID_FORMATS, 0
   }

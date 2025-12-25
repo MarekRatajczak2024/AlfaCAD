@@ -657,6 +657,7 @@ static BOOL draw_sheet_plt(int pen0)
  ELLIPSE e = Edef;
  ELLIPSE fe =FEdef;
  ELLIPTICALARC ae=eldef;
+ AVECTOR V;
  long_long off, offk, ad;
  int pen;
 
@@ -756,6 +757,30 @@ static BOOL draw_sheet_plt(int pen0)
             grubosc = ( ((LINIA*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
+
+         //edges
+         if (((LINIA*)nag)->obiektt2==4) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+             else V.style = V_EDGE_ROLL_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==6) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+             else V.style = V_EDGE_SIMPLE_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==7) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+             else V.style = V_EDGE_FIXED_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+
 	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :
@@ -1005,6 +1030,30 @@ static BOOL draw_sheet_plt(int pen0)
             grubosc = ( ((LINIA*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
+
+         //edges
+         if (((LINIA*)nag)->obiektt2==4) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+             else V.style = V_EDGE_ROLL_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==6) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+             else V.style = V_EDGE_SIMPLE_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==7) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+             else V.style = V_EDGE_FIXED_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+
 	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :
@@ -1210,6 +1259,7 @@ static BOOL draw_sheet_plt1(int pen0)
 /*-------------------------------*/
 {
  NAGLOWEK *nag;
+ AVECTOR V;
  LUK l = ldef;
  long_long off, offk, ad;
  int k;
@@ -1252,6 +1302,30 @@ static BOOL draw_sheet_plt1(int pen0)
             grubosc = ( ((LINIA*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
+
+         //edges
+         if (((LINIA*)nag)->obiektt2==4) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+             else V.style = V_EDGE_ROLL_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==6) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+             else V.style = V_EDGE_SIMPLE_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+         else if (((LINIA*)nag)->obiektt2==7) {
+             memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+             if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+             else V.style = V_EDGE_FIXED_INV;
+             Draw_Vector_To_Drive(&V, NULL);
+             break;
+         }
+
 	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :

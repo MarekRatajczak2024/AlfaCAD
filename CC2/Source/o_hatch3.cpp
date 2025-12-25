@@ -69,6 +69,9 @@ extern void line_place (LINIA *l, double *xmin, double *ymin, double *xmax, doub
 extern void okrag_place (OKRAG *o, double *xmin, double *ymin, double *xmax, double *ymax);
 extern void luk_place (LUK *l, double *xmin, double *ymin, double *xmax, double *ymax);
 
+extern void komunikat_str_short(char *st, BOOL stay, BOOL center);
+extern void remove_short_notice(void);
+
 extern BOOL glb_silent;
 
 BOOL Make_Hatch(T_PTR_Hatch_Param ptrs_hatch_param0,
@@ -3325,6 +3328,9 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
     double zmax, zmax1;
     LINIA LiniaG1;
     int key;
+    int counter;
+    int last_counter=0;
+    char counter_str[16];
 
 
     if (le_abd < 0) global_dane = (BLOK *) dane;
@@ -3424,7 +3430,18 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
     //   get_range_outline(ptrs_hatch_param);
     //}
 
-    for (j = 0; j < i_hatch_lineno; j++) {
+    for (j = 0; j < i_hatch_lineno; j++)
+    {
+        if ((i_hatch_lineno>0) && (!glb_silent))
+        {
+            counter=(int)(((float)j / (float)i_hatch_lineno) * 100.f);
+            if (counter>last_counter)
+            {
+                sprintf(counter_str,"%d%%",counter);
+                komunikat_str_short(counter_str, TRUE, FALSE);
+                last_counter=counter;
+            }
+        }
         pole_hatch_add = j;
         if (i__trapsno != 0) {
             if (!glb_silent) {
@@ -3517,6 +3534,9 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
     }
     h_free((void *) ptri__tab_ver_no);
     free(ptrs__traps);
+
+    komunikat_str_short((char*)"", TRUE, FALSE);
+    remove_short_notice();
 
     if ((comput_area > 0) && (comput_area < 10)) {
         CUR_OFF(X, Y);

@@ -237,49 +237,49 @@ static LISTBOX listbox [COMBOBOX_SIZE] =
 {
   {
     0, 0, 0, 0,  	/*wspolrzedne*/
-    NoLayers, LAYER_MAXW, 0, 0, 0, 24,
+    NoLayers, LAYER_MAXW, LAYER_MAXW, 0, 0, 0, 24,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, layer_name_txt, ID_CLayer, 0
   },
   {
     0, 0, 0, 0,
-    NoColors, 17 /*MAXWCOLOR*/, 0, 0, 0, 24,  //18
+    NoColors, 17 /*MAXWCOLOR*/, 17, 0, 0, 0, 24,  //18
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, Colors_Name_txt, ID_CColor, 0
   },
   {
     0, 0, 0, 0,
-    NoWidthLines, 0, 0, 0, 0, 24,
+    NoWidthLines, 0, 0, 0, 0, 0, 24,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, width_line_txt, ID_CWidth, 0
   },
   {
     0, 0, 0, 0,
-    NoTypeLines, 6, 0, 0, 0, 24,
+    NoTypeLines, 6, 6, 0, 0, 0, 24,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, type_line_txt, ID_CType, 0
   },
   {
     0, 0, 0, 0,
-    MaxNumberTextStyle, 0, 0, 0, 0, FONTNAMELEN,
+    MaxNumberTextStyle, 0, 0, 0, 0, 0, FONTNAMELEN,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, font_name_txt, ID_CFontName, 0
   },
   {
     0, 0, 0, 0,
-    NoTextType, 5, 0, 0, 0, 16,
+    NoTextType, 5, 5, 0, 0, 0, 16,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, tab_type_txt, ID_CTextType, 0
   },
   {
     0, 0, 0, 0,
-    NoTextJust, 0, 0, 0, 0, 16,
+    NoTextJust, 0, 0, 0, 0, 0, 16,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, font_just_txt,  ID_CTextJust, 0
   },
     {
     0, 0, 0, 0,
-    NoTranslucency, 0, 0, 0, 0, 16,
+    NoTranslucency, 0, 0, 0, 0, 0, 16,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, translucency_txt,  ID_CTranslucency, 0
   },

@@ -186,14 +186,14 @@ static LISTBOX listbox_as [2] =
         {
                 {
                         0, 0, 0, 0,    /*wspolrzedne*/
-                        8, 8, 0, 0, 0, 3,
+                        8, 8, 8, 0, 0, 0, 3,
                         0 /*COLOR_NULL*/, COLOR_NULL, 15 /*COLOR_NULL*/,
                         1, NULL, combination_txt, ID_COMBINATION, 0
                 },
 
                 {
                         0, 0, 0, 0,    /*wspolrzedne*/
-                        8, 8, 0, 0, 0, 3,
+                        8, 8, 8, 0, 0, 0, 3,
                         0 /*COLOR_NULL*/, COLOR_NULL, 15 /*COLOR_NULL*/,
                         1, NULL, modes_number_txt, ID_MODES_NUMBER, 0
                 },

@@ -42,6 +42,7 @@ typedef struct {
 	int x, y, dx, dy;      /*polorzenie i wielkosc okienka*/
 	int max;		/*liczba pozycji listbox'a*/
 	int maxw;		/*rozmiar okna ( 0 dla nie scrolowanych )*/
+    int maxw0;
 	char flags;		/*rozne opcje*/
 	int poz;		/*pozycja kursora */
 	int foff;		/*pierwsza pozycja w okienku*/

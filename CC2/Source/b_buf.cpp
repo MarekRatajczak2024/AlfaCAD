@@ -336,7 +336,7 @@ int SetBufferSize(char  *P, long Size)
 
 /*--------------------------------------------*/
 
-BOOL h_alloc (char  **block, long size)
+BOOL h_alloc_old (char  **block, long size)
 /*----------------------------------------------*/
 {
   if (NULL == NewBuffer (block))
@@ -347,8 +347,20 @@ BOOL h_alloc (char  **block, long size)
   return  SetBufferSize(*block, size) ;
 }
 
+BOOL h_alloc (char  **block, long size)
+/*----------------------------------------------*/
+{
+    *block = (char*)malloc(size);
+    if (*blok==NULL)
+    {
+        ErrList (18) ;
+        return FALSE ;
+    }
+    return TRUE;
+}
 
-BOOL h_realloc (T_PTR_Units ptrs_units, int i_d_alloc)
+
+BOOL h_realloc_old (T_PTR_Units ptrs_units, int i_d_alloc)
 /*------------------------------------------------------*/
 {
   BOOL b_ret ;
@@ -371,8 +383,33 @@ BOOL h_realloc (T_PTR_Units ptrs_units, int i_d_alloc)
   return b_ret ;
 }
 
+BOOL h_realloc (T_PTR_Units ptrs_units, int i_d_alloc)
+/*------------------------------------------------------*/
+{
+    BOOL b_ret = TRUE ;
 
-void h_free (void *block)
+    if (ptrs_units->i_size_alloc > ptrs_units->i_size + i_d_alloc)
+    {
+        return TRUE ;
+    }
+    if (i_d_alloc == 0)
+    {
+        i_d_alloc = ptrs_units->i_d_alloc ;
+    }
+    ptrs_units->i_size_alloc = ptrs_units->i_size + i_d_alloc ;
+
+    ptrs_units->ptr_table=(char*)realloc(ptrs_units->ptr_table, ptrs_units->i_size_alloc * ptrs_units->i_unit_size);
+    if (ptrs_units->ptr_table == NULL)
+    {
+        ErrList (18) ;
+        b_ret = FALSE;
+    }
+
+    return b_ret ;
+}
+
+
+void h_free_old (void *block)
 /*----------------------*/
 {
   if (block == NULL)
@@ -381,6 +418,17 @@ void h_free (void *block)
   }
   DisposeBuffer ((char  *)block) ;
   block = NULL ;
+}
+
+void h_free (void *block)
+/*----------------------*/
+{
+    if (block == NULL)
+    {
+        return ;
+    }
+    free(block) ;
+    block = NULL ;
 }
 
 

@@ -937,6 +937,12 @@ void setviewport(int left, int top, int right, int bottom, int clip)
     int x_right;
     int y_bottom;
 
+    if (top<0)
+    {
+        int abs=0;
+        return;
+    }
+
     if (parent_screen != NULL) {destroy_bitmap(parent_screen);
         parent_screen = NULL;
     }

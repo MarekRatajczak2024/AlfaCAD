@@ -98,6 +98,7 @@ extern void set_decimal_format(char *text, double l, double precision);
 extern void create_solid_on_line (LINIA *L, WIELOKAT *s, double width1, double width2, double axis);
 extern void Normalize_Solid (WIELOKAT *ptr_w);
 extern double measure_vector (float x1, float y1, float x2, float y2, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
+extern double measure_arcvector (LUK *ptrs_arc, BOOL b_first_end, double df_l0, double df_dl, double *df_x, double *df_y);
 extern point intersectionPoint(point a1,point a2,point b1,point b2);
 extern BOOL Check_if_GT (double x, double y);
 extern double Get_TextLen (TEXT *ptrs_text, char *ptrsz_t) ;
@@ -3475,29 +3476,57 @@ void PISZ_OBJECTS::draw_arrow_to_DXF(double x0, double y0, double x1, double y1,
 {
     LINIA L=Ldef;
     WIELOKAT w=Stdef;
+    OKRAG k=Kdef;
     int ret;
 
     L.x1=x1;
     L.y1=y1;
     L.x2=x2;
     L.y2=y2;
-    L.warstwa=w.warstwa=v->warstwa;
-    L.kolor=w.kolor=v->kolor;
+    L.warstwa=w.warstwa=k.warstwa=v->warstwa;
+    L.kolor=w.kolor=k.kolor=v->kolor;
     L.typ=64;
 
-    ret = RysujLinia(&L);
+    if (v->style<V_EDGE_SIMPLE) {
+        L.typ = 64;
 
-    w.xy[2]=x0;
-    w.xy[3]=y0;
-    w.xy[0]=x0+psize*koc1;
-    w.xy[1]=y0-psize*kos1;
-    w.xy[4]=x0+psize*koc2;
-    w.xy[5]=y0-psize*kos2;
+        ret = RysujLinia(&L);
+    }
 
-    w.lp=6;
-    w.n=32;
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV) || (v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
+    {
+        L.typ = V_FIXED_LINE; //128;
+        L.x1 = x0;
+        L.y1 = y0;
+        L.x2 = x0 + psize * koc1;
+        L.y2= y0 - psize * kos1;
 
-    ret = RysujSolid(&w);
+        ret = RysujLinia(&L);
+    }
+    else if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV) || (v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+    {
+
+        if (v->style == V_EDGE_ROLL)  //roll edge
+            psize *= -1;
+        k.x=x0 + psize * 0.5 * koc1;
+        k.y=y0 - psize * 0.5 * kos1;
+        k.r=fabs(psize * 0.5);
+
+        ret = RysujKolo(&k);
+    }
+    else {
+        w.xy[2] = x0;
+        w.xy[3] = y0;
+        w.xy[0] = x0 + psize * koc1;
+        w.xy[1] = y0 - psize * kos1;
+        w.xy[4] = x0 + psize * koc2;
+        w.xy[5] = y0 - psize * kos2;
+
+        w.lp = 6;
+        w.n = 32;
+
+        ret = RysujSolid(&w);
+    }
 }
 
 void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, double x2, double y2, double koc, double kos, double n1, double ra, AVECTOR *v)
@@ -3579,6 +3608,105 @@ void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, 
 }
 
 
+void PISZ_OBJECTS::make_arcarrows_to_DXF(LUK *l, AVECTOR *v, double kat)
+{
+    int i;
+    double df_line_rem;
+    double df_l0;
+    double df_psize;
+    double df_seg_len, df_seg_len_dens;
+    BOOL b_first_end=TRUE;
+    double df_x0, df_y0, df_x, df_y, df_x1, df_y1, df_x2, df_y2;
+    point p;
+    float n, n1;
+    double koc, kos;
+    double koc1, kos1, koc2, kos2;
+    double ra, ra1;
+    PLINIA PL1;
+    LINIA Lt1;
+    double del_angle;
+    double angle;
+    double katS=Pi_*25.0/180;
+    double shift;
+    double THE_END=0. ; /*-df_seg_len/2.*/
+
+    //T_Point P;
+
+    df_psize = Get_Point_Size ();
+    df_seg_len=df_psize;
+
+    ra=df_seg_len / 2;
+    ra1=0.9*ra;
+
+    if ((v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
+    {
+        katS = Pi_ * 45.0 / 180;
+        df_seg_len_dens = df_seg_len / 2.0;
+    }
+    else df_seg_len_dens = df_seg_len;
+
+    i = 0 ;
+
+    shift = (v->style<V_EDGE_SIMPLE) ? 2. : 1.;
+
+    df_l0 = -df_seg_len_dens/shift; //1 or 2 ;   //first arrow will start at the beginning of the edge
+    do
+    {
+        df_line_rem = measure_arcvector(l, b_first_end, df_l0, df_seg_len_dens, &df_x, &df_y);
+
+        if ((v->style>=V_EDGE_SIMPLE) && (df_line_rem<df_seg_len/2.))
+        {
+            df_x=v->x1+v->r*cos(v->angle2);
+            df_y=v->y1+v->r*sin(v->angle2);
+        }
+
+        if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
+        {
+
+            Lt1.x1 = df_x;
+            Lt1.y1 = df_y;
+            Lt1.x2 = l->x;
+            Lt1.y2 = l->y;
+            parametry_lini(&Lt1, &PL1);
+
+            //angle=Angle_Normal(PL1.kat*Pi2/180);
+            //koc=cos(angle);
+            //kos=sin(angle);
+
+            if ((v->style==V_EDGE_ARC_SIMPLE_INV) || (v->style==V_EDGE_ARC_FIXED_INV) || (v->style==V_EDGE_ARC_ROLL_INV)) PL1.kat+=180;
+
+            angle = Angle_Normal(-(PL1.kat) * Pi / 180);
+            if (fabs(angle - Pi2) < 0.00001) angle = 0;
+            if (fabs(angle) < 0.00001) angle = 0;
+
+            if ((v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
+            {
+                koc1 = koc2 = cos(angle);
+                kos1 = kos2 = sin(angle);
+            }
+            else {
+                koc1 = cos(angle - katS);
+                koc2 = cos(angle + katS);
+                kos1 = sin(angle - katS);
+                kos2 = sin(angle + katS);
+            }
+
+            n1 = -1;
+
+            draw_arrow_to_DXF(df_x, df_y, df_x, df_y, df_x, df_y, koc1, kos1, koc2, kos2, n1 * ra, v);
+        }
+
+        //P.x=df_x;
+        //P.y=df_y;
+        //P.kolor=7;
+        //rysuj_punkt_(&P, COPY_PUT, 1);
+
+        df_l0 += df_seg_len_dens ;
+        i++ ;
+    }
+    while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
+}
+
 void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat)
 {
     //arrows
@@ -3600,11 +3728,15 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     LINIA Lt1;
     double del_angle;
     double shift;
+    double THE_END=0. ; /*-df_seg_len/2.*/
 
     df_psize = Get_Point_Size ();
 
     if (v->style!=15) df_seg_len=df_psize;
     else df_seg_len=df_psize*0.66;  //THERMAL
+
+    if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV))
+        katS = Pi_ * 45.0 / 180;
 
     angle=Angle_Normal(angle0);
 
@@ -3617,12 +3749,23 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     switch (v->style)
     {
         case 10:
+        case 17:
             if (x1<=x2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 11:
             if (y1<=y2) angle=Angle_Normal(angle0+Pi_);
             break;
         case 12:
+            angle=Angle_Normal(-angle0);
+            if (fabs(angle-Pi2)<0.00001) angle=0;
+            if (fabs(angle)<0.00001) angle=0;
+            break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
             angle=Angle_Normal(-angle0);
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
@@ -3642,10 +3785,17 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
             break;
     }
 
-    koc1=cos(angle-katS);
-    koc2=cos(angle+katS);
-    kos1=sin(angle-katS);
-    kos2=sin(angle+katS);
+    if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV))
+    {
+        koc1 = koc2 = cos(angle);
+        kos1 = kos2 = sin(angle);
+    }
+    else {
+        koc1 = cos(angle - katS);
+        koc2 = cos(angle + katS);
+        kos1 = sin(angle - katS);
+        kos2 = sin(angle + katS);
+    }
 
     angle_rev=Angle_Normal(angle+Pi_);
 
@@ -3670,21 +3820,30 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
         if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
-            if (Check_if_Equal(angle, Pi_/2))  //vertical
+            if ((Check_if_Equal(angle, Pi_/2))   || (Check_if_Equal(angle, Pi_*3/2)))  //vertical
             {
                 a1.x=df_x; a1.y=-100.0;
                 a2.x=df_x; a2.y=100.0;
                 b1.x=(double)x11; b1.y=(double)y11;
                 b2.x=(double)x12; b2.y=(double)y12;
                 p=intersectionPoint(a1,a2,b1,b2);
+                if (isnan(p.x))
+                {
+                    p.x = b2.x;
+                    p.y = b2.y;
+                }
             }
-            else if (Check_if_Equal(angle, 0))  //horizontal
+            else if ((Check_if_Equal(angle, 0)) || (Check_if_Equal(angle, Pi_))) //horizontal
             {
                 a1.x=-100.0; a1.y=df_y;
                 a2.x=100.0; a2.y=df_y;
                 b1.x=(double)x11; b1.y=(double)y11;
                 b2.x=(double)x12; b2.y=(double)y12;
                 p=intersectionPoint(a1,a2,b1,b2);
+                if (isnan(p.x)) {
+                    p.x = b1.x;
+                    p.y = b1.y;
+                }
             }
             else
             {
@@ -3702,6 +3861,7 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
             switch (v->style)
             {
                 case 10:
+                case 17:
                     if (v->flags & 1)
                     {
                         df_x0 = p.x;
@@ -3778,6 +3938,12 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                     }
                     break;
                 case 12:
+                case V_EDGE_SIMPLE:  //simple supported edge
+                case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+                case V_EDGE_FIXED:  //fixed edge
+                case V_EDGE_FIXED_INV:  //fixed edge reversed
+                case V_EDGE_ROLL:  //roll edge
+                case V_EDGE_ROLL_INV:  //roll edge reversed
                     if (v->flags & 1) {
                         df_x0 = p.x;
                         df_y0 = p.y;
@@ -3951,7 +4117,7 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
             i++ ;
         }
     }
-    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : -df_seg_len/2.)) ;
+    while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 }
 
 
@@ -3983,6 +4149,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
     double t_len_mm, direction, Kp2sn;
     double kat0=10;
     int vkolor;
+    ELLIPSE load_ellipse=FEdef;
 
 #define arrowf 1.0
 
@@ -4076,11 +4243,18 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             if (ptrs_vector->property_no>0) sprintf(Vtxt.text, "#%d", ptrs_vector->property_no);
             break;
         case 4:
-
+        case 18: //slab force
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            if (L1.x1<=L1.x2) n=1; else n=-1;
+            //if (L1.x1<=L1.x2) n=1; else n=-1;
+            if (L1.y1>L1.y2) {
+                if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
+            }
+            else
+            {
+                if (L1.x1 <= L1.x2) n = 1; else n = -1;
+            }
 
             Vtxt.x=(L1.x1+L1.x2)/2-((n*ra/4)*koc1);
             Vtxt.y=(L1.y1+L1.y2)/2-((n*ra/4)*kos1);
@@ -4137,6 +4311,17 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
+            if (ptrs_vector->angle2<ptrs_vector->angle1)
+                kata2=ptrs_vector->angle2+Pi2;
+            else kata2=ptrs_vector->angle2;
+            kats=Angle_Normal((ptrs_vector->angle1+kata2)/2);
+            break;
         case 8:
         case 9:
             if (ptrs_vector->angle2<ptrs_vector->angle1)
@@ -4161,6 +4346,18 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             normalize_txt(&Vltxt);
             break;
         case 10:  //trapezium Y
+        case 17:  //trapezium Y slab
+
+            if (Check_if_Equal(L1.x1, L1.x2))
+            {
+                L1.x2+=0.001;
+
+                parametry_lini(&L1, &PL);
+                kat1=PL.kat;
+                kos=sin(PL.kat*Pi/180);
+                koc=cos(PL.kat*Pi/180);
+
+            }
 
             if (L1.x1<L1.x2) n=1;
             else n=-1;
@@ -4422,6 +4619,35 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
+            if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
+                ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.01;  //just to simulate
+            else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.01;  //just to simulate
+            kos1=sin(Pi*(PL.kat+90)/180);
+            koc1=cos(Pi*(PL.kat+90)/180);
+
+            n=1;
+
+            if (ptrs_vector->flags & 1) n*=-1;
+
+            Lt.x1 = L1.x1 + n*(ptrs_vector->magnitude1/load_magnitude)*koc1;
+            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude)*kos1;
+            Lt.x2 = L1.x2 + n*(ptrs_vector->magnitude2/load_magnitude)*koc1;
+            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude)*kos1;
+
+            Ltx=(Lt.x1 + Lt.x2)/2;
+            Lty=(Lt.y1 + Lt.y2)/2;
+
+            parametry_lini(&Lt, &PL1);
+            kos2=sin(Pi*(PL1.kat+90)/180);
+            koc2=cos(Pi*(PL1.kat+90)/180);
+            break;
+
         case 13:  //trapezium H
             if (L1.x1<L1.x2)
             {
@@ -4800,6 +5026,21 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             break;
         case 4:  //force
         case 18: //slab force
+            if (ptrs_vector->style==18)  //slab force
+            {
+                load_ellipse.kolor=ptrs_vector->kolor;
+                load_ellipse.warstwa=ptrs_vector->warstwa;
+                load_ellipse.widoczny=ptrs_vector->widoczny;
+                load_ellipse.translucency=51;
+                load_ellipse.typ=64;
+                load_ellipse.x=ptrs_vector->x1;
+                load_ellipse.y=ptrs_vector->y1;
+                load_ellipse.angle=0;
+                load_ellipse.rx=(float)(df_psize*3.);
+                load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                RysujEllipse(&load_ellipse);
+            }
+
             w.atrybut=ptrs_vector->atrybut;
             w.warstwa=ptrs_vector->warstwa;
             w.kolor=vkolor;
@@ -4882,6 +5123,13 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
         case 6:
         case 8:  //rotation
         case 9:
+        case V_EDGE_ARC_SIMPLE:  //simple supported edge
+        case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
+        case V_EDGE_ARC_FIXED:  //fixed edge
+        case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
+        case V_EDGE_ARC_ROLL:  //roll edge
+        case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
+
             if (ptrs_vector->style==5)
             {
                 linestyle(ptrs_vector->typ);
@@ -4964,6 +5212,35 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
                 if(RysujLuk(&l)==ErrorWeWy) return ErrorWeWy;
             }
+            else if ((ptrs_vector->style==V_EDGE_ARC_SIMPLE) ||  //simple supported edge
+                     (ptrs_vector->style==V_EDGE_ARC_SIMPLE_INV) ||  //simple supported edge flipped
+                     (ptrs_vector->style==V_EDGE_ARC_FIXED) ||  //fixed edge
+                     (ptrs_vector->style==V_EDGE_ARC_FIXED_INV) ||  //fixed edge flipped
+                     (ptrs_vector->style==V_EDGE_ARC_ROLL) ||  //roll edge
+                     (ptrs_vector->style==V_EDGE_ARC_ROLL_INV))  //roll edge flipped
+            {
+                grubosc = (ptrs_vector->typ & 224) / 32;
+                linestyle(grubosc * 32 + 1);
+                kats=ptrs_vector->angle2-Pi_/2;
+                n=+1;
+                s=1;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                l.typ=ptrs_vector->typ;
+
+                if (RysujLuk(&l) == FALSE) return FALSE;
+                //triangles or dashes
+                make_arcarrows_to_DXF(&l, ptrs_vector, PL.kat);
+
+                break;
+            }
+            else return FALSE;
 
             dx = Get_Point_Size() / arrowf * cos(kats);
             dy = Get_Point_Size() / arrowf * sin(kats);
@@ -5001,12 +5278,29 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             break;
         case 10:  //trapezium Y
+        case 17:  //trapezium Y slab
+
+            if (ptrs_vector->style==17)  //slab load
+            {
+                load_ellipse.kolor=ptrs_vector->kolor;
+                load_ellipse.warstwa=ptrs_vector->warstwa;
+                load_ellipse.widoczny=ptrs_vector->widoczny;
+                load_ellipse.translucency=51;
+                load_ellipse.typ=64;
+                load_ellipse.x=(float)((ptrs_vector->x1+ptrs_vector->x2)/2.);
+                load_ellipse.y=(float)((ptrs_vector->y1+ptrs_vector->y2)/2.);
+                load_ellipse.angle=(float)(PL.kat*Pi/180);
+                load_ellipse.rx=(float)(PL.dl/2.);
+                load_ellipse.ry=(float)(load_ellipse.rx/3.);
+                RysujEllipse(&load_ellipse);
+            }
 
             L1.typ = 64;
 
             if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
 
             w.empty_typ = 0;
+            /*
             w.xy[0] = ptrs_vector->x1;
             w.xy[1] = ptrs_vector->y1;
             w.xy[2] = ptrs_vector->x2;
@@ -5014,6 +5308,16 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             w.xy[4] = ptrs_vector->x2;
             w.xy[5] = Lt.y2;
             w.xy[6] = ptrs_vector->x1;
+            w.xy[7] = Lt.y1;
+             */
+
+            w.xy[0] = L1.x1;
+            w.xy[1] = L1.y1;
+            w.xy[2] = L1.x2;
+            w.xy[3] = L1.y2;
+            w.xy[4] = L1.x2;
+            w.xy[5] = Lt.y2;
+            w.xy[6] = L1.x1;
             w.xy[7] = Lt.y1;
             w.lp = 8;
             w.n = 40;
@@ -5053,6 +5357,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+            if(RysujText(&Vltxt)==ErrorWeWy) return ErrorWeWy;
 
             break;
         case 11:  //trapezium X
@@ -5162,6 +5467,35 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+
+            break;
+        case V_EDGE_SIMPLE:  //simple supported edge
+        case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
+        case V_EDGE_FIXED:  //fixed edge
+        case V_EDGE_FIXED_INV:  //fixed edge reversed
+        case V_EDGE_ROLL:  //roll edge
+        case V_EDGE_ROLL_INV:  //roll edge reversed
+            L1.typ=ptrs_vector->typ; //64;
+
+            if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
+
+            w.empty_typ=0;
+
+            w.xy[0]=L1.x1;
+            w.xy[1]=L1.y1;
+            w.xy[2]=L1.x2;
+            w.xy[3]=L1.y2;
+
+            w.xy[4]=Lt.x2;
+            w.xy[5]=Lt.y2;
+            w.xy[6]=Lt.x1;
+            w.xy[7]=Lt.y1;
+            w.lp=8;
+            w.n=40;
+
+            w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
+
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat);
 
             break;
         case 13:  //trapezium H
@@ -5429,7 +5763,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 else Ln1.x2 = L1.x2 - t_len_mm - Vtxt.wysokosc / 2.0;
             }
 
-            if (Draw_Line_To_Drive(&Ln1) == FALSE) return FALSE;
+            if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
 
             K1_5=jednostkiplt(w1_5);
             Kp2sn = 1.686909582 * K1_5;
@@ -5954,6 +6288,7 @@ int My_App_PISZ_DXF_ASCII::MyEntities(void)
 { NAGLOWEK *nag;
   BLOK 	*ptrs_block ;
   TEXT *ptrs_text;
+  AVECTOR V;
   T_Desc_Ex_Block 	*ptrs_desc_bl ;
 
 
@@ -6122,7 +6457,30 @@ int My_App_PISZ_DXF_ASCII::MyEntities(void)
           }
 	  break;
 	    case Olinia :
-	  if(RysujLinia((LINIA *)nag)==ErrorWeWy) return ErrorWeWy;
+            //edges
+            if (((LINIA*)nag)->obiektt2==4) {
+                memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+                if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_ROLL;
+                else V.style = V_EDGE_ROLL_INV;
+                if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+                break;
+            }
+            else if (((LINIA*)nag)->obiektt2==6) {
+                memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+                if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_SIMPLE;
+                else V.style = V_EDGE_SIMPLE_INV;
+                if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+                break;
+            }
+            else if (((LINIA*)nag)->obiektt2==7) {
+                memmove(&V, ((LINIA*)nag), sizeof(LINIA));
+                if (((LINIA*)nag)->obiektt3 == 0) V.style = V_EDGE_FIXED;
+                else V.style = V_EDGE_FIXED_INV;
+                if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+                break;
+            }
+
+	      if(RysujLinia((LINIA *)nag)==ErrorWeWy) return ErrorWeWy;
 	  break;
 	    case Otekst :
 		ptrs_text = (TEXT*)nag;
@@ -6148,6 +6506,53 @@ int My_App_PISZ_DXF_ASCII::MyEntities(void)
       if(RysujEllipse((ELLIPSE*)nag)==ErrorWeWy) return ErrorWeWy;
       break;
         case Oluk :
+            //edges
+        if (((LUK*)nag)->obiektt2==4) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+            else V.style = V_EDGE_ARC_ROLL_INV;
+            if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+            break;
+        }
+        else if (((LUK*)nag)->obiektt2==6) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+            else V.style = V_EDGE_ARC_SIMPLE_INV;
+            if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+            break;
+        }
+        else if (((LUK*)nag)->obiektt2==7) {
+            V.warstwa=((LUK*)nag)->warstwa;
+            V.kolor=((LUK*)nag)->kolor;
+            V.typ=((LUK*)nag)->typ;
+            V.x1=((LUK*)nag)->x;
+            V.y1=((LUK*)nag)->y;
+            V.r=((LUK*)nag)->r;
+            V.angle1=((LUK*)nag)->kat1;
+            V.angle2=((LUK*)nag)->kat2;
+            V.magnitude1=0.0f;
+            if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+            else V.style = V_EDGE_ARC_FIXED_INV;
+            if (RysujVector(&V, &v_block_sufix) == ErrorWeWy) return ErrorWeWy;
+            break;
+            }
+
 		 if(RysujLuk((LUK*)nag)==ErrorWeWy) return ErrorWeWy;
 	 break;
         case Oellipticalarc :

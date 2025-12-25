@@ -1479,6 +1479,8 @@ static void draw_listbox(LISTBOX  * listbox)
 
   GrMouseEraseCursor();
 
+  listbox->maxw=listbox->maxw0; //inicjacja
+
   def_paper =(listbox->flags & FLB_LIST) ? dlg_kolory->dlg_listbox_paper : dlg_kolory->dlg_list_combo_paper;
   def_ink =(listbox->flags & FLB_LIST) ? dlg_kolory->dlg_listbox_ink : dlg_kolory->dlg_list_combo_ink;
   def_border =(listbox->flags & FLB_LIST) ? dlg_kolory->dlg_listbox_border : dlg_kolory->dlg_list_combo_border;
@@ -1487,10 +1489,23 @@ static void draw_listbox(LISTBOX  * listbox)
   border = listbox->border == COLOR_NULL ? def_border : listbox->border;
   size =((listbox->maxw == 0) ? listbox->max : listbox->maxw);
 
+  if(listbox->max < listbox->maxw)
+  {
+      size = listbox->max;
+  }
+
   x01 = jed_to_piks_x(listbox->x)+pocz_x;
   x02 = jed_to_piks_x(listbox->x + listbox->dx) /*- 1*/ +pocz_x;
   y01 = jed_to_piks_y(listbox->y)+pocz_y-2;
   y02 = jed_to_piks_y(listbox->y + listbox->dy * size) - 1+pocz_y + 2;
+
+  while (y02>getmaxy())
+  {
+      size--;
+      y02 = jed_to_piks_y(listbox->y + listbox->dy * size) - 1+pocz_y + 2;
+  }
+
+  listbox->maxw=size;
 
   w=x02-x01;
   h=y02-y01;
@@ -1521,10 +1536,10 @@ static void draw_listbox(LISTBOX  * listbox)
   setcolor(ink);
   
   xt=x1+3;
-  if(listbox->max < listbox->maxw)
-  {
-    size = listbox->max;
-  }
+  //if(listbox->max < listbox->maxw)
+  //{
+  //  size = listbox->max;
+  //}
 
   listbox_max_text_len_ = listbox->max_text_len * getmaxx() * 8;
   listbox_max_text_len_ /= 638;
@@ -1908,11 +1923,26 @@ static int open_listbox(LISTBOX  * listbox)
   int x1, y1, x2, y2, size;
   int i_image_no ;
 
+  listbox->maxw=listbox->maxw0;  //initiasion
+
   size =((listbox->maxw == 0) ? listbox->max : listbox->maxw);
   x1 = jed_to_piks_x(listbox->x)+pocz_x;
   x2 = jed_to_piks_x(listbox->x + listbox->dx) - 1+pocz_x;
   y1 = jed_to_piks_y(listbox->y)+pocz_y;
   y2 = jed_to_piks_y(listbox->y + listbox->dy * size) - 1+pocz_y;
+
+  if(listbox->max < listbox->maxw)
+  {
+      size = listbox->max;
+  }
+
+  while (y2>getmaxy())
+  {
+      size--;
+      y2 = jed_to_piks_y(listbox->y + listbox->dy * size) - 1+pocz_y + 2;
+  }
+
+  listbox->maxw=size;
 
   set_listbox_slider=0;
   if ((BAR_POINTER) && (listbox->maxw>0) && (listbox->maxw<listbox->max))

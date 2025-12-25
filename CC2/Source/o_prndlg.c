@@ -696,19 +696,19 @@ static LISTBOX listbox[3] =
 {
 	{
 	0, 0, 0, 0,
-	NoImageFormat, 0, 0, 0, 0, 9,
+	NoImageFormat, 0, 0, 0, 0, 0, 9,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, image_formats, LS_IMAGE_FORMAT, 0
   },
 	{
 	0, 0, 0, 0,
-	NoPaperFormat, 11, 0, 0, 0, 9,
+	NoPaperFormat, 11, 11, 0, 0, 0, 9,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, paper_formats, LS_PAPER_FORMAT, 0
   },
     {
     0, 0, 0, 0,
-    NoPrinter, 1, 0, 0, 0, 64,
+    NoPrinter, 1, 0, 0, 0, 0, 64,
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, printer_types, LS_PRINTER_TYPE, 0
     }

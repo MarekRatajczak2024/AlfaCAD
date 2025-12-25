@@ -304,7 +304,7 @@ static LISTBOX listbox[] =
 {
 {
 	0, 0, 0, 0,
-	NoImageFormat, 0, 0, 0, 0, 5,
+	NoImageFormat, 0, 0, 0, 0, 5, 5,
 	COLOR_NULL, COLOR_NULL, COLOR_NULL,
 	1, NULL, image_formats, ID_IMAGE_FORMAT1
   }
