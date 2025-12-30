@@ -68,6 +68,13 @@ extern void flip_shift_screen(LINIA *line_g0);
 
 extern double cut_val(double jXY);
 extern double my_round(double x, unsigned int digits);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+
+// Inverse of milimetryobx
+extern double milimetryobx_inv(double obj_x);
+// Inverse of milimetryoby
+extern double milimetryoby_inv(double obj_y);
 
 #define cursor_off cursel_off
 #define cursor_on cursel_on
@@ -94,6 +101,8 @@ static int out_angle_ok1 ;
 static int strwyj;
 static double Lx2,Ly2,Lz2 ;
 static double kos0,koc0;
+
+int isometric_to_cartesian(double ix, double iy, double *cx, double *cy);
 
 WIELOKAT S4_PCX = S4def;
 B_PCX *GlobalPCX;
@@ -389,6 +398,7 @@ void Point_Origin (void)
   double buf_ret [2] ;
   double jX,jY,jX0,jY0;
   double angle_l, sina, cosa;
+  int ret;
 
   standard_func();
   if (b__active_point == TRUE)
@@ -412,68 +422,116 @@ void Point_Origin (void)
 	   }
 	   if(ev->Number == ENTER)
 	   {
-	     jX = milimetryobx (X0) ;
-	     jY = milimetryoby (Y0) ;
-	     
-	     angle_l=get_angle_l();
-	     
-	     if (angle_l!=0)
+         if (options1.uklad_izometryczny)
+         {
+             cartesian_to_isometric(milimetryobx (X0), milimetryoby (Y0), &jX, &jY);
+         }
+         else
+         {
+             jX = milimetryobx (X0) ;
+             jY = milimetryoby (Y0) ;
+
+             angle_l = get_angle_l();
+             if (angle_l != 0) {
+                 jX0 = jX;
+                 jY0 = jY;
+                 sina = get_sina();
+                 cosa = get_cosa();
+                 jX = (jX0 * cosa) + (jY0 * sina);
+                 jY = (-jX0 * sina) + (jY0 * cosa);
+                 jX0 = jX;
+                 jY0 = jY;
+
+                 jX = my_round(jX0, 6);
+                 jY = my_round(jY0, 6);
+             }
+         }
+
+         if (options1.uklad_geodezyjny==0) sprintf (sk, "%#16.12lg;%#16.12lg", jX, jY) ;
+           else sprintf (sk, "%#16.12lg;%#16.12lg", jY, jX) ;
+         if (!get_string (sk, "", MaxTextLen, 0, 99))
+          {
+            redcrP (1) ;
+            return ;
+          }
+         if (FALSE == calculator (sk, &retval_no, buf_ret) || retval_no < 2)
+          {
+           redcrP (1) ;
+           return ;
+          }
+
+
+         if (options1.uklad_izometryczny)
+         {
+             xd = jednostkiOb(buf_ret[0]);
+             yd = jednostkiOb(buf_ret[1]);
+             ret = isometric_vector_to_cartesian(xd, yd, &xd1, &yd1);
+         }
+         else
+         {
+             if (options1.uklad_geodezyjny == 0)
              {
-             jX0=jX;
-             jY0=jY;
-             sina=get_sina();
-             cosa=get_cosa();
-             jX = (jX0 * cosa) + (jY0 * sina);
-             jY = (-jX0 * sina) + (jY0 * cosa);
-             jX0=jX;
-             jY0=jY;
-
-             jX=my_round(jX0, 6);
-             jY=my_round(jY0, 6);
-
+                 xd = jednostkiOb(buf_ret[0]);
+                 yd = jednostkiOb(buf_ret[1]);
+             } else
+             {
+                 xd = jednostkiOb(buf_ret[1]);
+                 yd = jednostkiOb(buf_ret[0]);
              }
 
-             if (options1.uklad_geodezyjny==0) sprintf (sk, "%#16.12lg;%#16.12lg", jX, jY) ;
-               else sprintf (sk, "%#16.12lg;%#16.12lg", jY, jX) ;
-             if (!get_string (sk, "", MaxTextLen, 0, 99))
-              { 
-                redcrP (1) ;
-                return ;
-              }  
-             if (FALSE == calculator (sk, &retval_no, buf_ret) || retval_no < 2)
-              {
-               redcrP (1) ;
-               return ;
-              }
-             if (options1.uklad_geodezyjny==0)
-               {
-                xd = jednostkiOb (buf_ret [0]) ;
-                yd = jednostkiOb (buf_ret [1]) ;
-               }
-                else
-                 {
-                  xd = jednostkiOb (buf_ret [1]) ;
-                  yd = jednostkiOb (buf_ret [0]) ;
-                 }
-             
-             if (angle_l!=0)
-               {
-                 sina=get_sina();
-                 cosa=get_cosa();
-                 xd1=(xd*cosa) - (yd*sina);
-                 yd1=(xd*sina) + (yd*cosa);
-               }
-                 else
-                   {
-                     xd1=xd;
-                     yd1=yd;
-                   }
+             if (angle_l != 0)
+             {
+                 sina = get_sina();
+                 cosa = get_cosa();
+                 xd1 = (xd * cosa) - (yd * sina);
+                 yd1 = (xd * sina) + (yd * cosa);
+             }
+             else
+             {
+                 xd1 = xd;
+                 yd1 = yd;
+             }
+         }
 
-             xd = X0 - xd1;
-             yd = Y0 - yd1;
+         xd = X0 - xd1;
+         yd = Y0 - yd1;
 
 	     l_kr=put_localx(xd) ;
 	     l_kr=put_localy(yd) ;
+
+         /*
+           double xd_obj = jednostkiOb(buf_ret[0]);   // Cartesian object X
+           double yd_obj = jednostkiOb(buf_ret[1]);   // Cartesian object Y
+
+           double xd_drawing, yd_drawing;
+
+// Convert object Cartesian → drawing units (mm)
+           xd_drawing = milimetryobx_inv(xd_obj);     // you need inverse function!
+           yd_drawing = milimetryoby_inv(yd_obj);     // inverse of milimetryoby
+
+// Now apply rotation if needed (geodetic Cartesian)
+           if (!options1.uklad_izometryczny && options1.uklad_geodezyjny != 0 && angle_l != 0) {
+               double sina = get_sina();
+               double cosa = get_cosa();
+               double temp = xd_drawing;
+               xd_drawing = temp * cosa - yd_drawing * sina;
+               yd_drawing = temp * sina + yd_drawing * cosa;
+           }
+
+// For isometric – NO additional transformation here!
+           double xd1 = xd_drawing;
+           double yd1 = yd_drawing;
+
+// Compute offset in drawing units
+           double offset_x = X0 - xd1;
+           double offset_y = Y0 - yd1;
+
+// Set local origin
+           l_kr=put_localx(offset_x);
+           l_kr=put_localy(offset_y);
+              */
+
+
 	     pozycja_kursora();
 	     delay(500);
 	     redcrP (1) ;

@@ -3304,11 +3304,13 @@ static POLE pmJednostki[8] = {
 
 static TMENU mJednostki = { 8,0,0,18,24,8,TADD,CMNU,CMBR,CMTX,0,78,0,0,0,(POLE(*)[]) &pmJednostki,NULL,NULL };
 
-static POLE pmKartezjanskiGeodezyjny[2] = {
+static POLE pmKartezjanskiGeodezyjny[] = {
 		 {u8"Cartesianas",'C',104,NULL},
-		 {u8"Geodésicas",'G',105,NULL} };
+		 {u8"Geodésicas",'G',105,NULL},
+         {u8"Isométricas",'I',868,NULL}
+};
 	 
-static TMENU mKartezjanskiGeodezyjny = { 2,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,109,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0, 162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 static POLE pmPointOrigin[3] = {
 		 {u8"Punto de origen\0 ",'P',106,NULL},
@@ -3446,10 +3448,11 @@ static POLE pmParametry[] = {
 	 {u8"editar ALFACADES.INI\0 \0     ",'A',103,NULL},
 };
 
-static char* ParTxt[] = { u8"C", "G", "Y", "N", };
+static char* ParTxt[] = { u8"C", u8"G", u8"Y", u8"N", u8"I"};
 
 #define _CARTESIAN_ u8"C"
 #define _GEODETIC_ u8"G"
+#define _ISOMETRIC_ u8"I"
 #define _MAX_ "Max"
 #define _PLUSMAX_ "+Max"
 #define _OTHER_COLOR_ u8"֍[X] otro >>> "

@@ -486,6 +486,8 @@ extern double round_to_fraction(double dimbase, double fraction);
 extern int cursor_color0;
 extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
 
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+
 static char *format_float="%.9g";
 static char *format_floatd="%.9g";
 
@@ -1297,6 +1299,8 @@ double tana;
 double tana1;
 double sina;
 double cosa;
+double sina1;
+double cosa1;
 
 MyDane *dane_s;
 
@@ -1629,7 +1633,15 @@ int put_angle_l(double a_l)
 angle_l=a_l;
 angle_lr=(angle_l/360.0) * Pi2;
 tana = tan (angle_lr);
-if (FALSE == Check_if_Equal (tana, 0)) tana1= tan ( angle_lr + (Pi2/4));
+if (options1.uklad_izometryczny)
+{ if (FALSE == Check_if_Equal (tana, 0)) tana1= tan ( angle_lr + (Pi2/3.));
+    sina1=sin (angle_lr+2.094395102);
+    cosa1=cos (angle_lr+2.094395102);
+}
+else { if (FALSE == Check_if_Equal (tana, 0)) tana1= tan ( angle_lr + (Pi2/4.));
+    sina1=sin (angle_lr+1.570796327);
+    cosa1=cos (angle_lr+1.570796327);
+}
 sina = sin (angle_lr);
 cosa = cos (angle_lr);
 return 1;
@@ -1681,6 +1693,12 @@ double get_sina(void)
 double get_cosa(void)
 { return cosa; }
 
+double get_cosa1(void)
+{ return cosa1; }
+
+double get_sina1(void)
+{ return sina1; }
+
 double get_localx(void)
 { return localx; }
 
@@ -1706,6 +1724,7 @@ double plt_d_to_jednostki_d (double mmplt)  /* mm (plt) -> jednostki*/
   return mmplt ;
 }
 
+
 /*transformacja milimetry --> jednostki  */
 /* wyswietlane sa na ekranie jednostki */
 
@@ -1717,6 +1736,16 @@ double milimetryobx(double jednostki)   /* jednostki -> mm (ob) */
 
 double milimetryoby(double jednostki)   /* jednostki -> mm (ob) */
 {return  ((jednostki - localy) *SkalaF/Jednostki);}
+
+// Inverse of milimetryobx
+double milimetryobx_inv(double obj_x) {
+    return obj_x * Jednostki / SkalaF + localx;  // adjust if localx is already set differently
+}
+
+// Inverse of milimetryoby
+double milimetryoby_inv(double obj_y) {
+    return obj_y * Jednostki / SkalaF + localy;
+}
 
 double milimetryobxl (double x0, double y0)
 /*-------------------------------------------*/
@@ -2036,11 +2065,39 @@ double cut_val(double jXY)
   else return jXY;
 }
 
+
+#include <math.h>
+
+#define SQRT3_OVER_2   (sqrt(3.0)/2.0)   // ≈ 0.8660254037844386
+#define ONE_OVER_SQRT3 (1.0/sqrt(3.0))   // ≈ 0.5773502691896257
+#define HALF           (0.5)
+
+/* Cartesian -> Isometric */
+int cartesian_to_isometric(double cx, double cy, double *ix, double *iy) {
+    if (!ix || !iy) return -1;
+
+    *ix = ONE_OVER_SQRT3 * cx + cy;
+    *iy = -ONE_OVER_SQRT3 * cx + cy;
+
+    return 0;
+}
+
+/* Isometric -> Cartesian */
+int isometric_to_cartesian(double ix, double iy, double *cx, double *cy) {
+    if (!cx || !cy) return -1;
+
+    *cx = SQRT3_OVER_2 * (ix - iy);
+    *cy = HALF * (ix + iy);
+
+    return 0;
+}
+
 void pozycja_kursora(void)
 /*----------------------------*/
 {
   double jX,jY,jX0,jY0;
   double sina1, cosa1;
+  int ret;
 
 
   if (!X_Y_kursora)
@@ -2051,16 +2108,24 @@ void pozycja_kursora(void)
   e.lmax = r27;
   jX = milimetryobx (X) ;
   jY = milimetryoby (Y) ;
-  if (angle_l!=0)
+  if (options1.uklad_izometryczny)
   {
-  jX0=jX;
-  jY0=jY;
-  sina1=get_sina();
-  cosa1=get_cosa();
-  jX = (jX0 * cosa1) + (jY0 * sina1);
-  jY = (-jX0 * sina1) + (jY0 * cosa1);
-  jX=cut_val(jX);
-  jY=cut_val(jY);
+      jX0 = jX;
+      jY0 = jY;
+
+      ret = cartesian_to_isometric(jX0, jY0, &jX, &jY);
+  }
+  else {
+      if (angle_l != 0) {
+          jX0 = jX;
+          jY0 = jY;
+          sina1 = get_sina();
+          cosa1 = get_cosa();
+          jX = (jX0 * cosa1) + (jY0 * sina1);
+          jY = (-jX0 * sina1) + (jY0 * cosa1);
+          jX = cut_val(jX);
+          jY = cut_val(jY);
+      }
   }
 
   if (options1.uklad_geodezyjny == 1) sprintf(e.st, "%#12.9lg; %#12.9lg", jY, jX);
@@ -2098,6 +2163,62 @@ BOOL INTL_CURSOR = TRUE; // FALSE;
 #else
 BOOL INTL_CURSOR = TRUE;
 #endif
+
+
+//#include <stdint.h>
+//#include <float.h>
+//#include <math.h>
+
+typedef struct {
+    long x, y;
+} IPoint;
+
+/**
+ * Finds the two intersection points of a line with the rectangle.
+ * @param x0, y0: Internal point (integers)
+ * @param xmax, ymax: Rectangle bounds (integers)
+ * @param cosa, sina: Precomputed cos and sin of the angle
+ * @param out: Array of 2 IPoints to be filled
+ */
+void get_intersections(int x0, int y0, long xmax, long ymax,
+                       double cosa, double sina, IPoint out[2]) {
+    double t[4];
+    int count = 0;
+
+    // Distances to vertical boundaries (x=0 and x=xmax)
+    // x = x0 + t*cosa  => t = (x - x0) / cosa
+    t[0] = (0 - x0) / cosa;
+    t[1] = (double)(xmax - (long)x0) / cosa;
+
+    // Distances to horizontal boundaries (y=0 and y=ymax)
+    // y = y0 + t*sina  => t = (y - y0) / sina
+    t[2] = (0 - y0) / sina;
+    t[3] = (double)(ymax - (long)y0) / sina;
+
+    for (int i = 0; i < 4; i++) {
+        double ix = x0 + t[i] * cosa;
+        double iy = y0 + t[i] * sina;
+
+        // Check if the point lies on the rectangle's segments
+        // We use a small epsilon for floating point comparison against bounds
+        if (ix >= -0.001 && ix <= (double)xmax + 0.001 &&
+            iy >= -0.001 && iy <= (double)ymax + 0.001) {
+
+            out[count].x = (long)round(ix);
+            out[count].y = (long)round(iy);
+
+            // Ensure we don't return the same corner twice
+            if (count > 0 && out[0].x == out[1].x && out[0].y == out[1].y) continue;
+
+            count++;
+            if (count == 2) break;
+        }
+    }
+}
+
+// To find intersections for both lines:
+// Line 1: Use (cosa, sina)
+// Line 2: Use (-sina, cosa)  <-- This is the perpendicular vector (rotated 90 deg)
 
 
 void out_cur_on_factory(double X, double Y, int circle)
@@ -2364,6 +2485,7 @@ void out_cur_on_factory(double X, double Y, int circle)
 		setwritemode(COPY_PUT);
 
 #ifndef ALLEGRO5
+        /*
 		lpoints = xpp;
 		for (ii = 0; ii < lpoints; ii += 3)
 			putpixel(screen, ii, y0, cursor_color);
@@ -2376,14 +2498,44 @@ void out_cur_on_factory(double X, double Y, int circle)
 
 		for (ii = ykk + 1; ii < pYp; ii += 3)
 			putpixel(screen, x0, ii, cursor_color);
+        */
+
+        linestyle(32);
+
+        IPoint Ip[2];
+        get_intersections(x0, y0, pXk, pYp, cosa, -sina, Ip);
+        lineC(Ip[0].x, Ip[0].y, Ip[1].x, Ip[1].y);
+        if (options1.uklad_izometryczny)
+        {
+            get_intersections(x0, y0, pXk, pYp, cosa1, -sina1, Ip);
+        }
+        else get_intersections(x0, y0, pXk, pYp, sina, cosa, Ip);
+        lineC(Ip[0].x, Ip[0].y, Ip[1].x, Ip[1].y);
+
+        ////lineC(0, y0, xpp, y0);
+        ////lineC(xkk, y0, pXk, y0);
+
+        ////lineC(x0, 0, x0, ypp);
+        ////lineC(x0, ykk, x0, pYp);
+
 #else
         linestyle(32);
 
-        lineC(0, y0, xpp, y0);
-        lineC(xkk, y0, pXk, y0);
+        IPoint Ip[2];
+        get_intersections(x0, y0, pXk, pYp, cosa, -sina, Ip);
+        lineC(Ip[0].x, Ip[0].y, Ip[1].x, Ip[1].y);
+        if (options1.uklad_izometryczny)
+        {
+            get_intersections(x0, y0, pXk, pYp, cosa1, -sina1, Ip);
+        }
+        else get_intersections(x0, y0, pXk, pYp, sina, cosa, Ip);
+        lineC(Ip[0].x, Ip[0].y, Ip[1].x, Ip[1].y);
 
-        lineC(x0, 0, x0, ypp);
-        lineC(x0, ykk, x0, pYp);
+        ////lineC(0, y0, xpp, y0);
+        ////lineC(xkk, y0, pXk, y0);
+
+        ////lineC(x0, 0, x0, ypp);
+        ////lineC(x0, ykk, x0, pYp);
 #endif
 	}
 	else
@@ -2469,7 +2621,7 @@ static void cur_on(double x, double y)
   pozycja_kursora();
   }
 
-#define MAX_GRID_POINT 400
+#define MAX_GRID_POINT 6000  //it's good number, even for huge multi-monitor screen
 static int *gx, gxk, *gy, gyk ;
 
 
@@ -2485,29 +2637,125 @@ static double GetFloatPrecission(double value, double precision)
 	return (floor((value * pow(10, precision) + 0.5)) / pow(10, precision));
 }
 
-static void grid_obl(void)
-{ double i,ix0,iy0;
-  double XXp, YYp, YYk;
-  
-  XXp = GetFloatPrecission(Xp, 10);
-  YYp = GetFloatPrecission(Yp, 10);
-  
-  if(fmod(XXp,krok_g)) ix0=XXp+krok_g-fmod(XXp,krok_g);
-  else ix0=XXp;
-  if(fmod(YYp,krok_g)) iy0=YYp+krok_g-fmod(YYp,krok_g);
-  else iy0=YYp;
-
-  YYk = (int)(Yk / krok_g) * krok_g;
-
-  if( (Xk-ix0)/krok_g >= MAX_GRID_POINT || (YYk-iy0)/krok_g >= MAX_GRID_POINT)
-  {
-    gxk = gyk = MAX_GRID_POINT ;
-    return ;
-  }
-  for(i=ix0,gxk=0; i<=Xk; i+=krok_g,gxk++) gx[gxk]=pikseleX(i);
-  for(i=iy0,gyk=0; i<=YYk; i+=krok_g,gyk++) 
-	  gy[gyk]=pikseleY(i);
+// Helper for positive modulo (handles negative values correctly)
+static double positive_mod(double a, double b) {
+    double m = fmod(a, b);
+    return (m < 0) ? m + b : m;
 }
+
+static void grid_obl(void) {
+    double i, ix0, iy0;
+    double XXp, YYp, YYk;
+
+    XXp = GetFloatPrecission(Xp, 10);
+    YYp = GetFloatPrecission(Yp, 10);
+
+    // Offsets from local origin (in drawing mm)
+    double offset_x = positive_mod(localx, krok_g);
+    double offset_y = positive_mod(localy, krok_g);
+
+    if (!options1.uklad_izometryczny)
+    {
+        // Cartesian: Snap starts to match offset mod krok_g
+        double dx_start = XXp - offset_x;
+        ix0 = offset_x + krok_g * ceil(dx_start / krok_g);
+
+        double dy_start = YYp - offset_y;
+        iy0 = offset_y + krok_g * ceil(dy_start / krok_g);
+
+        // Snap end for Y (largest <= Yk matching offset)
+        double dy_end = Yk - offset_y;
+        YYk = offset_y + krok_g * floor(dy_end / krok_g);
+
+        // Limit check
+        if ((Xk - ix0)/krok_g + 1 >= MAX_GRID_POINT || (YYk - iy0)/krok_g + 1 >= MAX_GRID_POINT) {
+            gxk = gyk = -1; //MAX_GRID_POINT exceeded;
+            return;
+        }
+
+        // X positions (vertical lines)
+        for (i = ix0, gxk = 0; i <= Xk + 1e-6; i += krok_g, gxk++) {
+            gx[gxk] = pikseleX(i);
+        }
+
+        // Y positions (horizontal lines)
+        for (i = iy0, gyk = 0; i <= YYk + 1e-6; i += krok_g, gyk++) {
+            gy[gyk] = pikseleY(i);
+        }
+    } else {
+        // Isometric: Snap in iso space using local origin
+        double local_cx = localx;  // drawing mm
+        double local_cy = localy;
+
+        double local_ix, local_iy;
+        cartesian_to_isometric(local_cx, local_cy, &local_ix, &local_iy);
+
+        double offset_ix = positive_mod(local_ix, krok_g);
+        double offset_iy = positive_mod(local_iy, krok_g);
+
+        // Window corners to iso (as before)
+        double corner_cx[4] = {Xp, Xk, Xp, Xk};
+        double corner_cy[4] = {Yp, Yp, Yk, Yk};
+        double min_ix = INFINITY, max_ix = -INFINITY;
+        double min_iy = INFINITY, max_iy = -INFINITY;
+        for (int c = 0; c < 4; c++) {
+            double ix, iy;
+            cartesian_to_isometric(corner_cx[c], corner_cy[c], &ix, &iy);
+            min_ix = fmin(min_ix, ix);
+            max_ix = fmax(max_ix, ix);
+            min_iy = fmin(min_iy, iy);
+            max_iy = fmax(max_iy, iy);
+        }
+
+        // Snap ix_start >= min_ix, ≡ offset_ix mod krok_g
+        double dix_start = min_ix - offset_ix;
+        ix0 = offset_ix + krok_g * ceil(dix_start / krok_g);
+
+        // ix_end <= max_ix
+        double dix_end = max_ix - offset_ix;
+        double ix_end = offset_ix + krok_g * floor(dix_end / krok_g);
+
+        // iy_start >= min_iy, ≡ offset_iy mod krok_g
+        double diy_start = min_iy - offset_iy;
+        iy0 = offset_iy + krok_g * ceil(diy_start / krok_g);
+
+        // iy_end <= max_iy
+        double diy_end = max_iy - offset_iy;
+        double iy_end = offset_iy + krok_g * floor(diy_end / krok_g);
+
+        // Limit check (approx points)
+        int approx_nx = (ix_end - ix0)/krok_g + 2;
+        int approx_ny = (iy_end - iy0)/krok_g + 2;
+        if (approx_nx * approx_ny >= MAX_GRID_POINT)
+        {
+            gxk = gyk = -1; //MAX_GRID_POINT exceeded;
+            return;
+        }
+
+        // Generate points
+        int count = 0;
+        int ii=0;
+        int jj=0;
+        for (i = iy0; i <= iy_end + 1e-6; i += krok_g)
+        {
+            ii++;
+            for (double j = ix0; j <= ix_end + 1e-6; j += krok_g)
+            {
+                jj++;
+                double cx, cy;
+                isometric_to_cartesian(j, i, &cx, &cy);
+                if (cx >= Xp - 1e-6 && cx <= Xk + 1e-6 && cy >= Yp - 1e-6 && cy <= Yk + 1e-6)
+                {
+                    gx[count] = pikseleX(cx);
+                    gy[count] = pikseleY(cy);
+                    count++;
+                }
+            }
+        }
+        gxk = gyk = count;
+    }
+}
+
 
 static int grid_kom=0;
 
@@ -2519,32 +2767,53 @@ void  grid_on(void)
   if (!grid_) return;
   grid_obl();
   if (gxk == 0 || gyk == 0) return;
-  if(((pikseleX(Xk)-pikseleX(Xp))/gxk<5) || (abs(pikseleY(Yk)-pikseleY(Yp))/gyk<5))
-  /*siatka mniejsza od 5 pxl*/
-    { if (!grid_kom) { ErrList(1);/*delay(500);*/}
+  //if (((!options1.uklad_izometryczny) && (((pikseleX(Xk)-pikseleX(Xp))/gxk<5) || (abs(pikseleY(Yk)-pikseleY(Yp))/gyk<5))) ||
+  //   ((options1.uklad_izometryczny) && (((pikseleX(Xk)-pikseleX(Xp))/gxk<5) || (abs(pikseleY(Yk)-pikseleY(Yp))/gyk<2))))
+  if (gxk<0 || gyk<0 || ((gxk > 1) && (fabs(*(gx + 1) - *(gx))<5)) || ((gyk > 2) && (fabs(*(gy + 1) - *(gy + 2))<5)))
+  /*grid mesh less than 5 pxl*/
+    {
+      if (!grid_kom) ErrList(1);
       grid_kom=1;
+      Set_Screenplay(second_screen);  //to return to second screen after the message
       return;
     }
-  if(grid_kom) { komunikat(0); grid_kom=0; }
-  
+  if(grid_kom)
+  {
+      komunikat(0); grid_kom=0;
+      Set_Screenplay(second_screen);  //to return to second screen after the message
+  }
+
   setcolor(kolory.border/*LIGHTGRAY*/);
   setwritemode(COPY_PUT);
 
   setlinestyle1(USERBIT_LINE, 0, 0);
+  //setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
 
   if (gxk > 1)
-	  gsizex = min((*(gx + 1) - *(gx)) / 3, 10);
-  else gsizex = 10;
+	  gsizex = max(min(fabs(*(gx + 1) - *(gx)) / 6 /*3*/, 10), 1);
+  else
+      gsizex = 10;
 
   if (gyk > 1)
-	  gsizey = min((*(gy) - *(gy + 1)) / 3, 10);
-  else gsizey = 10;
+  {
+  	  if (*(gy) == *(gy + 1))
+  	  {
+	  	  if (gyk > 2)
+	  	  	gsizey = max(min(fabs(*(gy + 1) - *(gy + 2)) / 6 /*3*/, 10), 1);
+  	  	else gsizey=gsizex;
+  	  }
+	  else gsizey = max(min(fabs(*(gy) - *(gy + 1)) / 6 /*3*/, 10), 1);
+  }
+  else
+      gsizey = 10;
 
   for (iy = 0, gya = gy; iy < gyk; gya++, iy++)
   {
+      //printf("\ngya[%d]=%d\n",iy,*gya);
 	  for (ix = 0, gxa = gx; ix < gxk; gxa++, ix++)
-
 	  {
+          //printf(" gxa[%d]=%d",ix,*gxa);
+          //if (((ix+1)%10)==0) printf("\n");
 		  if ((*gxa + gsizex) > pikseleX(Xk))
 			  lineCuncut(*gxa - gsizex, *gya-pYk, *gxa, *gya-pYk);
 		  else if ((*gxa + gsizex) < pikseleX(Xp))
@@ -2579,6 +2848,13 @@ static void ramka(int opt)
   int y1g[13]={  4,  4,-4, 4,-14,-20,-14,-6, 0, 6, 4, 4, 4,};
   int x2g[13]={ -4,  4,14,14,  0,  6,- 6,20,14,14, 2, 0,-2,};
   int y2g[13]={-14,-14,-4, 4,-20,-14,-14, 0, 6,-6,-18,-20,-18,};
+
+  int x1i[18]={0,0,-27,-25,-30,27,25,30,0,0,-17,0,17,-17,0,-17,0,17};
+  int y1i[18]={0,0,-14,-16,-17,-14,-16,-17,0,-15,-25,-35,-25,-10,-20,-25,-35,-25};
+  int x2i[18]={-26,26,-25,-30,-27,25,30,27,0,-17,0,17,0,0,17,-17,0,17};
+  int y2i[18]={-15,-15,-16,-17,-14,-16,-17,-14,-15,-25,-35,-25,-15,-20,-10,-10,-20,-10};
+
+
   double angle_l, angle_lr, sinfi, cosfi;
   int ii, x11, y11, x12, y12;
 
@@ -2606,51 +2882,50 @@ if (opt==0)
    angle_l=get_angle_l();
    if (angle_l<0) angle_l+=360;
 
-   if ((Check_if_Equal(0,angle_l)==FALSE) || (options1.uklad_geodezyjny==1) || opt==2)
+   if  (options1.uklad_izometryczny==1)
    {
+       if (opt == 2) setcolor(kolory.paper);
 
-   if (opt==2) setcolor(kolory.paper);
-
-   if (Check_if_Equal(angle_l,90)==TRUE)
-    {
-    sinfi=1;
-    cosfi=0;
-    }
-    else if (Check_if_Equal(angle_l,180)==TRUE)
-    {
-    sinfi=0;
-    cosfi=-1;
-    }
-    else if (Check_if_Equal(angle_l,270)==TRUE)
-    {
-    sinfi=-1;
-    cosfi=0;
-    }
-    else
-   {
-   angle_lr=angle_l*0.017453293;
-   sinfi=sin(angle_lr);
-   cosfi=cos(angle_lr);
-   }
-
-   for (ii=0; ii<13; ii++)
-    {
-    if (options1.uklad_geodezyjny==0)
-     {
-      x11=x1k[ii]*cosfi+y1k[ii]*sinfi;
-      y11=-x1k[ii]*sinfi+y1k[ii]*cosfi;
-      x12=x2k[ii]*cosfi+y2k[ii]*sinfi;
-      y12=-x2k[ii]*sinfi+y2k[ii]*cosfi;
-     }
-      else
+       for (ii = 0; ii < 18; ii++)
        {
-        x11=x1g[ii]*cosfi+y1g[ii]*sinfi;
-        y11=-x1g[ii]*sinfi+y1g[ii]*cosfi;
-        x12=x2g[ii]*cosfi+y2g[ii]*sinfi;
-        y12=-x2g[ii]*sinfi+y2g[ii]*cosfi;
+           LINE(x1i[ii] + 38, y1i[ii] + maxY - 8 /*36*/ - pYk, x2i[ii] + 38, y2i[ii] + maxY - 8 /*36*/ - pYk);
        }
-    LINE(x11+22,y11+maxY-22-pYk,x12+22,y12+maxY-22-pYk);
-    }
+   }
+   else {
+       if ((Check_if_Equal(0, angle_l) == FALSE) || (options1.uklad_geodezyjny == 1) || opt == 2) {
+
+           if (opt == 2) setcolor(kolory.paper);
+
+           if (Check_if_Equal(angle_l, 90) == TRUE) {
+               sinfi = 1;
+               cosfi = 0;
+           } else if (Check_if_Equal(angle_l, 180) == TRUE) {
+               sinfi = 0;
+               cosfi = -1;
+           } else if (Check_if_Equal(angle_l, 270) == TRUE) {
+               sinfi = -1;
+               cosfi = 0;
+           } else {
+               angle_lr = angle_l * 0.017453293;
+               sinfi = sin(angle_lr);
+               cosfi = cos(angle_lr);
+           }
+
+           for (ii = 0; ii < 13; ii++) {
+               if (options1.uklad_geodezyjny == 0) {
+                   x11 = x1k[ii] * cosfi + y1k[ii] * sinfi;
+                   y11 = -x1k[ii] * sinfi + y1k[ii] * cosfi;
+                   x12 = x2k[ii] * cosfi + y2k[ii] * sinfi;
+                   y12 = -x2k[ii] * sinfi + y2k[ii] * cosfi;
+               } else {
+                   x11 = x1g[ii] * cosfi + y1g[ii] * sinfi;
+                   y11 = -x1g[ii] * sinfi + y1g[ii] * cosfi;
+                   x12 = x2g[ii] * cosfi + y2g[ii] * sinfi;
+                   y12 = -x2g[ii] * sinfi + y2g[ii] * cosfi;
+               }
+               LINE(x11 + 22, y11 + maxY - 22 - pYk, x12 + 22, y12 + maxY - 22 - pYk);
+           }
+       }
    }
   }
 }
@@ -2885,7 +3160,6 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 	linesettingstype_ lineinfo;
 	int de_x, de2_x, de_y, de2_y;
 	int i;
-
 
 	getlinesettings1(&lineinfo);
 	l_e = 1;
@@ -12279,13 +12553,15 @@ void ClearWindow(void)
 
 static long mv_sh_ms (double dmv) ;
 
-long l_rX, l_rY, l_krok_s ;	/*drag bloku*/
+long l_rX, l_rY, l_krok_s; //, t_krok_s ;	/*drag bloku*/
 
 
 static void cursor_lrtb(double dx, double dy)
 {
   double Xl, Yl ;
   static double rX = 0, rY = 0 ;
+  int ret;
+
 
   Xl = X + dx + rX ;
   if (X == Xmax)
@@ -12323,7 +12599,20 @@ static void cursor_lrtb(double dx, double dy)
   rY = fmod (Yl, krok_s) ;
   Yl -= rY ;
   l_rX =  mv_sh_ms (rY) ;
+
+  ////if (!options1.uklad_izometryczny)  //TTO DO FOR ISOMETRIC SYSTEM
+
   l_krok_s = krok_s * DokladnoscF * skala ;
+
+  ////else  //isometric
+  ////{
+  ////    double cart_krok_s = krok_s * DokladnoscF * skala;
+  ////    double l_krok_d, t_krok_d;
+  ////    ret=isometric_vector_to_cartesian(cart_krok_s, cart_krok_s, &l_krok_d, &t_krok_d);
+  ////    l_krok_s=(long)l_krok_d;
+  ////    t_krok_s=(long)t_krok_d;
+  ////}
+
   if (kasowanie_licznikow==TRUE)
    {
      Xl=X;
@@ -13881,8 +14170,8 @@ void reset_cursor(void)
 
     bufor_makra = (char *)malloc (Get_Buf_Mak_Size ());
 
-    gx = (int*) malloc (MAX_GRID_POINT * sizeof(int)) ;
-    gy = (int*) malloc (MAX_GRID_POINT * sizeof(int)) ;
+    gx = (int*) malloc ((MAX_GRID_POINT + 2) * sizeof(int)) ;
+    gy = (int*) malloc ((MAX_GRID_POINT + 2) * sizeof(int)) ;
 
   if (bufor_makra == NULL /*|| Layers == NULL*/ || gx == NULL || gy == NULL)
   {  

@@ -1294,7 +1294,12 @@ void special_chars (char * tekst)
 {
   int dl_tekst;
   char *adr_char;
+  char *adr_str;
   int i_char;
+
+  const char *fi= u8"Ø";
+  const char *deg= u8"°";
+  const char *plus_minus= u8"±";
 
   dl_tekst=(int)strlen(tekst);
   if (dl_tekst==0) return;
@@ -1303,6 +1308,7 @@ void special_chars (char * tekst)
    {
     i_char=0;
 	//polskie znaki
+
 	adr_char=strstr(tekst,"%%165");  //A
 	 if (adr_char!=NULL)
      {
@@ -1448,51 +1454,83 @@ void special_chars (char * tekst)
        memmove(adr_char+1,adr_char+5,dl_tekst-(adr_char-tekst)-4);
        dl_tekst-=4;
 	 }
+
 	 //////////////////////////////
 	 adr_char=strstr(tekst,"%%177");  //+-'
 	 if (adr_char!=NULL)
      {
-       tekst[adr_char-tekst]='\261';  
-       i_char++;
-       memmove(adr_char+1,adr_char+5,dl_tekst-(adr_char-tekst)-4);
-       dl_tekst-=4;
+       //tekst[adr_char-tekst]='\261';
+       tekst[adr_char-tekst]=plus_minus[0];
+       tekst[adr_char-tekst+1]=plus_minus[1];
+       i_char+=2;
+       memmove(adr_char+2,adr_char+5,dl_tekst-(adr_char-tekst)-3);
+       dl_tekst-=3;
 	 }
     //////////////////
     //stopnie
     adr_char=strstr(tekst,"%%d");
     if (adr_char!=NULL)
      {
-       tekst[adr_char-tekst]='\260';
-       i_char++;
-       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
-       dl_tekst-=2;
+       //tekst[adr_char-tekst]='\260';
+       tekst[adr_char-tekst]=deg[0];
+       tekst[adr_char-tekst+1]=deg[1];
+       i_char+=2;
+       memmove(adr_char+2,adr_char+3,dl_tekst-(adr_char-tekst)-1);
+       dl_tekst-=1;
      }
 	adr_char = strstr(tekst, "%%D");
 	if (adr_char != NULL)
 	{
-		tekst[adr_char - tekst] = '\260';
-		i_char++;
-		memmove(adr_char + 1, adr_char + 3, dl_tekst - (adr_char - tekst) - 2);
-		dl_tekst -= 3;
+		//tekst[adr_char - tekst] = '\260';
+        tekst[adr_char-tekst]=deg[0];
+        tekst[adr_char-tekst+1]=deg[1];
+		i_char+=2;
+		memmove(adr_char + 2, adr_char + 3, dl_tekst - (adr_char - tekst) - 1);
+		dl_tekst -= 1;
 	}
     //plus minus
     adr_char=strstr(tekst, "%%p");
     if (adr_char!=NULL)
      {
-       tekst[adr_char-tekst]='\261'; 
-       i_char++;
-       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
-       dl_tekst-=2;
+       //tekst[adr_char-tekst]='\261';
+       tekst[adr_char-tekst]=plus_minus[0];
+       tekst[adr_char-tekst+1]=plus_minus[1];
+       i_char+=2;
+       memmove(adr_char+2,adr_char+3,dl_tekst-(adr_char-tekst)-1);
+       dl_tekst-=1;
+     }
+     adr_char=strstr(tekst, "%%P");
+     if (adr_char!=NULL)
+     {
+         //tekst[adr_char-tekst]='\261';
+         tekst[adr_char-tekst]=plus_minus[0];
+         tekst[adr_char-tekst+1]=plus_minus[1];
+         i_char+=2;
+         memmove(adr_char+2,adr_char+3,dl_tekst-(adr_char-tekst)-1);
+         dl_tekst-=1;
      }
     //fi
     adr_char=strstr(tekst, "%%c");
     if (adr_char!=NULL)
      {
-       tekst[adr_char-tekst]='\330';
-       i_char++;
-       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
-       dl_tekst-=2;
+       //tekst[adr_char-tekst]='\330';
+       tekst[adr_char-tekst]=fi[0];
+       tekst[adr_char-tekst+1]=fi[1];
+       i_char+=2;
+       memmove(adr_char+2,adr_char+3,dl_tekst-(adr_char-tekst)-1);
+       dl_tekst-=1;
      }
+
+    adr_char=strstr(tekst, "%%C");
+    if (adr_char!=NULL)
+    {
+       //tekst[adr_char-tekst]='\330';
+       tekst[adr_char-tekst]=fi[0];
+       tekst[adr_char-tekst+1]=fi[1];
+       i_char+=2;
+       memmove(adr_char+2,adr_char+3,dl_tekst-(adr_char-tekst)-1);
+       dl_tekst-=1;
+    }
     //procent
     adr_char=strstr(tekst, "%%%");
     if (adr_char!=NULL)
@@ -1528,7 +1566,38 @@ void special_chars (char * tekst)
        memmove(adr_char,adr_char+3,dl_tekst-(adr_char-tekst)-1);
        dl_tekst-=3;
      }
-     
+
+    //caret encoded characters:
+    adr_char=strstr(tekst, "^I");  // tabulator
+    if (adr_char!=NULL)
+    {
+       //adding tab
+       tekst[adr_char-tekst]='\011';
+       i_char++;
+       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
+       dl_tekst-=2;
+    }
+
+    adr_char=strstr(tekst, "^J");  //  line break LF
+    if (adr_char!=NULL)
+    {
+       //adding tab
+       tekst[adr_char-tekst]='\012';
+       i_char++;
+       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
+       dl_tekst-=2;
+    }
+
+    adr_char=strstr(tekst, "^M");  //  CR
+    if (adr_char!=NULL)
+    {
+       //adding tab
+       tekst[adr_char-tekst]='\015';
+       i_char++;
+       memmove(adr_char+1,adr_char+3,dl_tekst-(adr_char-tekst)-2);
+       dl_tekst-=2;
+    }
+
     if (i_char==0) break;
    }
   return;
@@ -7999,7 +8068,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
     i=0;
     while (i<i_buf1)
      {
-      if (buf10[i]=='\134') //poszukiwanie opcji
+      if (buf10[i]=='\134') //backslash - poszukiwanie opcji
        {
          i++;
          if (buf10[i]=='F')   //odczytanie fontu
@@ -8062,7 +8131,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 			}
             i++;
           }
-          else if (buf10[i]=='H')   //odczytanie wysokosci
+          else if (buf10[i]=='H')   //reading height
           {
             i++; j=0;
             while (buf10[i]!=';')
@@ -8092,7 +8161,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 			 }
             i++;
           }
-		  else if (buf10[i] == 'W')   //odczytanie width
+		  else if (buf10[i] == 'W')   //reading width
 		 {
 			 e_wspx_ok = TRUE;
 			 i++; j = 0;
@@ -8122,7 +8191,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 			 }
 			 i++;
 		 }
-		  else if (buf10[i] == 'p')   //odczytanie width
+		  else if (buf10[i] == 'p')   //reading width
 		 {
 		 i++; j = 0;
 		 while (buf10[i] != ';')
@@ -8162,7 +8231,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 		 i++;
 		 }
 
-          else if (buf10[i]=='C')   //odczytanie koloru
+          else if (buf10[i]=='C')   //reading color
           {
             i++; j=0;
             while (buf10[i]!=';')
@@ -8217,19 +8286,19 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 		  No_Unicode = FALSE;
 
 		  }
-          else if (buf10[i]=='P')   //nowy wiersz
+          else if (buf10[i]=='P')   //new line
           {
            strncat(buf11, "\r\n", 2);  //"\n\r"
 		   t.multiline = 1;
            i++;
           }
-          else //dopisanie do bufora
+          else //adding to the buffer
            {
             strncat(buf11,&buf10[i],1);
             i++;
            }
        }
-        else //dopisanie do bufora
+        else //adding to the buffer
          {
 		   if ((buf10[i] == '{') || (buf10[i] == '}'))
 		   {
@@ -13483,6 +13552,7 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
   double x_space_factor, y_space_factor;
   double e_wspx1 = 1.0;
   int zmwym_czcionka = 0;
+  double Jednostki_in_dxf;
 
 
   last_mtext_h=zmwym.wysokosc;
@@ -13656,38 +13726,59 @@ if ((ADP!=NULL) && (ADK!=NULL))
 
 SkalaF = SkalaF_dxf;
 OkragG.kolor = PointG.kolor = TextG.kolor = LukG.kolor = LiniaG.kolor = GetColorALF(CECOLOR, 0);
+
+
 switch (INSUNITS)
 {
-
-case 4: Jednostki = 1.0;       //mm
+case 4: Jednostki_in_dxf = 1.0;       //mm
 	break;
-case 5: Jednostki = 10.0;      //cm
+case 5: Jednostki_in_dxf = 10.0;      //cm
 	break;
-case 6: Jednostki = 1000.0;    //m
+case 6: Jednostki_in_dxf = 1000.0;    //m
 	break;
-case 7: Jednostki = 1000000.0; //km
+case 7: Jednostki_in_dxf = 1000000.0; //km
         break;
-case 1: Jednostki = 25.4;      //"
+case 1: Jednostki_in_dxf = 25.4;      //"
 	break;
-case 2: Jednostki = 304.8;     //'
+case 2: Jednostki_in_dxf = 304.8;     //'
 	break;
-case 3: Jednostki = 1609344;    //mi
+case 3: Jednostki_in_dxf = 1609344;    //mi
         break;
-case 10: Jednostki = 914.4;    //yd
+case 10: Jednostki_in_dxf = 914.4;    //yd
         break;
-default: Jednostki = 1.0;
+default: Jednostki_in_dxf = 1.0;
 	break;
 }
 
-zmwym.wysokosc = DIMTXT;
-zmwym.kierunek_t = DIMTOH;
+//Jednostki_in_dxf can be different than selected - we need to be careful.
+//at the moment let's ignore Jednostki_in_dxf
+
+// DIMTXT can be different than expected due to Jednostki_in_dxf
+//we could do:
+// zmwym.wysokosc = DIMTXT*Jednostki_in_dxf/SkalaF;
+//or
+// zmwym.wysokosc = DIMTXT*Jednostki/SkalaF;
+//but at tthe moment ;let's ignore it
+//zmwym.wysokosc = DIMTXT*Jednostki/SkalaF;
+
+//    DIMTOH  1 (imperial) or 0 (metric)
+
+////zmwym.kierunek_t =    :
+////    In DXF dimensions, text alignment generally follows the
+////   "dimension line" (parallel/aligned) or stays "horizontal",
+///     with options to position inside/outside extension lines,
+///     often controlled by style settings (like DIMTIX, DIMTXT)
+///     or specific group codes (72/73 for TEXT, 41/42 for DIMENSION entities)
+///     to dictate its vertical/horizontal placement relative to the measurement path,
+///     typically aligning to the "aligned dimensioning" standard
+///     where text follows the angled dimension line's direction for readability
+
 if (DIMCLRD == 0) zmwym.Lkolor = 7;
 else zmwym.Lkolor = GetColorALF(DIMCLRD, 0);
 if (DIMCLRT == 0) zmwym.Tkolor = 7;
 else zmwym.Tkolor = GetColorALF(DIMCLRT, 0);
 if (DIMRND == 0.0) zmwym.dokladnosc = 0.01;
 else zmwym.dokladnosc = DIMRND;
-
 
 if (block_record!=NULL) free(block_record);
 

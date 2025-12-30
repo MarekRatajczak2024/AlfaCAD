@@ -38,6 +38,7 @@ extern double Grid_to_Rad (double) ;
 extern void Rotate_Point (double, double, double, double, double, double, double *,double *) ;
 extern void outokno_a(OKNO *O, LINIA *L1);
 extern void orto_l(LINIA *L, int *Orto_Dir);
+extern int isometric_to_cartesian(double ix, double iy, double *cx, double *cy);
 
 static int np ;
 
@@ -80,6 +81,78 @@ TMENU mArray_polar = { 2,0,0,34,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,
 
 TMENU mArray_polar_rot={2,0,0,34,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmArray_polar_rot,NULL,NULL};
 
+//#include <math.h>
+
+/*
+ * Transform partial derivatives (gradients) from isometric to Cartesian coordinates.
+ *
+ * Inputs:
+ *   df_dx_iso - Partial derivative df/di_x in isometric system
+ *   df_dy_iso - Partial derivative df/di_y in isometric system
+ *
+ * Outputs:
+ *   df_dx_cart - Partial derivative df/dc_x in Cartesian system
+ *   df_dy_cart - Partial derivative df/dc_y in Cartesian system
+ *
+ * Returns: 0 on success, -1 if output pointers are NULL
+ */
+int isometric_gradient_to_cartesian_(double df_dx_iso, double df_dy_iso, double *df_dx_cart, double *df_dy_cart)
+{
+    if (!df_dx_cart || !df_dy_cart) return -1;
+
+    double inv_sqrt3 = 1.0 / sqrt(3.0);
+
+    *df_dx_cart = inv_sqrt3 * df_dx_iso - inv_sqrt3 * df_dy_iso;
+    *df_dy_cart = df_dx_iso + df_dy_iso;
+
+    return 0;
+}
+
+int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart)
+{
+    if (!dx_cart || !dy_cart) return -1;
+
+    double sqrt3_over_2 = sqrt(3.0) / 2.0;
+    double half = 0.5;
+
+    *dx_cart = sqrt3_over_2 * (dx_iso - dy_iso);
+    *dy_cart = half * (dx_iso + dy_iso);
+
+    return 0;
+}
+
+#define ONE_OVER_SQRT3 (1.0 / sqrt(3.0))  // ≈ 0.5773502691896257
+
+/*
+ * Convert a vector from Cartesian to Isometric coordinates.
+ * This transforms displacement-like vectors (contravariant components)
+ * from Cartesian (dx_cart, dy_cart) to isometric components (dx_iso, dy_iso).
+ *
+ * Inputs:
+ *   dx_cart - Vector component along Cartesian x-axis
+ *   dy_cart - Vector component along Cartesian y-axis
+ *
+ * Outputs:
+ *   dx_iso  - Component along isometric x-axis
+ *   dy_iso  - Component along isometric y-axis
+ *
+ * Returns: 0 on success, -1 if output pointers are NULL
+ */
+int cartesian_vector_to_isometric(
+        double dx_cart, double dy_cart,
+        double *dx_iso, double *dy_iso)
+{
+    if (!dx_iso || !dy_iso) return -1;
+
+    // Inverse transformation matrix for vectors:
+    // dx_iso = (1/√3) * dx_cart + dy_cart
+    // dy_iso = -(1/√3) * dx_cart + dy_cart
+    *dx_iso = ONE_OVER_SQRT3 * dx_cart + dy_cart;
+    *dy_iso = -ONE_OVER_SQRT3 * dx_cart + dy_cart;
+
+    return 0;
+}
+
 static void make_array_rect (void)
 /*------------------------------*/
 {
@@ -88,6 +161,7 @@ static void make_array_rect (void)
   long l_block_size ;
   double angle_l, sina, cosa ;
   double df_dx1, df_dy1;
+  int ret;
 
   angle_l=get_angle_l();
   if (angle_l!=0)
@@ -106,14 +180,21 @@ static void make_array_rect (void)
      {
        if (angle_l!=0)
        {
-       df_dx1=(df_dx*cosa) - (df_dy*sina);
-       df_dy1=(df_dx*sina) + (df_dy*cosa);
+           if (options1.uklad_izometryczny)
+           {
+               ret = isometric_vector_to_cartesian(df_dx, df_dy, &df_dx1, &df_dy1);
+           }
+           else
+           {
+               df_dx1 = (df_dx * cosa) - (df_dy * sina);
+               df_dy1 = (df_dx * sina) + (df_dy * cosa);
+           }
        }
        else
-	{
-	df_dx1 = df_dx;
-	df_dy1 = df_dy;
-	}
+        {
+        df_dx1 = df_dx;
+        df_dy1 = df_dy;
+        }
        if (FALSE == Add_Block (ADP, ADK, &l_block_size, df_dx1, df_dy1, 0, 0, 0, 0, 0, 0, Tprzesuw))
        {
 	 return ;
@@ -324,6 +405,7 @@ static void redcrARP (int type)
   double angle_l;
   double df_x1, df_y1;
   double sina, cosa;
+  int ret;
 
   switch (type)
   {
@@ -353,8 +435,8 @@ static void redcrARP (int type)
     case 3 :
       CUR_OFF (X, Y) ;
       np = dodajstr (&eL) ;
-      s_window.x1 = s_window.x2 = X ;
-      s_window.y1 = s_window.y2 = Y ;
+      s_window.x1 = s_window.x2 = X;
+      s_window.y1 = s_window.y2 = Y;
       CUR_oFF = CUR_OFF ; CUR_OFF = cur_offo ;
       CUR_oN = CUR_ON ;   CUR_ON = cur_ono ;
       CUR_ON (X,Y) ;
@@ -366,23 +448,29 @@ static void redcrARP (int type)
       usunstr (np) ;
       if (strwyj == 0)
       {
-	df_x1 = s_window.x2 - s_window.x1 ;
-	df_y1 = s_window.y2 - s_window.y1 ;
-	angle_l=get_angle_l();
-	if (angle_l==0)
-	{
-	 s_array_rect.df_dist_x = df_x1 ;
-	 s_array_rect.df_dist_y = df_y1 ;
-	}
-	else
-	 {
-	  sina=get_sina();
-	  cosa=get_cosa();
+        df_x1 = s_window.x2 - s_window.x1 ;
+        df_y1 = s_window.y2 - s_window.y1 ;
+        angle_l=get_angle_l();
+        if (angle_l==0)
+        {
+         s_array_rect.df_dist_x = df_x1 ;
+         s_array_rect.df_dist_y = df_y1 ;
+        }
+        else
+         {
+            if (options1.uklad_izometryczny)
+            {
+                ret= cartesian_vector_to_isometric(df_x1, df_y1, &s_array_rect.df_dist_x, &s_array_rect.df_dist_y);
+            }
+            else
+            {
+                sina = get_sina();
+                cosa = get_cosa();
 
-	  s_array_rect.df_dist_x = (df_x1*cosa) + (df_y1*sina) ;
-	  s_array_rect.df_dist_y = (-df_x1*sina) + (df_y1*cosa) ;
-	 /**/
-	 }
+                s_array_rect.df_dist_x = (df_x1 * cosa) + (df_y1 * sina);
+                s_array_rect.df_dist_y = (-df_x1 * sina) + (df_y1 * cosa);
+            }
+         }
       }
       CUR_OFF (X, Y) ;
       blokzap (ADP, ADK, Ablok, XOR_PUT, 1) ;

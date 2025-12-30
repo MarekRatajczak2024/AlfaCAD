@@ -1717,7 +1717,7 @@ struct
     unsigned load      :8;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
     unsigned variant   :8;  //0 undefined, 1..255 number of load character with different factors
     unsigned flags     :8;  //0  regular   1 inverted
-    unsigned load2     :8;
+    unsigned load22     :8;
     float angle1;
     float angle2;
     float magnitude1; //power magnitude or start magnitude
@@ -3029,7 +3029,8 @@ typedef struct {
    unsigned scale_DIM : 1;
    unsigned save_original_layer : 1;
    unsigned fill_pcx_solid      : 1;   
-   unsigned lock_prof_aktual : 1;
+   //unsigned lock_prof_aktual : 1;
+   unsigned uklad_izometryczny : 1;
    unsigned uklad_geodezyjny : 1;
    unsigned view_only_current_layer : 1;
    unsigned ignore_buffering_pcx : 1;

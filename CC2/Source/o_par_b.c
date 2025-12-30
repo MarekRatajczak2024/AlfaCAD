@@ -74,6 +74,7 @@ void Magnitudes(void);
 static void near uaktualnij_polap(void);
 
 static int asp = 0;
+static double angle_l_curr=0.;
 
 static void  nooop(void)
 {}
@@ -329,19 +330,39 @@ void  kursorSB(void)
 }
 
 void Uklad_kartezjanski(void)
-{
-  if (options1.uklad_geodezyjny==0) return;
+{ int l_kr;
+  if ((options1.uklad_geodezyjny==0) && (options1.uklad_izometryczny==0))
+      return;
   options1.uklad_geodezyjny=0;
+  options1.uklad_izometryczny=0;
   menu_par_new((*mParametry.pola)[4].txt, ParTxt[0]);
   drawp(&mParametry);
+  l_kr=put_angle_l(angle_l_curr);
+  go_refresh=TRUE;
 }
 
 void Uklad_geodezyjny(void)
-{
-  if (options1.uklad_geodezyjny==1) return;
+{ int l_kr;
+  if ((options1.uklad_geodezyjny==1) && (options1.uklad_izometryczny==0))
+      return;
   options1.uklad_geodezyjny=1;
+  options1.uklad_izometryczny=0;
   menu_par_new((*mParametry.pola)[4].txt, ParTxt[1]);
   drawp(&mParametry);
+  l_kr=put_angle_l(angle_l_curr);
+  go_refresh=TRUE;
+}
+
+void Uklad_izometryczny(void)
+{   int l_kr;
+    if (options1.uklad_izometryczny==1) return;
+    options1.uklad_izometryczny=1;
+    options1.uklad_geodezyjny=0;
+    angle_l_curr=get_angle_l();
+    l_kr=put_angle_l(30.0);
+    menu_par_new((*mParametry.pola)[4].txt, ParTxt[4]);
+    go_refresh=TRUE;
+    drawp(&mParametry);
 }
 
 void ramka_on(void)
@@ -1342,11 +1363,13 @@ int ret;
    if (Jednostki == funits [i]) break;
   menu_par_new((*mParametry.pola)[2].txt, punits[i]);
 
-  if (options1.uklad_geodezyjny==0) 
-
-	  strcpy(sk, _CARTESIAN_);
-
-    else strcpy(sk, _GEODETIC_);
+  if (options1.uklad_izometryczny==1)
+      strcpy(sk, _ISOMETRIC_);
+  else {
+      if (options1.uklad_geodezyjny == 0)
+          strcpy(sk, _CARTESIAN_);
+      else strcpy(sk, _GEODETIC_);
+  }
   menu_par_new((*mParametry.pola)[4].txt,sk);
 
   if (KursorS == 0)
@@ -2077,7 +2100,7 @@ static void (* COMND[])(void)={
 /*86 origin,local*/  PointOrigin, LocalAngle, LocalAngleNum,
 /*89 kursor */       kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS, kursorS,
 /*99 kursorB */	     kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB, kursorSB,
-/*109 uklad */       Uklad_kartezjanski, Uklad_geodezyjny,
+/*109 uklad */       nooop, nooop,  //moved to 162
                      Force_Magnitude, Moment_Magnitude, Displacement_Magnitude, Rotation_Magnitude, nooop/*Load_Magnitude*/, Thermal_Magnitude,
                      N_Magnitude, V_Magnitude, M_Magnitude, D_Magnitude, nooop, RM_Magnitude, nooop, P_Magnitude, Q_Magnitude,
                      nooop,nooop, nooop,
@@ -2085,7 +2108,8 @@ static void (* COMND[])(void)={
                      Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision, Reaction_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
-                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP, R_Magnitude, QN_Magnitude
+                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP, R_Magnitude, QN_Magnitude,
+                     Uklad_kartezjanski, Uklad_geodezyjny, Uklad_izometryczny
 };
 
 /*----------------------------------------------------*/

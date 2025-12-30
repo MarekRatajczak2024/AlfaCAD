@@ -40,7 +40,7 @@
 
 #include "message.h"
 
-#include "leak_detector_cpp.hpp"
+////#include "leak_detector_cpp.hpp"
 
 extern BOOL Add_String_To_List1 (char *ptr_string) ;
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
@@ -3051,6 +3051,11 @@ static char *add_block(BOOL hatchoutline, BLOK *adb, int atrybut)
 	  len_type = (int)strlen(blok_type) + 1;
 	  len_desc = sizeof(unsigned) + 2 * sizeof(float) + sizeof(len_type) + len_type;
 	  size_block += len_desc;
+
+      if ((sizeof(NAGLOWEK) + size_block)==29)
+      {
+          int a=0;
+      }
 
 	  if (NULL == (buf_block = (BLOK*)malloc /*getmem*/(sizeof(NAGLOWEK) + size_block)))
 	  {

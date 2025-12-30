@@ -46,12 +46,47 @@ extern int get_sketch_offset(int sk_offset);
 /*--------------------------------------------------------*/
 /*--------      linia     ---------*/
 
+//#include <math.h>
+//#define M_PI 3.14159265358979323846  // Define PI if not available
+
+/*
+ * Calculate the angle (in degrees) that the vector from (x1, y1) to (x2, y2)
+ * makes relative to the x-axis in the isometric coordinate system.
+ * Positive angles are counterclockwise, range: [0, 360).
+ * Returns: angle in degrees, or 0 if vector is zero-length.
+ */
+double isometric_vector_angle(double x1, double y1, double x2, double y2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+
+    if (dx == 0.0 && dy == 0.0) {
+        return 0.0;  // Undefined for zero vector; return 0 by convention
+    }
+
+    // Transform to isometric components
+    double inv_sqrt3 = 1.0 / sqrt(3.0);
+    double i_dx = (dx * inv_sqrt3) + dy;
+    double i_dy = (-dx * inv_sqrt3) + dy;
+
+    // Compute angle using atan2
+    double angle_rad = atan2(i_dy, i_dx);
+    double angle_deg = angle_rad * (180.0 / PI);
+
+    // Normalize to [0, 360)
+    if (angle_deg < 0.0) {
+        angle_deg += 360.0;
+    }
+
+    return angle_deg;
+}
 
 void parametry_linior (LINIA *L,PLINIA *PL)
 /*--------------------------------------------*/
 {
   double dx,dy,dxprim,dyprim;
+  double dxprim1,dyprim1;
   double sinfi,cosfi,angle_l,angle_lr;
+  double sinfi1,cosfi1,angle_lr1;
 
   if (L == NULL)
   {
@@ -60,7 +95,19 @@ void parametry_linior (LINIA *L,PLINIA *PL)
   }
   if (orto == 0)
   {
-    parametry_lini (L, PL);
+   if (options1.uklad_izometryczny)
+    {
+       angle_l=get_angle_l();
+       dx = L->x2 - L->x1;
+       dy = L->y2 - L->y1;
+       PL->kat=isometric_vector_angle(L->x1, L->y1, L->x2, L->y2)+angle_l;
+       PL->sin=sin(PL->kat/180.*PI);
+       PL->cos=cos(PL->kat/180.*PI);
+       PL->dl=sqrt(dx*dx+dy*dy);
+       PL->dx=dx;
+       PL->dy=dy;
+    }
+    else parametry_lini (L, PL);
     return;
   }
 
@@ -71,11 +118,19 @@ void parametry_linior (LINIA *L,PLINIA *PL)
 
   if (angle_l!=0)		   /* uklad lokalny */
    {
-   angle_lr=angle_l*0.017453293;
-   sinfi=sin(angle_lr);
-   cosfi=cos(angle_lr);
-   dxprim=dx*cosfi+dy*sinfi;
-   dyprim=-dx*sinfi+dy*cosfi;
+       angle_lr=angle_l*0.017453293;
+       sinfi=sin(angle_lr);
+       cosfi=cos(angle_lr);
+       dxprim=dx*cosfi+dy*sinfi;
+       dyprim=-dx*sinfi+dy*cosfi;
+       if (options1.uklad_izometryczny)
+       {
+           angle_lr1=(angle_l+120)*0.017453293;
+           sinfi1=sin(angle_lr1);
+           cosfi1=cos(angle_lr1);
+           dxprim1=dx*cosfi1+dy*sinfi1;
+           dyprim1=-dx*sinfi1+dy*cosfi1;
+       }
    }
   if (angle_l==0)
   {
@@ -111,17 +166,46 @@ void parametry_linior (LINIA *L,PLINIA *PL)
    else
     if ( Orto_Dir == I_Orto_YDir )
     {
-     angle_lr=(angle_l+90)*0.017453293;
+     if (options1.uklad_izometryczny)
+         angle_lr=(angle_l+120)*0.017453293;
+     else angle_lr=(angle_l+90)*0.017453293;
      sinfi=sin(angle_lr);
      cosfi=cos(angle_lr);
-     PL->kat=(dyprim>=0 ? angle_l+90 : angle_l+270);
-     PL->sin=(dyprim>=0 ? sinfi : -sinfi);
-     PL->cos=(dyprim>=0 ? cosfi : -cosfi);
-     PL->dl=fabs(dyprim);
+     if (options1.uklad_izometryczny)
+     {
+         PL->kat = (dxprim1 >= 0 ? angle_l + 120 : angle_l + 300);
+         PL->sin=(dxprim1>=0 ? sinfi1 : -sinfi1);
+         PL->cos=(dxprim1>=0 ? cosfi1 : -cosfi1);
+         ////PL->sin=(dyprim1>=0 ? -sinfi1 : sinfi1);
+         ////PL->cos=(dyprim1>=0 ? -cosfi1 : cosfi1);
+         //PL->dl=fabs(dxprim1);
+         PL->dl=sqrt(dx*dx+dy*dy);
+         PL->dx=dx;
+         PL->dy=dy;
+     }
+     else
+     {
+         PL->kat = (dyprim >= 0 ? angle_l + 90 : angle_l + 270);
+
+         PL->sin = (dyprim >= 0 ? sinfi : -sinfi);
+         PL->cos = (dyprim >= 0 ? cosfi : -cosfi);
+         PL->dl = fabs(dyprim);
+     }
     }
     else
     {
-     parametry_lini (L, PL) ;
+        if (options1.uklad_izometryczny)
+        {
+            dx = L->x2 - L->x1;
+            dy = L->y2 - L->y1;
+            PL->kat=isometric_vector_angle(L->x1, L->y1, L->x2, L->y2)+angle_l;
+            PL->sin=sin(PL->kat/180.*PI);
+            PL->cos=cos(PL->kat/180.*PI);
+            PL->dl=sqrt(dx*dx+dy*dy);
+            PL->dx=dx;
+            PL->dy=dy;
+        }
+        else parametry_lini (L, PL) ;
     }
   }
 }
@@ -313,10 +397,19 @@ void outlineor (LINIA *L,int mode,int pl)
             lineC(pikseleX0(L_axis.x1),pikseleY0(L_axis.y1),pikseleX0(L_axis.x2),pikseleY0(L_axis.y2));
           }
       }
+
+
+      L->x2=L1.x2;
+      L->y2=L1.y2;
+      //okno_all();
+      //if (pl) out_parametry_lini(L);
   }
   else
   {
     lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+
+    //okno_all();
+    //if (pl) out_parametry_lini(L);
   }
   okno_all();
   if (pl) out_parametry_lini(L);

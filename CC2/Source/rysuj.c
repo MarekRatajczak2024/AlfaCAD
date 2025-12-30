@@ -604,6 +604,8 @@ extern BITMAP *icon_pointer;
 extern BITMAP *icon_edit_ini;
 extern BITMAP *icon_cartesian;
 extern BITMAP *icon_geodetic;
+extern BITMAP *icon_isometric;
+extern BITMAP *icon_isometric64;
 extern BITMAP *icon_point_origin;
 extern BITMAP *icon_axis_angle;
 extern BITMAP *icon_rotation_angle;
@@ -628,6 +630,8 @@ extern char *icon_pointer_p;
 extern char *icon_edit_ini_p;
 extern char *icon_cartesian_p;
 extern char *icon_geodetic_p;
+extern char *icon_isometric_p;
+extern char *icon_isometric64_p;
 extern char *icon_point_origin_p;
 extern char *icon_axis_angle_p;
 extern char *icon_rotation_angle_p;
@@ -2495,6 +2499,8 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_edit_ini,"edit_ini",&icon_edit_ini_p},
         {&icon_cartesian,"cartesian",&icon_cartesian_p},
         {&icon_geodetic,"geodetic",&icon_geodetic_p},
+        {&icon_isometric,"isometric",&icon_isometric_p},
+        {&icon_isometric64,"isometric64",&icon_isometric64_p},
         {&icon_point_origin,"point_origin",&icon_point_origin_p},
         {&icon_axis_angle,"axis_angle",&icon_axis_angle_p},
         {&icon_rotation_angle,"rotation_angle",&icon_rotation_angle_p},
@@ -4627,8 +4633,8 @@ void Save_Desktop_font(char *font_name)
 
 void set_ttf_digits27_len(void)
 {
-	ttf_digits27_len = TTF_text_len("99.999999999; 99.999999999");
-	ttf_digits13_len = TTF_text_len("99.999999999 ");
+	ttf_digits27_len = TTF_text_len("999.999999999; 999.999999999");
+	ttf_digits13_len = TTF_text_len("999.999999999");
 	ttf_width_w = (float)(TTF_text_len("WWWWWWWWWWWWWWWWWWWW")) / 20.0;
     PL266 = 50 * TTF_text_len("0");
     PL366 = 75 * TTF_text_len("0");
@@ -6066,6 +6072,7 @@ if (child==0)
 
   while(1)
    {
+       CUR_OFF(X,Y);
        reset_cursor(); //this is just for a case if cursor is not reset after some function
        CUR_ON(X,Y);
 

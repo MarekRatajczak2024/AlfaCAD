@@ -158,6 +158,7 @@ enum KG { INT,FLOAT,STRING,KOMENTARZ,KODNIEZNANY };
 #define SECTION  "SECTION"
 #define HEADER	 "HEADER"
 #define CLASSES	 "CLASSES"
+#define CLASS	 "CLASS"
 #define TABLES	 "TABLES"
 #define OBJECTS	 "OBJECTS"
 #define DICTIONARY "DICTIONARY"
@@ -539,11 +540,173 @@ PISZ_CLASSES::PISZ_CLASSES(void)
 int PISZ_CLASSES::PiszClasses(void)
 {
 	if (PiszGrupa(0, (char*)SECTION) == ErrorWeWy ||
-		PiszGrupa(2, (char*)CLASSES) == ErrorWeWy ||
-		//PiszGrupa(5, handle_hex) == ErrorWeWy ||
+		PiszGrupa(2, (char*)CLASSES) == ErrorWeWy)
+        return ErrorWeWy;
+		//PiszGrupa(0, handle_hex) == ErrorWeWy ||
 		//PiszImageDef() == ErrorWeWy ||
-		PiszGrupa(0, (char*)ENDSEC) == ErrorWeWy) return ErrorWeWy;
-	else return OkWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"ACDBDICTIONARYWDFLT") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbDictionaryWithDefault") == ErrorWeWy ||
+        //PiszGrupa(3,"ObjectDBX Classes") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        //PiszGrupa(91,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy)
+        return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"ACDBPLACEHOLDER") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbPlaceHolder") == ErrorWeWy ||
+        //PiszGrupa(3,"ObjectDBX Classes") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        //PiszGrupa(91,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"ARCALIGNEDTEXT") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbArcAlignedText") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"DICTIONARYVAR") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbDictionaryVar") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"HATCH") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbHatch") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"IDBUFFER") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbIdBuffer") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"IMAGE") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbRasterImage") == ErrorWeWy ||
+        PiszGrupa(90,127) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"IMAGEDEF") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbRasterImageDef") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"IMAGEDEF_REACTOR") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbRasterImageDefReactor") == ErrorWeWy ||
+        PiszGrupa(90,1) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"LAYER_INDEX") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbLayerIndex") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"LAYOUT") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbLayout") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"LWPOLYLINE") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbPolyline") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"OBJECT_PTR") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"CAseDLPNTableRecord") == ErrorWeWy ||
+        PiszGrupa(90,1) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"OLE2FRAME") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbOle2Frame") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"PLOTSETTINGS") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbPlotSettings") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"RASTERVARIABLES") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbRasterVariables") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"RTEXT") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"RText") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"SORTENTSTABLE") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbSortentsTable") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"SPATIAL_INDEX") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbSpatialIndex") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"SPATIAL_FILTER") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbSpatialFilter") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"WIPEOUT") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbWipeout") == ErrorWeWy ||
+        PiszGrupa(90,127) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,1) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)CLASS) == ErrorWeWy ||
+        PiszGrupa(1,(char*)"WIPEOUTVARIABLES") == ErrorWeWy ||
+        PiszGrupa(2,(char*)"AcDbWipeoutVariables") == ErrorWeWy ||
+        PiszGrupa(90,0) == ErrorWeWy ||
+        PiszGrupa(280,0) == ErrorWeWy ||
+        PiszGrupa(281,0) == ErrorWeWy) return ErrorWeWy;
+
+    if (PiszGrupa(0, (char*)ENDSEC) == ErrorWeWy) return ErrorWeWy;
+
+    return OkWeWy;
 }
 
 PISZ_OBJECTSDEF::PISZ_OBJECTSDEF(void)

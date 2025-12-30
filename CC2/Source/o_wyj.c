@@ -693,6 +693,8 @@ BITMAP *icon_pointer;
 BITMAP *icon_edit_ini;
 BITMAP *icon_cartesian;
 BITMAP *icon_geodetic;
+BITMAP *icon_isometric;
+BITMAP *icon_isometric64;
 BITMAP *icon_point_origin;
 BITMAP *icon_axis_angle;
 BITMAP *icon_rotation_angle;
@@ -717,6 +719,8 @@ char *icon_pointer_p;
 char *icon_edit_ini_p;
 char *icon_cartesian_p;
 char *icon_geodetic_p;
+char *icon_isometric_p;
+char *icon_isometric64_p;
 char *icon_point_origin_p;
 char *icon_axis_angle_p;
 char *icon_rotation_angle_p;
@@ -3900,7 +3904,7 @@ void DwgIn(void)
 	}
 
     //LibreDWG variant
-    sprintf(params, "\"%s\" --as r2013 -y -v0 -o %s", sk, ALFAIMPORTFILE);
+    sprintf(params, "\"%s\" --as r2013 -y -v0 -o %s", sk, ALFAIMPORTFILE);  //r2013
 	runcode = RunSilent("dwg2dxf.exe", params);
 	runcode &= 8191;
 	if (runcode > 0)

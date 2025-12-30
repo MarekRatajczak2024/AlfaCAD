@@ -343,15 +343,15 @@ static void normalizacja_tekstu_on(void)
 
 
 
-int get_lock_prof_aktual(void)
-{
- return options1.lock_prof_aktual;
-}
+//int get_lock_prof_aktual(void)
+//{
+// return options1.lock_prof_aktual;
+//}
 
-void put_lock_prof_aktual(int lock)
-{
-  options1.lock_prof_aktual = lock;
-}
+//void put_lock_prof_aktual(int lock)
+//{
+//  options1.lock_prof_aktual = lock;
+//}
  
 static void scale_DIM_off(void)
 {
@@ -2191,8 +2191,8 @@ wielokat_place (WIELOKAT *w, double *xmin, double *ymin, double *xmax, double *y
 static void
 solidarc_place (SOLIDARC *sa, double *xmin, double *ymin, double *xmax, double *ymax)
 {
-    LINIA L_left, L_right;
-    LUK l_inner1, l_inner2, l_outer1, l_outer2;
+    LINIA L_left=Ldef, L_right=Ldef;
+    LUK l_inner1=ldef, l_inner2=ldef, l_outer1=ldef, l_outer2=ldef;
     int ln;
 
     ln=solidarc_elements(sa, &L_left, &L_right, &l_inner1, &l_inner2, &l_outer1, &l_outer2);
@@ -2396,6 +2396,7 @@ void Get_Limits (long_long off, long_long offk, int atrybut, double *xmin, doubl
 /*------------------------------------------------------------------------------------------------------*/
 {
   NAGLOWEK *nag ;
+  SOLIDARC *sa;
   long_long ad ;
   int a;
  
@@ -2413,49 +2414,61 @@ void Get_Limits (long_long off, long_long offk, int atrybut, double *xmin, doubl
       {
 	    case Olinia :
 	    line_place ((LINIA*)nag, xmin, ymin, xmax, ymax) ;
-         //// over_limits(xmin, xmax, ymin, ymax,0);
+             over_limits(xmin, xmax, ymin, ymax,0);
 	    break ;
 	    case Otekst :
 	    tekst_place ((TEXT*)nag, xmin, ymin, xmax, ymax) ;
-          ////    over_limits(xmin, xmax, ymin, ymax,2);
+              over_limits(xmin, xmax, ymin, ymax,2);
 	    break ;
 	    case Okolo :
         case Ookrag :
 	    okrag_place ((OKRAG*)nag, xmin, ymin, xmax, ymax) ;
-          ////    over_limits(xmin, xmax, ymin, ymax,3);
+              over_limits(xmin, xmax, ymin, ymax,3);
 	    break ;
         case Oellipse :
         case Ofilledellipse :
         ellipse_place ((ELLIPSE*)nag, xmin, ymin, xmax, ymax) ;
-              ////    over_limits(xmin, xmax, ymin, ymax,3);
+                  over_limits(xmin, xmax, ymin, ymax,3);
         break ;
         case Oluk :
 	    luk_place ((LUK*)nag, xmin, ymin, xmax, ymax) ;
-          ////    over_limits(xmin, xmax, ymin, ymax,4);
+              over_limits(xmin, xmax, ymin, ymax,4);
 	    break ;
         case Oellipticalarc :
         ellipticalarc_place ((ELLIPTICALARC *)nag, xmin, ymin, xmax, ymax) ;
-              ////    over_limits(xmin, xmax, ymin, ymax,4);
+                  over_limits(xmin, xmax, ymin, ymax,4);
         break ;
         case Owwielokat :
 	    wielokat_place ((WIELOKAT*)nag, xmin, ymin, xmax, ymax) ;
-           ////   over_limits(xmin, xmax, ymin, ymax,5);
+              over_limits(xmin, xmax, ymin, ymax,5);
 	    break ;
         case Osolidarc :
+        sa=(SOLIDARC*)nag;
+        sa->kat1= (float)Angle_Normal((double)sa->kat1);
+        sa->kat2= (float)Angle_Normal((double)sa->kat2);
+        double ymin_back=*ymin;
+        if ((sa->x==510.52002f) && (sa->y==89.8003998f))
+        {
+            int a=0;
+        }
         solidarc_place ((SOLIDARC*)nag, xmin, ymin, xmax, ymax) ;
-           ////   over_limits(xmin, xmax, ymin, ymax,5);
+              over_limits(xmin, xmax, ymin, ymax,5);
+              if (ymin_back>*ymin)
+              {
+                  int a=0;
+              }
         break ;
         case Ospline:
 	    spline_place((SPLINE*)nag, xmin, ymin, xmax, ymax);
-           ////   over_limits(xmin, xmax, ymin, ymax,6);
+              over_limits(xmin, xmax, ymin, ymax,6);
 	    break;
         case Opoint :
 	    point_place ((T_Point*)nag, xmin, ymin, xmax, ymax) ;
-           ////   over_limits(xmin, xmax, ymin, ymax,7);
+              over_limits(xmin, xmax, ymin, ymax,7);
 	    break ;
         case Ovector :
         vector_place ((AVECTOR*)nag, xmin, ymin, xmax, ymax) ;
-          ////   over_limits(xmin, xmax, ymin, ymax,7);
+             over_limits(xmin, xmax, ymin, ymax,7);
         break ;
        default :
 	    break ;

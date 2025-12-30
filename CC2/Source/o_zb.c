@@ -2093,7 +2093,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   if (zn_b2==3)
    {
    if (proc_io (f, &angle_l, sizeof(double)) != sizeof(double)) return FALSE ;    /* odczyt kata obrotu ukladu lokalnego */
-   l_kr=put_angle_l(angle_l);
+   //l_kr=put_angle_l(angle_l);  //moved from here until options1 read due to isometric
    }
     else
      {
@@ -2139,8 +2139,11 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
      }
   /*rezerwa*/
   
-  normalize_text=options1.normalize_text;
+  //normalize_text=options1.normalize_text;
   if (proc_io (f, &options1, sizeof(char)) != sizeof(char)) return FALSE ;
+  normalize_text=options1.normalize_text;
+
+  l_kr=put_angle_l(angle_l);  //moved here due to isometric
 
   long l_off__ = lseek (f, 0, SEEK_CUR);
 

@@ -499,6 +499,8 @@ extern char *icon_pointer_p;
 extern char *icon_edit_ini_p;
 extern char *icon_cartesian_p;
 extern char *icon_geodetic_p;
+extern char *icon_isometric_p;
+extern char *icon_isometric64_p;
 extern char *icon_point_origin_p;
 extern char *icon_axis_angle_p;
 extern char *icon_rotation_angle_p;
@@ -3472,7 +3474,7 @@ static char *get_icons_p(int number)
         /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
         /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p, icon_slab_force_p,
         /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p, icon_ULSLC_p, icon_SLSLC_p, icon_QPSLSLC_p, icon_shear_p, icon_shield_fem_p,
-        /*866*/   icon_solid_translucent_p, icon_solid_gtranslucent_p
+        /*866*/   icon_solid_translucent_p, icon_solid_gtranslucent_p, icon_isometric_p, icon_isometric64_p
 
     };
    

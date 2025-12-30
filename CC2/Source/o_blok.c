@@ -112,6 +112,8 @@ extern int Reverse_VectorP(void);
 extern void set_global_set_stretch(BOOL v_s_s);
 extern void orto_l(LINIA *L, int *Orto_Dir);
 
+extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
+
 extern BOOL Semaphore;
 
 #ifdef ALLEGRO5
@@ -935,7 +937,7 @@ static int (*COMNDmbs[])(void)=
 static int strwyj;
 static double DX0, DY0;
 
-static int L_p	(BOOL	b_graph_value)
+static int L_p_	(BOOL	b_graph_value)
 {
   PLINIA	PL;
   double	l,k;
@@ -970,6 +972,93 @@ static int L_p	(BOOL	b_graph_value)
   strwyj=1;
   return	1;
 }
+
+
+/*
+ * Convert an angle measured in the isometric coordinate system
+ * (CCW from isometric x-axis) to the corresponding angle in the
+ * standard Cartesian coordinate system (CCW from Cartesian x-axis).
+ *
+ * Input:
+ *   iso_angle_deg - Angle in degrees in isometric system (0° along iso x-axis)
+ *
+ * Returns:
+ *   Angle in degrees in Cartesian system, normalized to [0, 360)
+ */
+double isometric_angle_to_cartesian_angle(double iso_angle_deg)
+{
+    // Convert to radians
+    double iso_rad = iso_angle_deg * (M_PI / 180.0);
+
+    // Direction vector in isometric space
+    double i_dx = cos(iso_rad);
+    double i_dy = sin(iso_rad);
+
+    // Transform to Cartesian space using the forward projection
+    double cart_dx = (sqrt(3.0)/2.0) * (i_dx - i_dy);
+    double cart_dy = (0.5)           * (i_dx + i_dy);
+
+    // Compute the angle using atan2 (returns radians in (-pi, pi])
+    double cart_rad = atan2(cart_dy, cart_dx);
+
+    // Convert to degrees
+    double cart_deg = cart_rad * (180.0 / M_PI);
+
+    // Normalize to [0, 360)
+    if (cart_deg < 0.0) {
+        cart_deg += 360.0;
+    }
+
+    return cart_deg;
+}
+
+static int L_p	(BOOL	b_graph_value)
+{
+    PLINIA	PL;
+    double	l,k;
+    double	angle_l;
+    int ret;
+
+    b_graph_value =	b_graph_value ;
+    if (eL.val_no <	1)
+    {
+        return 0 ;
+    }
+    l =	eL.values [0] ;
+    if ( orto	!=	0 || eL.val_no	==	1)
+    {
+        parametry_linior(&L,&PL);
+        k=PL.kat;
+
+        l =	jednostkiOb(l);
+        k =	k * Pi / 180.0;
+        DX0	= Double_to_Float	(l	* cos	(k));
+        DY0	= Double_to_Float	(l	* sin	(k));
+    }
+    else
+    {
+        angle_l = get_angle_l();
+        if (angle_l != 0) {
+            k = eL.values[1] + angle_l;
+            if (k < 0) k += 360;
+        } else
+            k = eL.values[1];
+
+        if (options1.uklad_izometryczny)
+        {
+            l = jednostkiOb(l);
+            k = isometric_angle_to_cartesian_angle(k-angle_l);
+        }
+
+        l = jednostkiOb(l);
+        k = k * Pi / 180.0;
+        DX0 = Double_to_Float(l * cos(k));
+        DY0 = Double_to_Float(l * sin(k));
+    }
+    strwyj=1;
+    return	1;
+}
+
 
 static int Vf_n_(BOOL b_graph_value)
 {
@@ -1113,7 +1202,7 @@ BOOL get_dragging_quad(void)
 static void	cur_onq(double	x,double	y)
 {
     PLINIA	PL;
-    cursel_on(x, y);
+    ////cursel_on(x, y);
     L.x2=x; L.y2=y;
     outlineor(&L,COPY_PUT,1);
     parametry_linior (&L,	&PL);
@@ -1124,14 +1213,83 @@ static void	cur_onq(double	x,double	y)
     cursel_on(x, y);
 }
 
+//#include <math.h>
+
+//#define M_PI 3.14159265358979323846  // Define PI if not available
+
+/*
+ * Convert an angle measured in the isometric coordinate system
+ * (CCW from isometric x-axis) to the corresponding angle in the
+ * standard Cartesian coordinate system (CCW from Cartesian x-axis).
+ *
+ * Input:
+ *   iso_angle_deg - Angle in degrees in isometric system (0° along iso x-axis)
+ *
+ * Returns:
+ *   Angle in degrees in Cartesian system, normalized to [0, 360)
+ */
+int isometric_PL_to_cartesian_PL(PLINIA *PL)
+{
+    // Convert to radians
+    double iso_rad = PL->kat * (M_PI / 180.0);
+
+    // Direction vector in isometric space
+    double i_dx = cos(iso_rad);
+    double i_dy = sin(iso_rad);
+
+    // Transform to Cartesian space using the forward projection
+    double cart_dx = (sqrt(3.0)/2.0) * (i_dx - i_dy);
+    double cart_dy = (0.5)           * (i_dx + i_dy);
+
+    // Compute the angle using atan2 (returns radians in (-pi, pi])
+    double cart_rad = atan2(cart_dy, cart_dx);
+
+    // Convert to degrees
+    double cart_deg = cart_rad * (180.0 / M_PI);
+
+    PL->sin=sin(cart_rad);
+    PL->cos=cos(cart_rad);
+
+    // Normalize to [0, 360)
+    if (cart_deg < 0.0) {
+        cart_deg += 360.0;
+    }
+
+    PL->kat=cart_deg;
+
+    return 0;
+}
+
+
+
 static void	cur_onk(double	x,double	y)
 {
   PLINIA	PL;
-  cursel_on(x, y);
+  int ret;
+  double angle_l;
+
+  //cursel_on(x, y);
   L.x2=x; L.y2=y;
   outlineor(&L,COPY_PUT,1);
   parametry_linior (&L,	&PL);
-  DX = PL.dl *	PL.cos;	DY= PL.dl *	PL.sin;
+  angle_l=get_angle_l();
+  //PL.sin=sin(PL.kat*PI/180.);
+  //PL.cos=cos(PL.kat*PI/180.);
+  if (options1.uklad_izometryczny)
+  {
+      if (!orto)
+      {
+          PL.kat-=angle_l;
+          isometric_PL_to_cartesian_PL(&PL);
+      }
+      //DX = PL.dl *	PL.cos;
+      //DY = PL.dl *	PL.sin;
+  }
+  //else
+  //{
+      DX = PL.dl * PL.cos;
+      DY = PL.dl * PL.sin;
+  //}
   out_blok1(DX,DY,0,0,Tprzesuw,0);
   cursel_on(x, y);
 }

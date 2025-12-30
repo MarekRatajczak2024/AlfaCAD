@@ -798,43 +798,75 @@ static BOOL add_line (BOOL b_strwyj)
   return b_ret ;
 }
 
+
+#define SQRT3_OVER_2   (sqrt(3.0)/2.0)  // ≈ 0.8660254037844386
+#define HALF           (0.5)
+
+int isometric_polar_to_cartesian(
+        double x1, double y1,
+        double length, double angle_deg,
+        double *x2, double *y2)
+{
+    if (!x2 || !y2) return -1;
+
+    double angle_rad = angle_deg * (M_PI / 180.0);
+
+    double i_dx = length * cos(angle_rad);
+    double i_dy = length * sin(angle_rad);
+
+    *x2 = x1 + SQRT3_OVER_2 * (i_dx - i_dy);
+    *y2 = y1 + HALF           * (i_dx + i_dy);
+
+    return 0;
+}
+
 static int L_p(BOOL b_graph_value)
 /*-------------------------------*/
 {
-  PLINIA PL ;
-  double l, k ;
-  double df_x, df_y ;
-  double angle_l ;
+    PLINIA PL;
+    double l, k;
+    double df_x, df_y;
+    double angle_l;
+    int ret;
 
-  if (eL.val_no < 1) return 0;
-  CUR_OFF (X, Y) ;
-  l = eL.values [0] ;
-  if ( orto == 1 || eL.val_no == 1)
-  {
-    if (TRUE == b_graph_value)
+    if (eL.val_no < 1) return 0;
+    CUR_OFF(X, Y);
+    l = eL.values[0];
+    if (orto == 1 || eL.val_no == 1) {
+        if (TRUE == b_graph_value) {
+            Get_Graph_Values_Cur_Pos(&df_x, &df_y);
+            LiniaG.x2 = df_x;
+            LiniaG.y2 = df_y;
+        }
+        parametry_linior(&LiniaG, &PL);
+        k = PL.kat;
+
+        l = jednostkiOb(l);
+        k = Grid_to_Rad(k);
+        Lx2 = LiniaG.x1 + l * cos(k);
+        Ly2 = LiniaG.y1 + l * sin(k);
+    } else
     {
-       Get_Graph_Values_Cur_Pos (&df_x, &df_y) ;
-       LiniaG.x2 = df_x ;
-       LiniaG.y2 = df_y ;
+        if (options1.uklad_izometryczny)
+        {
+            l = jednostkiOb(l);
+            ret = isometric_polar_to_cartesian(LiniaG.x1, LiniaG.y1, l, eL.values[1], &Lx2, &Ly2);
+        }
+        else
+        {
+            angle_l = get_angle_l();
+            if (angle_l != 0) {
+                k = eL.values[1] + angle_l;
+                if (k < 0) k += 360;
+            } else
+                k = eL.values[1];
+            l = jednostkiOb(l);
+            k = Grid_to_Rad(k);
+            Lx2 = LiniaG.x1 + l * cos(k);
+            Ly2 = LiniaG.y1 + l * sin(k);
+        }
     }
-    parametry_linior (&LiniaG, &PL) ;
-    k = PL.kat ;
-  }
-  else
-  {
-    angle_l=get_angle_l();
-    if (angle_l!=0)
-    {
-     k = eL.values [1] + angle_l;
-     if (k<0) k+=360;
-    }
-     else
-       k = eL.values [1] ;
-  }
-  l = jednostkiOb(l);
-  k = Grid_to_Rad (k) ;
-  Lx2 = LiniaG.x1 + l * cos (k) ;
-  Ly2 = LiniaG.y1 + l * sin (k) ;
+
   strwyj = 1;
   CUR_ON (X, Y) ;
   return 1;

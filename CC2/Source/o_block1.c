@@ -610,7 +610,7 @@ static void  cur_offS_(double x,double y)
 
 static void  cur_onS(double x,double y)
 {
-  cursel_on(x, y); ////
+  //cursel_on(x, y); ////
   L.x2=x; L.y2=y;
   outlineor(&L,XOR_PUT,0);
   ks1 = ks2 = 10*sqrt((x-Px)*(x-Px)+(y-Py)*(y-Py))/(Xk-Xp);
@@ -620,7 +620,7 @@ static void  cur_onS(double x,double y)
 }
 
 static void  cur_onS_(double x,double y)
-{   cursel_on(x,y);
+{   //cursel_on(x,y);
     L.x2=x; L.y2=y;
     outlineor(&L,XOR_PUT,0);
     ks1 = ks2 = 10*sqrt((x-Px)*(x-Px)+(y-Py)*(y-Py))/(Xk-Xp);
@@ -761,7 +761,7 @@ static void  cur_offOYZ__(double x,double y)
 
 static void  cur_onO(double x,double y)
 { double l,kat;
-  cursel_on(x,y);
+  //cursel_on(x,y);
   L.x2=x; L.y2=y;
   outlineor(&L,COPY_PUT,0);
   l=sqrt((x-Px)*(x-Px)+(y-Py)*(y-Py));
@@ -775,7 +775,7 @@ static void  cur_onO(double x,double y)
 
 static void  cur_onOXZ(double x,double y)
 { double l,kat;
-  cursel_on(x,y);
+  //cursel_on(x,y);
   L.x2=x; L.y2=y;
   outlineor(&L,COPY_PUT,0);
   l=sqrt((x-Px)*(x-Px)+(y-Py)*(y-Py));
@@ -789,7 +789,7 @@ static void  cur_onOXZ(double x,double y)
 
 static void  cur_onOYZ(double x,double y)
 { double l,kat;
-  cursel_on(x,y);
+  //cursel_on(x,y);
   L.x2=x; L.y2=y;
   outlineor(&L,COPY_PUT,0);
   l=sqrt((x-Px)*(x-Px)+(y-Py)*(y-Py));

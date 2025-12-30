@@ -4337,6 +4337,10 @@ int solidarc_elements(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *l_inner1
 
     if (kat2<kat1) kat2+=Pi2;
     dkat=kat2-kat1;
+
+    if (fabs(dkat-Pi_)<0.001)
+        dkat=Pi_;  //littlebit correction
+
     if (Check_if_LE(dkat, Pi_))
         return solidarc_elements_factory(sa, 0, L_left, L_right, l_inner1, l_outer1);
     else

@@ -98,7 +98,7 @@ void bar2_tab_half_margin(void)
 void bar2_tab_len(int len_pxl)
 {
     if (len_pxl > (maxX - 15)) len_pxl = maxX - 11;
-    else if (len_pxl < (maxX - 15)/2.0) len_pxl = (maxX - 15)/2.0;
+    ////else if (len_pxl < (maxX - 15)/2.0) len_pxl = (maxX - 15)/2.0;  //this is not necessary to make message longer
 
     bar(vfv(10), ED_INF_HEIGHT, len_pxl+4, 2 * ED_INF_HEIGHT - y1); //1);
 }
@@ -263,9 +263,10 @@ void ErrListFactory(int n, char *error_str)
   Error=1;
   nn=n;
   if (n) setfillstyle_(SOLID_FILL,kolory.paperk);
-  else
-   setfillstyle_(SOLID_FILL, BKCOLOR) ;
-   bar2_tab_half_margin();
+  else {
+      setfillstyle_(SOLID_FILL, BKCOLOR);
+      bar2_tab_half_margin();
+  }
   if(n)
    {
      moveto(vfv(11), ED_INF_HEIGHT + y2);

@@ -3302,11 +3302,13 @@ static POLE pmJednostki[8] = {
 
 static TMENU mJednostki = { 8,0,0,18,24,8,TADD,CMNU,CMBR,CMTX,0,78,0,0,0,(POLE(*)[]) &pmJednostki,NULL,NULL };
 
-static POLE pmKartezjanskiGeodezyjny[2] = {
+static POLE pmKartezjanskiGeodezyjny[] = {
 		 {u8"Декартова",L'Д',104,NULL},
-		 {u8"Геодезична",L'Г',105,NULL} };
+		 {u8"Геодезична",L'Г',105,NULL},
+         {u8"Ізометрична",L'І',868,NULL}
+};
 	 
-static TMENU mKartezjanskiGeodezyjny = { 2,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,109,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 static POLE pmPointOrigin[3] = {
 		 {u8"Початкова точка\0 ",L'П',106,NULL},
@@ -3443,10 +3445,11 @@ static POLE pmParametry[] = {
 	 {u8"Редагувати ALFACADUA.INI\0 \0     ",L'Р',103,NULL},
 };
 
-static char* ParTxt[] = { u8"Д", "Г", "Т", "Н", };
+static char* ParTxt[] = { u8"Д", u8"Г", u8"Т", u8"Н", u8"І"};
 
 #define _CARTESIAN_ u8"Д"
 #define _GEODETIC_ u8"Г"
+#define _ISOMETRIC_ u8"І"
 #define _MAX_ u8"Макс"
 #define _PLUSMAX_ u8"+Макс"
 #define _OTHER_COLOR_ u8"֍[М] інший>>> "
