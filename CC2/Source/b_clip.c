@@ -846,7 +846,7 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 {
   int num_wy ;
-  int *poly_wy;
+  int *poly_wy=NULL;
   int ret;
   V3D v[8];
 #pragma pack(1)
@@ -862,7 +862,8 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
       int a=0;
   }
 
-  if (NULL == (poly_wy = (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(poly_wy[0]))))
+  //if (NULL == (poly_wy = (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(poly_wy[0]))))
+  if (NULL == (poly_wy = (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(int))))
   {
 	  return;
   }
@@ -1079,7 +1080,11 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
       }
   }
 
-  free(poly_wy);
+  if (poly_wy)
+  {
+      free(poly_wy);
+      poly_wy = NULL;
+  }
 
 }
 
@@ -1119,14 +1124,16 @@ void Clip_Solid (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy)
 {
   int i, licz, granica ;
   T_PixelTVal   s1, s2, p1, p2, x, y ;
-  T_PixelTVal  *temp_wy, *chwil ;
+  T_PixelTVal  *temp_wy=NULL, *chwil=NULL ;
 
-  if (NULL == (chwil = (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(chwil[0]))))
+  //if (NULL == (chwil = (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(chwil[0]))))
+  if (NULL == (chwil = (T_PixelTVal*)malloc((MaxNumPolygonPoints+2) * sizeof(T_PixelTVal))))
   {
 	  return;
   }
 
-  if (NULL == (temp_wy = (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(temp_wy[0]))))
+  //if (NULL == (temp_wy = (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(temp_wy[0]))))
+  if (NULL == (temp_wy = (T_PixelTVal*)malloc((MaxNumPolygonPoints+2) * sizeof(T_PixelTVal))))
   {
     free(chwil);
     return;
@@ -1189,8 +1196,16 @@ void Clip_Solid (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy)
   }
   *num_wy = num_we / 2 ;
 
-  free(chwil);
-  free(temp_wy) ;
+  if (chwil)
+  {
+      free(chwil);
+      chwil = NULL;
+  }
+  if (temp_wy)
+  {
+      free(temp_wy) ;
+      temp_wy = NULL;
+  }
 }
 
 
@@ -1278,22 +1293,27 @@ void Draw_Kolo (T_PixelTVal xr, T_PixelTVal yr, T_PixelTVal R)
   int i, N;
   long N0;
   int num_we ;
-  T_PixelTVal *poly_we ;
+  T_PixelTVal *poly_we=NULL;
   int num_wy ;
-  int *poly_wy ;
+  int *poly_wy=NULL;
 
   if (R <= 1)
   {
     putpixel_ ((int)xr, (int)yr, getcolor ()) ;
     return ;
   }
-  if (NULL == (poly_we= (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(poly_we[0]))))
+  //if (NULL == (poly_we= (T_PixelTVal*)malloc(MaxNumPolygonPoints * sizeof(poly_we[0]))))
+    if (NULL == (poly_we= (T_PixelTVal*)malloc((MaxNumPolygonPoints+2) * sizeof(T_PixelTVal))))
   {
     return ;
   }
-  if (NULL == (poly_wy= (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(poly_wy[0]))))
+  if (NULL == (poly_wy= (int*)malloc((MaxNumPolygonPoints + 2) * sizeof(int))))
   {
-    free(poly_we);
+    if (poly_we)
+    {
+        free(poly_we);
+        poly_we=NULL;
+    }
     return ;
   }
 
@@ -1352,7 +1372,15 @@ void Draw_Kolo (T_PixelTVal xr, T_PixelTVal yr, T_PixelTVal R)
     Clip_Solid (num_we / 2, poly_we, &num_wy, poly_wy) ;
   }
   fillpoly (num_wy, poly_wy) ;
-  free(poly_we);
-  free(poly_wy);
+ if (poly_we)
+ {
+     free(poly_we);
+     poly_we=NULL;
+ }
+ if (poly_wy)
+ {
+     free(poly_wy);
+     poly_wy=NULL;
+ }
 }
 

@@ -57,6 +57,7 @@ static TMENU mPLine_Con_Slab={2,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDm
 static BLOK *BLK_ADR;
 
 static int last_plate_property_no=0;
+static int last_plate_property_no_new=0;
 
 enum PLINE_MODE {PL_MODE_CONTINUE = 1 , PL_MODE_LINE , PL_MODE_ARC,
 	PL_MODE_END, PL_MODE_UNDO } ;
@@ -168,7 +169,10 @@ static void redcr (char typ, int m_con)
      if (m_con==1)
          menupini (&mPLine_Con, _POLYLINE_, _POLYLINE_C_,20) ;
      else if (m_con==2)
-         menupini (&mPLine_Con_Slab, _POLYLINE_, _POLYLINE_C_,20) ;
+     {
+         pmPLine_Con_Slab[1].menu=mVector;
+         menupini(&mPLine_Con_Slab, _POLYLINE_, _POLYLINE_C_, 20);
+     }
      CUR_ON (X, Y) ;
   }
   else
@@ -406,13 +410,14 @@ int add_property_number(double X0, double Y0)
         erase_pline () ;
         return 0;
     }
+    last_plate_property_no_new=(int)strtol(plate_property_no_str, NULL, 10);
     sprintf(opis_plyty,"#%s",plate_property_no_str);
     angle_l=get_angle_l();
     sina=get_sina();
     cosa=get_cosa();
     //DESCRIPTION
-    TextGa.kat= (angle_l/360) * Pi2;
-    TextGa.wysokosc=zmwym.wysokosc;
+    TextGa.kat= (float)((angle_l/360) * Pi2);
+    TextGa.wysokosc=(float)zmwym.wysokosc;
     TextGa.bold=zmwym.bold;
     TextGa.italics=zmwym.italics;
     TextGa.width_factor=(float)zmwym.width_factor;
@@ -426,11 +431,11 @@ int add_property_number(double X0, double Y0)
     TextGa.obiektt2 = O2NoBlockS;
     TextGa.blok=1;
 
-    TextGa.x=X0 + (dx_komentarz * cosa) + (dy_komentarz * sina);
-    TextGa.y=Y0 - (dy_komentarz * cosa) + (dx_komentarz * sina);
+    TextGa.x=(float)(X0 + (dx_komentarz * cosa) + (dy_komentarz * sina));
+    TextGa.y=(float)(Y0 - (dy_komentarz * cosa) + (dx_komentarz * sina));
 
     strcpy(&TextGa.text[0],opis_plyty);
-    LengthT=strlen(TextGa.text);
+    LengthT=(int)strlen(TextGa.text);
     TextGa.dl=LengthT;
     TextGa.n=T18+TextGa.dl;
 
@@ -567,7 +572,8 @@ start:
     }
     if (PL_MODE_END == pline_mode)
     {
-      goto beg ;
+        last_plate_property_no=last_plate_property_no_new;
+        goto beg ;
     }
     else
     if (PL_MODE_UNDO == pline_mode)

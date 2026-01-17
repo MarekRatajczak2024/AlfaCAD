@@ -81,6 +81,9 @@ static p_point bar_center;
 
 static int WHEELSIGN=1;
 
+static int keys=0;
+static int keys_int=0;
+
 BOOL XORBAR=FALSE;
 
 BOOL altkey = FALSE;
@@ -252,7 +255,8 @@ extern void get_global_coords (double *x0, double *y0);
 extern BOOL TTF_redraw;
 extern char* tab_typ_tekstu[];
 extern char* typ_punktu_tab[];
-extern char* vector_style_tab[];
+//extern char* vector_style_tab[];
+extern char*Vector_txt[];
 extern char* tab_justowanie[];
 extern char _YES__[4];
 extern char _NO__[4];
@@ -1346,6 +1350,36 @@ extern char *icon_cross_section_forces_p;
 
 extern char *icon_resilience_p;
 
+extern char *icon_fixed_roller_x_p;
+extern char *icon_fixed_roller_xu_p;
+extern char *icon_fixed_roller_y_p;
+extern char *icon_fixed_roller_yu_p;
+extern char *icon_pinned_roller_x_p;
+extern char *icon_pinned_roller_xu_p;
+extern char *icon_pinned_roller_y_p;
+extern char *icon_pinned_roller_yu_p;
+extern char *icon_rigid_rigid_springs_p;
+extern char *icon_rigid_rigid_nosprings_p;
+extern char *icon_force_z_p;
+extern char *icon_trapezium_z_p;
+extern char *icon_moment_x_p;
+extern char *icon_moment_x_rev_p;
+extern char *icon_moment_y_p;
+extern char *icon_moment_y_rev_p;
+extern char *icon_moment_xy_p;
+extern char *icon_moment_xy_rev_p;
+
+extern char *icon_displacement_z_p;
+extern char *icon_rotation_x_p;
+extern char *icon_rotation_x_rev_p;
+extern char *icon_rotation_y_p;
+extern char *icon_rotation_y_rev_p;
+extern char *icon_rotation_xy_p;
+extern char *icon_rotation_xy_rev_p;
+
+extern char *icon_vector_member_style_d_p;
+extern char *icon_rigid_springs_nosprings_d_p;
+
 extern char *icon_ULS_p;
 extern char *icon_SLS_p;
 extern char *icon_QPSLS_p;
@@ -1564,9 +1598,12 @@ TMENU mTypTekstuI = { 16,0,0,16,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pm
 
 extern TMENU mTyp_punktu;
 extern TMENU mEdgeType;
-extern TMENU mMember_style;
+extern TMENU mMember_style_cartesian;
+extern TMENU mMember_style_isometric;
 extern TMENU mForce_Displacement_style;
+extern TMENU mForce_Displacement_style_isometric;
 extern TMENU mMoment_Rotation_style;
+extern TMENU mMoment_Rotation_style_isometric;
 extern TMENU mLoad_style;
 
 
@@ -2070,8 +2107,8 @@ void Test_Menu (TMENU *menu)
 }
 
 
-static int keys=0;
-static int keys_int=0;
+//static int keys=0;
+//static int keys_int=0;
 static int msx, msy;
 static char msud;
 static char msud_min;
@@ -3474,8 +3511,11 @@ static char *get_icons_p(int number)
         /*842*/   icon_slab_zone_p, icon_slab_wall_p, icon_slab_space_p, icon_slab_load_p, icon_slab_geo_red_p, icon_slab_geo_black_p, icon_slab_fem_p,
         /*849*/   icon_slab_edge_rolled_p, icon_slab_edge_hinged_p, icon_slab_edge_free_p, icon_slab_edge_fixed_p, icon_flip_support_p, icon_static_p, icon_slab_fem_a_p, icon_slab_force_p,
         /*857*/   icon_view_log_d_48_p, icon_SI_p, icon_IMP_p, icon_factory_reset_p, icon_ULSLC_p, icon_SLSLC_p, icon_QPSLSLC_p, icon_shear_p, icon_shield_fem_p,
-        /*866*/   icon_solid_translucent_p, icon_solid_gtranslucent_p, icon_isometric_p, icon_isometric64_p
-
+        /*866*/   icon_solid_translucent_p, icon_solid_gtranslucent_p, icon_isometric_p, icon_isometric64_p,
+        /*870*/   icon_fixed_roller_x_p,icon_fixed_roller_xu_p,icon_fixed_roller_y_p,icon_fixed_roller_yu_p,icon_pinned_roller_x_p,icon_pinned_roller_xu_p,icon_pinned_roller_y_p,icon_pinned_roller_yu_p,icon_rigid_rigid_springs_p,icon_rigid_rigid_nosprings_p,
+        /*880*/   icon_force_z_p,icon_trapezium_z_p,icon_moment_x_p,icon_moment_x_rev_p,icon_moment_y_p,icon_moment_y_rev_p,icon_moment_xy_p,icon_moment_xy_rev_p,
+        /*888*/   icon_displacement_z_p,icon_rotation_x_p,icon_rotation_x_rev_p,icon_rotation_y_p,icon_rotation_y_rev_p,icon_rotation_xy_p,icon_rotation_xy_rev_p,
+        /*895*/   icon_vector_member_style_d_p, icon_rigid_springs_nosprings_d_p,
     };
    
 	if (number>1999)
@@ -7792,7 +7832,9 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		   keys = keys_int;
 		   keys_int = 0;
 	   }
-	   else Test_przycisniec(&keys); 
+	   else
+	       Test_przycisniec(&keys);
+       my_sleep(0);
 
 
 	   if (keys > 0)
@@ -8308,7 +8350,7 @@ char  readmouse(void)
     int msx_, msy_;
     int WspX_, WspY_;
 
-  Test_przycisniec(&keys_int);
+  if (keys_int==0) Test_przycisniec(&keys_int);
   if (keys_int > 0)
   {
 	  mvcurb.mvc = 1;
@@ -8394,13 +8436,6 @@ int  getcom(TMENU *menu)
    {
 
     zn = inkeys(menu, search_ok);
-
-    if (search_ok)
-    {
-        if (zn=='A') {
-            int a=0;
-        }
-    }
 	
 	set_sleep_state(FALSE);
 
@@ -9340,7 +9375,7 @@ void ch_color (void)
     }
 
     menu_level++;
-    menu_address[menu_level-1]=&mKolorAC;
+    menu_address[menu_level-1]=(char*)&mKolorAC;
     n = Simple_Menu_Proc(&mKolorAC);
 
     if (n)
@@ -9623,7 +9658,7 @@ void ch_lwidth (void)
         mGruboscLinii.poz = i_width0;
 
         menu_level++;
-        menu_address[menu_level-1]=&mGruboscLiniiS;
+        menu_address[menu_level-1]=(char*)&mGruboscLiniiS;
         n = Simple_Menu_Proc(&mGruboscLiniiS);
     }
     else {
@@ -9632,7 +9667,7 @@ void ch_lwidth (void)
         mGruboscLinii.poz = i_width;
 
         menu_level++;
-        menu_address[menu_level-1]=&mGruboscLinii;
+        menu_address[menu_level-1]=(char*)&mGruboscLinii;
         n = Simple_Menu_Proc(&mGruboscLinii);
     }
 
@@ -9799,7 +9834,7 @@ void ch_edge (void)
 
     frame_off(&mInfoAboutA);
     menu_level++;
-    menu_address[menu_level-1]=&mEdgeType;
+    menu_address[menu_level-1]=(char*)&mEdgeType;
     n = Simple_Menu_Proc(&mEdgeType);
     if (n)
     {
@@ -9825,7 +9860,7 @@ void ch_ptype (void) {
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mTyp_punktu;
+    menu_address[menu_level-1]=(char*)&mTyp_punktu;
     n = Simple_Menu_Proc(&mTyp_punktu);
     if (n)
     {
@@ -9854,13 +9889,21 @@ void ch_stype (void) {
         case 1:
         case 2:
         case 3:
-            menu_address[menu_level-1]=&mMember_style;
-            n = Simple_Menu_Proc(&mMember_style);
+            if (!(((AVECTOR *)object_info_ad)->cartflags))
+            {
+                menu_address[menu_level - 1] = (char*)&mMember_style_cartesian;
+                n = Simple_Menu_Proc(&mMember_style_cartesian);
+            }
+            else
+            {
+                menu_address[menu_level - 1] = (char*)&mMember_style_isometric;
+                n = Simple_Menu_Proc(&mMember_style_isometric);
+            }
             break;
         case 4:
         //case 18:
         case 7:
-            menu_address[menu_level-1]=&mForce_Displacement_style;
+            menu_address[menu_level-1]=(char*)&mForce_Displacement_style;
             n = Simple_Menu_Proc(&mForce_Displacement_style);
             switch (n)
             {
@@ -9872,11 +9915,25 @@ void ch_stype (void) {
                     break;
             }
             break;
+        case 19:
+        case 27:
+            menu_address[menu_level-1]=(char*)&mForce_Displacement_style_isometric;
+            n = Simple_Menu_Proc(&mForce_Displacement_style_isometric);
+            switch (n)
+            {
+                case 1:
+                    n=20;
+                    break;
+                case 2:
+                    n=28;
+                    break;
+            }
+            break;
         case 5:
         case 6:
         case 8:
         case 9:
-            menu_address[menu_level-1]=&mMoment_Rotation_style;
+            menu_address[menu_level-1]=(char*)&mMoment_Rotation_style;
             n = Simple_Menu_Proc(&mMoment_Rotation_style);
             switch (n)
             {
@@ -9894,11 +9951,63 @@ void ch_stype (void) {
                     break;
             }
             break;
+        case 21:
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+            menu_address[menu_level-1]=(char*)&mMoment_Rotation_style_isometric;
+            n = Simple_Menu_Proc(&mMoment_Rotation_style_isometric);
+            switch (n)
+            {
+                case 1:
+                    n=22;
+                    break;
+                case 2:
+                    n=23;
+                    break;
+                case 3:
+                    n=24;
+                    break;
+                case 4:
+                    n=25;
+                    break;
+                case 5:
+                    n=26;
+                    break;
+                case 6:
+                    n=27;
+                    break;
+                case 7:
+                    n=29;
+                    break;
+                case 8:
+                    n=30;
+                    break;
+                case 9:
+                    n=31;
+                    break;
+                case 10:
+                    n=32;
+                    break;
+                case 11:
+                    n=33;
+                    break;
+            }
+            break;
         case 10:
+        case 20:
         case 11:
         case 12:
         case 13:
-        case 14:menu_address[menu_level-1]=&mLoad_style;
+        case 14:menu_address[menu_level-1]=(char*)&mLoad_style;
             n = Simple_Menu_Proc(&mLoad_style);
             switch (n)
             {
@@ -9916,6 +10025,8 @@ void ch_stype (void) {
                     break;
                 case 5:
                     n=15;
+                case 6:
+                    n=21;
                     break;
             }
             break;
@@ -9928,10 +10039,34 @@ void ch_stype (void) {
     if (n)
     {
         rysuj_obiekt(object_info_ad, COPY_PUT, 0);
-        ((AVECTOR *) object_info_ad)->style = n-1;
+
+        if (!(((AVECTOR *)object_info_ad)->cartflags))
+                ((AVECTOR *) object_info_ad)->style = n-1;
+        else
+        {
+            switch (n)
+            {
+                case 1: ((AVECTOR *) object_info_ad)->style = 0;
+                    ((AVECTOR *) object_info_ad)->foundflags = 0;
+                    break;
+                case 2: ((AVECTOR *) object_info_ad)->style = 0;
+                    ((AVECTOR *) object_info_ad)->foundflags = 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         rysuj_obiekt(object_info_ad, COPY_PUT, 1);
         //menu update
-        menu_par_new((*mInfoAboutA.pola)[menu_n].txt, vector_style_tab[((AVECTOR *)object_info_ad)->style]);
+        if (((AVECTOR *)ad)->style==0)
+        {
+            if (((AVECTOR *)ad)->foundflags==0)
+                menu_par_new((*mInfoAboutA.pola)[menu_n].txt, Vector_txt[0]);
+            else
+                menu_par_new((*mInfoAboutA.pola)[menu_n].txt, Vector_txt[34]);
+        }
+        else menu_par_new((*mInfoAboutA.pola)[menu_n].txt, Vector_txt[((AVECTOR *)object_info_ad)->style]);
         Change = TRUE;
     }
     baronoff_(&mInfoAboutA);
@@ -10010,10 +10145,11 @@ static POLE pmObjectSelected[] = {
 
 static TMENU mObjectSelected = { 0,0,0,10,30,7,ICONS,CMNU,CMBR,CMTX,0,19,0,0,0,(POLE(*)[]) &pmObjectSelected,NULL,NULL };
 
-int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845, 856};
+int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 735, 736, 737, 752, 786, 845, 856,
+                   880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891, 893, 894};
 
 int edge_icon[]={0, 0, 0, 0, 849, 851, 850, 852};
-int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818};
+int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818, 870, 871, 872, 873, 874, 875, 876, 877};
 extern char *vector_txt[];
 extern char *point_txt[];
 
@@ -10032,7 +10168,7 @@ int choose_object(int type_address_no, TYPE_ADDRESS *type_address)
     char o_layer_s[12];
 
     menu_level++;
-    menu_address[menu_level-1]=&mObjectSelected;
+    menu_address[menu_level-1]=(char*)&mObjectSelected;
 
     mObjectSelected.max=0;
 
@@ -10214,7 +10350,7 @@ void ch_ltype (void)
     }
 
     menu_level++;
-    menu_address[menu_level-1]=&mTypyLinii;
+    menu_address[menu_level-1]=(char*)&mTypyLinii;
     n = Simple_Menu_Proc(&mTypyLinii);
 
     if (n)
@@ -11279,8 +11415,8 @@ void ch_angle (void)
 
             switch (((AVECTOR *) object_info_ad)->style)
             {
-                case 4:
-                case 7:
+                case 4:  //force
+                case 7:  //displacement
                     parametry_lini((AVECTOR *) object_info_ad, &PL);
                     kat=PL.kat;
                     kos=sin(a1);
@@ -11575,34 +11711,49 @@ void ch_magnitude1 (void)
             menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
             switch (((AVECTOR *) object_info_ad)->style)
             {
-                case 4:
-                case 18:
+                case 4:  //force
+                case 18:  //slab force
+                case 19: //force z
                     magnitude2line((AVECTOR*)object_info_ad, force_magnitude);
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, force_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, force_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
-                case 7:
+                case 7:  //displacement
+                case 27:  //displacement z
                     magnitude2line((AVECTOR*)object_info_ad, displacement_magnitude);
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, displacement_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, displacement_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
-                case 5:
-                case 6:
+                case 5: //moment
+                case 6: //-moment
+                case 21: //moment x
+                case 22: //-moment
+                case 23: //moment y
+                case 24: //-moment y
+                case 25: //moment xy
+                case 26: //-moment xy
                     magnitude2angle(((AVECTOR *) object_info_ad), moment_magnitude);
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, moment_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, moment_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
-                case 8:
-                case 9:
+                case 8:  //rotation
+                case 9:  //-rotation
+                case 28:  //rotation x
+                case 29:  //-rotation x
+                case 30:  //rotation y
+                case 31:  //-rotation y
+                case 32:  //rotation xy
+                case 33:  //-rotation xy
                     magnitude2angle(((AVECTOR *) object_info_ad), rotation_magnitude);
                     set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, rotation_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
                 case 10:
+                case 20:
                 case 11:
                 case 12:
                 case 13:
@@ -11810,7 +11961,7 @@ void ch_opacity (void)
     }
 
     menu_level++;
-    menu_address[menu_level-1]=&mTranslucencyCH;
+    menu_address[menu_level-1]=(char*)&mTranslucencyCH;
     n = Simple_Menu_Proc(&mTranslucencyCH);
 
     if (n)
@@ -11916,7 +12067,7 @@ void ch_load_ch(void)
         }
 
         menu_level++;
-        menu_address[menu_level-1]=&mLoad_Char_Thermal;
+        menu_address[menu_level-1]=(char*)&mLoad_Char_Thermal;
         n0 = Simple_Menu_Proc(&mLoad_Char_Thermal);
 
         if (n0)
@@ -11969,7 +12120,7 @@ void ch_load_ch(void)
         }
 
         menu_level++;
-        menu_address[menu_level-1]=&mLoad_Char;
+        menu_address[menu_level-1]=(char*)&mLoad_Char;
         n0 = Simple_Menu_Proc(&mLoad_Char);
 
         if (n0)
@@ -12079,7 +12230,7 @@ void ch_font_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mCzcionka;
+    menu_address[menu_level-1]=(char*)&mCzcionka;
     Set_HEIGHT_high();
 
     Test_Menu (&mCzcionka);
@@ -12149,7 +12300,7 @@ void ch_type_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mTypTekstuI;
+    menu_address[menu_level-1]=(char*)&mTypTekstuI;
     n = Simple_Menu_Proc(&mTypTekstuI);
     if (n)
     {
@@ -12173,7 +12324,7 @@ void ch_hidden_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mUkrytyI;
+    menu_address[menu_level-1]=(char*)&mUkrytyI;
     n = Simple_Menu_Proc(&mUkrytyI);
     if (n)
     {
@@ -12207,7 +12358,7 @@ void ch_adjust_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mJustowanieI;
+    menu_address[menu_level-1]=(char*)&mJustowanieI;
     n = Simple_Menu_Proc(&mJustowanieI);
     if (n)
     {
@@ -12318,7 +12469,7 @@ void ch_italic_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mItalicsI;
+    menu_address[menu_level-1]=(char*)&mItalicsI;
     n = Simple_Menu_Proc(&mItalicsI);
     if (n)
     {
@@ -12355,7 +12506,7 @@ void ch_bold_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mBoldI;
+    menu_address[menu_level-1]=(char*)&mBoldI;
     n = Simple_Menu_Proc(&mBoldI);
     if (n)
     {
@@ -12392,7 +12543,7 @@ void ch_underline_t (void)
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=&mUnderlinedI;
+    menu_address[menu_level-1]=(char*)&mUnderlinedI;
     n = Simple_Menu_Proc(&mUnderlinedI);
     if (n)
     {
@@ -12445,7 +12596,7 @@ void ch_spacing_t (void)
     }
 
     menu_level++;
-    menu_address[menu_level-1]=&mLineSpacing;
+    menu_address[menu_level-1]=(char*)&mLineSpacing;
     n = Simple_Menu_Proc(&mLineSpacing);
     if (n)
     {

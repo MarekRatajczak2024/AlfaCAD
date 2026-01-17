@@ -877,6 +877,7 @@ extern int Skala_In_();
 extern int Skala_Out_();
 extern int trim_line_to_quad(LINIA *ptrs_line, QUAD *quad, LINIA *line_tmp, LINIA *line_tmp1);
 extern int trim_arc_to_quad(LUK *ptrs_arc, QUAD *quad, LUK *arc_tmp, LUK *arc_tmp1);
+extern int trim_ellipticalarc_to_quad(ELLIPTICALARC *ptrs_ea, QUAD *quad, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1);
 extern void Normalize_Quad (QUAD *quad);
 extern void calc_bspline(int lp, int n, float points[], int p1, float* out_x, float* out_y);
 

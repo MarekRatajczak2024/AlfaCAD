@@ -2064,14 +2064,14 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 								if (mvcurb.akton && (mvcurb.mvc))  //|| keypressed()
 								{
-									w_char_no = k;
-									w_lw_no = li;
+									mvcurb.mvc=0;
+									//w_char_no = k;
+									//w_lw_no = li;
 									return;
 								}
 								if (mvcurb.aktoff && mvcurb.T == 1 &&
 									w_char_no == k && w_lw_no == li)
 								{
-									//if ((f_type == 2) && (mode == XOR_PUT)) free(alf);
 									return;
 								}
 								arc = FALSE;
@@ -2146,6 +2146,9 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 						if (mvcurb.akton && (mvcurb.mvc))  //|| keypressed()
 						{
+//							mvcurb.mvc=0;
+							//w_char_no = k;
+							//w_lw_no = li;
 							return;
 						}
 

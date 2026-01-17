@@ -102,6 +102,101 @@ static double Rstr;
 
 /*-----------------------------------------------------------------------*/
 
+//enum PlaneType { XY_PLANE, XZ_PLANE, YZ_PLANE };
+
+/*
+ * Transform a circle in the specified plane (with center in Cartesian screen coordinates and radius r in world units)
+ * to an equivalent ellipse in Cartesian screen coordinates for isometric projection.
+ *
+ * Inputs:
+ *   plane - The plane of the circle (XY horizontal, XZ or YZ vertical)
+ *   x, y  - Center of the circle in Cartesian (screen) coordinates
+ *   r     - Radius of the circle in world units (same as krok_g units)
+ *
+ * Outputs:
+ *   xe, ye - Center of the ellipse in Cartesian coordinates (same as input x,y)
+ *   rx     - Semi-axis along Cartesian X (before rotation)
+ *   ry     - Semi-axis along Cartesian Y (before rotation)
+ *   a      - Rotation angle of the ellipse in degrees (angle of the X semi-axis relative to Cartesian X-axis)
+ *
+ * Returns: 0 on success, -1 on invalid pointers
+ */
+int circle_to_isometric_ellipse(enum PlaneType plane, double x, double y, double r,
+                                double *xe, double *ye, double *rx, double *ry, double *a) {
+    if (!xe || !ye || !rx || !ry || !a || r < 0.0) return -1;
+
+    // Center remains the same in screen coordinates
+    *xe = x;
+    *ye = y;
+
+    // Precomputed scales
+    double sqrt_3_over_2 = sqrt(3.0 / 2.0);  // ≈ 1.224744871391589
+    double one_over_sqrt_2 = 1.0 / sqrt(2.0);  // ≈ 0.7071067811865475
+
+    switch (plane) {
+        case XY_PLANE:  // Horizontal: axis-aligned, wider in X
+            *rx = r * sqrt_3_over_2;
+            *ry = r * one_over_sqrt_2;
+            *a = 0.0;
+            break;
+
+        case XZ_PLANE:  // Vertical XZ: rotated -30°, taller in Y
+            *rx = r * one_over_sqrt_2;
+            *ry = r * sqrt_3_over_2;
+            *a = -30.0;
+            break;
+
+        case YZ_PLANE:  // Vertical YZ: rotated +30°, taller in Y
+            *rx = r * one_over_sqrt_2;
+            *ry = r * sqrt_3_over_2;
+            *a = 30.0;
+            break;
+
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
+int circle_to_isometric_ellipse_o_e(enum PlaneType plane, OKRAG *o, ELLIPSE *e)
+        {
+    if (!o || !e || o->r <= 0.0) return -1;
+
+    // Center remains the same in screen coordinates
+    e->x = o->x;
+    e->y = o->y;
+
+    // Precomputed scales
+    double sqrt_3_over_2 = sqrt(3.0 / 2.0);  // ≈ 1.224744871391589
+    double one_over_sqrt_2 = 1.0 / sqrt(2.0);  // ≈ 0.7071067811865475
+
+    switch (plane) {
+        case XY_PLANE:  // Horizontal: axis-aligned, wider in X
+            e->rx = o->r * (float)sqrt_3_over_2;
+            e->ry = o->r * (float)one_over_sqrt_2;
+            e->angle = 0.0f;
+            break;
+
+        case XZ_PLANE:  // Vertical XZ: rotated -30°, taller in Y
+            e->rx = o->r * (float)one_over_sqrt_2;
+            e->ry = o->r * (float)sqrt_3_over_2;
+            e->angle = 5.759586532f; //-30.0f;
+            break;
+
+        case YZ_PLANE:  // Vertical YZ: rotated +30°, taller in Y
+            e->rx = o->r * (float)one_over_sqrt_2;
+            e->ry = o->r * (float)sqrt_3_over_2;
+            e->angle = 0.523598776f; //30.0f;
+            break;
+
+        default:
+            return -1;
+    }
+
+    return 0;
+}
+
 static BOOL circle_center_TTR_OL(/*t_circle_TTR *ptrs__circle_TTR,*/ OKRAG *o, LINIA *l, const double *x0,  const double *y0, double r, double *x,  double *y)
 {
     double dx = l->x2 - l->x1;

@@ -75,6 +75,8 @@ extern int Get_Ellipse_Points (double df_xc, double df_yc, double df_xaxis, doub
 extern int Get_EllipticalArc_Points (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double df_sangle, double df_eangle, double xy[]);
 extern void Set_Ell_Verno (int i_ell_verno);
 extern int Get_Ell_Verno (void);
+extern int przeciecieLEA_ (double *x, double *y, void *adr, void *adr1);
+extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle,double df_sangle0,double df_eangle0,double *x1, double *y1, double *x2, double *y2);
 
 static void *obiekt_wybrany1 (unsigned *typ)
 /*---------------------------------------*/
@@ -3947,6 +3949,181 @@ int trim_arc_to_quad (LUK *ptrs_arc, QUAD *quad, LUK *arc_tmp, LUK *arc_tmp1)
     }
     if ((b_add1 == TRUE) && (b_add2 == TRUE)) return 2;  //drawing 2 lines
     else return 1;  //drawing first line
+}
+
+//#include <math.h>
+//#include <stdlib.h>  // for qsort
+
+//#define M_PI 3.14159265358979323846
+
+/* Helper: sign function */
+static int sign(double v) {
+    return (v > 0.0) ? 1 : ((v < 0.0) ? -1 : 0);
+}
+
+/* Helper: point inside quad (ray casting) */
+static int point_in_quad(double px, double py, const QUAD *quad) {
+    int i, j, c = 0;
+    for (i = 0, j = 3; i < 4; j = i++) {
+        double xi = quad->xy[2*i], yi = quad->xy[2*i + 1];
+        double xj = quad->xy[2*j], yj = quad->xy[2*j + 1];
+        if (((yi > py) != (yj > py)) &&
+            (px < xi + (xj - xi) * (py - yi) / (yj - yi + (yj == yi ? 1e-10 : 0)))) {
+            c = !c;
+        }
+    }
+    return c;
+}
+
+/* Helper: ellipse parametric point */
+static void ellipse_point(const ELLIPTICALARC *ea, double phi, double *px, double *py) {
+    double cos_phi = cos(phi);
+    double sin_phi = sin(phi);
+    double cos_a = cos(ea->angle);
+    double sin_a = sin(ea->angle);
+    *px = ea->x + ea->rx * cos_phi * cos_a - ea->ry * sin_phi * sin_a;
+    *py = ea->y + ea->rx * cos_phi * sin_a + ea->ry * sin_phi * cos_a;
+}
+
+/* Helper: solve quadratic for intersection parameter t in [0,1] */
+static int solve_intersections(double a, double b, double c, double t[2]) {
+    double disc = b*b - 4*a*c;
+    if (disc < 0.0) return 0;
+    double sqrt_disc = sqrt(disc);
+    t[0] = (-b - sqrt_disc) / (2*a);
+    t[1] = (-b + sqrt_disc) / (2*a);
+    int n = 0;
+    if (t[0] >= 0.0 && t[0] <= 1.0) t[n++] = t[0];
+    if (t[1] >= 0.0 && t[1] <= 1.0 && fabs(t[1] - t[0]) > 1e-8) t[n++] = t[1];
+    return n;
+}
+
+/* Helper: intersection of parametric line with quad edge */
+static int line_quad_intersection(double x1, double y1, double x2, double y2,
+                                  double ex1, double ey1, double ex2, double ey2,
+                                  double *t) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double ex = ex2 - ex1;
+    double ey = ey2 - ey1;
+    double den = dx * ey - dy * ex;
+    if (fabs(den) < 1e-10) return 0;  // parallel
+    double num_t = (ex1 - x1) * ey - (ey1 - y1) * ex;
+    *t = num_t / den;
+    return (*t >= 0.0 && *t <= 1.0);
+}
+
+static int double_cmp(const void *a, const void *b) {
+    return (*(const double*)a > *(const double*)b) - (*(const double*)a < *(const double*)b);
+}
+
+/* Main function */
+int trim_ellipticalarc_to_quad(ELLIPTICALARC *ptrs_ea, QUAD *quad, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1) {
+    LINIA L=Ldef;
+    int ret;
+    double int_x, int_y;
+
+    if (!ptrs_ea || !quad || !ea_tmp || !ea_tmp1) return 0;
+
+    /* Copy original to temps */
+    memmove(ea_tmp, ptrs_ea, sizeof(ELLIPTICALARC));
+    memmove(ea_tmp1, ptrs_ea, sizeof(ELLIPTICALARC));
+
+    if (ea_tmp->kat2 < ea_tmp->kat1) ea_tmp->kat2 += (float)(2.0 * M_PI);
+    if (ea_tmp1->kat2 < ea_tmp1->kat1) ea_tmp1->kat2 += (float)(2.0 * M_PI);
+
+    double phi1 = ptrs_ea->angle + ptrs_ea->kat1;
+    double phi2 = ptrs_ea->angle + ptrs_ea->kat2;
+
+    /* Ensure phi2 > phi1 and sweep <= 2π */
+    if (phi2 <= phi1) phi2 += 2.0 * M_PI;
+
+    /* Compute end points */
+    double end1_x, end1_y, end2_x, end2_y;
+    ellipse_point(ptrs_ea, phi1, &end1_x, &end1_y);
+    ellipse_point(ptrs_ea, phi2, &end2_x, &end2_y);
+
+    int in1 = point_in_quad(end1_x, end1_y, quad);
+    int in2 = point_in_quad(end2_x, end2_y, quad);
+
+    if (!in1 && !in2) {
+        /* Both outside - check if arc crosses quad */
+        /* Sample points along arc */
+        const int samples = 32;
+        double phi_step = (phi2 - phi1) / samples;
+        int crossings = 0;
+        for (int i = 1; i < samples; i++) {
+            double phi = phi1 + i * phi_step;
+            double px, py;
+            ellipse_point(ptrs_ea, phi, &px, &py);
+            if (point_in_quad(px, py, quad)) crossings++;
+        }
+        if (crossings == 0) return 0;  // no intersection
+    }
+
+    /* Find intersection parameters */
+    double t_list[8];  // max 4 edges × 2
+    int n_t = 0;
+
+    for (int e = 0; e < 4; e++)
+    {
+        int e2 = (e + 1) % 4;
+        L.x1 = quad->xy[2*e];
+        L.y1 = quad->xy[2*e + 1];
+        L.x2 = quad->xy[2*e2];
+        L.y2 = quad->xy[2*e2 + 1];
+        ret = przeciecieLEA_ (&int_x, &int_y, &L, ptrs_ea);  //it's well working legacy procedure finding real intersection point between Line and Elliptical Arc
+        if (ret)
+        {
+            double phi_int = atan2(int_y - ptrs_ea->y, int_x - ptrs_ea->x) - ptrs_ea->angle;
+            if (phi_int < 0.0) phi_int += 2.0 * M_PI;
+            if (phi_int < phi1) phi_int += 2.0 * M_PI;
+            t_list[n_t++] = phi_int;
+        }
+    }
+
+    if (n_t == 0) {
+        /* No intersection - whole arc visible or hidden */
+        if (in1 || in2) return 0;  // hidden
+        return 1;  // visible
+    }
+
+    /* Sort intersection phis */
+    qsort(t_list, n_t, sizeof(double), double_cmp);
+
+    if (n_t == 0) return 0;
+
+    if (n_t == 1)
+    {
+        /* One visible segment */
+        //check which points lays inside quad
+        double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
+        Get_EllipticalArc_EndPoints (ptrs_ea->x, ptrs_ea->y, ptrs_ea->rx, ptrs_ea->ry, ptrs_ea->angle, ptrs_ea->kat1, ptrs_ea->kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+        if (point_in_quad(ea_end_x, ea_end_y, quad))
+        {
+            ea_tmp->kat1 = (float) ea_tmp->kat1;
+            ea_tmp->kat2 = (float) t_list[0] - ea_tmp->angle;
+            if (ea_tmp->kat2 < ea_tmp->kat1) ea_tmp->kat2 += (float) (2.0 * M_PI);
+        }
+        else
+        {
+            ea_tmp->kat1 = (float) t_list[0] - ea_tmp->angle;
+            ea_tmp->kat2 = ea_tmp->kat2;
+            if (ea_tmp->kat2 < ea_tmp->kat1) ea_tmp->kat2 += (float) (2.0 * M_PI);
+        }
+        return 1;
+    }
+
+    /* Two visible segments */
+    //ea_tmp->kat1 = ea_tmp->kat1;  //it stays as is
+    ea_tmp->kat2 = (float)t_list[0]-ea_tmp->angle;
+    if (ea_tmp->kat2 < ea_tmp->kat1) ea_tmp->kat2 += (float)(2.0 * M_PI);
+
+    ea_tmp1->kat1 = (float)t_list[1]-ea_tmp1->angle;
+    //ea_tmp1->kat2 = ea_tmp1->kat2;  //it stays as is
+    if (ea_tmp1->kat2 < ea_tmp1->kat1) ea_tmp1->kat2 += (float)(2.0 * M_PI);
+
+    return 2;
 }
 
 #undef __O_TRIM__

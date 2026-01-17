@@ -667,7 +667,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Wskaż schemat ramy lyb kratownicy do analizy statycznej/dynamicznej",
-/*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii)",
+/*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii lub wektora elementu)",
 /*169*/u8"Wskaż element ramy lub kratownicy",
 /*170*/u8"Umieść linię przekrojową w żądanych współrzędnych elementu. Kliknij aby zapisać wartości w schowku",
 /*171*/u8"Wskaż schemat płyty do analizy statycznej (MES)",

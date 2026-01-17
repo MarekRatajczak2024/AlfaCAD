@@ -109,6 +109,15 @@ extern void set_decimal_format(char *text, double l, double precision);
 extern double normalize_txt_angle(double angle0);
 extern void normalize_txt(TEXT *ptrs_text);
 extern char *load_symbol[];
+extern int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea);
+extern void srodekea_(double *x,double *y, double *tangent, void *adr);
+extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle,double df_sangle0,double df_eangle0,double *x1, double *y1, double *x2, double *y2);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+extern double cartesian_angle_to_isometric_angle(double cart_angle_rad);
+extern double isometric_angle_to_cartesian_angle_rad(double iso_angle_rad);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2,float *base_x1, float *base_y1, float *base_x2, float *base_y2);
 
 extern double dim_precision;
 extern double force_precision;
@@ -732,39 +741,80 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
 {
     int ret=0;
     double n;
-    LINIA Lt, Lth;
+    LINIA Lt, Lth, Lp=Ldef;;
     double Ltx, Lty;
     PLINIA PL, PL1, PLth;
     double koc1, kos1, koc2, kos2, koc1th, kos1th;
     double dx, dy, dx1, dy1;
     float ymax, xmax;
+    double h_factor;
+    double kat1, kos, koc;
+    double arrow_angle;
     
     switch (v->style) {
         case 10:   //trapezium Y
         case 17:   //trapezium Y slab
+        case 20:   //trapezium Z
             if (L->x1<L->x2) n=1;
             else n=-1;
 
             if (v->flags & 1) n*=-1;
 
-            Lt.x1 = L->x1;
-            Lt.y1 = L->y1 + n*(v->magnitude1/((v->style==10) ? load_magnitude : flood_magnitude));
-            Lt.x2 = L->x2;
-            Lt.y2 = L->y2 + n*(v->magnitude2/((v->style==10) ? load_magnitude : flood_magnitude));
+            if ((!(v->cartflags & 1)) || (v->style!=10))
+            {
+                Lt.x1 = L->x1;
+                Lt.y1 = L->y1 + n * (v->magnitude1 / ((v->style == 10) ? load_magnitude : flood_magnitude));
+                Lt.x2 = L->x2;
+                Lt.y2 = L->y2 + n * (v->magnitude2 / ((v->style == 10) ? load_magnitude : flood_magnitude));
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude1 / ((v->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude2 / ((v->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                Lt.x1 = L->x1 + dx1_cart;
+                Lt.y1 = L->y1 + dy1_cart;
+                Lt.x2 = L->x2 + dx2_cart;
+                Lt.y2 = L->y2 + dy2_cart;
+            }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if ((!(v->cartflags & 1)) || (v->style!=10))
+            {
+                kos1=sin(Pi*(PL1.kat+90)/180);
+                koc1=cos(Pi*(PL1.kat+90)/180);
+            }
+            else {
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
 
-            if (Lt.x1<Lt.x2)
+            if (v->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
+            if (Lt.x1==Lt.x2)
+            {
+
+                dx = 0;
+                dy = 0;
+
+                dx1 = 0;
+                dy1 = 0;
+            }
+            else if (Lt.x1<Lt.x2)
             {
                 if (Lt.y1<L->y1)
                 {
-                    dx=-Vtxt->wysokosc*koc1;
-                    dy=-Vtxt->wysokosc*kos1;
+                    dx=-Vtxt->wysokosc*h_factor*koc1;
+                    dy=-Vtxt->wysokosc*h_factor*kos1;
                 }
                 else
                 {
@@ -774,8 +824,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
 
                 if (Lt.y2<L->y2)
                 {
-                    dx1=-Vtxt->wysokosc*koc1;
-                    dy1=-Vtxt->wysokosc*kos1;
+                    dx1=-Vtxt->wysokosc*h_factor*koc1;
+                    dy1=-Vtxt->wysokosc*h_factor*kos1;
                 }
                 else {
                     dx1 = 0;
@@ -791,8 +841,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
                 else
                 {
-                    dx = Vtxt->wysokosc * koc1;
-                    dy = Vtxt->wysokosc * kos1;
+                    dx = Vtxt->wysokosc *h_factor* koc1;
+                    dy = Vtxt->wysokosc *h_factor* kos1;
                 }
 
                 if (Lt.y2>L->y2)
@@ -802,8 +852,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
                 else
                 {
-                    dx1 = Vtxt->wysokosc * koc1;
-                    dy1 = Vtxt->wysokosc * kos1;
+                    dx1 = Vtxt->wysokosc *h_factor* koc1;
+                    dy1 = Vtxt->wysokosc *h_factor* kos1;
                 }
             }
 
@@ -825,29 +875,68 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             break;
         case 11: //trapezium X
 
+            if (Check_if_Equal(L->y1, L->y2))
+            {
+                L->y2+=0.001;
+
+                parametry_lini(L, &PL);
+                kat1=PL.kat;
+                kos=sin(PL.kat*Pi/180);
+                koc=cos(PL.kat*Pi/180);
+
+            }
+
             if (L->y1<L->y2) n=1;
             else n=-1;
 
             if (v->flags & 1) n*=-1;
 
-            Lt.x1 = L->x1 - n*(v->magnitude1/load_magnitude);;
-            Lt.y1 = L->y1;
-            Lt.x2 = L->x2 - n*(v->magnitude2/load_magnitude);
-            Lt.y2 = L->y2;
+            if (!(v->cartflags & 1))
+            {
+                Lt.x1 = L->x1 - n * (v->magnitude1 / load_magnitude);;
+                Lt.y1 = L->y1;
+                Lt.x2 = L->x2 - n * (v->magnitude2 / load_magnitude);
+                Lt.y2 = L->y2;
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(- n * (v->magnitude1 / load_magnitude), 0, &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(- n * (v->magnitude2 / load_magnitude), 0, &dx2_cart, &dy2_cart);
+                Lt.x1 = L->x1 + dx1_cart;
+                Lt.y1 = L->y1 + dy1_cart;
+                Lt.x2 = L->x2 + dx2_cart;
+                Lt.y2 = L->y2 + dy2_cart;
+            }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if (!(v->cartflags & 1))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180);
+            }
+            else {
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
+
+            if (v->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
 
             if (Lt.y1<Lt.y2)
             {
                 if (Lt.x1>L->x1)
                 {
-                    dx=-Vtxt->wysokosc*koc1;
-                    dy=-Vtxt->wysokosc*kos1;
+                    dx=-Vtxt->wysokosc*h_factor*koc1;
+                    dy=-Vtxt->wysokosc*h_factor*kos1;
                 }
                 else
                 {
@@ -856,8 +945,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
                 if (Lt.x2>L->x2)
                 {
-                    dx1=-Vtxt->wysokosc*koc1;
-                    dy1=-Vtxt->wysokosc*kos1;
+                    dx1=-Vtxt->wysokosc*h_factor*koc1;
+                    dy1=-Vtxt->wysokosc*h_factor*kos1;
                 }
                 else {
                     dx1 = 0;
@@ -873,8 +962,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
                 else
                 {
-                    dx = -Vtxt->wysokosc * koc1;
-                    dy = -Vtxt->wysokosc * kos1;
+                    dx = -Vtxt->wysokosc *h_factor* koc1;
+                    dy = -Vtxt->wysokosc *h_factor* kos1;
                 }
                 if (Lt.x2>L->x2)
                 {
@@ -883,8 +972,8 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
                 else
                 {
-                    dx1 = -Vtxt->wysokosc * koc1;
-                    dy1 = -Vtxt->wysokosc * kos1;
+                    dx1 = -Vtxt->wysokosc *h_factor* koc1;
+                    dy1 = -Vtxt->wysokosc *h_factor* kos1;
                 }
             }
 
@@ -904,51 +993,81 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             break;
         case 12:  //trapezium N
 
-            parametry_lini(v, &PL);
-            kos1=sin(Pi*(PL.kat+90)/180);
-            koc1=cos(Pi*(PL.kat+90)/180);
+            parametry_lini(L, &PL);
+
+            if (!(v->cartflags & 1))
+            {
+                arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180.);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            }
 
             n=1;
             if (v->flags & 1) n*=-1;
 
-            Lt.x1 = v->x1 + n*(v->magnitude1/load_magnitude)*koc1;
-            Lt.y1 = v->y1 + n*(v->magnitude1/load_magnitude)*kos1;
-            Lt.x2 = v->x2 + n*(v->magnitude2/load_magnitude)*koc1;
-            Lt.y2 = v->y2 + n*(v->magnitude2/load_magnitude)*kos1;
+            Lt.x1 = v->x1 + (float)(n*(v->magnitude1/load_magnitude)*koc1);
+            Lt.y1 = v->y1 + (float)(n*(v->magnitude1/load_magnitude)*kos1);
+            Lt.x2 = v->x2 + (float)(n*(v->magnitude2/load_magnitude)*koc1);
+            Lt.y2 = v->y2 + (float)(n*(v->magnitude2/load_magnitude)*kos1);
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos2=sin(Pi*(PL1.kat+90)/180);
-            koc2=cos(Pi*(PL1.kat+90)/180);
+            if (!(v->cartflags & 1))
+            {
+                kos2=sin(Pi*(PL1.kat+90.)/180.);
+                koc2=cos(Pi*(PL1.kat+90.)/180.);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180.);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos2 = sin(cart_angle);
+                koc2 = cos(cart_angle);
+            }
 
             dx = 0;
             dy = 0;
             dx1 = 0;
             dy1 = 0;
 
+            if (v->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
             if (((v->magnitude1<0) && !(v->flags & 1)) ||
                 ((v->magnitude1>0) && (v->flags & 1)))
             {
-                dx = -Vtxt->wysokosc * koc2;
-                dy = -Vtxt->wysokosc * kos2;
+                dx = -Vtxt->wysokosc *h_factor* koc2;
+                dy = -Vtxt->wysokosc *h_factor* kos2;
             }
 
             if (((v->magnitude2<0) && !(v->flags & 1)) ||
                 ((v->magnitude2>0) && (v->flags & 1)))
             {
-                dx1 = -Vtxt->wysokosc * koc2;
-                dy1 = -Vtxt->wysokosc * kos2;
+                dx1 = -Vtxt->wysokosc *h_factor* koc2;
+                dy1 = -Vtxt->wysokosc *h_factor* kos2;
             }
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=(PL1.kat*Pi/180);
+            Vtxt->x=Lt.x1+(float)dx;
+            Vtxt->y=Lt.y1+(float)dy;
+            Vtxt->kat=(float)(PL1.kat*Pi/180.);
             Vtxt->justowanie=j_do_lewej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=(PL1.kat*Pi/180);
+            Vtxt1->x=Lt.x2+(float)dx1;
+            Vtxt1->y=Lt.y2+(float)dy1;
+            Vtxt1->kat=(float)(PL1.kat*Pi/180.);
             Vtxt1->justowanie=j_do_prawej;
 
             normalize_txt(Vtxt);
@@ -957,35 +1076,71 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             if (tekst_wybrany(Vtxt1)) return 2;
             break;
         case 13: //trapezium H
-            if (v->x1<v->x2)
+
+            if (!(v->cartflags & 1))
             {
-                n=1;
-                ymax=max(v->y1, v->y2);
+                if (L->x1 < L->x2) {
+                    n = 1;
+                    ymax = max(L->y1, L->y2);
+                } else {
+                    n = -1;
+                    ymax = min(L->y1, L->y2);
+                }
+
+                if (v->flags & 1) n *= -1;
+
+                Lt.x1 = L->x1;
+                Lt.y1 = ymax + n * (v->magnitude1 / load_magnitude);
+                Lt.x2 = L->x2;
+                Lt.y2 = ymax + n * (v->magnitude2 / load_magnitude);
             }
             else
             {
-                n=-1;
-                ymax=min(v->y1, v->y2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(L->x1, L->y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(L->x2, L->y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_x1<iso_L1_x2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_x(L->x1, L->y1, L->x2, L->y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0.,  n * (v->magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0.,  n * (v->magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float)dx1_cart;
+                Lt.y1 = Lp.y1 + (float)dy1_cart;
+                Lt.x2 = Lp.x2 + (float)dx2_cart;
+                Lt.y2 = Lp.y2 + (float)dy2_cart;
             }
-
-            if (v->flags & 1) n*=-1;
-
-            Lt.x1 = v->x1;
-            Lt.y1 = ymax + n*(v->magnitude1/load_magnitude);
-            Lt.x2 = v->x2;
-            Lt.y2 = ymax + n*(v->magnitude2/load_magnitude);
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if (!(v->cartflags & 1))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180);
+            }
+            else {
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
 
             dx=0;
             dy=0;
             dx1=0;
             dy1=0;
+
+            if (v->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
 
             if (Lt.x1<Lt.x2)
             {
@@ -993,15 +1148,15 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 if (((v->magnitude1<0) && !(v->flags & 1)) ||
                     ((v->magnitude1>0) && (v->flags & 1)))
                 {
-                    dx=-Vtxt->wysokosc*koc1;
-                    dy=-Vtxt->wysokosc*kos1;
+                    dx=-Vtxt->wysokosc*h_factor*koc1;
+                    dy=-Vtxt->wysokosc*h_factor*kos1;
                 }
 
                 if (((v->magnitude2<0) && !(v->flags & 1)) ||
                     ((v->magnitude2>0) && (v->flags & 1)))
                 {
-                    dx1=-Vtxt->wysokosc*koc1;
-                    dy1=-Vtxt->wysokosc*kos1;
+                    dx1=-Vtxt->wysokosc*h_factor*koc1;
+                    dy1=-Vtxt->wysokosc*h_factor*kos1;
                 }
             }
             else
@@ -1009,14 +1164,14 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 if (((v->magnitude1>=0) && !(v->flags & 1)) ||
                     ((v->magnitude1<0) && (v->flags & 1)))
                 {
-                    dx = Vtxt->wysokosc * koc1;
-                    dy = Vtxt->wysokosc * kos1;
+                    dx = Vtxt->wysokosc *h_factor* koc1;
+                    dy = Vtxt->wysokosc *h_factor* kos1;
                 }
                 if (((v->magnitude2>=0) && !(v->flags & 1)) ||
                     ((v->magnitude2<0) && (v->flags & 1)))
                 {
-                    dx1 = Vtxt->wysokosc * koc1;
-                    dy1 = Vtxt->wysokosc * kos1;
+                    dx1 = Vtxt->wysokosc *h_factor* koc1;
+                    dy1 = Vtxt->wysokosc *h_factor* kos1;
                 }
             }
 
@@ -1037,49 +1192,86 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             if (tekst_wybrany(Vtxt1)) return 2;
             break;
         case 14: //trapezium V
-            if (v->y1<v->y2)
+            if (!(v->cartflags & 1))
             {
-                n=1;
-                xmax=min(v->x1, v->x2);
+                if (v->y1 < v->y2) {
+                    n = 1;
+                    xmax = min(v->x1, v->x2);
+                } else {
+                    n = -1;
+                    xmax = max(v->x1, v->x2);
+                }
+
+                if (v->flags & 1) n *= -1;
+
+                Lt.x1 = xmax - n * (v->magnitude1 / load_magnitude);
+                Lt.y1 = v->y1;
+                Lt.x2 = xmax - n * (v->magnitude2 / load_magnitude);
+                Lt.y2 = v->y2;
             }
             else
             {
-                n=-1;
-                xmax=max(v->x1, v->x2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(L->x1, L->y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(L->x2, L->y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_y1<iso_L1_y2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_y(L->x1, L->y1, L->x2, L->y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(-n * (v->magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(-n * (v->magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float)dx1_cart;
+                Lt.y1 = Lp.y1 + (float)dy1_cart;
+                Lt.x2 = Lp.x2 + (float)dx2_cart;
+                Lt.y2 = Lp.y2 + (float)dy2_cart;
             }
-
-            if (v->flags & 1) n*=-1;
-
-            Lt.x1 = xmax - n*(v->magnitude1/load_magnitude);
-            Lt.y1 = v->y1;
-            Lt.x2 = xmax - n*(v->magnitude2/load_magnitude);
-            Lt.y2 = v->y2;
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if (!(v->cartflags & 1))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180);
+            }
+            else {
+                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
+                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
 
             dx=0;
             dy=0;
             dx1=0;
             dy1=0;
 
+            if (v->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
             if (Lt.y1<Lt.y2)
             {
                 if (((v->magnitude1<0) && !(v->flags & 1)) ||
                     ((v->magnitude1>0) && (v->flags & 1)))
                 {
-                    dx=-Vtxt->wysokosc*koc1;
-                    dy=-Vtxt->wysokosc*kos1;
+                    dx=-Vtxt->wysokosc*h_factor*koc1;
+                    dy=-Vtxt->wysokosc*h_factor*kos1;
                 }
                 if (((v->magnitude2<0) && !(v->flags & 1)) ||
                     ((v->magnitude2>0) && (v->flags & 1)))
                 {
-                    dx1=-Vtxt->wysokosc*koc1;
-                    dy1=-Vtxt->wysokosc*kos1;
+                    dx1=-Vtxt->wysokosc*h_factor*koc1;
+                    dy1=-Vtxt->wysokosc*h_factor*kos1;
                 }
             }
             else
@@ -1087,14 +1279,14 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 if (((v->magnitude1<0) && !(v->flags & 1)) ||
                     ((v->magnitude1>0) && (v->flags & 1)))
                 {
-                    dx = -Vtxt->wysokosc * koc1;
-                    dy = -Vtxt->wysokosc * kos1;
+                    dx = -Vtxt->wysokosc *h_factor* koc1;
+                    dy = -Vtxt->wysokosc *h_factor* kos1;
                 }
                 if (((v->magnitude2<0) && !(v->flags & 1)) ||
                     ((v->magnitude2>0) && (v->flags & 1)))
                 {
-                    dx1 = -Vtxt->wysokosc * koc1;
-                    dy1 = -Vtxt->wysokosc * kos1;
+                    dx1 = -Vtxt->wysokosc *h_factor* koc1;
+                    dy1 = -Vtxt->wysokosc *h_factor* kos1;
                 }
             }
 
@@ -1191,6 +1383,7 @@ int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)
     switch (v->style) {
         case 10:   //trapezium Y
         case 17:   //trapezium Y slab
+        case 20:   //trapezium Z
         if (L->x1 < L->x2) {
             if (L->y2 < v->y2)
             {
@@ -1325,7 +1518,8 @@ int vector_wybrany(AVECTOR *ad)
 {
     double x0,y0;
     double n;
-    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef, LL=Ldef;
+    LINIA L=Ldef, /*L1=Ldef,*/ Lth=Ldef, Lt=Ldef, LL=Ldef, Lp=Ldef;
+    ELLIPTICALARC ea=eldef;
     LUK l;
     OKRAG O;
     TEXT Vtxt=Tdef, Vtxt1;
@@ -1335,6 +1529,11 @@ int vector_wybrany(AVECTOR *ad)
     double ra;
     double _precision_;
     int ret;
+    int plane;
+    double x1, y1, tangent;
+    double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
+    double arrow_angle;
+    float xmax, ymax;
 
     if (vector_filter>-1) {
         int vmarker=pow(2,ad->style);
@@ -1362,9 +1561,11 @@ int vector_wybrany(AVECTOR *ad)
             return prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2));
             break;
-        case 4:
-        case 18:
-        case 7:
+        case 4: //force
+        case 18:  //slab force
+        case 7: //displacement
+        case 19: //force z
+        case 27: //displacement z
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
 
@@ -1378,35 +1579,35 @@ int vector_wybrany(AVECTOR *ad)
 
             if (ad->x1<=ad->x2) n=1; else n=-1;
 
-            Vtxt.x=(ad->x1+ad->x2)/2-((n*ra/4)*koc);
-            Vtxt.y=(ad->y1+ad->y2)/2-((n*ra/4)*kos);
+            Vtxt.x=(ad->x1+ad->x2)/2.f-(float)((n*ra/4)*koc);
+            Vtxt.y=(ad->y1+ad->y2)/2.f-(float)((n*ra/4)*kos);
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, _precision_);
+            set_decimal_format(Vtxt.text, ad->magnitude1, _precision_);
 
-            Vtxt.kat=normalize_txt_angle(PL.kat*Pi/180);
+            Vtxt.kat=(float)normalize_txt_angle(PL.kat*Pi/180);
             Vtxt.justowanie=j_srodkowo;
 
             normalize_txt(&Vtxt);
 
             if (tekst_wybrany(&Vtxt))return 1;
 
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
             Vtxt.width=0;
             Vtxt.height=0;
-            Vtxt.x=(ad->x1+ad->x2)/2+n*((Vtxt.wysokosc+ra/4)*koc);
-            Vtxt.y=(ad->y1+ad->y2)/2+n*((Vtxt.wysokosc+ra/4)*kos);
+            Vtxt.x=(ad->x1+ad->x2)/2.f+(float)(n*((Vtxt.wysokosc+ra/4)*koc));
+            Vtxt.y=(ad->y1+ad->y2)/2.f+(float)(n*((Vtxt.wysokosc+ra/4)*kos));
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
             normalize_txt(&Vtxt);
 
             if (tekst_wybrany(&Vtxt))return 1;
             break;
-        case 5: //arc
-        case 6:
-        case 8:
-        case 9:
+        case 5: //arc moment
+        case 6: //-moment
+        case 8: //arc rotation
+        case 9: //-rotation
             if (punkt_w_prostokacie(ad->x1,ad->y1)) return 1;
 
             if(ad->r==0) return 0;
@@ -1419,11 +1620,11 @@ int vector_wybrany(AVECTOR *ad)
             if (luk_pomX(&l,X2,Y1,Y2)) return 1;
             if (luk_pomY(&l,Y1,X1,X2)) return 1;
             if (luk_pomY(&l,Y2,X1,X2)) return 1;
-            x0=ad->x1+ad->r*cos(ad->angle1);
-            y0=ad->y1+ad->r*sin(ad->angle1);
+            x0=ad->x1+ad->r*(float)cos(ad->angle1);
+            y0=ad->y1+ad->r*(float)sin(ad->angle1);
             if (punkt_w_prostokacie(x0,y0)) return 1;
-            x0=ad->x1+ad->r*cos(ad->angle2);
-            y0=ad->y1+ad->r*sin(ad->angle2);
+            x0=ad->x1+ad->r*(float)cos(ad->angle2);
+            y0=ad->y1+ad->r*(float)sin(ad->angle2);
             if (punkt_w_prostokacie(x0,y0)) return 1;
 
             if (ad->style<8) _precision_=moment_precision;
@@ -1432,32 +1633,156 @@ int vector_wybrany(AVECTOR *ad)
             if (ad->angle2<ad->angle1)
                 kata2=ad->angle2+Pi2;
             else kata2=ad->angle2;
-            kats=Angle_Normal((ad->angle1+kata2)/2);
-            Vtxt.x=ad->x1+(ad->r+0.5)*cos(kats);
-            Vtxt.y=ad->y1+(ad->r+0.5)*sin(kats);
-            Vtxt.kat=Angle_Normal(kats-Pi_/2);
+            kats=Angle_Normal((ad->angle1+kata2)/2.);
+            Vtxt.x=ad->x1+(float)((ad->r+0.5)*cos(kats));
+            Vtxt.y=ad->y1+(float)((ad->r+0.5)*sin(kats));
+            Vtxt.kat=(float)Angle_Normal(kats-Pi_/2);
             Vtxt.justowanie=j_srodkowo;
-            set_decimal_format(&Vtxt.text, ad->magnitude1, _precision_);
+            set_decimal_format(Vtxt.text, ad->magnitude1, _precision_);
             normalize_txt(&Vtxt);
 
             if (tekst_wybrany(&Vtxt)) return 1;
 
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
             Vtxt.x=ad->x1+(ad->r - Vtxt.wysokosc - 0.5)*cos(kats);
             Vtxt.y=ad->y1+(ad->r - Vtxt.wysokosc - 0.5)*sin(kats);
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
             normalize_txt(&Vtxt);
 
             if (tekst_wybrany(&Vtxt)) return 1;
 
             return 0;
             break;
-        case 10:
-        case 17:
+        case 21: //elippticalarc moment x   //TO DO ISOMETRIC
+        case 22: //-moment x
+        case 23: //elarc moment y
+        case 24: //-moment y
+        case 25: //elarc moment xy
+        case 26: //-moment xy
+        case 28: //elarc rotation x
+        case 29: //-rotation x
+        case 30: //elarc rotation y
+        case 31: //-rotation y
+        case 32: //elarc rotation xy
+        case 33: //-rotation xy
 
+            if (punkt_w_prostokacie(ad->x1,ad->y1)) return 1;
+
+            if(ad->r==0) return 0;
+            switch (ad->style) {
+                case 21:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                    plane = XY_PLANE;
+                    break;
+                case 22:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+                case 28:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                    plane = XY_PLANE;
+                    break;
+                case 29:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+            }
+
+            l.x=ad->x1;
+            l.y=ad->y1;
+            l.r=ad->r;
+            l.kat1=ad->angle1;
+            l.kat2=ad->angle2;
+
+            if (Check_if_Equal(ad->angle1, ad->angle2))
+            {
+                kats=Angle_Normal(ad->angle1);
+                x1=ad->x1+ad->r*cos(kats);
+                y1=ad->y1+ad->r*sin(kats);
+                tangent=kats - Pi_ / 2.;
+                if (tangent < 0) tangent += 2.0 * M_PI;
+                ea.x=l.x;
+                ea.y=l.y;
+                ea.rx=ea.ry=l.r;
+                ea.angle=0.f;
+                ea.kat1=l.kat1;
+                ea.kat2=l.kat2;
+            }
+            else {
+                ret = arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+                srodekea_(&x1, &y1, &tangent, &ea);
+                tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+                kats = tangent + Pi_ / 2.;
+                if (kats < 0) kats += 2.0 * M_PI;
+            }
+
+            ea.warstwa=ad->warstwa;
+            ea.atrybut=ad->atrybut;
+
+            //if (luk_pomX(&l,X1,Y1,Y2)) return 1;
+            //if (luk_pomX(&l,X2,Y1,Y2)) return 1;
+            //if (luk_pomY(&l,Y1,X1,X2)) return 1;
+            //if (luk_pomY(&l,Y2,X1,X2)) return 1;
+
+            if (lukeliptyczny_wybrany_prec(&ea)) return 1;
+
+            Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+            if (punkt_w_prostokacie(ea_start_x, ea_start_y)) return 1;
+            if (punkt_w_prostokacie(ea_end_x, ea_end_y)) return 1;
+
+            if (ad->style<28) _precision_=moment_precision;
+            else _precision_=rotation_precision;
+
+            Vtxt.x=(float)(x1+0.5*cos(kats));
+            Vtxt.y=(float)(y1+0.5*sin(kats));
+
+            Vtxt.kat=(float)tangent;
+            Vtxt.justowanie=j_srodkowo;
+            set_decimal_format(Vtxt.text, ad->magnitude1, _precision_);
+            normalize_txt(&Vtxt);
+
+            if (tekst_wybrany(&Vtxt)) return 1;
+
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
+            Vtxt.x=(float)(x1+(-Vtxt.wysokosc - 0.5)*cos(kats));
+            Vtxt.y=(float)(y1+(-Vtxt.wysokosc - 0.5)*sin(kats));
+
+            if (ad->variant>0)
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
+            normalize_txt(&Vtxt);
+
+            if (tekst_wybrany(&Vtxt)) return 1;
+
+            return 0;
+            break;
+        case 10:  //trapezium Y
+        case 17:  //trapezium Y slab
+        case 20:  //trapezium Z
             LL.x1=ad->x1;
             LL.x2=ad->x2;
             LL.y1=ad->y1;
@@ -1465,22 +1790,34 @@ int vector_wybrany(AVECTOR *ad)
 
             if (Check_if_Equal(LL.x1, LL.x2))
             {
-                LL.x2+=0.001;
+                LL.x2+=0.001f;
             }
 
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
             L.warstwa=ad->warstwa;
 
-            L.x1=LL.x1;
-            L.x2=LL.x2;
-
-            if (L.x1<L.x2) n=1; else n=-1;
+            if (LL.x1<LL.x2) n=1; else n=-1;
 
             if (ad->flags & 1) n*=-1;
 
-            L.y1=LL.y1+n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude);
-            L.y2=LL.y2+n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude);
+            if ((!(ad->cartflags & 1)) || (ad->style!=10))
+            {
+                L.x1=LL.x1;
+                L.x2=LL.x2;
+                L.y1=LL.y1+(float)(n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude));
+                L.y2=LL.y2+(float)(n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude));
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                L.x1 = LL.x1 + (float)dx1_cart;
+                L.y1 = LL.y1 + (float)dy1_cart;
+                L.x2 = LL.x2 + (float)dx2_cart;
+                L.y2 = LL.y2 + (float)dy2_cart;
+            }
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
@@ -1489,18 +1826,18 @@ int vector_wybrany(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
@@ -1515,7 +1852,7 @@ int vector_wybrany(AVECTOR *ad)
 
             if (Check_if_Equal(LL.y1, LL.y2))
             {
-                LL.y2+=0.001;
+                LL.y2+=0.001f;
             }
 
 
@@ -1523,14 +1860,28 @@ int vector_wybrany(AVECTOR *ad)
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
             L.warstwa=ad->warstwa;
 
-            L.y1=LL.y1;
-            L.y2=LL.y2;
 
-            if (L.y1<L.y2) n=-1; else n=1;
+            if (LL.y1<LL.y2) n=1; else n=-1;
+
             if (ad->flags & 1) n*=-1;
 
-            L.x1=LL.x1+n*ad->magnitude1/load_magnitude;
-            L.x2=LL.x2+n*ad->magnitude2/load_magnitude;
+            if (!(ad->cartflags & 1))
+            {
+                L.x1 = LL.x1 + (float)(n * ad->magnitude1 / load_magnitude);
+                L.y1=LL.y1;
+                L.x2 = LL.x2 + (float)(n * ad->magnitude2 / load_magnitude);
+                L.y2=LL.y2;
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(- n * (ad->magnitude1 / load_magnitude), 0, &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(- n * (ad->magnitude2 / load_magnitude), 0, &dx2_cart, &dy2_cart);
+                L.x1 = LL.x1 + (float)dx1_cart;
+                L.y1 = LL.y1 + (float)dy1_cart;
+                L.x2 = LL.x2 + (float)dx2_cart;
+                L.y2 = LL.y2 + (float)dy2_cart;
+            }
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
@@ -1539,18 +1890,18 @@ int vector_wybrany(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -1566,17 +1917,30 @@ int vector_wybrany(AVECTOR *ad)
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
             L.warstwa=ad->warstwa;
             parametry_lini((LINIA*)ad, &PL);
-            kat=PL.kat;
-            kos=sin(Pi*(PL.kat+90)/180);
-            koc=cos(Pi*(PL.kat+90)/180);
+
+            if (!(ad->cartflags & 1))
+            {
+                arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                kos = sin(arrow_angle);
+                koc = cos(arrow_angle);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos = sin(arrow_angle);
+                koc = cos(arrow_angle);
+            }
 
             n=1;
             if (ad->flags & 1) n*=-1;
 
-            L.x1 = ad->x1 + n*(ad->magnitude1/load_magnitude)*koc;
-            L.y1 = ad->y1 + n*(ad->magnitude1/load_magnitude)*kos;
-            L.x2 = ad->x2 + n*(ad->magnitude2/load_magnitude)*koc;
-            L.y2 = ad->y2 + n*(ad->magnitude2/load_magnitude)*kos;
+            L.x1 = LL.x1 + (float)(n*(ad->magnitude1/load_magnitude)*koc);
+            L.y1 = LL.y1 + (float)(n*(ad->magnitude1/load_magnitude)*kos);
+            L.x2 = LL.x2 + (float)(n*(ad->magnitude2/load_magnitude)*koc);
+            L.y2 = LL.y2 + (float)(n*(ad->magnitude2/load_magnitude)*kos);
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
@@ -1585,8 +1949,8 @@ int vector_wybrany(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
@@ -1595,8 +1959,8 @@ int vector_wybrany(AVECTOR *ad)
             Vtxt.wysokosc=zmwym.wysokosc/2;
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
@@ -1609,47 +1973,76 @@ int vector_wybrany(AVECTOR *ad)
             LL.y1=ad->y1;
             LL.y2=ad->y2;
 
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
-                                  jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
-            L.warstwa=L1.warstwa=ad->warstwa;
-            L.x1=L1.x1=ad->x1;
-            L.x2=L1.x2=ad->x2;
-            if (ad->x1<ad->x2)
+            if (prostokat_odcinek(jednostkiN(LL.x1), jednostkiN(LL.y1),  //vector line
+                                  jednostkiN(LL.x2), jednostkiN(LL.y2))) return 1;
+            L.warstwa=ad->warstwa;
+
+            if (!(ad->cartflags & 1))
             {
-                n=1;
-                L1.y1=L1.y2=max(ad->y1, ad->y2);
+                if (LL.x1 < LL.x2) {
+                    n = 1;
+                    ymax = max(LL.y1, LL.y2);
+                } else {
+                    n = -1;
+                    ymax = min(LL.y1, LL.y2);
+                }
+
+                if (ad->flags & 1) n *= -1;
+
+                L.x1 = LL.x1;
+                L.y1 = ymax + (float)(n * (ad->magnitude1 / load_magnitude));
+                L.x2 = LL.x2;
+                L.y2 = ymax + (float)(n * (ad->magnitude2 / load_magnitude));
+
+                //trapezoid base
+                Lp.x1=LL.x1;
+                Lp.y1=ymax;
+                Lp.x2=LL.x2;
+                Lp.y2=ymax;
             }
             else
             {
-                n=-1;
-                L1.y1=L1.y2=min(ad->y1, ad->y2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(LL.x1, LL.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(LL.x2, LL.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_x1<iso_L1_x2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_x(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0.,  n * (ad->magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0.,  n * (ad->magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+                L.x1 = Lp.x1 + (float)dx1_cart;
+                L.y1 = Lp.y1 + (float)dy1_cart;
+                L.x2 = Lp.x2 + (float)dx2_cart;
+                L.y2 = Lp.y2 + (float)dy2_cart;
             }
-            if (ad->flags & 1) n*=-1;
 
-            L.y1=L1.y1+n*ad->magnitude1/load_magnitude;
-            L.y2=L1.y1+n*ad->magnitude2/load_magnitude;
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),  //top trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //lef trapezium line
                                   jednostkiN(L.x1), jednostkiN(L.y1))) return 1;
-            if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
+            if (prostokat_odcinek(jednostkiN(Lp.x2), jednostkiN(Lp.y2), //right trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            if (prostokat_odcinek(jednostkiN(L1.x1), jednostkiN(L1.y2),
-                                  jednostkiN(L1.x2), jednostkiN(L1.y2))) return 1;
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //trapezium base
+                                  jednostkiN(Lp.x2), jednostkiN(Lp.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -1661,47 +2054,80 @@ int vector_wybrany(AVECTOR *ad)
             LL.y1=ad->y1;
             LL.y2=ad->y2;
 
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),  //vector line
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
-            L.warstwa=L1.warstwa=ad->warstwa;
-            L.y1=L1.y1=ad->y1;
-            L.y2=L1.y2=ad->y2;
-            if (ad->y1<ad->y2)
+            L.warstwa=ad->warstwa;
+
+            if (!(ad->cartflags & 1))
             {
-                n=-1;
-                L1.x1=L1.x2=min(ad->x1, ad->x2);
+                if (LL.y1<LL.y2)
+                {
+                    n=1;
+                    xmax=min(LL.x1, LL.x2);
+                }
+                else
+                {
+                    n=-1;
+                    xmax=max(LL.x1, LL.x2);
+                }
+
+                if (ad->flags & 1) n*=-1;
+
+                L.x1 = (float)(xmax - n * (ad->magnitude1 / load_magnitude));
+                L.y1 = LL.y1;
+                L.x2 = (float)(xmax - n * (ad->magnitude2 / load_magnitude));
+                L.y2 = LL.y2;
+
+                //trapezoid base
+                Lp.x1=xmax;
+                Lp.y1=LL.y1;
+                Lp.x2=xmax;
+                Lp.y2=LL.y2;
             }
             else
             {
-                n=1;
-                L1.x1=L1.x2=max(ad->x1, ad->x2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(LL.x1, LL.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(LL.x2, LL.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_y1<iso_L1_y2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_y(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(-n * (ad->magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(-n * (ad->magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                L.x1 = Lp.x1 + (float)dx1_cart;
+                L.y1 = Lp.y1 + (float)dy1_cart;
+                L.x2 = Lp.x2 + (float)dx2_cart;
+                L.y2 = Lp.y2 + (float)dy2_cart;
             }
-            if (ad->flags & 1) n*=-1;
 
-            L.x1=L1.x1+n*ad->magnitude1/load_magnitude;
-            L.x2=L1.x2+n*ad->magnitude2/load_magnitude;
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1), //top trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //left trapezium line
                                   jednostkiN(L.x1), jednostkiN(L.y1))) return 1;
-            if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
+            if (prostokat_odcinek(jednostkiN(Lp.x2), jednostkiN(Lp.y2), //right trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            if (prostokat_odcinek(jednostkiN(L1.x1), jednostkiN(L.y1),
-                                  jednostkiN(L1.x1), jednostkiN(L.y2))) return 1;
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //trapezium base
+                                  jednostkiN(Lp.x2), jednostkiN(Lp.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -1721,22 +2147,22 @@ int vector_wybrany(AVECTOR *ad)
             kos=sin(Pi*(PL.kat+90)/180);
             koc=cos(Pi*(PL.kat+90)/180);
 
-            Lth.x1 = (ad->x1+ad->x2)/2 + (ad->r/depth_magnitude)*koc; //thermal_depth_size
-            Lth.y1 = (ad->y1+ad->y2)/2 + (ad->r/depth_magnitude)*kos;
-            Lth.x2 = (ad->x1+ad->x2)/2 - (ad->r/depth_magnitude)*koc;
-            Lth.y2 = (ad->y1+ad->y2)/2 - (ad->r/depth_magnitude)*kos;
+            Lth.x1 = (ad->x1+ad->x2)/2.f + (float)((ad->r/depth_magnitude)*koc); //thermal_depth_size
+            Lth.y1 = (ad->y1+ad->y2)/2.f + (float)((ad->r/depth_magnitude)*kos);
+            Lth.x2 = (ad->x1+ad->x2)/2.f - (float)((ad->r/depth_magnitude)*koc);
+            Lth.y2 = (ad->y1+ad->y2)/2.f - (float)((ad->r/depth_magnitude)*kos);
 
             if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
                                   jednostkiN(Lth.x2), jednostkiN(Lth.y2))) return 1;
 
             parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180);
-            koc1th=cos(Pi*(PLth.kat+90)/180);
+            kos1th=sin(Pi*(PLth.kat+90)/180.);
+            koc1th=cos(Pi*(PLth.kat+90)/180.);
 
-            L.x1 = Lth.x1 + (ad->magnitude1/thermal_magnitude)*koc1th;
-            L.y1 = Lth.y1 + (ad->magnitude1/thermal_magnitude)*kos1th;
-            L.x2 = Lth.x2 + (ad->magnitude2/thermal_magnitude)*koc1th;
-            L.y2 = Lth.y2 + (ad->magnitude2/thermal_magnitude)*kos1th;
+            L.x1 = Lth.x1 + (float)((ad->magnitude1/thermal_magnitude)*koc1th);
+            L.y1 = Lth.y1 + (float)((ad->magnitude1/thermal_magnitude)*kos1th);
+            L.x2 = Lth.x2 + (float)((ad->magnitude2/thermal_magnitude)*koc1th);
+            L.y2 = Lth.y2 + (float)((ad->magnitude2/thermal_magnitude)*kos1th);
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
@@ -1745,8 +2171,8 @@ int vector_wybrany(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
                                   jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
 
-            set_decimal_format(&Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(&Vtxt1.text, ad->magnitude2, load_precision);
+            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
             ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
             if (ret>0) return 1;
@@ -1755,8 +2181,8 @@ int vector_wybrany(AVECTOR *ad)
             Vtxt.wysokosc=zmwym.wysokosc/2;
 
             if (ad->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)ad->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -1776,8 +2202,8 @@ int vector_wybrany(AVECTOR *ad)
             Vtxt.warstwa = ad->warstwa;
             Vtxt.atrybut=ad->atrybut;
             Vtxt.czcionka=zmwym.czcionka;
-            Vtxt.wysokosc=zmwym.wysokosc*0.75;
-            Vtxt.width_factor=zmwym.width_factor;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc*0.75);
+            Vtxt.width_factor=(float)(zmwym.width_factor);
 
             Vtxt.x=ad->x2;
             Vtxt.y=ad->y2;
@@ -1785,8 +2211,8 @@ int vector_wybrany(AVECTOR *ad)
 
             Vtxt.justowanie=j_do_lewej;
 
-            set_decimal_format(&Vtxt1.text, ad->magnitude1, dim_precision);
-            sprintf(&Vtxt.text,"R%s",Vtxt1.text);
+            set_decimal_format(Vtxt1.text, ad->magnitude1, dim_precision);
+            sprintf(Vtxt.text,"R%s",Vtxt1.text);
 
             double t_len_mm = Get_TextLen(&Vtxt, Vtxt.text);
             double direction=ad->x2-ad->x1;
@@ -1798,19 +2224,19 @@ int vector_wybrany(AVECTOR *ad)
 
             if (direction > 0) //to the right
             {
-                Vtxt.x = ad->x2 + Vtxt.wysokosc / 4.0;
-                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = ad->x2 + Vtxt.wysokosc / 4.0f;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_lewej;
 
-                if (t_len_mm == 0.0) Lt.x2 = ad->x2 + 0.01;
-                else Lt.x2 = ad->x2 + t_len_mm + Vtxt.wysokosc / 2.5;
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 + 0.01f;
+                else Lt.x2 = ad->x2 + t_len_mm + Vtxt.wysokosc / 2.5f;
             } else  //to the left
             {
-                Vtxt.x = ad->x2 - Vtxt.wysokosc / 4.0;
-                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = ad->x2 - Vtxt.wysokosc / 4.0f;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_prawej;
-                if (t_len_mm == 0.0) Lt.x2 = ad->x2 - 0.01;
-                else Lt.x2 = ad->x2 - t_len_mm - Vtxt.wysokosc / 2.0;
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 - 0.01f;
+                else Lt.x2 = ad->x2 - t_len_mm - Vtxt.wysokosc / 2.0f;
             }
             if (tekst_wybrany(&Vtxt)) return 1;
 
@@ -1830,22 +2256,26 @@ int vector_w_prostokacie(AVECTOR *ad)
 {
     double x0,y0;
     double n;
-    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef;
+    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef, LL=Ldef, Lp=Ldef;;
     LUK l;
     OKRAG O;
+    ELLIPTICALARC ea=eldef;
     TEXT Vtxt=Tdef, Vtxt1;
     PLINIA PL, PLth;
     double kat, kos, koc, koc1th, kos1th;
     double ra;
     int ret;
+    int plane;
+    double arrow_angle;
+    float xmax, ymax;
 
 #define arrowf 1.0
 
     Vtxt.warstwa = ad->warstwa;
     Vtxt.atrybut=ad->atrybut;
     Vtxt.czcionka=zmwym.czcionka;
-    Vtxt.wysokosc=zmwym.wysokosc;
-    Vtxt.width_factor=zmwym.width_factor;
+    Vtxt.wysokosc=(float)zmwym.wysokosc;
+    Vtxt.width_factor=(float)zmwym.width_factor;
     memcpy(&Vtxt1, &Vtxt, sizeof(TEXT));
 
     ra=Get_Point_Size () / arrowf;
@@ -1857,8 +2287,10 @@ int vector_w_prostokacie(AVECTOR *ad)
         case 2:
         case 3:
         case 4:
-        case 18:
+        case 18: //slab force
         case 7:
+        case 19: //force z
+        case 27: //displacement
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))!=3)  return 0;
             return 1;
@@ -1876,33 +2308,148 @@ int vector_w_prostokacie(AVECTOR *ad)
             if (ret==0) return 0;
             return 1;
             break;
+        case 21:  //TO DO ISOMETRIC
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+            l.x=ad->x1;
+            l.y=ad->y1;
+            l.r=ad->r;
+            l.kat1=ad->angle1;
+            l.kat2=ad->angle2;
+            switch (ad->style) {
+                case 21:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                    plane = XY_PLANE;
+                    break;
+                case 22:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+                case 28:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                    plane = XY_PLANE;
+                    break;
+                case 29:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+            }
+
+            ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            ret=lukeliptyczny_w_prostokacie(&ea);
+            if (ret==0) return 0;
+            return 1;
+            break;
         case 10:
         case 17:
+        case 20:
             if (linia_wybrana((LINIA*)ad)!=3) return 0;
 
-            L.x1=ad->x1;
-            L.x2=ad->x2;
-            if (ad->x1<ad->x2) n=1; else n=-1;
+            LL.x1=ad->x1;
+            LL.x2=ad->x2;
+            LL.y1=ad->y1;
+            LL.y2=ad->y2;
+
+            if (Check_if_Equal(LL.x1, LL.x2))
+            {
+                LL.x2+=0.001f;
+            }
+
+            if (LL.x1<LL.x2) n=1; else n=-1;
+
             if (ad->flags & 1) n*=-1;
-            L.y1=ad->y1+n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude);
-            L.y2=ad->y2+n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude);
+
+            if ((!(ad->cartflags & 1)) || (ad->style!=10))
+            {
+                L.x1=LL.x1;
+                L.x2=LL.x2;
+                L.y1=LL.y1+(float)(n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude));
+                L.y2=LL.y2+(float)(n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude));
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                L.x1 = LL.x1 + (float)dx1_cart;
+                L.y1 = LL.y1 + (float)dy1_cart;
+                L.x2 = LL.x2 + (float)dx2_cart;
+                L.y2 = LL.y2 + (float)dy2_cart;
+            }
+
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2))!=3)  return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(LL.x1), jednostkiN(LL.y1),
                                   jednostkiN(L.x1), jednostkiN(L.y1))!=3)  return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
+            if (prostokat_odcinek(jednostkiN(LL.x2), jednostkiN(LL.y2),
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
             return 1;
             break;
         case 11:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2)) !=3) return 0;
-            L.y1=ad->y1;
-            L.y2=ad->y2;
-            if (ad->y1<ad->y2) n=-1; else n=1;
+
+            LL.x1=ad->x1;
+            LL.x2=ad->x2;
+            LL.y1=ad->y1;
+            LL.y2=ad->y2;
+
+            if (Check_if_Equal(LL.y1, LL.y2))
+            {
+                LL.y2+=0.001f;
+            }
+
+            if (LL.y1<LL.y2) n=1; else n=-1;
+
             if (ad->flags & 1) n*=-1;
-            L.x1=ad->x1+n*ad->magnitude1/load_magnitude;
-            L.x2=ad->x2+n*ad->magnitude2/load_magnitude;
+
+            if (!(ad->cartflags & 1))
+            {
+                L.x1 = LL.x1 + (float)(n * ad->magnitude1 / load_magnitude);
+                L.y1=LL.y1;
+                L.x2 = LL.x2 + (float)(n * ad->magnitude2 / load_magnitude);
+                L.y2=LL.y2;
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(- n * (ad->magnitude1 / load_magnitude), 0, &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(- n * (ad->magnitude2 / load_magnitude), 0, &dx2_cart, &dy2_cart);
+                L.x1 = LL.x1 + (float)dx1_cart;
+                L.y1 = LL.y1 + (float)dy1_cart;
+                L.x2 = LL.x2 + (float)dx2_cart;
+                L.y2 = LL.y2 + (float)dy2_cart;
+            }
+
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
@@ -1915,18 +2462,36 @@ int vector_w_prostokacie(AVECTOR *ad)
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))  !=3) return 0;
 
+            LL.x1=ad->x1;
+            LL.x2=ad->x2;
+            LL.y1=ad->y1;
+            LL.y2=ad->y2;
+
             parametry_lini((LINIA*)ad, &PL);
-            kat=PL.kat;
-            kos=sin(Pi*(PL.kat+90)/180);
-            koc=cos(Pi*(PL.kat+90)/180);
+
+            if (!(ad->cartflags & 1))
+            {
+                arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                kos = sin(arrow_angle);
+                koc = cos(arrow_angle);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos = sin(arrow_angle);
+                koc = cos(arrow_angle);
+            }
 
             n=1;
             if (ad->flags & 1) n*=-1;
 
-            L.x1 = ad->x1 + n*(ad->magnitude1/load_magnitude)*koc;
-            L.y1 = ad->y1 + n*(ad->magnitude1/load_magnitude)*kos;
-            L.x2 = ad->x2 + n*(ad->magnitude2/load_magnitude)*koc;
-            L.y2 = ad->y2 + n*(ad->magnitude2/load_magnitude)*kos;
+            L.x1 = ad->x1 + (float)(n*(ad->magnitude1/load_magnitude)*koc);
+            L.y1 = ad->y1 + (float)(n*(ad->magnitude1/load_magnitude)*kos);
+            L.x2 = ad->x2 + (float)(n*(ad->magnitude2/load_magnitude)*koc);
+            L.y2 = ad->y2 + (float)(n*(ad->magnitude2/load_magnitude)*kos);
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
@@ -1940,60 +2505,136 @@ int vector_w_prostokacie(AVECTOR *ad)
         case 13:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2)) !=3) return 0;
+
+            LL.x1=ad->x1;
+            LL.x2=ad->x2;
+            LL.y1=ad->y1;
+            LL.y2=ad->y2;
+
             L.warstwa=L1.warstwa=ad->warstwa;
-            L.x1=L1.x1=ad->x1;
-            L.x2=L1.x2=ad->x2;
-            if (ad->x1<ad->x2)
+
+            if (!(ad->cartflags & 1))
             {
-                n=1;
-                L1.y1=L1.y2=max(ad->y1, ad->y2);
+                if (LL.x1 < LL.x2) {
+                    n = 1;
+                    ymax = max(LL.y1, LL.y2);
+                } else {
+                    n = -1;
+                    ymax = min(LL.y1, LL.y2);
+                }
+
+                if (ad->flags & 1) n *= -1;
+
+                L.x1 = LL.x1;
+                L.y1 = (float)(ymax + n * (ad->magnitude1 / load_magnitude));
+                L.x2 = LL.x2;
+                L.y2 = (float)(ymax + n * (ad->magnitude2 / load_magnitude));
+
+                //trapezoid base
+                Lp.x1=LL.x1;
+                Lp.y1=ymax;
+                Lp.x2=LL.x2;
+                Lp.y2=ymax;
             }
             else
             {
-                n=-1;
-                L1.y1=L1.y2=min(ad->y1, ad->y2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(LL.x1, LL.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(LL.x2, LL.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_x1<iso_L1_x2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_x(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0.,  n * (ad->magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0.,  n * (ad->magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+                L.x1 = Lp.x1 + (float)dx1_cart;
+                L.y1 = Lp.y1 + (float)dy1_cart;
+                L.x2 = Lp.x2 + (float)dx2_cart;
+                L.y2 = Lp.y2 + (float)dy2_cart;
             }
-            if (ad->flags & 1) n*=-1;
-            L.y1=L1.y1+n*ad->magnitude1/load_magnitude;
-            L.y2=L1.y1+n*ad->magnitude2/load_magnitude;
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+
+            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),  //top trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //lef trapezium line
                                   jednostkiN(L.x1), jednostkiN(L.y1)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
+            if (prostokat_odcinek(jednostkiN(Lp.x2), jednostkiN(Lp.y2), //right trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
 
-            if (prostokat_odcinek(jednostkiN(L1.x1), jednostkiN(L1.y2),
-                                  jednostkiN(L1.x2), jednostkiN(L1.y2)) !=3) return 0;
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //trapezium base
+                                  jednostkiN(Lp.x2), jednostkiN(Lp.y2)) !=3) return 0;
             return 1;
             break;
         case 14:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2)) !=3) return 0;
-            L.y1=L1.y1=ad->y1;
-            L.y2=L1.y2=ad->y2;
-            if (ad->y1<ad->y2)
+
+            LL.x1=ad->x1;
+            LL.x2=ad->x2;
+            LL.y1=ad->y1;
+            LL.y2=ad->y2;
+
+            L.warstwa=ad->warstwa;
+
+            if (!(ad->cartflags & 1))
             {
-                n=-1;
-                L1.x1=L1.x2=min(ad->x1, ad->x2);
+                if (LL.y1<LL.y2)
+                {
+                    n=1;
+                    xmax=min(LL.x1, LL.x2);
+                }
+                else
+                {
+                    n=-1;
+                    xmax=max(LL.x1, LL.x2);
+                }
+
+                if (ad->flags & 1) n*=-1;
+
+                L.x1 = (float)(xmax - n * (ad->magnitude1 / load_magnitude));
+                L.y1 = LL.y1;
+                L.x2 = (float)(xmax - n * (ad->magnitude2 / load_magnitude));
+                L.y2 = LL.y2;
+
+                //trapezoid base
+                Lp.x1=(float)xmax;
+                Lp.y1=LL.y1;
+                Lp.x2=(float)xmax;
+                Lp.y2=LL.y2;
             }
             else
             {
-                n=1;
-                L1.x1=L1.x2=max(ad->x1, ad->x2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(LL.x1, LL.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(LL.x2, LL.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_y1<iso_L1_y2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_y(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(-n * (ad->magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(-n * (ad->magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                L.x1 = Lp.x1 + (float)dx1_cart;
+                L.y1 = Lp.y1 + (float)dy1_cart;
+                L.x2 = Lp.x2 + (float)dx2_cart;
+                L.y2 = Lp.y2 + (float)dy2_cart;
             }
-            if (ad->flags & 1) n*=-1;
-            L.x1=L1.x1+n*ad->magnitude1/load_magnitude;
-            L.x2=L1.x2+n*ad->magnitude2/load_magnitude;
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+
+            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1), //top trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1), //left trapezium line
                                   jednostkiN(L.x1), jednostkiN(L.y1)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(ad->x2), jednostkiN(ad->y2),
+            if (prostokat_odcinek(jednostkiN(Lp.x2), jednostkiN(Lp.y2), //right trapezium line
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
 
-            if (prostokat_odcinek(jednostkiN(L1.x1), jednostkiN(L1.y2),
-                                  jednostkiN(L1.x2), jednostkiN(L1.y2)) !=3) return 0;
+            if (prostokat_odcinek(jednostkiN(Lp.x1), jednostkiN(Lp.y1),
+                                  jednostkiN(Lp.x2), jednostkiN(Lp.y2)) !=3) return 0;
             return 1;
             break;
         case 15:
@@ -2002,22 +2643,22 @@ int vector_w_prostokacie(AVECTOR *ad)
 
             parametry_lini((LINIA*)ad, &PL);
             kat=PL.kat;
-            kos=sin(Pi*(PL.kat+90)/180);
-            koc=cos(Pi*(PL.kat+90)/180);
+            kos=sin(Pi*(PL.kat+90)/180.);
+            koc=cos(Pi*(PL.kat+90)/180.);
 
-            Lth.x1 = (ad->x1+ad->x2)/2 + (ad->r/depth_magnitude)*koc; //thermal_depth_size
-            Lth.y1 = (ad->y1+ad->y2)/2 + (ad->r/depth_magnitude)*kos;
-            Lth.x2 = (ad->x1+ad->x2)/2 - (ad->r/depth_magnitude)*koc;
-            Lth.y2 = (ad->y1+ad->y2)/2 - (ad->r/depth_magnitude)*kos;
+            Lth.x1 = (ad->x1+ad->x2)/2.f + (float)((ad->r/depth_magnitude)*koc); //thermal_depth_size
+            Lth.y1 = (ad->y1+ad->y2)/2.f + (float)((ad->r/depth_magnitude)*kos);
+            Lth.x2 = (ad->x1+ad->x2)/2.f - (float)((ad->r/depth_magnitude)*koc);
+            Lth.y2 = (ad->y1+ad->y2)/2.f - (float)((ad->r/depth_magnitude)*kos);
 
             parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180);
-            koc1th=cos(Pi*(PLth.kat+90)/180);
+            kos1th=sin(Pi*(PLth.kat+90)/180.);
+            koc1th=cos(Pi*(PLth.kat+90)/180.);
 
-            L.x1 = Lth.x1 + (ad->magnitude1/thermal_magnitude)*koc1th;
-            L.y1 = Lth.y1 + (ad->magnitude1/thermal_magnitude)*kos1th;
-            L.x2 = Lth.x2 + (ad->magnitude2/thermal_magnitude)*koc1th;
-            L.y2 = Lth.y2 + (ad->magnitude2/thermal_magnitude)*kos1th;
+            L.x1 = Lth.x1 + (float)((ad->magnitude1/thermal_magnitude)*koc1th);
+            L.y1 = Lth.y1 + (float)((ad->magnitude1/thermal_magnitude)*kos1th);
+            L.x2 = Lth.x2 + (float)((ad->magnitude2/thermal_magnitude)*koc1th);
+            L.y2 = Lth.y2 + (float)((ad->magnitude2/thermal_magnitude)*kos1th);
 
             if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
                                   jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
@@ -2044,17 +2685,17 @@ int vector_w_prostokacie(AVECTOR *ad)
             Vtxt.warstwa = ad->warstwa;
             Vtxt.atrybut=ad->atrybut;
             Vtxt.czcionka=zmwym.czcionka;
-            Vtxt.wysokosc=zmwym.wysokosc*0.75;
-            Vtxt.width_factor=zmwym.width_factor;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc*0.75);
+            Vtxt.width_factor=(float)(zmwym.width_factor);
 
             Vtxt.x=ad->x2;
             Vtxt.y=ad->y2;
-            Vtxt.kat=0;
+            Vtxt.kat=0.f;
 
             Vtxt.justowanie=j_do_lewej;
 
-            set_decimal_format(&Vtxt1.text, ad->magnitude1, dim_precision);
-            sprintf(&Vtxt.text,"R%s",Vtxt1.text);
+            set_decimal_format(Vtxt1.text, ad->magnitude1, dim_precision);
+            sprintf(Vtxt.text,"R%s",Vtxt1.text);
 
             double t_len_mm = Get_TextLen(&Vtxt, Vtxt.text);
             double direction=ad->x2-ad->x1;
@@ -2066,19 +2707,19 @@ int vector_w_prostokacie(AVECTOR *ad)
 
             if (direction > 0) //to the right
             {
-                Vtxt.x = ad->x2 + Vtxt.wysokosc / 4.0;
-                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = ad->x2 + Vtxt.wysokosc / 4.0f;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_lewej;
 
-                if (t_len_mm == 0.0) Lt.x2 = ad->x2 + 0.01;
-                else Lt.x2 = ad->x2 + t_len_mm + Vtxt.wysokosc / 2.5;
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 + 0.01f;
+                else Lt.x2 = ad->x2 + (float)t_len_mm + Vtxt.wysokosc / 2.5f;
             } else  //to the left
             {
-                Vtxt.x = ad->x2 - Vtxt.wysokosc / 4.0;
-                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = ad->x2 - Vtxt.wysokosc / 4.0f;
+                Vtxt.y = ad->y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_prawej;
-                if (t_len_mm == 0.0) Lt.x2 = ad->x2 - 0.01;
-                else Lt.x2 = ad->x2 - t_len_mm - Vtxt.wysokosc / 2.0;
+                if (t_len_mm == 0.0) Lt.x2 = ad->x2 - 0.01f;
+                else Lt.x2 = ad->x2 - (float)t_len_mm - Vtxt.wysokosc / 2.0;
             }
             ret = tekst_w_prostokacie(&Vtxt);
             if (ret==0) return 0;
@@ -2105,9 +2746,11 @@ int vector_drag_wybrany(AVECTOR *ad)
     LINIA L=Ldef, L1=Ldef;
     LUK l;
     OKRAG O;
+    ELLIPTICALARC ea=eldef;
     PLINIA PL;
     double kat, kos, koc;
     int ret;
+    int plane;
 
     switch (ad->style)
     {
@@ -2118,6 +2761,8 @@ int vector_drag_wybrany(AVECTOR *ad)
         case 4:
         case 18:
         case 7:
+        case 19:
+        case 27:
             return prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                      jednostkiN(ad->x2), jednostkiN(ad->y2));
             break;
@@ -2130,15 +2775,77 @@ int vector_drag_wybrany(AVECTOR *ad)
             if(ad->r==0) return 0;
             if (punkt_w_prostokacie(ad->x1,ad->y1)) return 4;
 
-            x0=ad->x1+ad->r*cos(ad->angle1);
-            y0=ad->y1+ad->r*sin(ad->angle1);
+            x0=ad->x1+ad->r*cosf(ad->angle1);
+            y0=ad->y1+ad->r*sinf(ad->angle1);
             if (punkt_w_prostokacie(x0,y0)) return 1;
-            x0=ad->x1+ad->r*cos(ad->angle2);
-            y0=ad->y1+ad->r*sin(ad->angle2);
+            x0=ad->x1+ad->r*cosf(ad->angle2);
+            y0=ad->y1+ad->r*sinf(ad->angle2);
             if (punkt_w_prostokacie(x0,y0)) return 2;
             return 0;
             break;
+        case 21:  //eliptical arc in isometric
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+            l.x=ad->x1;
+            l.y=ad->y1;
+            l.r=ad->r;
+            l.kat1=ad->angle1;
+            l.kat2=ad->angle2;
+            switch (ad->style) {
+                case 21:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                    plane = XY_PLANE;
+                    break;
+                case 22:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+                case 28:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                    plane = XY_PLANE;
+                    break;
+                case 29:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+            }
+
+            ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            ret=prostokat_ellipticalarc(&ea);
+            if(ret==4) ret=0;
+            return ret;
+            break;
         case 10:
+        case 20:
         case 17:
         case 11:
         case 12:
@@ -2697,10 +3404,12 @@ int prostokat_ellipticalarc(ELLIPTICALARC *ad)
 int Point_Selected(T_Point *ptrs_point)
 /*------------------------------------*/
 {
-	long x1, y1, x2, y2, x12, y12;
-	double df_psize;
-	OKRAG Okr;
-    double dxy, dd, dd1 ;
+    long x1, y1, x2, y2, x12, y12;
+    double df_psize;
+    OKRAG Okr;
+    double dxy, dd, dd1, dl ;
+    double x1i, y1i, x2i, y2i;
+    double kos30=-0.5, koc30=-0.866025404, kos210=0.5, koc210=0.866025404, kos150=0.5, koc150=-0.866025404, kos330=-0.5, koc330=0.866025404;
 
     if (FALSE == Get_Point_View () && (ptrs_point->typ<7))
     {
@@ -2715,189 +3424,253 @@ int Point_Selected(T_Point *ptrs_point)
     if (ptrs_point->typ<8) df_psize = Get_Point_Size () / 2;
     else df_psize = Get_Point_Size ()  / 4 ;
 
-  if (ptrs_point->typ <= 8)
-  {
+    if (ptrs_point->typ <= 8)
+    {
 
-      x1 = jednostkiN (ptrs_point->x - df_psize) ;
-      y1 = jednostkiN (ptrs_point->y - df_psize) ;
-      x2 = jednostkiN (ptrs_point->x + df_psize) ;
-      y2 = jednostkiN (ptrs_point->y + df_psize) ;
+        x1 = jednostkiN (ptrs_point->x - df_psize) ;
+        y1 = jednostkiN (ptrs_point->y - df_psize) ;
+        x2 = jednostkiN (ptrs_point->x + df_psize) ;
+        y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-      if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
-      {
-          if (prostokat_odcinek(x1, y1, x2, y2)) return 1;
-          if (prostokat_odcinek(x1, y2, x2, y1)) return 1;
-      }
+        if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
+        {
+            if (prostokat_odcinek(x1, y1, x2, y2)) return 1;
+            if (prostokat_odcinek(x1, y2, x2, y1)) return 1;
+        }
 
-      if (ptrs_point->typ ==1)
-      {
-          Okr.r = Get_Point_Size() / 5;
-          return (test_circle_sel(&Okr) == 1) ? 1 : 0;
-      }
-      else if (ptrs_point->typ == 7)  //junction
-      {
-          Okr.r = Get_Point_Size() / 5;
+        if (ptrs_point->typ ==1)
+        {
+            Okr.r = Get_Point_Size() / 5;
+            return (test_circle_sel(&Okr) == 1) ? 1 : 0;
+        }
+        else if (ptrs_point->typ == 7)  //junction
+        {
+            Okr.r = Get_Point_Size() / 5;
 
-          return (test_circle_sel(&Okr) == 1) ? 1 : 0;
-      }
-      else if (ptrs_point->typ == 8)  //pin
-      {
-          Okr.r = Get_Point_Size() / 6;
-          if (prostokat_odcinek(x1, y1, x2, y2)) return 1;
+            return (test_circle_sel(&Okr) == 1) ? 1 : 0;
+        }
+        else if (ptrs_point->typ == 8)  //pin
+        {
+            Okr.r = Get_Point_Size() / 6;
+            if (prostokat_odcinek(x1, y1, x2, y2)) return 1;
 
-          return (test_circle_sel(&Okr) == 1) ? 1 : 0;
-      }
-  }
-  else if ((ptrs_point->typ > 8)  && (ptrs_point->typ < 12)) /*pin=8, pin_g=9, pin_d=10, pin_s=11*/
-  {
-   df_psize = Get_Point_Size () / 3 ;
-   Okr.r = df_psize;
-   if (test_circle_sel(&Okr) == 1) return 1;
+            return (test_circle_sel(&Okr) == 1) ? 1 : 0;
+        }
+    }
+    else if ((ptrs_point->typ > 8)  && (ptrs_point->typ < 12)) /*pin=8, pin_g=9, pin_d=10, pin_s=11*/
+    {
+        df_psize = Get_Point_Size () / 3 ;
+        Okr.r = df_psize;
+        if (test_circle_sel(&Okr) == 1) return 1;
 
-   x1 = jednostkiN (ptrs_point->x - df_psize) ;
-   y1 = jednostkiN (ptrs_point->y - df_psize) ;
-   x2 = jednostkiN (ptrs_point->x + df_psize) ;
-   y2 = jednostkiN (ptrs_point->y + df_psize) ;
+        x1 = jednostkiN (ptrs_point->x - df_psize) ;
+        y1 = jednostkiN (ptrs_point->y - df_psize) ;
+        x2 = jednostkiN (ptrs_point->x + df_psize) ;
+        y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-   if (prostokat_odcinek (x1, y1, x2, y2)) return 1 ;
-  }
-  else
-   {
+        if (prostokat_odcinek (x1, y1, x2, y2)) return 1 ;
+    }
+    else
+    {
 
-       switch (ptrs_point->typ)
-      {
-          case 12:
-          case 13:
-          case 14:
-          case 15:
-          case 20:
-          case 21:
-          case 22:
-          case 23:
-              df_psize = Get_Point_Size() / 4;
-              Okr.r = 1.5*df_psize;
+        switch (ptrs_point->typ)
+        {
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 20:
+            case 21:
+            case 22:
+            case 23:
+            case 29:
+            case 30:
+            case 31:
+            case 32:
+                df_psize = Get_Point_Size() / 4;
+                Okr.r = 1.5*df_psize;
 
-              x1 = jednostkiN (ptrs_point->x - df_psize) ;
-              y1 = jednostkiN (ptrs_point->y - df_psize) ;
-              x2 = jednostkiN (ptrs_point->x + df_psize) ;
-              y2 = jednostkiN (ptrs_point->y + df_psize) ;
+                x1 = jednostkiN (ptrs_point->x - df_psize) ;
+                y1 = jednostkiN (ptrs_point->y - df_psize) ;
+                x2 = jednostkiN (ptrs_point->x + df_psize) ;
+                y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-              x12 = (x1 + x2)/2;
-              y12 = (y1 + y2)/2;
+                x12 = (x1 + x2)/2;
+                y12 = (y1 + y2)/2;
 
-              dxy= jednostkiN(df_psize*2.5);  //2
-              dd = jednostkiN(2*df_psize / 1.5);  //*1.0
-              dd1= jednostkiN(df_psize);
+                dxy= jednostkiN(df_psize*2.5);  //2
+                dd = jednostkiN(2*df_psize / 1.5);  //*1.0
+                dd1= jednostkiN(df_psize);
+                break;
+            case 16:
+            case 17:
+            case 18:
+            case 19:
+            case 24:
+            case 25:
+            case 26:
+            case 27:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+                df_psize = Get_Point_Size() / 4;
+                Okr.r = 2*df_psize;
 
-              break;
-          case 16:
-          case 17:
-          case 18:
-          case 19:
-          case 24:
-          case 25:
-          case 26:
-          case 27:
-              df_psize = Get_Point_Size() / 4;
-              Okr.r = 2*df_psize;
+                x1 = jednostkiN (ptrs_point->x - df_psize) ;
+                y1 = jednostkiN (ptrs_point->y - df_psize) ;
+                x2 = jednostkiN (ptrs_point->x + df_psize) ;
+                y2 = jednostkiN (ptrs_point->y + df_psize) ;
+                x12 = (x1 + x2)/2;
+                y12 = (y1 + y2)/2;
 
-              x1 = jednostkiN (ptrs_point->x - df_psize) ;
-              y1 = jednostkiN (ptrs_point->y - df_psize) ;
-              x2 = jednostkiN (ptrs_point->x + df_psize) ;
-              y2 = jednostkiN (ptrs_point->y + df_psize) ;
-              x12 = (x1 + x2)/2;
-              y12 = (y1 + y2)/2;
+                dxy= jednostkiN(df_psize*3);
+                dd = jednostkiN(df_psize*2);
+                dd1= jednostkiN(df_psize);
+                break;
+            case 28:
+                df_psize = Get_Point_Size() / 4;
+                Okr.r = 1.5*df_psize;
 
-              dxy= jednostkiN(df_psize*3);
-              dd = jednostkiN(df_psize*2);
-              dd1= jednostkiN(df_psize);
+                x1 = jednostkiN (ptrs_point->x - df_psize) ;
+                y1 = jednostkiN (ptrs_point->y - df_psize) ;
+                x2 = jednostkiN (ptrs_point->x + df_psize) ;
+                y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-              break;
-          case 28:
-              df_psize = Get_Point_Size() / 4;
-              Okr.r = 1.5*df_psize;
+                x12 = (x1 + x2)/2;
+                y12 = (y1 + y2)/2;
 
-              x1 = jednostkiN (ptrs_point->x - df_psize) ;
-              y1 = jednostkiN (ptrs_point->y - df_psize) ;
-              x2 = jednostkiN (ptrs_point->x + df_psize) ;
-              y2 = jednostkiN (ptrs_point->y + df_psize) ;
+                dxy= jednostkiN(df_psize*2.325);
+                dd = jednostkiN(2*df_psize*0.25);
+                dd1= jednostkiN(2*df_psize*0.618);
+                break;
+        }
 
-              x12 = (x1 + x2)/2;
-              y12 = (y1 + y2)/2;
-
-              dxy= jednostkiN(df_psize*2.325);
-              dd = jednostkiN(2*df_psize*0.25);
-              dd1= jednostkiN(2*df_psize*0.618);
-              break;
-      }
-
-       if (test_circle_sel(&Okr) == 1) return 1;
+        if (test_circle_sel(&Okr) == 1) return 1;
 
 
-       switch (ptrs_point->typ) {
-           case 12:
-           case 16:
-           //bottom
-           if (prostokat_odcinek(x1 - dxy, y12 - dd, x2 + dxy, y12 - dd)) return 1;
-           break;
-           case 13:
-           case 17:
-           //left
-           if (prostokat_odcinek(x12 - dd, y1 - dxy, x12 - dd, y2 + dxy)) return 1;
-           break;
+        switch (ptrs_point->typ) {
+            case 12:
+            case 16:
+                //bottom
+                if (prostokat_odcinek(x1 - dxy, y12 - dd, x2 + dxy, y12 - dd)) return 1;
+                break;
+            case 13:
+            case 17:
+                //left
+                if (prostokat_odcinek(x12 - dd, y1 - dxy, x12 - dd, y2 + dxy)) return 1;
+                break;
 
-           case 14:
-           case 18:
-           //right
-           if (prostokat_odcinek(x12 + dd, y1 - dxy, x12 + dd, y2 + dxy)) return 1;
-           break;
+            case 14:
+            case 18:
+                //right
+                if (prostokat_odcinek(x12 + dd, y1 - dxy, x12 + dd, y2 + dxy)) return 1;
+                break;
 
-           case 15:
-           case 19:
-           //top
-           if (prostokat_odcinek(x1 - dxy, y12 + dd, x2 + dxy, y12 + dd)) return 1;
-           break;
-           case 20:
-           case 24:
-               //bottom
-               if (prostokat_odcinek(x1-dxy, y12-dd, x2+dxy, y12-dd)) return 1 ;
-               if (prostokat_odcinek(x1-dxy, y12-dd-dd1, x2+dxy, y12-dd-dd1)) return 1 ;
-               break;
-           case 21:
-           case 25:
-               //left
-               if (prostokat_odcinek(x12-dd, y1-dxy, x12-dd, y2+dxy)) return 1 ;
-               if (prostokat_odcinek(x12-dd-dd1, y1-dxy, x12-dd-dd1, y2+dxy)) return 1 ;
-               break;
-           case 22:
-           case 26:
-               //right
-               if (prostokat_odcinek(x12+dd, y1-dxy, x12+dd, y2+dxy)) return 1 ;
-               if (prostokat_odcinek(x12+dd+dd1, y1-dxy, x12+dd+dd1, y2+dxy)) return 1 ;
-               break;
-           case 23:
-           case 27:
-               //top
-               if (prostokat_odcinek(x1-dxy, y12+dd, x2+dxy, y12+dd)) return 1 ;
-               if (prostokat_odcinek(x1-dxy, y12+dd+dd1, x2+dxy, y12+dd+dd1)) return 1 ;
-               break;
-           case 28:
-               if (prostokat_odcinek(x12-dxy, y12+dd, x12-dd1, y12+dd)) return 1 ;
-               if (prostokat_odcinek(x12+dd1, y12+dd, x12+dxy, y12+dd)) return 1 ;
-               if (prostokat_odcinek(x12-dxy, y12-dd, x12-dd1, y12-dd)) return 1 ;
-               if (prostokat_odcinek(x12+dd1, y12-dd, x12+dxy, y12-dd)) return 1 ;
+            case 15:
+            case 19:
+                //top
+                if (prostokat_odcinek(x1 - dxy, y12 + dd, x2 + dxy, y12 + dd)) return 1;
+                break;
+            case 20:
+            case 24:
+                //bottom
+                if (prostokat_odcinek(x1-dxy, y12-dd, x2+dxy, y12-dd)) return 1 ;
+                if (prostokat_odcinek(x1-dxy, y12-dd-dd1, x2+dxy, y12-dd-dd1)) return 1 ;
+                break;
+            case 21:
+            case 25:
+                //left
+                if (prostokat_odcinek(x12-dd, y1-dxy, x12-dd, y2+dxy)) return 1 ;
+                if (prostokat_odcinek(x12-dd-dd1, y1-dxy, x12-dd-dd1, y2+dxy)) return 1 ;
+                break;
+            case 22:
+            case 26:
+                //right
+                if (prostokat_odcinek(x12+dd, y1-dxy, x12+dd, y2+dxy)) return 1 ;
+                if (prostokat_odcinek(x12+dd+dd1, y1-dxy, x12+dd+dd1, y2+dxy)) return 1 ;
+                break;
+            case 23:
+            case 27:
+                //top
+                if (prostokat_odcinek(x1-dxy, y12+dd, x2+dxy, y12+dd)) return 1 ;
+                if (prostokat_odcinek(x1-dxy, y12+dd+dd1, x2+dxy, y12+dd+dd1)) return 1 ;
+                break;
+            case 28:
+                if (prostokat_odcinek(x12-dxy, y12+dd, x12-dd1, y12+dd)) return 1 ;
+                if (prostokat_odcinek(x12+dd1, y12+dd, x12+dxy, y12+dd)) return 1 ;
+                if (prostokat_odcinek(x12-dxy, y12-dd, x12-dd1, y12-dd)) return 1 ;
+                if (prostokat_odcinek(x12+dd1, y12-dd, x12+dxy, y12-dd)) return 1 ;
 
-               if (prostokat_odcinek(x12-dd, y12+dxy, x12-dd, y12+dd1)) return 1 ;
-               if (prostokat_odcinek(x12-dd, y12-dd1, x12-dd, y12-dxy)) return 1 ;
-               if (prostokat_odcinek(x12+dd, y12+dxy, x12+dd, y12+dd1)) return 1 ;
-               if (prostokat_odcinek(x12+dd, y12-dd1, x12+dd, y12-dxy)) return 1 ;
-
-               break;
-      }
-   }
-  return 0 ;
+                if (prostokat_odcinek(x12-dd, y12+dxy, x12-dd, y12+dd1)) return 1 ;
+                if (prostokat_odcinek(x12-dd, y12-dd1, x12-dd, y12-dxy)) return 1 ;
+                if (prostokat_odcinek(x12+dd, y12+dxy, x12+dd, y12+dd1)) return 1 ;
+                if (prostokat_odcinek(x12+dd, y12-dd1, x12+dd, y12-dxy)) return 1 ;
+                break;
+            case 29: /*fixed roller X*/
+            case 33: /*pinned roller X*/
+                dl=dd1*koc30;
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc30;
+                y1i = y1i + dl * kos30;
+                x2i = x2i + dl * koc30;
+                y2i = y2i + dl * kos30;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                break;
+            case 30: /*fixed roller XU*/
+            case 34: /*pinned roller XU*/
+                dl=dd1*koc30;
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc210;
+                y1i = y1i + dl * kos210;
+                x2i = x2i + dl * koc210;
+                y2i = y2i + dl * kos210;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                break;
+            case 31: /*fixed roller Y*/
+            case 35: /*pinned roller Y*/
+                dl=-dd1*koc30;
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc150;
+                y1i = y1i + dl * kos150;
+                x2i = x2i + dl * koc150;
+                y2i = y2i + dl * kos150;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                break;
+            case 32: /*fixed roller YU*/
+            case 36: /*pinned roller YU*/
+                dl=-dd1*koc30;
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc330;
+                y1i = y1i + dl * kos330;
+                x2i = x2i + dl * koc330;
+                y2i = y2i + dl * kos330;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
+                break;
+        }
+    }
+    return 0 ;
 }
-
 
 int Point_Rectangle(T_Point *ptrs_point)
 /*------------------------------------*/
@@ -2905,8 +3678,10 @@ int Point_Rectangle(T_Point *ptrs_point)
     long x1, y1, x2, y2, x12, y12;
     double df_psize;
     OKRAG Okr;
-    double dxy, dd, dd1 ;
+    double dxy, dd, dd1, dl ;
     int w;
+    double x1i, y1i, x2i, y2i;
+    double kos30=-0.5, koc30=-0.866025404, kos210=0.5, koc210=0.866025404, kos150=0.5, koc150=-0.866025404, kos330=-0.5, koc330=0.866025404;
 
     if (!punkt_w_prostokacie(ptrs_point->x, ptrs_point->y)) return 0;
 
@@ -2980,6 +3755,10 @@ int Point_Rectangle(T_Point *ptrs_point)
             case 21:
             case 22:
             case 23:
+            case 29: /*fixed roller X*/
+            case 30: /*fixed roller XU*/
+            case 31: /*fixed roller Y*/
+            case 32: /*fixed roller YU*/
                 df_psize = Get_Point_Size() / 4;
                 Okr.r = 1.5*df_psize;
                 x1 = jednostkiN (ptrs_point->x - df_psize) ;
@@ -3002,6 +3781,10 @@ int Point_Rectangle(T_Point *ptrs_point)
             case 25:
             case 26:
             case 27:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
                 df_psize = Get_Point_Size() / 4;
                 Okr.r = 2*df_psize;
 
@@ -3095,6 +3878,68 @@ int Point_Rectangle(T_Point *ptrs_point)
                 if (prostokat_odcinek(x12+dd, y12+dxy, x12+dd, y12+dd1)!=3) return 0 ;
                 if (prostokat_odcinek(x12+dd, y12-dd1, x12+dd, y12-dxy)!=3) return 0 ;
                 break;
+            case 29: /*fixed roller X*/
+            case 33: /*pinned roller X*/
+                dl=dd1*koc30;
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc30;
+                y1i = y1i + dl * kos30;
+                x2i = x2i + dl * koc30;
+                y2i = y2i + dl * kos30;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                break;
+            case 30: /*fixed roller XU*/
+            case 34: /*pinned roller XU*/
+                dl=dd1*koc30;
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc210;
+                y1i = y1i + dl * kos210;
+                x2i = x2i + dl * koc210;
+                y2i = y2i + dl * kos210;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                break;
+            case 31: /*fixed roller Y*/
+            case 35: /*pinned roller Y*/
+                dl=-dd1*koc30;
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc150;
+                y1i = y1i + dl * kos150;
+                x2i = x2i + dl * koc150;
+                y2i = y2i + dl * kos150;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                break;
+            case 32: /*fixed roller YU*/
+            case 36: /*pinned roller YU*/
+                dl=-dd1*koc30;
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                //shifting line
+                x1i = x1i + dl * koc330;
+                y1i = y1i + dl * kos330;
+                x2i = x2i + dl * koc330;
+                y2i = y2i + dl * kos330;
+                if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
+                break;
+
+
         }
     }
     return 1 ;
@@ -3131,6 +3976,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
    LINIA L1, L2, Ls=Ldef, Lt=Ldef, Lth=Ldef;
    WIELOKAT w=S4def;
    SOLIDARC sa=sadef;
+   ELLIPTICALARC ea=eldef;
    double df_psize, df_psize1, ra ;
    double kat, kat1, kos, koc;
    PLINIA PL, PLth;
@@ -3139,6 +3985,8 @@ int Vector_Selected(AVECTOR *ptrs_vector)
    double koc1, kos1, koc2, kos2, koc1th, kos1th;
    double n;
    float ymax, xmax;
+   int plane;
+   int ret;
 
 #ifndef arrowf
 #define arrowf 1.0
@@ -3169,8 +4017,9 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (vector_okrag_wybrany(ptrs_vector, 0, df_psize1)) return 1;
             if (vector_okrag_wybrany(ptrs_vector, 1, df_psize1)) return 1;
             break;
-        case 4:
-        case 18:
+        case 4:  //force
+        case 18: //slab force
+        case 19: //force z
             ra=Get_Point_Size () / arrowf;
             L1.x1=ptrs_vector->x1;
             L1.y1=ptrs_vector->y1;
@@ -3210,7 +4059,8 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             w.lp=6;
             if (wielokat_wybrany(&w)) return 1;
             break;
-        case 7:
+        case 7: //displacement
+        case 27: //displacement z
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
             if (vector_okrag_wybrany(ptrs_vector, 0, df_psize1)) return 1;
 
@@ -3239,7 +4089,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (wielokat_wybrany(&w)) return 1;
 
             break;
-        case 5:
+        case 5:  //moment
             ra=Get_Point_Size () / arrowf;
             sa.atrybut=ptrs_vector->atrybut;
             sa.warstwa=ptrs_vector->warstwa;
@@ -3254,7 +4104,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (solidarc_wybrany(&sa)) return 1;
             //arrow
             break;
-        case 6:
+        case 6:  //-moment
             ra=Get_Point_Size () / arrowf;
             sa.atrybut=ptrs_vector->atrybut;
             sa.warstwa=ptrs_vector->warstwa;
@@ -3269,7 +4119,26 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (solidarc_wybrany(&sa)) return 1;
             //arrow
             break;
-        case 8:
+        case 21:  //TO DO ISOMETRIC
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+            memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
+            l.x=ptrs_vector->x1;
+            l.y=ptrs_vector->y1;
+            l.r=ptrs_vector->r;
+            l.kat1=ptrs_vector->angle1;
+            l.kat2=ptrs_vector->angle2;
+            ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            ea.warstwa=l.warstwa;
+            ea.atrybut=l.atrybut;
+            if (lukeliptyczny_wybrany(&ea)) return 1;
+
+            //arrow
+            break;
+        case 8: //rotation
             memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
             l.x=ptrs_vector->x1;
             l.y=ptrs_vector->y1;
@@ -3280,7 +4149,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
 
             //arrow
             break;
-        case 9:
+        case 9:  //-rotation
             memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
             l.x=ptrs_vector->x1;
             l.y=ptrs_vector->y1;
@@ -3288,11 +4157,31 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             l.kat1=ptrs_vector->angle1;
             l.kat2=ptrs_vector->angle2;
             if (luk_wybrany(&l)) return 1;
+
+            //arrow
+            break;
+        case 28:  //TO DO ISOMETRIC
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+            memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
+            l.x=ptrs_vector->x1;
+            l.y=ptrs_vector->y1;
+            l.r=ptrs_vector->r;
+            l.kat1=ptrs_vector->angle1;
+            l.kat2=ptrs_vector->angle2;
+            ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            ea.warstwa=l.warstwa;
+            ea.atrybut=l.atrybut;
+            if (lukeliptyczny_wybrany(&ea)) return 1;
 
             //arrow
             break;
         case 10:
         case 17:
+        case 20:
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
             if (ptrs_vector->x1<ptrs_vector->x2) n=1;

@@ -80,6 +80,57 @@ double isometric_vector_angle(double x1, double y1, double x2, double y2) {
     return angle_deg;
 }
 
+/*
+ * Calculate the length of a vector defined by endpoints (x1,y1) to (x2,y2)
+ * in the isometric coordinate system.
+ *
+ * The length is measured along the isometric axes (same as Cartesian distance
+ * in the underlying world, since the transformation preserves lengths for
+ * displacements along the axes).
+ *
+ * Inputs:
+ *   x1, y1 - Starting point in Cartesian (drawing) coordinates
+ *   x2, y2 - Ending point in Cartesian (drawing) coordinates
+ *
+ * Returns:
+ *   The length in the same units as krok_g / object units (world units)
+ */
+double isometric_vector_length(double x1, double y1, double x2, double y2, double *pl_dx, double *pl_dy) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+
+    if (dx == 0.0 && dy == 0.0) {
+        return 0.0;  // Zero vector
+    }
+
+    // Transform Cartesian displacement to isometric components
+    double inv_sqrt3 = 1.0 / sqrt(3.0);
+    double i_dx = inv_sqrt3 * dx + dy;
+    double i_dy = -inv_sqrt3 * dx + dy;
+
+    // Euclidean distance in isometric space (preserves true length)
+    *pl_dx=i_dx;
+    *pl_dy=i_dy;
+    return sqrt(i_dx * i_dx + i_dy * i_dy);
+}
+
+double isometric_vector_length_f(float x1, float y1, float x2, float y2) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+
+    if (dx == 0.0 && dy == 0.0) {
+        return 0.0;  // Zero vector
+    }
+
+    // Transform Cartesian displacement to isometric components
+    double inv_sqrt3 = 1.0 / sqrt(3.0);
+    double i_dx = inv_sqrt3 * dx + dy;
+    double i_dy = -inv_sqrt3 * dx + dy;
+
+    // Euclidean distance in isometric space (preserves true length)
+    return sqrt(i_dx * i_dx + i_dy * i_dy);
+}
+
 void parametry_linior (LINIA *L,PLINIA *PL)
 /*--------------------------------------------*/
 {
@@ -103,9 +154,10 @@ void parametry_linior (LINIA *L,PLINIA *PL)
        PL->kat=isometric_vector_angle(L->x1, L->y1, L->x2, L->y2)+angle_l;
        PL->sin=sin(PL->kat/180.*PI);
        PL->cos=cos(PL->kat/180.*PI);
-       PL->dl=sqrt(dx*dx+dy*dy);
-       PL->dx=dx;
-       PL->dy=dy;
+       //PL->dl=sqrt(dx*dx+dy*dy);
+       PL->dl=isometric_vector_length(L->x1, L->y1, L->x2, L->y2, &PL->dx, &PL->dy);
+       //PL->dx=dx;
+       //PL->dy=dy;
     }
     else parametry_lini (L, PL);
     return;

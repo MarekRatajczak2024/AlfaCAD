@@ -802,10 +802,7 @@ static BOOL add_line (BOOL b_strwyj)
 #define SQRT3_OVER_2   (sqrt(3.0)/2.0)  // ≈ 0.8660254037844386
 #define HALF           (0.5)
 
-int isometric_polar_to_cartesian(
-        double x1, double y1,
-        double length, double angle_deg,
-        double *x2, double *y2)
+int isometric_polar_to_cartesian(double x1, double y1,double length, double angle_deg, double *x2, double *y2)
 {
     if (!x2 || !y2) return -1;
 

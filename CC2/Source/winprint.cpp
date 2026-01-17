@@ -306,20 +306,20 @@ void Initial_Message(char file_name[255])
 #ifndef LINUX
 #ifdef BIT64
  char Ainfo[16] = u8"AlfaCAD Info";
- char logoandquote[512] = u8"AlfaCAD for Windows (x64) © Marek Ratajczak, 2020-2025";
+ char logoandquote[512] = u8"AlfaCAD for Windows (x64) © Marek Ratajczak, 2020-2026";
 #else
  char Ainfo[16] = u8"AlfaCAD Info";
- char logoandquote[512] = u8"AlfaCAD for Windows © Marek Ratajczak, 2020-2025";
+ char logoandquote[512] = u8"AlfaCAD for Windows © Marek Ratajczak, 2020-2026";
 #endif
 #else
     char Ainfo[16] = u8"AlfaCAD Info";
 #ifndef MACOS
-    char logoandquote[512] = u8"AlfaCAD for Linux (x64) © Marek Ratajczak, 2020-2025";
+    char logoandquote[512] = u8"AlfaCAD for Linux (x64) © Marek Ratajczak, 2020-2026";
 #else
 #ifdef ARM64
-	char logoandquote[512] = u8"AlfaCAD for MacOS (arm64)\n © Marek Ratajczak, 2020-2025";
+	char logoandquote[512] = u8"AlfaCAD for MacOS (arm64)\n © Marek Ratajczak, 2020-2026";
 #else
-    char logoandquote[512] = u8"AlfaCAD for MacOS (x64)\n © Marek Ratajczak, 2020-2025";
+    char logoandquote[512] = u8"AlfaCAD for MacOS (x64)\n © Marek Ratajczak, 2020-2026";
 #endif
 #endif
 #endif

@@ -18,9 +18,11 @@
 #include "menu.h"
 static BLOK * lps_edit_block = NULL ;
 static BOOL b__edit_current_block ;
-static float xr, yr, rad;
+static float xr, yr, rad, rady, angle;
 static double X00,Y00;
+static double Dx_bak, Dy_bak;
 static double sxy_;
+BOOL l_el;
 
 static float x01=0, y01=0, k01=0, k02=0;
 int f0=0;
@@ -31,6 +33,8 @@ extern int ttf_digits27_len;
 extern void outlinetext(TEXT *t, QUAD *outline, double margin);
 extern void select_color_type(char *ad);
 extern void select_color_paper_type(char *ad);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+extern int cartesian_vector_to_isometric(double dx_cart, double dy_cart, double *dx_iso, double *dy_iso);
 
 extern char last_buf[MaxSizeObiekt];
 
@@ -412,6 +416,9 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 
            X00=X;
            Y00=Y;
+
+           Dx_bak=0;
+           Dy_bak=0;
        }
        else if (typ == Bkolo || typ == Bwwielokat )
        {
@@ -419,6 +426,9 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 
            X00=X;  ////
            Y00=Y;  ////
+
+           Dx_bak=0;
+           Dy_bak=0;
        }
      }
      else
@@ -491,6 +501,7 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 			  xr=((LUK *)adr)->x;
 			  yr = ((LUK *)adr)->y;
 			  rad = ((LUK *)adr)->r;
+              l_el=0;  //arc
 
               //X0=X;
               //Y0=Y;
@@ -508,6 +519,39 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 			  Katr();
 			  sxy_ = 1.0;
 			  break;
+          case Bellipticalarc:
+
+              if (lps_edit_block->kod_obiektu != B_DIM1)
+              {
+                  ////out_sel(X, Y);
+                  return;
+              }
+              ADP = (char *)lps_edit_block;
+              ADK = ADP + sizeof(NAGLOWEK) + ((BLOK *)ADP)->n - 1;
+
+              xr=((ELLIPTICALARC *)adr)->x;
+              yr = ((ELLIPTICALARC *)adr)->y;
+              rad = ((ELLIPTICALARC *)adr)->rx;
+              rady = ((ELLIPTICALARC *)adr)->ry;
+              angle = ((ELLIPTICALARC *)adr)->angle;
+              l_el=1; //elliptical arc
+
+              //X0=X;
+              //Y0=Y;
+
+              X00=X;
+              Y00=Y;
+
+              zmien_atrybut(ADP, ADK, Anormalny, Ablok);
+              b__edit_current_block = FALSE;
+              if (ADP == dane)
+              {
+                  b__edit_current_block = TRUE;
+              }
+              bl = 1; ruchblokw();
+              Katr();
+              sxy_ = 1.0;
+              break;
 	case Btekst : ADP=ADK=adr;
 
               X00=X;
@@ -547,7 +591,7 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
               {
                 b__edit_current_block = TRUE ;
               }
-		      b=1;ruchblokw();
+		      b=1; ruchblokw();
 		      Katr();
 		      break;
       case Bpoint  :
@@ -594,9 +638,43 @@ static void cur_off(double x, double y)
     flip_screen();
 }
 
+/*
+ * Compute the uniform scale factor s to scale the elliptical arc (or its full ellipse)
+ * about the center (xr, yr) so that the perimeter (or extension) passes through (X00, Y00).
+ *
+ * Inputs:
+ *   xr, yr     - Center of the ellipse
+ *   radx, rady - Semi-major and semi-minor radii
+ *   angle      - Rotation angle of the main axis (radians)
+ *   X00, Y00   - The target point
+ *
+ * Returns:
+ *   The scale factor s (>0). If s=0, point is at center (invalid).
+ */
+double compute_ellipse_scale(double xr, double yr, double radx, double rady, double angle, double X00, double Y00)
+{
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+
+    double dx = X00 - xr;
+    double dy = Y00 - yr;
+
+    double A = dx * cos_a + dy * sin_a;
+    A = A * A;
+
+    double B = dx * sin_a - dy * cos_a;
+    B = B * B;
+
+    double s2 = A / (radx * radx) + B / (rady * rady);
+
+    if (s2 <= 0.0) return 0.0;  // point at center or invalid
+
+    return sqrt(s2);
+}
+
 static void cur_on(double x, double y)
 { double Dx,Dy,xs,ys;
-  double sxy, rad1;
+  double sxy, rad1, sxy1, rad2;
   WIELOKAT *wSt_p;
   WIELOKAT wSt;
   LINIA *wL;
@@ -614,14 +692,21 @@ static void cur_on(double x, double y)
      if(b || r || p)
       { if ((lps_edit_block->kod_obiektu != B_DIM3) || (p) || (orto))//it's not a leader block
           {
-              Dx = Dx * katr.sin * katr.sin - Dy * katr.sin * katr.cos;
-              Dy = -(x - X00) * katr.sin * katr.cos + Dy * katr.cos * katr.cos;
+             Dx = Dx * katr.sin * katr.sin - Dy * katr.sin * katr.cos;
+             Dy = -(x - X00) * katr.sin * katr.cos + Dy * katr.cos * katr.cos;
           }
         if(b && b__edit_current_block == TRUE)
-         { zwl(&Ls,Dx,Dy);
-           zwl(&Ls1,Dx,Dy);
-           w.x2+=Dx; w.y2+=Dy;
-           w.x0+=Dx; w.y0+=Dy;
+         { zwl(&Ls,Dx-Dx_bak,Dy-Dy_bak);
+           zwl(&Ls1,Dx-Dx_bak,Dy-Dy_bak);
+           w.x2+=(Dx-Dx_bak);
+           w.y2+=(Dy-Dy_bak);
+           w.x0+=(Dx-Dx_bak);
+           w.y0+=(Dy-Dy_bak);
+
+             w.x_+=(Dx-Dx_bak);
+             w.y_+=(Dy-Dy_bak);
+
+           Dx_bak=Dx; Dy_bak=Dy;
          }
       }
 	 else if (bl)
@@ -630,9 +715,14 @@ static void cur_on(double x, double y)
 		 Dx = Dx * katr.sin*katr.sin - Dy * katr.sin*katr.cos;
 		 Dy = -(x - X00)*katr.sin*katr.cos + Dy * katr.cos*katr.cos;
 
-		 rad1 = sqrt((X00 - xr)*(X00 - xr) + (Y00 - yr)*(Y00 - yr));
-		 
-		 sxy =  rad1 / rad;
+         if (!l_el)
+         {
+             rad1 = sqrt((X00 - xr) * (X00 - xr) + (Y00 - yr) * (Y00 - yr));
+             sxy = (rad1 / rad);
+         }
+         else
+             sxy = compute_ellipse_scale(xr, yr, rad, rady, angle, X00, Y00);
+
 	 }
 	 if (bl)
      {
@@ -786,6 +876,7 @@ static void redcr(char typ)
      if (Lsw==1)
       { Lsw=0;
 	Ls.warstwa = Current_Layer;
+
 	if(dodaj_obiekt((BLOK*)dane,(void*)&Ls)==NULL) return;
 	else if(WymInter)
     {

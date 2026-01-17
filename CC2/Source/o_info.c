@@ -79,6 +79,7 @@ extern int edge_icon[];
 extern char *load_symbol[];
 
 extern void alfacad_logo_info(void);
+extern char *Vector_txt[];
 
 static void nooph(void)
 {}
@@ -1622,7 +1623,14 @@ void Info_about_object(char *ad)
         act(iLenght);
         edit_param_no[iLenght]=FALSE;
 
-        strcpy(sk,vector_style_tab[((AVECTOR *)ad)->style]);
+        //strcpy(sk,vector_style_tab[((AVECTOR *)ad)->style]);
+        if (((AVECTOR *)ad)->style==0)
+        {
+            if (((AVECTOR *)ad)->foundflags==0)
+                strcpy(sk,Vector_txt[0]);
+            else strcpy(sk,Vector_txt[34]);
+        }
+        else strcpy(sk,Vector_txt[((AVECTOR *)ad)->style]);
         menu_par_new((*mInfoAbout.pola)[iVstyle].txt, sk) ;
         act(iVstyle);
 
@@ -1655,9 +1663,11 @@ void Info_about_object(char *ad)
                 act(iAngle1);
                 edit_param_no[iAngle1]=FALSE;
                 break;
-            case 4:
+            case 4:  //force
+            case 18:  //slab force
+            case 19:  //force z
                 //magnitude1
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, force_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, force_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude].txt, sk) ;
                 act(iMagnitude);
                 (*mInfoAbout.pola)[iMagnitude].iconno=727;
@@ -1675,9 +1685,10 @@ void Info_about_object(char *ad)
                 menu_par_new((*mInfoAbout.pola)[iAngle].txt, sk) ;
                 act(iAngle);
                 break;
-            case 7:
+            case 7: //displacement
+            case 27: //displacement z
                 //magnitude1
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, displacement_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, displacement_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude].txt, sk) ;
                 act(iMagnitude);
                 (*mInfoAbout.pola)[iMagnitude].iconno=730;
@@ -1690,10 +1701,16 @@ void Info_about_object(char *ad)
                 menu_par_new((*mInfoAbout.pola)[iAngle].txt, sk) ;
                 act(iAngle);
                 break;
-            case 5:
-            case 6:
+            case 5:  //moment
+            case 6:  //-moment
+            case 21:  //moment x
+            case 22:  //-moment x
+            case 23:  //moment y
+            case 24:  //-moment y
+            case 25:  //moment xy
+            case 26:  //-moment xy
                 //magnitude1
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, moment_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, moment_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude].txt, sk) ;
                 act(iMagnitude);
                 (*mInfoAbout.pola)[iMagnitude].iconno=728;
@@ -1715,10 +1732,16 @@ void Info_about_object(char *ad)
                 act(iAngle1);
                 break;
                 break;
-            case 8:
-            case 9:
+            case 8:  //rotation
+            case 9:  //-rotation
+            case 28:  //rotation x
+            case 29:  //-rotation x
+            case 30:  //rotation y
+            case 31:  //-rotation y
+            case 32:  //rotation xy
+            case 33:  //-rotation xy
                 //magnitude1
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, rotation_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, rotation_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude].txt, sk) ;
                 act(iMagnitude);
                 (*mInfoAbout.pola)[iMagnitude].iconno=731;
@@ -1732,6 +1755,8 @@ void Info_about_object(char *ad)
                 act(iAngle1);
                 break;
             case 10:
+            case 17:
+            case 20:
             case 11:
             case 12:
             case 13:
@@ -1752,12 +1777,12 @@ void Info_about_object(char *ad)
                 edit_param_no[iAngle1]=FALSE;
                 //magnitude1
                 //magnitude2
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, load_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, load_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude1].txt, sk) ;
                 act(iMagnitude1);
                 (*mInfoAbout.pola)[iMagnitude1].iconno=766;
 
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude2, load_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude2, load_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude2].txt, sk) ;
                 act(iMagnitude2);
                 (*mInfoAbout.pola)[iMagnitude2].iconno=767;
@@ -1789,12 +1814,12 @@ void Info_about_object(char *ad)
                 //magnitude1
                 //magnitude2
                 //radius
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude1, thermal_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude1, thermal_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude1].txt, sk) ;
                 act(iMagnitude1);
                 (*mInfoAbout.pola)[iMagnitude1].iconno=768;
 
-                set_decimal_format(&sk, ((AVECTOR *)ad)->magnitude2, thermal_precision);
+                set_decimal_format(sk, ((AVECTOR *)ad)->magnitude2, thermal_precision);
                 menu_par_new((*mInfoAbout.pola)[iMagnitude2].txt, sk) ;
                 act(iMagnitude2);
                 (*mInfoAbout.pola)[iMagnitude2].iconno=769;

@@ -490,7 +490,9 @@ int qkoniecS(double *x, double *y)
                   case 3:
                   case 4:  //force
                   case 18: //slab force
+                  case 19: //force z
                   case 7:  //displacement
+                  case 27:  //displacement z
                   if (!(Layers[((AVECTOR *) adr)->warstwa].point)) break;
                   adv = (AVECTOR *) adr;
                   *x = adv->x1;
@@ -502,6 +504,7 @@ int qkoniecS(double *x, double *y)
                   break;
                   case 10:
                   case 17:  //slab
+                  case 20:  //trapezium Z
                   case 11:
                   case 12:
                   case 13:

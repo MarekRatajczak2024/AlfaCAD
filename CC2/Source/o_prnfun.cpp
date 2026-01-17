@@ -192,6 +192,11 @@ extern void set_trace_block(BOOL tb);
 void my_soft_polygon(BITMAP* bmp, int vertices, AL_CONST int* points, int color, int translucency, int colorB);
 void SetPDFClip(int pdf_left, int pdf_bottom, int pdf_right, int pdf_top);
 
+int split_dim_arc(LUK *l, LUK *l_tmp, LUK *l_tmp1);
+int split_dim_line(LINIA *L, LINIA *L_tmp, LINIA *L_tmp1);
+int check_dim_line(LINIA *L);
+int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1);
+
 extern HPDF_Image
 HPDF_Image_LoadRawImageFromMem(HPDF_MMgr          mmgr,
 	const HPDF_BYTE* buf,
@@ -3969,6 +3974,53 @@ int split_dim_arc(LUK *l, LUK *l_tmp, LUK *l_tmp1) {
     else return 0;
 }
 
+int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1) {
+    NAGLOWEK *nag, *nag1;
+    TEXT *t;
+    QUAD t_outline;
+    int ret;
+
+    //checking if arc is dimensioning arc
+    if ((ea->blok == 1) && (ea->obiektt1 == 0) && (ea->obiektt2 == 1) && (ea->obiektt3 == 0))
+    {
+        //check if next object is text or line then text
+        nag1 = (NAGLOWEK*)((char*)ea + sizeof(NAGLOWEK) + ea->n);
+        if (nag1->obiekt == Otekst)
+        {
+            t = (TEXT*)nag1;
+            if ((t->blok == 1) && (t->obiektt1 == 0) && (t->obiektt2 == 1) && (t->obiektt3 == 0))
+            {
+                //checking crossing with text
+                outlinetext(t, &t_outline, 0.5);
+                Normalize_Quad (&t_outline);
+                ret=trim_ellipticalarc_to_quad(ea, &t_outline, ea_tmp, ea_tmp1);
+                return ret;
+            }
+        }
+        else if (nag1->obiekt == Olinia)
+        {
+            nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
+            if (nag1->obiekt == Olinia)
+                nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
+            if (nag1->obiekt == Otekst)
+            {
+                t = (TEXT*)nag1;
+                if ((t->blok == 1) && (t->obiektt1 == 0) && (t->obiektt2 == 1) && (t->obiektt3 == 0))
+                {
+                    //checking crossing with text
+                    outlinetext(t, &t_outline, 0.5);
+                    Normalize_Quad (&t_outline);
+                    ret=trim_ellipticalarc_to_quad(ea, &t_outline, ea_tmp, ea_tmp1);
+                    return ret;
+                }
+            }
+            else return 0;
+        }
+        else return 0;
+    }
+    else return 0;
+}
+
 static BOOL draw_to_matrix_entities(Print_Rect window_to_print, int entities, char frozen)
 /*--------------------------------------------------------------------------------------*/
 {
@@ -3976,8 +4028,9 @@ static BOOL draw_to_matrix_entities(Print_Rect window_to_print, int entities, ch
  NAGLOWEK *nag;
  LUK l = ldef, l1, l_tmp, l_tmp1;
  LINIA L = Ldef, L_tmp, L_tmp1;
+ ELLIPTICALARC ea_tmp, ea_tmp1;
  SPLINE S = Splinedef;
- AVECTOR V;
+ AVECTOR V=Vdef;
  T_Point *point;
  long_long off, offk, ad;
  int k;
@@ -4377,7 +4430,24 @@ if (draw_logo==TRUE)
 
             line_width_type = Line_Width (((ELLIPTICALARC*)nag)->typ);
 
-            if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+            ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+            switch (ret)
+            {
+                case 0:
+                    if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                    break;
+                case 1:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    break;
+                case 2:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                    break;
+                default:
+                    break;
+            }
+
+            //if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
             break;
        case Owwielokat :
 
@@ -4827,7 +4897,24 @@ if (draw_logo==TRUE)
 
             line_width_type = Line_Width (((ELLIPTICALARC*)nag)->typ);
 
-            if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+            ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+            switch (ret)
+            {
+                case 0:
+                    if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                    break;
+                case 1:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    break;
+                case 2:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                    break;
+                default:
+                    break;
+            }
+
+            //if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
             break;
        case Owwielokat :
            transluc=255;
@@ -5238,7 +5325,24 @@ if (draw_logo==TRUE)
 
             line_width_type = Line_Width (((ELLIPTICALARC*)nag)->typ);
 
-            if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+            ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+            switch (ret)
+            {
+                case 0:
+                    if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                    break;
+                case 1:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    break;
+                case 2:
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                    if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                    break;
+                default:
+                    break;
+            }
+
+            //if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
             break;
        case Owwielokat :
            transluc=255;
@@ -5441,7 +5545,8 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
  LINIA L;
  TEXT T1, *T0;
  ELLIPSE e, fe;
- ELLIPTICALARC ea;
+ ELLIPTICALARC *ea;
+ ELLIPTICALARC ea_tmp, ea_tmp1;
  T_Point *point;
  long_long off, offk, ad;
  int k;
@@ -5450,7 +5555,8 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
  BLOK *b1;
  T_Desc_Ex_Block *ptrs_desc_bl1;
  double width_s0, width_s1;
- AVECTOR V;
+ AVECTOR V=Vdef;
+ int ret;
 
  BLOK_SIEC=FALSE;
 
@@ -5675,7 +5781,25 @@ static BOOL draw_to_matrix1____(Print_Rect window_to_print)   //TO REMOVE
 
             line_width_type = Line_Width (((ELLIPTICALARC*)nag)->typ);
 
-            if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+            ea = (ELLIPTICALARC*)nag;
+
+            ret = split_dim_ellipticalarc(ea, &ea_tmp, &ea_tmp1);
+            switch (ret) {
+                case 0:
+                    if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC *) nag) == FALSE) return FALSE;
+                    break;
+                case 1:
+                    if (Draw_EllipticalArc_To_Drive(&ea_tmp) == FALSE) return FALSE;
+                    break;
+                case 2:
+                    if (Draw_EllipticalArc_To_Drive(&ea_tmp) == FALSE) return FALSE;
+                    if (Draw_EllipticalArc_To_Drive(&ea_tmp1) == FALSE) return FALSE;
+                    break;
+                default:
+                    break;
+            }
+
+            //if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
             break;
        case Owwielokat :
 	  if (!wielokat_wybrany((WIELOKAT*)nag)) break;

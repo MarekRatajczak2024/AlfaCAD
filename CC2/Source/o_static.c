@@ -138,7 +138,7 @@ extern void *obiekt_wybrany_select (unsigned int Bobjects);
 extern int get_associated_blocks_adr(char *block_name, char *component_name, int limit_state, BLOK **adr);
 
 extern int theta_, sigma_eq_, epsilon_;
-
+extern char *Vector_txt[];
 
 /*
 extern int calculate_rebars_eurocode_simplified(double M, double h, double b, double cc,
@@ -4815,8 +4815,7 @@ void Static_analysis(void) {
 
                 }
                 if ((i == st_node_no) && ((v->style == 7) || (v->style == 8) || (v->style == 9))) {
-                    sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
-                            (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
+                    sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1), Vector_txt[v->style], _force_not_associated_,rn);
                     strcat(report, report_row);
                 }
             }
@@ -4897,21 +4896,18 @@ void Static_analysis(void) {
                             }
                         }
                         if (i == st_element_no) {
-                            sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
-                                    (*mVector.pola)[v->style + 1].txt, _load_not_associated_,rn);
+                            sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),Vector_txt[v->style], _load_not_associated_,rn);
                             strcat(report, report_row);
                         }
                     } else if (v->style == 5) //moment +
                     {
                         //should be report about error
-                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
-                                (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
+                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),Vector_txt[v->style], _force_not_associated_,rn);
                         strcat(report, report_row);
                     } else if (v->style == 6) //moment -
                     {
                         //should be report about error
-                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
-                                (*mVector.pola)[v->style + 1].txt, _force_not_associated_,rn);
+                        sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),Vector_txt[v->style], _force_not_associated_,rn);
                         strcat(report, report_row);
                     }
                 }
@@ -5522,7 +5518,7 @@ void Static_analysis(void) {
                             }
                         } else {
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(v->x1),
-                                    milimetryoby(v->y1),milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,_load_not_associated_,rn);
+                                    milimetryoby(v->y1),milimetryobx(v->x2), milimetryoby(v->y2), Vector_txt[v->style],_load_not_associated_,rn);
                             strcat(report, report_row);
                         }
                         break;
@@ -5609,7 +5605,7 @@ void Static_analysis(void) {
                             //it's bad
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
-                                    milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
+                                    milimetryobx(v->x2), milimetryoby(v->y2), Vector_txt[v->style],
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
@@ -5632,7 +5628,7 @@ void Static_analysis(void) {
                             /*TEMPORARY
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
-                                    milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
+                                    milimetryobx(v->x2), milimetryoby(v->y2), Vector_txt[v->style],
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
@@ -5656,7 +5652,7 @@ void Static_analysis(void) {
                             /*  TEMPORARY
                             sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s <%f;%f> <%f;%f>%s", milimetryobx(v->x1),
                                     milimetryoby(v->y1),
-                                    milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
+                                    milimetryobx(v->x2), milimetryoby(v->y2), Vector_txt[v->style],
                                     _thermal_load_inside_element_,
                                     milimetryobx(st_node[st_element[i].node1].x),  //node1r node2r
                                     milimetryoby(st_node[st_element[i].node1].y),
@@ -5701,8 +5697,7 @@ void Static_analysis(void) {
 
                     if (th_load_el == 0) {
                         sprintf(report_row, "<%f;%f> <%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),
-                                milimetryobx(v->x2), milimetryoby(v->y2), (*mVector.pola)[v->style + 1].txt,
-                                _load_not_associated_,rn);
+                                milimetryobx(v->x2), milimetryoby(v->y2), Vector_txt[v->style], _load_not_associated_,rn);
                         strcat(report, report_row);
                     }
                 }

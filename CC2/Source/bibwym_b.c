@@ -30,6 +30,15 @@ extern void setwritemode( int mode );
 extern void Angle_Measure (LINIA *line_gee, LINIA *line_gee1, int *out_kat, int out_angle_ok);
 extern int Set_Orto_Dir (LINIA *L, int orto_dir);
 extern double Get_Text_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, int font_index, int *t_width, int *t_height, double *matrix_d, int *i_matrix_d);
+extern double isometric_vector_length(double x1, double y1, double x2, double y2, double *pl_dx, double *pl_dy);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern double cartesian_angle_to_isometric_angle(double cart_angle_rad);
+extern void normalize_txt(TEXT *ptrs_text);
+extern int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea);
+extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double df_sangle0, double df_eangle0, double *x1, double *y1, double *x2, double *y2);
+extern void izometrize_solid(enum PlaneType plane, WIELOKAT *St);
+extern void make_dim_elliptical_arc_isometric_solid(ELLIPTICALARC *ea, double ea_start_x, double ea_start_y, double ea_end_x, double ea_end_y, double Kps, double katS, int n, WIELOKAT *w);
+extern void srodekea_(double *x,double *y, double *tangent, void *adr);  //fast and realtively precise
 
 static int Continue=0,Wst;
 static char *ADLr;  /* adres ostatniej linii */
@@ -44,6 +53,10 @@ static int wym_luku=0;
 static int wym_okregu=0;
 static int wym_kata=0;
 static int kat_w_now=0;
+
+static ELLIPTICALARC ea0=eldef, ea=eldef;
+
+static double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
 
 static LINIA line_g = Ldef  ;
 
@@ -70,13 +83,16 @@ static struct KAT kat={ 0,0,1};
 static struct KAT katr;
 
 
- struct W {
+struct W {
 		double x2;
 		double y2;
 	   	double x0;
 	   	double y0;
-	   	};
-struct W w;
+        double x_;
+        double y_;
+	   	} W;
+
+static struct W w;
 
  struct Wl {
 		   double x;
@@ -729,7 +745,7 @@ void  wymiarowanie(void)
                           }
 
                           wL_x1 = wL->x1 + r2 * kat.cos;
-                          wL_y1 = wL->y1 + r2 * kat.sin;;
+                          wL_y1 = wL->y1 + r2 * kat.sin;
 
                           wSt->xy[2] = wL_x1;
                           wSt->xy[3] = wL_y1;

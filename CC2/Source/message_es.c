@@ -666,7 +666,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Indique un diagrama de marco o armadura para análisis estático/dinámico",
-/*168*/u8"Dimensionamiento (para comenzar a dimensionar un ángulo, toque cualquier línea)",
+/*168*/u8"Dimensionamiento (para comenzar a dimensionar un ángulo, toque cualquier línea or vector de elemento)",
 /*169*/u8"Indicar el elemento del marco o cercha",
 /*170*/u8"Posicione la línea de sección en las coordenadas deseado del elemento. Haga clic para guardar los valores en el portapapeles",
 /*171*/u8"Indique un diagrama de losa para análisis estático (FEM)",

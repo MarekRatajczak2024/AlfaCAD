@@ -49,6 +49,11 @@ extern void set_trace_block_begin(char *adr);
 extern void set_trace_block_end(char *adr);
 extern void set_trace_block(BOOL tb);
 
+extern int split_dim_arc(LUK *l, LUK *l_tmp, LUK *l_tmp1);
+extern int split_dim_line(LINIA *L, LINIA *L_tmp, LINIA *L_tmp1);
+extern int check_dim_line(LINIA *L);
+extern int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1);
+
 /*
    SP;       returns a pen
    SP pen number;
@@ -653,11 +658,12 @@ static BOOL draw_sheet_plt(int pen0)
 /*-------------------------------*/
 {
  NAGLOWEK *nag;
- LUK l = ldef;
+ LINIA L = Ldef, L_tmp, L_tmp1;
+ LUK l = ldef, l_tmp, l_tmp1;
  ELLIPSE e = Edef;
  ELLIPSE fe =FEdef;
- ELLIPTICALARC ae=eldef;
- AVECTOR V;
+ ELLIPTICALARC ae=eldef, ea_tmp, ea_tmp1;
+ AVECTOR V=Vdef;
  long_long off, offk, ad;
  int pen;
 
@@ -670,6 +676,7 @@ static BOOL draw_sheet_plt(int pen0)
  double plot_progress;
  double next_plot_progress = 0.01;
  int counter=0;
+    int ret;
 
  BLOK_SIEC=FALSE;
 
@@ -781,7 +788,26 @@ static BOOL draw_sheet_plt(int pen0)
              break;
          }
 
-	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
+         if (check_dim_line((LINIA*)nag)==0) {if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;}
+         else {
+             ret = split_dim_line((LINIA *) nag, &L_tmp, &L_tmp1);
+             switch (ret) {
+                 case 0:
+                     if (Draw_Line_To_Drive((LINIA *) nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     if (Draw_Line_To_Drive(&L_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+         }
+
+	     //if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :
 	     if (Draw_Tekst_To_Drive ((TEXT*)nag, ptrs__ini_date->ink_plotter, pen + 1 , ptrs__config->type/*, ptrs__ini_date->tab_pen_width_ink[pen]*/) == FALSE) return FALSE;
@@ -861,7 +887,71 @@ static BOOL draw_sheet_plt(int pen0)
             grubosc = ( ((LUK*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
-	     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+             //edges
+             if (((LUK*)nag)->obiektt2==4) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                 else V.style = V_EDGE_ARC_ROLL_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==6) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                 else V.style = V_EDGE_ARC_SIMPLE_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==7) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                 else V.style = V_EDGE_ARC_FIXED_INV;
+
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+
+             ret=split_dim_arc((LUK*)nag, &l_tmp, &l_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     if (Draw_Arc_To_Drive (&l_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+	     //if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
 	    break;
          case Oellipticalarc :
              //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -870,7 +960,24 @@ static BOOL draw_sheet_plt(int pen0)
                  grubosc = ( ((ELLIPTICALARC *)nag)->typ & 224 ) / 32;
                  plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
              }
-             if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+
+             ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+             //if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
              break;
 	  case Owwielokat :
         //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -1054,7 +1161,26 @@ static BOOL draw_sheet_plt(int pen0)
              break;
          }
 
-	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
+         if (check_dim_line((LINIA*)nag)==0) {if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;}
+         else {
+             ret = split_dim_line((LINIA *) nag, &L_tmp, &L_tmp1);
+             switch (ret) {
+                 case 0:
+                     if (Draw_Line_To_Drive((LINIA *) nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     if (Draw_Line_To_Drive(&L_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+         }
+
+	     //if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :
         if (strlen(((TEXT*)nag)->text)>0)
@@ -1137,7 +1263,72 @@ static BOOL draw_sheet_plt(int pen0)
             grubosc = ( ((LUK*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
-	     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+
+             //edges
+             if (((LUK*)nag)->obiektt2==4) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                 else V.style = V_EDGE_ARC_ROLL_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==6) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                 else V.style = V_EDGE_ARC_SIMPLE_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==7) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                 else V.style = V_EDGE_ARC_FIXED_INV;
+
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+
+             ret=split_dim_arc((LUK*)nag, &l_tmp, &l_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     if (Draw_Arc_To_Drive (&l_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+	     //if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
 	    break;
        case Oellipticalarc :
                //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -1146,7 +1337,23 @@ static BOOL draw_sheet_plt(int pen0)
                    grubosc = ( ((ELLIPTICALARC *)nag)->typ & 224 ) / 32;
                    plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
                }
-               if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+             ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+              // if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
            break;
 	  case Owwielokat :
         //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -1259,13 +1466,16 @@ static BOOL draw_sheet_plt1(int pen0)
 /*-------------------------------*/
 {
  NAGLOWEK *nag;
- AVECTOR V;
- LUK l = ldef;
+ AVECTOR V=Vdef;
+ LINIA L = Ldef, L_tmp, L_tmp1;
+ LUK l = ldef, l_tmp, l_tmp1;
+ ELLIPTICALARC ea_tmp, ea_tmp1;
  long_long off, offk, ad;
  int k;
  BOOL b_err=TRUE;
  int grubosc;
  int pen;
+ int ret;
 
  if (ptrs__ini_date->ink_plotter==1)
    {
@@ -1326,7 +1536,26 @@ static BOOL draw_sheet_plt1(int pen0)
              break;
          }
 
-	     if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
+         if (check_dim_line((LINIA*)nag)==0) {if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;}
+         else {
+             ret = split_dim_line((LINIA *) nag, &L_tmp, &L_tmp1);
+             switch (ret) {
+                 case 0:
+                     if (Draw_Line_To_Drive((LINIA *) nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Line_To_Drive(&L_tmp) == FALSE) return FALSE;
+                     if (Draw_Line_To_Drive(&L_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+         }
+
+	     //if (Draw_Line_To_Drive ((LINIA*)nag) == FALSE) return FALSE;
 	     break;
 	   case Otekst :
 	     if (Draw_Tekst_To_Drive ((TEXT*)nag, ptrs__ini_date->ink_plotter, pen + 1, ptrs__config->type/*, ptrs__ini_date->tab_pen_width_ink[pen]*/) == FALSE) return FALSE;
@@ -1407,7 +1636,71 @@ static BOOL draw_sheet_plt1(int pen0)
             grubosc = ( ((LUK*)nag)->typ & 224 ) / 32;
             plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
           }
-	     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+             //edges
+             if (((LUK*)nag)->obiektt2==4) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_ROLL;
+                 else V.style = V_EDGE_ARC_ROLL_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==6) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_SIMPLE;
+                 else V.style = V_EDGE_ARC_SIMPLE_INV;
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+             else if (((LUK*)nag)->obiektt2==7) {
+                 V.warstwa=((LUK*)nag)->warstwa;
+                 V.kolor=((LUK*)nag)->kolor;
+                 V.typ=((LUK*)nag)->typ;
+                 V.x1=((LUK*)nag)->x;
+                 V.y1=((LUK*)nag)->y;
+                 V.r=((LUK*)nag)->r;
+                 V.angle1=((LUK*)nag)->kat1;
+                 V.angle2=((LUK*)nag)->kat2;
+                 V.magnitude1=0.0f;
+                 if (((LUK*)nag)->obiektt3 == 0) V.style = V_EDGE_ARC_FIXED;
+                 else V.style = V_EDGE_ARC_FIXED_INV;
+
+                 Draw_Vector_To_Drive(&V, NULL);
+                 break;
+             }
+
+             ret=split_dim_arc((LUK*)nag, &l_tmp, &l_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_Arc_To_Drive (&l_tmp) == FALSE) return FALSE;
+                     if (Draw_Arc_To_Drive (&l_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+	     //if (Draw_Arc_To_Drive ((LUK*)nag) == FALSE) return FALSE;
 	    break;
      case Oellipticalarc :
              //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -1416,7 +1709,23 @@ static BOOL draw_sheet_plt1(int pen0)
                  grubosc = ( ((ELLIPTICALARC *)nag)->typ & 224 ) / 32;
                  plt_pen_width_ink (pen + 1, ptrs__ini_date->tab_line_width_ink[grubosc]);
              }
-             if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+             ret=split_dim_ellipticalarc((ELLIPTICALARC*)nag, &ea_tmp, &ea_tmp1);
+             switch (ret)
+             {
+                 case 0:
+                     if (Draw_EllipticalArc_To_Drive ((ELLIPTICALARC*)nag) == FALSE) return FALSE;
+                     break;
+                 case 1:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     break;
+                 case 2:
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp) == FALSE) return FALSE;
+                     if (Draw_EllipticalArc_To_Drive (&ea_tmp1) == FALSE) return FALSE;
+                     break;
+                 default:
+                     break;
+             }
+             //if (Draw_EllipticalArc_To_Drive((ELLIPTICALARC*)nag) == FALSE) return FALSE;
          break;
      case Owwielokat :
         //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
@@ -1540,6 +1849,7 @@ static int object_to_pen ( NAGLOWEK * nag )
 	 case Ookrag:
 	 case Ospline:
      case Oellipse:
+     case Oellipticalarc:
       if ((ptrs__ini_date->color_print==1) && (ptrs__ini_date->ink_plotter==1))
          pen_number=L->kolor;
         else

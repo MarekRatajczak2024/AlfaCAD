@@ -113,6 +113,10 @@ extern void set_global_set_stretch(BOOL v_s_s);
 extern void orto_l(LINIA *L, int *Orto_Dir);
 
 extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
 
 extern BOOL Semaphore;
 
@@ -236,6 +240,7 @@ extern int Vm_n (BOOL b_graph_value);
 extern int Vn_n (BOOL b_graph_value);
 extern int Vr_n (BOOL b_graph_value);
 extern int Vd_n (BOOL b_graph_value);
+extern int Vd1_1_n (BOOL b_graph_value);
 extern int Ve_n (BOOL b_graph_value);
 extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl);
@@ -1012,6 +1017,28 @@ double isometric_angle_to_cartesian_angle(double iso_angle_deg)
     return cart_deg;
 }
 
+double isometric_angle_to_cartesian_angle_rad(double iso_rad)
+{
+
+    // Direction vector in isometric space
+    double i_dx = cos(iso_rad);
+    double i_dy = sin(iso_rad);
+
+    // Transform to Cartesian space using the forward projection
+    double cart_dx = (sqrt(3.0)/2.0) * (i_dx - i_dy);
+    double cart_dy = (0.5)           * (i_dx + i_dy);
+
+    // Compute the angle using atan2 (returns radians in (-pi, pi])
+    double cart_rad = atan2(cart_dy, cart_dx);
+
+    // Normalize to [0, 2*M_PI)
+    if (cart_rad < 0.0) {
+        cart_rad += 2*M_PI;
+    }
+
+    return cart_rad;
+}
+
 static int L_p	(BOOL	b_graph_value)
 {
     PLINIA	PL;
@@ -1150,6 +1177,16 @@ static int Vd_n_(BOOL b_graph_value)
     return ret;
 }
 
+static int Vd1_1_n_(BOOL b_graph_value)
+{
+    int ret = Vd1_1_n(b_graph_value);
+    strwyj=1;
+    VectorC.x2=VectorG.x2;
+    VectorC.y2=VectorG.y2;
+    VectorC.magnitude1=VectorG.magnitude1;
+    return ret;
+}
+
 static int Vn_n_(BOOL b_graph_value)
 {
     int ret = Vn_n(b_graph_value);
@@ -1251,12 +1288,41 @@ int isometric_PL_to_cartesian_PL(PLINIA *PL)
     PL->cos=cos(cart_rad);
 
     // Normalize to [0, 360)
-    if (cart_deg < 0.0) {
-        cart_deg += 360.0;
-    }
-
+    if (cart_deg < 0.0) { cart_deg += 360.0; }
     PL->kat=cart_deg;
+    PL->dl=sqrt(cart_dx*cart_dx+cart_dy*cart_dy);
+    PL->dx=cart_dx;
+    PL->dy=cart_dy;
 
+    /////////////////////
+    /*
+    if (TRUE == Check_if_Equal (cart_dy, 0.))
+    {
+        PL->kat=(cart_dx>=0. ? 0. : 180.);
+        PL->cos=(cart_dx>=0. ? 1 : -1);
+        PL->sin=0.;
+        PL->dl=fabs(cart_dx);
+    }
+    else
+    if (TRUE == Check_if_Equal (cart_dx, 0.))
+    {
+        PL->kat=(cart_dy>=0. ? 90. : 270.);
+        PL->sin=(cart_dy>=0. ? 1 : -1);
+        PL->cos=0.;
+        PL->dl=fabs(cart_dy);
+    }
+    else
+    {
+        PL->dl=sqrt(cart_dx*cart_dx+cart_dy*cart_dy);
+        PL->sin=cart_dy/PL->dl;
+        PL->cos=cart_dx/PL->dl;
+        PL->kat=(180/Pi)*Atan2(cart_dy,cart_dx);
+        if ((PL->kat)<0.) PL->kat+=360.0;
+    }
+    PL->dx=cart_dx;
+    PL->dy=cart_dy;
+     */
+    /////////////////////
     return 0;
 }
 
@@ -1279,8 +1345,9 @@ static void	cur_onk(double	x,double	y)
   {
       if (!orto)
       {
-          PL.kat-=angle_l;
-          isometric_PL_to_cartesian_PL(&PL);
+          //PL.kat-=angle_l;
+          //isometric_PL_to_cartesian_PL(&PL);
+          parametry_lini (&L,	&PL);
       }
       //DX = PL.dl *	PL.cos;
       //DY = PL.dl *	PL.sin;
@@ -5015,10 +5082,11 @@ static void	redcrck(char typ)
   static	int (	*SW[4])();
   double n;
   PLINIA PL, PLth;
-  LINIA Lth=Ldef;
+  LINIA Lth=Ldef, Lp=Ldef;
   double koc1, kos1, koc1th, kos1th;
   double xmax, ymax;
   int stretch_v;
+  int ret;
 
   switch(typ)
 	{ case 0	:
@@ -5056,7 +5124,7 @@ static void	redcrck(char typ)
                  eVf.extend = 0;
                  np = dodajstr(&eVf);
              }
-             else if (VectorC.style==18) //force
+             else if ((VectorC.style==18) || (VectorC.style==19)) //slab force, force Z
              {
                  eVf1.x = maxX / 2 + 5;
                  eVf1.y = ESTR_Y;
@@ -5065,6 +5133,18 @@ static void	redcrck(char typ)
                  eVf1.mode = GV_VECTOR;
                  eVf1.format = format_float;
                  eVf1.ESTRF = Vf1_1_n_;
+                 eVf1.extend = 0;
+                 np = dodajstr(&eVf1);
+             }
+             else if (VectorC.style==27) //displacement Z
+             {
+                 eVf1.x = maxX / 2 + 5;
+                 eVf1.y = ESTR_Y;
+                 eVf1.lmax = 12;
+                 eVf1.val_no_max = 1;
+                 eVf1.mode = GV_VECTOR;
+                 eVf1.format = format_float;
+                 eVf1.ESTRF = Vd1_1_n_;
                  eVf1.extend = 0;
                  np = dodajstr(&eVf1);
              }
@@ -5090,8 +5170,8 @@ static void	redcrck(char typ)
                 LiniaG.x1=VectorC.x1;
                 LiniaG.y1=VectorC.y1;
 
-                LiniaG.x2=VectorC.x1-VectorC.r*cos(VectorC.angle1);
-                LiniaG.y2=VectorC.y1+VectorC.r*sin(VectorC.angle1);
+                LiniaG.x2=VectorC.x1-(float)VectorC.r*cos(VectorC.angle1);
+                LiniaG.y2=VectorC.y1+(float)VectorC.r*sin(VectorC.angle1);
 
                 Px=LiniaG.x2;
                 Py=LiniaG.y2;
@@ -5120,15 +5200,22 @@ static void	redcrck(char typ)
              LiniaG.x1=VectorC.x1;
              LiniaG.y1=VectorC.y1;
 
-             LiniaG.x2=VectorC.x1-VectorC.r*cos(VectorC.angle2);
-             LiniaG.y2=VectorC.y1+VectorC.r*sin(VectorC.angle2);
+             LiniaG.x2=VectorC.x1-(float)VectorC.r*cos(VectorC.angle2);
+             LiniaG.y2=VectorC.y1+(float)VectorC.r*sin(VectorC.angle2);
 
              Px=LiniaG.x2;
              Py=LiniaG.y2;
              DX=LiniaG.x2-LiniaG.x1;
              DY=LiniaG.y2-LiniaG.y1;
 
-             if ((VectorC.style==5) || (VectorC.style==6))//moment
+             if ((VectorC.style==5) ||  //moment
+                 (VectorC.style==6) ||  //-moment
+                 (VectorC.style==21) || //moment X
+                 (VectorC.style==22) || //-moment X
+                 (VectorC.style==23) || //moment Y
+                 (VectorC.style==24) || //-moment Y
+                 (VectorC.style==25) || //moment XY
+                 (VectorC.style==26)) //-moment XY
              {
                  eVm.x=maxX/2 + 5 ;
                  eVm.y= ESTR_Y;
@@ -5164,12 +5251,13 @@ static void	redcrck(char typ)
              {
                  case 10:
                  case 17:
+                 case 20:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
                      LiniaG.x1 = VectorC.x1;
                      LiniaG.y1 = VectorC.y1;
                      LiniaG.x2 = VectorC.x1;
-                     LiniaG.y2 = VectorC.y1 + n*(VectorC.magnitude1/((VectorC.style==10) ? load_magnitude : flood_magnitude));
+                     LiniaG.y2 = VectorC.y1 + (float)n*(VectorC.magnitude1/((VectorC.style==10) ? load_magnitude : flood_magnitude));
                      parametry_lini(&VectorC, &PL);
                      break;
                  case 11:
@@ -5178,7 +5266,7 @@ static void	redcrck(char typ)
 
                      LiniaG.x1 = VectorC.x1;
                      LiniaG.y1 = VectorC.y1;
-                     LiniaG.x2 = VectorC.x1 - n*(VectorC.magnitude1/load_magnitude);
+                     LiniaG.x2 = VectorC.x1 - (float)n*(VectorC.magnitude1/load_magnitude);
                      LiniaG.y2 = VectorC.y1;
                      break;
                  case 12:
@@ -5189,42 +5277,84 @@ static void	redcrck(char typ)
 
                      LiniaG.x1 = VectorC.x1;
                      LiniaG.y1 = VectorC.y1;
-                     LiniaG.x2 = VectorC.x1 + (VectorC.magnitude1/load_magnitude)*koc1;
-                     LiniaG.y2 = VectorC.y1 + (VectorC.magnitude1/load_magnitude)*kos1;
+                     LiniaG.x2 = VectorC.x1 + (float)(VectorC.magnitude1/load_magnitude)*koc1;
+                     LiniaG.y2 = VectorC.y1 + (float)(VectorC.magnitude1/load_magnitude)*kos1;
                      break;
                  case 13:
-                     if (VectorC.x1<VectorC.x2)
+                     if (!(VectorC.cartflags & 1))
                      {
-                         n=1;
-                         ymax=max(VectorC.y1, VectorC.y2);
+                         if (VectorC.x1 < VectorC.x2) {
+                             n = 1;
+                             ymax = max(VectorC.y1, VectorC.y2);
+                         } else {
+                             n = -1;
+                             ymax = min(VectorC.y1, VectorC.y2);
+                         }
+
+                         if (VectorC.flags & 1) n *= -1;
+
+                         LiniaG.x1 = VectorC.x1;
+                         LiniaG.y1 = (float)ymax;
+                         LiniaG.x2 = VectorC.x1;
+                         LiniaG.y2 = (float)(ymax + n * (VectorC.magnitude1 / load_magnitude));
                      }
                      else
                      {
-                         n=-1;
-                         ymax=min(VectorC.y1, VectorC.y2);
-                     }
+                         //projection on x axis
+                         double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                         ret=cartesian_to_isometric(VectorC.x1, VectorC.y1, &iso_L1_x1, &iso_L1_y1);
+                         ret=cartesian_to_isometric(VectorC.x2, VectorC.y2, &iso_L1_x2, &iso_L1_y2);
 
-                     LiniaG.x1 = VectorC.x1;
-                     LiniaG.y1 = ymax;
-                     LiniaG.x2 = VectorC.x1;
-                     LiniaG.y2 = ymax + n*(VectorC.magnitude1/load_magnitude);
+                         if (iso_L1_x1<iso_L1_x2) n=1;
+                         else n=-1;
+
+                         ret = trapezoid_base_isometric_x(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                         double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                         ret = isometric_vector_to_cartesian(0.,  n * (VectorC.magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                         ret = isometric_vector_to_cartesian(0.,  n * (VectorC.magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+
+                         LiniaG.x1 = Lp.x1;
+                         LiniaG.y1 = Lp.y1;
+                         LiniaG.x2 = Lp.x1 + (float)dx1_cart;
+                         LiniaG.y2 = Lp.y1 + (float)dy1_cart;
+                     }
                      break;
                  case 14:
-                     if (VectorC.y1<VectorC.y2)
-                     {
-                         n=1;
-                         xmax=min(VectorC.x1, VectorC.x2);
+                     if (!(VectorC.cartflags & 1)) {
+                         if (VectorC.y1 < VectorC.y2) {
+                             n = 1;
+                             xmax = min(VectorC.x1, VectorC.x2);
+                         } else {
+                             n = -1;
+                             xmax = max(VectorC.x1, VectorC.x2);
+                         }
+
+                         LiniaG.x1 = (float)xmax;
+                         LiniaG.y1 = VectorC.y1;
+                         LiniaG.x2 = (float)(xmax - n * (VectorC.magnitude1 / load_magnitude));
+                         LiniaG.y2 = VectorC.y1;
                      }
                      else
                      {
-                         n=-1;
-                         xmax=max(VectorC.x1, VectorC.x2);
-                     }
+                         //projection on x axis
+                         double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                         ret=cartesian_to_isometric(VectorC.x1, VectorC.y1, &iso_L1_x1, &iso_L1_y1);
+                         ret=cartesian_to_isometric(VectorC.x2, VectorC.y2, &iso_L1_x2, &iso_L1_y2);
 
-                     LiniaG.x1 = xmax;
-                     LiniaG.y1 = VectorC.y1;
-                     LiniaG.x2 = xmax - n*(VectorC.magnitude1/load_magnitude);
-                     LiniaG.y2 = VectorC.y1;
+                         if (iso_L1_y1<iso_L1_y2) n=1;
+                         else n=-1;
+
+                         ret = trapezoid_base_isometric_y(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                         double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                         ret = isometric_vector_to_cartesian(-n * (VectorC.magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                         ret = isometric_vector_to_cartesian(-n * (VectorC.magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                         LiniaG.x1 = Lp.x1;
+                         LiniaG.y1 = Lp.y1;
+                         LiniaG.x2 = Lp.x1 + (float)dx1_cart;
+                         LiniaG.y2 = Lp.y1 + (float)dy1_cart;
+                     }
                      break;
                  case 15:
                      parametry_lini(&VectorC, &PL);
@@ -5232,19 +5362,19 @@ static void	redcrck(char typ)
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
 
-                     Lth.x1 = (VectorC.x1+VectorC.x2)/2 + (VectorC.r/depth_magnitude)*koc1;   //thermal_depth_size
-                     Lth.y1 = (VectorC.y1+VectorC.y2)/2 + (VectorC.r/depth_magnitude)*kos1;
-                     Lth.x2 = (VectorC.x1+VectorC.x2)/2 - (VectorC.r/depth_magnitude)*koc1;
-                     Lth.y2 = (VectorC.y1+VectorC.y2)/2 - (VectorC.r/depth_magnitude)*kos1;
+                     Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;   //thermal_depth_size
+                     Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
+                     Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
+                     Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
 
                      parametry_lini(&Lth, &PLth);
-                     kos1th=sin(Pi*(PLth.kat+90)/180);
-                     koc1th=cos(Pi*(PLth.kat+90)/180);
+                     kos1th=sin(Pi*(PLth.kat+90)/180.);
+                     koc1th=cos(Pi*(PLth.kat+90)/180.);
 
                      LiniaG.x1 = Lth.x1;
                      LiniaG.y1 = Lth.y1;
-                     LiniaG.x2 = Lth.x1 + (VectorC.magnitude1/thermal_magnitude)*koc1th;
-                     LiniaG.y2 = Lth.y1 + (VectorC.magnitude1/thermal_magnitude)*kos1th;
+                     LiniaG.x2 = Lth.x1 + (float)(VectorC.magnitude1/thermal_magnitude)*koc1th;
+                     LiniaG.y2 = Lth.y1 + (float)(VectorC.magnitude1/thermal_magnitude)*kos1th;
                      break;
              }
              eVf.x=maxX/2 + 5 ;
@@ -5270,12 +5400,13 @@ static void	redcrck(char typ)
              {
                  case 10:
                  case 17:
+                 case 20:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
                      LiniaG.x1 = VectorC.x2;
                      LiniaG.y1 = VectorC.y2;
                      LiniaG.x2 = VectorC.x2;
-                     LiniaG.y2 = VectorC.y2 + n*(VectorC.magnitude2/load_magnitude);
+                     LiniaG.y2 = VectorC.y2 + (float)(n*(VectorC.magnitude2/load_magnitude));
                      break;
                  case 11:
                      if (VectorC.y1<VectorC.y2) n=1;
@@ -5283,7 +5414,7 @@ static void	redcrck(char typ)
 
                      LiniaG.x1 = VectorC.x2;
                      LiniaG.y1 = VectorC.y2;
-                     LiniaG.x2 = VectorC.x2 - n*(VectorC.magnitude2/load_magnitude);
+                     LiniaG.x2 = VectorC.x2 - (float)(n*(VectorC.magnitude2/load_magnitude));
                      LiniaG.y2 = VectorC.y2;
                      break;
                  case 12:
@@ -5294,42 +5425,84 @@ static void	redcrck(char typ)
 
                      LiniaG.x1 = VectorC.x2;
                      LiniaG.y1 = VectorC.y2;
-                     LiniaG.x2 = VectorC.x2 + (VectorC.magnitude2/load_magnitude)*koc1;
-                     LiniaG.y2 = VectorC.y2 + (VectorC.magnitude2/load_magnitude)*kos1;
+                     LiniaG.x2 = VectorC.x2 + (float)(VectorC.magnitude2/load_magnitude)*koc1;
+                     LiniaG.y2 = VectorC.y2 + (float)(VectorC.magnitude2/load_magnitude)*kos1;
                      break;
                  case 13:
-                     if (VectorC.x1<VectorC.x2)
+                     if (!(VectorC.cartflags & 1))
                      {
-                         n=1;
-                         ymax=max(VectorC.y1, VectorC.y2);
+                         if (VectorC.x1 < VectorC.x2) {
+                             n = 1;
+                             ymax = max(VectorC.y1, VectorC.y2);
+                         } else {
+                             n = -1;
+                             ymax = min(VectorC.y1, VectorC.y2);
+                         }
+
+                         if (VectorC.flags & 1) n *= -1;
+
+                         LiniaG.x1 = VectorC.x2;
+                         LiniaG.y1 = (float)ymax;
+                         LiniaG.x2 = VectorC.x2;
+                         LiniaG.y2 = (float)(ymax + n * (VectorC.magnitude2 / load_magnitude));
                      }
                      else
                      {
-                         n=-1;
-                         ymax=min(VectorC.y1, VectorC.y2);
-                     }
+                         //projection on x axis
+                         double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                         ret=cartesian_to_isometric(VectorC.x1, VectorC.y1, &iso_L1_x1, &iso_L1_y1);
+                         ret=cartesian_to_isometric(VectorC.x2, VectorC.y2, &iso_L1_x2, &iso_L1_y2);
 
-                     LiniaG.x1 = VectorC.x2;
-                     LiniaG.y1 = ymax;
-                     LiniaG.x2 = VectorC.x2;
-                     LiniaG.y2 = ymax + n*(VectorC.magnitude2/load_magnitude);
+                         if (iso_L1_x1<iso_L1_x2) n=1;
+                         else n=-1;
+
+                         ret = trapezoid_base_isometric_x(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                         double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                         ret = isometric_vector_to_cartesian(0.,  n * (VectorC.magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                         ret = isometric_vector_to_cartesian(0.,  n * (VectorC.magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+
+                         LiniaG.x1 = Lp.x2;
+                         LiniaG.y1 = Lp.y2;
+                         LiniaG.x2 = Lp.x1 + (float)dx2_cart;
+                         LiniaG.y2 = Lp.y1 + (float)dy2_cart;
+                     }
                      break;
                  case 14:
-                     if (VectorC.y1<VectorC.y2)
-                     {
-                         n=1;
-                         xmax=min(VectorC.x1, VectorC.x2);
+                     if (!(VectorC.cartflags & 1)) {
+                         if (VectorC.y1 < VectorC.y2) {
+                             n = 1;
+                             xmax = min(VectorC.x1, VectorC.x2);
+                         } else {
+                             n = -1;
+                             xmax = max(VectorC.x1, VectorC.x2);
+                         }
+
+                         LiniaG.x1 = (float)xmax;
+                         LiniaG.y1 = VectorC.y2;
+                         LiniaG.x2 = (float)(xmax - n * (VectorC.magnitude2 / load_magnitude));
+                         LiniaG.y2 = VectorC.y2;
                      }
                      else
                      {
-                         n=-1;
-                         xmax=max(VectorC.x1, VectorC.x2);
-                     }
+                         //projection on x axis
+                         double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                         ret=cartesian_to_isometric(VectorC.x1, VectorC.y1, &iso_L1_x1, &iso_L1_y1);
+                         ret=cartesian_to_isometric(VectorC.x2, VectorC.y2, &iso_L1_x2, &iso_L1_y2);
 
-                     LiniaG.x1 = xmax;
-                     LiniaG.y1 = VectorC.y2;
-                     LiniaG.x2 = xmax - n*(VectorC.magnitude2/load_magnitude);
-                     LiniaG.y2 = VectorC.y2;
+                         if (iso_L1_y1<iso_L1_y2) n=1;
+                         else n=-1;
+
+                         ret = trapezoid_base_isometric_y(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                         double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                         ret = isometric_vector_to_cartesian(-n * (VectorC.magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                         ret = isometric_vector_to_cartesian(-n * (VectorC.magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                         LiniaG.x1 = Lp.x2;
+                         LiniaG.y1 = Lp.y2;
+                         LiniaG.x2 = Lp.x1 + (float)dx2_cart;
+                         LiniaG.y2 = Lp.y1 + (float)dy2_cart;
+                     }
                      break;
                  case 15:
                      parametry_lini(&VectorC, &PL);
@@ -5337,10 +5510,10 @@ static void	redcrck(char typ)
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
 
-                     Lth.x1 = (VectorC.x1+VectorC.x2)/2 + (VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                     Lth.y1 = (VectorC.y1+VectorC.y2)/2 + (VectorC.r/depth_magnitude)*kos1;
-                     Lth.x2 = (VectorC.x1+VectorC.x2)/2 - (VectorC.r/depth_magnitude)*koc1;
-                     Lth.y2 = (VectorC.y1+VectorC.y2)/2 - (VectorC.r/depth_magnitude)*kos1;
+                     Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
+                     Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
+                     Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
+                     Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
 
                      parametry_lini(&Lth, &PLth);
                      kos1th=sin(Pi*(PLth.kat+90)/180);
@@ -5348,8 +5521,8 @@ static void	redcrck(char typ)
 
                      LiniaG.x1 = Lth.x2;
                      LiniaG.y1 = Lth.y2;
-                     LiniaG.x2 = Lth.x2 + (VectorC.magnitude2/thermal_magnitude)*koc1th;
-                     LiniaG.y2 = Lth.y2 + (VectorC.magnitude2/thermal_magnitude)*kos1th;
+                     LiniaG.x2 = Lth.x2 + (float)(VectorC.magnitude2/thermal_magnitude)*koc1th;
+                     LiniaG.y2 = Lth.y2 + (float)(VectorC.magnitude2/thermal_magnitude)*kos1th;
                      break;
              }
              eVf.x=maxX/2 + 5 ;
@@ -5376,13 +5549,13 @@ static void	redcrck(char typ)
                  kos1=sin(Pi*(PL.kat+90)/180);
                  koc1=cos(Pi*(PL.kat+90)/180);
 
-                 Lth.x1 = (VectorC.x1+VectorC.x2)/2 + (VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                 Lth.y1 = (VectorC.y1+VectorC.y2)/2 + (VectorC.r/depth_magnitude)*kos1;
-                 Lth.x2 = (VectorC.x1+VectorC.x2)/2 - (VectorC.r/depth_magnitude)*koc1;
-                 Lth.y2 = (VectorC.y1+VectorC.y2)/2 - (VectorC.r/depth_magnitude)*kos1;
+                 Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
+                 Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
+                 Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
+                 Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
 
-                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0;
-                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0;
+                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
+                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
                  LiniaG.x2 = Lth.x2;
                  LiniaG.y2 = Lth.y2;
 
@@ -5411,13 +5584,13 @@ static void	redcrck(char typ)
                  kos1=sin(Pi*(PL.kat+90)/180);
                  koc1=cos(Pi*(PL.kat+90)/180);
 
-                 Lth.x1 = (VectorC.x1+VectorC.x2)/2 + (VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                 Lth.y1 = (VectorC.y1+VectorC.y2)/2 + (VectorC.r/depth_magnitude)*kos1;
-                 Lth.x2 = (VectorC.x1+VectorC.x2)/2 - (VectorC.r/depth_magnitude)*koc1;
-                 Lth.y2 = (VectorC.y1+VectorC.y2)/2 - (VectorC.r/depth_magnitude)*kos1;
+                 Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
+                 Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
+                 Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
+                 Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
 
-                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0;
-                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0;
+                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
+                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
                  LiniaG.x2 = Lth.x1;
                  LiniaG.y2 = Lth.y1;
 
@@ -5443,8 +5616,8 @@ static void	redcrck(char typ)
              LiniaG.x1=VectorC.x1;
              LiniaG.y1=VectorC.y1;
 
-             LiniaG.x2=VectorC.x1-VectorC.r*cos(0);
-             LiniaG.y2=VectorC.y1+VectorC.r*sin(0);
+             LiniaG.x2=VectorC.x1-(float)VectorC.r*cos(0);
+             LiniaG.y2=VectorC.y1+(float)VectorC.r*sin(0);
 
              Px=LiniaG.x2;
              Py=LiniaG.y2;
@@ -5641,9 +5814,11 @@ static void	utwierdzenie_vector(AVECTOR *adl)
                 { case	1 :
                         switch (adl->style)
                         {
-                            case 4:
-                            case 18:
-                            case 7:
+                            case 4:  //force
+                            case 18: //slab force
+                            case 19: //force z
+                            case 7:  //displacement
+                            case 27:  //displacement z
                                 adl->obiektt1 = Guma;
                                 break;
                             default:
@@ -5655,9 +5830,11 @@ static void	utwierdzenie_vector(AVECTOR *adl)
                     case	2 :
                         switch (adl->style)
                         {
-                            case 4:
-                            case 18:
-                            case 7:
+                            case 4:  //force
+                            case 18: //slab force
+                            case 19: //force z
+                            case 7:  //displacement
+                            case 27:  //displacement z
                                 if (get_stretch_vector()<=0) {
                                     adl->atrybut = Anormalny;  //!!!!!!!!!!!!!!!!!
                                     adl->przec=NoAblokC;
@@ -5686,6 +5863,33 @@ static void	utwierdzenie_vector(AVECTOR *adl)
                                     else adl->obiektt1 = Utwierdzony1;
                                 }
                             break;
+                            case 21:
+                            case 22:
+                            case 23:
+                            case 24:
+                            case 25:
+                            case 26:
+                            case 28:
+                            case 29:
+                            case 30:
+                            case 31:
+                            case 32:
+                            case 33:
+                                if (get_stretch_vector()<=0) {
+                                    adl->atrybut = Anormalny;  //!!!!!!!!!!!!!!!!!
+                                    adl->przec=NoAblokC;
+                                }
+                                else if (get_stretch_vector()==2)
+                                {
+                                    if (adl->obiektt1 == Utwierdzony1) adl->obiektt1 = Guma;
+                                    else adl->obiektt1 = Utwierdzony2;
+                                }
+                                else
+                                {
+                                    if (adl->obiektt1 == Utwierdzony2) adl->obiektt1 = Guma;
+                                    else adl->obiektt1 = Utwierdzony1;
+                                }
+                                break;
                             default:
                                 if (adl->obiektt1==Utwierdzony2) adl->obiektt1=Guma;
                                 else adl->obiektt1=Utwierdzony1;
@@ -6943,14 +7147,18 @@ static void	redcr_chp (char typ)
 		SERV[def67]= (void*)SW[0];
 		SERV[def68]= (void*)SW[1];
 		sel.akt=sel_akt;
+
+        /*  this is done in change_properites
 		if	(ADP != NULL && ADK != NULL)
 		{
-            blokzap(ADP,ADK,Ablok,COPY_PUT,0); //to avoid translucency interference
+         blokzap(ADP,ADK,Ablok,COPY_PUT,0); //to avoid translucency interference
 		 blokzap(ADP,ADK,Ablok,COPY_PUT,1);
 		 memmove(&UNDO_REC, &UNDO_REC_255, sizeof(UNDO_TAB_REC));
 		 zmien_atrybut_undo(dane, dane +	dane_size);
 		 zmien_atrybut(ADP,ADK,Ablok,Aoblok);
 		}
+         */
+
         Cur_offd(X, Y);
 		Cur_ond(X,Y);
 		komunikat (0) ;
@@ -7040,6 +7248,7 @@ void Change_Properties (void)
   blok (dzi, odzi, Redraw_Block,	COMNDmb_chp) ;
   if (check_if_obiekt(dane, dane+dane_size, Ablok, ONieOkreslony)) Change_Properties_dlg();
   redcr_chp	(1);
+  if ((TTF_redraw) || (regen_ctx)) redraw();
   return;
 }
 

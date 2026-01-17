@@ -1378,6 +1378,18 @@ static char* translucency_txt[20 + 1] = {
 					u8"5%",
 					NoChange };
 
+static char* vector_txt[5] =
+        {u8"rigid-rigid",
+        u8"rigid-pinned",
+        u8"pinned-rigid",
+        u8"pinned-pinned",
+        NoChange };
+
+static char* springs_txt[3] =
+         {u8"rigid beam",
+         u8"Winkler beam",
+         NoChange };
+
 #define chprop_tips0 u8"@Layer"
 #define chprop_tips1 u8"Color"
 #define chprop_tips2 u8"Line width"
@@ -1397,6 +1409,7 @@ static char* translucency_txt[20 + 1] = {
 #define chprop_tips16 u8"Flip vertically"
 #define chprop_tips17 u8"On top"
 #define chprop_tips18 u8"Opacity of solids, traces and solid colour hatching"
+#define chprop_tips19 u8"Style of the vector, appropriate to the coordinate system"
 
 static char* add_new_font_c = u8"add new font";
 
@@ -1488,6 +1501,8 @@ char* typ_punktu_tab[] = { u8"Simple",u8"Base point",u8"Pin","?","?","?","?",u8"
                            u8"?","?","?","?","?","?","?","?",
                            };
 */
+
+/*
 char* vector_style_tab[] = { u8"rigid-rigid",u8"rigid-pin",u8"pin-rigid",u8"pin-pin",
                              u8"Force",u8"Moment+",u8"Moment-",
                              u8"Displacement", u8"Rotation+", u8"Rotation-",
@@ -1507,7 +1522,7 @@ char* vector_style_tab[] = { u8"rigid-rigid",u8"rigid-pin",u8"pin-rigid",u8"pin-
                              u8"?","?","?","?","?","?","?","?",
                              u8"?","?","?","?","?","?","?","?",
                            };
-
+*/
 char* view_width_tab1[] = { u8"very thin",u8"thin",u8"thick",u8"very thick",u8"extra thick",u8"filling",u8"",u8"invisible" };
 
 char* tab_typ_tekstu[] = { u8"Normal", u8"Internal label",u8"component Label",u8"Symbol",u8"Type",
@@ -1598,13 +1613,17 @@ char* objects[] = { u8"Line",u8"Line 3D",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8
 #define _FILLING_ u8"filling"
 
 char *vector_txt[]={u8"Vector: rigid-rigid",u8"Vector: rigid-pin",u8"Vector: pin-rigid",u8"Vector: pin-pin",u8"Vector: Force",u8"Vector: Moment",u8"Vector: -Moment",
-                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)", u8"slab surface Load", u8"slab concentrated slab force Load"};
+                    u8"Vector: Displacement",u8"Vector: Rotation",u8"Vector: -Rotation",u8"Vector: trapezium Y load",u8"Vector: trapezium X load",u8"Vector: trapezium N load",u8"Vector: trapezium H load",u8"Vector: trapezium V load",u8"Vector: Thermal load", u8"Vector: node size (Radius)", u8"slab surface Load", u8"slab concentrated slab force Load",
+                    u8"Vector: Force Z",u8"Vector: trapezium Z load", u8"Vector: Moment X",u8"Vector: -Moment X",u8"Vector: Moment Y",u8"Vector: -Moment Y",u8"Vector: Moment XY",u8"Vector: -Moment XY",
+                    u8"Vector: Displacement Z", u8"Vector: Rotation X",u8"Vector: -Rotation X",u8"Vector: Rotation Y",u8"Vector: -Rotation Y",u8"Vector: Rotation XY",u8"Vector: -Rotation XY",
+                    };
 
 //char *point_txt[]={"Simple","Base point",'','','','','',"Junction","pin point",'','','',"Fixed","fixed L","fixed R","fixed U","Pinned","pinned L","pinned R","pinned U","fixed Roller","fixed roller L","fixed roller R","fixed roller U",
 //     "pinned rOller","pinned roller L","pinned roller R","pinned roller U"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
-unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'C', ' ', ' ', ' ',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
+unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'F',L'M',L'-',L'E',L'R',L'O',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'P',L'S',L'W',L'Z',L'Q',L'L',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'8',L'9',L'!',L'@',L'#',L'$',L'%',L'^',};
+
+unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'C', ' ', ' ', ' ',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'C', 'V', 'E', 'N', 'D'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', L'B', L'V', ' '};
 char *object_txt[]={u8"Image",u8"Line",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Solid",u8"Point",u8"Block",u8"Solid Arc",u8"Elliptical Arc",u8"Ellipse",u8"Filled Ellipse",u8"Bezier Spline",u8"Vector",""};
 
@@ -1793,7 +1812,44 @@ POLE pmLoad_Char_Thermal[] = {
 //static
 TMENU mLoad_Char_Thermal = { 2, 0,0, 12, 88, 12, ICONS, CMNU,CMBR,CMTX,0, 18, 0, 0,0,(POLE(*)[]) &pmLoad_Char_Thermal, NULL, NULL };
 
-static POLE pmVector[] = {
+char *Vector_txt[]={u8"rigid - rigid",  //0
+                    u8"rigid - pin",
+                    u8"pin - rigid",
+                    u8"pin - pin",
+                    u8"Force",
+                    u8"Moment",
+                    u8"-moment",
+                    u8"displacement",
+                    u8"Rotation",
+                    u8"-rotation",
+                    u8"trapezium Y load",
+                    u8"trapezium X load",
+                    u8"trapezium N load",
+                    u8"trapezium H load",
+                    u8"trapezium V load",
+                    u8"Thermal load",
+                    u8"node size (radius)",  //16
+
+                    u8"plate surface load",  //17
+                    u8"plate concentrated force Load",  //18
+                    u8"Force Z",  //19
+                    u8"trapezium Z load", //20
+                    u8"Moment XZ",  //21
+                    u8"-moment XZ",
+                    u8"Moment YZ",
+                    u8"-moment YZ",
+                    u8"Moment XY",
+                    u8"-moment XY",  //26
+                    u8"displacement Z",  //27
+                    u8"Rotation XZ",  //28
+                    u8"-rotation XZ",
+                    u8"Rotation YZ",
+                    u8"-rotation YZ",
+                    u8"Rotation XY",
+                    u8"-rotation XY",  //33
+                    u8"beam on a Winkler foundation"};  //34
+
+static POLE pmVector_cartesian[] = {
 		  {u8"Undo\0Del\0",L'U',218,NULL},
           {u8"rigid - rigid\0\0",L'A',723,NULL},
           {u8"rigid - pin\0\0",L'B',724,NULL},
@@ -1818,22 +1874,98 @@ static POLE pmVector[] = {
           {u8"Wall under plate\0\0",L'W',843,NULL},
           {u8"Zone in plate or shield\0\0",L'Z',842,NULL},
           {u8"plate surface load\0\0",L'Q',845,&mLoad_Char},
-          {u8"plate concentrated force Load\0\0",L'L',856,&mLoad_Char},
+          {u8"plate concentrated force Load\0\0",L'L',856,&mLoad_Char},  //18
+
+          ////for grids
+          ////{u8"Force Z\0\0",L'1',880,&mLoad_Char},
+          ////{u8"trapezium Z load\0\0",L'2',881,&mLoad_Char},
+          ////{u8"Moment XZ\0\0",L'3',882,&mLoad_Char},
+          ////{u8"-moment XZ\0\0",L'4',883,&mLoad_Char},
+          ////{u8"Moment YZ\0\0",L'5',884,&mLoad_Char},
+          ////{u8"-moment YZ\0\0",L'6',885,&mLoad_Char},
+          ////{u8"Moment XY\0\0",L'7',886,&mLoad_Char},
+          ////{u8"-moment XY\0\0",L'8',887,&mLoad_Char},
+
+          ////{u8"displacement Z\0\0",L'9',888,NULL},
+          ////{u8"Rotation XZ\0\0",L'!',889,NULL},
+          ////{u8"-rotation XZ\0\0",L'@',890,NULL},
+          ////{u8"Rotation YZ\0\0",L'#',891,NULL},
+          ////{u8"-rotation YZ\0\0",L'$',892,NULL},
+          ////{u8"Rotation XY\0\0",L'%',893,NULL},
+          ////{u8"-rotation XY\0\0",L'^',894,NULL},
+};
+
+static POLE pmVector_isometric[] = {
+		  {u8"Undo\0Del\0",L'U',218,NULL},
+          {u8"rigid - rigid\0\0",L'A',723,NULL},   //0
+          {u8"beam on a Winkler foundation\0\0",L'W',878,NULL},  //39
+          ////{u8"rigid - pin\0\0",L'B',724,NULL},  //1
+          ////{u8"pin - rigid\0\0",L'C',725,NULL},  //2
+          ////{u8"pin - pin\0\0",L'D',726,NULL},    //3
+          {u8"Force\0\0",L'F',727,&mLoad_Char},     //4
+          ////{u8"Moment\0\0",L'M',728,&mLoad_Char},  //5
+          ////{u8"-moment\0\0",L'-',729,&mLoad_Char},  //6
+          {u8"displacement\0\0",L'E',730,NULL}, //&mLoad_Char},  //7
+          ////{u8"Rotation\0\0",L'R',731,NULL}, //&mLoad_Char},  //8
+          ////{u8"-rotation\0\0",L'O',732,NULL}, //&mLoad_Char},  //9
+          {u8"trapezium Y load\0\0",L'Y',733,&mLoad_Char},  //10
+          {u8"trapezium X load\0\0",L'X',734,&mLoad_Char},  //11
+          {u8"trapezium N load\0\0",L'N',735,&mLoad_Char},  //12
+          {u8"trapezium H load\0\0",L'H',736,&mLoad_Char},  //13
+          {u8"trapezium V load\0\0",L'V',737,&mLoad_Char},  //14
+          {u8"Thermal load\0\0",L'T',752,&mLoad_Char_Thermal},  //15
+          {u8"node size (radius)\0\0",L'0',786,NULL},  //16
+
+          ////{u8"slab Plate or shield\0\0",L'P',846,NULL},  //NULL
+          ////{u8"Space in plate or shield\0\0",L'S',844,NULL},  //NULL
+          ////{u8"Wall under plate\0\0",L'W',843,NULL},  //NULL
+          ////{u8"Zone in plate or shield\0\0",L'Z',842,NULL},  //NULL
+          ////{u8"plate surface load\0\0",L'Q',845,&mLoad_Char},  //17
+          ////{u8"plate concentrated force Load\0\0",L'L',856,&mLoad_Char},  //18
+
+          //for grids
+          {u8"Force Z\0\0",L'1',880,&mLoad_Char},  //19
+          {u8"trapezium Z load\0\0",L'2',881,&mLoad_Char},  //20
+          {u8"Moment XZ\0\0",L'3',882,&mLoad_Char},  //21
+          {u8"-moment XZ\0\0",L'4',883,&mLoad_Char},  //22
+          {u8"Moment YZ\0\0",L'5',884,&mLoad_Char},  //23
+          {u8"-moment YZ\0\0",L'6',885,&mLoad_Char},  //24
+          {u8"Moment XY\0\0",L'7',886,&mLoad_Char},  //25
+          {u8"-moment XY\0\0",L'8',887,&mLoad_Char},  //26
+
+          {u8"displacement Z\0\0",L'9',888,NULL},  //27
+          {u8"Rotation XZ\0\0",L'!',889,NULL},  //28
+          {u8"-rotation XZ\0\0",L'@',890,NULL},  //29
+          {u8"Rotation YZ\0\0",L'#',891,NULL},  //30
+          {u8"-rotation YZ\0\0",L'$',892,NULL},  //31
+          {u8"Rotation XY\0\0",L'%',893,NULL},  //32
+          {u8"-rotation XY\0\0",L'^',894,NULL},  //33
+
 };
 
 static POLE pmVector_Con[] = {
 		  {u8"Continuation",L'C',220,NULL} };
 
-static POLE pmMember_style[] = {
+static POLE pmMember_style_cartesian[] = {
           {u8"rigid - rigid\0\0",L'A',723,NULL},
           {u8"rigid - pin\0\0",L'B',724,NULL},
           {u8"pin - rigid\0\0",L'C',725,NULL},
           {u8"pin - pin\0\0",L'D',726,NULL},
 };
 
+static POLE pmMember_style_isometric[] = {
+          {u8"rigid - rigid\0\0",L'A',723,NULL},
+          {u8"beam on a Winkler foundation\0\0",L'W',878,NULL},
+};
+
 static POLE pmForce_Displacement_style[] = {
           {u8"Force\0\0",L'F',727,NULL},
           {u8"displacement\0\0",L'E',730,NULL},
+};
+
+static POLE pmForce_Displacement_style_isometric[] = {
+          {u8"Force Z\0\0",L'F',880,NULL},
+          {u8"displacement Z\0\0",L'E',888,NULL},
 };
 
 static POLE pmMoment_Rotation_style[] = {
@@ -1843,12 +1975,28 @@ static POLE pmMoment_Rotation_style[] = {
           {u8"-rotation\0\0",L'O',732,NULL},
 };
 
+static POLE pmMoment_Rotation_style_isometric[] = {
+          {u8"Moment X\0\0",L'A',882,NULL},
+          {u8"-moment X\0\0",L'B',883,NULL},
+          {u8"Moment Y\0\0",L'C',884,NULL},
+          {u8"-moment Y\0\0",L'D',885,NULL},
+          {u8"Moment XY\0\0",L'E',886,NULL},
+          {u8"-moment XY\0\0",L'F',887,NULL},
+          {u8"Rotation X\0\0",L'G',889,NULL},
+          {u8"-rotation X\0\0",L'H',890,NULL},
+          {u8"Rotation Y\0\0",L'I',891,NULL},
+          {u8"-rotation Y\0\0",L'J',892,NULL},
+          {u8"Rotation XY\0\0",L'K',893,NULL},
+          {u8"-rotation XY\0\0",L'L',894,NULL},
+};
+
 static POLE pmLoad_style[] = {
           {u8"trapezium Y load\0\0",L'Y',733,NULL},
           {u8"trapezium X load\0\0",L'X',734,NULL},
           {u8"trapezium N load\0\0",L'N',735,NULL},
           {u8"trapezium H load\0\0",L'H',736,NULL},
           {u8"trapezium V load\0\0",L'V',737,NULL},
+          {u8"trapezium Z load\0\0",L'Z',881,NULL},
 };
 
 #define _AXIS_ u8"Axis"
@@ -2031,11 +2179,11 @@ static char* EllipticalAngle[] = {u8"Local",u8"Global"};
 static POLE pmPLine_Con[] = {
 		  {u8"Continuation",L'C',220,NULL} };
 
-extern TMENU mVector;
+extern TMENU *mVector;
 
 static POLE pmPLine_Con_Slab[] = {
 		  {u8"Continuation",L'C',220,NULL},
-          {u8"Vectors",L'V',722,&mVector},
+          {u8"Vectors",L'V',722,NULL},
 };
 
 #define _POLYLINE_ u8"Polyline"
@@ -2347,6 +2495,15 @@ static POLE pmTyp_punktu[] = {
      {u8"pinned roller R\0",L'-',749,NULL},
      {u8"pinned roller U\0",L'=',757,NULL},
      {u8"no rotation Z\0",L'+',818,NULL},
+
+     {u8"fixed roller X\0",L'X',870,NULL},
+     {u8"fixed roller XU\0",L'U',871,NULL},
+     {u8"fixed roller Y\0",L'Y',872,NULL},
+     {u8"fixed roller Y (Up)\0",L'T',873,NULL},
+     {u8"pinned roller X\0",L'H',874,NULL},
+     {u8"pinned roller X (Up)\0",L'A',875,NULL},
+     {u8"pinned roller Y\0",L'V',876,NULL},
+     {u8"pinned roller Y (Up)\0",L'W',877,NULL},
 };
 
 #endif
@@ -3571,10 +3728,7 @@ T_Prototype      s__prot = { u8"prototype.alf", TRUE };
 char* typ_punktu_inf[] = { u8"Simple",u8"Base point","","","","","",u8"Junction",u8"Pin","","","",
                            u8"Fixed",u8"Fixed L",u8"Fixed R",u8"Fixed U",u8"Pinned", u8"Pinned L", u8"Pinned R", u8"Pinned U",
                            u8"Fixed Roller", u8"Fixed Roller L", u8"Fixed Roller R", u8"Fixed Roller U", u8"Pinned Roller", u8"Pinned Roller L", u8"Pinned Roller R", u8"Pinned Roller U", u8"no rotation Z",
-                           "","","","","","","","",
-
-
-};
+                           u8"Fixed Roller X", u8"Fixed Roller X U", u8"Fixed Roller Y", u8"Fixed Roller Y U", u8"Pinned Roller X", u8"Pinned Roller X U", u8"Pinned Roller Y", u8"Pinned Roller Y U"};
 
 #endif
 

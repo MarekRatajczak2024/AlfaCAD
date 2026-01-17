@@ -38,9 +38,11 @@ extern void set_mode_solid(void);
 enum POINT {POINT_SIZE = 1, POINT_VIEW_ON = 2, POINT_VIEW_OFF = 3} ;
 enum POINT_TYP {POINT_NORMAL = 0, POINT_BASE_POINT, POINT_PIN, POINT_JUNCTION, POINT_FIXED, POINT_FIXED_L, POINT_FIXED_R, POINT_FIXED_U, POINT_PINNED, POINT_PINNED_L, POINT_PINNED_R, POINT_PINNED_U,
                 POINT_FIXED_ROLLER, POINT_FIXED_ROLLER_L, POINT_FIXED_ROLLER_R, POINT_FIXED_ROLLER_U, POINT_PINNED_ROLLER, POINT_PINNED_ROLLER_L, POINT_PINNED_ROLLER_R, POINT_PINNED_ROLLER_U, POINT_NO_ROTATION,
+                POINT_FIXED_ROLLER_X, POINT_FIXED_ROLLER_XU, POINT_FIXED_ROLLER_Y, POINT_FIXED_ROLLER_YU, POINT_PINNED_ROLLER_X, POINT_PINNED_ROLLER_XU, POINT_PINNED_ROLLER_Y, POINT_PINNED_ROLLER_YU,
+
         } ;
 
-TMENU mTyp_punktu= {21, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmTyp_punktu, NULL,NULL} ;
+TMENU mTyp_punktu= {29, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmTyp_punktu, NULL,NULL} ;
 
 
 BOOL Add_Point (double df_x, double df_y)
@@ -483,7 +485,7 @@ void Point (void)
 			{
 				set_point_junction();
 			}
-            else if ((ev->Number >= POINT_FIXED) && (ev->Number <= POINT_NO_ROTATION)) //POINT_PINNED_ROLLER_U))
+            else if ((ev->Number >= POINT_FIXED) && (ev->Number <= POINT_PINNED_ROLLER_YU))
             {
                 set_point_support(ev->Number);
             }

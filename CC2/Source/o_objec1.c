@@ -793,6 +793,118 @@ void Points_To_Arc (LUK *l, double x1, double y1, double x2, double y2)
    l->r = sqrt (x11 * x11 + y11 * y11);
 }
 
+void Points_To_EllipticalArc_(ELLIPTICALARC *ea, double x1, double y1, double x2, double y2)
+/*---------------------------------------------------------------------------------------*/
+{
+    if (!ea) return;
+
+    double dx1 = x1 - ea->x;
+    double dy1 = y1 - ea->y;
+    double dx2 = x2 - ea->x;
+    double dy2 = y2 - ea->y;
+
+    double cos_a = cos(ea->angle);
+    double sin_a = sin(ea->angle);
+
+    /* Rotate points into local ellipse frame (inverse rotation) */
+    double local_x1 =  dx1 * cos_a + dy1 * sin_a;
+    double local_y1 = -dx1 * sin_a + dy1 * cos_a;
+
+    double local_x2 =  dx2 * cos_a + dy2 * sin_a;
+    double local_y2 = -dx2 * sin_a + dy2 * cos_a;
+
+    /* Parametric angles (relative to rotated major axis) */
+    ea->kat1 = atan2(local_y1 / ea->ry, local_x1 / ea->rx);
+    ea->kat2 = atan2(local_y2 / ea->ry, local_x2 / ea->rx);
+
+    /* Normalize to [0, 2π) */
+    if (ea->kat1 < 0.0) ea->kat1 += 2.0 * M_PI;
+    if (ea->kat2 < 0.0) ea->kat2 += 2.0 * M_PI;
+
+    /* Optional: ensure kat2 > kat1 (add 2π if needed) */
+    if (ea->kat2 < ea->kat1) ea->kat2 += 2.0 * M_PI;
+
+    /* Compute rx and ry from distances in local frame */
+    double dist1 = sqrt(local_x1 * local_x1 + local_y1 * local_y1);
+    double dist2 = sqrt(local_x2 * local_x2 + local_y2 * local_y2);
+
+    /* Use the average or max — here we use the distance from first point */
+    /* For consistency with scaling, use the same point as in original Points_To_Arc */
+    ea->rx = fabs(local_x1);
+    ea->ry = fabs(local_y1);
+    /* Or more robust: use the point farther from center */
+    if (dist2 > dist1) {
+        ea->rx = fabs(local_x2);
+        ea->ry = fabs(local_y2);
+    }
+}
+
+void Points_To_EllipticalArc__(ELLIPTICALARC *ea, double x1, double y1, double x2, double y2)
+/*---------------------------------------------------------------------------------------*/
+{
+    if (!ea) return;
+
+    double dx1 = x1 - ea->x;
+    double dy1 = y1 - ea->y;
+    double dx2 = x2 - ea->x;
+    double dy2 = y2 - ea->y;
+
+    double cos_a = cos((double)ea->angle);
+    double sin_a = sin((double)ea->angle);
+
+    /* Rotate points into local ellipse frame (inverse rotation) */
+    double local_x1 =  dx1 * cos_a + dy1 * sin_a;
+    double local_y1 = -dx1 * sin_a + dy1 * cos_a;
+
+    double local_x2 =  dx2 * cos_a + dy2 * sin_a;
+    double local_y2 = -dx2 * sin_a + dy2 * cos_a;
+
+    /* Parametric angles (relative to rotated major axis) */
+    ea->kat1 = (float)atan2(local_y1 / ea->ry, local_x1 / ea->rx);
+    ea->kat2 = (float)atan2(local_y2 / ea->ry, local_x2 / ea->rx);
+
+    /* Normalize to [0, 2π) */
+    if (ea->kat1 < 0.0) ea->kat1 += (float)(2.0 * M_PI);
+    if (ea->kat2 < 0.0) ea->kat2 += (float)(2.0 * M_PI);
+
+    /* Ensure kat2 > kat1 (assuming CCW) */
+    if (ea->kat2 < ea->kat1) ea->kat2 += (float)(2.0 * M_PI);
+}
+
+void Points_To_EllipticalArc(ELLIPTICALARC *ea, double x1, double y1, double x2, double y2)
+/*---------------------------------------------------------------------------------------*/
+{
+    if (!ea) return;
+
+    double dx1 = x1 - ea->x;
+    double dy1 = y1 - ea->y;
+    double dx2 = x2 - ea->x;
+    double dy2 = y2 - ea->y;
+
+    //double cos_a = cos((double)ea->angle);
+    //double sin_a = sin((double)ea->angle);
+
+    /* Rotate points into local ellipse frame (inverse rotation) */
+    //double local_x1 =  dx1 * cos_a + dy1 * sin_a;
+    //double local_y1 = -dx1 * sin_a + dy1 * cos_a;
+
+    //double local_x2 =  dx2 * cos_a + dy2 * sin_a;
+    //double local_y2 = -dx2 * sin_a + dy2 * cos_a;
+
+    /* Parametric angles (relative to rotated major axis) */
+    //ea->kat1 = (float)atan2(local_y1 / ea->ry, local_x1 / ea->rx);
+    //ea->kat2 = (float)atan2(local_y2 / ea->ry, local_x2 / ea->rx);
+    ea->kat1 = (float)atan2(dy1, dx1) - ea->angle;
+    ea->kat2 = (float)atan2(dy2, dx2) - ea->angle;
+
+    /* Normalize to [0, 2π) */
+    if (ea->kat1 < 0.0) ea->kat1 += (float)(2.0 * M_PI);
+    if (ea->kat2 < 0.0) ea->kat2 += (float)(2.0 * M_PI);
+
+    /* Ensure kat2 > kat1 (assuming CCW) */
+    if (ea->kat2 < ea->kat1) ea->kat2 += (float)(2.0 * M_PI);
+}
+
 void Points_To_Arc_Vector (AVECTOR *v, double x1, double y1, double x2, double y2)
 /*--------------------------------------------------------------------------*/
 {

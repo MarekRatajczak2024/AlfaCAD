@@ -406,9 +406,12 @@ void katTsel(double kat)
                    case 3:
                    case 4:
                    case 18:
+                   case 19:
                    case 7:
+                   case 27:
                    case 10:
                    case 17:
+                   case 20:
                    case 11:
                    case 12:
                    case 13:

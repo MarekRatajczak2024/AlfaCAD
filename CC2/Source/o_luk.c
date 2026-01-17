@@ -37,6 +37,8 @@
 #define YES _YES_
 #define NO _NO_
 
+#define M_PIf 3.14159265358979323846f
+
 extern void setwritemode( int mode );
 extern int linestyle_xor(int typ);
 extern void setfillstyle_(int pattern, int color);
@@ -168,6 +170,331 @@ static TMENU mPLukm={12, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmn
 static TMENU mPLukmSlab={17, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukm,NULL,NULL};
 
 static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
+
+#define M_PI 3.14159265358979323846
+
+//typedef enum { XY_PLANE, XZ_PLANE, YZ_PLANE} PlaneType;
+
+/* Fixed helper function – now takes r as parameter */
+static double compute_theta(double r, double rx, double ry, double ellipse_a_rad, enum PlaneType plane, double orig_angle)
+{
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+
+    /* Original direction in the circle's plane (scaled by radius r) */
+    switch (plane) {
+        case XY_PLANE:
+            dx = r * cos(orig_angle);
+            dy = r * sin(orig_angle);
+            break;
+        case XZ_PLANE:
+            dx = r * cos(orig_angle);
+            dz = r * sin(orig_angle);
+            break;
+        case YZ_PLANE:
+            dy = r * cos(orig_angle);
+            dz = r * sin(orig_angle);
+            break;
+    }
+
+    /* Isometric projection to screen coordinates (relative displacement) */
+    double screen_dx = (sqrt(3.0) / 2.0) * (dx - dy);
+    double screen_dy = 0.5 * (dx + dy) + dz;
+
+    /* Rotate into ellipse local frame */
+    double cos_a = cos(ellipse_a_rad);
+    double sin_a = sin(ellipse_a_rad);
+
+    double local_x =  screen_dx * cos_a + screen_dy * sin_a;
+    double local_y = -screen_dx * sin_a + screen_dy * cos_a;
+
+    /* Parametric angle on the ellipse */
+    double theta = atan2(local_y / ry, local_x / rx);
+    if (theta < 0.0) theta += 2.0 * M_PI;
+
+    return theta;
+}
+
+static float compute_theta_f_f(float r, float rx, float ry, float ellipse_a_rad, enum PlaneType plane, float orig_angle)
+{
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+
+    /* Original direction in the circle's plane (scaled by radius r) */
+    switch (plane) {
+        case XY_PLANE:
+            dx = r * cosf(orig_angle);
+            dy = r * sinf(orig_angle);
+            break;
+        case XZ_PLANE:
+            dx = r * cosf(orig_angle);
+            dz = r * sinf(orig_angle);
+            break;
+        case YZ_PLANE:
+            dy = r * cosf(orig_angle);
+            dz = r * sinf(orig_angle);
+            break;
+    }
+
+    /* Isometric projection to screen coordinates (relative displacement) */
+    double screen_dx = (sqrt(3.0) / 2.0) * (dx - dy);
+    double screen_dy = 0.5 * (dx + dy) + dz;
+
+    /* Rotate into ellipse local frame */
+    double cos_a = cosf(ellipse_a_rad);
+    double sin_a = sinf(ellipse_a_rad);
+
+    double local_x =  screen_dx * cos_a + screen_dy * sin_a;
+    double local_y = -screen_dx * sin_a + screen_dy * cos_a;
+
+    /* Parametric angle on the ellipse */
+    float theta = (float)atan2(local_y / ry, local_x / rx);
+    if (theta < 0.0) theta += (float)(2.0 * M_PI);
+
+    return theta;
+}
+
+static float compute_theta_f(float r, float rx, float ry, float ellipse_a_rad, enum PlaneType plane, float orig_angle) {
+    double r_d = (double)r;
+    double rx_d = (double)rx;
+    double ry_d = (double)ry;
+    double ellipse_a_rad_d = (double)ellipse_a_rad;
+    double orig_angle_d = (double)orig_angle;
+
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+
+    switch (plane) {
+        case XY_PLANE:
+            dx = r_d * cos(orig_angle_d);
+            dy = r_d * sin(orig_angle_d);
+            break;
+        case XZ_PLANE:
+            dx = r_d * cos(orig_angle_d);
+            dz = r_d * sin(orig_angle_d);
+            break;
+        case YZ_PLANE:
+            dy = r_d * cos(orig_angle_d);
+            dz = r_d * sin(orig_angle_d);
+            break;
+    }
+
+    double screen_dx = (sqrt(3.0) / 2.0) * (dx - dy);
+    double screen_dy = 0.5 * (dx + dy) + dz;
+
+    double cos_a = cos(ellipse_a_rad_d);
+    double sin_a = sin(ellipse_a_rad_d);
+
+    double local_x = screen_dx * cos_a + screen_dy * sin_a;
+    double local_y = -screen_dx * sin_a + screen_dy * cos_a;
+
+    double theta_d = atan2(local_y / ry_d, local_x / rx_d);
+    if (theta_d < 0.0) theta_d += 2.0 * M_PI;
+
+    return (float)theta_d;
+}
+
+/*
+ * Transform a circular arc to an elliptical arc in isometric view.
+ */
+int arc_to_isometric_ellipticalarc(enum PlaneType plane,
+                                   double x, double y, double r,
+                                   double angle1, double angle2,
+                                   double *xe, double *ye,
+                                   double *rx, double *ry,
+                                   double *a,
+                                   double *start_angle, double *end_angle)
+{
+    if (!xe || !ye || !rx || !ry || !a || !start_angle || !end_angle || r < 0.0)
+        return -1;
+
+    /* Normalize input angles to [0, 2π) */
+    angle1 = fmod(angle1, 2.0 * M_PI);
+    if (angle1 < 0.0) angle1 += 2.0 * M_PI;
+    angle2 = fmod(angle2, 2.0 * M_PI);
+    if (angle2 < 0.0) angle2 += 2.0 * M_PI;
+    if (angle2 <= angle1) angle2 += 2.0 * M_PI;
+
+    /* Ellipse parameters */
+    const double sqrt3_over2 = sqrt(3.0 / 2.0);
+    const double one_over_sqrt2 = 1.0 / sqrt(2.0);
+
+    *xe = x;
+    *ye = y;
+
+    switch (plane) {
+        case XY_PLANE:
+            *rx = r * sqrt3_over2;
+            *ry = r * one_over_sqrt2;
+            *a = 0.0;
+            break;
+        case XZ_PLANE:
+            *rx = r * one_over_sqrt2;
+            *ry = r * sqrt3_over2;
+            *a = -30.0;
+            break;
+        case YZ_PLANE:
+            *rx = r * one_over_sqrt2;
+            *ry = r * sqrt3_over2;
+            *a = 30.0;
+            break;
+        default:
+            return -1;
+    }
+
+    double ellipse_a_rad = *a * M_PI / 180.0;
+
+    /* Now correctly pass r to the helper */
+    double theta1 = compute_theta(r, *rx, *ry, ellipse_a_rad, plane, angle1);
+    double theta2 = compute_theta(r, *rx, *ry, ellipse_a_rad, plane, angle2);
+
+    *start_angle = theta1 * (180.0 / M_PI);
+    *end_angle   = theta2 * (180.0 / M_PI);
+
+    if (*end_angle <= *start_angle)
+        *end_angle += 360.0;
+
+    return 0;
+}
+
+int arc_to_isometric_ellipticalarc_a_ea_(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea)
+{
+    if (!l || !ea || l->r < 0.0) return -1;
+
+    /* Ellipse parameters */
+    const double sqrt3_over2 = sqrt(3.0 / 2.0);
+    const double one_over_sqrt2 = 1.0 / sqrt(2.0);
+
+    ea->x = l->x;
+    ea->y = l->y;
+
+    switch (plane) {
+        case XY_PLANE:
+            ea->rx = l->r * (float)sqrt3_over2;
+            ea->ry = l->r * (float)one_over_sqrt2;
+            ea->angle = 0.0f;
+            break;
+        case XZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 5.759586532f; //-30.0f;
+            break;
+        case YZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 0.523598776f; //30.0f;
+            break;
+        default:
+            return -1;
+    }
+
+    /* Now correctly pass r to the helper */
+    ea->kat1 = compute_theta_f(l->r, ea->rx, ea->ry, ea->angle, plane, l->kat1);
+    ea->kat2 = compute_theta_f(l->r, ea->rx, ea->ry, ea->angle, plane, l->kat2);
+    
+    if (ea->kat2 <= ea->kat1) ea->kat2 += (float)(2.0f*M_PI);
+
+    return 0;
+}
+
+int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea) {
+    if (!l || !ea || l->r < 0.0) return -1;
+
+    /* Ellipse parameters (unchanged) */
+    const double sqrt3_over2 = sqrt(3.0 / 2.0);
+    const double one_over_sqrt2 = 1.0 / sqrt(2.0);
+
+    ea->x = l->x;
+    ea->y = l->y;
+
+    switch (plane) {
+        case XY_PLANE:
+            ea->rx = l->r * (float)sqrt3_over2;
+            ea->ry = l->r * (float)one_over_sqrt2;
+            ea->angle = 0.0f;
+            break;
+        case XZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 5.759586532f;  // -30° rad
+            break;
+        case YZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 0.523598776f;  // +30° rad
+            break;
+        default:
+            return -1;
+    }
+
+    ea->kat1=l->kat1 - ea->angle;
+    ea->kat2=l->kat2 - ea->angle;
+    if (ea->kat1<0) ea->kat1+=(2*M_PIf);
+    if (ea->kat2<0) ea->kat2+=(2*M_PIf);
+
+    return 0;
+}
+
+int arc_to_isometric_ellipticalarc_a_ea__(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea) {
+    if (!l || !ea || l->r < 0.0) return -1;
+
+    /* Convert input absolute screen angles to local plane angles */
+    float plane_rotation_rad = 0.0f;
+
+    switch (plane) {
+        case XY_PLANE:
+            plane_rotation_rad = M_PIf/4.f; // why  ???   0.0f;  // no rotation
+            break;
+        case XZ_PLANE:
+            plane_rotation_rad = M_PIf/4.f - 0.523598776f;  // why ??? should be -30° rad
+            break;
+        case YZ_PLANE:
+            plane_rotation_rad = M_PIf/4.f + 0.523598776f;  // why ???  should be +30° rad
+            break;
+        default:
+            return -1;
+    }
+
+    float local_kat1 = l->kat1 - plane_rotation_rad;
+    float local_kat2 = - l->kat2 - plane_rotation_rad;
+
+    // Normalize local angles to [0, 2π)
+    local_kat1 = fmodf(local_kat1, 2.0f * M_PIf);
+    if (local_kat1 < 0.0f) local_kat1 += 2.0f * M_PIf;
+    local_kat2 = fmodf(local_kat2, 2.0f * M_PIf);
+    if (local_kat2 < 0.0f) local_kat2 += 2.0f * M_PIf;
+    if (local_kat2 <= local_kat1) local_kat2 += 2.0f * M_PIf;
+
+    /* Ellipse parameters (unchanged) */
+    const double sqrt3_over2 = sqrt(3.0 / 2.0);
+    const double one_over_sqrt2 = 1.0 / sqrt(2.0);
+
+    ea->x = l->x;
+    ea->y = l->y;
+
+    switch (plane) {
+        case XY_PLANE:
+            ea->rx = l->r * (float)sqrt3_over2;
+            ea->ry = l->r * (float)one_over_sqrt2;
+            ea->angle = 0.0f;
+            break;
+        case XZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 5.759586532f;  // -30° rad
+            break;
+        case YZ_PLANE:
+            ea->rx = l->r * (float)one_over_sqrt2;
+            ea->ry = l->r * (float)sqrt3_over2;
+            ea->angle = 0.523598776f;  // +30° rad
+            break;
+        default:
+            return -1;
+    }
+
+    /* Compute parametric angles using local plane angles */
+    ea->kat1 = compute_theta_f(l->r, ea->rx, ea->ry, ea->angle, plane, local_kat1);
+    ea->kat2 = compute_theta_f(l->r, ea->rx, ea->ry, ea->angle, plane, local_kat2);
+
+    return 0;
+}
 
 // Helper to normalize angle into [0, 2*PI)
 double normalizeAngle(double angle) {

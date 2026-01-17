@@ -2373,6 +2373,67 @@ char *icon_cross_section_forces_p;
 BITMAP *icon_resilience;
 char *icon_resilience_p;
 
+
+BITMAP *icon_fixed_roller_x;
+BITMAP *icon_fixed_roller_xu;
+BITMAP *icon_fixed_roller_y;
+BITMAP *icon_fixed_roller_yu;
+BITMAP *icon_pinned_roller_x;
+BITMAP *icon_pinned_roller_xu;
+BITMAP *icon_pinned_roller_y;
+BITMAP *icon_pinned_roller_yu;
+BITMAP *icon_rigid_rigid_springs;
+BITMAP *icon_rigid_rigid_nosprings;
+BITMAP *icon_force_z;
+BITMAP *icon_trapezium_z;
+BITMAP *icon_moment_x;
+BITMAP *icon_moment_x_rev;
+BITMAP *icon_moment_y;
+BITMAP *icon_moment_y_rev;
+BITMAP *icon_moment_xy;
+BITMAP *icon_moment_xy_rev;
+
+BITMAP *icon_displacement_z;
+BITMAP *icon_rotation_x;
+BITMAP *icon_rotation_x_rev;
+BITMAP *icon_rotation_y;
+BITMAP *icon_rotation_y_rev;
+BITMAP *icon_rotation_xy;
+BITMAP *icon_rotation_xy_rev;
+
+char *icon_fixed_roller_x_p;
+char *icon_fixed_roller_xu_p;
+char *icon_fixed_roller_y_p;
+char *icon_fixed_roller_yu_p;
+char *icon_pinned_roller_x_p;
+char *icon_pinned_roller_xu_p;
+char *icon_pinned_roller_y_p;
+char *icon_pinned_roller_yu_p;
+char *icon_rigid_rigid_springs_p;
+char *icon_rigid_rigid_nosprings_p;
+char *icon_force_z_p;
+char *icon_trapezium_z_p;
+char *icon_moment_x_p;
+char *icon_moment_x_rev_p;
+char *icon_moment_y_p;
+char *icon_moment_y_rev_p;
+char *icon_moment_xy_p;
+char *icon_moment_xy_rev_p;
+
+char *icon_displacement_z_p;
+char *icon_rotation_x_p;
+char *icon_rotation_x_rev_p;
+char *icon_rotation_y_p;
+char *icon_rotation_y_rev_p;
+char *icon_rotation_xy_p;
+char *icon_rotation_xy_rev_p;
+
+BITMAP *icon_vector_member_style_d;
+BITMAP *icon_rigid_springs_nosprings_d;
+char *icon_vector_member_style_d_p;
+char *icon_rigid_springs_nosprings_d_p;
+
+
 BITMAP *icon_hourglass;
 char *icon_hourglass_p;
 BITMAP *icon_hourglass_mem;

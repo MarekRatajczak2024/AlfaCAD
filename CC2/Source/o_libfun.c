@@ -271,13 +271,13 @@ void return_menu_par0 (char *pole, char * par)
 
 void obru(double si,double co, double xp, double yp, double *xn,double *yn)
 /*------------------------------------------------*/
-{ *xn=+xp*co+yp*si;  	/*zgodny z kierunkiem ruchu wskazowek zegara*/
+{ *xn=+xp*co+yp*si;  	/*clockwise*/
   *yn=-xp*si+yp*co;
 }
 
 void obrd(double si,double co, double xp, double yp, double *xn, double *yn)
-/*------------------------------------------------*/
-{ *xn=+xp*co-yp*si;	/*nie zgodny z kierunkiem ruchu wskazowek zegara*/
+/*------------------------------------------------------------------------*/
+{ *xn=+xp*co-yp*si;	/*counterclockwise*/
   *yn= xp*si+yp*co;
 }
 

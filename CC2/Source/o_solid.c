@@ -41,6 +41,9 @@ extern void view_pattern_type(char* pattern_name);
 extern int Open_SolidPatterns(void);
 extern void Wez_Solid_Pattern(void);
 extern void Set_Solid_Pattern(void);
+extern double get_elliptical_tangent_angle(double main_axis_angle, double xr, double yr, double end_angle);
+extern double cartesian_angle_to_isometric_angle(double cart_angle_rad);
+extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
 
 static void (*cursor_on)(double ,double)=out_cur_on;
 static void (*cursor_off)(double ,double)=out_cur_off;
@@ -75,6 +78,109 @@ float solidpatternscales[7] = {0.125,0.25,0.5,1.0,2.0,4.0,8.0};
 int solidpatternangles[4] = { 0, 90, 180, 270 };
 char solidpatterndxy[10][5] = {"0","1/32","1/16","1/8","1/4","3/8","1/2","5/8","3/4","7/8"};
 /*--------------------------------------------------------------------------------------*/
+
+
+/* Helper: isometric projection of a single point (float version) */
+static void project_point_isometric(float cx, float cy, float *ix, float *iy, enum PlaneType plane) {
+    double dx = (double)cx;
+    double dy = (double)cy;
+    double px, py;
+
+    switch (plane) {
+        case XY_PLANE:
+            px = (sqrt(3.0)/2.0) * dx - (sqrt(3.0)/2.0) * dy;
+            py = 0.5 * dx + 0.5 * dy;
+            break;
+        case XZ_PLANE:
+            px = (sqrt(3.0)/2.0) * dx;
+            py = 0.5 * dx + dy;  // Z contributes full height
+            break;
+        case YZ_PLANE:
+            px = -(sqrt(3.0)/2.0) * dy;
+            py = 0.5 * dy + dy;  // Z contributes full height
+            break;
+        default:
+            px = dx;
+            py = dy;
+            break;
+    }
+
+    *ix = (float)px;
+    *iy = (float)py;
+}
+
+/* Main function: isometrize a polygon (triangle or quadrilateral) in place */
+void izometrize_solid(enum PlaneType plane, WIELOKAT *St) {
+    if (!St || St->lp < 6) return;  // at least 3 vertices (6 floats)
+
+    /* Save the fixed insertion point (vertex 1: indices 2 and 3) */
+    float fixed_x = St->xy[2];
+    float fixed_y = St->xy[3];
+
+    /* Compute projected coordinates for ALL vertices */
+    float proj_x[4], proj_y[4];  // max 4 vertices
+    int num_vertices = St->lp / 2;
+
+    for (int i = 0; i < num_vertices; i++) {
+        project_point_isometric(St->xy[2*i], St->xy[2*i + 1], &proj_x[i], &proj_y[i], plane);
+    }
+
+    /* Compute offset so that the fixed point stays unchanged */
+    float offset_x = fixed_x - proj_x[1];  // vertex 1 projected
+    float offset_y = fixed_y - proj_y[1];
+
+    /* Apply projection + offset to all vertices */
+    for (int i = 0; i < num_vertices; i++) {
+        St->xy[2*i]     = proj_x[i] + offset_x;
+        St->xy[2*i + 1] = proj_y[i] + offset_y;
+    }
+}
+
+void make_dim_elliptical_arc_isometric_solid(ELLIPTICALARC *ea, double ea_start_x, double ea_start_y, double ea_end_x, double ea_end_y, double Kps, double katS, int n, WIELOKAT *w)
+{
+    double ea_end_xx = (n>0) ? ea_end_x : ea_start_x;
+    double ea_end_yy = (n>0) ? ea_end_y : ea_start_y;
+    double angle_rad = get_elliptical_tangent_angle(ea->angle, ea->rx, ea->ry, (n>0) ?ea->kat2 : ea->kat1);
+
+    // Reverse direction for arrowhead base behind tip (your working flip)
+    if (n>0) angle_rad = fmod(angle_rad - M_PI, 2.0 * M_PI);
+    if (angle_rad < 0.0) angle_rad += 2.0 * M_PI;
+
+    double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+    double katS_rad = katS * M_PI / 180.0;
+    double Kp2s = Kps / cos(M_PI*katS/180) ;
+
+    double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
+    double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
+
+    double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+    double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+    double x_tip1, y_tip1, x_tip2, y_tip2;
+    isometric_polar_to_cartesian(ea_end_xx, ea_end_yy, Kp2s, iso_angle1_deg, &x_tip1, &y_tip1);
+    isometric_polar_to_cartesian(ea_end_xx, ea_end_yy, Kp2s, iso_angle2_deg, &x_tip2, &y_tip2);
+
+    double dxi = ea_end_xx - (x_tip1 + x_tip2) / 2.0;
+    double dyi = ea_end_yy - (y_tip1 + y_tip2) / 2.0;
+
+    /*
+    w->xy[0] = (float)(x_tip1 + dxi);
+    w->xy[1] = (float)(y_tip1 + dyi);
+    w->xy[2] = (float)(ea_end_xx + dxi);
+    w->xy[3] = (float)(ea_end_yy + dyi);
+    w->xy[4] = (float)(x_tip2 + dxi);
+    w->xy[5] = (float)(y_tip2 + dyi);
+     */
+
+    w->xy[0] = (float)x_tip1;
+    w->xy[1] = (float)y_tip1;
+    w->xy[2] = (float)ea_end_xx;
+    w->xy[3] = (float)ea_end_yy;
+    w->xy[4] = (float)x_tip2;
+    w->xy[5] = (float)y_tip2;
+
+}
 
 static void out_temp_line (void)
 /*-----------------------------*/

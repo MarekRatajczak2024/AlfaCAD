@@ -47,7 +47,16 @@ static void katkat(double kat1)
 
 static void katkat90(double kat1)
 {
-	kat.kat = kat1+90;
+    if (!options1.uklad_izometryczny)
+	     kat.kat = kat1+90;
+    else
+    {
+        if (Check_if_Equal(kat.kat,30.))
+            kat.kat = kat1+120;
+        else if (Check_if_Equal(kat.kat,330.))
+            kat.kat = 30.;
+        else kat.kat = kat1+90;
+    }
 	if (kat.kat >= 360) kat.kat -= (long)(kat.kat / 360) * 360;
 	if (kat.kat >= 180) kat.kat -= 180;
 	if (kat.kat > 90) kat.kat += 180;
@@ -76,7 +85,15 @@ static void kierunek0(void)
 static void  kierunek90(void)
 { double angle_l;
   angle_l=get_angle_l();
-  if (angle_l!=0) katkat1(angle_l + 90);
+  if (angle_l!=0)
+  {
+      if (!options1.uklad_izometryczny)
+          katkat1(angle_l + 90);
+      else
+      {
+          katkat1(angle_l + 120);
+      }
+  }
   else
   {
    kat.kat=90.0;
@@ -89,7 +106,6 @@ static void  kierunek90(void)
   menu_par_new((*mWymiarujm.pola)[0].txt,"90");
   CUR_OFF_ON();
 }
-
 
 static void katselx(void)
 { unsigned typ;

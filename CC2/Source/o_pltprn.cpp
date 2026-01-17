@@ -266,7 +266,31 @@ extern "C" {
     extern void get_solidarc_ends(SOLIDARC *sa, double *xy);
     extern unsigned int lighten_color(unsigned int color, float factor);
 
-    extern char *load_symbol[];
+    extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+    //extern int isometric_gradient_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+    extern double isometric_angle_to_cartesian_angle(double iso_angle_deg);
+    extern double isometric_angle_to_cartesian_angle_rad(double iso_angle_rad);
+    extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
+    extern double isometric_vector_length_f(float x1, float y1, float x2, float y2);
+    extern double isometric_vector_angle(double x1, double y1, double x2, double y2);
+    extern int circle_to_isometric_ellipse(enum PlaneType plane, double x, double y, double r, double *xe, double *ye, double *rx, double *ry, double *a);
+    extern int circle_to_isometric_ellipse_o_e(enum PlaneType plane, OKRAG *o, ELLIPSE *e);
+    extern int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea);
+    //extern int Get_EllipticalArc_Points (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double kat1, double kat2, double xy[]);
+    extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle,double df_sangle0,double df_eangle0,double *x1, double *y1, double *x2, double *y2);
+    extern int cartesian_vector_to_isometric(double dx_cart, double dy_cart, double *dx_iso, double *dy_iso);
+    extern void srodekea_(double *x,double *y, double *tangent, void *adr);
+
+    extern void set_decimal_format(char *text, double l, double precision);
+    extern double cartesian_angle_to_isometric_angle(double cart_angle_rad);
+    extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+    extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+    extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+    extern int shorten_line_isometric(LINIA *L1, LINIA *L2i, double ra, int ends);
+    extern void create_solid_on_line_isometric (LINIA *L, WIELOKAT *s, double width1, double width2, double axis);
+    extern double get_elliptical_tangent_angle(double main_axis_angle, double xr, double yr, double end_angle);
+
+extern char *load_symbol[];
 
 	typedef enum { PRN_PCX = 0, PRN_WINDOWS, PRN_PDF, PRN_9, PRN_24, PRN_48, PRN_LASER, PRN_ESC_P2 } PRN;
 
@@ -962,7 +986,6 @@ BOOL move_vector_inside_prn(T_PixelTVal* PolyPoints, int v_number, int flag)
 
 		break;
 	case 4:  //last vector
-    case 18: //slab force
 
 		vector_middle = perpend_intersect(PolyPoints[4], PolyPoints[5], PolyPoints[6], PolyPoints[7], center);
 
@@ -2586,17 +2609,17 @@ BOOL Draw_Solidarc_To_Drive (SOLIDARC *ptr_sa, Print_Rect *window_to_print)
   return b_ret;
 }
 
-void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, double y2, double koc1, double kos1, double koc2, double kos2, double psize, AVECTOR *v)
+void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, double y2, double angle_rad, double katS_rad, double koc1, double kos1, double koc2, double kos2, double psize, AVECTOR *v)
 {
     LINIA L=Ldef;
     WIELOKAT w=Stdef;
     OKRAG k=Kdef;
     int ret;
 
-    L.x1=x1;
-    L.y1=y1;
-    L.x2=x2;
-    L.y2=y2;
+    L.x1=(float)x1;
+    L.y1=(float)y1;
+    L.x2=(float)x2;
+    L.y2=(float)y2;
     L.warstwa=w.warstwa=k.warstwa=v->warstwa;
     L.kolor=w.kolor=k.kolor=v->kolor;
 
@@ -2610,10 +2633,10 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
     if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV) || (v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
     {
         L.typ = V_FIXED_LINE; //128;
-        L.x1 = x0;
-        L.y1 = y0;
-        L.x2 = x0 + psize * koc1;
-        L.y2= y0 - psize * kos1;
+        L.x1 = (float)x0;
+        L.y1 = (float)y0;
+        L.x2 = (float)(x0 + psize * koc1);
+        L.y2= (float)(y0 - psize * kos1);
 
         line_width_type = Line_Width(L.typ);
         ret = Draw_Line_To_Drive(&L);
@@ -2623,19 +2646,52 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
 
         if (v->style == V_EDGE_ROLL)  //roll edge
             psize *= -1;
-        k.x=x0 + psize * 0.5 * koc1;
-        k.y=y0 - psize * 0.5 * kos1;
-        k.r=fabs(psize * 0.5);
+        k.x=(float)(x0 + psize * 0.5 * koc1);
+        k.y=(float)(y0 - psize * 0.5 * kos1);
+        k.r=(float)(fabs(psize * 0.5));
 
         ret = Draw_Fill_Circle_To_Drive(&k);
     }
-    else {
-        w.xy[2] = x0;
-        w.xy[3] = y0;
-        w.xy[0] = x0 + psize * koc1;
-        w.xy[1] = y0 - psize * kos1;
-        w.xy[4] = x0 + psize * koc2;
-        w.xy[5] = y0 - psize * kos2;
+    else
+    {
+        w.xy[2] = (float)x0;
+        w.xy[3] = (float)y0;
+
+        if ((!(v->cartflags & 1)) || (v->style==17) || (v->style==20))
+        {
+            w.xy[0] = (float)(x0 + psize * koc1);
+            w.xy[1] = (float)(y0 - psize * kos1);
+            w.xy[4] = (float)(x0 + psize * koc2);
+            w.xy[5] = (float)(y0 - psize * kos2);
+        }
+        else
+        {
+            // Isometric mode
+            double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+            double iso_backward = fmod(iso_angle + M_PI/2., 2.0 * M_PI);
+            if (iso_backward < 0.0) iso_backward += 2.0 * M_PI;
+
+            double katS_rad = 25.0 * M_PI / 180.0;  // or your variable
+
+            // SWAPPED ORDER TO MATCH MANUAL
+            double iso_angle1 = fmod(iso_backward + katS_rad, 2.0 * M_PI);
+            double iso_angle2 = fmod(iso_backward - katS_rad, 2.0 * M_PI);
+
+            double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+            double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+            double x_tip1, y_tip1, x_tip2, y_tip2;
+            isometric_polar_to_cartesian(x0, y0, psize, iso_angle1_deg, &x_tip1, &y_tip1);
+            isometric_polar_to_cartesian(x0, y0, psize, iso_angle2_deg, &x_tip2, &y_tip2);
+
+            w.xy[0] = (float)x_tip1;
+            w.xy[1] = (float)y_tip1;
+            w.xy[2] = (float)x0;
+            w.xy[3] = (float)y0;
+            w.xy[4] = (float)x_tip2;
+            w.xy[5] = (float)y_tip2;
+        }
 
         w.lp = 6;
         w.n = 32;
@@ -2643,9 +2699,7 @@ void draw_arrow_to_drive(double x0, double y0, double x1, double y1, double x2, 
         line_width_type = Solid_Line_Width(w.empty_typ);
         ret = Draw_Wielokat_To_Drive(&w, NULL);
     }
-
 }
-
 
 void draw_wave_to_drive(double x0, double y0, double x1, double y1, double x2, double y2, double koc, double kos, double n1, double ra, AVECTOR *v)
 {
@@ -2671,18 +2725,18 @@ void draw_wave_to_drive(double x0, double y0, double x1, double y1, double x2, d
     if (fabs(dl)>(3*dx))
     {
         dlm=0;
-        s.xy[0]=x1;
-        s.xy[1]=y1;
+        s.xy[0]=(float)x1;
+        s.xy[1]=(float)y1;
         dlm+=(n1*dx);
-        s.xy[2]=x1+dlm;
-        s.xy[3]=y1+dy;
+        s.xy[2]=(float)(x1+dlm);
+        s.xy[3]=(float)(y1+dy);
         i=4;
         dlm+=(2*n1*dx);
         while (fabs(dlm)<fabs(dl))
         {
             dy=-dy;
-            s.xy[i]=x1+dlm;
-            s.xy[i+1]=y1+dy;
+            s.xy[i]=(float)(x1+dlm);
+            s.xy[i+1]=(float)(y1+dy);
             i+=2;
             if (i>=NumSplinePoints*2) break;
             dlm+=(2*n1*dx);
@@ -2690,8 +2744,8 @@ void draw_wave_to_drive(double x0, double y0, double x1, double y1, double x2, d
 
         dlm-=(n1*dx);
         dy=-dy;
-        s.xy[i]=x1+dlm;
-        s.xy[i+1]=y1;
+        s.xy[i]=(float)(x1+dlm);
+        s.xy[i+1]=(float)(y1);
         i+=2;
 
         s.lp=i;
@@ -2715,16 +2769,52 @@ void draw_wave_to_drive(double x0, double y0, double x1, double y1, double x2, d
         if (n1==1) L.kolor=1;
         else L.kolor=5;
         L.typ=64;
-        L.x1=x1;
-        L.y1=y1;
-        L.x2=x2;
-        L.y2=y2;
+        L.x1=(float)x1;
+        L.y1=(float)y1;
+        L.x2=(float)x2;
+        L.y2=(float)y2;
 
         line_width_type = Line_Width (L.typ);
         ret=Draw_Line_To_Drive(&L);
     }
 }
 
+void draw_spring_to_drive(double x0, double y0, double x1, double y1, double x2, double y2, double angle_rad, double katS_rad, double koc1, double kos1, double koc2, double kos2, double psize, AVECTOR *v)
+{
+    LINIA L=Ldef;
+    double angle;
+    int ret;
+    int i;
+    float n=1.f;
+
+    float spring[]={0.f,0.f, 0.45f, -0.1f, -0.45f, -0.3f, 0.45f, -0.5f, -0.45f, -0.7f, 0.45f, -0.9f, -0.45f, -1.1f, 0.45f, -1.3f, -0.45f, -1.3f};
+
+    L.warstwa = v->warstwa;
+    L.kolor = v->kolor;
+    L.typ=64;
+
+    if (!(v->cartflags & 1))
+    {
+        angle=M_PI;
+    }
+    else
+    {
+        angle=M_PI;
+    }
+
+    if (v->y2>v->y1) n=1.f;
+    else n=-1.f;
+
+    for (i=0; i<16; i+=2)
+    {
+        L.x1 = (float)(n*spring[i]*psize+x0);
+        L.y1 = (float)(spring[i+1]*psize+y0);
+        L.x2 = (float)(n*spring[i+2]*psize+x0);
+        L.y2 = (float)(spring[i+3]*psize+y0);
+        line_width_type = Line_Width (L.typ);
+        ret=Draw_Line_To_Drive(&L);
+    }
+}
 
 void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
 {
@@ -2781,8 +2871,8 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
         if (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len_dens/4 : -df_seg_len_dens/2))   //or maybe df_seg_len_dens/2 for load
         {
 
-            Lt1.x1 = df_x;
-            Lt1.y1 = df_y;
+            Lt1.x1 = (float)df_x;
+            Lt1.y1 = (float)df_y;
             Lt1.x2 = l->x;
             Lt1.y2 = l->y;
             parametry_lini(&Lt1, &PL1);
@@ -2811,7 +2901,7 @@ void make_arcarrows_to_drive(LUK *l, AVECTOR *v, double kat)
 
             n1 = -1;
 
-            draw_arrow_to_drive(df_x, df_y, df_x, df_y, df_x, df_y, koc1, kos1, koc2, kos2, n1 * ra, v);
+            draw_arrow_to_drive(df_x, df_y, df_x, df_y, df_x, df_y, angle, katS, koc1, kos1, koc2, kos2, n1 * ra, v);
         }
 
         //P.x=df_x;
@@ -2870,31 +2960,80 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
     {
         case 10:
         case 17:
-            if (x1<=x2) angle=Angle_Normal(angle0+Pi_);
+        case 20:
+            if (!(v->cartflags & 1)  || (v->style!=10))
+            {
+                if (x1 <= x2) angle = Angle_Normal(angle0 + Pi_);
+            }
+            else
+            {
+                if (x1 > x2) angle = Angle_Normal(angle0 + 60./180.*Pi_);
+                else angle = Angle_Normal(angle0 - 120./180.*Pi_);
+            }
             break;
         case 11:
-            if (y1<=y2) angle=Angle_Normal(angle0+Pi_);
+            if (!(v->cartflags & 1)) {
+                if (y1 <= y2) angle = Angle_Normal(angle0 + Pi_);
+            }
+            else
+            {
+                if (y1 <= y2) angle = Angle_Normal(angle0 + 120./180.*Pi_);
+                else angle = Angle_Normal(angle0 - 60./180.*Pi_);
+            }
             break;
+        case 0:
         case 12:
-            angle=Angle_Normal(-angle0);
-            if (fabs(angle-Pi2)<0.00001) angle=0;
-            if (fabs(angle)<0.00001) angle=0;
-            break;
         case V_EDGE_SIMPLE:  //simple supported edge
         case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
         case V_EDGE_FIXED:  //fixed edge
         case V_EDGE_FIXED_INV:  //fixed edge reversed
         case V_EDGE_ROLL:  //roll edge
         case V_EDGE_ROLL_INV:  //roll edge reversed
-            angle=Angle_Normal(-angle0);
+            if (!(v->cartflags & 1))
+                angle=Angle_Normal(-angle0);
+            else
+            {
+                double iso_angle = cartesian_angle_to_isometric_angle(angle0);
+                // Add 180° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle - M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+            }
+
             if (fabs(angle-Pi2)<0.00001) angle=0;
             if (fabs(angle)<0.00001) angle=0;
             break;
         case 13:
-            if (x1<=x2) angle=Angle_Normal(angle0+Pi_);
+            if (!(v->cartflags & 1)) {
+                if (x1 <= x2) angle = Angle_Normal(angle0 + Pi_);
+            }
+            else
+            {
+                //if (x1 <= x2) angle = Angle_Normal(angle0 + 120./180.*Pi_);
+                //else angle = Angle_Normal(angle0 - 60./180.*Pi_);
+
+                double iso_angle = cartesian_angle_to_isometric_angle(angle0);
+                // Add 180° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle - M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+            }
             break;
         case 14:
-            if (y1<=y2) angle=Angle_Normal(angle0+Pi_);
+            if (!(v->cartflags & 1)) {
+                if (y1 <= y2) angle = Angle_Normal(angle0 + Pi_);
+            }
+            else
+            {
+                //if (x1 <= x2) angle = Angle_Normal(angle0 + 120./180.*Pi_);
+                //else angle = Angle_Normal(angle0 - 60./180.*Pi_);
+
+                double iso_angle = cartesian_angle_to_isometric_angle(angle0);
+                // Add 180° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle - M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+            }
             break;
         case 15:
             angle=Angle_Normal(-angle0);
@@ -2917,7 +3056,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
         kos2 = sin(angle + katS);
     }
 
-    angle_rev=Angle_Normal(angle+Pi_);
+    //angle_rev=Angle_Normal(angle+Pi_);
 
     i = 0 ;
 
@@ -2943,11 +3082,19 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
 
             if ((Check_if_Equal(angle, Pi_/2))   || (Check_if_Equal(angle, Pi_*3/2)))  //vertical
             {
-                a1.x=df_x; a1.y=-100.0;
-                a2.x=df_x; a2.y=100.0;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
+                a1.x=df_x;
+                a1.y=-100.0;
+                a2.x=df_x;
+                a2.y=100.0;
+                b1.x=(double)x11;
+                b1.y=(double)y11;
+                b2.x=(double)x12;
+                b2.y=(double)y12;
+
+                if (b1.x == b2.x) b2.x += 0.0001;
+
                 p=intersectionPoint(a1,a2,b1,b2);
+
                 if (isnan(p.x))
                 {
                     p.x = b2.x;
@@ -2956,11 +3103,16 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             }
             else if ((Check_if_Equal(angle, 0)) || (Check_if_Equal(angle, Pi_))) //horizontal
             {
-                a1.x=-100.0; a1.y=df_y;
-                a2.x=100.0; a2.y=df_y;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
+                a1.x=-100.0;
+                a1.y=df_y;
+                a2.x=100.0;
+                a2.y=df_y;
+                b1.x=(double)x11;
+                b1.y=(double)y11;
+                b2.x=(double)x12;
+                b2.y=(double)y12;
                 p=intersectionPoint(a1,a2,b1,b2);
+
                 if (isnan(p.x)) {
                     p.x = b1.x;
                     p.y = b1.y;
@@ -2968,10 +3120,14 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             }
             else
             {
-                a1.x=df_x-100.0*koc; a1.y=df_y-100.0*kos;
-                a2.x=df_x+100.0*koc; a2.y=df_y+100.0*kos;
-                b1.x=(double)x11; b1.y=(double)y11;
-                b2.x=(double)x12; b2.y=(double)y12;
+                a1.x=df_x-100.0*koc;
+                a1.y=df_y-100.0*kos;
+                a2.x=df_x+100.0*koc;
+                a2.y=df_y+100.0*kos;
+                b1.x=(double)x11;
+                b1.y=(double)y11;
+                b2.x=(double)x12;
+                b2.y=(double)y12;
                 p=intersectionPoint(a1,a2,b1,b2);
             }
 
@@ -2983,6 +3139,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
             {
                 case 10:
                 case 17:
+                case 20:
                     if (v->flags & 1)
                     {
                         df_x0 = p.x;
@@ -2991,7 +3148,9 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = df_x;
                         df_y2 = df_y;
 
-                        df_x1 = df_x;
+                        if ((!(v->cartflags & 1))) ////|| (v->style!=10))
+                            df_x1 = df_x;
+                        df_x1 = p.x - n1 * ra1 * koc;
 
                         if ((p.y - df_y) > -0.001) {
                             df_y1 = p.y - ra1 * kos;
@@ -3011,7 +3170,27 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = p.x;
                         df_y2 = p.y;
 
-                        df_x1 = df_x;
+                        if ((!(v->cartflags & 1)))
+                        {
+                            df_x1 = df_x;
+                        }
+                        else
+                        {
+                            if (x1 < x2)
+                            {
+                                if (Check_if_GE((p.y - df_y),0.))
+                                    df_x1 = df_x + n1 * ra1 * koc;
+                                else
+                                    df_x1 = df_x - n1 * ra1 * koc;
+                            }
+                            else
+                            {
+                                if (Check_if_GE((p.y - df_y),0.))
+                                    df_x1 = df_x + n1 * ra1 * koc;
+                                else
+                                    df_x1 = df_x - n1 * ra1 * koc;
+                            }
+                        }
 
                         if ((p.y - df_y) > -0.001) {
                             df_y1 = df_y + ra1 * kos;
@@ -3030,7 +3209,21 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = df_x;
                         df_y2 = df_y;
 
-                        df_y1 = df_y;
+                        if (!(v->cartflags & 1))
+                        {
+                            df_y1 = df_y;
+                        }
+                        else
+                        {
+                            if (y1 < y2)
+                            {
+                                df_y1 = p.y - n1 * ra1 * kos;
+                            }
+                            else
+                            {
+                                df_y1 = p.y + n1 * ra1 * kos;
+                            }
+                        }
 
                         if ((p.x - df_x) > 0.001) {
                             df_x1 = p.x - ra1 * koc;
@@ -3048,7 +3241,25 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = p.x;
                         df_y2 = p.y;
 
-                        df_y1 = df_y;
+                        if (!(v->cartflags & 1))
+                            df_y1 = df_y;
+                        else
+                        {
+                            if (y1 < y2)
+                            {
+                                if ((p.x - df_x) > 0.)
+                                    df_y1 = df_y + n1 * ra1 * kos;
+                                else
+                                    df_y1 = df_y - n1 * ra1 * kos;
+                            }
+                            else
+                            {
+                                if ((p.x - df_x) > 0.)
+                                    df_y1 = df_y + n1 * ra1 * kos;
+                                else
+                                    df_y1 = df_y - n1 * ra1 * kos;
+                            }
+                        }
 
                         if ((p.x - df_x) > 0.001) {
                             df_x1 = df_x + ra1 * koc;
@@ -3059,6 +3270,7 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         }
                     }
                     break;
+                case 0:
                 case 12:
                 case V_EDGE_SIMPLE:  //simple supported edge
                 case V_EDGE_SIMPLE_INV:  //simple supported edge reversed
@@ -3085,7 +3297,14 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                             if (PL1.kat < kat) PL1.kat += 360;
                             del_angle = PL1.kat - kat;
 
-                            if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                            if (!(v->cartflags & 1))
+                            {
+                                if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                            }
+                            else
+                            {
+                                if ((fabs(del_angle) > (120.0 + 1)) || (fabs(del_angle)) < (60.0 - 1)) n1 = -1;
+                            }
                         }
 
                         df_x1 = p.x - n1 * ra1 * koc;
@@ -3113,7 +3332,14 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                             if (PL1.kat < kat) PL1.kat += 360;
                             del_angle = PL1.kat - kat;
 
-                            if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                            if (!(v->cartflags & 1))
+                            {
+                                if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                            }
+                            else
+                            {
+                                if ((fabs(del_angle) > (120.0 + 1)) || (fabs(del_angle)) < (60.0 - 1)) n1 = -1;
+                            }
                         }
 
                         df_x1 = df_x + n1 * ra1 * koc;
@@ -3129,7 +3355,9 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = df_x;
                         df_y2 = df_y;
 
-                        df_x1 = df_x;
+                        if ((!(v->cartflags & 1)))
+                            df_x1 = df_x;
+
                         if (x1 < x2) {
                             if (p.y < df_y) n1 = -1;
                             df_y1 = p.y - n1 * ra1 * kos;
@@ -3146,13 +3374,40 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = p.x;
                         df_y2 = p.y;
 
-                        df_x1 = df_x;
-                        if (x1 < x2) {
-                            if (p.y < df_y) n1 = -1;
-                            df_y1 = df_y + n1 * ra1 * kos;
-                        } else {
-                            if (p.y > df_y) n1 = -1;
-                            df_y1 = df_y - n1 * ra1 * kos;
+                        if ((!(v->cartflags & 1)))
+                        {
+                            df_x1 = df_x;
+
+                            if (x1 < x2) {
+                                if (p.y < df_y) n1 = -1;
+                                df_y1 = df_y + n1 * ra1 * kos;
+                            } else {
+                                if (p.y > df_y) n1 = -1;
+                                df_y1 = df_y - n1 * ra1 * kos;
+                            }
+                        }
+                        else
+                        {
+                            double iso_x1, iso_y1, iso_x2, iso_y2;
+                            double iso_df_x, iso_df_y, iso_p_x, iso_p_y;
+                            int ret=cartesian_to_isometric(x1, y1, &iso_x1, &iso_y1);
+                            ret=cartesian_to_isometric(x2, y2, &iso_x2, &iso_y2);
+                            ret=cartesian_to_isometric(df_x, df_y, &iso_df_x, &iso_df_y);
+                            ret=cartesian_to_isometric(p.x, p.y, &iso_p_x, &iso_p_y);
+
+                            if (iso_x1 < iso_x2)
+                            {
+                                if (Check_if_LT(iso_p_y, iso_df_y)) n1 = -1;
+                                df_x1 = df_x + n1 * ra1 * koc;
+                                df_y1 = df_y + n1 * ra1 * kos;
+                            }
+                            else
+                            {
+                                if (Check_if_LT(iso_p_y, iso_df_y)) n1 = -1;
+                                df_x1 = df_x + n1 * ra1 * koc;
+                                df_y1 = df_y + n1 * ra1 * kos;
+                            }
+
                         }
                     }
                     break;
@@ -3165,7 +3420,8 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = df_x;
                         df_y2 = df_y;
 
-                        df_y1 = df_y;
+                        if ((!(v->cartflags & 1)))
+                            df_y1 = df_y;
 
                         if (y1 < y2) {
                             if (p.x > df_x) n1 = -1;
@@ -3184,14 +3440,39 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         df_x2 = p.x;
                         df_y2 = p.y;
 
-                        df_y1 = df_y;
+                        if ((!(v->cartflags & 1))) {
+                            df_y1 = df_y;
 
-                        if (y1 < y2) {
-                            if (p.x > df_x) n1 = -1;
-                            df_x1 = df_x - n1 * ra1 * koc;
-                        } else {
-                            if (p.x < df_x) n1 = -1;
-                            df_x1 = df_x + n1 * ra1 * koc;
+                            if (y1 < y2) {
+                                if (p.x > df_x) n1 = -1;
+                                df_x1 = df_x - n1 * ra1 * koc;
+                            } else {
+                                if (p.x < df_x) n1 = -1;
+                                df_x1 = df_x + n1 * ra1 * koc;
+                            }
+                        }
+                        else
+                        {
+                            double iso_x1, iso_y1, iso_x2, iso_y2;
+                            double iso_df_x, iso_df_y, iso_p_x, iso_p_y;
+                            int ret=cartesian_to_isometric(x1, y1, &iso_x1, &iso_y1);
+                            ret=cartesian_to_isometric(x2, y2, &iso_x2, &iso_y2);
+                            ret=cartesian_to_isometric(df_x, df_y, &iso_df_x, &iso_df_y);
+                            ret=cartesian_to_isometric(p.x, p.y, &iso_p_x, &iso_p_y);
+
+
+                            if (iso_y1 < iso_y2)
+                            {
+                                if (Check_if_LE(iso_p_x, iso_df_x)) n1 = -1;
+                                df_x1 = df_x + n1 * ra1 * koc;
+                                df_y1 = df_y + n1 * ra1 * kos;
+                            }
+                            else
+                            {
+                                if (Check_if_LE(iso_p_x, iso_df_x)) n1 = -1;
+                                df_x1 = df_x + n1 * ra1 * koc;
+                                df_y1 = df_y + n1 * ra1 * kos;
+                            }
                         }
                     }
 
@@ -3230,7 +3511,13 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                     break;
             }
 
-            if (v->style!=15) draw_arrow_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc1, kos1, koc2, kos2, n1*ra, v);
+            if (v->style!=15)
+            {
+                if (v->style != 0)
+                     draw_arrow_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, angle, katS, koc1, kos1, koc2, kos2, n1*ra, v);
+                else
+                    draw_spring_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, angle, katS, koc1, kos1, koc2, kos2, /*n1 **/ ra, v);
+            }
             else draw_wave_to_drive(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v);
             df_l0 += df_seg_len_dens ;
             i++ ;
@@ -3244,17 +3531,19 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 {
     double df_psize, df_psize1 ;
     PLINIA PL, PL1, PLth;
-    LINIA L1=Ldef, L2=Ldef, L3=Ldef, L4=Ldef, Lt=Ldef, Ls=Ldef, Lth=Ldef, Ln=Ldef, Ln1=Ldef;
+    LINIA L1=Ldef, L2=Ldef, L3=Ldef, L4=Ldef, Lt=Ldef, Ls=Ldef, Lth=Ldef, Ln=Ldef, Ln1=Ldef, Lp=Ldef;
     SOLIDARC sa=sadef;
     WIELOKAT w=S4def;
     OKRAG O=Odef;
+    ELLIPSE E=Edef;
     OKRAG K=Kdef;
     LUK l=ldef;
+    ELLIPTICALARC ea=eldef;
     double kat1, kos, koc, kats, kata2;
     double ra;
     double katS=25.0;
     TEXT Vtxt=Tdef, Vtxt1=Tdef, Vltxt=Tdef;
-    double n, dx, dy, dx1, dy1, dx2, dy2, Kp2s, K1_5, Ltx, Lty;;
+    double n, dx, dy, dx1, dy1, dx2, dy2, Kp2s, Kps, K1_5, Ltx, Lty;;
     int kolorS;
     double koc1, kos1, koc2, kos2, koc1th, kos1th;
     int grubosc, s;
@@ -3272,6 +3561,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
     double kat0=10;
     ELLIPSE load_ellipse=FEdef;
+    double arrow_angle;
+    double h_factor;
+    double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
 
 #define arrowf 1.0
 
@@ -3280,8 +3572,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
     df_psize = Get_Point_Size () / 2;   //2
     df_psize1 = Get_Point_Size () / 4 ; //2
 
-    L1.warstwa=O.warstwa=l.warstwa=K.warstwa=w.warstwa=sa.warstwa=ptrs_vector->warstwa;
-    L1.kolor=O.kolor=l.kolor=K.kolor=w.kolor=sa.kolor=ptrs_vector->kolor;
+    L1.warstwa=O.warstwa=E.warstwa=l.warstwa=K.warstwa=w.warstwa=sa.warstwa=ea.warstwa=ptrs_vector->warstwa;
+    L1.kolor=O.kolor=E.kolor=l.kolor=K.kolor=w.kolor=sa.kolor=ea.kolor=ptrs_vector->kolor;
     L1.typ=ptrs_vector->typ;
 
     memmove(&L2, &L1, sizeof(LINIA));
@@ -3319,6 +3611,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
     switch (ptrs_vector->style)
     {
+        double x1, y1, tangent;
+
+        int plane;
+
         case 0:
         case 1:
         case 2:
@@ -3329,6 +3625,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
         case 4:  //force
         case 18: //slab force
+        case 19: //force z
 
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
@@ -3356,8 +3653,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
-        case 7:
-
+        case 7:  //displacement
+        case 27:  //displacement z
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
@@ -3383,8 +3680,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
-        case 5:
-        case 6:
+        case 5: //moment
+        case 6: //-moment
             if (ptrs_vector->angle2<ptrs_vector->angle1)
                 kata2=ptrs_vector->angle2+Pi2;
             else kata2=ptrs_vector->angle2;
@@ -3406,6 +3703,73 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             normalize_txt(&Vltxt);
 
             break;
+        case 21:  //moment x  //TO DO ISOMETRIC
+        case 23:  //moment y
+        case 25:  //moment yy
+
+        case 22:  //-moment x
+        case 24:  //-moment y
+        case 26:  //-moment xy
+
+            switch (ptrs_vector->style) {
+                case 21:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                    plane = XY_PLANE;
+                    break;
+                case 22:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+            }
+            l.x=ptrs_vector->x1;
+            l.y=ptrs_vector->y1;
+            l.r=ptrs_vector->r;
+            l.kat1=ptrs_vector->angle1;
+            l.kat2=ptrs_vector->angle2;
+
+            if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
+            {
+                kats=Angle_Normal(ptrs_vector->angle1);
+                x1=ptrs_vector->x1+ptrs_vector->r*cos(kats);
+                y1=ptrs_vector->y1+ptrs_vector->r*sin(kats);
+                tangent=kats - Pi_ / 2.;
+                if (tangent < 0) tangent += 2.0 * M_PI;
+            }
+            else {
+                ret = arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                srodekea_(&x1, &y1, &tangent, &ea);
+                tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+                kats = tangent + Pi_ / 2.;
+                if (kats < 0) kats += 2.0 * M_PI;
+            }
+            Vtxt.x=(float)(x1+0.5*cos(kats));
+            Vtxt.y=(float)(y1+0.5*sin(kats));
+
+            Vltxt.x=(float)(x1+(-Vltxt.wysokosc - 0.5)*cos(kats));
+            Vltxt.y=(float)(y1+(-Vltxt.wysokosc - 0.5)*sin(kats));
+
+            Vtxt.kat=Vltxt.kat=(float)tangent;
+            Vtxt.justowanie=Vltxt.justowanie=j_srodkowo;
+            set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, moment_precision);
+            normalize_txt(&Vtxt);
+
+            if (ptrs_vector->variant>0)
+                sprintf((char*)&Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
+            else sprintf((char*)&Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
+            normalize_txt(&Vltxt);
+
+            break;
+
         case V_EDGE_ARC_SIMPLE:  //simple supported edge
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
@@ -3417,8 +3781,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else kata2=ptrs_vector->angle2;
             kats=Angle_Normal((ptrs_vector->angle1+kata2)/2);
             break;
-        case 8:
-        case 9:
+        case 8:  //rotation
+        case 9:  //-rotation
             if (ptrs_vector->angle2<ptrs_vector->angle1)
                 kata2=ptrs_vector->angle2+Pi2;
             else kata2=ptrs_vector->angle2;
@@ -3440,8 +3804,73 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
             normalize_txt(&Vltxt);
             break;
+        case 28: //rotation x  //TO DO ISOMETRIC
+        case 29: //-rotation x
+        case 30: //rotation y
+        case 31: //-rotation y
+        case 32: //rotation xy
+        case 33: //-rotation xy
+            switch (ptrs_vector->style) {
+                case 28:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                    plane = XY_PLANE;
+                    break;
+                case 29:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+            }
+            l.x=ptrs_vector->x1;
+            l.y=ptrs_vector->y1;
+            l.r=ptrs_vector->r;
+            l.kat1=ptrs_vector->angle1;
+            l.kat2=ptrs_vector->angle2;
+
+            if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
+            {
+                kats=Angle_Normal(ptrs_vector->angle1);
+                x1=ptrs_vector->x1+ptrs_vector->r*cos(kats);
+                y1=ptrs_vector->y1+ptrs_vector->r*sin(kats);
+                tangent=kats - Pi_ / 2.;
+                if (tangent < 0) tangent += 2.0 * M_PI;
+            }
+            else {
+                ret = arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                srodekea_(&x1, &y1, &tangent, &ea);
+                tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+                kats = tangent + Pi_ / 2.;
+                if (kats < 0) kats += 2.0 * M_PI;
+            }
+            Vtxt.x=(float)(x1+0.5*cos(kats));
+            Vtxt.y=(float)(y1+0.5*sin(kats));
+
+            Vltxt.x=(float)(x1+(-Vltxt.wysokosc - 0.5)*cos(kats));
+            Vltxt.y=(float)(y1+(-Vltxt.wysokosc - 0.5)*sin(kats));
+
+            Vtxt.kat=Vltxt.kat=(float)tangent;
+            Vtxt.justowanie=Vltxt.justowanie=j_srodkowo;
+            set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, moment_precision);
+            normalize_txt(&Vtxt);
+
+            if (ptrs_vector->variant>0)
+                sprintf(Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
+            else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
+            normalize_txt(&Vltxt);
+
+            break;
         case 10:  //trapezium Y
         case 17:  //trapezium Y slab
+        case 20:  //trapezium Z
 
             if (Check_if_Equal(L1.x1, L1.x2))
             {
@@ -3459,23 +3888,64 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             if (ptrs_vector->flags & 1) n*=-1;
 
-            Lt.x1 = L1.x1;
-            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
-            Lt.x2 = L1.x2;
-            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude));
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
+            {
+                Lt.x1 = L1.x1;
+                Lt.y1 = L1.y1 + (float)(n*(ptrs_vector->magnitude1/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude)));
+                Lt.x2 = L1.x2;
+                Lt.y2 = L1.y2 + (float)(n*(ptrs_vector->magnitude2/((ptrs_vector->style==10) ? load_magnitude : flood_magnitude)));
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude1 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude2 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                Lt.x1 = (float)L1.x1 + dx1_cart;
+                Lt.y1 = (float)L1.y1 + dy1_cart;
+                Lt.x2 = (float)L1.x2 + dx2_cart;
+                Lt.y2 = (float)L1.y2 + dy2_cart;
+            }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
 
-            if (Lt.x1<Lt.x2)
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180);
+            }
+            else {
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
+
+            if (ptrs_vector->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
+            if (Lt.x1==Lt.x2)
+            {
+
+                dx = 0;
+                dy = 0;
+
+                dx1 = 0;
+                dy1 = 0;
+                dx2 = 0;
+                dy2 = 0;
+
+            }
+            else if (Lt.x1<Lt.x2)
             {   if (Lt.y1<L1.y1)
                 {
-                    dx=-Vtxt.wysokosc*koc1;
-                    dy=-Vtxt.wysokosc*kos1;
+                    dx=-Vtxt.wysokosc*h_factor*koc1;
+                    dy=-Vtxt.wysokosc*h_factor*kos1;
                 }
                 else
                 {
@@ -3484,11 +3954,11 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 if (Lt.y2<L1.y2)
                 {
-                    dx1=-Vtxt.wysokosc*koc1;
-                    dy1=-Vtxt.wysokosc*kos1;
+                    dx1=-Vtxt.wysokosc*h_factor*koc1;
+                    dy1=-Vtxt.wysokosc*h_factor*kos1;
 
-                    dx2=-Vltxt.wysokosc*koc1;
-                    dy2=-Vltxt.wysokosc*kos1;
+                    dx2=-Vltxt.wysokosc*h_factor*koc1;
+                    dy2=-Vltxt.wysokosc*h_factor*kos1;
                 }
                 else {
                     dx1 = 0;
@@ -3505,8 +3975,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 else
                 {
-                    dx = Vtxt.wysokosc * koc1;
-                    dy = Vtxt.wysokosc * kos1;
+                    dx = Vtxt.wysokosc *h_factor* koc1;
+                    dy = Vtxt.wysokosc *h_factor* kos1;
                 }
                 if (Lt.y2>L1.y2)
                 {
@@ -3517,21 +3987,21 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 else
                 {
-                    dx1 = Vtxt.wysokosc * koc1;
-                    dy1 = Vtxt.wysokosc * kos1;
-                    dx2 = Vltxt.wysokosc * koc1;
-                    dy2 = Vltxt.wysokosc * kos1;
+                    dx1 = Vtxt.wysokosc *h_factor* koc1;
+                    dy1 = Vtxt.wysokosc *h_factor* kos1;
+                    dx2 = Vltxt.wysokosc *h_factor* koc1;
+                    dy2 = Vltxt.wysokosc *h_factor* kos1;
                 }
             }
 
-            Vtxt.x=Lt.x1+dx;
-            Vtxt.y=Lt.y1+dy;
-            Vtxt.kat=normalize_txt_angle(PL1.kat*Pi/180);
+            Vtxt.x=(float)(Lt.x1+dx);
+            Vtxt.y=(float)(Lt.y1+dy);
+            Vtxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt.justowanie=j_do_lewej;
             else Vtxt.justowanie=j_do_prawej;
-            Vtxt1.x=Lt.x2+dx1;
-            Vtxt1.y=Lt.y2+dy1;
-            Vtxt1.kat=Vltxt.kat=normalize_txt_angle(PL1.kat*Pi/180);
+            Vtxt1.x=(float)(Lt.x2+dx1);
+            Vtxt1.y=(float)(Lt.y2+dy1);
+            Vtxt1.kat=Vltxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt1.justowanie=j_do_prawej;
             else  Vtxt1.justowanie=j_do_lewej;
 
@@ -3567,23 +4037,53 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             if (ptrs_vector->flags & 1) n*=-1;
 
-            Lt.x1 = L1.x1 - n*(ptrs_vector->magnitude1/load_magnitude);
-            Lt.y1 = L1.y1;
-            Lt.x2 = L1.x2 - n*(ptrs_vector->magnitude2/load_magnitude);
-            Lt.y2 = L1.y2;
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                Lt.x1 = L1.x1 - n * (ptrs_vector->magnitude1 / load_magnitude);
+                Lt.y1 = L1.y1;
+                Lt.x2 = L1.x2 - n * (ptrs_vector->magnitude2 / load_magnitude);
+                Lt.y2 = L1.y2;
+            }
+            else
+            {
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(- n * (ptrs_vector->magnitude1 / load_magnitude), 0, &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(- n * (ptrs_vector->magnitude2 / load_magnitude), 0, &dx2_cart, &dy2_cart);
+                Lt.x1 = L1.x1 + dx1_cart;
+                Lt.y1 = L1.y1 + dy1_cart;
+                Lt.x2 = L1.x2 + dx2_cart;
+                Lt.y2 = L1.y2 + dy2_cart;
+            }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
+            if (!(ptrs_vector->cartflags & 1))
+            {
             kos1=sin(Pi*(PL1.kat+90)/180);
             koc1=cos(Pi*(PL1.kat+90)/180);
+            }
+            else {
+                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
+                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
+
+            if (ptrs_vector->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
 
             if (Lt.y1<Lt.y2)
             {   if (Lt.x1>L1.x1)
                 {
-                    dx=-Vtxt.wysokosc*koc1;
-                    dy=-Vtxt.wysokosc*kos1;
+                    dx=-Vtxt.wysokosc*h_factor*koc1;
+                    dy=-Vtxt.wysokosc*h_factor*kos1;
                 }
                 else
                 {
@@ -3592,10 +4092,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 if (Lt.x2>L1.x2)
                 {
-                    dx1=-Vtxt.wysokosc*koc1;
-                    dy1=-Vtxt.wysokosc*kos1;
-                    dx2=-Vltxt.wysokosc*koc1;
-                    dy2=-Vltxt.wysokosc*kos1;
+                    dx1=-Vtxt.wysokosc*h_factor*koc1;
+                    dy1=-Vtxt.wysokosc*h_factor*kos1;
+                    dx2=-Vltxt.wysokosc*h_factor*koc1;
+                    dy2=-Vltxt.wysokosc*h_factor*kos1;
                 }
                 else {
                     dx1 = 0;
@@ -3612,8 +4112,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 else
                 {
-                    dx = -Vtxt.wysokosc * koc1;
-                    dy = -Vtxt.wysokosc * kos1;
+                    dx = -Vtxt.wysokosc *h_factor* koc1;
+                    dy = -Vtxt.wysokosc *h_factor* kos1;
                 }
                 if (Lt.x2>L1.x2)
                 {
@@ -3624,10 +4124,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 }
                 else
                 {
-                    dx1 = -Vtxt.wysokosc * koc1;
-                    dy1 = -Vtxt.wysokosc * kos1;
-                    dx2 = -Vltxt.wysokosc * koc1;
-                    dy2 = -Vltxt.wysokosc * kos1;
+                    dx1 = -Vtxt.wysokosc *h_factor* koc1;
+                    dy1 = -Vtxt.wysokosc *h_factor* kos1;
+                    dx2 = -Vltxt.wysokosc *h_factor* koc1;
+                    dy2 = -Vltxt.wysokosc *h_factor* kos1;
                 }
             }
 
@@ -3657,23 +4157,49 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
         case 12:  //trapezium N
 
-            kos1=sin(Pi*(PL.kat+90)/180);
-            koc1=cos(Pi*(PL.kat+90)/180);
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            }
 
             n=1;
             if (ptrs_vector->flags & 1) n*=-1;
 
-            Lt.x1 = L1.x1 + n*(ptrs_vector->magnitude1/load_magnitude)*koc1;
-            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude)*kos1;
-            Lt.x2 = L1.x2 + n*(ptrs_vector->magnitude2/load_magnitude)*koc1;
-            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude)*kos1;
+            Lt.x1 = L1.x1 + (float)(n*(ptrs_vector->magnitude1/load_magnitude)*koc1);
+            Lt.y1 = L1.y1 + (float)(n*(ptrs_vector->magnitude1/load_magnitude)*kos1);
+            Lt.x2 = L1.x2 + (float)(n*(ptrs_vector->magnitude2/load_magnitude)*koc1);
+            Lt.y2 = L1.y2 + (float)(n*(ptrs_vector->magnitude2/load_magnitude)*kos1);
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos2=sin(Pi*(PL1.kat+90)/180);
-            koc2=cos(Pi*(PL1.kat+90)/180);
+
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                kos2=sin(Pi*(PL1.kat+90.)/180.);
+                koc2=cos(Pi*(PL1.kat+90.)/180.);
+            }
+            else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos2 = sin(cart_angle);
+                koc2 = cos(cart_angle);
+            }
 
             dx = 0;
             dy = 0;
@@ -3682,36 +4208,40 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             dx2 = 0;
             dy2 = 0;
 
+            if (ptrs_vector->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
             //if (ptrs_vector->magnitude1<0)
             if (((ptrs_vector->magnitude1<0) && !(ptrs_vector->flags & 1)) ||
                 ((ptrs_vector->magnitude1>0) && (ptrs_vector->flags & 1)))
             {
-                dx = -Vtxt.wysokosc * koc2;
-                dy = -Vtxt.wysokosc * kos2;
+                dx = -Vtxt.wysokosc *h_factor* koc2;
+                dy = -Vtxt.wysokosc *h_factor* kos2;
             }
 
             //if (ptrs_vector->magnitude2<0)
             if (((ptrs_vector->magnitude2<0) && !(ptrs_vector->flags & 1)) ||
                 ((ptrs_vector->magnitude2>0) && (ptrs_vector->flags & 1)))
             {
-                dx1 = -Vtxt.wysokosc * koc2;
-                dy1 = -Vtxt.wysokosc * kos2;
+                dx1 = -Vtxt.wysokosc *h_factor* koc2;
+                dy1 = -Vtxt.wysokosc *h_factor* kos2;
 
-                dx2 = -Vltxt.wysokosc * koc2;
-                dy2 = -Vltxt.wysokosc * kos2;
+                dx2 = -Vltxt.wysokosc *h_factor* koc2;
+                dy2 = -Vltxt.wysokosc *h_factor* kos2;
             }
 
-            Vtxt.x=Lt.x1+dx;
-            Vtxt.y=Lt.y1+dy;
-            Vtxt.kat=(PL1.kat*Pi/180);
+            Vtxt.x=Lt.x1+(float)dx;
+            Vtxt.y=Lt.y1+(float)dy;
+            Vtxt.kat=(float)(PL1.kat*Pi/180);
             Vtxt.justowanie=j_do_lewej;
-            Vtxt1.x=Lt.x2+dx1;
-            Vtxt1.y=Lt.y2+dy1;
-            Vtxt1.kat=Vltxt.kat=(PL1.kat*Pi/180);
+            Vtxt1.x=Lt.x2+(float)dx1;
+            Vtxt1.y=Lt.y2+(float)dy1;
+            Vtxt1.kat=Vltxt.kat=(float)(PL1.kat*Pi/180);
             Vtxt1.justowanie=j_do_prawej;
 
-            Vltxt.x=Ltx+dx2;
-            Vltxt.y=Lty+dy2;
+            Vltxt.x=(float)(Ltx+dx2);
+            Vltxt.y=(float)(Lty+dy2);
             Vltxt.justowanie=j_srodkowo;
 
             set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, load_precision);
@@ -3732,53 +4262,86 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
         case V_EDGE_ROLL:  //roll edge
         case V_EDGE_ROLL_INV:  //roll edge reversed
             if ((ptrs_vector->style==V_EDGE_SIMPLE) || (ptrs_vector->style==V_EDGE_FIXED))
-                ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.01;  //just to simulate
-            else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.01;  //just to simulate
-            kos1=sin(Pi*(PL.kat+90)/180);
-            koc1=cos(Pi*(PL.kat+90)/180);
+                ptrs_vector->magnitude1=ptrs_vector->magnitude2=0.01f;  //just to simulate
+            else ptrs_vector->magnitude1=ptrs_vector->magnitude2=-0.01f;  //just to simulate
+            kos1=sin(Pi*(PL.kat+90)/180.);
+            koc1=cos(Pi*(PL.kat+90)/180.);
 
             n=1;
 
             if (ptrs_vector->flags & 1) n*=-1;
 
-            Lt.x1 = L1.x1 + n*(ptrs_vector->magnitude1/load_magnitude)*koc1;
-            Lt.y1 = L1.y1 + n*(ptrs_vector->magnitude1/load_magnitude)*kos1;
-            Lt.x2 = L1.x2 + n*(ptrs_vector->magnitude2/load_magnitude)*koc1;
-            Lt.y2 = L1.y2 + n*(ptrs_vector->magnitude2/load_magnitude)*kos1;
+            Lt.x1 = L1.x1 + (float)(n*(ptrs_vector->magnitude1/load_magnitude)*koc1);
+            Lt.y1 = L1.y1 + (float)(n*(ptrs_vector->magnitude1/load_magnitude)*kos1);
+            Lt.x2 = L1.x2 + (float)(n*(ptrs_vector->magnitude2/load_magnitude)*koc1);
+            Lt.y2 = L1.y2 + (float)(n*(ptrs_vector->magnitude2/load_magnitude)*kos1);
 
-            Ltx=(Lt.x1 + Lt.x2)/2;
-            Lty=(Lt.y1 + Lt.y2)/2;
+            Ltx=(Lt.x1 + Lt.x2)/2.;
+            Lty=(Lt.y1 + Lt.y2)/2.;
 
             parametry_lini(&Lt, &PL1);
-            kos2=sin(Pi*(PL1.kat+90)/180);
-            koc2=cos(Pi*(PL1.kat+90)/180);
+            kos2=sin(Pi*(PL1.kat+90)/180.);
+            koc2=cos(Pi*(PL1.kat+90)/180.);
             break;
 
         case 13:  //trapezium H
-            if (L1.x1<L1.x2)
+            if (!(ptrs_vector->cartflags & 1))
             {
-                n=1;
-                ymax=max(L1.y1, L1.y2);
+                if (L1.x1 < L1.x2) {
+                    n = 1;
+                    ymax = max(L1.y1, L1.y2);
+                } else {
+                    n = -1;
+                    ymax = min(L1.y1, L1.y2);
+                }
+
+                if (ptrs_vector->flags & 1) n *= -1;
+
+                Lt.x1 = L1.x1;
+                Lt.y1 = (float)(ymax + n * (ptrs_vector->magnitude1 / load_magnitude));
+                Lt.x2 = L1.x2;
+                Lt.y2 = (float)(ymax + n * (ptrs_vector->magnitude2 / load_magnitude));
             }
             else
             {
-                n=-1;
-                ymax=min(L1.y1, L1.y2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(L1.x1, L1.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(L1.x2, L1.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_x1<iso_L1_x2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_x(L1.x1, L1.y1, L1.x2, L1.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0.,  n * (ptrs_vector->magnitude1 / load_magnitude),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0.,  n * (ptrs_vector->magnitude2 / load_magnitude),  &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float)dx1_cart;
+                Lt.y1 = Lp.y1 + (float)dy1_cart;
+                Lt.x2 = Lp.x2 + (float)dx2_cart;
+                Lt.y2 = Lp.y2 + (float)dy2_cart;
             }
 
-            if (ptrs_vector->flags & 1) n*=-1;
-
-            Lt.x1 = L1.x1;
-            Lt.y1 = ymax + n*(ptrs_vector->magnitude1/load_magnitude);
-            Lt.x2 = L1.x2;
-            Lt.y2 = ymax + n*(ptrs_vector->magnitude2/load_magnitude);
-
-            Ltx=(Lt.x1 + Lt.x2)/2;
-            Lty=(Lt.y1 + Lt.y2)/2;
+            Ltx=(Lt.x1 + Lt.x2)/2.;
+            Lty=(Lt.y1 + Lt.y2)/2.;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180.);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180.);
+            }
+            else {
+                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
+                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
 
             dx=0;
             dy=0;
@@ -3787,22 +4350,26 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             dx2=0;
             dy2=0;
 
+            if (ptrs_vector->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
             if (Lt.x1<Lt.x2)
             {
                 if (((ptrs_vector->magnitude1<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude1>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx=-Vtxt.wysokosc*koc1;
-                    dy=-Vtxt.wysokosc*kos1;
+                    dx=-Vtxt.wysokosc*h_factor*koc1;
+                    dy=-Vtxt.wysokosc*h_factor*kos1;
                 }
                 if (((ptrs_vector->magnitude2<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude2>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx1=-Vtxt.wysokosc*koc1;
-                    dy1=-Vtxt.wysokosc*kos1;
+                    dx1=-Vtxt.wysokosc*h_factor*koc1;
+                    dy1=-Vtxt.wysokosc*h_factor*kos1;
 
-                    dx2=-Vltxt.wysokosc*koc1;
-                    dy2=-Vltxt.wysokosc*kos1;
+                    dx2=-Vltxt.wysokosc*h_factor*koc1;
+                    dy2=-Vltxt.wysokosc*h_factor*kos1;
                 }
             }
             else
@@ -3810,33 +4377,33 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (((ptrs_vector->magnitude1>=0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude1<0) && (ptrs_vector->flags & 1)))
                 {
-                    dx = Vtxt.wysokosc * koc1;
-                    dy = Vtxt.wysokosc * kos1;
+                    dx = Vtxt.wysokosc*h_factor * koc1;
+                    dy = Vtxt.wysokosc*h_factor* kos1;
                 }
                 if (((ptrs_vector->magnitude2>=0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude2<0) && (ptrs_vector->flags & 1)))
                 {
-                    dx1 = Vtxt.wysokosc * koc1;
-                    dy1 = Vtxt.wysokosc * kos1;
+                    dx1 = Vtxt.wysokosc*h_factor * koc1;
+                    dy1 = Vtxt.wysokosc*h_factor * kos1;
 
-                    dx2 = Vltxt.wysokosc * koc1;
-                    dy2 = Vltxt.wysokosc * kos1;
+                    dx2 = Vltxt.wysokosc*h_factor * koc1;
+                    dy2 = Vltxt.wysokosc*h_factor * kos1;
                 }
             }
 
-            Vtxt.x=Lt.x1+dx;
-            Vtxt.y=Lt.y1+dy;
-            Vtxt.kat=normalize_txt_angle(PL1.kat*Pi/180);
+            Vtxt.x=Lt.x1+(float)dx;
+            Vtxt.y=Lt.y1+(float)dy;
+            Vtxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt.justowanie=j_do_lewej;
             else Vtxt.justowanie=j_do_prawej;
-            Vtxt1.x=Lt.x2+dx1;
-            Vtxt1.y=Lt.y2+dy1;
-            Vtxt1.kat=Vltxt.kat=normalize_txt_angle(PL1.kat*Pi/180);
+            Vtxt1.x=Lt.x2+(float)dx1;
+            Vtxt1.y=Lt.y2+(float)dy1;
+            Vtxt1.kat=Vltxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt1.justowanie=j_do_prawej;
             else  Vtxt1.justowanie=j_do_lewej;
 
-            Vltxt.x=Ltx+dx2;
-            Vltxt.y=Lty+dy2;
+            Vltxt.x=(float)(Ltx+dx2);
+            Vltxt.y=(float)(Lty+dy2);
             Vltxt.justowanie=j_srodkowo;
 
             set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, load_precision);
@@ -3852,30 +4419,66 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
         case 14:  //trapezium V
 
-            if (L1.y1<L1.y2)
+            if (!(ptrs_vector->cartflags & 1))
             {
-                n=1;
-                xmax=min(L1.x1, L1.x2);
+                if (L1.y1<L1.y2)
+                {
+                    n=1;
+                    xmax=min(L1.x1, L1.x2);
+                }
+                else
+                {
+                    n=-1;
+                    xmax=max(L1.x1, L1.x2);
+                }
+
+                if (ptrs_vector->flags & 1) n*=-1;
+
+                Lt.x1 = (float)(xmax - n * (ptrs_vector->magnitude1 / load_magnitude));
+                Lt.y1 = L1.y1;
+                Lt.x2 = (float)(xmax - n * (ptrs_vector->magnitude2 / load_magnitude));
+                Lt.y2 = L1.y2;
             }
             else
             {
-                n=-1;
-                xmax=max(L1.x1, L1.x2);
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(L1.x1, L1.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(L1.x2, L1.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_y1<iso_L1_y2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_y(L1.x1, L1.y1, L1.x2, L1.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(-n * (ptrs_vector->magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(-n * (ptrs_vector->magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float)dx1_cart;
+                Lt.y1 = Lp.y1 + (float)dy1_cart;
+                Lt.x2 = Lp.x2 + (float)dx2_cart;
+                Lt.y2 = Lp.y2 + (float)dy2_cart;
             }
-
-            if (ptrs_vector->flags & 1) n*=-1;
-
-            Lt.x1 = xmax - n*(ptrs_vector->magnitude1/load_magnitude);
-            Lt.y1 = L1.y1;
-            Lt.x2 = xmax - n*(ptrs_vector->magnitude2/load_magnitude);
-            Lt.y2 = L1.y2;
 
             Ltx=(Lt.x1 + Lt.x2)/2;
             Lty=(Lt.y1 + Lt.y2)/2;
 
             parametry_lini(&Lt, &PL1);
-            kos1=sin(Pi*(PL1.kat+90)/180);
-            koc1=cos(Pi*(PL1.kat+90)/180);
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                kos1 = sin(Pi * (PL1.kat + 90) / 180);
+                koc1 = cos(Pi * (PL1.kat + 90) / 180);
+            }
+            else {
+                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
+                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
+                double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(cart_angle);
+                koc1 = cos(cart_angle);
+            }
 
             dx=0;
             dy=0;
@@ -3884,22 +4487,26 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             dx2=0;
             dy2=0;
 
+            if (ptrs_vector->cartflags & 1)
+                h_factor=1.2;
+            else h_factor=1.0;
+
             if (Lt.y1<Lt.y2)
             {
                 if (((ptrs_vector->magnitude1<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude1>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx=-Vtxt.wysokosc*koc1;
-                    dy=-Vtxt.wysokosc*kos1;
+                    dx=-Vtxt.wysokosc*h_factor*koc1;
+                    dy=-Vtxt.wysokosc*h_factor*kos1;
                 }
                 if (((ptrs_vector->magnitude2<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude2>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx1=-Vtxt.wysokosc*koc1;
-                    dy1=-Vtxt.wysokosc*kos1;
+                    dx1=-Vtxt.wysokosc*h_factor*koc1;
+                    dy1=-Vtxt.wysokosc*h_factor*kos1;
 
-                    dx2=-Vltxt.wysokosc*koc1;
-                    dy2=-Vltxt.wysokosc*kos1;
+                    dx2=-Vltxt.wysokosc*h_factor*koc1;
+                    dy2=-Vltxt.wysokosc*h_factor*kos1;
                 }
             }
             else
@@ -3907,31 +4514,31 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (((ptrs_vector->magnitude1<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude1>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx = -Vtxt.wysokosc * koc1;
-                    dy = -Vtxt.wysokosc * kos1;
+                    dx = -Vtxt.wysokosc*h_factor * koc1;
+                    dy = -Vtxt.wysokosc*h_factor * kos1;
                 }
                 if (((ptrs_vector->magnitude2<0) && !(ptrs_vector->flags & 1)) ||
                     ((ptrs_vector->magnitude2>0) && (ptrs_vector->flags & 1)))
                 {
-                    dx1 = -Vtxt.wysokosc * koc1;
-                    dy1 = -Vtxt.wysokosc * kos1;
+                    dx1 = -Vtxt.wysokosc*h_factor * koc1;
+                    dy1 = -Vtxt.wysokosc*h_factor * kos1;
 
-                    dx2 = -Vltxt.wysokosc * koc1;
-                    dy2 = -Vltxt.wysokosc * kos1;
+                    dx2 = -Vltxt.wysokosc*h_factor * koc1;
+                    dy2 = -Vltxt.wysokosc*h_factor * kos1;
                 }
             }
 
-            Vtxt.x=Lt.x1+dx;
-            Vtxt.y=Lt.y1+dy;
-            Vtxt.kat=(PL1.kat*Pi/180);
+            Vtxt.x=Lt.x1+(float)dx;
+            Vtxt.y=Lt.y1+(float)dy;
+            Vtxt.kat=(float)(PL1.kat*Pi/180);
             Vtxt.justowanie=j_do_lewej;
-            Vtxt1.x=Lt.x2+dx1;
-            Vtxt1.y=Lt.y2+dy1;
-            Vtxt1.kat=Vltxt.kat=(PL1.kat*Pi/180);
+            Vtxt1.x=Lt.x2+(float)dx1;
+            Vtxt1.y=Lt.y2+(float)dy1;
+            Vtxt1.kat=Vltxt.kat=(float)(PL1.kat*Pi/180);
             Vtxt1.justowanie=j_do_prawej;
 
-            Vltxt.x=Ltx+dx2;
-            Vltxt.y=Lty+dy2;
+            Vltxt.x=Ltx+(float)dx2;
+            Vltxt.y=Lty+(float)dy2;
             Vltxt.justowanie=j_srodkowo;
 
             set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, load_precision);
@@ -3950,19 +4557,19 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             kos1=sin(Pi*(PL.kat+90)/180);
             koc1=cos(Pi*(PL.kat+90)/180);
 
-            Lth.x1 = (L1.x1+L1.x2)/2 + (ptrs_vector->r/depth_magnitude)*koc1;  //thermal_depth_size
-            Lth.y1 = (L1.y1+L1.y2)/2 + (ptrs_vector->r/depth_magnitude)*kos1;
-            Lth.x2 = (L1.x1+L1.x2)/2 - (ptrs_vector->r/depth_magnitude)*koc1;
-            Lth.y2 = (L1.y1+L1.y2)/2 - (ptrs_vector->r/depth_magnitude)*kos1;
+            Lth.x1 = (float)((L1.x1+L1.x2)/2 + (ptrs_vector->r/depth_magnitude)*koc1);  //thermal_depth_size
+            Lth.y1 = (float)((L1.y1+L1.y2)/2 + (ptrs_vector->r/depth_magnitude)*kos1);
+            Lth.x2 = (float)((L1.x1+L1.x2)/2 - (ptrs_vector->r/depth_magnitude)*koc1);
+            Lth.y2 = (float)((L1.y1+L1.y2)/2 - (ptrs_vector->r/depth_magnitude)*kos1);
 
             parametry_lini(&Lth, &PLth);
             kos1th=sin(Pi*(PLth.kat+90)/180);
             koc1th=cos(Pi*(PLth.kat+90)/180);
 
-            Lt.x1 = Lth.x1 + (ptrs_vector->magnitude1/thermal_magnitude)*koc1th;
-            Lt.y1 = Lth.y1 + (ptrs_vector->magnitude1/thermal_magnitude)*kos1th;
-            Lt.x2 = Lth.x2 + (ptrs_vector->magnitude2/thermal_magnitude)*koc1th;
-            Lt.y2 = Lth.y2 + (ptrs_vector->magnitude2/thermal_magnitude)*kos1th;
+            Lt.x1 = Lth.x1 + (float)((ptrs_vector->magnitude1/thermal_magnitude)*koc1th);
+            Lt.y1 = Lth.y1 + (float)((ptrs_vector->magnitude1/thermal_magnitude)*kos1th);
+            Lt.x2 = Lth.x2 + (float)((ptrs_vector->magnitude2/thermal_magnitude)*koc1th);
+            Lt.y2 = Lth.y2 + (float)((ptrs_vector->magnitude2/thermal_magnitude)*kos1th);
 
             parametry_lini(&Lt, &PL1);
             kos2=sin(Pi*(PL1.kat+90)/180);
@@ -3985,13 +4592,13 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 dy1 = -Vtxt.wysokosc * kos2;
             }
 
-            Vtxt.x=Lt.x1+dx;
-            Vtxt.y=Lt.y1+dy;
-            Vtxt.kat=(PL1.kat*Pi/180);
+            Vtxt.x=Lt.x1+(float)dx;
+            Vtxt.y=Lt.y1+(float)dy;
+            Vtxt.kat=(float)(PL1.kat*Pi/180);
             Vtxt.justowanie=j_do_lewej;
-            Vtxt1.x=Lt.x2+dx1;
-            Vtxt1.y=Lt.y2+dy1;
-            Vtxt1.kat=(PL1.kat*Pi/180);
+            Vtxt1.x=Lt.x2+(float)dx1;
+            Vtxt1.y=Lt.y2+(float)dy1;
+            Vtxt1.kat=((float)PL1.kat*Pi/180);
             Vtxt1.justowanie=j_do_prawej;
 
             set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, thermal_precision);
@@ -4001,8 +4608,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             normalize_txt(&Vtxt1);
             break;
         case 16:
-            Ln.x1 = L1.x1 + (ptrs_vector->r/radius_magnitude)*koc;   //thermal_depth_size
-            Ln.y1 = L1.y1 + (ptrs_vector->r/radius_magnitude)*kos;
+            Ln.x1 = L1.x1 + (float)((ptrs_vector->r/radius_magnitude)*koc);   //thermal_depth_size
+            Ln.y1 = L1.y1 + (float)((ptrs_vector->r/radius_magnitude)*kos);
             Ln.x2 = L1.x2;
             Ln.y2 = L1.y2;
 
@@ -4024,25 +4631,26 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
     Vtxt.n = T18 + Vtxt.dl;
     Vtxt1.n = T18 + Vtxt1.dl;
 
-    L2.x1 = L1.x1 + ra * koc;
-    L2.y1 = L1.y1 + ra * kos;
-    L2.x2 = L1.x2 - ra * koc;
-    L2.y2 = L1.y2 - ra * kos;
+    L2.x1 = L1.x1 + (float)(ra * koc);
+    L2.y1 = L1.y1 + (float)(ra * kos);
+    L2.x2 = L1.x2 - (float)(ra * koc);
+    L2.y2 = L1.y2 - (float)(ra * kos);
 
-    L3.x1 = L1.x1 + df_psize * koc;
-    L3.y1 = L1.y1 + df_psize * kos;
-    L3.x2 = L1.x2 - df_psize * koc;
-    L3.y2 = L1.y2 - df_psize * kos;
+    L3.x1 = L1.x1 + (float)(df_psize * koc);
+    L3.y1 = L1.y1 + (float)(df_psize * kos);
+    L3.x2 = L1.x2 - (float)(df_psize * koc);
+    L3.y2 = L1.y2 - (float)(df_psize * kos);
 
-    L4.x1 = L1.x1 + df_psize1 * koc;
-    L4.y1 = L1.y1 + df_psize1 * kos;
-    L4.x2 = L1.x2 - df_psize1 * koc;
-    L4.y2 = L1.y2 - df_psize1 * kos;
+    L4.x1 = L1.x1 + (float)(df_psize1 * koc);
+    L4.y1 = L1.y1 + (float)(df_psize1 * kos);
+    L4.x2 = L1.x2 - (float)(df_psize1 * koc);
+    L4.y2 = L1.y2 - (float)(df_psize1 * kos);
 
     switch(ptrs_vector->style)
     {
-        case 0:
+        int plane;
 
+        case 0:
             line_width_type = Line_Width (L4.typ);
             if (Draw_Line_To_Drive(&L4) == FALSE) return FALSE;
 
@@ -4060,6 +4668,34 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
+
+            if ((ptrs_vector->cartflags) && (ptrs_vector->foundflags==1))
+            {
+                w.xy[0]=L4.x1;
+                w.xy[1]=L4.y1;
+                w.xy[2]=L4.x2;
+                w.xy[3]=L4.y2;
+                w.xy[6]=L4.x2;
+                w.xy[7]=L4.y2;
+                w.xy[4]=L4.x1;
+                w.xy[5]=L4.x1;
+                if (!(ptrs_vector->cartflags & 1))
+                {
+                    arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                    kos1 = sin(arrow_angle);
+                    koc1 = cos(arrow_angle);
+                }
+                else {
+                    double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180.);
+                    // Add 90° in isometric space (counter-clockwise perpendicular)
+                    double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                    if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                    arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                    kos1 = sin(arrow_angle);
+                    koc1 = cos(arrow_angle);
+                }
+                make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+            }
 
             break;
         case 1:
@@ -4141,6 +4777,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
         case 4:  //force
         case 18: //slab force
+        case 19: //force z
             if (ptrs_vector->style==18)  //slab force
             {
                 load_ellipse.kolor=ptrs_vector->kolor;
@@ -4167,7 +4804,13 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 Ls.x1 = L2.x1;
                 Ls.y1 = L2.y1;
 
-                create_solid_on_line(&Ls, &w, ra / 4, ra / 4, 0);
+                if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 4))
+                    create_solid_on_line(&Ls, &w, ra / 4, ra / 4, 0);
+                else {
+                    LINIA Lsi;
+                    shorten_line_isometric(&L1, &Lsi, ra, 1);
+                    create_solid_on_line_isometric(&Lsi, &w, ra / 4., ra / 4., 0);
+                }
 
                 line_width_type = Solid_Line_Width(w.empty_typ);
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
@@ -4175,6 +4818,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             Kp2s = Get_Point_Size () / (arrowf*cos(Pi*katS/180)) ;
 
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 4)) {
             koc1=cos(Pi*(kat1-katS)/180);
             koc2=cos(Pi*(kat1+katS)/180);
             kos1=sin(Pi*(kat1-katS)/180);
@@ -4182,10 +4826,41 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             w.xy[2]=ptrs_vector->x1;
             w.xy[3]=ptrs_vector->y1;
-            w.xy[0]=ptrs_vector->x1+Kp2s*koc1;
-            w.xy[1]=ptrs_vector->y1+Kp2s*kos1;
-            w.xy[4]=ptrs_vector->x1+Kp2s*koc2;
-            w.xy[5]=ptrs_vector->y1+Kp2s*kos2;
+            w.xy[0]=ptrs_vector->x1+(float)(Kp2s*koc1);
+            w.xy[1]=ptrs_vector->y1+(float)(Kp2s*kos1);
+            w.xy[4]=ptrs_vector->x1+(float)(Kp2s*koc2);
+            w.xy[5]=ptrs_vector->y1+(float)(Kp2s*kos2);
+            } else {
+                // Isometric mode
+                double angle_rad = kat1 * M_PI / 180.;
+                double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+                //backward is not necessary
+                //double iso_backward = fmod(iso_angle /*+ M_PI*/, 2.0 * M_PI);
+                //if (iso_backward < 0.0) iso_backward += 2.0 * M_PI;
+
+                double katS_rad = 25.0 * M_PI / 180.0;  // or your variable
+
+                // SWAPPED ORDER TO MATCH MANUAL
+                //double iso_angle1 = fmod(iso_backward + katS_rad, 2.0 * M_PI);
+                //double iso_angle2 = fmod(iso_backward - katS_rad, 2.0 * M_PI);
+                double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
+                double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
+
+                double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+                double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+                double x_tip1, y_tip1, x_tip2, y_tip2;
+                isometric_polar_to_cartesian(ptrs_vector->x1, ptrs_vector->y1, Kp2s, iso_angle1_deg, &x_tip1, &y_tip1);
+                isometric_polar_to_cartesian(ptrs_vector->x1, ptrs_vector->y1, Kp2s, iso_angle2_deg, &x_tip2, &y_tip2);
+
+                w.xy[0] = (float)x_tip1;
+                w.xy[1] = (float)y_tip1;
+                w.xy[2] = ptrs_vector->x1;
+                w.xy[3] = ptrs_vector->y1;
+                w.xy[4] = (float)x_tip2;
+                w.xy[5] = (float)y_tip2;
+            }
 
             w.lp=6;
             w.n=32;
@@ -4198,39 +4873,97 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             if (Draw_Tekst_To_Drive(&Vltxt, 0, 1, 1) == FALSE) return FALSE;
             break;
         case 7:  //displacement
-
+        case 27:  //displacement z
             grubosc=(ptrs_vector->typ & 224 ) / 32;
 
-            L3.x2=L2.x2;
-            L3.y2=L2.y2;
-            L3.typ=grubosc*32 + 1;
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 7))
+            {
+                L3.x2 = L2.x2;
+                L3.y2 = L2.y2;
+                L3.typ = grubosc * 32 + 1;
 
-            line_width_type = Line_Width (L3.typ);
-            if (Draw_Line_To_Drive(&L3) == FALSE) return FALSE;
+                line_width_type = Line_Width(L3.typ);
+                if (Draw_Line_To_Drive(&L3) == FALSE) return FALSE;
 
-            l.typ = 64;
-            l.x = ptrs_vector->x1;
-            l.y = ptrs_vector->y1;
-            l.r = (float)df_psize;
-            l.kat1 = 0;
-            l.kat2 = Pi2;
+                l.typ = 64;
+                l.x = ptrs_vector->x1;
+                l.y = ptrs_vector->y1;
+                l.r = (float) df_psize;
+                l.kat1 = 0;
+                l.kat2 = Pi2;
 
-            line_width_type = Line_Width (l.typ);
-            if (Draw_Arc_To_Drive (&l) == FALSE) return FALSE;
+                line_width_type = Line_Width(l.typ);
+                if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+            }
+            else
+            {
+                LINIA Lsi;
+                shorten_line_isometric(&L1, &Lsi, ra, 3);
+                L3.x2 = Lsi.x2;
+                L3.y2 = Lsi.y2;
+                L3.typ = grubosc * 32 + 1;
+
+                line_width_type = Line_Width(L3.typ);
+                if (Draw_Line_To_Drive(&L3) == FALSE) return FALSE;
+
+                O.x = ptrs_vector->x1;
+                O.y = ptrs_vector->y1;
+                O.r = (float)df_psize;
+                E.typ = 64;
+                ret=circle_to_isometric_ellipse_o_e(XY_PLANE, &O, &E);
+
+                line_width_type = Line_Width(l.typ);
+                if (Draw_Ellipse_To_Drive(&E) == FALSE) return FALSE;
+            }
 
             Kp2s = Get_Point_Size () / (arrowf*cos(Pi*katS/180)) ;
 
-            koc1=cos(Pi*(kat1-katS)/180);
-            koc2=cos(Pi*(kat1+katS)/180);
-            kos1=sin(Pi*(kat1-katS)/180);
-            kos2=sin(Pi*(kat1+katS)/180);
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=7))
+            {
+                koc1=cos(Pi*(kat1-katS)/180.);
+                koc2=cos(Pi*(kat1+katS)/180.);
+                kos1=sin(Pi*(kat1-katS)/180.);
+                kos2=sin(Pi*(kat1+katS)/180.);
 
-            w.xy[2]=ptrs_vector->x2;
-            w.xy[3]=ptrs_vector->y2;
-            w.xy[0]=ptrs_vector->x2-Kp2s*koc1;
-            w.xy[1]=ptrs_vector->y2-Kp2s*kos1;
-            w.xy[4]=ptrs_vector->x2-Kp2s*koc2;
-            w.xy[5]=ptrs_vector->y2-Kp2s*kos2;
+                w.xy[2]=ptrs_vector->x2;
+                w.xy[3]=ptrs_vector->y2;
+                w.xy[0]=ptrs_vector->x2-(float)(Kp2s*koc1);
+                w.xy[1]=ptrs_vector->y2-(float)(Kp2s*kos1);
+                w.xy[4]=ptrs_vector->x2-(float)(Kp2s*koc2);
+                w.xy[5]=ptrs_vector->y2-(float)(Kp2s*kos2);
+            }
+            else
+            {
+                // Isometric mode
+                double angle_rad = kat1*M_PI/180. + M_PI;
+                double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+                //backward is not necessary
+                //double iso_backward = fmod(iso_angle /*+ M_PI*/, 2.0 * M_PI);
+                //if (iso_backward < 0.0) iso_backward += 2.0 * M_PI;
+
+                double katS_rad = katS * M_PI / 180.0;  // or your variable
+
+                // SWAPPED ORDER TO MATCH MANUAL
+                //double iso_angle1 = fmod(iso_backward + katS_rad, 2.0 * M_PI);
+                //double iso_angle2 = fmod(iso_backward - katS_rad, 2.0 * M_PI);
+                double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
+                double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
+
+                double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+                double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+                double x_tip1, y_tip1, x_tip2, y_tip2;
+                isometric_polar_to_cartesian(ptrs_vector->x2, ptrs_vector->y2, Kp2s, iso_angle1_deg, &x_tip1, &y_tip1);
+                isometric_polar_to_cartesian(ptrs_vector->x2, ptrs_vector->y2, Kp2s, iso_angle2_deg, &x_tip2, &y_tip2);
+
+                w.xy[0] = (float)x_tip1;
+                w.xy[1] = (float)y_tip1;
+                w.xy[2] = ptrs_vector->x2;
+                w.xy[3] = ptrs_vector->y2;
+                w.xy[4] = (float)x_tip2;
+                w.xy[5] = (float)y_tip2;
+            }
 
             w.lp=6;
             w.n=32;
@@ -4246,15 +4979,26 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
         case 5:  //moment
         case 6:
+        case 21:  //moment x //TO DO ISOMETRIC
+        case 22:
+        case 23:  //moment y
+        case 24:
+        case 25:  //moment xy
+        case 26:
         case 8:  //rotation
         case 9:
+        case 28:  //rotation x //TO DO ISOMETRIC
+        case 29:
+        case 30:  //rotation y
+        case 31:
+        case 32:  //rotation xy
+        case 33:
         case V_EDGE_ARC_SIMPLE:  //simple supported edge
         case V_EDGE_ARC_SIMPLE_INV:  //simple supported edge flipped
         case V_EDGE_ARC_FIXED:  //fixed edge
         case V_EDGE_ARC_FIXED_INV:  //fixed edge flipped
         case V_EDGE_ARC_ROLL:  //roll edge
         case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
-
             if (ptrs_vector->style==5)
             {
                 linestyle(ptrs_vector->typ);
@@ -4272,8 +5016,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 sa.r = ptrs_vector->r;
                 sa.kat1 = ptrs_vector->angle1;
                 sa.kat2 = ptrs_vector->angle2;
-                sa.width1 = ra / 4;
-                sa.width2 = ra / 4;
+                sa.width1 = (float)ra / 4.f;
+                sa.width2 = (float)ra / 4.f;
                 line_width_type = Solid_Line_Width (sa.empty_typ);
                 if (Draw_Solidarc_To_Drive(&sa, window_to_print) == FALSE) return FALSE;
             }
@@ -4294,10 +5038,94 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 sa.r = ptrs_vector->r;
                 sa.kat1 = ptrs_vector->angle1;
                 sa.kat2 = ptrs_vector->angle2;
-                sa.width1 = ra / 4;
-                sa.width2 = ra / 4;
+                sa.width1 = (float)ra / 4.f;
+                sa.width2 = (float)ra / 4.f;
                 line_width_type = Solid_Line_Width (sa.empty_typ);
                 if (Draw_Solidarc_To_Drive(&sa, window_to_print) == FALSE) return FALSE;
+            }
+            else if ((ptrs_vector->style==21) || (ptrs_vector->style==23) || (ptrs_vector->style==25))
+            {
+                switch (ptrs_vector->style) {
+                    case 21:  // moment x //TO DO ISOMETRIC
+                        plane = XZ_PLANE;
+                        break;
+                    case 23:
+                        plane = YZ_PLANE;
+                        break;
+                    case 25:
+                        plane = XY_PLANE;
+                        break;
+                }
+                if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
+                {
+                    ea_start_x=ea_end_x=ptrs_vector->x2;
+                    ea_start_y=ea_end_y=ptrs_vector->y2;
+                    ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
+                    ea.angle=0.0f;
+                    ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
+                    break;
+                }
+
+                linestyle(ptrs_vector->typ);
+                kats=ptrs_vector->angle2-Pi_/2;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+                n=+1;
+                s=0;
+
+                ////instead of solid arc we use arc converted to elliptical arc in isometric
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                ea.typ=128;
+                ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                line_width_type = Line_Width(ea.typ);
+                if (Draw_EllipticalArc_To_Drive(&ea) == FALSE) return FALSE;
+                Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+            }
+            else if ((ptrs_vector->style==22) || (ptrs_vector->style==24) || (ptrs_vector->style==26))
+            {
+                switch (ptrs_vector->style) {
+                    case 22:  // moment x //TO DO ISOMETRIC
+                        plane = XZ_PLANE;
+                        break;
+                    case 24:
+                        plane = YZ_PLANE;
+                        break;
+                    case 26:
+                        plane = XY_PLANE;
+                        break;
+                }
+                if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
+                {
+                    ea_start_x=ea_end_x=ptrs_vector->x2;
+                    ea_start_y=ea_end_y=ptrs_vector->y2;
+                    ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
+                    ea.angle=0.0f;
+                    ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
+                    break;
+                }
+
+                linestyle(ptrs_vector->typ);
+                kats=ptrs_vector->angle2+Pi_/2;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+                n=-1;
+                s=0;
+
+                ////instead of solid arc we use arc converted to elliptical arc in isometric
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                ea.typ=128;
+                ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                line_width_type = Line_Width(ea.typ);
+                if (Draw_EllipticalArc_To_Drive(&ea) == FALSE) return FALSE;
+                Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
             }
             else if (ptrs_vector->style==8)
             {
@@ -4336,6 +5164,94 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 l.typ = grubosc * 32 + 1;
                 line_width_type = Line_Width (l.typ);
                 if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+            }
+            else if ((ptrs_vector->style==28) || (ptrs_vector->style==30) || (ptrs_vector->style==32)) {
+                switch (ptrs_vector->style) {
+                    case 28:  // moment x //TO DO ISOMETRIC
+                        plane = XZ_PLANE;
+                        break;
+                    case 30:
+                        plane = YZ_PLANE;
+                        break;
+                    case 32:
+                        plane = XY_PLANE;
+                        break;
+                }
+                if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
+                {
+                    ea_start_x=ea_end_x=ptrs_vector->x2;
+                    ea_start_y=ea_end_y=ptrs_vector->y2;
+                    ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
+                    ea.angle=0.0f;
+                    ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
+                    break;
+                }
+
+                grubosc = (ptrs_vector->typ & 224) / 32;
+                linestyle(grubosc * 32 + 1);
+                kats=ptrs_vector->angle2-Pi_/2;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+                n=+1;
+                s=1;
+
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                //l.typ=grubosc * 32 + 1;
+                //rysuj_obiekt_(&l, mode, kolor);
+                ea.typ=grubosc * 32 + 1;
+                ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                line_width_type = Line_Width (ea.typ);
+                if (Draw_EllipticalArc_To_Drive(&ea) == FALSE) return FALSE;
+                Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+            }
+            else if ((ptrs_vector->style==29) || (ptrs_vector->style==31) || (ptrs_vector->style==33)) {
+                switch (ptrs_vector->style) {
+                    case 29:  // moment x //TO DO ISOMETRIC
+                        plane = XZ_PLANE;
+                        break;
+                    case 31:
+                        plane = YZ_PLANE;
+                        break;
+                    case 33:
+                        plane = XY_PLANE;
+                        break;
+                }
+                if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
+                {
+                    ea_start_x=ea_end_x=ptrs_vector->x2;
+                    ea_start_y=ea_end_y=ptrs_vector->y2;
+                    ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
+                    ea.angle=0.0f;
+                    ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
+                    break;
+                }
+
+                grubosc = (ptrs_vector->typ & 224) / 32;
+                linestyle(grubosc * 32 + 1);
+                kats=ptrs_vector->angle2+Pi_/2;
+                xs=ptrs_vector->x1+ptrs_vector->r*cos(ptrs_vector->angle2);
+                ys=ptrs_vector->y1+ptrs_vector->r*sin(ptrs_vector->angle2);
+                n=-1;
+                s=1;
+
+                l.x=ptrs_vector->x1;
+                l.y=ptrs_vector->y1;
+                l.r=ptrs_vector->r;
+                l.kat1=ptrs_vector->angle1;
+                l.kat2=ptrs_vector->angle2;
+                //l.typ=grubosc * 32 + 1;
+                //rysuj_obiekt_(&l, mode, kolor);
+                ea.typ=grubosc * 32 + 1;
+                ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
+                line_width_type = Line_Width(ea.typ);
+                if (Draw_EllipticalArc_To_Drive(&ea) == FALSE) return FALSE;
+                Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
             }
             else if ((ptrs_vector->style==V_EDGE_ARC_SIMPLE) ||  //simple supported edge
                      (ptrs_vector->style==V_EDGE_ARC_SIMPLE_INV) ||  //simple supported edge flipped
@@ -4376,17 +5292,97 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             Kp2s = Get_Point_Size() / (arrowf * cos(Pi * katS / 180));
 
-            koc1 = cos(kats - Pi * (katS) / 180);
-            koc2 = cos(kats + Pi * (katS) / 180);
-            kos1 = sin(kats - Pi * (katS) / 180);
-            kos2 = sin(kats + Pi * (katS) / 180);
+            Kps = Get_Point_Size ();
 
-            w.xy[2] = xs;
-            w.xy[3] = ys;
-            w.xy[0] = xs + Kp2s * koc1;
-            w.xy[1] = ys + Kp2s * kos1;
-            w.xy[4] = xs + Kp2s * koc2;
-            w.xy[5] = ys + Kp2s * kos2;
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style<20)) {
+                koc1 = cos(kats - Pi * (katS) / 180);
+                koc2 = cos(kats + Pi * (katS) / 180);
+                kos1 = sin(kats - Pi * (katS) / 180);
+                kos2 = sin(kats + Pi * (katS) / 180);
+
+                w.xy[2] = (float)xs;
+                w.xy[3] = (float)ys;
+                w.xy[0] = (float)(xs + Kp2s * koc1);
+                w.xy[1] = (float)(ys + Kp2s * kos1);
+                w.xy[4] = (float)(xs + Kp2s * koc2);
+                w.xy[5] = (float)(ys + Kp2s * kos2);
+            }
+            else {
+                int plane;
+                switch (ptrs_vector->style) {
+                    case 21:
+                        plane = XZ_PLANE;
+                        break;
+                    case 22:
+                        plane = XZ_PLANE;
+                        break;
+                    case 23:
+                        plane = YZ_PLANE;
+                        break;
+                    case 24:
+                        plane = YZ_PLANE;
+                        break;
+                    case 25:
+                        plane = XY_PLANE;
+                        break;
+                    case 26:
+                        plane = XY_PLANE;
+                        break;
+                    case 28:
+                        plane = XZ_PLANE;
+                        break;
+                    case 29:
+                        plane = XZ_PLANE;
+                        break;
+                    case 30:
+                        plane = YZ_PLANE;
+                        break;
+                    case 31:
+                        plane = YZ_PLANE;
+                        break;
+                    case 32:
+                        plane = XY_PLANE;
+                        break;
+                    case 33:
+                        plane = XY_PLANE;
+                        break;
+                    default:
+                        plane = XY_PLANE;
+                        break;
+                }
+                double ea_end_xx = (n > 0) ? ea_end_x : ea_start_x;
+                double ea_end_yy = (n > 0) ? ea_end_y : ea_start_y;
+                double angle_rad = get_elliptical_tangent_angle(ea.angle, ea.rx, ea.ry, (n > 0) ? ea.kat2 : ea.kat1);
+
+                // Reverse direction for arrowhead base behind tip (your working flip)
+                if (n > 0) angle_rad = fmod(angle_rad - M_PI, 2.0 * M_PI);
+                if (angle_rad < 0.0) angle_rad += 2.0 * M_PI;
+
+                double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+                double katS_rad = katS * M_PI / 180.0;
+
+                double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
+                double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
+
+                double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+                double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+                double x_tip1, y_tip1, x_tip2, y_tip2;
+                isometric_polar_to_cartesian(ea_end_xx, ea_end_yy, Kp2s, iso_angle1_deg, &x_tip1, &y_tip1);
+                isometric_polar_to_cartesian(ea_end_xx, ea_end_yy, Kp2s, iso_angle2_deg, &x_tip2, &y_tip2);
+
+                double dxi = ea_end_xx - (x_tip1 + x_tip2) / 2.0;
+                double dyi = ea_end_yy - (y_tip1 + y_tip2) / 2.0;
+
+                w.xy[0] = (float) (x_tip1 + dxi);
+                w.xy[1] = (float) (y_tip1 + dyi);
+                w.xy[2] = (float) (ea_end_xx + dxi);
+                w.xy[3] = (float) (ea_end_yy + dyi);
+                w.xy[4] = (float) (x_tip2 + dxi);
+                w.xy[5] = (float) (y_tip2 + dyi);
+            }
+
             w.lp = 6;
             w.n = 32;
 
@@ -4406,6 +5402,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             break;
             case 10:  //trapezium Y
             case 17:  //trapezium Y slab
+            case 20:  //trapezium Z
 
                 if (ptrs_vector->style==17)  //slab load
                 {
@@ -4428,6 +5425,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             w.empty_typ = 0;
 
+            if ((!(ptrs_vector->cartflags & 1))  || (ptrs_vector->style!=10))  //TUTAJ
+            {
             w.xy[0] = L1.x1;
             w.xy[1] = L1.y1;
             w.xy[2] = L1.x2;
@@ -4436,6 +5435,19 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.xy[5] = Lt.y2;
             w.xy[6] = L1.x1;
             w.xy[7] = Lt.y1;
+            }
+            else
+            {
+                w.xy[0] = L1.x1;
+                w.xy[1] = L1.y1;
+                w.xy[2] = L1.x2;
+                w.xy[3] = L1.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
+            }
+
             w.lp = 8;
             w.n = 40;
 
@@ -4471,7 +5483,12 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             if (type__drive != PLT_DRIVE) {
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
             }
-            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ / 2, ptrs_vector, PL.kat);
+
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
+                arrow_angle=Pi_ / 2.;
+            else arrow_angle=150./180.*Pi_;
+
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
@@ -4487,14 +5504,28 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             w.empty_typ=0;
 
-            w.xy[0]=L1.x1;
-            w.xy[1]=L1.y1;
-            w.xy[2]=L1.x2;
-            w.xy[3]=L1.y2;
-            w.xy[4]=Lt.x2;
-            w.xy[5]=L1.y2;
-            w.xy[6]=Lt.x1;
-            w.xy[7]=L1.y1;
+            if (!(ptrs_vector->cartflags & 1))
+            {
+                w.xy[0]=L1.x1;
+                w.xy[1]=L1.y1;
+                w.xy[2]=L1.x2;
+                w.xy[3]=L1.y2;
+                w.xy[4]=Lt.x2;
+                w.xy[5]=L1.y2;
+                w.xy[6]=Lt.x1;
+                w.xy[7]=L1.y1;
+            }
+            else
+            {
+                w.xy[0] = L1.x1;
+                w.xy[1] = L1.y1;
+                w.xy[2] = L1.x2;
+                w.xy[3] = L1.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
+            }
             
             w.lp=8;
             w.n=40;
@@ -4531,7 +5562,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
             }
 
-            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], 0, ptrs_vector, PL.kat);
+            if (!(ptrs_vector->cartflags & 1)) arrow_angle=0.;
+            else arrow_angle=30./180.*Pi_;
+
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
@@ -4590,7 +5624,7 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
             }
 
-            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_*(PL.kat+90.0)/180.0, ptrs_vector, PL.kat);
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle /*Pi_*(PL.kat+90.0)/180.0*/, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
@@ -4660,38 +5694,50 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             line_width_type = Line_Width (L1.typ);
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
-            if (L1.x1<L1.x2)
-            {
-                n=1;
-                w.xy[1]=w.xy[3]=max(L1.y1, L1.y2);
+            if (!(ptrs_vector->cartflags & 1)) {
+                if (L1.x1 < L1.x2) {
+                    n = 1;
+                    w.xy[1] = w.xy[3] = max(L1.y1, L1.y2);
+                } else {
+                    n = -1;
+                    w.xy[1] = w.xy[3] = min(L1.y1, L1.y2);
+                }
+
+                w.xy[0] = L1.x1;
+                w.xy[2] = L1.x2;
+                w.xy[4] = L1.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = L1.x1;
+                w.xy[7] = Lt.y1;
             }
             else
             {
-                n=-1;
-                w.xy[1]=w.xy[3]=min(L1.y1, L1.y2);
+                w.xy[0] = Lp.x1;
+                w.xy[1] = Lp.y1;
+                w.xy[2] = Lp.x2;
+                w.xy[3] = Lp.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
             }
 
-            w.xy[0]=L1.x1;
-            w.xy[2]=L1.x2;
-            w.xy[4]=L1.x2;
-            w.xy[5]=Lt.y2;
-            w.xy[6]=L1.x1;
-            w.xy[7]=Lt.y1;
+            w.lp=8;
 
             Normalize_Solid(&w);
 
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
-            L1.x2=L1.x1;
-            L1.y2=L1.y1;
+            L1.x2=ptrs_vector->x1;
+            L1.y2=ptrs_vector->y1;
             line_width_type = Line_Width (L1.typ);
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
-            L1.x2=L1.x2;
-            L1.y2=L1.y2;
+            L1.x2=ptrs_vector->x2;
+            L1.y2=ptrs_vector->y2;
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
             L1.typ=64;
@@ -4728,7 +5774,11 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
             }
 
-            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_/2, ptrs_vector, PL.kat);
+            if (!(ptrs_vector->cartflags & 1))
+                arrow_angle=Pi_ / 2.;
+            else arrow_angle=150./180.*Pi_;
+
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
@@ -4742,40 +5792,54 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             line_width_type = Line_Width (L1.typ);
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
-
-
-            if (L1.y1<L1.y2)
+            if (!(ptrs_vector->cartflags & 1))
             {
-                n=1;
-                w.xy[0]=w.xy[2]=min(L1.x1, L1.x2);
+                if (L1.y1<L1.y2)
+                {
+                    n=1;
+                    w.xy[0]=w.xy[2]=min(L1.x1, L1.x2);
+                }
+                else
+                {
+                    n=-1;
+                    w.xy[0]=w.xy[2]=max(L1.x1, L1.x2);
+                }
+
+                w.xy[1]=L1.y1;
+                w.xy[3]=L1.y2;
+                w.xy[4]=Lt.x2;
+                w.xy[5]=L1.y2;
+                w.xy[6]=Lt.x1;
+                w.xy[7]=L1.y1;
             }
             else
             {
-                n=-1;
-                w.xy[0]=w.xy[2]=max(L1.x1, L1.x2);
+                w.xy[0] = Lp.x1;
+                w.xy[1] = Lp.y1;
+                w.xy[2] = Lp.x2;
+                w.xy[3] = Lp.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
             }
 
-            w.xy[1]=L1.y1;
-            w.xy[3]=L1.y2;
-            w.xy[4]=Lt.x2;
-            w.xy[5]=L1.y2;
-            w.xy[6]=Lt.x1;
-            w.xy[7]=L1.y1;
+            w.lp=8;
 
             Normalize_Solid(&w);
 
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
-            L1.x2=L1.x1;
-            L1.y2=L1.y1;
+            L1.x2=ptrs_vector->x1;
+            L1.y2=ptrs_vector->y1;
             line_width_type = Line_Width (L1.typ);
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
-            L1.x2=L1.x2;
-            L1.y2=L1.y2;
+            L1.x2=ptrs_vector->x2;
+            L1.y2=ptrs_vector->y2;
             if (Draw_Line_To_Drive(&L1) == FALSE) return FALSE;
 
             L1.typ=64;
@@ -4812,7 +5876,11 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 if (FALSE == Draw_Wielokat_To_Drive(&w, window_to_print)) return FALSE;
             }
 
-            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], 0, ptrs_vector, PL.kat);
+            if (!(ptrs_vector->cartflags & 1))
+                arrow_angle=0.;
+            else arrow_angle=30./180.*Pi_;
+
+            make_arrows_to_drive(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
 
             line_width_type = TEXT_LINE_TYPE;
             if (Draw_Tekst_To_Drive(&Vtxt, 0, 1, 1) == FALSE) return FALSE;
@@ -4915,19 +5983,19 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             if (direction > 0) //to the right
             {
-                Vtxt.x = L1.x2 + Vtxt.wysokosc / 4.0;
-                Vtxt.y = L1.y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = L1.x2 + Vtxt.wysokosc / 4.0f;
+                Vtxt.y = L1.y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_lewej;
 
                 if (t_len_mm == 0.0) Ln1.x2 = L1.x2 + 0.01;
-                else Ln1.x2 = L1.x2 + t_len_mm + Vtxt.wysokosc / 2.5;
+                else Ln1.x2 = L1.x2 + t_len_mm + Vtxt.wysokosc / 2.5f;
             } else  //to the left
             {
-                Vtxt.x = L1.x2 - Vtxt.wysokosc / 4.0;
-                Vtxt.y = L1.y2 + Vtxt.wysokosc / 4.0;
+                Vtxt.x = L1.x2 - Vtxt.wysokosc / 4.0f;
+                Vtxt.y = L1.y2 + Vtxt.wysokosc / 4.0f;
                 Vtxt.justowanie = j_do_prawej;
-                if (t_len_mm == 0.0) Ln1.x2 = L1.x2 - 0.01;
-                else Ln1.x2 = L1.x2 - t_len_mm - Vtxt.wysokosc / 2.0;
+                if (t_len_mm == 0.0) Ln1.x2 = L1.x2 - 0.01f;
+                else Ln1.x2 = L1.x2 - t_len_mm - Vtxt.wysokosc / 2.0f;
             }
 
             if (Draw_Line_To_Drive(&Ln1) == FALSE) return FALSE;
@@ -4938,10 +6006,10 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             n=-1;
             w.xy[2]=Ln.x1;
             w.xy[3]=Ln.y1;
-            w.xy[0]=Ln.x1-n*Kp2sn*cos(Pi*(kat1-kat0)/180);
-            w.xy[1]=Ln.y1-n*Kp2sn*sin(Pi*(kat1-kat0)/180);
-            w.xy[4]=Ln.x1-n*Kp2sn*cos(Pi*(kat1+kat0)/180);
-            w.xy[5]=Ln.y1-n*Kp2sn*sin(Pi*(kat1+kat0)/180);
+            w.xy[0]=Ln.x1-(float)(n*Kp2sn*cos(Pi*(kat1-kat0)/180.));
+            w.xy[1]=Ln.y1-(float)(n*Kp2sn*sin(Pi*(kat1-kat0)/180.));
+            w.xy[4]=Ln.x1-(float)(n*Kp2sn*cos(Pi*(kat1+kat0)/180.));
+            w.xy[5]=Ln.y1-(float)(n*Kp2sn*sin(Pi*(kat1+kat0)/180.));
             w.lp = 6;
             w.n = 8 + w.lp * sizeof (float) ;
 
@@ -7233,11 +8301,15 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
     double df_psize ;
     double x1, y1, x2, y2, x12, y12;
     int kolor;
-    double dxy, dd, dd1;
+    double dxy, dd, dd1, dl;
     OKRAG Kolo;
     LINIA L;
     LUK l;
     int ret;
+    double x1i, y1i, x2i, y2i;
+    //double kos30=-0.5, koc30=0.866025404, kos210=0.5, koc210=-0.866025404, kos150=0.5, koc150=0.866025404, kos330=-0.5, koc330=-0.866025404;  //inverted
+    double kos30=-0.5, koc30=-0.866025404, kos210=0.5, koc210=0.866025404, kos150=0.5, koc150=-0.866025404, kos330=-0.5, koc330=0.866025404;
+
 
     if (ptrs_point->typ<8) df_psize = Get_Point_Size () / 2;
     else df_psize = Get_Point_Size () / 4 ;
@@ -7485,6 +8557,194 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
             if (draw_line_to_drive1(x12+dd, y12+dxy, x12+dd, y12+dd1, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
             if (draw_line_to_drive1(x12+dd, y12-dd1, x12+dd, y12-dxy, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
 
+            break;
+        case 29: /*fixed roller X*/
+        case 30: /*fixed roller XU*/
+            //Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x12, (double)y1, &x1i, &y1i);
+            //Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x12, (double)y2, &x2i, &y2i);
+            if (draw_line_to_drive1(x12, y1, x12, y2, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            if (Draw_Fill_Circle_To_Drive (&Kolo) == FALSE) return FALSE;
+
+            dxy= df_psize*2.5;  //2.0
+            dd=  df_psize*1.5;  //1.0
+            dd1= df_psize;
+            dl=dd1*koc30;
+            line_width_type = LINE_THICK_WIDTH;
+
+            switch (ptrs_point->typ)
+            {
+                case 29:
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc30;
+                    y1i = y1i + dl * kos30;
+                    x2i = x2i + dl * koc30;
+                    y2i = y2i + dl * kos30;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+                case 30:
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc210;
+                    y1i = y1i + dl * kos210;
+                    x2i = x2i + dl * koc210;
+                    y2i = y2i + dl * kos210;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+            }
+            break;
+        case 31: /*fixed roller Y*/
+        case 32: /*fixed roller YU*/
+            //Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x12, (double)y1, &x1i, &y1i);
+            //Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x12, (double)y2, &x2i, &y2i);
+            if (draw_line_to_drive1(x12, y1, x12, y2, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            if (Draw_Fill_Circle_To_Drive (&Kolo) == FALSE) return FALSE;
+
+            dxy= df_psize*2.5;  //2.0
+            dd=  df_psize*1.5;  //1.0
+            dd1= df_psize;
+            dl=-dd1*koc30;
+            line_width_type = LINE_THICK_WIDTH;
+
+            switch (ptrs_point->typ)
+            {
+                case 31:
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc150;
+                    y1i = y1i + dl * kos150;
+                    x2i = x2i + dl * koc150;
+                    y2i = y2i + dl * kos150;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+                case 32:
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc330;
+                    y1i = y1i + dl * kos330;
+                    x2i = x2i + dl * koc330;
+                    y2i = y2i + dl * kos330;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+            }
+            break;
+        case 33: /*pinned roller X*/
+        case 34: /*pinned roller XU*/
+            //Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x12, (double)y1, &x1i, &y1i);
+            //Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x12, (double)y2, &x2i, &y2i);
+            if (draw_line_to_drive1(x12, y1, x12, y2, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            line_width_type = LINE_NORM_WIDTH;
+            if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+            dxy= df_psize*3;
+            dd = df_psize*2;
+            dd1= df_psize;
+            dl=dd1*koc30;
+            line_width_type = LINE_THICK_WIDTH;
+
+            switch (ptrs_point->typ)
+            {
+                case 33:
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc30;
+                    y1i = y1i + dl * kos30;
+                    x2i = x2i + dl * koc30;
+                    y2i = y2i + dl * kos30;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+                case 34:
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos210, koc210, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc210;
+                    y1i = y1i + dl * kos210;
+                    x2i = x2i + dl * koc210;
+                    y2i = y2i + dl * kos210;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+            }
+            break;
+        case 35: /*pinned roller Y*/
+        case 36: /*pinned roller YU*/
+            //Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x12, (double)y1, &x1i, &y1i);
+            //Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x12, (double)y2, &x2i, &y2i);
+            if (draw_line_to_drive1(x12, y1, x12, y2, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            line_width_type = LINE_NORM_WIDTH;
+            if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+            dxy= df_psize*3;
+            dd = df_psize*2;
+            dd1= df_psize;
+            dl=-dd1*koc30;
+            line_width_type = LINE_THICK_WIDTH;
+
+            switch (ptrs_point->typ)
+            {
+                case 35:
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc150;
+                    y1i = y1i + dl * kos150;
+                    x2i = x2i + dl * koc150;
+                    y2i = y2i + dl * kos150;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+                case 36:
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd), &x1i, &y1i);
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd), &x2i, &y2i);
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x1-dxy), (double)(y12+dd+dd1), &x1i, &y1i);
+                    Rotate_Point(kos330, koc330, (double)x12, (double)y12, (double)(x2+dxy), (double)(y12+dd+dd1), &x2i, &y2i);
+                    //shifting line
+                    x1i = x1i + dl * koc330;
+                    y1i = y1i + dl * kos330;
+                    x2i = x2i + dl * koc330;
+                    y2i = y2i + dl * kos330;
+                    if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+                    break;
+            }
             break;
 
     }
@@ -7767,6 +9027,9 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 
   i_first = PTRS__Text_Style [t->czcionka]->first_char ;
   i_num = PTRS__Text_Style[t->czcionka]->num_char;
+
+  if (i_num==0) i_num=65535;  //TO DO PLOT TEXT
+
   df_tl0 = tdl;
 
   if ( type__drive != PRN_DRIVE)

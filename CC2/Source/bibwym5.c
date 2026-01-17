@@ -17,7 +17,6 @@
 static void koniecL(void *adr) ;
 static double get_add_line_len (double x, double y) ;
 
-
 static void koniecW (void * adr)
 /*-----------------------------*/
 {
@@ -66,6 +65,30 @@ static double Xkat,Ykat;
   BLOK *nb;
   float kat1;
   int n1,n2;
+  double kos1, koc1;
+
+  if (options1.uklad_izometryczny)
+  {
+      if (Check_if_Equal(kat.kat , 30.))
+      {
+          kos1 = sin(Pi * (kat.kat + 30.) / 180.);
+          koc1 = cos(Pi * (kat.kat + 30.) / 180.);
+          kat1=kat.kat+30.;
+      }
+      else if (Check_if_Equal(kat.kat , 330.))
+      {
+          kos1 = sin(Pi * (kat.kat - 30.) / 180.);
+          koc1 = cos(Pi * (kat.kat - 30.) / 180.);
+          kat1=kat.kat-30.;
+      }
+      else
+      {
+          kos1 = kat.sin;
+          koc1 = kat.cos;
+          kat1=kat.kat;
+      }
+  }
+  else kat1=kat.kat;
 
   if(Continue==0)
   {
@@ -75,12 +98,23 @@ static double Xkat,Ykat;
      B.kod_obiektu='W';
      B.dlugosc_opisu_obiektu=sizeof(kat1);
      if( (nb=(BLOK*)dodaj_obiekt(NULL,&B))==NULL) return 0;
-     kat1=kat.kat;
      memmove(&(nb->opis_obiektu[0]),&kat1,sizeof(kat1));
      n1=kat.kat>90 ?  1 : -1;
      n2=kat.kat>90 ?  1 :  1;
-     w.x0=w.x2=x+n1*zmwym.linia_ob*fabs(kat.sin);
-     w.y0=w.y2=y+n2*zmwym.linia_ob*fabs(kat.cos);
+     if (!options1.uklad_izometryczny)
+     {
+         w.x0 = w.x2 = x + n1 * zmwym.linia_ob * fabs(kat.sin);
+         w.y0 = w.y2 = y + n2 * zmwym.linia_ob * fabs(kat.cos);
+         w.x_ = x;
+         w.y_ = y;
+     }
+     else
+     {
+         w.x0 = w.x2 = x + n1 * zmwym.linia_ob * fabs(kos1);
+         w.y0 = w.y2 = y + n2 * zmwym.linia_ob * fabs(koc1);
+         w.x_ = x;
+         w.y_ = y;
+     }
    }
   else
    { Continue++;
@@ -97,19 +131,63 @@ static double Xkat,Ykat;
       }
       else
        { double a;
-	 a=kat.sin/kat.cos;
-	 w.x2=(y-w.y0+(1/a)*x+a*w.x0)/(a+1/a);
-	 w.y2=w.y0+a*(w.x2-w.x0);
+           if (!options1.uklad_izometryczny)
+           {
+               a = kat.sin / kat.cos;
+
+               w.x2 = (y - w.y0 + (1 / a) * x + a * w.x0) / (a + 1 / a);
+               w.y2 = w.y0 + a * (w.x2 - w.x0);
+           }
+           else
+           {
+               //first projection on kat.kat line
+               double alpha;
+               if (Check_if_Equal(kat.kat, 330.))
+                       alpha = 210*M_PI/180.;
+               else if (Check_if_Equal(kat.kat, 30.))
+                   alpha = 150*M_PI/180.;
+               else
+                   alpha = (kat.kat+90)*M_PI/180.;
+               double sina=sin(alpha);
+               double cosa=cos(alpha);
+               double sinat=sin(alpha-kat.kat*M_PI/180.);
+
+               //double x_=w.x_ +kat.cos*((x-w.x_)*kat.cos+(y-w.y_)*kat.sin);
+               //double y_=w.y_ +kat.sin*((x-w.x_)*kat.cos+(y-w.y_)*kat.sin);
+
+               double x_=w.x_ + (((x-w.x_)*sina - (y-w.y_)*cosa)/sinat)*kat.cos;
+               double y_=w.y_ + (((x-w.x_)*sina - (y-w.y_)*cosa)/sinat)*kat.sin;
+
+               n1=kat.kat>90 ?  1 : -1;
+               n2=kat.kat>90 ?  1 :  1;
+
+               w.x2 = x_ + n1 * zmwym.linia_ob * fabs(kos1);
+               w.y2 = y_ + n2 * zmwym.linia_ob * fabs(koc1);
+
+               w.x_=x_;
+               w.y_=y_;
+           }
+
        }
      if( !outs(TRUE) ) return 0;
    }
   n1=x>w.x2 ?  1 : -1;
   n2=y>w.y2 ? -1 :  1;
   Lr.warstwa=Current_Layer;
-  Lr.x1=w.x2+n1 * get_add_line_len (x, y) * fabs(kat.sin);
-  Lr.y1=w.y2-n2 * get_add_line_len (x, y) * fabs(kat.cos);
-  Lr.x2=w.x2-n1*K1_5*fabs(kat.sin);
-  Lr.y2=w.y2+n2*K1_5*fabs(kat.cos);
+    if (!options1.uklad_izometryczny)
+    {
+        Lr.x1 = w.x2 + n1 * get_add_line_len(x, y) * fabs(kat.sin);
+        Lr.y1 = w.y2 - n2 * get_add_line_len(x, y) * fabs(kat.cos);
+        Lr.x2 = w.x2 - n1 * K1_5 * fabs(kat.sin);
+        Lr.y2 = w.y2 + n2 * K1_5 * fabs(kat.cos);
+    }
+    else
+    {
+        Lr.x1 = w.x2 + n1 * get_add_line_len(x, y) * fabs(kos1);
+        Lr.y1 = w.y2 - n2 * get_add_line_len(x, y) * fabs(koc1);
+        Lr.x2 = w.x2 - n1 * K1_5 * fabs(kos1);
+        Lr.y2 = w.y2 + n2 * K1_5 * fabs(koc1);
+    }
   if(Lr.x1!=Lr.x2 || Lr.y1!=Lr.y2)
    if(dodaj_obiekt((BLOK *)dane, (void*)&Lr)==NULL) return 0;
    else if(WymInter) {
@@ -292,12 +370,12 @@ static void  punkt(void)
 { unsigned typ;
   LINIA line_gee ;
   LINIA line_gee1 ;
-  int out_kat ;
+  int out_kat;
 
   void *adr,*adr1;
   if (wym_kata==3)
-      typ=Bluk | Bokrag | Bkolo | Bwymiarowanie | Btekst;
-  else typ=Blinia | Bluk | Bokrag | Bkolo | Bwymiarowanie | Btekst | Bwwielokat ;
+      typ=Bluk | Bellipticalarc | Bokrag | Bkolo | Bwymiarowanie | Btekst;
+  else typ=Blinia | Bluk | Bellipticalarc | Bokrag | Bkolo | Bwymiarowanie | Btekst | Bwwielokat | Bvector;
   if ((adr=select_w(&typ,&adr1))==NULL)
   {
     return;
@@ -315,10 +393,10 @@ static void  punkt(void)
     }
     else if (wym_kata!=2)
     {
-        if ((typ == Blinia) && (wym_kata == 1))
+        if (((typ == Blinia) || ((typ == Bvector) && (((AVECTOR*)adr)->style<4))) && (wym_kata == 1))
         {
             WymNowy();
-            out_kat == 0;
+            out_kat = 0;
             Angle_Measure(&line_gee, &line_gee1, &out_kat, 1);
 
             if (out_kat == 1)
@@ -327,7 +405,7 @@ static void  punkt(void)
                 CUR_OFF_ON();
             }
         }
-        else if (typ == Blinia) koniecL(adr);
+        else if ((typ == Blinia) || ((typ == Bvector) && (((AVECTOR*)adr)->style<4))) koniecL(adr);
         else if (typ == Bluk) {
             if (wym_luku == 0) {
                 luk_w(adr);

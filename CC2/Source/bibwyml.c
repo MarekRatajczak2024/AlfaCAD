@@ -206,8 +206,10 @@ static void kat_w (LINIA line_gee, LINIA line_gee1)
 
   luk1.kat2 = Atan2 (line_gee1.y2 - line_gee1.y1, line_gee1.x2 - line_gee1.x1) ;
 
-  luk1.r = sqrt(((line_gee1.x2-line_gee1.x1) * (line_gee1.x2-line_gee1.x1)) +
-     ((line_gee1.y2-line_gee1.y1) * (line_gee1.y2-line_gee1.y1)));
+  luk1.r = min(sqrt(((line_gee1.x2-line_gee1.x1) * (line_gee1.x2-line_gee1.x1)) +
+                        ((line_gee1.y2-line_gee1.y1) * (line_gee1.y2-line_gee1.y1))),
+                        sqrt(((line_gee.x2-line_gee.x1) * (line_gee.x2-line_gee.x1)) +
+                        ((line_gee.y2-line_gee.y1) * (line_gee.y2-line_gee.y1))));
 
   parametry_lini(&l,&PL);
   katkat(PL.kat);

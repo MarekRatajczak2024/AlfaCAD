@@ -2265,6 +2265,65 @@ extern char *icon_cross_section_forces_p;
 extern BITMAP *icon_resilience;
 extern char *icon_resilience_p;
 
+extern BITMAP *icon_fixed_roller_x;
+extern BITMAP *icon_fixed_roller_xu;
+extern BITMAP *icon_fixed_roller_y;
+extern BITMAP *icon_fixed_roller_yu;
+extern BITMAP *icon_pinned_roller_x;
+extern BITMAP *icon_pinned_roller_xu;
+extern BITMAP *icon_pinned_roller_y;
+extern BITMAP *icon_pinned_roller_yu;
+extern BITMAP *icon_rigid_rigid_springs;
+extern BITMAP *icon_rigid_rigid_nosprings;
+extern BITMAP *icon_force_z;
+extern BITMAP *icon_trapezium_z;
+extern BITMAP *icon_moment_x;
+extern BITMAP *icon_moment_x_rev;
+extern BITMAP *icon_moment_y;
+extern BITMAP *icon_moment_y_rev;
+extern BITMAP *icon_moment_xy;
+extern BITMAP *icon_moment_xy_rev;
+
+extern BITMAP *icon_displacement_z;
+extern BITMAP *icon_rotation_x;
+extern BITMAP *icon_rotation_x_rev;
+extern BITMAP *icon_rotation_y;
+extern BITMAP *icon_rotation_y_rev;
+extern BITMAP *icon_rotation_xy;
+extern BITMAP *icon_rotation_xy_rev;
+
+extern char *icon_fixed_roller_x_p;
+extern char *icon_fixed_roller_xu_p;
+extern char *icon_fixed_roller_y_p;
+extern char *icon_fixed_roller_yu_p;
+extern char *icon_pinned_roller_x_p;
+extern char *icon_pinned_roller_xu_p;
+extern char *icon_pinned_roller_y_p;
+extern char *icon_pinned_roller_yu_p;
+extern char *icon_rigid_rigid_springs_p;
+extern char *icon_rigid_rigid_nosprings_p;
+extern char *icon_force_z_p;
+extern char *icon_trapezium_z_p;
+extern char *icon_moment_x_p;
+extern char *icon_moment_x_rev_p;
+extern char *icon_moment_y_p;
+extern char *icon_moment_y_rev_p;
+extern char *icon_moment_xy_p;
+extern char *icon_moment_xy_rev_p;
+
+extern char *icon_displacement_z_p;
+extern char *icon_rotation_x_p;
+extern char *icon_rotation_x_rev_p;
+extern char *icon_rotation_y_p;
+extern char *icon_rotation_y_rev_p;
+extern char *icon_rotation_xy_p;
+extern char *icon_rotation_xy_rev_p;
+
+extern BITMAP *icon_vector_member_style_d;
+extern BITMAP *icon_rigid_springs_nosprings_d;
+extern char *icon_vector_member_style_d_p;
+extern char *icon_rigid_springs_nosprings_d_p;
+
 extern BITMAP *icon_hourglass_mem;
 extern BITMAP *icon_hourglassx1_5_mem;
 extern BITMAP *icon_hourglassx2_mem;
@@ -3257,6 +3316,33 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
         {&icon_solid_translucent,"solid_translucent",&icon_solid_translucent_p },
         {&icon_solid_gtranslucent,"solid_gtranslucent",&icon_solid_gtranslucent_p },
+        {&icon_fixed_roller_x, "fixed_roller_x", &icon_fixed_roller_x_p },
+        {&icon_fixed_roller_xu, "fixed_roller_xu", &icon_fixed_roller_xu_p },
+        {&icon_fixed_roller_y, "fixed_roller_y", &icon_fixed_roller_y_p },
+        {&icon_fixed_roller_yu, "fixed_roller_yu", &icon_fixed_roller_yu_p },
+        {&icon_pinned_roller_x, "pinned_roller_x", &icon_pinned_roller_x_p },
+        {&icon_pinned_roller_xu, "pinned_roller_xu", &icon_pinned_roller_xu_p },
+        {&icon_pinned_roller_y, "pinned_roller_y", &icon_pinned_roller_y_p },
+        {&icon_pinned_roller_yu, "pinned_roller_yu", &icon_pinned_roller_yu_p },
+        {&icon_rigid_rigid_springs, "rigid_rigid_springs", &icon_rigid_rigid_springs_p },
+        {&icon_rigid_rigid_nosprings, "rigid_rigid_nosprings", &icon_rigid_rigid_nosprings_p },
+        {&icon_force_z, "force_z", &icon_force_z_p },
+        {&icon_trapezium_z, "trapezium_z", &icon_trapezium_z_p },
+        {&icon_moment_x, "moment_x", &icon_moment_x_p },
+        {&icon_moment_x_rev, "moment_x_rev", &icon_moment_x_rev_p },
+        {&icon_moment_y, "moment_y", &icon_moment_y_p},
+        {&icon_moment_y_rev, "moment_y_rev", &icon_moment_y_rev_p },
+        {&icon_moment_xy, "moment_xy", &icon_moment_xy_p},
+        {&icon_moment_xy_rev, "moment_xy_rev", &icon_moment_xy_rev_p},
+        {&icon_displacement_z, "displacement_z", &icon_displacement_z_p },
+        {&icon_rotation_x, "rotation_x", &icon_rotation_x_p },
+        {&icon_rotation_x_rev, "rotation_x_rev", &icon_rotation_x_rev_p },
+        {&icon_rotation_y, "rotation_y", &icon_rotation_y_p },
+        {&icon_rotation_y_rev, "rotation_y_rev", &icon_rotation_y_rev_p },
+        {&icon_rotation_xy, "rotation_xy", &icon_rotation_xy_p },
+        {&icon_rotation_xy_rev, "rotation_xy_rev", &icon_rotation_xy_rev_p },
+        {&icon_vector_member_style_d, "vector_member_style_d", &icon_vector_member_style_d_p },
+        {&icon_rigid_springs_nosprings_d, "rigid_springs_nosprings_d", &icon_rigid_springs_nosprings_d_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);

@@ -666,7 +666,7 @@ static char* komunikaty0[] =
 /*165*/u8"",
 /*166*/u8"",  //custom text
 /*167*/u8"Indicate the frame or truss diagram for static/dynamic analysis",
-/*168*/u8"Dimensioning (to start dimensioning an angle, touch any line)",
+/*168*/u8"Dimensioning (to start dimensioning an angle, touch any line or element vector)",
 /*169*/u8"Indicate frame or truss element",
 /*170*/u8"Place the section line at the desired element coordinates. Click to save the values to the clipboard",
 /*171*/u8"Indicate the plate diagram for static analysis (FEM)",

@@ -1378,6 +1378,18 @@ static char* translucency_txt[20 + 1] = {
 					u8"5%",
 					NoChange };
 
+static char* vector_txt[5] =
+       {u8"sztywno-sztywny",
+        u8"sztywno-przegub",
+        u8"przegub-sztywny",
+        u8"przegub-przegub",
+        NoChange };
+
+static char* springs_txt[3] =
+        {u8"belka sztywna",
+        u8"belka Winklera",
+        NoChange };
+
 #define chprop_tips0 u8"@Warstwa"
 #define chprop_tips1 u8"Kolor"
 #define chprop_tips2 u8"Grubość linii"
@@ -1397,6 +1409,7 @@ static char* translucency_txt[20 + 1] = {
 #define chprop_tips16 u8"Odwróć wertykalnie"
 #define chprop_tips17 u8"Na wierzchu"
 #define chprop_tips18 u8"Nieprzezroczystość wielokątów, śladów i kreskowania jednolitym kolorem"
+#define chprop_tips19 u8"Styl wektora, odpowiedni do układu współrzędnych"
 
 char* add_new_font_c = u8"dodaj nową czcionkę";
 
@@ -1480,6 +1493,7 @@ char* dlg_name[] =
 char* typ_punktu_tab[] = { u8"Normalny",u8"punkt Bazowy",u8"Pin","?","?","?","?","?","?",
 						"?","?","?","?","?","?","?" };
 */
+/*
 char* vector_style_tab[] = { u8"sztywny-sztywny",u8"sztywny-przegubowy",u8"przegubowy-sztywny",u8"przegubowy-przegubowy",
                             u8"Siła",u8"Moment+",u8"Moment-",
                             u8"Przemieszczenie", u8"Obrót+", u8"Obrót-",
@@ -1499,7 +1513,7 @@ char* vector_style_tab[] = { u8"sztywny-sztywny",u8"sztywny-przegubowy",u8"przeg
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
  };
-
+*/
 
 char* view_width_tab1[] = { u8"bardzo cienka",u8"cienka",u8"gruba",u8"bardzo gruba",u8"najgrubsza",u8"",u8"",u8"niweidoczna" };
 
@@ -1592,14 +1606,18 @@ char* objects[] = { u8"Linia",u8"Linia 3D",u8"Tekst",u8"Łuk",u8"Okrąg",u8"Koł
 #define _FILLING_ u8"wypełnienie"
 
 char *vector_txt[]={u8"Wektor: sztywno-sztywny",u8"Wektor: sztywno-przegubowy",u8"Wektor: przegubowo-sztywny",u8"Wektor: przegubowo-przegubowy",u8"Wektor: Siła",u8"Wektor: Moment" ,u8"Wektor: -Moment",
- u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)", u8"obciążenie powieżchniowe płyty", u8"obciążenie punktowe płyty"};
+ u8"Wektor: Przemieszczenie",u8"Wektor: Obrót",u8"Wektor: -Obrót",u8"Wektor: obciążenie trapezowe Y",u8"Wektor: obciążenie trapezowe X",u8"Wektor: obciążenie trapezowe N",u8"Wektor: obciążenie trapezowe H",u8"Wektor: obciążenie trapezowe V",u8"Wektor: obciążenie termiczne", u8"Wektor: Rozmiar węzła (promień)", u8"obciążenie powieżchniowe płyty", u8"obciążenie punktowe płyty",
+ u8"Wektor: Siła Z",u8"Wektor: obciążenie trapezowe Z", u8"Wector: Moment X",u8"Wector: -Moment X",u8"Wector: Moment Y",u8"Wector: -Moment Y",u8"Wector: Moment XY",u8"Wector: -Moment XY",
+ u8"Wektor: Przemieszczenie Z", u8"Wektor: Obrót X",u8"Wektor: -Obrót X",u8"Wektor: Obrót Y",u8"Wektor: -Obrót Y",u8"Wektor: Obrót XY",u8"Wektor: -Obrót XY",
+ };
 
 //char *point_txt[]={u8"Normalny",u8"punkt Bazowy",'','','','','',u8"połączenie",u8"Zacisk",'','','',u8"Utwierdzenie",u8"utwierdzenie L",u8"utwierdzenie P",u8"utwierdzenie G",u8"Przegubowe",
  //    u8"przegubowe L",u8"przegubowe P",u8"przegubowe G",u8"utwierdzenie przesuwne poziomo",u8"utwierdzenie przesuwne pionowo L",u8"utwierdzenie przesuwne pionowo P",u8"utwierdzenie przesuwne poziomo G",
   //   u8"przegubowe przesuwne poziomo",u8"przegubowe przesuwne pionowo L",u8"przegubowe przesuwne pionowo P",u8"przegubowe przesuwne poziomo G",
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
-unsigned short point_wcod[]={L'N', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'Z', ' ', ' ', ' ',L'U', L'1', L'2', L'3', L'P', L'3', L'4', L'5', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
+unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'S',L'M',L'-',L'P',L'O',L'R',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'K',L'L',L'W',L'Z',L'Q',L'F',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'8',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
+
+unsigned short point_wcod[]={L'N', L'B', ' ', ' ', ' ', ' ',' ', L'J', L'Z', ' ', ' ', ' ',L'U', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'B', 'V', 'C', 'N', 'D'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'U', L'O', L'D', L'S', L'P', L'*', L'G', L'C', L'E', L'F', 'B', L'W', ' '};
 char *object_txt[]={u8"Obraz", u8"Linia", u8"Tekst", u8"Łuk", u8"Okrąg", u8"Dysk", u8"Obszar", u8"Punkt", u8"Blok", u8"Obszar łukowy",u8"Łuk eliptyczny",u8"Elipsa",u8"Wypełniona elipsa",u8"Splajn Beziera",u8"Wektor",""};
 
@@ -1791,8 +1809,44 @@ POLE pmLoad_Char_Thermal[] = {
 //static
 TMENU mLoad_Char_Thermal = { 2, 0,0, 12, 88, 12, ICONS, CMNU,CMBR,CMTX,0, 18, 0, 0,0,(POLE(*)[]) &pmLoad_Char_Thermal, NULL, NULL };
 
+char *Vector_txt[]={ u8"sztywno - sztywny",
+                     u8"sztywno - przegubowy",
+                     u8"przegubowo - sztywny",
+                     u8"przegubowo - przegubowy",
+                     u8"Siła",
+                     u8"Moment siły",
+                     u8"-moment siły",
+                     u8"Przesunięcie",
+                     u8"Obrót",
+                     u8"-obrót",
+                     u8"obciążenie trapezowe Y",
+                     u8"obciażenie trapezowe X",
+                     u8"obciażenie trapezowe N",
+                     u8"obciażenie trapezowe H",
+                     u8"obciażenie trapezowe V",
+                     u8"obciążenie Termiczne",
+                     u8"Rozmiar węzła (promień)",
 
-static POLE pmVector[] = {
+                     u8"obciążenie powierzchniowe płyty",
+                     u8"obciążenie skupione płyty",
+                     u8"Siła Z",
+                     u8"obciażenie trapezowe Z",
+                     u8"Moment X",
+                     u8"-moment X",
+                     u8"Moment Y",
+                     u8"-moment Y",
+                     u8"Moment XY",
+                     u8"-moment XY",
+                     u8"Przesunięcie Z",
+                     u8"Obrót XZ",
+                     u8"-obrót XZ",
+                     u8"Obrót YZ",
+                     u8"-obrót YZ",
+                     u8"Obrót XY",
+                     u8"-obrót XY",
+                     u8"belka na podłożu Winklera"};
+
+static POLE pmVector_cartesian[] = {
 		  {u8"Usuń\0Del\0",L'U',218,NULL},
           {u8"sztywno - sztywny\0\0",L'A',723,NULL},
           {u8"sztywno - przegubowy\0\0",L'B',724,NULL},
@@ -1818,21 +1872,96 @@ static POLE pmVector[] = {
           {u8"strefa płyty lub tarczy\0\0",L'Z',842,NULL},
           {u8"obciążenie powierzchniowe płyty\0\0",L'Q',845,&mLoad_Char},
           {u8"obciążenie skupione płyty\0\0",L'F',856,&mLoad_Char},
+
+          ////for grids
+          ////{u8"Siła Z\0\0",L'1',880,&mLoad_Char},
+          ////{u8"obciażenie trapezowe Z\0\0",L'2',881,&mLoad_Char},
+          ////{u8"Moment X\0\0",L'3',882,&mLoad_Char},
+          ////{u8"-moment X\0\0",L'4',883,&mLoad_Char},
+          ////{u8"Moment Y\0\0",L'5',884,&mLoad_Char},
+          ////{u8"-moment Y\0\0",L'6',885,&mLoad_Char},
+          ////{u8"Moment XY\0\0",L'7',886,&mLoad_Char},
+          ////{u8"-moment XY\0\0",L'8',887,&mLoad_Char},
+
+          ////{u8"Przesunięcie Z\0\0",L'9',888,NULL},
+          ////{u8"Obrót XZ\0\0",L'!',889,NULL},
+          ////{u8"-obrót XZ\0\0",L'@',890,NULL},
+          ////{u8"Obrót YZ\0\0",L'#',891,NULL},
+          ////{u8"-obrót YZ\0\0",L'$',892,NULL},
+          ////{u8"Obrót XY\0\0",L'%',893,NULL},
+          ////{u8"-obrót XY\0\0",L'^',894,NULL},
+};
+
+static POLE pmVector_isometric[] = {
+		  {u8"Usuń\0Del\0",L'U',218,NULL},
+          {u8"sztywno - sztywny\0\0",L'A',723,NULL},
+          {u8"belka na podłożu Winklera\0\0",L'W',878,NULL},
+          ////{u8"sztywno - przegubowy\0\0",L'B',724,NULL},
+          ////{u8"przegubowo - sztywny\0\0",L'C',725,NULL},
+          ////{u8"przegubowo - przegubowy\0\0",L'D',726,NULL},
+          {u8"Siła\0\0",L'S',727,&mLoad_Char},
+          ////{u8"Moment siły\0\0",L'M',728,&mLoad_Char},
+          ////{u8"-moment siły\0\0",L'-',729,&mLoad_Char},
+          {u8"Przesunięcie\0\0",L'P',730,NULL}, //&mLoad_Char}, //NULL
+          ////{u8"Obrót\0\0",L'O',731,NULL}, //&mLoad_Char}, //NULL
+          ////{u8"-obrót\0\0",L'R',732,NULL}, //&mLoad_Char}, //NULL
+          {u8"obciążenie trapezowe Y\0\0",L'Y',733,&mLoad_Char},
+          {u8"obciażenie trapezowe X\0\0",L'X',734,&mLoad_Char},
+          {u8"obciażenie trapezowe N\0\0",L'N',735,&mLoad_Char},
+          {u8"obciażenie trapezowe H\0\0",L'H',736,&mLoad_Char},
+          {u8"obciażenie trapezowe V\0\0",L'V',737,&mLoad_Char},
+          {u8"obciążenie Termiczne\0\0",L'T',752,&mLoad_Char_Thermal},
+          {u8"Rozmiar węzła (promień)\0\0",L'0',786,NULL},
+
+          ////{u8"Kontur płyty lub tarczy\0\0",L'K',846,NULL},
+          ////{u8"otwór w płycie lub tarczy\0\0",L'L',844,NULL},
+          ////{u8"ściana pod płytą\0\0",L'W',843,NULL},
+          ////{u8"strefa płyty lub tarczy\0\0",L'Z',842,NULL},
+          ////{u8"obciążenie powierzchniowe płyty\0\0",L'Q',845,&mLoad_Char},
+          ////{u8"obciążenie skupione płyty\0\0",L'F',856,&mLoad_Char},
+
+          //for grids
+          {u8"Siła Z\0\0",L'1',880,&mLoad_Char},
+          {u8"obciażenie trapezowe Z\0\0",L'2',881,&mLoad_Char},
+          {u8"Moment X\0\0",L'3',882,&mLoad_Char},
+          {u8"-moment X\0\0",L'4',883,&mLoad_Char},
+          {u8"Moment Y\0\0",L'5',884,&mLoad_Char},
+          {u8"-moment Y\0\0",L'6',885,&mLoad_Char},
+          {u8"Moment XY\0\0",L'7',886,&mLoad_Char},
+          {u8"-moment XY\0\0",L'8',887,&mLoad_Char},
+
+          {u8"Przesunięcie Z\0\0",L'9',888,NULL},
+          {u8"Obrót XZ\0\0",L'!',889,NULL},
+          {u8"-obrót XZ\0\0",L'@',890,NULL},
+          {u8"Obrót YZ\0\0",L'#',891,NULL},
+          {u8"-obrót YZ\0\0",L'$',892,NULL},
+          {u8"Obrót XY\0\0",L'%',893,NULL},
+          {u8"-obrót XY\0\0",L'^',894,NULL},
 };
 
 static POLE pmVector_Con[] = {
 		  {u8"Kontynuacja",L'K',220,NULL} };
 
-static POLE pmMember_style[] = {
+static POLE pmMember_style_cartesian[] = {
           {u8"sztywno - sztywny\0\0",L'A',723,NULL},
           {u8"sztywno - przegubowy\0\0",L'B',724,NULL},
           {u8"przegubowo - sztywny\0\0",L'C',725,NULL},
           {u8"przegubowo - przegubowy\0\0",L'D',726,NULL},
 };
 
+static POLE pmMember_style_isometric[] = {
+          {u8"sztywno - sztywny\0\0",L'A',723,NULL},
+          {u8"belka na podłożu Winklera\0\0",L'W',878,NULL},
+};
+
 static POLE pmForce_Displacement_style[] = {
           {u8"Siła\0\0",L'S',727,NULL},
           {u8"Przesunięcie\0\0",L'P',730,NULL},
+};
+
+static POLE pmForce_Displacement_style_isometric[] = {
+          {u8"Siła Z\0\0",L'F',880,NULL},
+          {u8"Przesunięcie Z\0\0",L'E',888,NULL},
 };
 
 static POLE pmMoment_Rotation_style[] = {
@@ -1842,12 +1971,28 @@ static POLE pmMoment_Rotation_style[] = {
           {u8"-obrót\0\0",L'R',732,NULL},
 };
 
+static POLE pmMoment_Rotation_style_isometric[] = {
+          {u8"Moment siły X\0\0",L'A',882,NULL},
+          {u8"-moment siły X\0\0",L'B',883,NULL},
+          {u8"Moment siły Y\0\0",L'C',884,NULL},
+          {u8"-moment siły Y\0\0",L'D',885,NULL},
+          {u8"Moment siły XY\0\0",L'E',886,NULL},
+          {u8"-moment siły XY\0\0",L'F',887,NULL},
+          {u8"Obrót X\0\0",L'G',889,NULL},
+          {u8"-obrót X\0\0",L'H',890,NULL},
+          {u8"Obrót Y\0\0",L'I',891,NULL},
+          {u8"-obrót Y\0\0",L'J',892,NULL},
+          {u8"Obrót XY\0\0",L'K',893,NULL},
+          {u8"-obrót XY\0\0",L'L',894,NULL},
+};
+
 static POLE pmLoad_style[] = {
           {u8"obciążenie trapezowe Y\0\0",L'Y',733,NULL},
           {u8"obciażenie trapezowe X\0\0",L'X',734,NULL},
           {u8"obciażenie trapezowe N\0\0",L'N',735,NULL},
           {u8"obciażenie trapezowe H\0\0",L'H',736,NULL},
           {u8"obciażenie trapezowe V\0\0",L'V',737,NULL},
+          {u8"obciażenie trapezowe Z\0\0",L'Z',881,NULL},
 };
 
 #define _AXIS_ u8"Oś"
@@ -2032,11 +2177,11 @@ static char* EllipticalAngle[] = {u8"Localny",u8"Globalny"};
 static POLE pmPLine_Con[] = {
 		  {u8"Kontynuacja",L'K',220,NULL} };
 
-extern TMENU mVector;
+extern TMENU *mVector;
 
 static POLE pmPLine_Con_Slab[] = {
 		  {u8"Kontynuacja",L'K',220,NULL},
-          {u8"Wektory",L'W',722,&mVector},
+          {u8"Wektory",L'W',722,NULL},  //mVector
 };
 
 #define _POLYLINE_ u8"Polilinia"
@@ -2348,6 +2493,15 @@ static POLE pmTyp_punktu[] = {
      {u8"przegubowe przesuwne pionowo P\0",L'-',749,NULL},
      {u8"przegubowe przesuwne poziomo G\0",L'=',757,NULL},
      {u8"bez obrotu Z\0",L'+',818,NULL},
+
+     {u8"utwierdzenie przesuwne w osi X\0",L'X',870,NULL},
+     {u8"utwierdzenie przesuwne w osi X (G)\0",L'Q',871,NULL},
+     {u8"utwierdzenie przesuwne w osi Y\0",L'Y',872,NULL},
+     {u8"utwierdzenie przesuwne w osi Y (G)\0",L'T',873,NULL},
+     {u8"przegubowe przesuwne w osi X\0",L'H',874,NULL},
+     {u8"przegubowe przesuwne w osi X (G)\0",L'A',875,NULL},
+     {u8"przegubowe przesuwne w osi Y\0",L'V',876,NULL},
+     {u8"przegubowe przesuwne w osi Y (G)\0",L'W',877,NULL},
 };
 
 #endif
@@ -3559,8 +3713,7 @@ T_Prototype      s__prot = { u8"prototyp.alf", TRUE };
 char* typ_punktu_inf[] = { u8"Normalny",u8"Punkt bazowy","","","","","",u8"Węzeł",u8"Zacisk","","","",
                            u8"Utwierdzony",u8"Utwierdzony L",u8"Utwierdzony P", u8"Utwierdzony G", u8"Przegubowy", u8"Przegubowy L", u8"Przegubowy P", u8"Przegubowy G",
                            u8"Sztywny Przesuwny", u8"Sztywny Przesuwny L", u8"Sztywny Przesuwny P", u8"Sztywny Przesuwny G", u8"Przegubowy Przesuwny", u8"Przegubowy Przesuwny L", u8"Przegubowy Przesuwny P", u8"Przegubowy Przesuwny G", u8"bez obrotu Z",
-                           "","","","","","","","",
-};
+                           u8"Sztywny Przesuwny X", u8"Sztywny Przesuwny X G", u8"Sztywny Przesuwny Y", u8"Sztywny Przesuwny Y G", u8"Przegubowy Przesuwny X", u8"Przegubowy Przesuwny X G", u8"Przegubowy Przesuwny Y", u8"Przegubowy Przesuwny Y G"};
 
 #endif
 

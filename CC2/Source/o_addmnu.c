@@ -1617,11 +1617,13 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
         case 3:
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
-        case 4:
-        case 18:
+        case 4:  //force
+        case 18: //slab force
+        case 19: //force z
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
-        case 7:
+        case 7:  //displacement
+        case 27:  //displacement z
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
             break;
         case 5:
@@ -1637,6 +1639,13 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             sa.width2=ra/4;
             solidarc_place(&sa, xmin, ymin, xmax, ymax);
             break;
+        case 21:  //TO DO ISOMETRIC
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+            break;
         case 8:
         case 9:
             l.warstwa=V->warstwa;
@@ -1647,8 +1656,18 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             l.kat2=V->angle2;
             luk_place (&l, xmin, ymin, xmax, ymax) ;
             break;
+        case 28:  //TO DO ISOMETRIC
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+        case 34:
+        case 35:
+            break;
         case 10:
         case 17:
+        case 20:
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
             if (V->x1<V->x2) n=1;
@@ -1760,8 +1779,8 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             Vtxt.wysokosc=zmwym.wysokosc*0.75;
             Vtxt.justowanie=j_do_lewej;
 
-            set_decimal_format(&Vtxt1.text, V->magnitude1, dim_precision);
-            sprintf(&Vtxt.text,"R%s",Vtxt1.text);
+            set_decimal_format(Vtxt1.text, V->magnitude1, dim_precision);
+            sprintf(Vtxt.text,"R%s",Vtxt1.text);
 
             Ln1.x1=V->x2;
             Ln1.y1=V->y2;

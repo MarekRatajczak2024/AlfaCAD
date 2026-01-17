@@ -50,6 +50,7 @@ extern void Destroy_Blocks_Array(void);
 extern int vector_drag_wybrany(AVECTOR *ad);
 extern int vector_w_prostokacie(AVECTOR *ad);
 extern void getcolor_RGB(int *red, int *green, int *blue, int color);
+extern int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea);
 
 void adrem_obiekt_FIRSTB (void *ad, int (*DZI)(void *), int (*ODZI)(void *), BOOL b_win_sel);
 static void redcrc(char typ);
@@ -211,7 +212,10 @@ static int linia_dwc(LINIA *adl,int dwc)
 static int vector_dwc(AVECTOR *adv,int dwc)
 { int w;
     LUK adluk=ldef;
+    ELLIPTICALARC ea=eldef;
     OKRAG adOkrag=Odef;
+    int ret;
+    int plane;
 
     switch (adv->style)
     {
@@ -226,15 +230,93 @@ static int vector_dwc(AVECTOR *adv,int dwc)
             adluk.kat2=adv->angle2;
             switch(dwc)
             {
-                case Windoww: w=luk_w_prostokacie(&adluk);
+                case Windoww:
+                        w=luk_w_prostokacie(&adluk);
                     break;
                 case Dragg : //w=prostokat_luk(&adluk);
-                             w= punkt_w_prostokacie(adluk.x, adluk.y);
+                        w= punkt_w_prostokacie(adluk.x, adluk.y);
+                        if(w==4) w=0;
+                    break;
+                case Cross :
+                        w=luk_wybrany(&adluk);
+                    break;
+                default:
+                    w=0;
+                    break;
+            }
+            break;
+        case 21:  //isometry
+        case 22:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
+            adluk.x=adv->x1;
+            adluk.y=adv->y1;
+            adluk.r=adv->r;
+            adluk.kat1=adv->angle1;
+            adluk.kat2=adv->angle2;
+            switch (adv->style) {
+                case 21:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                    plane = XY_PLANE;
+                    break;
+                case 22:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+                case 28:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                    plane = XY_PLANE;
+                    break;
+                case 29:  // moment x //TO DO ISOMETRIC
+                    plane = XZ_PLANE;
+                    break;
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+            }
+
+            ret=arc_to_isometric_ellipticalarc_a_ea(plane, &adluk, &ea);
+
+            switch(dwc)
+            { case Windoww  :
+                    w=lukeliptyczny_w_prostokacie(&ea);  //w=lukeliptyczny_wybrany(ea);
+                    break;
+                case Dragg : //w=lukeliptyczny_w_prostokacie(ea);  //w=lukeliptyczny_wybrany(ea);
+                    w=prostokat_ellipticalarc(&ea);
                     if(w==4) w=0;
                     break;
-                case Cross : w=luk_wybrany(&adluk);
+                case Cross :
+                    w=lukeliptyczny_wybrany_prec(&ea);
                     break;
-                default    : break;
+                default:
+                    w=0;
+                    break;
             }
             break;
         case 16:

@@ -88,24 +88,24 @@ static int MaxNoBlock=1000;
 #define MAX_CLIENT_BITMAP 64
 #define FIRST_CLIENT_BITMAP_NO 1000
 
-#define V_EDGE_SIMPLE 21
-#define V_EDGE_SIMPLE_INV 22
-#define V_EDGE_FIXED 23
-#define V_EDGE_FIXED_INV 24
-#define V_EDGE_ARC_SIMPLE 25
-#define V_EDGE_ARC_SIMPLE_INV 26
-#define V_EDGE_ARC_FIXED 27
-#define V_EDGE_ARC_FIXED_INV 28
+#define V_EDGE_SIMPLE 41
+#define V_EDGE_SIMPLE_INV 42
+#define V_EDGE_FIXED 43
+#define V_EDGE_FIXED_INV 44
+#define V_EDGE_ARC_SIMPLE 45
+#define V_EDGE_ARC_SIMPLE_INV 46
+#define V_EDGE_ARC_FIXED 47
+#define V_EDGE_ARC_FIXED_INV 48
 //rolling edges
-#define V_EDGE_ROLL 29
-#define V_EDGE_ROLL_INV 30
-#define V_EDGE_ARC_ROLL 31
-#define V_EDGE_ARC_ROLL_INV 32
+#define V_EDGE_ROLL 49
+#define V_EDGE_ROLL_INV 50
+#define V_EDGE_ARC_ROLL 51
+#define V_EDGE_ARC_ROLL_INV 52
 
-#define V_SLAB_PLATE 21
-#define V_SLAB_SPACE 22
-#define V_SLAB_WALL 23
-#define V_SLAB_ZONE 24
+#define V_SLAB_PLATE 61
+#define V_SLAB_SPACE 62
+#define V_SLAB_WALL 63
+#define V_SLAB_ZONE 64
 
 #define V_FIXED_LINE 96
 
@@ -1717,7 +1717,8 @@ struct
     unsigned load      :8;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
     unsigned variant   :8;  //0 undefined, 1..255 number of load character with different factors
     unsigned flags     :8;  //0  regular   1 inverted
-    unsigned load22     :8;
+    unsigned cartflags :2;  //0 regular  1 isometric
+    unsigned foundflags :6;  //0 regular & 1 spring z support, &2 spring x support & 4 sprint y support
     float angle1;
     float angle2;
     float magnitude1; //power magnitude or start magnitude
@@ -2652,7 +2653,40 @@ typedef struct tagRECT {
 #define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
 #define L2def {Anormalny,Olinia,0,0,0,1,0,0,  48, 0,7,64, 0,0,0,0, Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
 
-#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0}
+#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
+/*
+ unsigned atrybut  : 3;
+    unsigned obiekt   : 4;
+    unsigned obiektt1 : 2;
+    unsigned obiektt2 : 3;
+    unsigned obiektt3 : 1;
+    unsigned widoczny : 1;
+    unsigned przec    : 1;
+    unsigned blok     : 1;                     //2
+    unsigned int n ; //    : 32;               //6
+    unsigned warstwa  : 8;
+    unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
+    unsigned typ      : 8;
+    unsigned reserve  : 8;                     //10
+    float x1          ;  //first point or center point
+    float y1          ;  //first point or center point
+    float x2          ;  //second point
+    float y2          ;  //second point
+    float r;  //for arcs                       //30
+    //float angle;
+    unsigned load      :8;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
+    unsigned variant   :8;  //0 undefined, 1..255 number of load character with different factors
+    unsigned flags     :8;  //0  regular   1 inverted
+    unsigned cartflags :2;  //0 regular  1 isometric
+    unsigned foundflags :6;  //0 regular & 1 spring z support, &2 spring x support & 4 sprint y support
+    float angle1;
+    float angle2;
+    float magnitude1; //power magnitude or start magnitude
+    float magnitude2; //end magnitude          //50
+    unsigned style    : 8;
+    unsigned reserve1 : 8;                     //52
+    unsigned property_no : 16;
+ */
 
 #define T18_3   29//37//29 //27 //25
 #define T18   37
@@ -3042,9 +3076,9 @@ typedef struct {
 typedef struct
 {
 	BOOL 	   b_layer, b_color, b_width, b_type,
-		b_text_font, b_text_type, b_text_ukryty, b_text_just, b_text_height, b_text_width, b_text_italics, b_text_bold, b_text_underline, b_hflip, b_vflip, b_ontop, b_drawpoly, b_translucency;
+		b_text_font, b_text_type, b_text_ukryty, b_text_just, b_text_height, b_text_width, b_text_italics, b_text_bold, b_text_underline, b_hflip, b_vflip, b_ontop, b_drawpoly, b_translucency, b_vector;
   int  	   layer,  color,  width,  type, 	/*color - pozycja menu*/
-	   i_text_font, i_text_type, i_text_ukryty, i_text_just, i_text_italics, i_text_bold, i_text_underline, i_hflip, i_vflip, i_ontop, i_translucency;
+	   i_text_font, i_text_type, i_text_ukryty, i_text_just, i_text_italics, i_text_bold, i_text_underline, i_hflip, i_vflip, i_ontop, i_translucency, i_vector, i_vector1;
   double   df_text_height, df_text_width ;
 }
 T_change_param ;
@@ -3266,6 +3300,8 @@ typedef struct
     float f2;
     float f3;
 } FE_DATA3_EX;
+
+enum PlaneType { XY_PLANE=0, XZ_PLANE, YZ_PLANE };
 
 /*
 typedef struct

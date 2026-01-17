@@ -58,17 +58,18 @@ extern long pXp,pYp,pXk,pYk;
 extern double Get_Ds(void);
 extern double Get_Ds_x(void);
 
-static T_change_param s__change_param =  {TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE,
-					 0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1} ;
-static T_change_param s__change_param0 = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 
-					 0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1} ;
-static T_change_param s__change_param00 = { FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-                     0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1};
+static T_change_param s__change_param =  {TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE,  TRUE, FALSE, FALSE,
+					 0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0} ;
+static T_change_param s__change_param0 = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+					 0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0} ;
+static T_change_param s__change_param00 = { FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+                     0, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0};
 static void change_properties (char  *, char  *, T_change_param *) ;
 
 static int m_x, m_y;
 
-
+#define DXDialog 335
+#define DYDialog 100
 #define XpGr	        5 /*10*/
 #define YpGr       	5 /*10*/
 #define DXGroup 	185 //213//300
@@ -119,10 +120,10 @@ static int m_x, m_y;
 #define DXFontName	(13 * 8 + 10)
 
 
-#define XpOK    	     (XpGr + DXGroup + 13)
-#define YpOK            174
+#define XpOK    	    (DXDialog - DXBut0 - 5) // (XpGr + DXGroup + 13)
+#define YpOK            180
 #define XpCANCEL        XpOK
-#define YpCANCEL	    221
+#define YpCANCEL	    225
 
 
 #define DYChange        DYLab
@@ -131,8 +132,13 @@ static int m_x, m_y;
 #define NoLayers 	MAX_NUMBER_OF_LAYERS
 #define NoColors	MAXCOLOR
 #define NoTranslucency 20
-#define BUTTON_SIZE	33 /*17*/
-#define COMBOBOX_SIZE	8/*5*/
+#define IMAGE_SIZE	33
+#define BUTTON_SIZE	34
+#define LISTBOX_SIZE	10
+#define COMBOBOX_SIZE	9
+#define NoVector 4
+#define NoSprings 2
+int NoVectorListbox=NoVector;
 
 #define ID_OK		1
 #define ID_CANCEL      	2
@@ -168,18 +174,20 @@ static int m_x, m_y;
 #define ID_BOnTopYes 31/*21*/
 #define ID_BOnTopNo  32/*22*/
 #define ID_BTranslucency  33/*22*/
+#define ID_BVector  34/*22*/
 
 
-#define ID_CLayer           34/*13*/
-#define ID_CColor           35/*14*/
-#define ID_CWidth           36/*15*/
-#define ID_CType            37/*16*/
-#define ID_CFontName        38/*17*/
-#define ID_CTextType        39/*17*/
-#define ID_CTextJust        40/*17*/
-#define ID_CTranslucency    41/*19*/
-#define ID_ETextHeight      42/*18*/
-#define ID_ETextWidth       43/*19*/
+#define ID_CLayer           35/*13*/
+#define ID_CColor           36/*14*/
+#define ID_CWidth           37/*15*/
+#define ID_CType            38/*16*/
+#define ID_CFontName        39/*17*/
+#define ID_CTextType        40/*17*/
+#define ID_CTextJust        41/*17*/
+#define ID_CTranslucency    42/*19*/
+#define ID_CVector          43/*19*/
+#define ID_ETextHeight      44/*18*/
+#define ID_ETextWidth       45/*19*/
 
 #define NO_OK		0	/*numery button'ow*/
 #define NO_CANCEL      	1
@@ -223,6 +231,9 @@ static int m_x, m_y;
 #define NO_CFontType    5
 #define NO_CFontJust    6
 #define NO_CTranslucency    7
+#define NO_CVector    8
+#define NO_CVector1    9
+int NO_CVectorListbox=NO_CVector;
 
 #define NO_ETextHeight      0
 #define NO_ETextWidth       1
@@ -233,7 +244,7 @@ static char *font_name_txt [MaxNumberTextStyle + 1] ;
 
 static char *layer_name_txt [NoLayers + 1] ;	/*nalezy wstepnie zainicjowac*/
 
-static LISTBOX listbox [COMBOBOX_SIZE] =
+static LISTBOX listbox [LISTBOX_SIZE] =
 {
   {
     0, 0, 0, 0,  	/*wspolrzedne*/
@@ -283,6 +294,18 @@ static LISTBOX listbox [COMBOBOX_SIZE] =
     COLOR_NULL, COLOR_NULL, COLOR_NULL,
     1, NULL, translucency_txt,  ID_CTranslucency, 0
   },
+  {
+      0, 0, 0, 0,
+      NoVector, 0, 0, 0, 0, 0, 16,
+      COLOR_NULL, COLOR_NULL, COLOR_NULL,
+      1, NULL, vector_txt,  ID_CVector, 0
+  },
+  {
+      0, 0, 0, 0,
+      NoSprings, 0, 0, 0, 0, 0, 16,
+      COLOR_NULL, COLOR_NULL, COLOR_NULL,
+      1, NULL, springs_txt,  ID_CVector, 0
+  },
 };
 
 
@@ -295,7 +318,8 @@ static COMBOBOX combobox [COMBOBOX_SIZE] =
  { XFontName, YpGrFontName-3 , DXLayerName, DYComboBox+2, &listbox [4]},
  { XFontName, YpGrFontType-1 , DXLayerName, DYComboBox, &listbox [5]},
  { XFontName, YpGrFontJust-1 , DXLayerName, DYComboBox, &listbox [6]},
- { XpGr + DXGroup + 41, YpGrLayer - 1 , 52, DYComboBox, &listbox[7]},
+ { XpGr + DXGroup + 40, YpGrLayer - 1 , 78, DYComboBox, &listbox[7]},
+ { XpGr + DXGroup + 40, YpGrLayer + DYName - 1 , 78, DYComboBox, &listbox[8]},
 } ;
 
 
@@ -397,8 +421,12 @@ static BUTTON buttons [BUTTON_SIZE] =
 /*31*/  { XpName + XpNoButton, YpGrFontName + 11 * DYName , DXCheckBox, DYComboBox, COLOR_NULL, COLOR_NULL, COLOR_NULL,
   "", 0, B_RADIOBUTTON, 0, 1,0, ID_BOnTopNo,
 },
-  /*32*/  { 289, YpGrLayer , DXCheckBox, DYComboBox, COLOR_NULL, COLOR_NULL, COLOR_NULL,
+  /*32*/  { 314, YpGrLayer , DXCheckBox, DYComboBox, COLOR_NULL, COLOR_NULL, COLOR_NULL,
   "", 0, B_CHECKBOX, 0, 1,0, ID_BTranslucency,
+},
+/*33*/
+    { 314, YpGrLayer + 1 * DYName, DXCheckBox, DYComboBox, COLOR_NULL, COLOR_NULL, COLOR_NULL,
+   "", 0, B_CHECKBOX, 0, 1,0, ID_BVector,
 },
 } ;
 
@@ -408,7 +436,7 @@ static GROUP_BOX gr_box [2] =
   { XpGr, YpGr, DXGroup, DYGroup,
 	COLOR_NULL ,COLOR_NULL, chprop_comm0, 0, NULL,
   },
-  { XpGr + DXGroup + 4, YpGr, 310 - DXGroup - 13, 26, //  75,
+  { XpGr + DXGroup + 4, YpGr, DXDialog - DXGroup - 13, 3 * DYName,
     COLOR_NULL ,COLOR_NULL, chprop_comm2, 0, NULL,
   },
 };
@@ -438,7 +466,7 @@ static DARK_LIGHT_LINE line_d_l [] =
 
 #define y1 1
 #define y2 2
-static IMAGE images_ch[] =
+static IMAGE images_ch[IMAGE_SIZE] =
 {
  {  XpName, YpGrLayer-y2, 32, 32, 45,chprop_tips0},
  {  XpName, YpGrColor-y2, 32, 32, 5,chprop_tips1},
@@ -480,16 +508,19 @@ static IMAGE images_ch[] =
  {  XpName + XpNoButton + 20, YpGrFontName + 11 * DYName -y2, 32, 32, 52,chprop_tips14},
 
  {  XpGr + DXGroup + 4 + 10, YpGrLayer -y2, 32, 32, 126,chprop_tips18},
+
+ {  XpGr + DXGroup + 4 + 10, YpGrLayer + 1*DYName -y2, 32, 32, 212,chprop_tips19},
+ {  XpGr + DXGroup + 4 + 10, YpGrLayer + 1*DYName -y2, 32, 32, 213,chprop_tips19},
 };
 
 static TDIALOG change_dlg=
 {
-	100, 5 /*10*/, 310 /*338*/, DYGroup + 2 * YpGr + 2,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0, chprop_comm1,
+	10, 5, DXDialog, DYGroup + 2 * YpGr + 2,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0, chprop_comm1,
 	2, (DARK_LIGHT_LINE(*)[])&line_d_l,		/*line*/
 	0, NULL,		/*&labels*/
 	2, (GROUP_BOX(*)[])&gr_box,
 	2, (INPUTLINE(*)[])&s__edit, 		/*edit*/
-	31, (IMAGE(*)[])&images_ch,		/*image*/
+	IMAGE_SIZE, (IMAGE(*)[])&images_ch,		/*image*/
 	BUTTON_SIZE, (BUTTON(*)[])&buttons,
 	0, NULL,		/*listbox*/
 	COMBOBOX_SIZE, (COMBOBOX(*)[])&combobox,
@@ -608,8 +639,7 @@ static void set_struct_dialog_control (void)
 /*grubosc linii*/
   Set_Check_Button ( &change_dlg, ID_BWidth, s__change_param.b_width) ;
   listbox [NO_CWidth].enable = s__change_param.b_width ;
-  listbox [NO_CWidth].poz = listbox [NO_CWidth].enable ?
-  s__change_param.width : NoWidthLines;
+  listbox [NO_CWidth].poz = listbox [NO_CWidth].enable ? s__change_param.width : NoWidthLines;
 
 /*typ linii*/
   Set_Check_Button ( &change_dlg, ID_BType,  s__change_param.b_type) ;
@@ -627,6 +657,41 @@ static void set_struct_dialog_control (void)
   Get_Menu_Param(i_pos, listbox[NO_CTranslucency].maxw, listbox[NO_CTranslucency].max,
       &listbox[NO_CTranslucency].foff, &listbox[NO_CTranslucency].poz);
 
+    /*vector style*/
+    if (!options1.uklad_izometryczny)
+    {
+        images_ch[IMAGE_SIZE-2].iconno=abs(images_ch[IMAGE_SIZE-2].iconno);
+        images_ch[IMAGE_SIZE-1].iconno=abs(images_ch[IMAGE_SIZE-1].iconno)*-1;
+
+        combobox[NO_CVector].listbox=&listbox[NO_CVector];
+        NO_CVectorListbox=NO_CVector;
+        NoVectorListbox=NoVector;
+
+        Set_Check_Button(&change_dlg, ID_BVector, s__change_param.b_vector);
+        listbox[NO_CVector].enable = s__change_param.b_vector;
+        listbox[NO_CVector1].enable = FALSE;
+        listbox[NO_CVector].poz = listbox[NO_CVector].enable ? s__change_param.i_vector : NoVector ;
+        i_pos = listbox[NO_CVector].enable ? s__change_param.i_vector : NoVector;
+        Get_Menu_Param(i_pos, listbox[NO_CVector].maxw, listbox[NO_CVector].max,
+                       &listbox[NO_CVector].foff, &listbox[NO_CVector].poz);
+    }
+    else
+    {
+        images_ch[IMAGE_SIZE-2].iconno=abs(images_ch[IMAGE_SIZE-2].iconno)*-1;
+        images_ch[IMAGE_SIZE-1].iconno=abs(images_ch[IMAGE_SIZE-1].iconno);
+
+        combobox[NO_CVector].listbox=&listbox[NO_CVector1];
+        NO_CVectorListbox=NO_CVector1;
+        NoVectorListbox=NoSprings;
+
+        Set_Check_Button(&change_dlg, ID_BVector, s__change_param.b_vector);
+        listbox[NO_CVector1].enable = s__change_param.b_vector;
+        listbox[NO_CVector].enable = FALSE;
+        listbox[NO_CVector1].poz = listbox[NO_CVector1].enable ? s__change_param.i_vector1 : NoSprings ;
+        i_pos = listbox[NO_CVector1].enable ? s__change_param.i_vector1 : NoSprings;
+        Get_Menu_Param(i_pos, listbox[NO_CVector1].maxw, listbox[NO_CVector1].max,
+                       &listbox[NO_CVector1].foff, &listbox[NO_CVector1].poz);
+    }
 
 /*wysokosc tekstu*/
   Set_Check_Button ( &change_dlg, ID_BFontHeight,  s__change_param.b_text_height) ;
@@ -775,6 +840,14 @@ static BOOL get_dlg_controls (void)
   {
       s__change_param.i_translucency = listbox[NO_CTranslucency].foff + listbox[NO_CTranslucency].poz;
   }
+
+    if (TRUE == (s__change_param.b_vector = Get_Check_Button(&change_dlg, ID_BVector)))
+    {
+        if (!options1.uklad_izometryczny)
+             s__change_param.i_vector = listbox[NO_CVectorListbox].foff + listbox[NO_CVectorListbox].poz;
+        else
+            s__change_param.i_vector1 = listbox[NO_CVectorListbox].foff + listbox[NO_CVectorListbox].poz;
+    }
 
   if (TRUE == (s__change_param.b_text_font = Get_Check_Button (&change_dlg, ID_BFontName)))
   {
@@ -963,6 +1036,28 @@ static int proc_dlg (int n)
       }
       Draw_ComboBox (&combobox [NO_CTranslucency]);
       break ;
+      case ID_BVector:
+          s__change_param.b_vector = Get_Check_Button(&change_dlg, ID_BVector);
+          listbox[NO_CVectorListbox].enable = s__change_param.b_vector;
+          if (TRUE == s__change_param.b_vector)
+          {
+              Get_Menu_Param(s__change_param.i_vector,
+                             listbox[NO_CVectorListbox].maxw,
+                             listbox[NO_CVectorListbox].max,
+                             &listbox[NO_CVectorListbox].foff,
+                             &listbox[NO_CVectorListbox].poz);
+          }
+          else
+          {
+              s__change_param.i_vector = listbox [NO_CVectorListbox].foff + listbox [NO_CVectorListbox].poz ;
+              Get_Menu_Param (NoVectorListbox,
+                              listbox [NO_CVectorListbox].maxw,
+                              listbox [NO_CVectorListbox].max,
+                              &listbox [NO_CVectorListbox].foff,
+                              &listbox [NO_CVectorListbox].poz) ;
+          }
+          Draw_ComboBox (&combobox [NO_CVector]);
+          break ;
 
     case ID_BFontName :
       s__change_param.b_text_font = Get_Check_Button (&change_dlg, ID_BFontName) ;
@@ -1360,6 +1455,7 @@ static void change_properties
   WIELOKAT *ob1 ;
   ELLIPSE *ob2;
   SOLIDARC *ob3;
+  AVECTOR *ob4;
   TEXT *ptrs_t ;
   BOOL is_TTF;
   BOOL TTF_redraw;
@@ -1599,6 +1695,43 @@ static void change_properties
                ob2->translucency=transluc;
            }
        }
+        if (lps_change_param->b_vector)
+        {
+            if (ob->obiekt == Ovector)
+            {
+                ob4 = (AVECTOR*)ob;
+                if ((!options1.uklad_izometryczny) && (ob4->cartflags==0))
+                {
+                    switch (lps_change_param->i_vector)
+                    {
+                        case 0:
+                            ob4->style=0;
+                            break;
+                        case 1:
+                            ob4->style=1;
+                            break;
+                        case 2:
+                            ob4->style=2;
+                            break;
+                        case 3:
+                            ob4->style=3;
+                            break;
+                    }
+                }
+                else if ((options1.uklad_izometryczny) && (ob4->cartflags==1) && ob4->style==0)
+                {
+                    switch (lps_change_param->i_vector1)
+                    {
+                        case 0:
+                            ob4->foundflags=0;
+                            break;
+                        case 1:
+                            ob4->foundflags=1;
+                            break;
+                    }
+                }
+            }
+        }
     }
     obiekt_tok_all (NULL, adk, (char **)&ob, ONieOkreslony) ;
   }
@@ -1610,10 +1743,15 @@ static void change_properties
       adp = ADP;
       adk = ADK;
   }
-  blokzap_no_pcx(ADP,ADK,Ablok,COPY_PUT,1);
-  zmien_atrybut (dane, dane + dane_size, Aoblok, Anormalny) ;
-  zmien_atrybut (adp, adk, Ablok, Aoblok) ;
-  ADP = ADK = NULL ;
+
+    /*  this will be done in Change_Properties_dlg
+    blokzap(ADP,ADK,Ablok,COPY_PUT,0); //to avoid translucency interference
+    blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+    memmove(&UNDO_REC, &UNDO_REC_255, sizeof(UNDO_TAB_REC));
+    zmien_atrybut_undo(dane, dane +	dane_size);
+    zmien_atrybut(ADP,ADK,Ablok,Aoblok);
+    */
+
   Change = TRUE;
   Set_Auto_Backup (TRUE) ;
   CUR_OFF (X,Y) ;
@@ -1655,6 +1793,15 @@ void Change_Properties_dlg (void)
 
     change_properties (ADP, ADK, &s__change_param0) ;
   }
+
+    blokzap(ADP,ADK,Ablok,COPY_PUT,0); //to avoid translucency interference
+    blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+    memmove(&UNDO_REC, &UNDO_REC_255, sizeof(UNDO_TAB_REC));
+    zmien_atrybut_undo(dane, dane +	dane_size);
+    zmien_atrybut(ADP,ADK,Ablok,Aoblok);
+
+    ADP = ADK = NULL ;
+
   return ;
 }
 

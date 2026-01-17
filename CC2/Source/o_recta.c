@@ -57,6 +57,10 @@ extern double Angle_Normal_Grid (double angle);
 extern void set_Px_Py(double Px_, double Py_);
 extern void Rotate_Point (double, double, double, double, double, double, double *,double *) ;
 extern BOOL Check_if_Equal (double x, double y);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern int isometric_to_cartesian(double ix, double iy, double *cx, double *cy);
+extern int cartesian_vector_to_isometric(double dx_cart, double dy_cart, double *dx_iso, double *dy_iso);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
 
 typedef
   struct
@@ -489,10 +493,12 @@ static int edit_distance_value (BOOL b_graph_value)
   {
     return 0 ;
   }
+
   wsx = (s_window.x2 - s_window.x1 > 0) ? 1 : -1 ;
   wsy = (s_window.y2 - s_window.y1 > 0) ? 1 : -1 ;
-  df_x1 = jednostkiOb (wsx * eL.values [0]) ;
-  df_y1 = jednostkiOb (wsy * eL.values [1]) ;
+  df_x1 = jednostkiOb(wsx * eL.values[0]);
+  df_y1 = jednostkiOb(wsy * eL.values[1]);
+
   strwyj = 1 ;
   return 1 ;
 }
@@ -745,6 +751,7 @@ static void redcrRECT (int type)
   LINIA L, L1;
   
   double sina, cosa;
+  int ret;
 
   switch (type)
   {
@@ -853,14 +860,25 @@ static void redcrRECT (int type)
 	  cosa=get_cosa();
 	  if (strwyj==1)
 	  {
-	    prectangle.x1=0;
-	    prectangle.y1=0;
-	    prectangle.x2=-df_x1*cosa;
-	    prectangle.y2=-df_x1*sina;
-	    prectangle.x3=-(df_x1*cosa)+(df_y1*sina);
-	    prectangle.y3=-(df_x1*sina)-(df_y1*cosa);
-	    prectangle.x4=df_y1*sina;
-	    prectangle.y4=-df_y1*cosa;
+        if (!options1.uklad_izometryczny)
+        {
+            prectangle.x1 = 0;
+            prectangle.y1 = 0;
+            prectangle.x2 = -df_x1 * cosa;
+            prectangle.y2 = -df_x1 * sina;
+            prectangle.x3 = -(df_x1 * cosa) + (df_y1 * sina);
+            prectangle.y3 = -(df_x1 * sina) - (df_y1 * cosa);
+            prectangle.x4 = df_y1 * sina;
+            prectangle.y4 = -df_y1 * cosa;
+        }
+        else
+        {
+            prectangle.x1 = 0;
+            prectangle.y1 = 0;
+            ret = isometric_to_cartesian(-df_x1, 0., &prectangle.x2, &prectangle.y2);
+            ret = isometric_to_cartesian(-df_x1, -df_y1, &prectangle.x3, &prectangle.y3);
+            ret = isometric_to_cartesian(0., -df_y1, &prectangle.x4, &prectangle.y4);
+        }
 
           base_point_x=prectangle.x1;
           base_point_y=prectangle.y1;

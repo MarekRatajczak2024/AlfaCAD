@@ -1855,10 +1855,16 @@ void GrMouseGetKeys(GrMouseEvent *event, int PozX, int PozY)
 
 	//int p_mouse = my_poll_mouse();  // WINE
 
+	if (mouse_b>0)
+	{
+		int a=0;
+	}
+
 	last_mouse_b = cur_mouse_b;
 	cur_mouse_b = mouse_b;
 
-	if ((cur_mouse_b & 1) && !(last_mouse_b & 1)) event->flags += 4;
+	if ((cur_mouse_b & 1) && !(last_mouse_b & 1))
+		event->flags += 4;
 	if ((cur_mouse_b & 2) && !(last_mouse_b & 2))
     {
         event->flags += 1;
@@ -1900,7 +1906,7 @@ void GrMouseGetEvent1(int flags,GrMouseEvent *event)
 	  //czekanie na podniesienie klawisza
       //
 	  if (mouse_b > 0) GrMouseRelease();
-	  
+
     }
   if (flags & GR_M_MOTION)
     {

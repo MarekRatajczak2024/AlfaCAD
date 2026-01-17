@@ -96,7 +96,7 @@ TMENU mArray_polar_rot={2,0,0,34,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0
  *
  * Returns: 0 on success, -1 if output pointers are NULL
  */
-int isometric_gradient_to_cartesian_(double df_dx_iso, double df_dy_iso, double *df_dx_cart, double *df_dy_cart)
+int isometric_gradient_to_cartesian(double df_dx_iso, double df_dy_iso, double *df_dx_cart, double *df_dy_cart)
 {
     if (!df_dx_cart || !df_dy_cart) return -1;
 

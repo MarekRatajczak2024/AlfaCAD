@@ -189,6 +189,9 @@ static int wyznacz_tekst(BOOL draw)
   int lx,z;
   int len ;
   double kat2_kat1, ex_r ;
+  double pl_dx, pl_dy;
+  int ret;
+  double tangent;
 
   if (zmwym.dokladnosc == 0.0) zmwym.dokladnosc = 0.01;  //for not well converted DXF files
 
@@ -211,13 +214,25 @@ static int wyznacz_tekst(BOOL draw)
       {
       wl.kat1=wl.kat1-(2*Pi);
       }
-      l=((wl.kat2-wl.kat1)/(2*Pi))*360;
+      if (!options1.uklad_izometryczny)
+           l=((wl.kat2-wl.kat1)/(2*Pi))*360;
+      else {
+          l=(cartesian_angle_to_isometric_angle(wl.kat2)-cartesian_angle_to_isometric_angle(wl.kat1))/M_PI*180.;
+      }
+      if (l<0.) l+=360.;
       kat2_kat1=0.5*(wl.kat2+wl.kat1);
      }
       else
 	{
-	l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
-	l=milimetryob(l);
+        if (!options1.uklad_izometryczny)
+        {
+            l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
+        }
+        else
+        {
+            l=isometric_vector_length(w.x0, w.y0, w.x2, w.y2, &pl_dx, &pl_dy);
+        }
+        l=milimetryob(l);
 	}
 
 
@@ -279,23 +294,35 @@ static int wyznacz_tekst(BOOL draw)
       wysokosc = zmwym.wysokosc;
       l = 0;
       T.justowanie = j_srodkowo;
-      if (zmwym.kierunek_t == 1) {
-          T.kat = 0;
-          if (kat2_kat1 <= Pi) y = y1;
-          else y = y1 - wysokosc;
+      if (!options1.uklad_izometryczny) {
+          if (zmwym.kierunek_t == 1) {
+              T.kat = 0;
+              if (kat2_kat1 <= Pi) y = y1;
+              else y = y1 - wysokosc;
 
-          if (kat2_kat1 <= (Pi * 0.5)) x = x1;
-          else if (kat2_kat1 > (Pi * 1.5)) x = x1;
-          else x = x1 - l;
-      } else {
-          T.kat = (kat2_kat1) - (Pi * 0.5);
-          if (zmwym.collinear == 0) {
-              y = y1 - (sin(T.kat) * 0.5 * l);
-              x = x1 - (cos(T.kat) * 0.5 * l);
+              if (kat2_kat1 <= (Pi * 0.5)) x = x1;
+              else if (kat2_kat1 > (Pi * 1.5)) x = x1;
+              else x = x1 - l;
           } else {
-              y = y1 - (sin(T.kat) * 0.5 * l) - T.wysokosc * 0.5 * fabs(cos(T.kat));
-              x = x1 - (cos(T.kat) * 0.5 * l) + T.wysokosc * 0.5 * sin(T.kat);
+              T.kat = (kat2_kat1) - (Pi * 0.5);
+              if (zmwym.collinear == 0) {
+                  y = y1 - (sin(T.kat) * 0.5 * l);
+                  x = x1 - (cos(T.kat) * 0.5 * l);
+              } else {
+                  y = y1 - (sin(T.kat) * 0.5 * l) - T.wysokosc * 0.5 * fabs(cos(T.kat));
+                  x = x1 - (cos(T.kat) * 0.5 * l) + T.wysokosc * 0.5 * sin(T.kat);
+              }
           }
+      }
+      else
+      {
+          srodekea_(&x1, &y1, &tangent, &ea);
+          tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+          double kats = tangent + Pi_ / 2.;
+          if (kats < 0) kats += 2.0 * M_PI;
+          x=(float)(x1+0.5*cos(kats));
+          y=(float)(y1+0.5*sin(kats));
+          T.kat=(float)tangent;
       }
   }
   else {
@@ -340,6 +367,9 @@ static int wyznacz_tekst(BOOL draw)
   T.n=T18+T.dl;
   T.width = 0;
   T.height = 0;
+
+  normalize_txt(&T);
+
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
   else if(WymInter)
   {
@@ -482,8 +512,8 @@ static int wyznacz_tekst_clock(void)
 
    }
   T.warstwa=Current_Layer;
-  T.x=x;
-  T.y=y;
+  T.x=(float)x;
+  T.y=(float)y;
   T.dl=strlen(&T.text[0]);
   T.n=T18+T.dl;
   T.width = 0;
@@ -508,7 +538,7 @@ static int s0(void)
   St.warstwa=Current_Layer;
   kat1=kat.kat;
   l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
-  Wst0=(l>2*Kp2s*cos(Pi*kat0/180)) ? 0 : 1;
+  Wst0=(l>2*Kp2s*cos(Pi*kat0/180.)) ? 0 : 1;
   if(Wst0) n=-1;
   else n=1;
   if(w.x0>=w.x2 && w.y0>=w.y2 && kat1<=90)n=-n;
@@ -523,58 +553,66 @@ static int s0(void)
      okno_all();
    }
   if(Continue==2 && Wst0==1)
-   { L.x1=w.x0-K1_5*cos(Pi*(kat.kat+45)/180);
-     L.y1=w.y0-K1_5*sin(Pi*(kat.kat+45)/180);
-     L.x2=w.x0+K1_5*cos(Pi*(kat.kat+45)/180);
-     L.y2=w.y0+K1_5*sin(Pi*(kat.kat+45)/180);
+   { L.x1=(float)(w.x0-K1_5*cos(Pi*(kat.kat+45.)/180.));
+     L.y1=(float)(w.y0-K1_5*sin(Pi*(kat.kat+45.)/180.));
+     L.x2=(float)(w.x0+K1_5*cos(Pi*(kat.kat+45.)/180.));
+     L.y2=(float)(w.y0+K1_5*sin(Pi*(kat.kat+45.)/180.));
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
      else if(WymInter) outline(&L,COPY_PUT,0);
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
-     L.x1=w.x0;
-     L.y1=w.y0;
-     L.x2=w.x0-n1*K1_5*fabs(kat.cos);
-     L.y2=w.y0-n2*K1_5*fabs(kat.sin);
+     L.x1=(float)w.x0;
+     L.y1=(float)w.y0;
+     L.x2=(float)(w.x0-n1*K1_5*fabs(kat.cos));
+     L.y2=(float)(w.y0-n2*K1_5*fabs(kat.sin));
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
      else if(WymInter) outline(&L,COPY_PUT,0);
    }
   if(Wst0==1)
-   { Ls1.x1=w.x2-K1_5*cos(Pi*(kat.kat+45)/180);
-     Ls1.y1=w.y2-K1_5*sin(Pi*(kat.kat+45)/180);
-     Ls1.x2=w.x2+K1_5*cos(Pi*(kat.kat+45)/180);
-     Ls1.y2=w.y2+K1_5*sin(Pi*(kat.kat+45)/180);
+   { Ls1.x1=(float)(w.x2-K1_5*cos(Pi*(kat.kat+45.)/180.));
+     Ls1.y1=(float)(w.y2-K1_5*sin(Pi*(kat.kat+45.)/180.));
+     Ls1.x2=(float)(w.x2+K1_5*cos(Pi*(kat.kat+45.)/180.));
+     Ls1.y2=(float)(w.y2+K1_5*sin(Pi*(kat.kat+45.)/180.));
      if((ad=(void *)dodaj_obiekt((BLOK*)dane,(void*)&Ls1))==NULL) return 0;
      else if(WymInter) outline(&Ls1,COPY_PUT,0);
      MovAd=((char *)ad)-dane;
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
-     Ls.x1=w.x2;
-     Ls.y1=w.y2;
-     Ls.x2=w.x2+n1*K1_5*fabs(kat.cos);
-     Ls.y2=w.y2+n2*K1_5*fabs(kat.sin);
+     Ls.x1=(float)w.x2;
+     Ls.y1=(float)w.y2;
+     Ls.x2=(float)(w.x2+n1*K1_5*fabs(kat.cos));
+     Ls.y2=(float)(w.y2+n2*K1_5*fabs(kat.sin));
      Lsw=1;
    }
   if(Wst0==0)
-   { St.xy[2]=w.x0;
-     St.xy[3]=w.y0;
-     St.xy[0]=w.x0+n*Kp2s*cos(Pi*(kat1-kat0)/180);
-     St.xy[1]=w.y0+n*Kp2s*sin(Pi*(kat1-kat0)/180);
-     St.xy[4]=w.x0+n*Kp2s*cos(Pi*(kat1+kat0)/180);
-     St.xy[5]=w.y0+n*Kp2s*sin(Pi*(kat1+kat0)/180);
+   { St.xy[2]=(float)w.x0;
+     St.xy[3]=(float)w.y0;
+     St.xy[0]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1-kat0)/180.));
+     St.xy[1]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1-kat0)/180.));
+     St.xy[4]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1+kat0)/180.));
+     St.xy[5]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1+kat0)/180.));
      St.lp = 6;
      St.n = 8 /*4*/ + St.lp * sizeof (float) ;
+     if (options1.uklad_izometryczny)
+     {
+         izometrize_solid(XY_PLANE, &St);
+     }
      if(dodaj_obiekt((BLOK*)dane,(void*)&St)==NULL) return 0;
      else
      if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
-     St.xy[2]=w.x2;
-     St.xy[3]=w.y2;
-     St.xy[0]=w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180);
-     St.xy[1]=w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180);
-     St.xy[4]=w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180);
-     St.xy[5]=w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180);
+     St.xy[2]=(float)w.x2;
+     St.xy[3]=(float)w.y2;
+     St.xy[0]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180.));
+     St.xy[1]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180.));
+     St.xy[4]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180.));
+     St.xy[5]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180.));
      St.lp = 6;
      St.n = 8 /*4*/ + St.lp * sizeof (float) ;
+     if (options1.uklad_izometryczny)
+     {
+         izometrize_solid(XY_PLANE, &St);
+     }
      if(dodaj_obiekt((BLOK*)dane,(void*)&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -585,14 +623,26 @@ static int s0(void)
 }
 
 static int s1(void)
-{ int n1,n2;
+{   int n1,n2;
+    double ukat;
+
+    if (!options1.uklad_izometryczny) ukat=45.;
+    else
+    {
+        if (Check_if_Equal(kat.kat, 330.))
+            ukat=30.;
+        else if (Check_if_Equal(kat.kat, 30.))
+            ukat=60.;
+        else
+            ukat=45.;
+    }
 
   L.warstwa=Ls1.warstwa=Current_Layer;
   if (Continue==2)
-   { L.x1=w.x0-Kp2*cos(Pi*(kat.kat+45)/180);
-     L.y1=w.y0-Kp2*sin(Pi*(kat.kat+45)/180);
-     L.x2=w.x0+Kp2*cos(Pi*(kat.kat+45)/180);
-     L.y2=w.y0+Kp2*sin(Pi*(kat.kat+45)/180);
+   { L.x1=(float)(w.x0-Kp2*cos(Pi*(kat.kat+ukat)/180.));
+     L.y1=(float)(w.y0-Kp2*sin(Pi*(kat.kat+ukat)/180.));
+     L.x2=(float)(w.x0+Kp2*cos(Pi*(kat.kat+ukat)/180.));
+     L.y2=(float)(w.y0+Kp2*sin(Pi*(kat.kat+ukat)/180.));
      L.typ = 64 /*5*/;
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
      else if(WymInter)
@@ -602,20 +652,20 @@ static int s1(void)
      Ls1.typ = 32 /*0*/;
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
-     Ls1.x1=w.x0;
-     Ls1.y1=w.y0;
-     Ls1.x2=w.x0-n1*K1_5*fabs(kat.cos);
-     Ls1.y2=w.y0-n2*K1_5*fabs(kat.sin);
+     Ls1.x1=(float)w.x0;
+     Ls1.y1=(float)w.y0;
+     Ls1.x2=(float)(w.x0-n1*K1_5*fabs(kat.cos));
+     Ls1.y2=(float)(w.y0-n2*K1_5*fabs(kat.sin));
      if(dodaj_obiekt((BLOK*)dane,(void*)&Ls1)==NULL) return 0;
      else if(WymInter)
      {
          rysuj_obiekt(&Ls1, COPY_PUT, 1);
      }
    }
-  L.x1=w.x2-Kp2*cos(Pi*(kat.kat+45)/180);
-  L.y1=w.y2-Kp2*sin(Pi*(kat.kat+45)/180);
-  L.x2=w.x2+Kp2*cos(Pi*(kat.kat+45)/180);
-  L.y2=w.y2+Kp2*sin(Pi*(kat.kat+45)/180);
+  L.x1=(float)(w.x2-Kp2*cos(Pi*(kat.kat+ukat)/180.));
+  L.y1=(float)(w.y2-Kp2*sin(Pi*(kat.kat+ukat)/180.));
+  L.x2=(float)(w.x2+Kp2*cos(Pi*(kat.kat+ukat)/180.));
+  L.y2=(float)(w.y2+Kp2*sin(Pi*(kat.kat+ukat)/180.));
   L.typ = 64 /*5*/;
   if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
   else if(WymInter)
@@ -625,10 +675,10 @@ static int s1(void)
   L.typ = 32 /*0*/;
   n1=w.x2>w.x0 ? 1 : -1;
   n2=w.y2>w.y0 ? 1 : -1;
-  Ls.x1=w.x2;
-  Ls.y1=w.y2;
-  Ls.x2=w.x2+n1*K1_5*fabs(kat.cos);
-  Ls.y2=w.y2+n2*K1_5*fabs(kat.sin);
+  Ls.x1=(float)w.x2;
+  Ls.y1=(float)w.y2;
+  Ls.x2=(float)(w.x2+n1*K1_5*fabs(kat.cos));
+  Ls.y2=(float)(w.y2+n2*K1_5*fabs(kat.sin));
   Lsw=1;
   return 1;
 }
@@ -640,37 +690,36 @@ static int s2(void)
   setfillstyle_(SOLID_FILL,zmwym.Lkolor);
   if (Continue==2)
    { Ko.warstwa=Current_Layer;
-     Ko.x=w.x0;
-     Ko.y=w.y0;
-     Ko.r=K0_5;
+     Ko.x=(float)w.x0;
+     Ko.y=(float)w.y0;
+     Ko.r=(float)K0_5;
      if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&Ko, COPY_PUT, 1) ;
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
-     Ls1.x1=w.x0;
-     Ls1.y1=w.y0;
-     Ls1.x2=w.x0-n1*K1_5*fabs(kat.cos);
-     Ls1.y2=w.y0-n2*K1_5*fabs(kat.sin);
+     Ls1.x1=(float)w.x0;
+     Ls1.y1=(float)w.y0;
+     Ls1.x2=(float)(w.x0-n1*K1_5*fabs(kat.cos));
+     Ls1.y2=(float)(w.y0-n2*K1_5*fabs(kat.sin));
      if(dodaj_obiekt((BLOK*)dane,&Ls1)==NULL) return 0;
-     else if(WymInter)
-     {
+     else if(WymInter) {
          rysuj_obiekt(&Ls1, COPY_PUT, 1);
      }
    }
   Ko.warstwa=Current_Layer;
-  Ko.x=w.x2;
-  Ko.y=w.y2;
-  Ko.r=K0_5;
+  Ko.x=(float)w.x2;
+  Ko.y=(float)w.y2;
+  Ko.r=(float)K0_5;
   if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
   else if(WymInter)
        rysuj_obiekt ((char *)&Ko, COPY_PUT, 1) ;
   n1=w.x2>w.x0 ? 1 : -1;
   n2=w.y2>w.y0 ? 1 : -1;
-  Ls.x1=w.x2;
-  Ls.y1=w.y2;
-  Ls.x2=w.x2+n1*K1_5*fabs(kat.cos);
-  Ls.y2=w.y2+n2*K1_5*fabs(kat.sin);
+  Ls.x1=(float)w.x2;
+  Ls.y1=(float)w.y2;
+  Ls.x2=(float)(w.x2+n1*K1_5*fabs(kat.cos));
+  Ls.y2=(float)(w.y2+n2*K1_5*fabs(kat.sin));
   Lsw=1;
   return 1;
  }
@@ -683,18 +732,18 @@ static int s_l(BOOL draw)
 
   kat1=kat.kat;
   l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
-  Wst0=(l>2*Kp2s*cos(Pi*kat0/180)) ? 0 : 1;
+  Wst0=(l>2*Kp2s*cos(Pi*kat0/180.)) ? 0 : 1;
   if(Wst0) n=-1;
   else n=1;
   if(w.x0>=w.x2 && w.y0>=w.y2 && kat1<=90)n=-n;
   if(w.x0>=w.x2 && w.y0<=w.y2 && kat1>=180)n=-n;
      St.warstwa=Current_Layer;
-     St.xy[2]=w.x2;
-     St.xy[3]=w.y2;
-     St.xy[0]=w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180);
-     St.xy[1]=w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180);
-     St.xy[4]=w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180);
-     St.xy[5]=w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180);
+     St.xy[2]=(float)w.x2;
+     St.xy[3]=(float)w.y2;
+     St.xy[0]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180.));
+     St.xy[1]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180.));
+     St.xy[4]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180.));
+     St.xy[5]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180.));
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
@@ -702,9 +751,9 @@ static int s_l(BOOL draw)
         if (draw) rysuj_obiekt((char *) &St, COPY_PUT, 1);
      }
      Ko.warstwa=Current_Layer;
-     Ko.x=w.x0;
-     Ko.y=w.y0;
-     Ko.r=K0_5;
+     Ko.x=(float)w.x0;
+     Ko.y=(float)w.y0;
+     Ko.r=(float)K0_5;
      if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
      else if(WymInter) {
          if (draw) rysuj_obiekt((char *) &Ko, COPY_PUT, 1);
@@ -731,14 +780,24 @@ static int s_ll(void)
   else n=1;
      dkat=Pi*kat0/180;
      St.warstwa=Current_Layer;
-     St.xy[2]=xp;
-     St.xy[3]=yp;
-     St.xy[0]=xp-n*Kp2s*cos(kat1-dkat);
-     St.xy[1]=yp-n*Kp2s*sin(kat1-dkat);
-     St.xy[4]=xp-n*Kp2s*cos(kat1+dkat);
-     St.xy[5]=yp-n*Kp2s*sin(kat1+dkat);
+    if (!options1.uklad_izometryczny) {
+        St.xy[2] = (float) xp;
+        St.xy[3] = (float) yp;
+        St.xy[0] = (float) (xp - n * Kp2s * cos(kat1 - dkat));
+        St.xy[1] = (float) (yp - n * Kp2s * sin(kat1 - dkat));
+        St.xy[4] = (float) (xp - n * Kp2s * cos(kat1 + dkat));
+        St.xy[5] = (float) (yp - n * Kp2s * sin(kat1 + dkat));
+    }
+    else
+        make_dim_elliptical_arc_isometric_solid(&ea, ea_start_x, ea_start_y, ea_end_x, ea_end_y, Kp2s, kat0, 0, &St);
+
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+     //   izometrize_solid(XY_PLANE, &St);
+
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -748,14 +807,23 @@ static int s_ll(void)
   xp=Llw.x+r1*cos(Llw.kat1);
   yp=Llw.y+r1*sin(Llw.kat1);
 
-     St.xy[2]=xp;
-     St.xy[3]=yp;
-     St.xy[0]=xp-n*Kp2s*cos(kat1-dkat);
-     St.xy[1]=yp-n*Kp2s*sin(kat1-dkat);
-     St.xy[4]=xp-n*Kp2s*cos(kat1+dkat);
-     St.xy[5]=yp-n*Kp2s*sin(kat1+dkat);
+    if (!options1.uklad_izometryczny) {
+        St.xy[2] = (float) xp;
+        St.xy[3] = (float) yp;
+        St.xy[0] = (float) (xp - n * Kp2s * cos(kat1 - dkat));
+        St.xy[1] = (float) (yp - n * Kp2s * sin(kat1 - dkat));
+        St.xy[4] = (float) (xp - n * Kp2s * cos(kat1 + dkat));
+        St.xy[5] = (float) (yp - n * Kp2s * sin(kat1 + dkat));
+    }
+    else
+        make_dim_elliptical_arc_isometric_solid(&ea, ea_start_x, ea_start_y, ea_end_x, ea_end_y, Kp2s, kat0, 1, &St);
+
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+      //  izometrize_solid(XY_PLANE, &St);
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -779,20 +847,22 @@ static int s_ll_clock(void)
   xp=Llw.x+r1*cos(Llw.kat2);
   yp=Llw.y+r1*sin(Llw.kat2);
 
-
-
   if(Wst0) n=-1;
   else n=1;
      dkat=Pi*kat0/180;
      St.warstwa=Current_Layer;
-     St.xy[2]=xp;
-     St.xy[3]=yp;
-     St.xy[0]=xp-n*dl_st*cos(kat1-dkat);
-     St.xy[1]=yp-n*dl_st*sin(kat1-dkat);
-     St.xy[4]=xp-n*dl_st*cos(kat1+dkat);
-     St.xy[5]=yp-n*dl_st*sin(kat1+dkat);
+     St.xy[2]=(float)xp;
+     St.xy[3]=(float)yp;
+     St.xy[0]=(float)(xp-n*dl_st*cos(kat1-dkat));
+     St.xy[1]=(float)(yp-n*dl_st*sin(kat1-dkat));
+     St.xy[4]=(float)(xp-n*dl_st*cos(kat1+dkat));
+     St.xy[5]=(float)(yp-n*dl_st*sin(kat1+dkat));
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+        izometrize_solid(XY_PLANE, &St);
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -801,14 +871,18 @@ static int s_ll_clock(void)
   xp=Llw.x+r1*cos(Llw.kat1);
   yp=Llw.y+r1*sin(Llw.kat1);
 
-     St.xy[2]=xp;
-     St.xy[3]=yp;
-     St.xy[0]=xp-n*dl_st*cos(kat1-dkat);
-     St.xy[1]=yp-n*dl_st*sin(kat1-dkat);
-     St.xy[4]=xp-n*dl_st*cos(kat1+dkat);
-     St.xy[5]=yp-n*dl_st*sin(kat1+dkat);
+     St.xy[2]=(float)xp;
+     St.xy[3]=(float)yp;
+     St.xy[0]=(float)(xp-n*dl_st*cos(kat1-dkat));
+     St.xy[1]=(float)(yp-n*dl_st*sin(kat1-dkat));
+     St.xy[4]=(float)(xp-n*dl_st*cos(kat1+dkat));
+     St.xy[5]=(float)(yp-n*dl_st*sin(kat1+dkat));
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+        izometrize_solid(XY_PLANE, &St);
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -824,30 +898,38 @@ static int s_o(void)
   St.warstwa=Current_Layer;
   kat1=kat.kat;
   l=sqrt((w.x2-w.x0)*(w.x2-w.x0)+(w.y2-w.y0)*(w.y2-w.y0));
-  Wst0=(l>2*Kp2s*cos(Pi*kat0/180)) ? 0 : 1;
+  Wst0=(l>2*Kp2s*cos(Pi*kat0/180.)) ? 0 : 1;
   if(Wst0) n=-1;
   else n=1;
   if(w.x0>=w.x2 && w.y0>=w.y2 && kat1<=90)n=-n;
   if(w.x0>=w.x2 && w.y0<=w.y2 && kat1>=180)n=-n;
-     St.xy[2]=w.x2;
-     St.xy[3]=w.y2;
-     St.xy[0]=w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180);
-     St.xy[1]=w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180);
-     St.xy[4]=w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180);
-     St.xy[5]=w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180);
+     St.xy[2]=(float)w.x2;
+     St.xy[3]=(float)w.y2;
+     St.xy[0]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180.));
+     St.xy[1]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180.));
+     St.xy[4]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180.));
+     St.xy[5]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180.));
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+        izometrize_solid(XY_PLANE, &St);
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
-     St.xy[2]=w.x0;
-     St.xy[3]=w.y0;
-     St.xy[0]=w.x0+n*Kp2s*cos(Pi*(kat1-kat0)/180);
-     St.xy[1]=w.y0+n*Kp2s*sin(Pi*(kat1-kat0)/180);
-     St.xy[4]=w.x0+n*Kp2s*cos(Pi*(kat1+kat0)/180);
-     St.xy[5]=w.y0+n*Kp2s*sin(Pi*(kat1+kat0)/180);
+     St.xy[2]=(float)w.x0;
+     St.xy[3]=(float)w.y0;
+     St.xy[0]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1-kat0)/180.));
+     St.xy[1]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1-kat0)/180.));
+     St.xy[4]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1+kat0)/180.));
+     St.xy[5]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1+kat0)/180.));
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
+    if (options1.uklad_izometryczny)
+    {
+        izometrize_solid(XY_PLANE, &St);
+    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -864,20 +946,25 @@ static int outs(BOOL draw)
   double r1, r2;
 
   //counting the angle
-  l.x1 = w.x0;
-  l.y1 = w.y0;
-  l.x2 = w.x2;
-  l.y2 = w.y2;
+  l.x1 = (float)w.x0;
+  l.y1 = (float)w.y0;
+  l.x2 = (float)w.x2;
+  l.y2 = (float)w.y2;
   parametry_lini(&l, &PL);
 
   if (wym_okregu == 0)
   {
-
       if(typ_wymiar == Olinia) {
           if (zmwym.strzalka == 0)
           {
               if (PL.dl >= 5.0) r2 = 2.5; //1.5;
               else r2 = 0.0;
+          }
+          else
+          {
+              //if (PL.dl >= 5.0) r2 = 2.5; //1.5;
+              //else r2 = 0.0;
+              r2 = 0;
           }
       }
       else {
@@ -901,10 +988,10 @@ static int outs(BOOL draw)
 	  y2k = w.y2 + r1 * kat.sin;
 
 	  Lw.warstwa = Current_Layer;
-	  Lw.x1 = x1p;
-	  Lw.y1 = y1p;
-	  Lw.x2 = x2p;
-	  Lw.y2 = y2p;
+	  Lw.x1 = (float)x1p;
+	  Lw.y1 = (float)y1p;
+	  Lw.x2 = (float)x2p;
+	  Lw.y2 = (float)y2p;
 	  Lw.obiektt2 = O2BlockDim;
 	  Lw.obiektt3 = O3WymRoz;
       if(typ_wymiar != Oluk) ////
@@ -945,10 +1032,10 @@ static int outs(BOOL draw)
 
             if (w.x2>w.x0) r2*=-1;
 
-            Lw.x1 = w.x0 - r2 * kat.cos;
-            Lw.y1 = w.y0 - r2 * kat.sin;
-            Lw.x2 = w.x2 + r2 * kat.cos;
-            Lw.y2 = w.y2 + r2 * kat.sin;
+            Lw.x1 = (float)(w.x0 - r2 * kat.cos);
+            Lw.y1 = (float)(w.y0 - r2 * kat.sin);
+            Lw.x2 = (float)(w.x2 + r2 * kat.cos);
+            Lw.y2 = (float)(w.y2 + r2 * kat.sin);
         }
         else
         {
@@ -960,10 +1047,10 @@ static int outs(BOOL draw)
                 if (w.y2 < w.y0) r2 *= -1;
             }
 
-            Lw.x1 = w.x0;
-            Lw.y1 = w.y0;
-            Lw.x2 = w.x2 - r2 * kat.cos;
-            Lw.y2 = w.y2 - r2 * kat.sin;
+            Lw.x1 = (float)w.x0;
+            Lw.y1 = (float)w.y0;
+            Lw.x2 = (float)(w.x2 - r2 * kat.cos);
+            Lw.y2 = (float)(w.y2 - r2 * kat.sin);
         }
     }
     else if(typ_wymiar == Oluk)
@@ -976,10 +1063,10 @@ static int outs(BOOL draw)
             if (w.y2 < w.y0) r2 *= -1;
         }
 
-        Lw.x1 = w.x0;
-        Lw.y1 = w.y0;
-        Lw.x2 = w.x2 - r2 * kat.cos;
-        Lw.y2 = w.y2 - r2 * kat.sin;
+        Lw.x1 = (float)w.x0;
+        Lw.y1 = (float)w.y0;
+        Lw.x2 = (float)(w.x2 - r2 * kat.cos);
+        Lw.y2 = (float)(w.y2 - r2 * kat.sin);
     }
     else //Olinia
     {
@@ -990,10 +1077,10 @@ static int outs(BOOL draw)
             if (w.y2 < w.y0) r2 *= -1;
         }
 
-        Lw.x1 = w.x0 + r2 * kat.cos;
-        Lw.y1 = w.y0 + r2 * kat.sin;
-        Lw.x2 = w.x2 - r2 * kat.cos;
-        Lw.y2 = w.y2 - r2 * kat.sin;
+        Lw.x1 = (float)(w.x0 + r2 * kat.cos);
+        Lw.y1 = (float)(w.y0 + r2 * kat.sin);
+        Lw.x2 = (float)(w.x2 - r2 * kat.cos);
+        Lw.y2 = (float)(w.y2 - r2 * kat.sin);
     }
 
     if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
@@ -1006,10 +1093,10 @@ static int outs(BOOL draw)
   if (wym_okregu == 0)
   {
 	  Lw.warstwa = Current_Layer;
-	  Lw.x1 = x1k;
-	  Lw.y1 = y1k;
-	  Lw.x2 = x2k;
-	  Lw.y2 = y2k;
+	  Lw.x1 = (float)x1k;
+	  Lw.y1 = (float)y1k;
+	  Lw.x2 = (float)x2k;
+	  Lw.y2 = (float)y2k;
 	  Lw.obiektt2 = O2BlockDim;
 	  Lw.obiektt3 = O3WymRoz;
       if(typ_wymiar != Oluk) ////
@@ -1053,30 +1140,67 @@ static int outss(void)
   double x1p,y1p,x1k,y1k,x2p,y2p,x2k,y2k;
   double r1;
   double k1, l1;
+  //ELLIPTICALARC ea0=eldef, ea=eldef;
+  LUK Llw0=ldef;
 
   Llw.typ=Lw.typ;
   Llw.warstwa=Current_Layer;
   Llw.obiektt2=1;
   Llw.blok=1;
-  Llw.x=wl.x;
-  Llw.y=wl.y;
+  Llw.x=(float)wl.x;
+  Llw.y=(float)wl.y;
+
+    Llw0.x=(float)wl.x;
+    Llw0.y=(float)wl.y;
 
   if (wl.kat2<wl.kat1)
   {
-    wl.kat1=wl.kat1-(2*Pi);
+    //wl.kat1=wl.kat1-(2*Pi);
+    wl.kat2+=(float)(2*Pi);
   }
-  l1=(wl.kat2-wl.kat1)*(wl.r-zmwym.linia_ob);
+  l1=(wl.kat2-wl.kat1)*(wl.r); //-zmwym.linia_ob);
   if (l1>5.0) k1=2.49/wl.r; else k1=0.0;    //1.5
 
-  Llw.kat1=wl.kat1+k1;
-  Llw.kat2=wl.kat2-k1;
-  Llw.r=wl.r;
-  if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
-   if(dodaj_obiekt((BLOK*)dane,&Llw)==NULL) return 0;
-    else if(WymInter) rysuj_obiekt ((char *)&Llw, COPY_PUT, 1) ;
+    Llw0.kat1=(float)(wl.kat1);
+    Llw0.kat2=(float)(wl.kat2);
+    Llw0.r=(float)wl.r;
 
-  Llw.kat1=wl.kat1;
-  Llw.kat2=wl.kat2;
+    if (wl.kat2 < wl.kat1) wl.kat2+=(float)2*M_PI;
+
+  Llw.kat1=(float)(wl.kat1+k1);
+  Llw.kat2=(float)(wl.kat2-k1);
+
+    if (Llw.kat1 > (float)2*M_PI) Llw.kat1-=(float)2*M_PI;
+    if (Llw.kat2 > (float)2*M_PI) Llw.kat2-=(float)2*M_PI;
+
+    Llw.r=(float)wl.r;
+
+  if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
+  {
+      if (!options1.uklad_izometryczny)
+      {
+          if (dodaj_obiekt((BLOK *) dane, &Llw) == NULL) return 0;
+          else if (WymInter) rysuj_obiekt((char *) &Llw, COPY_PUT, 1);
+      }
+      else
+      {
+          ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw0, &ea0);
+          Get_EllipticalArc_EndPoints (ea0.x, ea0.y, ea0.rx, ea0.ry, ea0.angle, ea0.kat1, ea0.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+          ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw, &ea);
+          //Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+          ea.typ=Lw.typ;
+          ea.warstwa=Current_Layer;
+          ea.obiektt2=1;
+          ea.blok=1;
+          if (dodaj_obiekt((BLOK *) dane, &ea) == NULL) return 0;
+          else if (WymInter) rysuj_obiekt((char *) &ea, COPY_PUT, 1);
+      }
+  }
+
+  Llw.kat1=(float)wl.kat1;
+  Llw.kat2=(float)wl.kat2;
 
   r1=wl.r-zmwym.linia_ob;
   x1p=Llw.x+r1*cos(Llw.kat1);
@@ -1090,10 +1214,10 @@ static int outss(void)
   y2k=Llw.y+r1*sin(Llw.kat2);
 
   Lw.warstwa=Current_Layer;
-  Lw.x1=x1p;
-  Lw.y1=y1p;
-  Lw.x2=x2p;
-  Lw.y2=y2p;
+  Lw.x1=(float)x1p;
+  Lw.y1=(float)y1p;
+  Lw.x2=(float)x2p;
+  Lw.y2=(float)y2p;
   Lw.obiektt2 = O2BlockDim;
   Lw.obiektt3 = O3WymRoz;
   if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
@@ -1104,10 +1228,10 @@ static int outss(void)
    }
 
 /*  Lw.warstwa=Current_Layer; */
-  Lw.x1=x1k;
-  Lw.y1=y1k;
-  Lw.x2=x2k;
-  Lw.y2=y2k;
+  Lw.x1=(float)x1k;
+  Lw.y1=(float)y1k;
+  Lw.x2=(float)x2k;
+  Lw.y2=(float)y2k;
   if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
    if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
    else if(WymInter)
@@ -1139,11 +1263,11 @@ static int outss_clock(void)
   Llw.warstwa=Current_Layer;
   Llw.obiektt2=1;
   Llw.blok=1;
-  Llw.x=wl.x;
-  Llw.y=wl.y;
-  Llw.kat1=wl.kat1;
-  Llw.kat2=wl.kat2;
-  Llw.r=wl.r;
+  Llw.x=(float)wl.x;
+  Llw.y=(float)wl.y;
+  Llw.kat1=(float)wl.kat1;
+  Llw.kat2=(float)wl.kat2;
+  Llw.r=(float)wl.r;
 
   if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
    if(dodaj_obiekt((BLOK*)dane,&Llw)==NULL) return 0;

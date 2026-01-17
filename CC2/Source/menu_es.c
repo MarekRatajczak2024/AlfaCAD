@@ -1376,6 +1376,18 @@ static char* translucency_txt[20 + 1] = {
 					u8"5%",
 					NoChange };
 
+static char* vector_txt[5] =
+        {u8"rígido-rígido",
+          u8"rígido-pasador",
+          u8"pasador-rígido",
+          u8"pasador-pasador",
+          NoChange };
+
+static char* springs_txt[3] =
+         {u8"viga rígida",
+          u8"viga Winkler",
+          NoChange };
+
 #define chprop_tips0 u8"@Capa"
 #define chprop_tips1 u8"Color"
 #define chprop_tips2 u8"Ancho de línea"
@@ -1395,6 +1407,7 @@ static char* translucency_txt[20 + 1] = {
 #define chprop_tips16 u8"Voltear verticalmente"
 #define chprop_tips17 u8"Arriba"
 #define chprop_tips18 u8"Opacidad de sólidos, trazos y sombreado de colores sólidos"
+#define chprop_tips19 u8"Estilo del vector, apropiado al sistema de coordenadas"
 
 char* add_new_font_c = u8"añadir nueva fuente";
 
@@ -1478,6 +1491,7 @@ char* dlg_name[] =
 char* typ_punktu_tab[] = { u8"Sencillo",u8"Punto base",u8"Pin","?","?","?","?","?","?",
 						"?","?","?","?","?","?","?"};
 */
+/*
 char* vector_style_tab[] = { u8"rígido-rígido",u8"rígido-con bisagras",u8"con bisagras-rígido",u8"con bisagras-con bisagras",
                             u8"Fuerza",u8"Momento+",u8"Momento-",
                             u8"Desplazamiento", u8"Rotación+", u8"Rotación-",
@@ -1497,7 +1511,7 @@ char* vector_style_tab[] = { u8"rígido-rígido",u8"rígido-con bisagras",u8"con
                             u8"?","?","?","?","?","?","?","?",
                             u8"?","?","?","?","?","?","?","?",
                             };
-
+*/
 char* view_width_tab1[] = { u8"muy delgada", u8"fina", u8"gruesa", u8"muy gruesa", u8"extra gruesa", u8"relleno", u8"", u8"invisible" };
 
 char* tab_typ_tekstu[] = { u8"Normal", u8"Etiqueta interna",u8"Etiqueta de componente",u8"Símbolo",u8"Tipo",
@@ -1588,14 +1602,18 @@ char* objects[] = { u8"Línea", u8"Línea 3D", u8"Texto", u8"Arco", u8"Círculo"
 #define _FILLING_ u8"relleno"
 
 char *vector_txt[]={u8"Vector: rígido-rígido",u8"Vector: rígido-pasador",u8"Vector: pasador-rígido",u8"Vector: pasador-pasador",u8"Vector: Fuerza",u8"Vector: Momento" ,u8"Vector: -Momento",
- u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)", u8"carga de losa superficial", u8"carga de losa de fuerza concentrada"};
+ u8"Vector: Desplazamiento",u8"Vector: Rotación",u8"Vector: -Rotación",u8"Vector: carga trapecio Y",u8"Vector: carga trapecio X",u8"Vector: carga trapecio N",u8"Vector: carga trapecio H",u8"Vector: carga trapecio V",u8"Vector: carga térmica", u8"Vector: tamaño del nodo (Radio)", u8"carga de losa superficial", u8"carga de losa de fuerza concentrada",
+ u8"Vector: Fuerza Z",u8"Vector: carga trapecio Z", u8"Vector: Momento X",u8"Vector: -Momento X",u8"Vector: Momento Y",u8"Vector: -Momento Y",u8"Vector: Momento XY",u8"Vector: -Momento XY",
+ u8"Vector: Desplazamiento Z", u8"Vector: Rotación X",u8"Vector: -Rotación X",u8"Vector: Rotación Y",u8"Vector: -Rotación Y",u8"Vector: Rotación XY",u8"Vector: -Rotación XY",
+ };
 
 //char *point_txt[]={u8"Simple",u8"punto Base",'','','','','',u8"Unión",u8"Pasador",'','','',u8"apoyo Empotrado",u8"apoyo empotrado I",u8"apoyo empotrado D",u8"apoyo empotrado A",u8"apoyo Articulado fijo",
 // u8"apoyo articulado fijo I",u8"apoyo articulado fijo D",u8"apoyo articulado fijo A",u8"apoyo Deslizadera horizontalmente",u8"apoyo deslizadera verticalmente I",u8"apoyo deslizadera verticalmente D",
  //u8"apoyo deslizadera horizontalmente A",u8"apoyo articulado deslizadera horizontalmente",u8"apoyo articulado deslizadera verticalmente I",u8"apoyo articulado deslizadera verticalmente D",u8"apoyo articulado deslizadera horizontalmente A"};
 
-unsigned short vector_wcod[]={L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'0', L'Y', L'X', L'N', L'H', L'V', L'T', L'R', 'Q', 'L'};
-unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'U', L'P', ' ', ' ', ' ',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+'};
+unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'F',L'M',L'-',L'U',L'R',L'O',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'L',L'E',L'W',L'Z',L'Q',L'S',L'0',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
+
+unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'U', L'P', ' ', ' ', ' ',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+','X', 'N', 'Y', 'M', 'V', 'K', 'N', 'T'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', 'B', L'V', ' '};
 char *object_txt[]={u8"Imagen",u8"Línea",u8"Texto",u8"Arco",u8"Círculo",u8"Disco",u8"Sólido",u8"Punto",u8"Bloque",u8"Arco sólido",u8"Arco elíptico",u8"Elipse",u8"Elipse rellena",u8"Bézier Spline",u8"Vector",""};
 
@@ -1786,7 +1804,44 @@ POLE pmLoad_Char_Thermal[] = {
 //static
 TMENU mLoad_Char_Thermal = { 2, 0,0, 12, 88, 12, ICONS, CMNU,CMBR,CMTX,0, 18, 0, 0,0,(POLE(*)[]) &pmLoad_Char_Thermal, NULL, NULL };
 
-static POLE pmVector[] = {
+char *Vector_txt[] =  { u8"rígido-rígido",
+                        u8"rígido-con bisagras",
+                        u8"con bisagras-rígido",
+                        u8"con bisagras-con bisagras",
+                        u8"Fuerza",
+                        u8"Momento+",
+                        u8"Momento-",
+                        u8"Desplazamiento",
+                        u8"Rotación+",
+                        u8"Rotación-",
+                        u8"carga trapezoidal Y",
+                        u8"carga trapezoidal X",
+                        u8"carga trapezoidal N",
+                        u8"proyección horizontal de una carga vertical H",
+                        u8"proyección vertical de una carga horizontal V",
+                        u8"carga térmica",
+                        u8"tamaño del nodo (radio)",
+
+                        u8"carga superficial de la losa",
+                        u8"carga concentrada de la losa",
+                        u8"Fuerza Z",
+                        u8"carga trapezoidal Z",
+                        u8"Momento X",
+                        u8"-momento X",
+                        u8"Momento Y",
+                        u8"-momento Y",
+                        u8"Momento XY",
+                        u8"-momento XY",
+                        u8"desplazamiento Z",
+                        u8"Rotación XZ",
+                        u8"-rotación XZ",
+                        u8"Rotación YZ",
+                        u8"-rotación YZ",
+                        u8"Rotación XY",
+                        u8"-rotación XY",
+                        u8"viga sobre cimentación Winkler"};
+
+static POLE pmVector_cartesian[] = {
 		  {u8"Eliminar\0Del\0",L'E',218,NULL},
           {u8"rígido - rígido\0\0",L'A',723,NULL},
           {u8"rígido - pasador\0\0",L'B',724,NULL},
@@ -1812,21 +1867,96 @@ static POLE pmVector[] = {
           {u8"Zona de losa o escudo\0\0",L'Z',842,NULL},
           {u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
           {u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
+
+          ////for grids
+          ////{u8"Fuerza Z\0\0",L'0',880,&mLoad_Char},
+          ////{u8"carga trapezoidal Z\0\0",L'1',881,&mLoad_Char},
+          ////{u8"Momento X\0\0",L'2',882,&mLoad_Char},
+          ////{u8"-momento X\0\0",L'3',883,&mLoad_Char},
+          ////{u8"Momento Y\0\0",L'4',884,&mLoad_Char},
+          ////{u8"-momento Y\0\0",L'5',885,&mLoad_Char},
+          ////{u8"Momento XY\0\0",L'6',886,&mLoad_Char},
+          ////{u8"-momento XY\0\0",L'7',887,&mLoad_Char},
+
+          ////{u8"desplazamiento Z\0\0",L'9',888,NULL},
+          ////{u8"Rotación XZ\0\0",L'!',889,NULL},
+          ////{u8"-rotación XZ\0\0",L'@',890,NULL},
+          ////{u8"Rotación YZ\0\0",L'#',891,NULL},
+          ////{u8"-rotación YZ\0\0",L'$',892,NULL},
+          ////{u8"Rotación XY\0\0",L'%',893,NULL},
+          ////{u8"-rotación XY\0\0",L'^',894,NULL},
+};
+
+static POLE pmVector_isometric[] = {
+		  {u8"Eliminar\0Del\0",L'E',218,NULL},
+          {u8"rígido - rígido\0\0",L'A',723,NULL},
+          {u8"viga sobre cimentación Winkler\0\0",L'W',878,NULL},
+          ////{u8"rígido - pasador\0\0",L'B',724,NULL},
+          ////{u8"pasador - rígido\0\0",L'C',725,NULL},
+          ////{u8"pasador - pasador\0\0",L'D',726,NULL},
+          {u8"Fuerza\0\0",L'F',727,&mLoad_Char},
+          ////{u8"Momento\0\0",L'M',728,&mLoad_Char},
+          ////{u8"-momento\0\0",L'-',729,&mLoad_Char},
+          {u8"desplazamiento\0\0",L'U',730,NULL}, //&mLoad_Char}, //NULL
+          ////{u8"Rotación\0\0",L'R',731,NULL}, //&mLoad_Char},  //NULL
+          ////{u8"-rotación\0\0",L'O',732,NULL}, //&mLoad_Char},  //NULL
+          {u8"carga trapezoidal Y\0\0",L'Y',733,&mLoad_Char},
+          {u8"carga trapezoidal X\0\0",L'X',734,&mLoad_Char},
+          {u8"carga trapezoidal N\0\0",L'N',735,&mLoad_Char},
+          {u8"carga trapezoidal H\0\0",L'H',736,&mLoad_Char},
+          {u8"carga trapezoidal V\0\0",L'V',737,&mLoad_Char},
+          {u8"carga Térmica\0\0",L'T',752,&mLoad_Char_Thermal},
+          {u8"tamaño del nodo (radio)\0\0",L'0',786,NULL},
+
+          ////{u8"la Losa o escudo\0\0",L'L',846,NULL},
+          ////{u8"Espacio en placa o escudo\0\0",L'E',844,NULL},
+          ////{u8"La pared debajo de la losa\0\0",L'W',843,NULL},
+          ////{u8"Zona de losa o escudo\0\0",L'Z',842,NULL},
+          ////{u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
+          ////{u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
+
+          //for grids
+          {u8"Fuerza Z\0\0",L'0',880,&mLoad_Char},
+          {u8"carga trapezoidal Z\0\0",L'1',881,&mLoad_Char},
+          {u8"Momento X\0\0",L'2',882,&mLoad_Char},
+          {u8"-momento X\0\0",L'3',883,&mLoad_Char},
+          {u8"Momento Y\0\0",L'4',884,&mLoad_Char},
+          {u8"-momento Y\0\0",L'5',885,&mLoad_Char},
+          {u8"Momento XY\0\0",L'6',886,&mLoad_Char},
+          {u8"-momento XY\0\0",L'7',887,&mLoad_Char},
+
+          {u8"desplazamiento Z\0\0",L'9',888,NULL},
+          {u8"Rotación XZ\0\0",L'!',889,NULL},
+          {u8"-rotación XZ\0\0",L'@',890,NULL},
+          {u8"Rotación YZ\0\0",L'#',891,NULL},
+          {u8"-rotación YZ\0\0",L'$',892,NULL},
+          {u8"Rotación XY\0\0",L'%',893,NULL},
+          {u8"-rotación XY\0\0",L'^',894,NULL},
 };
 
 static POLE pmVector_Con[] = {
 		  {u8"Continuation",L'C',220,NULL} };
 
-static POLE pmMember_style[] = {
+static POLE pmMember_style_cartesian[] = {
           {u8"rígido - rígido\0\0",L'A',723,NULL},
           {u8"rígido - pasador\0\0",L'B',724,NULL},
           {u8"pasador - rígido\0\0",L'C',725,NULL},
           {u8"pasador - pasador\0\0",L'D',726,NULL},
 };
 
+static POLE pmMember_style_isometric[] = {
+          {u8"rígido - rígido\0\0",L'A',723,NULL},
+          {u8"viga sobre cimentación Winkler\0\0",L'W',878,NULL},
+};
+
 static POLE pmForce_Displacement_style[] = {
           {u8"Fuerza\0\0",L'F',727,NULL},
           {u8"desplazamiento\0\0",L'Z',730,NULL},
+};
+
+static POLE pmForce_Displacement_style_isometric[] = {
+          {u8"Fuerza Z\0\0",L'F',880,NULL},
+          {u8"desplazamiento Z\0\0",L'E',888,NULL},
 };
 
 static POLE pmMoment_Rotation_style[] = {
@@ -1836,12 +1966,28 @@ static POLE pmMoment_Rotation_style[] = {
           {u8"-rotación\0\0",L'O',732,NULL},
 };
 
+static POLE pmMoment_Rotation_style_isometric[] = {
+          {u8"Momento X\0\0",L'A',882,NULL},
+          {u8"-momento X\0\0",L'B',883,NULL},
+          {u8"Momento Y\0\0",L'C',884,NULL},
+          {u8"-momento Y\0\0",L'D',885,NULL},
+          {u8"Momento XY\0\0",L'E',886,NULL},
+          {u8"-momento XY\0\0",L'F',887,NULL},
+          {u8"Rotación X\0\0",L'G',889,NULL},
+          {u8"-rotación X\0\0",L'H',890,NULL},
+          {u8"Rotación Y\0\0",L'I',891,NULL},
+          {u8"-rotación Y\0\0",L'J',892,NULL},
+          {u8"Rotación XY\0\0",L'K',893,NULL},
+          {u8"-rotación XY\0\0",L'L',894,NULL},
+};
+
 static POLE pmLoad_style[] = {
           {u8"carga trapezoidal Y\0\0",L'Y',733,NULL},
           {u8"carga trapezoidal X\0\0",L'X',734,NULL},
           {u8"carga trapezoidal N\0\0",L'N',735,NULL},
           {u8"carga trapezoidal H\0\0",L'H',736,NULL},
           {u8"carga trapezoidal V\0\0",L'V',737,NULL},
+          {u8"carga trapezoidal Z\0\0",L'Z',881,NULL},
 };
 
 #define _AXIS_ u8"Axias"
@@ -2025,11 +2171,11 @@ static char* EllipticalAngle[] = {u8"Local",u8"Global"};
 static POLE pmPLine_Con[] = {
 		  {u8"Continuación",L'C',220,NULL} };
 
-extern TMENU mVector;
+extern TMENU *mVector;
 
 static POLE pmPLine_Con_Slab[] = {
 		  {u8"Continuación",L'C',220,NULL},
-          {u8"Vectores",L'V',722,&mVector},
+          {u8"Vectores",L'V',722,NULL},  //mVector
 };
 
 #define _POLYLINE_ u8"Polilínea"
@@ -2324,14 +2470,14 @@ static POLE pmTyp_punktu[] = {
 	 {u8"punto Base\0",L'B',295,NULL},
 	 {u8"Pasador\0",L'P',296,NULL},
 	 {u8"Unión\0",L'U',529,NULL},
-     {u8"apoyo Empotrado\0",L'E',738,NULL},
-     {u8"apoyo empotrado I\0",L'1',739,NULL},
-     {u8"apoyo empotrado D\0",L'2',740,NULL},
-     {u8"apoyo empotrado A\0",L'3',754,NULL},
-     {u8"apoyo Articulado fijo\0",L'A',741,NULL},
-     {u8"apoyo articulado fijo I\0",L'4',742,NULL},
-     {u8"apoyo articulado fijo D\0",L'5',743,NULL},
-     {u8"apoyo articulado fijo A\0",L'6',755,NULL},
+     {u8"apoyo Fijo\0",L'F',738,NULL},
+     {u8"apoyo fijo I\0",L'1',739,NULL},
+     {u8"apoyo fijo D\0",L'2',740,NULL},
+     {u8"apoyo fijo A\0",L'3',754,NULL},
+     {u8"apoyo Articulado\0",L'A',741,NULL},
+     {u8"apoyo articulado I\0",L'4',742,NULL},
+     {u8"apoyo articulado D\0",L'5',743,NULL},
+     {u8"apoyo articulado A\0",L'6',755,NULL},
      {u8"apoyo Deslizadera horizontalmente\0",L'D',744,NULL},
      {u8"apoyo deslizadera verticalmente I\0",L'7',745,NULL},
      {u8"apoyo deslizadera verticalmente D\0",L'8',746,NULL},
@@ -2341,6 +2487,15 @@ static POLE pmTyp_punktu[] = {
      {u8"apoyo articulado deslizadera verticalmente D\0",L'-',749,NULL},
      {u8"apoyo articulado deslizadera horizontalmente A\0",L'=',757,NULL},
      {u8"sin rotación Z\0",L'+',818,NULL},
+
+     {u8"apoyo fijo deslizante en el eje X\0",L'X',870,NULL},
+     {u8"apoyo fijo, deslizante en el eje X (A)\0",L'I',871,NULL},
+     {u8"apoyo fijo deslizante en el eje Y\0",L'Y',872,NULL},
+     {u8"apoyo fijo deslizante en el eje Y (A)\0",L'T',873,NULL},
+     {u8"apoyo articulado deslizadera en el eje X\0",L'H',874,NULL},
+     {u8"apoyo articulado deslizadera en el eje X (A)\0",L'A',875,NULL},
+     {u8"apoyo articulado deslizadera en el eje Y\0",L'V',876,NULL},
+     {u8"apoyo articulado deslizadera en el eje Y (A)\0",L'W',877,NULL},
 };
 
 #endif
@@ -3558,8 +3713,7 @@ T_Prototype      s__prot = { u8"prototype.alf", TRUE };
 char* typ_punktu_inf[] = { u8"Simple",u8"Punto base","","","","","",u8"Unión",u8"Pasador","","","",
                            u8"Empotrado",u8"Empotrado I",u8"Empotrado D",u8"Empotrado A", u8"Articulado", u8"Articulado I", u8"Articulado D", u8"Articulado A",
                            u8"Empotrado Deslizadera", u8"Empotrado Deslizadera I", u8"Empotrado Deslizadera D", u8"Empotrado Deslizadera A", u8"Articulado Deslizadera", u8"Articulado Deslizadera I", u8"Articulado Deslizadera D", u8"Articulado Deslizadera A", u8"sin rotación Z",
-                           "","","","","","","","",
-};
+                           u8"Empotrado Deslizadera X", u8"Empotrado Deslizadera X A", u8"Empotrado Deslizadera Y", u8"Empotrado Deslizadera Y A", u8"Articulado Deslizadera X", u8"Articulado Deslizadera X A", u8"Articulado Deslizadera Y", u8"Articulado Deslizadera Y A"};
 
 #endif
 

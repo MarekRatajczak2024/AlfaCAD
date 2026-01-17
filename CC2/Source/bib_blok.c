@@ -118,6 +118,7 @@ extern void reset_dane0(void);
 extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double df_sangle0, double df_eangle0, double *x1, double *y1, double *x2, double *y2);
 extern BOOL Ellipse_Of_Centre_And_Two_Points(double h, double k, double p, double q, double m, double n, double *a, double *b);
 extern void Tangential_Point_To_Ellipse(double cx, double cy, double rx, double ry, double xx1, double yy1, double xx2, double yy2, double *x, double *y);
+extern void Points_To_EllipticalArc(ELLIPTICALARC *ea, double x1, double y1, double x2, double y2);
 
 extern char *Get_PTR__GTMPFIRST(void);
 extern void Set_PTR__GTMPFIRST(char *first);
@@ -951,7 +952,8 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
         case 1:
         case 2:
         case 3:
-        case 10:
+        case 10: //load Y
+        case 20: //load Z
         case 11:
         case 12:
         case 13:
@@ -964,7 +966,9 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
             break;
         case 4:  //force
         case 18: //slab force
+        case 19: //force z
         case 7:  //displacement
+        case 27:  //displacement z
             del_x=(v->x2 - v->x1);
             del_y=(v->y2 - v->y1);
             Scale_Point (k1, k2 ,x,y,v->x1,v->y1,&xp,&yp);
@@ -975,6 +979,12 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
         case 6:
         case 8:
         case 9:
+        case 28: //rotation x
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+        case 33:
             Scale_Arc_Vector(v, x, y, k1, k2);
             break;
         case 16:
@@ -1169,27 +1179,27 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
     ptrs_arc->kat2+=k0;
      */
 
-    l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
+    l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r); //-zmwym.linia_ob);
     if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
     //k0=0;
     //k0=2.49/ptrs_arc->r;
 
     if (ptrs_arc->kat2<ptrs_arc->kat1)
     {
-        ptrs_arc->kat1 += k0;
-        ptrs_arc->kat2 -= k0;
+        ptrs_arc->kat1 += (float)k0;
+        ptrs_arc->kat2 -= (float)k0;
     }
     else {
-        ptrs_arc->kat1 -= k0;
-        ptrs_arc->kat2 += k0;
+        ptrs_arc->kat1 -= (float)k0;
+        ptrs_arc->kat2 += (float)k0;
     }
 
     Arc_To_Points (ptrs_arc, &x1, &y1, &x2, &y2);
     Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
     Scale_Point (k1, k2, x, y, x2, y2, &x2, &y2) ;
     Scale_Point (k1, k2 ,x,y,ptrs_arc->x,ptrs_arc->y,&xp,&yp) ;
-    ptrs_arc->x = xp;
-    ptrs_arc->y = yp;
+    ptrs_arc->x = (float)xp;
+    ptrs_arc->y = (float)yp;
     if (x1 != x2 || y1 != y2)
     {
         if ( (k1 > 0 && k2 > 0) || (k1 < 0 && k2 < 0) )
@@ -1204,23 +1214,111 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
         //if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
 
 
-        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r-zmwym.linia_ob);
+        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r); //-zmwym.linia_ob);
         if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
 
         if (ptrs_arc->kat2<ptrs_arc->kat1)
         {
-            ptrs_arc->kat1 -= k0;
-            ptrs_arc->kat2 += k0;
+            ptrs_arc->kat1 -= (float)k0;
+            ptrs_arc->kat2 += (float)k0;
         }
         else {
-            ptrs_arc->kat1 += k0;
-            ptrs_arc->kat2 -= k0;
+            ptrs_arc->kat1 += (float)k0;
+            ptrs_arc->kat2 -= (float)k0;
         }
 
     }
     else
     {
         ptrs_arc->r = 0;
+    }
+}
+
+
+void Scale_EllipticalArc_Dim(ELLIPTICALARC *ptrs_ea, double x, double y, double k1, double k2)
+{
+    double xp, yp, x1, y1, x2, y2;
+    double l1, k0, r_avg;
+    double rx, ry;
+
+    float M_PIf2 = (float)(2.*M_PI);
+
+    // Compute original average radius for narrowing calculation
+    r_avg = (ptrs_ea->rx + ptrs_ea->ry) / 2.0;
+
+    if (ptrs_ea->kat2 < ptrs_ea->kat1) ptrs_ea->kat2+=M_PIf2;
+
+    l1 = (ptrs_ea->kat2 - ptrs_ea->kat1) * r_avg;
+
+    if (l1 > 5.0) k0 = 2.49 / r_avg; else k0 = 0.0;
+
+    // Expanding angles (add back narrowing)
+    //if (ptrs_ea->kat2 < ptrs_ea->kat1) {
+    //    ptrs_ea->kat1 += (float)k0;
+    //    ptrs_ea->kat2 -= (float)k0;
+    //} else {
+    //    ptrs_ea->kat1 -= (float)k0;
+    //    ptrs_ea->kat2 += (float)k0;
+    //}
+
+    ptrs_ea->kat1 -= (float)k0;
+    ptrs_ea->kat2 += (float)k0;
+
+    if (ptrs_ea->kat1 < 0.) ptrs_ea->kat1+=M_PIf2;
+    if (ptrs_ea->kat2 < 0.) ptrs_ea->kat2+=M_PIf2;
+
+    if (ptrs_ea->kat1 > M_PIf2) ptrs_ea->kat1-=M_PIf2;
+    if (ptrs_ea->kat2 > M_PIf2) ptrs_ea->kat2-=M_PIf2;
+
+    // Compute end points of expanded arc
+    //EllipticalArc_To_Points(ptrs_ea, &x1, &y1, &x2, &y2);
+    Get_EllipticalArc_EndPoints (ptrs_ea->x, ptrs_ea->y, ptrs_ea->rx, ptrs_ea->ry, ptrs_ea->angle, ptrs_ea->kat1, ptrs_ea->kat2, &x1, &y1, &x2, &y2);
+
+    // Scale points and center
+    Scale_Point(k1, k2, x, y, x1, y1, &x1, &y1);
+    Scale_Point(k1, k2, x, y, x2, y2, &x2, &y2);
+    Scale_Point(k1, k2, x, y, ptrs_ea->x, ptrs_ea->y, &xp, &yp);
+
+    ptrs_ea->x = (float)xp;
+    ptrs_ea->y = (float)yp;
+
+    // Scale radii non-uniformly (approximation, assuming no rotation change)
+    rx=ptrs_ea->rx *k1;
+    ry=ptrs_ea->ry *k2;
+    ptrs_ea->rx = (float)rx;
+    ptrs_ea->ry = (float)ry;
+
+    // Recompute angles from scaled end points
+    if (x1 != x2 || y1 != y2)
+    {
+        Points_To_EllipticalArc(ptrs_ea, x1, y1, x2, y2);  //don't need
+
+        // Narrow angles again
+        r_avg = (ptrs_ea->rx + ptrs_ea->ry) / 2.0;
+        l1 = (ptrs_ea->kat2 - ptrs_ea->kat1) * r_avg;
+        if (l1 > 5.0) k0 = 2.49 / r_avg; else k0 = 0.0;
+
+        if (ptrs_ea->kat2 < ptrs_ea->kat1) ptrs_ea->kat2+=(float)(2*M_PI);
+
+       // if (ptrs_ea->kat2 < ptrs_ea->kat1) {
+       //     ptrs_ea->kat1 -= (float)k0;
+       //     ptrs_ea->kat2 += (float)k0;
+       // } else {
+       //     ptrs_ea->kat1 += (float)k0;
+       //     ptrs_ea->kat2 -= (float)k0;
+       // }
+        ptrs_ea->kat1 += (float)k0;
+        ptrs_ea->kat2 -= (float)k0;
+
+        if (ptrs_ea->kat1 < 0.) ptrs_ea->kat1+=M_PIf2;
+        if (ptrs_ea->kat2 < 0.) ptrs_ea->kat2+=M_PIf2;
+
+        if (ptrs_ea->kat1 > M_PIf2) ptrs_ea->kat1-=M_PIf2;
+        if (ptrs_ea->kat2 > M_PIf2) ptrs_ea->kat2-=M_PIf2;
+
+    } else {
+        ptrs_ea->rx = 0.0f;
+        ptrs_ea->ry = 0.0f;
     }
 }
 
@@ -1383,62 +1481,66 @@ static void skellipticalarc(char  *adr,double x,double y,double k1, double k2)
 
     ea=(ELLIPTICALARC *)adr;
 
-    //angles
-    Get_EllipticalArc_EndPoints (ea->x, ea->y, ea->rx, ea->ry, ea->angle, ea->kat1, ea->kat2, &px, &py, &kx, &ky);
-
-    if (FALSE == Check_if_Equal (fabs (k1), fabs (k2)))
+    if (ea->obiektt2!=O2BlockDim)
     {
-        if (Check_if_Equal(fmod(ea->angle, Pi/2.0), 0.0)==FALSE)
-            return ;
+        //angles
+        Get_EllipticalArc_EndPoints(ea->x, ea->y, ea->rx, ea->ry, ea->angle, ea->kat1, ea->kat2, &px, &py, &kx, &ky);
+
+        if (FALSE == Check_if_Equal(fabs(k1), fabs(k2))) {
+            if (Check_if_Equal(fmod(ea->angle, Pi / 2.0), 0.0) == FALSE)
+                return;
+        }
+
+        kos = sin(ea->angle);
+        koc = cos(ea->angle);
+
+        Rotate_Point(kos, koc, ea->x, ea->y, ea->x + ea->rx, ea->y, &ex1, &ey1);
+        Rotate_Point(kos, koc, ea->x, ea->y, ea->x, ea->y + ea->ry, &ex2, &ey2);
+
+        Rotate_Point(kos, koc, ea->x, ea->y, px, py, &px1, &py1);
+        Rotate_Point(kos, koc, ea->x, ea->y, kx, ky, &kx1, &ky1);
+
+
+        Scale_Point(k1, k2, x, y, ea->x, ea->y, &xp, &yp);
+        Scale_Point(k1, k2, x, y, ex1, ey1, &ex1, &ey1);
+        Scale_Point(k1, k2, x, y, ex2, ey2, &ex2, &ey2);
+        Scale_Point(k1, k2, x, y, px1, py1, &px1, &py1);
+        Scale_Point(k1, k2, x, y, kx1, ky1, &kx1, &ky1);
+
+        ea->x = xp;
+        ea->y = yp;
+
+        ea->rx = sqrt((ex1 - ea->x) * (ex1 - ea->x) + (ey1 - ea->y) * (ey1 - ea->y));
+        ea->ry = sqrt((ex2 - ea->x) * (ex2 - ea->x) + (ey2 - ea->y) * (ey2 - ea->y));
+
+
+        //angles
+        vx1 = px1 - ea->x;
+        vy1 = py1 - ea->y;
+        vx2 = 1.0;
+        vy2 = 0.0;
+
+        dot = vx1 * vx2 + vy1 * vy2;  // Dot product between [vx1, vy1] and [vx2, vy2]
+        det = vx1 * vy2 - vy1 * vx2;  // Determinant
+        df_sangle = -atan2(det, dot) - ea->angle;  // atan2(y, x) or atan2(sin, cos)
+        df_sangle = fmod(df_sangle, Pi2);
+        if (df_sangle < 0) df_sangle += Pi2;
+
+
+        vx1 = kx1 - ea->x;
+        vy1 = ky1 - ea->y;
+        vx2 = 1.0;
+        vy2 = 0.0;
+
+        dot = vx1 * vx2 + vy1 * vy2;     // Dot product between [vx1, vy1] and [vx2, vy2]
+        det = vx1 * vy2 - vy1 * vx2;     // Determinant
+        df_eangle = -atan2(det, dot) - ea->angle;  // atan2(y, x) or atan2(sin, cos)
+        df_eangle = fmod(df_eangle, Pi2);
+        if (df_eangle < 0) df_eangle += Pi2;
     }
+    else Scale_EllipticalArc_Dim(ea, x, y, k1, k2);
 
-    kos=sin(ea->angle);
-    koc=cos(ea->angle);
-
-    Rotate_Point(kos,koc,ea->x, ea->y, ea->x+ea->rx, ea->y, &ex1, &ey1);
-    Rotate_Point(kos,koc,ea->x, ea->y, ea->x, ea->y+ea->ry, &ex2, &ey2);
-
-    Rotate_Point(kos,koc,ea->x, ea->y, px, py, &px1, &py1);
-    Rotate_Point(kos,koc,ea->x, ea->y, kx, ky, &kx1, &ky1);
-
-
-    Scale_Point (k1, k2 ,x,y,ea->x,ea->y,&xp,&yp);
-    Scale_Point (k1, k2 ,x,y,ex1,ey1,&ex1,&ey1);
-    Scale_Point (k1, k2 ,x,y,ex2,ey2,&ex2,&ey2);
-    Scale_Point (k1, k2 ,x,y,px1,py1,&px1,&py1);
-    Scale_Point (k1, k2 ,x,y,kx1,ky1,&kx1,&ky1);
-
-    ea->x=xp;ea->y=yp;
-
-    ea->rx= sqrt((ex1-ea->x)*(ex1-ea->x) + (ey1-ea->y)*(ey1-ea->y));
-    ea->ry= sqrt((ex2-ea->x)*(ex2-ea->x) + (ey2-ea->y)*(ey2-ea->y));
-
-
-    //angles
-    vx1 = px1 - ea->x;
-    vy1 = py1 - ea->y;
-    vx2 = 1.0;
-    vy2 = 0.0;
-
-    dot = vx1 * vx2 + vy1 * vy2;  // Dot product between [vx1, vy1] and [vx2, vy2]
-    det = vx1 * vy2 - vy1 * vx2;  // Determinant
-    df_sangle = -atan2(det, dot) - ea->angle;  // atan2(y, x) or atan2(sin, cos)
-    df_sangle=fmod(df_sangle, Pi2);
-    if (df_sangle < 0) df_sangle += Pi2;
-
-
-    vx1 = kx1 - ea->x;
-    vy1 = ky1 - ea->y;
-    vx2 = 1.0;
-    vy2 = 0.0;
-
-    dot = vx1 * vx2 + vy1 * vy2;     // Dot product between [vx1, vy1] and [vx2, vy2]
-    det = vx1 * vy2 - vy1 * vx2;     // Determinant
-    df_eangle = -atan2(det, dot) - ea->angle;  // atan2(y, x) or atan2(sin, cos)
-    df_eangle=fmod(df_eangle, Pi2);
-    if (df_eangle < 0) df_eangle += Pi2;
-
-    ea->widoczny=elipsa_wybrana_prec((ELLIPSE*)ea);
+    ea->widoczny=lukeliptyczny_wybrany_prec(ea);
 }
 
 
@@ -2807,7 +2909,7 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
 
 
     //checking if line is dimensioning line
-    if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && (ad>dane) && (ad<(dane+dane_size)))
+    if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && ((char*)ad>dane) && ((char*)ad<(dane+dane_size)))
     {
         //check if next object is text or line then text
         nag1 = (char*)ad + sizeof(NAGLOWEK) + ad->n;
@@ -2872,7 +2974,7 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
             }
             else ad->widoczny = lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
         }
-
+        else ad->widoczny = lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
     }
     else {
         //lineC(pikseleX0(ad->x1), pikseleY0(ad->y1), pikseleX0(ad->x2), pikseleY0(ad->y2));
@@ -3932,7 +4034,7 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
   set_pattern_count(TRUE);
 
     //checking if line is dimensioning line
-    if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && (ad>dane) && (ad<(dane+dane_size)))
+    if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && ((char*)ad>dane) && ((char*)ad<(dane+dane_size)))
     {
         //check if next object is text or line then text
         nag1 = (char*)ad + sizeof(NAGLOWEK) + ad->n;
@@ -5806,7 +5908,7 @@ void blokzap(char  *adp,char  *adk,int atrybut,int mode, int kolor)
   while (ad!=NULL)
   {
     if (ad->widoczny && TRUE == Check_Attribute (ad->atrybut, atrybut))
-    rysuj_obiekt_((char*)ad,mode,kolor);
+        rysuj_obiekt_((char*)ad,mode,kolor);
     obiekt_tok(NULL,adk,(char **) &ad,ONieOkreslony);
     if ((get_pattern_count() == TRUE) && (pattern_add_limit > 0) && ((long_long)ad > pattern_add_limit))
     {
@@ -6298,6 +6400,8 @@ void out_blok2 (double x,double y,double k1,double k2,
 
 
 e: okno_all();
+    ClearErr() ;
+    ClearInfo ();
 }
 
 void out_blok1(double x,double y,double k1,double k2,int trans,double z)
