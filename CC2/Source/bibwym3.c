@@ -526,12 +526,12 @@ static int wyznacz_tekst_clock(void)
   return 1;
 }
 
-
 static int s0(void)
 { void *ad;
   int Wst0;
   static long MovAd;
-  double kat1,n,n1,n2,l;
+  double kat1,n,n1,n2,l,dot;
+  int n0, n01;
 
   L.warstwa=Current_Layer;
   Ls1.warstwa=Current_Layer;
@@ -585,34 +585,55 @@ static int s0(void)
      Lsw=1;
    }
   if(Wst0==0)
-   { St.xy[2]=(float)w.x0;
-     St.xy[3]=(float)w.y0;
-     St.xy[0]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1-kat0)/180.));
-     St.xy[1]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1-kat0)/180.));
-     St.xy[4]=(float)(w.x0+n*Kp2s*cos(Pi*(kat1+kat0)/180.));
-     St.xy[5]=(float)(w.y0+n*Kp2s*sin(Pi*(kat1+kat0)/180.));
+   {
+
+       if (!options1.uklad_izometryczny)
+       {
+           St.xy[2] = (float) w.x0;
+           St.xy[3] = (float) w.y0;
+           St.xy[0] = (float) (w.x0 + n * Kp2s * cos(Pi * (kat1 - kat0) / 180.));
+           St.xy[1] = (float) (w.y0 + n * Kp2s * sin(Pi * (kat1 - kat0) / 180.));
+           St.xy[4] = (float) (w.x0 + n * Kp2s * cos(Pi * (kat1 + kat0) / 180.));
+           St.xy[5] = (float) (w.y0 + n * Kp2s * sin(Pi * (kat1 + kat0) / 180.));
+       }
+       else
+       {
+           // First arrow at (w.x0, w.y0)
+           if (Check_if_Equal(w.x0, w.x2)) {
+               n0 = (w.y0 <= w.y2) ? 0 : 1;
+           } else {
+               n0 = (w.x0 <= w.x2) ? 0 : 1;
+           }
+
+           make_dim_line_isometric_solid(kat1, w.x0, w.y0, Kp2s, kat0, n0, &St);
+       }
      St.lp = 6;
-     St.n = 8 /*4*/ + St.lp * sizeof (float) ;
-     if (options1.uklad_izometryczny)
-     {
-         izometrize_solid(XY_PLANE, &St);
-     }
+     St.n = 8 + St.lp * sizeof (float) ;
+
      if(dodaj_obiekt((BLOK*)dane,(void*)&St)==NULL) return 0;
      else
      if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
-     St.xy[2]=(float)w.x2;
-     St.xy[3]=(float)w.y2;
-     St.xy[0]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1-kat0)/180.));
-     St.xy[1]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1-kat0)/180.));
-     St.xy[4]=(float)(w.x2-n*Kp2s*cos(Pi*(kat1+kat0)/180.));
-     St.xy[5]=(float)(w.y2-n*Kp2s*sin(Pi*(kat1+kat0)/180.));
-     St.lp = 6;
-     St.n = 8 /*4*/ + St.lp * sizeof (float) ;
-     if (options1.uklad_izometryczny)
-     {
-         izometrize_solid(XY_PLANE, &St);
-     }
+
+       if (!options1.uklad_izometryczny)
+       {
+           St.xy[2] = (float) w.x2;
+           St.xy[3] = (float) w.y2;
+           St.xy[0] = (float) (w.x2 - n * Kp2s * cos(Pi * (kat1 - kat0) / 180.));
+           St.xy[1] = (float) (w.y2 - n * Kp2s * sin(Pi * (kat1 - kat0) / 180.));
+           St.xy[4] = (float) (w.x2 - n * Kp2s * cos(Pi * (kat1 + kat0) / 180.));
+           St.xy[5] = (float) (w.y2 - n * Kp2s * sin(Pi * (kat1 + kat0) / 180.));
+       }
+       else
+       {
+           // Second arrow at (w.x2, w.y2) — opposite logic
+           n01 = (n0 == 0) ? 1 : 0;
+
+           make_dim_line_isometric_solid(kat1, w.x2, w.y2, Kp2s, kat0, n01, &St);
+       }
+       St.lp = 6;
+       St.n = 8 + St.lp * sizeof (float) ;
+
      if(dodaj_obiekt((BLOK*)dane,(void*)&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -793,11 +814,7 @@ static int s_ll(void)
 
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
-    if (options1.uklad_izometryczny)
-    {
-     //   izometrize_solid(XY_PLANE, &St);
 
-    }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -820,10 +837,7 @@ static int s_ll(void)
 
      St.lp = 6;
      St.n = 8  + St.lp * sizeof (float) ;
-    if (options1.uklad_izometryczny)
-    {
-      //  izometrize_solid(XY_PLANE, &St);
-    }
+
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
@@ -861,7 +875,7 @@ static int s_ll_clock(void)
      St.n = 8  + St.lp * sizeof (float) ;
     if (options1.uklad_izometryczny)
     {
-        izometrize_solid(XY_PLANE, &St);
+       // izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
@@ -881,7 +895,7 @@ static int s_ll_clock(void)
      St.n = 8  + St.lp * sizeof (float) ;
     if (options1.uklad_izometryczny)
     {
-        izometrize_solid(XY_PLANE, &St);
+      //  izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
@@ -913,7 +927,7 @@ static int s_o(void)
      St.n = 8  + St.lp * sizeof (float) ;
     if (options1.uklad_izometryczny)
     {
-        izometrize_solid(XY_PLANE, &St);
+        //izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)
@@ -928,7 +942,7 @@ static int s_o(void)
      St.n = 8  + St.lp * sizeof (float) ;
     if (options1.uklad_izometryczny)
     {
-        izometrize_solid(XY_PLANE, &St);
+        //izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
      else if(WymInter)

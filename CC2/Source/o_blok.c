@@ -2842,7 +2842,8 @@ int dziWez_k(void	*ad)	 /*kolor*/
 		((NAGLOWEK*)ad)->obiekt==Owwielokat	||
 	    ((NAGLOWEK*)ad)->obiekt == Ospline ||
         ((NAGLOWEK*)ad)->obiekt == Osolidarc ||
-		((NAGLOWEK*)ad)->obiekt==Opoint)
+		((NAGLOWEK*)ad)->obiekt==Opoint ||
+        ((NAGLOWEK*)ad)->obiekt==Ovector)
 	{	 
 	 Layers[Current_Layer].color=((LINIA*)ad)->kolor;
 	 Ini_Global_Object ();
@@ -5138,15 +5139,15 @@ static void	redcrck(char typ)
              }
              else if (VectorC.style==27) //displacement Z
              {
-                 eVf1.x = maxX / 2 + 5;
-                 eVf1.y = ESTR_Y;
-                 eVf1.lmax = 12;
-                 eVf1.val_no_max = 1;
-                 eVf1.mode = GV_VECTOR;
-                 eVf1.format = format_float;
-                 eVf1.ESTRF = Vd1_1_n_;
-                 eVf1.extend = 0;
-                 np = dodajstr(&eVf1);
+                 eVd1.x = maxX / 2 + 5;
+                 eVd1.y = ESTR_Y;
+                 eVd1.lmax = 12;
+                 eVd1.val_no_max = 1;
+                 eVd1.mode = GV_VECTOR;
+                 eVd1.format = format_float;
+                 eVd1.ESTRF = Vd1_1_n_;
+                 eVd1.extend = 0;
+                 np = dodajstr(&eVd1);
              }
              else //displacement
              {

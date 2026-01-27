@@ -499,7 +499,9 @@ extern int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELL
 //extern int Get_EllipticalArc_Points (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle, double kat1, double kat2, double xy[]);
 extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis, double df_yaxis, double df_angle,double df_sangle0,double df_eangle0,double *x1, double *y1, double *x2, double *y2);
 extern int cartesian_vector_to_isometric(double dx_cart, double dy_cart, double *dx_iso, double *dy_iso);
+extern int cartesian_vector_to_isometric_in_plane(enum PlaneType plane, double dx_cart, double dy_cart, double *dx_iso,double *dy_iso);
 extern void srodekea_(double *x,double *y, double *tangent, void *adr);
+extern double isometric_vector_length_f_in_plane(enum PlaneType plane, float x1, float y1, float x2, float y2);
 
 static char *format_float="%.9g";
 static char *format_floatd="%.9g";
@@ -2260,8 +2262,12 @@ void pozycja_kursora(void)
       }
   }
 
-  if (options1.uklad_geodezyjny == 1) sprintf(e.st, "%#12.9lg; %#12.9lg", jY, jX);
-  else sprintf(e.st, "%#12.9lg; %#12.9lg", jX, jY);
+  //if (options1.uklad_geodezyjny == 1) sprintf(e.st, "%#12.9lg; %#12.9lg", jY, jX);
+  //else sprintf(e.st, "%#12.9lg; %#12.9lg", jX, jY);
+  int nod=min((int)log10(Jednostki)+5, 9);
+
+    if (options1.uklad_geodezyjny == 1) sprintf(e.st, "%#12.*lf; %#12.*lf", nod, jY, nod, jX);
+    else sprintf(e.st, "%#12.*lf; %#12.*lf", nod, jX, nod, jY);
 
   e.x = getmaxx();
 
@@ -7338,7 +7344,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             kos1=sin(Angle_Normal((PL.kat-90)*Pi/180));
             koc1=cos(Angle_Normal((PL.kat-90)*Pi/180));
 
-            //if (L1.x1<=L1.x2) n=1; else n=-1;
             if (L1.y1>L1.y2) {
                 if (L1.x1 < L1.x2) n = 1; else n = -1;  //(L1.x1<=L1.x2)
             }
@@ -7416,21 +7421,12 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             l.kat1=ptrs_vector->angle1;
             l.kat2=ptrs_vector->angle2;
 
-            if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
-            {
-                kats=Angle_Normal(ptrs_vector->angle1);
-                x1=ptrs_vector->x1+ptrs_vector->r*cos(kats);
-                y1=ptrs_vector->y1+ptrs_vector->r*sin(kats);
-                tangent=kats - Pi_ / 2.;
-                if (tangent < 0) tangent += 2.0 * M_PI;
-            }
-            else {
-                ret = arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                srodekea_(&x1, &y1, &tangent, &ea);
-                tangent = fmod(tangent + M_PI, 2.0 * M_PI);
-                kats = tangent + Pi_ / 2.;
-                if (kats < 0) kats += 2.0 * M_PI;
-            }
+            ret = arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            srodekea_(&x1, &y1, &tangent, &ea);
+            tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+            kats = tangent + Pi_ / 2.;
+            if (kats < 0) kats += 2.0 * M_PI;
+
             Vtxt.x=(float)(x1+0.5*cos(kats));
             Vtxt.y=(float)(y1+0.5*sin(kats));
 
@@ -7461,12 +7457,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             break;
         case 8: //rotation
         case 9: //-rotation
-        //case 28:  //rotation x
-        //case 29:  //-rotation x
-        //case 30:  //rotation y
-        //case 31:  //-rotation y
-        //case 32:  //rotation xy
-        //case 33:  //-rotation xy
             if (ptrs_vector->angle2<ptrs_vector->angle1)
             kata2=ptrs_vector->angle2+Pi2;
             else kata2=ptrs_vector->angle2;
@@ -7520,21 +7510,12 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             l.kat1=ptrs_vector->angle1;
             l.kat2=ptrs_vector->angle2;
 
-            if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
-            {
-                kats=Angle_Normal(ptrs_vector->angle1);
-                x1=ptrs_vector->x1+ptrs_vector->r*cos(kats);
-                y1=ptrs_vector->y1+ptrs_vector->r*sin(kats);
-                tangent=kats - Pi_ / 2.;
-                if (tangent < 0) tangent += 2.0 * M_PI;
-            }
-            else {
-                ret = arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                srodekea_(&x1, &y1, &tangent, &ea);
-                tangent = fmod(tangent + M_PI, 2.0 * M_PI);
-                kats = tangent + Pi_ / 2.;
-                if (kats < 0) kats += 2.0 * M_PI;
-            }
+            ret = arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
+            srodekea_(&x1, &y1, &tangent, &ea);
+            tangent = fmod(tangent + M_PI, 2.0 * M_PI);
+            kats = tangent + Pi_ / 2.;
+            if (kats < 0) kats += 2.0 * M_PI;
+
             Vtxt.x=(float)(x1+0.5*cos(kats));
             Vtxt.y=(float)(y1+0.5*sin(kats));
 
@@ -7596,13 +7577,10 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             parametry_lini(&Lt, &PL1);
             if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
             {
-                //parametry_lini(&Lt, &PL1);
                 kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
                 koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
             else {
-                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
-                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
                 double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
                 double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                 if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -7701,7 +7679,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             normalize_txt(&Vtxt);
             normalize_txt(&Vtxt1);
 
-
             if (ptrs_vector->variant>0)
                 sprintf(Vltxt.text, "%s%d",load_symbol[(int)ptrs_vector->load], ptrs_vector->variant);
             else sprintf(Vltxt.text, "%s",load_symbol[(int)ptrs_vector->load]);
@@ -7717,7 +7694,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 kat1=PL.kat;
                 kos=sin(PL.kat*Pi/180);
                 koc=cos(PL.kat*Pi/180);
-
             }
 
             if (L1.y1<L1.y2) n=1*view_vector_scale;
@@ -7753,8 +7729,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 koc1=cos(Pi*(PL1.kat+90.)/180.);
             }
             else {
-                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
-                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
                 double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
                 double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                 if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -8161,8 +8135,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 koc1 = cos(Pi * (PL1.kat + 90) / 180);
             }
             else {
-                //kos1 = sin(Pi * (PL1.kat + 120.) / 180.);
-                //koc1 = cos(Pi * (PL1.kat + 120.) / 180.);
                 double iso_angle=cartesian_angle_to_isometric_angle(PL1.kat*M_PI/180.);
                 double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                 if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -8368,18 +8340,18 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
     switch(ptrs_vector->style) {
         case 0:
 
-            rysuj_obiekt_(&L4, mode, kolor);
+            rysuj_obiekt_((char*)&L4, mode, kolor);
             if (kolor) set_mode_trans();
             K.x = ptrs_vector->x1;
             K.y = ptrs_vector->y1;
             K.r = (float)df_psize1;
 
             if (okrag_visible(&K))
-                rysuj_obiekt_(&K, mode, kolor);
+                rysuj_obiekt_((char*)&K, mode, kolor);
             K.x = ptrs_vector->x2;
             K.y = ptrs_vector->y2;
             if (okrag_visible(&K))
-                rysuj_obiekt_(&K, mode, kolor);
+                rysuj_obiekt_((char*)&K, mode, kolor);
 
             if (kolor) set_mode_solid();
 
@@ -8421,21 +8393,21 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             L4.x2 = L3.x2;
             L4.y2 = L3.y2;
-            rysuj_obiekt_(&L4, mode, kolor);
+            rysuj_obiekt_((char*)&L4, mode, kolor);
 
             if (kolor) set_mode_trans();
             K.x = ptrs_vector->x1;
             K.y = ptrs_vector->y1;
             K.r = (float)df_psize1;
             if (okrag_visible(&K))
-                rysuj_obiekt_(&K, mode, kolor);
+                rysuj_obiekt_((char*)&K, mode, kolor);
             if (kolor) set_mode_solid();
             O.x = ptrs_vector->x2;
             O.y = ptrs_vector->y2;
             O.r = (float)df_psize;
             O.typ = 64;
             if (okrag_visible(&O))
-                rysuj_obiekt_(&O, mode, kolor);
+                rysuj_obiekt_((char*)&O, mode, kolor);
             out_v_krz(pikseleX0(ptrs_vector->x2), pikseleY0(ptrs_vector->y2));
 
             if (!kolor) {
@@ -8448,21 +8420,21 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             L4.x1 = L3.x1;
             L4.y1 = L3.y1;
-            rysuj_obiekt_(&L4, mode, kolor);
+            rysuj_obiekt_((char*)&L4, mode, kolor);
 
             if (kolor) set_mode_trans();
             K.x = ptrs_vector->x2;
             K.y = ptrs_vector->y2;
             K.r = (float)df_psize1;
             if (okrag_visible(&K))
-                rysuj_obiekt_(&K, mode, kolor);
+                rysuj_obiekt_((char*)&K, mode, kolor);
             if (kolor) set_mode_solid();
             O.x = ptrs_vector->x1;
             O.y = ptrs_vector->y1;
             O.r = (float)df_psize;
             O.typ = 64;
             if (okrag_visible(&O))
-                rysuj_obiekt_(&O, mode, kolor);
+                rysuj_obiekt_((char*)&O, mode, kolor);
             out_v_krz(pikseleX0(ptrs_vector->x1), pikseleY0(ptrs_vector->y1));
 
             if (!kolor) {
@@ -8472,17 +8444,17 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             break;
         case 3:
-            rysuj_obiekt_(&L3, mode, kolor);
+            rysuj_obiekt_((char*)&L3, mode, kolor);
             O.x = ptrs_vector->x1;
             O.y = ptrs_vector->y1;
             O.r = (float)df_psize;
             O.typ = 64;
             if (okrag_visible(&O))
-                rysuj_obiekt_(&O, mode, kolor);
+                rysuj_obiekt_((char*)&O, mode, kolor);
             O.x = ptrs_vector->x2;
             O.y = ptrs_vector->y2;
             if (okrag_visible(&O))
-                rysuj_obiekt_(&O, mode, kolor);
+                rysuj_obiekt_((char*)&O, mode, kolor);
             out_v_krz(pikseleX0(ptrs_vector->x1), pikseleY0(ptrs_vector->y1));
             out_v_krz(pikseleX0(ptrs_vector->x2), pikseleY0(ptrs_vector->y2));
 
@@ -8530,7 +8502,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     create_solid_on_line_isometric(&Lsi, &w, ra / 4., ra / 4., 0);
                 }
 
-                rysuj_obiekt_(&w, mode, kolor);
+                rysuj_obiekt_((char*)&w, mode, kolor);
             }
 
             Kp2s = Get_Point_Size() * view_vector_scale / (arrowf * cos(Pi * katS / 180));
@@ -8552,15 +8524,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 double angle_rad = kat1 * M_PI / 180.;
                 double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
 
-                //backward is not necessary
-                //double iso_backward = fmod(iso_angle /*+ M_PI*/, 2.0 * M_PI);
-                //if (iso_backward < 0.0) iso_backward += 2.0 * M_PI;
-
                 double katS_rad = 25.0 * M_PI / 180.0;  // or your variable
 
-                // SWAPPED ORDER TO MATCH MANUAL
-                //double iso_angle1 = fmod(iso_backward + katS_rad, 2.0 * M_PI);
-                //double iso_angle2 = fmod(iso_backward - katS_rad, 2.0 * M_PI);
                 double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
                 double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
 
@@ -8583,7 +8548,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             w.n = 32;
 
             if (wielokat_visible(&w))
-                rysuj_obiekt_(&w, mode, kolor);
+                rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (!kolor) {
                 outtextxy_w_0(&Vtxt);
@@ -8603,14 +8568,14 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 L3.x2 = L2.x2;
                 L3.y2 = L2.y2;
                 L3.typ = grubosc * 32 + 1;
-                rysuj_obiekt_(&L3, mode, kolor);
+                rysuj_obiekt_((char*)&L3, mode, kolor);
 
                 O.x = ptrs_vector->x1;
                 O.y = ptrs_vector->y1;
                 O.r = (float)df_psize;
                 O.typ = 64;
                 if (okrag_visible(&O))
-                    rysuj_obiekt_(&O, mode, kolor);
+                    rysuj_obiekt_((char*)&O, mode, kolor);
             }
             else
             {
@@ -8619,14 +8584,14 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 L3.x2 = Lsi.x2;
                 L3.y2 = Lsi.y2;
                 L3.typ = grubosc * 32 + 1;
-                rysuj_obiekt_(&L3, mode, kolor);
+                rysuj_obiekt_((char*)&L3, mode, kolor);
                 O.x = ptrs_vector->x1;
                 O.y = ptrs_vector->y1;
                 O.r = (float)df_psize;
                 E.typ = 64;
                 ret=circle_to_isometric_ellipse_o_e(XY_PLANE, &O, &E);
                 if (elipsa_wybrana_prec(&E))
-                    rysuj_obiekt_(&E, mode, kolor);
+                    rysuj_obiekt_((char*)&E, mode, kolor);
             }
 
             Kp2s = Get_Point_Size () *view_vector_scale / (arrowf*cos(Pi*katS/180)) ;
@@ -8651,15 +8616,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     double angle_rad = kat1*M_PI/180. + M_PI;
                     double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
 
-                    //backward is not necessary
-                    //double iso_backward = fmod(iso_angle /*+ M_PI*/, 2.0 * M_PI);
-                    //if (iso_backward < 0.0) iso_backward += 2.0 * M_PI;
-
                     double katS_rad = katS * M_PI / 180.0;  // or your variable
 
-                    // SWAPPED ORDER TO MATCH MANUAL
-                    //double iso_angle1 = fmod(iso_backward + katS_rad, 2.0 * M_PI);
-                    //double iso_angle2 = fmod(iso_backward - katS_rad, 2.0 * M_PI);
                     double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
                     double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
 
@@ -8683,7 +8641,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             w.empty_typ=3;
 
             if (wielokat_visible(&w))
-                rysuj_obiekt_(&w,mode,kolor);
+                rysuj_obiekt_((char*)&w,mode,kolor);
 
             out_v_krz (pikseleX0(ptrs_vector->x1), pikseleY0(ptrs_vector->y1));
 
@@ -8724,15 +8682,16 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             {
                 int plane;
                 case 5:
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
-
-                    sa.kat2=ptrs_vector->angle2;
-                    linestyle(ptrs_vector->typ);
                     kats=ptrs_vector->angle2-Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle2);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle2);
                     n=+1;
                     s=0;
+
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
+
+                    sa.kat2=ptrs_vector->angle2;
+                    linestyle(ptrs_vector->typ);
 
                     sa.atrybut=ptrs_vector->atrybut;
                     sa.warstwa=ptrs_vector->warstwa;
@@ -8747,14 +8706,15 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     rysuj_solidarc_(&sa, mode, kolor, FALSE, TRUE,1,1);
                 break;
                 case 6:
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
-
-                    linestyle(ptrs_vector->typ);
                     kats=ptrs_vector->angle1+Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle1);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle1);
                     n=-1;
                     s=0;
+
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
+
+                    linestyle(ptrs_vector->typ);
 
                     sa.atrybut=ptrs_vector->atrybut;
                     sa.warstwa=ptrs_vector->warstwa;
@@ -8782,22 +8742,14 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                             plane = XY_PLANE;
                             break;
                     }
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
-                    {
-                        ea_start_x=ea_end_x=ptrs_vector->x2;
-                        ea_start_y=ea_end_y=ptrs_vector->y2;
-                        ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
-                        ea.angle=0.0f;
-                        ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
-                        break;
-                    }
 
-                    linestyle(ptrs_vector->typ);
                     kats=ptrs_vector->angle2-Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle2);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle2);
                     n=+1;
                     s=0;
+
+                    linestyle(ptrs_vector->typ);
 
                     ////instead of solid arc we use arc converted to elliptical arc in isometric
                     l.x=ptrs_vector->x1;
@@ -8807,7 +8759,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     l.kat2=ptrs_vector->angle2;
                     ea.typ=128;
                     ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                    rysuj_obiekt_(&ea, mode, kolor);
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)==FALSE)
+                        rysuj_obiekt_((char*)&ea, mode, kolor);
                     Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
 
                     break;
@@ -8825,36 +8778,14 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                             plane = XY_PLANE;
                             break;
                     }
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
-                    {
-                        ea_start_x=ea_end_x=ptrs_vector->x2;
-                        ea_start_y=ea_end_y=ptrs_vector->y2;
-                        ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
-                        ea.angle=0.0f;
-                        ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
-                        break;
-                    }
 
-                    linestyle(ptrs_vector->typ);
                     kats=ptrs_vector->angle1+Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle1);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle1);
                     n=-1;
                     s=0;
 
-                    /*
-                    sa.atrybut=ptrs_vector->atrybut;
-                    sa.warstwa=ptrs_vector->warstwa;
-                    sa.kolor=vkolor; //ptrs_vector->kolor;
-                    sa.x=ptrs_vector->x1;
-                    sa.y=ptrs_vector->y1;
-                    sa.r=ptrs_vector->r;
-                    sa.kat1=ptrs_vector->angle1;
-                    sa.kat2=ptrs_vector->angle2;
-                    sa.width1=ra/4;
-                    sa.width2=ra/4;
-                    rysuj_solidarc_(&sa, mode, kolor, FALSE, TRUE, 1,1);
-                     */
+                    linestyle(ptrs_vector->typ);
 
                     ////instead of solid arc we use arc converted to elliptical arc in isometric
                     l.x=ptrs_vector->x1;
@@ -8864,39 +8795,22 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     l.kat2=ptrs_vector->angle2;
                     ea.typ=128;
                     ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                    rysuj_obiekt_(&ea, mode, kolor);
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)==FALSE)
+                        rysuj_obiekt_((char*)&ea, mode, kolor);
                     Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
 
                     break;
                 case 8:  //displacement
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
-
-                    grubosc = (ptrs_vector->typ & 224) / 32;
-                    linestyle(grubosc * 32 + 1);
-                    kats=ptrs_vector->angle2-Pi_/2;
                     n=+1;
                     s=1;
+                    kats=ptrs_vector->angle2-Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle2);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle2);
 
-                    l.x=ptrs_vector->x1;
-                    l.y=ptrs_vector->y1;
-                    l.r=ptrs_vector->r;
-                    l.kat1=ptrs_vector->angle1;
-                    l.kat2=ptrs_vector->angle2;
-                    l.typ=grubosc * 32 + 1;
-                    rysuj_obiekt_(&l, mode, kolor);
-                    break;
-                case 9: //-displacement
                     if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
 
                     grubosc = (ptrs_vector->typ & 224) / 32;
                     linestyle(grubosc * 32 + 1);
-                    kats=ptrs_vector->angle1+Pi_/2;
-                    n=-1;
-                    s=1;
-                    xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle1);
-                    ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle1);
 
                     l.x=ptrs_vector->x1;
                     l.y=ptrs_vector->y1;
@@ -8904,7 +8818,27 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     l.kat1=ptrs_vector->angle1;
                     l.kat2=ptrs_vector->angle2;
                     l.typ=grubosc * 32 + 1;
-                    rysuj_obiekt_(&l, mode, kolor);
+                    rysuj_obiekt_((char*)&l, mode, kolor);
+                    break;
+                case 9: //-displacement
+                    n=-1;
+                    s=1;
+                    kats=ptrs_vector->angle1+Pi_/2;
+                    xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle1);
+                    ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle1);
+
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)) break;
+
+                    grubosc = (ptrs_vector->typ & 224) / 32;
+                    linestyle(grubosc * 32 + 1);
+
+                    l.x=ptrs_vector->x1;
+                    l.y=ptrs_vector->y1;
+                    l.r=ptrs_vector->r;
+                    l.kat1=ptrs_vector->angle1;
+                    l.kat2=ptrs_vector->angle2;
+                    l.typ=grubosc * 32 + 1;
+                    rysuj_obiekt_((char*)&l, mode, kolor);
                     break;
                 case 28:  //TO DO ISOMETRIC
                 case 30:
@@ -8920,34 +8854,25 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                             plane = XY_PLANE;
                             break;
                     }
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
-                    {
-                        ea_start_x=ea_end_x=ptrs_vector->x2;
-                        ea_start_y=ea_end_y=ptrs_vector->y2;
-                        ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
-                        ea.angle=0.0f;
-                        ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
-                        break;
-                    }
 
-                    grubosc = (ptrs_vector->typ & 224) / 32;
-                    linestyle(grubosc * 32 + 1);
                     kats=ptrs_vector->angle2-Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle2);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle2);
                     n=+1;
                     s=1;
 
+                    grubosc = (ptrs_vector->typ & 224) / 32;
+                    linestyle(grubosc * 32 + 1);
+
                     l.x=ptrs_vector->x1;
                     l.y=ptrs_vector->y1;
                     l.r=ptrs_vector->r;
                     l.kat1=ptrs_vector->angle1;
                     l.kat2=ptrs_vector->angle2;
-                    //l.typ=grubosc * 32 + 1;
-                    //rysuj_obiekt_(&l, mode, kolor);
                     ea.typ=grubosc * 32 + 1;
                     ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                    rysuj_obiekt_(&ea, mode, kolor);
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)==FALSE)
+                        rysuj_obiekt_((char*)&ea, mode, kolor);
                     Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
 
                     break;
@@ -8965,23 +8890,15 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                             plane = XY_PLANE;
                             break;
                     }
-                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2))
-                    {
-                        ea_start_x=ea_end_x=ptrs_vector->x2;
-                        ea_start_y=ea_end_y=ptrs_vector->y2;
-                        ea.rx=ea.ry=sqrtf((ptrs_vector->x2 - ptrs_vector->x1)*(ptrs_vector->x2 - ptrs_vector->x1) + (ptrs_vector->y2-ptrs_vector->y1)*(ptrs_vector->y2-ptrs_vector->y1));
-                        ea.angle=0.0f;
-                        ea.kat1=ea.kat2=atan2f(ptrs_vector->y2-ptrs_vector->y1, ptrs_vector->x2 - ptrs_vector->x1);
-                        break;
-                    }
 
-                    grubosc = (ptrs_vector->typ & 224) / 32;
-                    linestyle(grubosc * 32 + 1);
                     kats=ptrs_vector->angle1+Pi_/2;
                     xs=ptrs_vector->x1+ptrs_vector->r*cosf(ptrs_vector->angle1);
                     ys=ptrs_vector->y1+ptrs_vector->r*sinf(ptrs_vector->angle1);
                     n=-1;
                     s=1;
+
+                    grubosc = (ptrs_vector->typ & 224) / 32;
+                    linestyle(grubosc * 32 + 1);
 
                     l.x=ptrs_vector->x1;
                     l.y=ptrs_vector->y1;
@@ -8992,7 +8909,8 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     //rysuj_obiekt_(&l, mode, kolor);
                     ea.typ=grubosc * 32 + 1;
                     ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
-                    rysuj_obiekt_(&ea, mode, kolor);
+                    if (Check_if_Equal((double)ptrs_vector->angle1, (double)ptrs_vector->angle2)==FALSE)
+                        rysuj_obiekt_((char*)&ea, mode, kolor);
                     Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
                     break;
                 case V_EDGE_ARC_SIMPLE:  //simple supported edge
@@ -9015,7 +8933,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                     l.kat1=ptrs_vector->angle1;
                     l.kat2=ptrs_vector->angle2;
                     l.typ=ptrs_vector->typ;
-                    rysuj_obiekt_(&l, mode, kolor);
+                    rysuj_obiekt_((char*)&l, mode, kolor);
 
                     //triangles or dashes
                     if (!make_arcarrows(&l, ptrs_vector, PL.kat, mode, kolor, vkolor, redraw_obj))
@@ -9094,10 +9012,6 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                         plane=XY_PLANE;
                         break;
                 }
-
-                // Isometric mode for ellipses tip
-                //double angle_rad=ea.angle + ea.kat2;
-                //create_arrowhead_ellipticalarc(&ea, plane, ea_end_x, ea_end_y, angle_rad, Kps /*Kp2s*/, katS, &w);
 
                 /*
                   //working a OK
@@ -9187,19 +9101,21 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             }
 
             if (wielokat_visible(&w))
-                rysuj_obiekt_(&w, mode, kolor);
+                rysuj_obiekt_((char*)&w, mode, kolor);
 
             out_v_krz (pikseleX0(ptrs_vector->x1), pikseleY0(ptrs_vector->y1));
 
-            if (!kolor) {
-                outtextxy_w_0(&Vtxt);
-                outtextxy_w_0(&Vltxt);
-                if (PTRS__Text_Style[Vtxt.czcionka]->type == 2) TTF_redraw=TRUE;
-            }
-            else
+            //eliminating text in zero angle state
+            if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2)==FALSE)
             {
-                outtextxy_w(&Vtxt,mode);
-                outtextxy_w(&Vltxt,mode);
+                if (!kolor) {
+                    outtextxy_w_0(&Vtxt);
+                    outtextxy_w_0(&Vltxt);
+                    if (PTRS__Text_Style[Vtxt.czcionka]->type == 2) TTF_redraw = TRUE;
+                } else {
+                    outtextxy_w(&Vtxt, mode);
+                    outtextxy_w(&Vltxt, mode);
+                }
             }
             break;
         case 10:  //trapezium Y
@@ -9221,7 +9137,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             }
 
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.empty_typ=0;
 
@@ -9255,17 +9171,17 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[3];
             L1.x2=w.xy[4];
             L1.y2=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             if ((!Check_if_Equal(PL.kat, 90)) && (!Check_if_Equal(PL.kat, 270)))
             {
                 L1.x1 = w.xy[6];
                 L1.y1 = w.xy[7];
-                rysuj_obiekt_(&L1, mode, kolor);
+                rysuj_obiekt_((char*)&L1, mode, kolor);
 
                 L1.x2 = w.xy[0];
                 L1.y2 = w.xy[1];
-                rysuj_obiekt_(&L1, mode, kolor);
+                rysuj_obiekt_((char*)&L1, mode, kolor);
             }
 
             w.translucent=1;
@@ -9277,7 +9193,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9305,7 +9221,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
         case 11:  //trapezium X
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.empty_typ=0;
 
@@ -9339,15 +9255,15 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[3];
             L1.x2=w.xy[4];
             L1.y2=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[6];
             L1.y1=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x2=w.xy[0];
             L1.y2=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.translucent=1;
             translucency=TRANS;
@@ -9384,7 +9300,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             break;
         case 12:  //trapezium N
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.empty_typ=0;
 
@@ -9405,15 +9321,15 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[3];
             L1.x2=w.xy[4];
             L1.y2=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[6];
             L1.y1=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x2=w.xy[0];
             L1.y2=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.translucent=1;
             translucency=TRANS;
@@ -9424,7 +9340,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9454,7 +9370,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
         case V_EDGE_ROLL:  //roll edge
         case V_EDGE_ROLL_INV:  //roll edge reversed
             L1.typ=ptrs_vector->typ; //64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.empty_typ=0;
 
@@ -9471,33 +9387,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             w.n=40;
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
-            /*
-            L1.typ=64;
-            L1.x1=w.xy[2];
-            L1.y1=w.xy[3];
-            L1.x2=w.xy[4];
-            L1.y2=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
 
-            L1.x1=w.xy[6];
-            L1.y1=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
-
-            L1.x2=w.xy[0];
-            L1.y2=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
-
-            w.translucent=1;
-            translucency=TRANS;
-
-            translucency_ptr = w.xy;
-            translucency_ptr += (w.lp * sizeof(float));
-            memmove(translucency_ptr, &translucency, sizeof(unsigned char));
-
-            rysuj_obiekt_(&w, mode, kolor);
-
-            if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
-            */
             set_mode_solid();
 
             if (!make_arrows(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat, mode, kolor, vkolor, redraw_obj))
@@ -9507,7 +9397,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             //////////////////
         case 13:  //trapezium H
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             if (!(ptrs_vector->cartflags & 1))
             {
@@ -9545,31 +9435,31 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[1];
             L1.x2=ptrs_vector->x1;
             L1.y2=ptrs_vector->y1;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
             L1.x2=ptrs_vector->x2;
             L1.y2=ptrs_vector->y2;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.typ=64;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
             L1.x2=w.xy[2];
             L1.y2=w.xy[3];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[4];
             L1.y1=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x2=w.xy[6];
             L1.y2=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.translucent=1;
             translucency=TRANS;
@@ -9580,7 +9470,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9607,7 +9497,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             break;
         case 14:  //trapezium V
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             if (!(ptrs_vector->cartflags & 1))
             {
@@ -9645,31 +9535,31 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[1];
             L1.x2=ptrs_vector->x1;
             L1.y2=ptrs_vector->y1;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
             L1.x2=ptrs_vector->x2;
             L1.y2=ptrs_vector->y2;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.typ=64;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
             L1.x2=w.xy[2];
             L1.y2=w.xy[3];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[4];
             L1.y1=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x2=w.xy[6];
             L1.y2=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.translucent=1;
             translucency=TRANS;
@@ -9680,7 +9570,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9707,10 +9597,10 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             break;
         case 15:  //THERMAL
             L1.typ=64;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             Lth.typ=64;
-            rysuj_obiekt_(&Lth, mode, kolor);
+            rysuj_obiekt_((char*)&Lth, mode, kolor);
 
             w.empty_typ=0;
             w.xy[0]=Lth.x1;
@@ -9729,15 +9619,15 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             L1.y1=w.xy[3];
             L1.x2=w.xy[4];
             L1.y2=w.xy[5];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x1=w.xy[6];
             L1.y1=w.xy[7];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             L1.x2=w.xy[0];
             L1.y2=w.xy[1];
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             w.translucent=1;
             translucency=TRANS;
@@ -9748,7 +9638,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9780,7 +9670,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             K.r=ptrs_vector->r;
             K.typ=64;
             if (okrag_visible(&K))
-                rysuj_obiekt_(&K, mode, kolor);
+                rysuj_obiekt_((char*)&K, mode, kolor);
             if (kolor) {
                 if (TRANSLUCENCY != TRANS) set_trans_blender(0, 0, 0, (int) TRANSLUCENCY);  //coming back
                 set_mode_solid();
@@ -9790,11 +9680,11 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             O.r=ptrs_vector->r;
             O.typ=64;
             if (okrag_visible(&O))
-                rysuj_obiekt_(&O, mode, kolor);
+                rysuj_obiekt_((char*)&O, mode, kolor);
             out_v_krz (pikseleX0 (ptrs_vector->x1), pikseleY0(ptrs_vector->y1));
 
             L1.typ=Ln1.typ=32;
-            rysuj_obiekt_(&L1, mode, kolor);
+            rysuj_obiekt_((char*)&L1, mode, kolor);
 
             Ln1.x1=L1.x2;
             Ln1.y1=L1.y2;
@@ -9819,7 +9709,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
                 else Ln1.x2 = L1.x2 - (float)t_len_mm - Vtxt.wysokosc / 2.0f;
             }
 
-            rysuj_obiekt_(&Ln1, mode, kolor);
+            rysuj_obiekt_((char*)&Ln1, mode, kolor);
 
             K1_5=jednostkiplt(w1_5);
             Kp2sn = 1.686909582 /*(2.5 / 2.47) * (2.5/1.5)*/ * K1_5 * view_vector_scale;
@@ -9834,7 +9724,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
             w.lp = 6;
             w.n = 8 + w.lp * sizeof (float) ;
             if (wielokat_visible(&w))
-                rysuj_obiekt_(&w, mode, kolor);
+                rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (!kolor) {
                 outtextxy_w_0(&Vtxt);
@@ -14327,7 +14217,7 @@ void ClearWindow(void)
 
 static long mv_sh_ms (double dmv) ;
 
-long l_rX, l_rY, l_krok_s; //, t_krok_s ;	/*drag bloku*/
+long l_rX, l_rY, l_krok_s, t_krok_s ;	/*drag bloku*/
 
 
 static void cursor_lrtb(double dx, double dy)
@@ -14335,57 +14225,73 @@ static void cursor_lrtb(double dx, double dy)
   double Xl, Yl ;
   static double rX = 0, rY = 0 ;
   int ret;
+  double sqrt3_over_2 = sqrt(3.0) / 2.0;
+  double half = 0.5;
+  double krok_s_=krok_s;
+  double krok_t_=krok_s;
+  double krok_g_=krok_g;
+  double krok_gt_=krok_g;
 
+    if (options1.uklad_izometryczny)
+    {
+        krok_s_*=sqrt3_over_2;
+        krok_t_*=half;
 
-  Xl = X + dx + rX ;
+        krok_g_*=sqrt3_over_2;
+        krok_gt_*=half;
+    }
+
+    Xl = X + dx + rX ;
+
   if (X == Xmax)
   {
-    if (0 != fmod (Xmax, krok_s))
+    if (0 != fmod (Xmax, krok_s_))
     {
-      if (krok_s == krok_g)
+      if (krok_s_ == krok_g_)
       {
-	Xl += -fmod (Xmax, krok_g) + krok_g ;
+	Xl += -fmod (Xmax, krok_g_) + krok_g_ ;
       }
       else
       {
-	Xl += krok_s - fmod (Xmax, krok_s) ;
+	Xl += krok_s_ - fmod (Xmax, krok_s_) ;
       }
     }
   }
-  rX = fmod (Xl, krok_s) ;
+  rX = fmod (Xl, krok_s_) ;
   Xl -= rX ;
   l_rX =  mv_sh_ms (rX) ;
   Yl = Y + dy + rY ;
   if (Y == Ymax)
   {
-    if (0 != fmod (Ymax, krok_s))
+    if (0 != fmod (Ymax, krok_t_))
     {
-      if (krok_s == krok_g)
+      if (krok_t_ == krok_gt_)
       {
-	Yl += -fmod (Ymax, krok_g) + krok_g ;
+	Yl += -fmod (Ymax, krok_gt_) + krok_gt_ ;
       }
       else
       {
-	Yl += krok_s - fmod (Ymax, krok_s) ;
+	Yl += krok_t_ - fmod (Ymax, krok_t_) ;
       }
     }
   }
-  rY = fmod (Yl, krok_s) ;
+  rY = fmod (Yl, krok_t_) ;
   Yl -= rY ;
   l_rX =  mv_sh_ms (rY) ;
 
-  ////if (!options1.uklad_izometryczny)  //TTO DO FOR ISOMETRIC SYSTEM
+  if (!options1.uklad_izometryczny)  //TTO DO FOR ISOMETRIC SYSTEM
+  {
+      l_krok_s = t_krok_s = (long)(krok_s * DokladnoscF * skala);
+  }
 
-  l_krok_s = krok_s * DokladnoscF * skala ;
+  else  //isometric
+  {
+      double cart_krok_s = krok_s * DokladnoscF * skala;
+      double l_krok_d, t_krok_d;
 
-  ////else  //isometric
-  ////{
-  ////    double cart_krok_s = krok_s * DokladnoscF * skala;
-  ////    double l_krok_d, t_krok_d;
-  ////    ret=isometric_vector_to_cartesian(cart_krok_s, cart_krok_s, &l_krok_d, &t_krok_d);
-  ////    l_krok_s=(long)l_krok_d;
-  ////    t_krok_s=(long)t_krok_d;
-  ////}
+      l_krok_s=(long)(cart_krok_s*half);
+      t_krok_s=(long)(cart_krok_s*sqrt3_over_2);
+  }
 
   if (kasowanie_licznikow==TRUE)
    {
@@ -14578,22 +14484,26 @@ void mvcurp(double dx, double dy)
 }
 
 static int  cursor_l(void)
-{ mvcur(-krok_s,0);
+{ if (!options1.uklad_izometryczny) mvcur(-krok_s,0);
+  else mvcur(-krok_s*SQRT3_OVER_2,0);
   return 0;
 }
 
 static int  cursor_r(void)
-{ mvcur(krok_s,0);
+{ if (!options1.uklad_izometryczny) mvcur(krok_s,0);
+  else mvcur(krok_s*SQRT3_OVER_2,0);
   return 0;
 }
 
 static int  cursor_t(void)
-{ mvcur(0,krok_s);
+{ if (!options1.uklad_izometryczny) mvcur(0,krok_s);
+  else mvcur(0,krok_s*HALF);
   return 0;
 }
 
 static int  cursor_b(void)
-{ mvcur(0,-krok_s);
+{ if (!options1.uklad_izometryczny) mvcur(0,-krok_s);
+  else mvcur(0,-krok_s*HALF);
   return 0;
 }
 

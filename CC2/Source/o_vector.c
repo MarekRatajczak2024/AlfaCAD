@@ -62,10 +62,17 @@ extern void Out_Edited_Draw_Param (ESTR *lps_et, BOOL out);
 extern void *get_vector_c(void);
 extern void *get_vector_s(void);
 extern int cartesian_vector_to_isometric(double dx_cart, double dy_cart, double *dx_iso, double *dy_iso);
+extern int cartesian_vector_to_isometric_in_plane(enum PlaneType plane, double dx_cart, double dy_cart, double *dx_iso,double *dy_iso);
 extern double cartesian_angle_to_isometric_angle(double cart_angle_rad);
 extern double isometric_angle_to_cartesian_angle_rad(double iso_rad);
+extern void project_point_isometric(float cx, float cy, float *ix, float *iy, enum PlaneType plane);
+extern int isometric_ellipticalarc_to_arc_ea_a(enum PlaneType plane, ELLIPTICALARC *ea, LUK *l);
+extern int compute_ellipse_radii_for_plane(enum PlaneType plane,double ea_x, double ea_y,double perimeter_x, double perimeter_y,double *rx, double *ry);
+extern int compute_arc_radii_for_plane(enum PlaneType plane, double center_x, double center_y, double point_x, double point_y, double *r);
+extern double isometric_vector_length_f(float x1, float y1, float x2, float y2);
+extern double isometric_vector_length_f_in_plane(enum PlaneType plane, float x1, float y1, float x2, float y2);
 
-extern int Pline_Slab (void);
+        extern int Pline_Slab (void);
 
 static void redcr(char);
 static int last_vector_style=-1;
@@ -91,7 +98,7 @@ TMENU mMoment_Rotation_style= {4, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0
 TMENU mMoment_Rotation_style_isometric= {12, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmMoment_Rotation_style_isometric, NULL,NULL} ;
 TMENU mLoad_style= {6, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmLoad_style, NULL,NULL} ;
 
-ESTR eVe, eVf, eVf1, eVm, eVd, eVr, eVt, eVt1, eVn;
+ESTR eVe, eVf, eVf1, eVm, eVd, eVd1, eVr, eVt, eVt1, eVn;
 
 double radius_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 double depth_magnitude=1.0; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
@@ -386,28 +393,9 @@ void out_parametry_vector (LINIA *L, AVECTOR *V)
             l=PL.dl*force_magnitude;
             if (eVf1.st == NULL) break;
             eVf1.st [0] = '\0' ;
-            /*
-            if (!orto)
-            {
-                angle_l=get_angle_l();
-                if (angle_l!=0)
-                {
-                    PL_kat=PL.kat-angle_l;
-                    if (PL_kat<0) PL_kat+=360;
-                }
-                else
-                {
-                    PL_kat=PL.kat;
-                }
-                sprintf (eVf.st, format_float2, l, PL_kat);
-            }
-            else
-            {
-             */
-                sprintf (eVf1.st, format_float, l) ;
-                /*
-            }
-                 */
+
+            sprintf (eVf1.st, format_float, l) ;
+
             Out_Edited_Draw_Param ((ESTR *)&eVf1, TRUE) ;
             break;
         case 5:
@@ -427,7 +415,6 @@ void out_parametry_vector (LINIA *L, AVECTOR *V)
             Out_Edited_Draw_Param ((ESTR *)&eVm, TRUE) ;
             break;
         case 7:
-        case 27:
             l=PL.dl*displacement_magnitude;
             if (eVd.st == NULL) break;
             eVd.st [0] = '\0' ;
@@ -450,6 +437,15 @@ void out_parametry_vector (LINIA *L, AVECTOR *V)
                 sprintf (eVd.st, format_float, l) ;
             }
             Out_Edited_Draw_Param ((ESTR *)&eVd, TRUE) ;
+            break;
+        case 27:
+            l=PL.dl*displacement_magnitude;
+            if (eVd1.st == NULL) break;
+            eVd1.st [0] = '\0' ;
+
+            sprintf (eVd1.st, format_float, l) ;
+
+            Out_Edited_Draw_Param ((ESTR *)&eVd1, TRUE) ;
             break;
         case 8:
         case 9:
@@ -506,6 +502,43 @@ void outarcvectoror (LUK *l, AVECTOR *V, int mode,int pl)
     V->magnitude1=0.0f;
     Draw_Vector(V, COPY_PUT, 1, 0);
 }
+
+// Compute the circular radius l->r so that after conversion to elliptical arc in the given plane,
+// the endpoint lies on the ray from center through (V->x2, V->y2)
+double compute_circular_radius_for_isometric(
+        enum PlaneType plane,
+        double center_x, double center_y,        // ellipse/circle center
+        double target_x, double target_y,        // the interactive point (V->x2, V->y2)
+        double world_angle_rad                   // desired angle in world space (PL.kat * M_PI/180)
+) {
+    // Direction vector from center to target point
+    double dir_x = target_x - center_x;
+    double dir_y = target_y - center_y;
+
+    // Normalize direction
+    double dir_len = sqrt(dir_x * dir_x + dir_y * dir_y);
+    if (dir_len < 1e-8) return 0.0;  // degenerate - point at center
+
+    dir_x /= dir_len;
+    dir_y /= dir_len;
+
+    // Unit vector in world space along desired angle
+    double ux = cos(world_angle_rad);
+    double uy = sin(world_angle_rad);
+
+    // Project this unit vector to isometric space
+    double pux, puy;
+    cartesian_vector_to_isometric_in_plane(plane, ux, uy, &pux, &puy);
+
+    // Length of the projected unit vector
+    double proj_unit_len = sqrt(pux * pux + puy * puy);
+
+    // The required radius r is the scale needed so that projected length matches target direction length
+    double r_needed = dir_len / proj_unit_len;
+
+    return r_needed;
+}
+
 
 void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
 /*---------------------------------------------------*/
@@ -597,11 +630,13 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
             case 33:  //-
                linestyle(64);
                lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L1.x2),pikseleY0(L1.y2));
-                ////parametry_lini(&L1, &PL);
-                parametry_lini(L, &PL);  //ignore orto
+                parametry_lini(&L1, &PL);
+                ////parametry_lini(L, &PL);  //ignore orto
                if (set_arc_stage==0)
                {
                    V->angle1=V->angle2=Pi_*PL.kat/180;
+                   ////V->x2=L1.x2;  ////
+                   ////V->y2=L1.y2;  ////
                    V->r=PL.dl;
                }
                    else if (set_arc_stage==1)
@@ -629,13 +664,21 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
     }
     else
     {
+        int plane=0;
+        double angle;
         switch (V->style)
         {
             case 5:
             case 6:
             case 8:
             case 9:
-            case 21: //TO DO ISOMETRIC
+                V->x1 = L->x1;
+                V->y1 = L->y1;
+                V->x2 = L->x2;
+                V->y2 = L->y2;
+                //V->r = PL.dl;
+                break;
+            case 21:
             case 22:
             case 23:
             case 24:
@@ -647,32 +690,121 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
             case 31:
             case 32:
             case 33:
-                linestyle(64);
-                lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
-
-                parametry_lini(L, &PL);
-                if (set_arc_stage==0)
-                {
-                    V->angle1=V->angle2=Pi_*PL.kat/180;
-                    V->r=PL.dl;
+                switch (V->style) {
+                    case 21:
+                    case 22:
+                        plane = XZ_PLANE;
+                        angle = -M_PI / 6.0;  // -30°
+                        break;
+                    case 23:
+                    case 24:
+                        plane = YZ_PLANE;
+                        angle = M_PI / 6.0;  // +30°
+                        break;
+                    case 25:
+                    case 26:
+                        plane = XY_PLANE;
+                        angle = 0.0;
+                        break;
+                    case 28:
+                    case 29:
+                        plane = XZ_PLANE;
+                        angle = -M_PI / 6.0;  // -30°
+                        break;
+                    case 30:
+                    case 31:
+                        plane = YZ_PLANE;
+                        angle = M_PI / 6.0;  // +30°
+                        break;
+                    case 32:
+                    case 33:
+                        plane = XY_PLANE;
+                        angle = 0.0;
+                        break;
                 }
-                else if (set_arc_stage==1)
-                {
-                    if ((V->style==5) || (V->style==8) || (V->style==21) || (V->style==23) || (V->style==25) || (V->style==28) || (V->style==30) || (V->style==32))
-                        V->angle2=Pi_*PL.kat/180;
-                    else V->angle1=Pi_*PL.kat/180;
-                }
-                else if (set_arc_stage==2)
-                {
-                    V->r=PL.dl;
-                }
+                V->x1 = L->x1;
+                V->y1 = L->y1;
+                V->x2 = L->x2;
+                V->y2 = L->y2;
+                break;
             default:
+                V->x1=L->x1;
+                V->y1=L->y1;
+                V->x2=L->x2;
+                V->y2=L->y2;
                 break;
         }
-        V->x1=L->x1;
-        V->y1=L->y1;
-        V->x2=L->x2;
-        V->y2=L->y2;
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+
+        parametry_lini(L, &PL);
+        if (set_arc_stage==0)
+        {
+            V->angle1=V->angle2=Pi_*PL.kat/180;
+            if (!options1.uklad_izometryczny)
+            {
+                V->r=PL.dl;
+            }
+            else
+            {
+                V->r=PL.dl;
+                //convert vector to isometric
+                double dx, dy;
+                float x1, y1, x2, y2;
+                double r, rx, ry;
+                ////int ret = cartesian_vector_to_isometric(V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
+                //int ret = cartesian_vector_to_isometric_in_plane(plane, V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
+
+                V->r=(float)isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
+
+            }
+        }
+        else if (set_arc_stage==1)
+        {
+            if ((V->style==5) || (V->style==8) || (V->style==21) || (V->style==23) || (V->style==25) || (V->style==28) || (V->style==30) || (V->style==32))
+                V->angle2=Pi_*PL.kat/180;
+            else V->angle1=Pi_*PL.kat/180;
+        }
+        else if (set_arc_stage==2)
+        {
+            switch (V->style)
+            {
+                case 21:
+                case 22:
+                    plane = XZ_PLANE;
+                    break;
+                case 23:
+                case 24:
+                    plane = YZ_PLANE;
+                    break;
+                case 25:
+                case 26:
+                    plane = XY_PLANE;
+                    break;
+                case 28:
+                case 29:
+                    plane = XZ_PLANE;
+                    break;
+                case 30:
+                case 31:
+                    plane = YZ_PLANE;
+                    break;
+                case 32:
+                case 33:
+                    plane = XY_PLANE;
+                    break;
+                default:
+                    plane=-1;
+                    break;
+            }
+            if (plane>-1)  V->r=(float)isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
+            else V->r=PL.dl;
+        }
+        //V->x1=L->x1;
+        //V->y1=L->y1;
+        //V->x2=L->x2;
+        //V->y2=L->y2;
         set_magnitude(V);
         Draw_Vector(V, COPY_PUT, 1, 0);
     }
@@ -2520,8 +2652,10 @@ int Vf1_1_n (BOOL b_graph_value)
             LiniaG.y2 = df_y ;
         }
 
-        parametry_linior (&LiniaG, &PL) ;
-        k = PL.kat ;
+        //parametry_linior (&LiniaG, &PL) ;
+        //k = PL.kat ;
+        if (LiniaG.y2<LiniaG.y1) k=270.0;  //vertical upward
+        else k=90.0;  //vertical downward
 
         l = m/force_magnitude;
         k = Grid_to_Rad (k) ;
@@ -2550,11 +2684,11 @@ int Vd1_1_n (BOOL b_graph_value)
     PLINIA PL ;
 
     b_graph_value = b_graph_value ;
-    if (eVf1.val_no < 1)
+    if (eVd1.val_no < 1)
     {
         return 0 ;
     }
-    m = eVf1.values [0] ;
+    m = eVd1.values [0] ;
     if (m > -3.4E38 && m < 3.4E38)
     {
         if (TRUE == b_graph_value)
@@ -2564,8 +2698,10 @@ int Vd1_1_n (BOOL b_graph_value)
             LiniaG.y2 = df_y ;
         }
 
-        parametry_linior (&LiniaG, &PL) ;
-        k = PL.kat ;
+        //parametry_linior (&LiniaG, &PL) ;
+        //k = PL.kat ;
+        if (LiniaG.y2<=LiniaG.y1) k=270.0;  //always vertical downward
+        else k=90.0;  //vertical upward
 
         l = m/displacement_magnitude;
         k = Grid_to_Rad (k) ;
@@ -2912,6 +3048,15 @@ void ini_vector_estr(void)
     eVd.ESTRF=Vd_n;
     eVd.extend = 0;
 
+    eVd1.x=maxX/2 + 5 ;
+    eVd1.y= ESTR_Y;
+    eVd1.lmax=12;
+    eVd1.val_no_max	= 1 ;
+    eVd1.mode	= GV_DIST	;
+    eVd1.format = format_float;
+    eVd1.ESTRF=Vd1_1_n;
+    eVd1.extend = 0;
+
     eVr.x=maxX/2 + 5 ;
     eVr.y= ESTR_Y;
     eVr.lmax=12;
@@ -3063,11 +3208,16 @@ static void redcr(char typ)
              set_arc_stage=0;
              break;
          case 7:  //displacement
-         case 27:  //displacement
              npv=dodajstr(&eVd);
              parametry_lini(&LiniaG, &PL);
              sprintf (eVd.st, format_float2, VectorG.magnitude1, PL.kat);
              Out_Edited_Draw_Param ((ESTR *)&eVd, TRUE) ;
+             break;
+         case 27:  //displacement Z
+             npv=dodajstr(&eVd1);
+             parametry_lini(&LiniaG, &PL);
+             sprintf (eVd1.st, format_float, VectorG.magnitude1);
+             Out_Edited_Draw_Param ((ESTR *)&eVd1, TRUE) ;
              break;
          case 8:  //rotation
          case 9:
@@ -3195,6 +3345,7 @@ static void poczatekV (double X0, double Y0)
     else if (ev->Number == -84)
     {
         if (npv>0) usunstr(npv);
+        orto=orto_;
         return;
     }
     if (strwyj == 1)
@@ -3246,8 +3397,10 @@ static void poczatekV (double X0, double Y0)
 
             CUR_OFF(X, Y);
             CUR_ON(X, Y);
-            if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style == 18)) {
+            if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style == 18) || (VectorG.style == 19) || (VectorG.style == 27))
+            {
                 redcr(1);
+                orto=orto_;
                 return;
             }
             continue;
@@ -3260,6 +3413,7 @@ static void poczatekV (double X0, double Y0)
 	 {
 	   redcr (1) ;
        last_vector_style=VectorG.style;
+       orto=orto_;
 	   return ;
 	 }
 	 if (ev->Number == ENTER)
@@ -3312,6 +3466,7 @@ static void poczatekV (double X0, double Y0)
              if (((VectorG.style > 3) && (VectorG.style < 10)) || ((VectorG.style>16) && (VectorG.style!=20)))  //including slab load and slab force but not load z
              {
                  redcr(1);
+                 orto=orto_;
                  return;
              }
              if ((VectorG.style >= 10) && (VectorG.magnitude2!=VectorG.magnitude1))
@@ -3337,6 +3492,7 @@ static void poczatekV (double X0, double Y0)
 	 break ;
     }
   }
+  orto=orto_;
 }
 
 static void redcr0(char typ)

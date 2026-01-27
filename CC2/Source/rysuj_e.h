@@ -304,7 +304,7 @@ extern unsigned short dos_version;
 extern long DelDaneSize;
 extern double text_line_width ;  /* grubosc linii dla teskstu */
 extern int procesp;
-extern ESTR eO,eL,el,elc,eTens,eA,eEA,eVf,eVf1,eVd,eVm,eVr,eVe, eVn;
+extern ESTR eO,eL,el,elc,eTens,eA,eEA,eVf,eVf1,eVd,eVd1,eVm,eVr,eVe, eVn;
 extern int selq;
 extern TMENU mTypyLinii;
 extern KOLORY kolory;

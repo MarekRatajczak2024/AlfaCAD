@@ -80,6 +80,9 @@ extern double get_d__luk(void);
 extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outarcvectoror (LUK *l, AVECTOR *V, int mode,int pl);
 
+extern int cartesian_vector_to_isometric_in_plane(enum PlaneType plane, double dx_cart, double dy_cart, double *dx_iso,double *dy_iso);
+
+
 //extern void redraw_trace (void);
 
 enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
@@ -392,6 +395,235 @@ int arc_to_isometric_ellipticalarc_a_ea_(enum PlaneType plane, LUK *l, ELLIPTICA
     if (ea->kat2 <= ea->kat1) ea->kat2 += (float)(2.0f*M_PI);
 
     return 0;
+}
+
+int isometric_ellipticalarc_to_arc_ea_a_ea_(enum PlaneType plane, ELLIPTICALARC *ea, LUK *l)
+{
+    if (!ea || !l || ea->rx <= 0.0f || ea->ry <= 0.0f) return -1;
+
+    /* Restore center and radius (average radius for the circular arc) */
+    l->x = ea->x;
+    l->y = ea->y;
+
+    /* Reconstruct the original circular radius */
+    /* Since projection scales differently in each direction, we take the "inverse" scale */
+    double avg_radius = (ea->rx + ea->ry) / 2.0;
+    double scale_factor = 1.0;
+
+    switch (plane) {
+        case XY_PLANE:
+            // XY plane: major axis stretched by √(3/2) ≈ 1.2247, minor by 1/√2 ≈ 0.7071
+            // Inverse: average inverse scale
+            scale_factor = 2.0 / (sqrt(3.0 / 2.0) + 1.0 / sqrt(2.0));
+            break;
+
+        case XZ_PLANE:
+        case YZ_PLANE:
+            // Vertical planes: rx = r / √2 ≈ 0.707 r, ry = r * √(3/2) ≈ 1.2247 r
+            // Inverse is the same average
+            scale_factor = 2.0 / (1.0 / sqrt(2.0) + sqrt(3.0 / 2.0));
+            break;
+
+        default:
+            return -1;
+    }
+
+    l->r = (float)(avg_radius * scale_factor);
+
+    /* Restore angles: add back the plane rotation */
+    float plane_rot_rad = 0.0f;
+    switch (plane) {
+        case XY_PLANE:
+            plane_rot_rad = 0.0f;
+            break;
+        case XZ_PLANE:
+            plane_rot_rad = 5.759586532f;  // your value ≈ +330° = -30°
+            break;
+        case YZ_PLANE:
+            plane_rot_rad = 0.523598776f;  // +30°
+            break;
+        default:
+            return -1;
+    }
+
+    l->kat1 = ea->kat1 + plane_rot_rad;
+    l->kat2 = ea->kat2 + plane_rot_rad;
+
+    /* Normalize angles to [0, 2π) */
+    l->kat1 = fmodf(l->kat1, 2.0f * M_PIf);
+    if (l->kat1 < 0.0f) l->kat1 += 2.0f * M_PIf;
+
+    l->kat2 = fmodf(l->kat2, 2.0f * M_PIf);
+    if (l->kat2 < 0.0f) l->kat2 += 2.0f * M_PIf;
+
+    /* Optional: ensure kat2 >= kat1 */
+    if (l->kat2 < l->kat1) l->kat2 += 2.0f * M_PIf;
+
+    return 0;
+}
+
+int compute_arc_radii_for_plane(enum PlaneType plane, double center_x, double center_y, double point_x, double point_y, double *r)
+{
+    if (!r) return -1;
+
+    // Direction vector from center to point
+    double dir_x = point_x - center_x;
+    double dir_y = point_y - center_y;
+
+    double dir_len = sqrt(dir_x * dir_x + dir_y * dir_y);
+    if (dir_len < 1e-8) {
+        *r = 0.0;
+        return -1;  // point at center
+    }
+
+    // Normalize direction
+    dir_x /= dir_len;
+    dir_y /= dir_len;
+
+    // The direction angle of the vector (world_angle_rad)
+    double world_angle_rad = atan2(dir_y, dir_x);
+
+    // Unit vector in world space along the direction
+    double ux = cos(world_angle_rad);
+    double uy = sin(world_angle_rad);
+
+    // Project unit vector to isometric space
+    double pux, puy;
+    if (cartesian_vector_to_isometric_in_plane(plane, ux, uy, &pux, &puy) != 0) {
+        return -1;
+    }
+
+    // Length of the projected unit vector
+    double proj_unit_len = sqrt(pux * pux + puy * puy);
+    if (proj_unit_len < 1e-8) {
+        *r = 0.0;
+        return -1;  // degenerate projection
+    }
+
+    // The required circular radius r to match the projected distance
+    *r = dir_len / proj_unit_len;
+
+    return 0;
+}
+
+#define SQRT3_OVER2 sqrt(3.0 / 2.0)
+#define ONE_OVER_SQRT2 (1.0 / sqrt(2.0))
+/* Compute rx and ry for the elliptical arc being the isometric projection of a circular arc in the selected plane.
+ * The ellipse center is at ea_x, ea_y, and it passes through the point perimeter_x, perimeter_y.
+ * The proportions are fixed per plane.
+ * Returns 0 on success, -1 on error (e.g., point at center).
+ */
+int compute_ellipse_radii_for_plane(
+        enum PlaneType plane,
+        double ea_x, double ea_y,                // center
+        double perimeter_x, double perimeter_y,  // point on perimeter (V->x2, V->y2)
+        double *rx, double *ry                  // output radii
+) {
+    if (!rx || !ry) return -1;
+
+    double dx = perimeter_x - ea_x;
+    double dy = perimeter_y - ea_y;
+    double dist = sqrt(dx * dx + dy * dy);
+    if (dist < 1e-8) return -1;  // point at center
+
+    double major_scale, minor_scale;
+
+    switch (plane) {
+        case XY_PLANE:
+            major_scale = SQRT3_OVER2;  // rx = r * √(3/2)
+            minor_scale = ONE_OVER_SQRT2;  // ry = r * 1/√2
+            break;
+        case XZ_PLANE:
+        case YZ_PLANE:
+            major_scale = SQRT3_OVER2;  // ry = r * √(3/2)
+            minor_scale = ONE_OVER_SQRT2;  // rx = r * 1/√2
+            break;
+        default:
+            return -1;
+    }
+
+    // Ratio k = major / minor
+    double k = major_scale / minor_scale;  // √3 for all
+
+    // For XY: rx major, ry minor
+    // For XZ/YZ: rx minor, ry major
+
+    // Normalize direction
+    dx /= dist;
+    dy /= dist;
+
+    // Rotate by -plane_angle to local frame (inverse rotation)
+    double plane_angle = 0.0;
+    switch (plane) {
+        case XY_PLANE:
+            plane_angle = 0.0;
+            break;
+        case XZ_PLANE:
+            plane_angle = -M_PI / 6.0;  // -30°
+            break;
+        case YZ_PLANE:
+            plane_angle = M_PI / 6.0;  // +30°
+            break;
+    }
+
+    double cos_p = cos(-plane_angle);
+    double sin_p = sin(-plane_angle);
+
+    double local_x = dx * cos_p - dy * sin_p;
+    double local_y = dx * sin_p + dy * cos_p;
+
+    // Now solve for r such that (local_x / (r * minor_scale))^2 + (local_y / (r * major_scale))^2 = 1
+    // Equivalent to r^2 = (local_x / minor_scale)^2 + (local_y / major_scale)^2
+
+    double term1 = local_x / minor_scale;
+    double term2 = local_y / major_scale;
+    double r = sqrt(term1 * term1 + term2 * term2);
+
+    switch (plane) {
+        case XY_PLANE:
+            *rx = r * major_scale;
+            *ry = r * minor_scale;
+            break;
+        case XZ_PLANE:
+        case YZ_PLANE:
+            *rx = r * minor_scale;
+            *ry = r * major_scale;
+            break;
+    }
+
+    return 0;
+}
+
+int isometric_ellipticalarc_to_arc_ea_a(enum PlaneType plane, ELLIPTICALARC *ea, LUK *l)
+{
+    /* Ellipse parameters (unchanged) */
+    const double sqrt3_over2 = sqrt(3.0 / 2.0);
+    const double one_over_sqrt2 = 1.0 / sqrt(2.0);
+
+    switch (plane) {
+        case XY_PLANE:
+            l->r = ea->rx / (float)sqrt3_over2;
+            //l->r = ea->ry / (float)one_over_sqrt2;
+            break;
+        case XZ_PLANE:
+            l->r = ea->rx /  (float)one_over_sqrt2;
+            //l->r = ea->ry / (float)sqrt3_over2;
+            break;
+        case YZ_PLANE:
+            l->r = ea->rx / (float)one_over_sqrt2;
+            //l->r = ea->ry / (float)sqrt3_over2;
+            break;
+        default:
+            return -1;
+    }
+
+    l->kat1 = ea->angle + ea->kat1;
+    l->kat2 = ea->angle + ea->kat2;
+    if (l->kat1<0) l->kat1+=(2*M_PIf);
+    if (l->kat2<0) l->kat2+=(2*M_PIf);
+
+    return 0;
+
 }
 
 int arc_to_isometric_ellipticalarc_a_ea(enum PlaneType plane, LUK *l, ELLIPTICALARC *ea) {

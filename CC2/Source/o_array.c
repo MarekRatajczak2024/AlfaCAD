@@ -122,6 +122,8 @@ int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart,
 }
 
 #define ONE_OVER_SQRT3 (1.0 / sqrt(3.0))  // ≈ 0.5773502691896257
+#define SQRT_3_OVER_2 (sqrt(3.0 / 2.0))  //≈ 1.224744871
+#define ONE_OVER_SQRT_2 (1.0 / sqrt(2.0))  // ≈ 0.7071067811865475
 
 /*
  * Convert a vector from Cartesian to Isometric coordinates.
@@ -144,11 +146,49 @@ int cartesian_vector_to_isometric(
 {
     if (!dx_iso || !dy_iso) return -1;
 
-    // Inverse transformation matrix for vectors:
-    // dx_iso = (1/√3) * dx_cart + dy_cart
-    // dy_iso = -(1/√3) * dx_cart + dy_cart
     *dx_iso = ONE_OVER_SQRT3 * dx_cart + dy_cart;
     *dy_iso = -ONE_OVER_SQRT3 * dx_cart + dy_cart;
+
+    return 0;
+}
+
+//#define ONE_OVER_SQRT3  (1.0 / sqrt(3.0))   // ≈ 0.57735026919
+
+int cartesian_vector_to_isometric_in_plane(enum PlaneType plane, double dx_cart, double dy_cart, double *dx_iso,double *dy_iso)
+{
+    if (!dx_iso || !dy_iso) return -1;
+
+    double dx = dx_cart;
+    double dy = dy_cart;
+    double dz = 0.0;
+
+    switch (plane) {
+        case XY_PLANE:
+            // XY plane: Z = 0, standard isometric
+            *dx_iso = ONE_OVER_SQRT3 * dx - ONE_OVER_SQRT3 * dy;
+            *dy_iso = 0.5 * dx + 0.5 * dy;
+            break;
+
+        case XZ_PLANE:
+            // XZ plane: Y = 0, vertical in isometric
+            // We treat dy_cart as Z height, dx_cart as X
+            *dx_iso = ONE_OVER_SQRT3 * dx;                // along iso-X
+            *dy_iso = 0.5 * dx + dy;                      // Z contributes full height
+            break;
+
+        case YZ_PLANE:
+            // YZ plane: X = 0, vertical in isometric
+            // We treat dy_cart as Z height, dx_cart as Y
+            *dx_iso = -ONE_OVER_SQRT3 * dy;               // along iso-Y (negative direction)
+            *dy_iso = 0.5 * dy + dy;                      // Z contributes full height
+            break;
+
+        default:
+            // Fallback: no transformation
+            *dx_iso = dx;
+            *dy_iso = dy;
+            return -1;
+    }
 
     return 0;
 }

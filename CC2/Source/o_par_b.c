@@ -341,6 +341,16 @@ void Uklad_kartezjanski(void)
   go_refresh=TRUE;
 }
 
+void switch_to_Cartesian(void) {
+    if (options1.uklad_izometryczny)
+    {
+        options1.uklad_geodezyjny = 0;
+        options1.uklad_izometryczny = 0;
+        menu_par_new((*mParametry.pola)[4].txt, ParTxt[0]);
+        drawp(&mParametry);
+    }
+}
+
 void Uklad_geodezyjny(void)
 { int l_kr;
   if ((options1.uklad_geodezyjny==1) && (options1.uklad_izometryczny==0))

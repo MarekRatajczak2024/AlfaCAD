@@ -81,7 +81,8 @@ char solidpatterndxy[10][5] = {"0","1/32","1/16","1/8","1/4","3/8","1/2","5/8","
 
 
 /* Helper: isometric projection of a single point (float version) */
-static void project_point_isometric(float cx, float cy, float *ix, float *iy, enum PlaneType plane) {
+//static
+void project_point_isometric(float cx, float cy, float *ix, float *iy, enum PlaneType plane) {
     double dx = (double)cx;
     double dy = (double)cy;
     double px, py;
@@ -135,6 +136,42 @@ void izometrize_solid(enum PlaneType plane, WIELOKAT *St) {
         St->xy[2*i + 1] = proj_y[i] + offset_y;
     }
 }
+
+void make_dim_line_isometric_solid(double kat1, double l_end_x, double l_end_y, double Kps, double katS, int n, WIELOKAT *w)
+{
+
+    // Reverse direction for arrowhead base behind tip
+    double angle_rad=kat1*M_PI/180.;
+    if (n>0) angle_rad = fmod(angle_rad - M_PI, 2.0 * M_PI);
+    if (angle_rad < 0.0) angle_rad += 2.0 * M_PI;
+
+    double iso_angle = cartesian_angle_to_isometric_angle(angle_rad);
+
+    double katS_rad = katS * M_PI / 180.0;
+
+    // Adjust Kp2s so that the half-base projection is Kps
+    //double Kp2s = Kps / cos(M_PI*katS/180) ;
+    double Kp2s = Kps / cos(katS_rad);  // full base width = 2 * Kps
+
+    double iso_angle1 = fmod(iso_angle + katS_rad, 2.0 * M_PI);
+    double iso_angle2 = fmod(iso_angle - katS_rad, 2.0 * M_PI);
+
+    double iso_angle1_deg = iso_angle1 * 180.0 / M_PI;
+    double iso_angle2_deg = iso_angle2 * 180.0 / M_PI;
+
+    double x_tip1, y_tip1, x_tip2, y_tip2;
+    isometric_polar_to_cartesian(l_end_x, l_end_y, Kp2s, iso_angle1_deg, &x_tip1, &y_tip1);
+    isometric_polar_to_cartesian(l_end_x, l_end_y, Kp2s, iso_angle2_deg, &x_tip2, &y_tip2);
+
+    // Tip at reference point (no shift needed, since tip is at end)
+    w->xy[0] = (float)x_tip1;
+    w->xy[1] = (float)y_tip1;
+    w->xy[2] = (float)l_end_x;  // tip
+    w->xy[3] = (float)l_end_y;
+    w->xy[4] = (float)x_tip2;
+    w->xy[5] = (float)y_tip2;
+}
+
 
 void make_dim_elliptical_arc_isometric_solid(ELLIPTICALARC *ea, double ea_start_x, double ea_start_y, double ea_end_x, double ea_end_y, double Kps, double katS, int n, WIELOKAT *w)
 {

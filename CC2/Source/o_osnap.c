@@ -601,6 +601,8 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
 
 #define arrowf 1.0
 
+    ra = Get_Point_Size() / arrowf;
+
     if (global_set_stretch) stretch_vector=0;
 
     v = adr;

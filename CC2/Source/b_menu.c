@@ -2138,7 +2138,7 @@ extern int set_lastest_window(void);
 void mskp(void)
 { msx=msy=0;}
 
-extern long l_rX, l_rY, l_krok_s ;
+extern long l_rX, l_rY, l_krok_s, t_krok_s ;
 
 static void  msk (int x, int y)
 {

@@ -70,6 +70,7 @@ extern double cut_val(double jXY);
 extern double my_round(double x, unsigned int digits);
 extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
 extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern void switch_to_Cartesian(void);
 
 // Inverse of milimetryobx
 extern double milimetryobx_inv(double obj_x);
@@ -1103,6 +1104,9 @@ void  axis_second_point (double X0, double Y0)
 	CUR_OFF (X, Y) ;
 	LiniaG.x2 = X0 ;
 	LiniaG.y2 = Y0 ;
+
+    switch_to_Cartesian();
+
 	out_local_angle();
 	CUR_ON (X, Y) ;
 	ev->Number=0 ;
@@ -1316,6 +1320,9 @@ void Local_Angle_Num(void)
    {
      while (angle_l<=-360) angle_l+=360;
    }
+
+  switch_to_Cartesian();
+
   l_kr=put_angle_l(angle_l);
   komunikat (0);
   redraw ();

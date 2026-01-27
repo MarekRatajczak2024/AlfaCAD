@@ -40,6 +40,9 @@ extern void izometrize_solid(enum PlaneType plane, WIELOKAT *St);
 extern void make_dim_elliptical_arc_isometric_solid(ELLIPTICALARC *ea, double ea_start_x, double ea_start_y, double ea_end_x, double ea_end_y, double Kps, double katS, int n, WIELOKAT *w);
 extern void srodekea_(double *x,double *y, double *tangent, void *adr);  //fast and realtively precise
 
+extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
+extern void make_dim_line_isometric_solid(double kat1, double l_end_x, double l_end_y, double Kps, double katS, int n, WIELOKAT *w);
+
 static int Continue=0,Wst;
 static char *ADLr;  /* adres ostatniej linii */
 static int Lsw=0;

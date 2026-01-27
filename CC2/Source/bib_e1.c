@@ -29,7 +29,7 @@
 #include "rysuj_e.h"
 
 extern void Out_Edited_Draw_Param (ESTR *lps_et, BOOL out) ;
-extern int GetColorAC(int) ;
+//extern int GetColorAC(int) ;
 extern BOOL Check_if_Equal0(double, double);
 extern BOOL Check_if_Equal (double, double) ;
 extern BOOL Check_if_Equal2(double, double);
@@ -131,6 +131,92 @@ double isometric_vector_length_f(float x1, float y1, float x2, float y2) {
     return sqrt(i_dx * i_dx + i_dy * i_dy);
 }
 
+#define INV_SQRT3 (1.0 / sqrt(3.0))
+
+#define SQRT3 1.73205080757
+#define COS30 0.86602540378
+#define SIN30 0.5
+
+/**
+ * Computes the true (world) length of a vector after removing the isometric projection distortion.
+ * Returns the length in the original plane's coordinate system.
+ */
+
+// Pre-calculated 1/fx and 1/fy based on your sqrt(3/2) and 1/sqrt(2)
+const double INV_FX_XY   = 0.81649658; // 1.0 / sqrt(1.5)
+const double INV_FY_XY   = 1.41421356; // 1.0 / (1.0 / sqrt(2.0))
+const double INV_FX_VERT = 1.41421356;
+const double INV_FY_VERT = 0.81649658;
+
+//not optimal version
+double isometric_vector_length_f_in_plane__(
+        enum PlaneType plane,
+        float x1, float y1,
+        float x2, float y2)
+{
+    double dx = (double)(x2 - x1);
+    double dy = (double)(y2 - y1);
+
+    if (dx == 0.0 && dy == 0.0) return 0.0;
+
+    const double fx_xy = sqrt(3.0 / 2.0), fy_xy = 1.0 / sqrt(2.0);
+    const double fx_vert = 1.0 / sqrt(2.0), fy_vert = sqrt(3.0 / 2.0);
+
+    double inv_fx, inv_fy;
+
+    double angle, fx, fy;
+    switch (plane) {
+        case XY_PLANE: angle = 0.0;         fx = fx_xy;   fy = fy_xy;   break;
+        case XZ_PLANE: angle = 5.759586532; fx = fx_vert; fy = fy_vert; break;
+        case YZ_PLANE: angle = 0.523598776; fx = fx_vert; fy = fy_vert; break;
+        default: return sqrt(dx*dx + dy*dy);
+    }
+
+    double cosA = cos(angle);
+    double sinA = sin(angle);
+
+// Rotate point to ellipse local coordinate system
+    double xr = dx * cosA + dy * sinA;
+    double yr = -dx * sinA + dy * cosA;
+
+    double x_scaled = xr * inv_fx;
+    double y_scaled = yr * inv_fy;
+
+// Calculate radius
+    return sqrt((xr / fx) * (xr / fx) + (yr / fy) * (yr / fy));
+}
+
+double isometric_vector_length_f_in_plane(enum PlaneType plane, float x1, float y1, float x2, float y2) {
+    double dx = (double)(x2 - x1);
+    double dy = (double)(y2 - y1);
+
+    if (dx == 0.0 && dy == 0.0) return 0.0;
+
+    double inv_fx, inv_fy, angle;
+
+    switch (plane) {
+        case XY_PLANE: angle = 0.0;         inv_fx = INV_FX_XY;   inv_fy = INV_FY_XY;   break;
+        case XZ_PLANE: angle = 5.759586532; inv_fx = INV_FX_VERT; inv_fy = INV_FY_VERT; break;
+        case YZ_PLANE: angle = 0.523598776; inv_fx = INV_FX_VERT; inv_fy = INV_FY_VERT; break;
+        default:       return sqrt(dx * dx + dy * dy);
+    }
+
+    double cosA = cos(angle);
+    double sinA = sin(angle);
+
+    // Rotate point to ellipse local coordinate system
+    double xr = dx * cosA + dy * sinA;
+    double yr = -dx * sinA + dy * cosA;
+
+    // Apply inverse scaling factors
+    double x_scaled = xr * inv_fx;
+    double y_scaled = yr * inv_fy;
+
+    // The result is the radius of the original circular arc
+    return sqrt(x_scaled * x_scaled + y_scaled * y_scaled);
+}
+
+
 void parametry_linior (LINIA *L,PLINIA *PL)
 /*--------------------------------------------*/
 {
@@ -154,21 +240,18 @@ void parametry_linior (LINIA *L,PLINIA *PL)
        PL->kat=isometric_vector_angle(L->x1, L->y1, L->x2, L->y2)+angle_l;
        PL->sin=sin(PL->kat/180.*PI);
        PL->cos=cos(PL->kat/180.*PI);
-       //PL->dl=sqrt(dx*dx+dy*dy);
        PL->dl=isometric_vector_length(L->x1, L->y1, L->x2, L->y2, &PL->dx, &PL->dy);
-       //PL->dx=dx;
-       //PL->dy=dy;
     }
     else parametry_lini (L, PL);
     return;
   }
 
   angle_l=get_angle_l();
-		      /* uklad globalny */
+		      /* global system */
   dx = L->x2 - L->x1;
   dy = L->y2 - L->y1;
 
-  if (angle_l!=0)		   /* uklad lokalny */
+  if (angle_l!=0)		   /* local system */
    {
        angle_lr=angle_l*0.017453293;
        sinfi=sin(angle_lr);
@@ -228,9 +311,6 @@ void parametry_linior (LINIA *L,PLINIA *PL)
          PL->kat = (dxprim1 >= 0 ? angle_l + 120 : angle_l + 300);
          PL->sin=(dxprim1>=0 ? sinfi1 : -sinfi1);
          PL->cos=(dxprim1>=0 ? cosfi1 : -cosfi1);
-         ////PL->sin=(dyprim1>=0 ? -sinfi1 : sinfi1);
-         ////PL->cos=(dyprim1>=0 ? -cosfi1 : cosfi1);
-         //PL->dl=fabs(dxprim1);
          PL->dl=sqrt(dx*dx+dy*dy);
          PL->dx=dx;
          PL->dy=dy;
@@ -383,13 +463,13 @@ void outlineor (LINIA *L,int mode,int pl)
             L_axis.x2=L1.x2;
             if (AXIS==TRUE)
               {
-                L_axis.y1=-L1000;
-                L_axis.y2=L2000;
+                L_axis.y1=(float)-L1000;
+                L_axis.y2=(float)L2000;
               }
                else
                  {
-                  L_axis.y1=L1.y2-L50;
-                  L_axis.y2=L1.y2+L50;
+                  L_axis.y1=(float)(L1.y2-L50);
+                  L_axis.y2=(float)(L1.y2+L50);
                  }
             lineC(pikseleX0(L1.x2),pikseleY0(L_axis.y1),pikseleX0(L1.x2),pikseleY0(L_axis.y2));
           }
@@ -399,13 +479,13 @@ void outlineor (LINIA *L,int mode,int pl)
             L_axis.y2=L1.y2;
             if (AXIS==TRUE)
              {
-              L_axis.x1=-L1000;
-              L_axis.x2=L2000;
+              L_axis.x1=(float)-L1000;
+              L_axis.x2=(float)L2000;
              }
               else
                {
-                L_axis.x1=L1.x2-L50;
-                L_axis.x2=L1.x2+L50;
+                L_axis.x1=(float)(L1.x2-L50);
+                L_axis.x2=(float)(L1.x2+L50);
                }
             lineC(pikseleX0(L_axis.x1),pikseleY0(L1.y2),pikseleX0(L_axis.x2),pikseleY0(L1.y2));
           }
@@ -419,31 +499,31 @@ void outlineor (LINIA *L,int mode,int pl)
                L_axis.x2=L1.x2;
                if (AXIS==TRUE)
                 {
-                 L_axis.y1=-L1000;
-                 L_axis.y2=L2000;
+                 L_axis.y1=(float)-L1000;
+                 L_axis.y2=(float)L2000;
                 }
                  else
                   {
-                   L_axis.y1=L1.y2-L50;
-                   L_axis.y2=L1.y2+L50;
+                   L_axis.y1=(float)(L1.y2-L50);
+                   L_axis.y2=(float)(L1.y2+L50);
                   }
               }
                else
                 {
-                 P_Orto_Dir = atan((L1.y2-L->y1)/(L1.x2-L->x1));
+                 P_Orto_Dir = atan((double)(L1.y2-L->y1)/(double)(L1.x2-L->x1));
                  if (AXIS==TRUE)
                   {
-                   L_axis.x1=L1.x2-L1000*sin(P_Orto_Dir);
-                   L_axis.y1=L1.y2+L1000*cos(P_Orto_Dir);
-                   L_axis.x2=L1.x2+L1000*sin(P_Orto_Dir);
-                   L_axis.y2=L1.y2-L1000*cos(P_Orto_Dir);
+                   L_axis.x1=(float)(L1.x2-L1000*sin(P_Orto_Dir));
+                   L_axis.y1=(float)(L1.y2+L1000*cos(P_Orto_Dir));
+                   L_axis.x2=(float)(L1.x2+L1000*sin(P_Orto_Dir));
+                   L_axis.y2=(float)(L1.y2-L1000*cos(P_Orto_Dir));
                   }
                    else
                     {
-                     L_axis.x1=L1.x2-L50*sin(P_Orto_Dir);
-                     L_axis.y1=L1.y2+L50*cos(P_Orto_Dir);
-                     L_axis.x2=L1.x2+L50*sin(P_Orto_Dir);
-                     L_axis.y2=L1.y2-L50*cos(P_Orto_Dir);
+                     L_axis.x1=(float)(L1.x2-L50*sin(P_Orto_Dir));
+                     L_axis.y1=(float)(L1.y2+L50*cos(P_Orto_Dir));
+                     L_axis.x2=(float)(L1.x2+L50*sin(P_Orto_Dir));
+                     L_axis.y2=(float)(L1.y2-L50*cos(P_Orto_Dir));
                     }
                 }
             lineC(pikseleX0(L_axis.x1),pikseleY0(L_axis.y1),pikseleX0(L_axis.x2),pikseleY0(L_axis.y2));

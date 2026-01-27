@@ -4125,6 +4125,27 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 24:
         case 25:
         case 26:
+            switch (ptrs_vector->style)
+            {
+            case 21:  // moment x //TO DO ISOMETRIC
+                plane = XZ_PLANE;
+                break;
+            case 23:
+                plane = YZ_PLANE;
+                break;
+            case 25:
+                plane = XY_PLANE;
+                break;
+            case 22:  // moment x //TO DO ISOMETRIC
+                plane = XZ_PLANE;
+                break;
+            case 24:
+                plane = YZ_PLANE;
+                break;
+            case 26:
+                plane = XY_PLANE;
+                break;
+            }
             memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
             l.x=ptrs_vector->x1;
             l.y=ptrs_vector->y1;
@@ -4166,6 +4187,28 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 31:
         case 32:
         case 33:
+            switch (ptrs_vector->style)
+            {
+            case 28:  // moment x //TO DO ISOMETRIC
+                plane = XZ_PLANE;
+                break;
+            case 30:
+                plane = YZ_PLANE;
+                break;
+            case 32:
+                plane = XY_PLANE;
+                break;
+            case 29:  // moment x //TO DO ISOMETRIC
+                plane = XZ_PLANE;
+                break;
+            case 31:
+                plane = YZ_PLANE;
+                break;
+            case 33:
+                plane = XY_PLANE;
+                break;
+            }
+
             memmove(&l, ptrs_vector, sizeof(NAGLOWEK));
             l.x=ptrs_vector->x1;
             l.y=ptrs_vector->y1;
