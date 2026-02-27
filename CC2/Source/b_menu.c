@@ -7060,8 +7060,8 @@ static void draw_keyimage(int keyimage, BOOL set_timer, BOOL silent, BOOL enforc
                 y02 = bmp->h;
 
                 if (!Get_Dialog_Menu_Level() && !silent) CUR_OFF(X, Y);
-                //back image image
 
+                //back image image
                 if (bmp_back != NULL) {
                     putimage2(x1, y1, bmp_back, COPY_PUT);
                     flip_corner();
@@ -7112,9 +7112,11 @@ static void draw_keyimage(int keyimage, BOOL set_timer, BOOL silent, BOOL enforc
 			bmp_back = NULL;
 			if (!Get_Dialog_Menu_Level() && !silent) CUR_ON(X, Y);
 		}
+
 		shiftkeyimage_back = 0;
 	}
 }
+
 
 void draw_keyimage_(int keyimage, BOOL set_timer, BOOL silent, BOOL enforce)
 {
@@ -7133,6 +7135,22 @@ void del_demo_keys(void)
 		destroy_bitmap(demo_bmp_back1);
 		demo_bmp_back1 = NULL;
 	}
+}
+
+void fill_demo_keys(void)
+{
+    if (bmp_back != NULL)
+    {
+        clear_to_color(bmp_back, get_palette_color(kolory.paper));
+    }
+    if (demo_bmp_back != NULL)
+    {
+        clear_to_color(demo_bmp_back, get_palette_color(kolory.paper));
+    }
+    if (demo_bmp_back1 != NULL)
+    {
+        clear_to_color(demo_bmp_back1, get_palette_color(kolory.paper));
+    }
 }
 
 static void draw_demokeyimage(int keyimage, int keyimage1, BOOL set_timer, BOOL silent, BOOL enforce)

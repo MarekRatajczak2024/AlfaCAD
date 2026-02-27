@@ -350,6 +350,8 @@ extern void Test_Menu (TMENU *) ;
 extern int findlentopxl(const char *s, int max_pxl);
 extern int TTF_text_len(char *text);
 extern int utf8len(const char *s);
+
+extern void fill_demo_keys(void);;
 #ifdef MACOS
 extern int send_AppleScript_Exit(pid_t pid);
 extern pid_t get_e_pid(void);
@@ -4490,6 +4492,8 @@ int Restore_params(void)
 
     reset_n_list_begin_blk();
     reset_b_layers_bak();
+
+    fill_demo_keys();
 
 	return 1;
 }

@@ -194,6 +194,8 @@ extern int LoadPattern(SOLID_PATTERN_LIBRARY_ITEM* pattern_mem);
 extern void utf8Upper(char* text);
 extern void set_st_jedn(void);
 
+extern void fill_demo_keys(void);
+
 extern char  *dane0;
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
@@ -2952,6 +2954,8 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
       ////korekta_obiektow_blokow();  //64bit
       if (killblock==1) zlikwiduj_wszystkie_bloki();
 	}
+
+    fill_demo_keys();
 
     return i_ret;
   }
