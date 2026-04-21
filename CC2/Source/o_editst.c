@@ -464,10 +464,10 @@ void outtext_r_e (int x0, int y0, int len, int width, char *s, BOOL ini, BOOL en
     setcolor(kolory.inkk_ini);
     setfillstyle_(SOLID_FILL,kolory.paperk_ini);
 
-    len_ttf0 = TTF_text_len_pos(&buf, pos1);
+    len_ttf0 = TTF_text_len_pos((char*)&buf, pos1);
     x01=x0 + len_ttf0;
 	//len_ttf = TTF_text_len_pos(&buf, wlen);  //wlen
-    len_ttf = TTF_text_len_pos(&buf, pos2+1);
+    len_ttf = TTF_text_len_pos((char*)&buf, pos2+1);
 
 	x = x0 + len_ttf;
 
@@ -485,7 +485,7 @@ void outtext_r_e (int x0, int y0, int len, int width, char *s, BOOL ini, BOOL en
     setcolor(kolory.inkk);
     setfillstyle_(SOLID_FILL,kolory.paperk);
 
-	len_ttf = TTF_text_len_pos(&buf, wlen);
+	len_ttf = TTF_text_len_pos((char*)&buf, wlen);
 	x = x0 + len_ttf;
 
 	char_len_ttf = 0;
@@ -574,7 +574,7 @@ int Get_Legal_Key (char *legal)
     {
         wc_legal_32[i] = (wchar_t)wc_legal[i];
     }
-    wc_legal_ptr=wc_legal_32;
+    wc_legal_ptr=(char*)wc_legal_32;
 #else
     wc_legal_ptr=wc_legal;
 #endif
@@ -582,7 +582,7 @@ int Get_Legal_Key (char *legal)
     while (1)
     {
         retval = Get_Key ();
-        if (wcschr (wc_legal_ptr, retval) != NULL)
+        if (wcschr ((wchar_t*)wc_legal_ptr, retval) != NULL)
         {
             break;
         }
@@ -694,9 +694,9 @@ int findlentopxl(const char *s, int max_pxl)
 
 	while ((len_pxl < max_pxl) && (*ptr!='\0'))
 	{
-		unicode = utf8_to_ucs2(ptr, &ptr1);
+		unicode = utf8_to_ucs2((uint8_t*)ptr, (uint8_t**)&ptr1);
 		len_pxl+=TTF_char_len(unicode);
-		i += ptr1 - ptr;
+		i += (int)(ptr1 - ptr);
 		ptr = ptr1;
         if (unicode==UTF8_BAD_LEADING_BYTE)
             break;
@@ -718,7 +718,7 @@ int findfpostopxl(/*const unsigned*/ char *s, int max_pxl)
 
 	while ((len_pxl > max_pxl) && (*ptr != '\0'))
 	{
-		unicode = utf8_to_ucs2(ptr, &ptr1);
+		unicode = utf8_to_ucs2((uint8_t*)ptr, (uint8_t**)&ptr1);
 		len_pxl -= TTF_char_len(unicode);
         if (ptr1==ptr) return i; //possibly error in encoding
 		i += ptr1 - ptr;
@@ -920,7 +920,7 @@ if (last_edit==TRUE)
 
   if ((c > 127) && ((c < 2048) || (c == 2074)))
   {
-	  bytes_n = ucs2_to_utf8(c, &utf8c);
+	  bytes_n = ucs2_to_utf8(c, utf8c);
 	  if (bytes_n == 2) c = utf8c[0] * 256 + utf8c[1];
       else if (bytes_n==3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
   }
@@ -1010,7 +1010,7 @@ if (last_edit==TRUE)
 
 	 if ((c > 127) && ((c < 2048) || (c == 2074)))
 	 {
-		 bytes_n = ucs2_to_utf8(c, &utf8c);
+		 bytes_n = ucs2_to_utf8(c, (uint8_t*)&utf8c);
 		 if (bytes_n==2) c = utf8c[0] * 256 + utf8c[1];
          else if (bytes_n==3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
 	 }
@@ -1463,7 +1463,7 @@ do
 
 	 if ((c > 127) && (c < 2048) || (known3b(c))) // == 8308))
 	 {
-		 bytes_n = ucs2_to_utf8(c, &utf8c);
+		 bytes_n = ucs2_to_utf8(c, (uint8_t*)&utf8c);
 		 if (bytes_n == 2) c = utf8c[0] * 256 + utf8c[1];
          else if (bytes_n == 3) c = utf8c[0] * 65536 + utf8c[1] * 256 + utf8c[2];
 	 }

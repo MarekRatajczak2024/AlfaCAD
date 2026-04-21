@@ -146,24 +146,24 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw)
     //checking if text and it is dimensioning text
     if ((nag->obiekt==Otekst) && (nag->blok == 1) && (nag->obiektt1 == 0) && (nag->obiektt2 == 1) && (nag->obiektt3 == 0))
     {//searching for dim line
-        t = nag;
-        adp= FIRSTB(nag);
+        t = (TEXT*)nag;
+        adp= (char*)FIRSTB((char*)nag);
         if (adp!=NULL)
         {
             adk=(char*)adp+sizeof(NAGLOWEK)+((BLOK*)adp)->n;
-            ad=(char*)adp+B3+sizeof(NAGLOWEK)+((BLOK*)adp)->dlugosc_opisu_obiektu;
-            while (ad<t)
+            ad=(NAGLOWEK*)((char*)adp+B3+sizeof(NAGLOWEK)+((BLOK*)adp)->dlugosc_opisu_obiektu);
+            while ((char*)ad<(char*)t)
             {
                 if ((ad->obiekt==Olinia) && (ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0))
                 {
-                    Ld = ad;
+                    Ld = (LINIA*)ad;
                 }
                 else if ((ad->obiekt==Oluk) && (ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0))
                 {
-                    ld = ad;
+                    ld = (LUK*)ad;
                 }
-                if (ad->obiekt==OdBLOK) ad=(char*)ad+B3+sizeof(NAGLOWEK)+((BLOK*)ad)->dlugosc_opisu_obiektu;
-                ad=(char*)ad + sizeof(NAGLOWEK) + ad->n;
+                if (ad->obiekt==OdBLOK) ad=(NAGLOWEK*)((char*)ad+B3+sizeof(NAGLOWEK)+((BLOK*)ad)->dlugosc_opisu_obiektu);
+                else ad=(NAGLOWEK*)((char*)ad + sizeof(NAGLOWEK) + ad->n);
             }
         }
     }
@@ -172,24 +172,24 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw)
     {
         adk=(char*)nag+sizeof(NAGLOWEK)+((BLOK*)nag)->n;
         //adk=ADK;
-        ad=(char*)nag+B3+sizeof(NAGLOWEK)+((BLOK*)nag)->dlugosc_opisu_obiektu;
-        while (ad<adk)
+        ad=(NAGLOWEK*)((char*)nag+B3+sizeof(NAGLOWEK)+((BLOK*)nag)->dlugosc_opisu_obiektu);
+        while ((char*)ad<(char*)adk)
         {
             if ((ad->obiekt==Olinia) && (ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0))
             {
-                Ld = ad;
+                Ld = (LINIA*)ad;
             }
             else if ((ad->obiekt==Oluk) && (ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0))
             {
-                ld = ad;
+                ld = (LUK*)ad;
             }
             else if ((ad->obiekt==Otekst)  && (ad->atrybut == atrybut) && (ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0))
             {
-                t = ad;
+                t = (TEXT*)ad;
                 break;  //text is always the last one
             }
-            if (ad->obiekt==OdBLOK) ad=(char*)ad+B3+sizeof(NAGLOWEK)+((BLOK*)ad)->dlugosc_opisu_obiektu;
-            ad=(char*)ad + sizeof(NAGLOWEK) + ad->n;
+            if (ad->obiekt==OdBLOK) ad=(NAGLOWEK*)((char*)ad+B3+sizeof(NAGLOWEK)+((BLOK*)ad)->dlugosc_opisu_obiektu);
+            else ad=(NAGLOWEK*)((char*)ad + sizeof(NAGLOWEK) + ad->n);
         }
     }
 
@@ -214,11 +214,11 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw)
                 if (grubosc_l > 4) grubosc_l = 4;
                 Lbuf.typ = grubosc_l * 32 + typ_l;
 
-                if (draw) rysuj_obiekt(&Lbuf, COPY_PUT, 0);
+                if (draw) rysuj_obiekt((char*)&Lbuf, COPY_PUT, 0);
 
-                select_color_type(Ld);
+                select_color_type((char*)Ld);
             }
-            else select_color_paper_type(Ld);
+            else select_color_paper_type((char*)Ld);
 
             Set_Second_Screen();
             okno_r_second();
@@ -266,11 +266,11 @@ void break_dim_line(NAGLOWEK *nag, int atrybut, int kolor, int blok, BOOL draw)
                 if (grubosc_l > 4) grubosc_l = 4;
                 lbuf.typ = grubosc_l * 32 + typ_l;
 
-                if (draw) rysuj_obiekt(&lbuf, COPY_PUT, 0);
+                if (draw) rysuj_obiekt((char*)&lbuf, COPY_PUT, 0);
 
-                select_color_type(ld);
+                select_color_type((char*)ld);
             }
-            else select_color_paper_type(ld);
+            else select_color_paper_type((char*)ld);
 
             Set_Second_Screen();
             okno_r_second();
@@ -303,7 +303,7 @@ static void near ruchblokw(void)
 {
     PTR__GTMP6=ADP;
     PTR__GTMP7=NULL;
-    break_dim_line(ADP, Ablok, 0, 0, TRUE);
+    break_dim_line((NAGLOWEK*)ADP, Ablok, 0, 0, TRUE);
     blokzap(ADP,ADK,Ablok,COPY_PUT,0);
     CUR_OFF_ON();
     BlokM=1;
@@ -379,7 +379,7 @@ static int W_t (BOOL b_graph_value)
     okno_all_second();
     Set_Screen();
 
-    break_dim_line(t, Anormalny, 1, 1, TRUE);
+    break_dim_line((NAGLOWEK*)t, Anormalny, 1, 1, TRUE);
 
     Set_Second_Screen();
     okno_r_second();
@@ -760,7 +760,7 @@ static void cur_on(double x, double y)
                  wSt_p = (WIELOKAT *) (PTR__GTMP6 + wL->n + sizeof(NAGLOWEK));
                  memmove(&wSt, wSt_p, sizeof(NAGLOWEK) + wSt_p->n);
 
-                 PTR__GTMP7=wSt_p;
+                 PTR__GTMP7=(char*)wSt_p;
 
                  parametry_lini(wL, &PL);
                  kat1 = PL.kat;
@@ -788,7 +788,7 @@ static void cur_on(double x, double y)
 
                  okno_r();
                  setwritemode(COPY_PUT);
-                 rysuj_obiekt_(&wSt, COPY_PUT, 1);
+                 rysuj_obiekt_((char*)&wSt, COPY_PUT, 1);
                  okno_all();
              }
          }
@@ -880,7 +880,7 @@ static void redcr(char typ)
 	if(dodaj_obiekt((BLOK*)dane,(void*)&Ls)==NULL) return;
 	else if(WymInter)
     {
-        rysuj_obiekt(&Ls, COPY_PUT, 1);
+        rysuj_obiekt((char*)&Ls, COPY_PUT, 1);
     }
       }
    }

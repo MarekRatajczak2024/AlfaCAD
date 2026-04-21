@@ -695,7 +695,7 @@ static void set_struct_dialog_control (int erase_flag)
     edit_table[NoDialogLayers].enable = 1;
     edit_table[NoDialogLayers].id = -1;
     edit_table[NoDialogLayers].txt = (char *)go_to2_txt; //"60";
-	edit_table[NoDialogLayers].legal = &numbers;
+	edit_table[NoDialogLayers].legal = numbers;
 
     edit_table[NoDialogLayers+1].x =  XpGroup + XpPgUp;
     edit_table[NoDialogLayers+1].y =  YpGroup + YpUp + D20 - 2 * DYComboBox - 5;
@@ -708,7 +708,7 @@ static void set_struct_dialog_control (int erase_flag)
     edit_table[NoDialogLayers+1].enable = 1;
     edit_table[NoDialogLayers+1].id = -1;
     edit_table[NoDialogLayers+1].txt = (char *)go_to1_txt; // "1";
-	edit_table[NoDialogLayers+1].legal = &numbers;
+	edit_table[NoDialogLayers+1].legal = numbers;
 
 /*combobox*/
   for ( i = COMBOBOX_COLOR; i < COMBOBOX_COLOR+ NoDialogLayers ; i++)
@@ -1017,14 +1017,14 @@ static BOOL get_layer_dlg_control (void)
 
 static void set_slide_flags(void)
 {
-    SLIDER *slider=layers_dlg.Sliders;
+    SLIDER *slider=(SLIDER*)layers_dlg.Sliders;
     slider[0].flags |= 0x800;
 }
 
 static void update_slide(void)
 {
     int var1, var2, var3, var4, ret;
-    SLIDER *slider=layers_dlg.Sliders;
+    SLIDER *slider=(SLIDER*)layers_dlg.Sliders;
 
     int (*SlideFun)(int *, int *, int *, int *);
     SlideFun = (int (*)(int *, int *, int *, int *)) slider[0].dp3;
@@ -1060,7 +1060,7 @@ static void add_layer (void)
       set_slide_flags();
 
     draw_dlg_layer_controls (no_dlg_line);
-    Draw_Slider(layers_dlg.Sliders);
+    Draw_Slider((SLIDER*)layers_dlg.Sliders);
   }
   else
   {

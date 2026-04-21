@@ -675,14 +675,14 @@ static void kolorS(void)
     sk1=strpbrk(sk," ");
 
     if (i_color >= 16) {
-        strcpy(&sk, "");
+        strcpy(sk, "");
 
         sprintf(sk, u8"%s%d", _OTHER_COLOR_, i_color);
 
         sk1 = strpbrk(sk, " ");
     } else {
         if (i_color==0) i_color=16;
-        return_menu_par0((*mKolorSTATIC.pola)[i_color-1].txt, &sk);
+        return_menu_par0((*mKolorSTATIC.pola)[i_color-1].txt, sk);
         sk1 = strpbrk(sk, " ");
     }
 
@@ -787,13 +787,13 @@ static void kolorSX(void)
     sk1=strpbrk(buf," ");
 
     if (i_color >= 16) {
-        strcpy(&sk, "");
+        strcpy(sk, "");
 
         sprintf(sk, u8"%s%d", _OTHER_COLOR_, i_color);
 
         sk1 = strpbrk(sk, " ");
     } else {
-        return_menu_par0((*mKolorSTATIC.pola)[i_color-1].txt, &sk);
+        return_menu_par0((*mKolorSTATIC.pola)[i_color-1].txt, sk);
         sk1 = strpbrk(sk, " ");
     }
 
@@ -1456,7 +1456,7 @@ int ret;
 	  &mKolorAC.foff, &mKolorAC.poz);
   if (i_menu_color >= 16)
   {
-	  strcpy(&sk, "");
+	  strcpy(sk, "");
 
 	  sprintf(sk, u8"%s%d", _OTHER_COLOR_,sektory_arkusza_ext.frame_color);
 
@@ -1464,7 +1464,7 @@ int ret;
   }
   else
   {
-	  return_menu_par0((*mKolorAC.pola)[i_menu_color].txt, &sk);
+	  return_menu_par0((*mKolorAC.pola)[i_menu_color].txt, sk);
 	  sk1 = strpbrk(sk, " ");
   }
   menu_par_new((*mSektory_Arkusza.pola)[11].txt, ++sk1);
@@ -1479,7 +1479,7 @@ int ret;
 	  &mKolorAC.foff, &mKolorAC.poz);
   if (i_menu_color >= 16)
   {
-	  strcpy(&sk, "");
+	  strcpy(sk, "");
 
 	  sprintf(sk, u8"%s%d", _OTHER_COLOR_,sektory_arkusza_ext.sector_color);
 
@@ -1487,7 +1487,7 @@ int ret;
   }
   else
   {
-	  return_menu_par0((*mKolorAC.pola)[i_menu_color].txt, &sk);
+	  return_menu_par0((*mKolorAC.pola)[i_menu_color].txt, sk);
 	  sk1 = strpbrk(sk, " ");
   }
   menu_par_new((*mSektory_Arkusza.pola)[12].txt, ++sk1);
@@ -1577,13 +1577,13 @@ int ret;
         }
         ////Get_Menu_Param(i_menu_color, mKolorSTATIC.maxw, mKolorSTATIC.max, &mKolorSTATIC.foff, &mKolorSTATIC.poz);
         if (i_menu_color >= 16) {
-            strcpy(&sk, "");
+            strcpy(sk, "");
 
             sprintf(sk, u8"%s%d", _OTHER_COLOR_, static_colors_ptr[i]);
 
             sk1 = strpbrk(sk, " ");
         } else {
-            return_menu_par0((*mKolorSTATIC.pola)[i_menu_color].txt, &sk);
+            return_menu_par0((*mKolorSTATIC.pola)[i_menu_color].txt, sk);
             sk1 = strpbrk(sk, " ");
         }
         menu_par_new((*mStaticColors.pola)[i].txt, ++sk1);

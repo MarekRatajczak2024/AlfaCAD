@@ -91,7 +91,12 @@ enum PLINE_MODE {PL_MODE_CONTINUE = 1, PL_MODE_LINE , PL_MODE_ARC,
 
 enum DRAW_ARC_TYPE
 { ARC_P3 = 0, ARC_SCE, ARC_SCA, ARC_SCL, ARC_SER, ARC_SEA, ARC_SED, ARC_Con, ARC_rev,
-	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_ROLL_EDGE, IDM_FLIP_SUPPORT, /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/ ARC_rev_Y, ARC_rev_N } ;
+	IDM_CLOSE, IDM_UNDO, IDM_LINE, IDM_FREE_EDGE, IDM_PINNED_EDGE, IDM_FIXED_EDGE, IDM_ROLL_EDGE, IDM_FLIP_SUPPORT, /*IDM_CONTINUOUS_LINE, IDM_DASHED_LINE*/} ;
+
+enum DRAW_ARC_REVERSE
+{
+    ARC_rev_Y=16, ARC_rev_N=17
+};
 
 extern int last_pline_delete (void) ;
 static int last_parc_delete (void) ;
@@ -1305,8 +1310,6 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
 {
   BOOL b_ret ;
   double x1, y1;
-  BOOL reversed_bak;
-
 
   BOOL reversed=Get_reversed();
 
@@ -1316,14 +1319,7 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
        x1 = LukG.x + LukG.r * cos (LukG.kat1) ;
        y1 = LukG.y + LukG.r * sin (LukG.kat1) ;
 
-       if ((Check_if_Equal(X, x1)) && (Check_if_Equal(Y, y1)))  reversed=1;
-       else reversed=0;
-
-       //reversed_bak=reversed;
-       reversed=0;
-
      (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, FALSE, &reversed);
-       //reversed=reversed_bak;
    }
   else
    {
@@ -1343,7 +1339,7 @@ static BOOL add_arc (double X0, double Y0, BOOL strwyj)
       NULL != dodaj_obiekt (((b__pline == TRUE) ? BLK_ADR /*(BLOK*)dane*/ : NULL), (void *)&LukG))
   {
     b_ret = TRUE ;
-      rysuj_obiekt(&LukG, COPY_PUT, 1) ;
+      rysuj_obiekt((char*)&LukG, COPY_PUT, 1) ;
   }
 
     BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
@@ -1364,11 +1360,6 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
     {
         x1 = LukG.x + LukG.r * cos (LukG.kat1) ;
         y1 = LukG.y + LukG.r * sin (LukG.kat1) ;
-
-        if ((Check_if_Equal(X, x1)) && (Check_if_Equal(Y, y1)))  reversed=1;
-        else reversed=0;
-
-        reversed=0;
 
         (*parl[ns_arc])(&pl,&LukG,X0,Y0,0, FALSE, &reversed);
     }
@@ -1449,7 +1440,7 @@ static BOOL add_solidarc (double X0, double Y0, BOOL strwyj, int Tbreak)
               if (NULL != dodaj_obiekt(((b__pline == TRUE) ? (BLOK *) dane : NULL), (void *) &sa)) {
 
                   b_ret = TRUE;
-                  rysuj_obiekt(&sa, COPY_PUT, 1);
+                  rysuj_obiekt((char*)&sa, COPY_PUT, 1);
               }
 
               update_trace_width();

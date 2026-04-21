@@ -179,7 +179,7 @@ extern BOOL get_all_from_next_layers (char  **adp_l,char  **adk_l, int nr_pierws
 extern BOOL get_all_texts (char  **adp_l,char  **adk_l);
 extern BOOL get_all_texts_symbols (char  **adp_l,char  **adk_l) ;
 extern BOOL get_all_layers (char  **adp_l,char  **adk_l);
-extern int blok_Ctrl_R(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void));
+extern int blok_Ctrl_R(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void));
 extern void delay(int time);
 extern void Info_about_object(char *ad);
 extern BLOK *FIRSTB(char  *ado);
@@ -188,14 +188,14 @@ extern int get_net(char  **adr);
 extern int get_pomiar_param(char  **adr);
 extern int get_f_s_pomiar_param(char **adr, int kanal_pomiar, double *x_pomiar, double *y_pomiar);
 extern void standard_func(void);
-extern BOOL Block_Proc_Wez_hw (int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void), int (*COMND[])(void), int info);
+extern BOOL Block_Proc_Wez_hw (int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void), const  int (*COMND[])(void), int info);
 extern void view_line_type(LINIA *L);
-extern int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void));
+extern int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void));
 extern char *find_block_atrybut(char *adrp, char *adrk, char atrybut);
 extern int Rotate_ProcXZ (void);
 extern int Rotate_ProcYZ (void);
 extern int my_file_exists(char *name);
-extern void blok_special(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void));
+extern void blok_special(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void));
 extern void get_base_point(double *x_origin, double *y_origin);
 extern void put_base_point(double *x_origin, double *y_origin);
 extern void put_hatch_angle(double *hatch_angle);
@@ -2159,7 +2159,7 @@ void Kopiuj(void)
 {
   TTF_redraw = FALSE;
   redcrK(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrK(1);
   if (przesunp()==ESC)
 	{ redcrK(2);
@@ -2179,7 +2179,7 @@ int Kopiuj_Ctrl_R(void)
 { static	int ( *SW[2])();
   SW [0] = SERV [58] ;  SERV [58]	= nooop1 ;
   redcrK(0);
-  if (blok_Ctrl_R(dzi,odzi,Redraw_Block,COMNDmb))
+  if (blok_Ctrl_R(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb))
    {
      redcrK(1);
 
@@ -2416,7 +2416,7 @@ void Przesun(void)
 {
   TTF_redraw = FALSE;
   redcrP(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrP(1);
   if (przesunp()==ESC)
 	{ 
@@ -2535,18 +2535,18 @@ void redcrsb(char typ, int n)
 
 void select_blok(void)
 {
-    blok(dzi,odzi,Redraw_Block,COMNDmb);
+    blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
 }
 
 void select_blok_items(int b_items)
 {
-    blok_items(b_items, dzi,odzi,Redraw_Block,COMNDmb);
+    blok_items(b_items, dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
 }
 
 void PrzesunZ(void)
 {
   redcrP(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrP(1);
   if (przesunpZ()==ESC)
 	{ redcrP(2);
@@ -2916,7 +2916,7 @@ int dziWez_s_pattern(void* ad)	 /*get solid pattern if filled with image*/
 		if ((w->empty_typ == 0) && (w->pattern == 1))
 		{
 
-			scale_ptr = w->xy;
+			scale_ptr = (char*)w->xy;
 			scale_ptr += (w->lp * sizeof(float));
 			dx_ptr = scale_ptr;
 			dx_ptr += sizeof(short int);
@@ -2949,7 +2949,7 @@ int dziWez_s_pattern(void* ad)	 /*get solid pattern if filled with image*/
 
 			if (w->translucent == 1)
 			{
-				translucency_ptr = w->xy;
+				translucency_ptr = (char*)w->xy;
 				translucency_ptr += (w->lp * sizeof(float));
 				memmove(&SolidTranslucency, translucency_ptr, sizeof(unsigned char));
 
@@ -2995,7 +2995,7 @@ int dziWez_s_pattern(void* ad)	 /*get solid pattern if filled with image*/
             SolidPatternScale=sa->scale;
             SolidPatternDx=sa->dx;
             SolidPatternAngle=sa->dy;
-            strcpy(&SolidPatternName,sa->patternname);
+            strcpy(SolidPatternName,sa->patternname);
 
             SolidPattern = 1;
             set_solid_pattern_name();
@@ -3070,7 +3070,7 @@ int dziSet_s_pattern(void* ad)	 /*set solid pattern if filled with image*/
 				w.empty_typ = 0;
 				w.pattern = 1;
 
-				scale_ptr = w.xy;
+				scale_ptr = (char*)w.xy;
 				scale_ptr += (w.lp * sizeof(float));
 				dx_ptr = scale_ptr;
 				dx_ptr += sizeof(short int);
@@ -3103,7 +3103,7 @@ int dziSet_s_pattern(void* ad)	 /*set solid pattern if filled with image*/
 					w.n = 8 + w.lp * sizeof(float);
 				else
 				{
-					translucency_ptr = w.xy;
+					translucency_ptr = (char*)w.xy;
 					translucency_ptr += (w.lp * sizeof(float));
 					memmove(translucency_ptr, &SolidTranslucency, sizeof(unsigned char));
 
@@ -3135,7 +3135,7 @@ int dziSet_s_pattern(void* ad)	 /*set solid pattern if filled with image*/
             sa.dx=SolidPatternDx;
             sa.angle=SolidPatternAngle;
             sa.dy=SolidPatternDy;
-            strcpy(&sa.patternname, SolidPatternName);
+            strcpy(sa.patternname, SolidPatternName);
 
             sa.n = SOLIDARC_N + (int)strlen(SolidPatternName) ;
         }
@@ -3189,7 +3189,7 @@ int dziWez_t_pattern(void* ad)	 /*get trace pattern if filled with image*/
 		if ((w->empty_typ == 0) && (w->pattern == 1))
 		{
 
-			scale_ptr = w->xy;
+			scale_ptr = (char*)w->xy;
 			scale_ptr += (w->lp * sizeof(float));
 			dx_ptr = scale_ptr;
 			dx_ptr += sizeof(short int);
@@ -3215,7 +3215,7 @@ int dziWez_t_pattern(void* ad)	 /*get trace pattern if filled with image*/
 			
 			if (w->translucent == 1)
 			{
-				translucency_ptr = w->xy;
+				translucency_ptr = (char*)w->xy;
 				translucency_ptr += (w->lp * sizeof(float));
 				memmove(&TraceTranslucency, translucency_ptr, sizeof(unsigned char));
 
@@ -3253,7 +3253,7 @@ int dziWez_t_pattern(void* ad)	 /*get trace pattern if filled with image*/
             TracePatternScale=sa->scale;
             TracePatternDx=sa->dx;
             TracePatternAngle=sa->dy;
-            strcpy(&TracePatternName,sa->patternname);
+            strcpy(TracePatternName,sa->patternname);
 
             TracePattern = 1;
             set_trace_pattern_name();
@@ -3316,7 +3316,7 @@ int dziSet_t_pattern(void* ad)	 /*set trace pattern if filled with image*/
 			{
 				w.empty_typ = 0;
 				w.pattern = 1;
-				scale_ptr = w.xy;
+				scale_ptr = (char*)w.xy;
 				scale_ptr += (w.lp * sizeof(float));
 				dx_ptr = scale_ptr;
 				dx_ptr += sizeof(short int);
@@ -3345,7 +3345,7 @@ int dziSet_t_pattern(void* ad)	 /*set trace pattern if filled with image*/
 					w.n = 8 + w.lp * sizeof(float);
 				else
 				{
-					translucency_ptr = w.xy;
+					translucency_ptr = (char*)w.xy;
 					translucency_ptr += (w.lp * sizeof(float));
 					memmove(translucency_ptr, &TraceTranslucency, sizeof(unsigned char));
 
@@ -3425,7 +3425,7 @@ int dziWez_h_pattern(void* ad)	 /*get trace pattern if filled with image*/
 			delay(50);
 			rysuj_obiekt(ad, COPY_PUT, 1);
 
-			scale_ptr = w->xy;
+			scale_ptr = (char*)w->xy;
 			scale_ptr += (w->lp * sizeof(float));
 			dx_ptr = scale_ptr;
 			dx_ptr += sizeof(short int);
@@ -3457,7 +3457,7 @@ int dziWez_h_pattern(void* ad)	 /*get trace pattern if filled with image*/
 
 			if (w->translucent == 1)
 			{
-				translucency_ptr = w->xy;
+				translucency_ptr = (char*)w->xy;
 				translucency_ptr += (w->lp * sizeof(float));
 				memmove(&SolidHatchTranslucency, translucency_ptr, sizeof(unsigned char));
 
@@ -3489,7 +3489,7 @@ int dziWez_h_pattern(void* ad)	 /*get trace pattern if filled with image*/
             SolidHatchPatternDx=sa->dx;
             SolidHatchPatternAngle=sa->angle;
             SolidHatchPatternDy=sa->dy;
-            strcpy(&SolidHatchPatternName, sa->patternname);
+            strcpy(SolidHatchPatternName, sa->patternname);
             
             SolidHatchPattern = 1;
             SolidHatch = 0;
@@ -3911,7 +3911,7 @@ static int Hide_Layers (void)
   if (wez_warstwe_typ_kolor) return	0;
   wez_warstwe_typ_kolor=TRUE;
   redcr_wez_warstwe_kolor_typ	(9);
-  i_ret = Block_Proc_Wez_hw	(dziWez_hw, odziWez_hw, nooop, COMNDwez_w, 0) ;
+  i_ret = Block_Proc_Wez_hw	(dziWez_hw, odziWez_hw, nooop, (const int (**)(void))COMNDwez_w, 0) ;
   redcr_wez_warstwe_kolor_typ	(1) ;
   wez_warstwe_typ_kolor=FALSE;
   return	i_ret	;
@@ -4646,7 +4646,7 @@ void Explode (void)
 {
   redcr_ex(0);
   global_any_choice=TRUE;
-  blok(dzi_ex,odzi_ex, Redraw_Block, COMNDmb_ex);
+  blok(dzi_ex,odzi_ex, Redraw_Block, (const int (**)(void))COMNDmb_ex);
   global_any_choice=FALSE;
   if (check_if_obiekt(dane, dane + dane_size, Ablok, ONieOkreslony))
   {
@@ -4660,7 +4660,7 @@ void Explode_ap (void)
 /*-----------------*/
 {
   redcr_ex_ap(0);
-  blok(dzi_ex,odzi_ex, Redraw_Block, COMNDmb_ex_ap);
+  blok(dzi_ex,odzi_ex, Redraw_Block, (const int (**)(void))COMNDmb_ex_ap);
   if (check_if_obiekt(dane, dane + dane_size, Ablok, ONieOkreslony))
   {
 	  if (Explode_dlg(TRUE)) explode_aparat();
@@ -4757,7 +4757,7 @@ void Skala(void)
 {
   TTF_redraw = FALSE;
   redcrS(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrS(1);
   if (przesunp()==ESC)
 	{ redcrS(2);
@@ -4863,7 +4863,7 @@ void Obrot(void)
 {
   TTF_redraw = FALSE;
   redcrO(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrO(1);
   if (przesunp()==ESC)
 	{ redcrO(2);
@@ -4893,7 +4893,7 @@ while (1)
   redcrO(0);
   
   
-  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	COMNDmb) == 0)
+  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb) == 0)
    {
     redcrO	(1) ;
 	Cur_offd(X, Y);
@@ -4948,7 +4948,7 @@ while (1)
 void ObrotXZ(void)
 {
   redcrO(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrO(1);
   if (przesunp()==ESC)
 	{ redcrO(2);
@@ -4964,7 +4964,7 @@ void ObrotXZ(void)
 void ObrotYZ(void)
 {
   redcrO(0);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrO(1);
   if (przesunp()==ESC)
 	{ redcrO(2);
@@ -5259,7 +5259,7 @@ static void	redcrck(char typ)
                      LiniaG.y1 = VectorC.y1;
                      LiniaG.x2 = VectorC.x1;
                      LiniaG.y2 = VectorC.y1 + (float)n*(VectorC.magnitude1/((VectorC.style==10) ? load_magnitude : flood_magnitude));
-                     parametry_lini(&VectorC, &PL);
+                     parametry_lini((LINIA*)&VectorC, &PL);
                      break;
                  case 11:
                      if (VectorC.y1<VectorC.y2) n=1;
@@ -5271,7 +5271,7 @@ static void	redcrck(char typ)
                      LiniaG.y2 = VectorC.y1;
                      break;
                  case 12:
-                     parametry_lini(&VectorC, &PL);
+                     parametry_lini((LINIA*)&VectorC, &PL);
 
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
@@ -5358,7 +5358,7 @@ static void	redcrck(char typ)
                      }
                      break;
                  case 15:
-                     parametry_lini(&VectorC, &PL);
+                     parametry_lini((LINIA*)&VectorC, &PL);
 
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
@@ -5419,7 +5419,7 @@ static void	redcrck(char typ)
                      LiniaG.y2 = VectorC.y2;
                      break;
                  case 12:
-                     parametry_lini(&VectorC, &PL);
+                     parametry_lini((LINIA*)&VectorC, &PL);
 
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
@@ -5506,7 +5506,7 @@ static void	redcrck(char typ)
                      }
                      break;
                  case 15:
-                     parametry_lini(&VectorC, &PL);
+                     parametry_lini((LINIA*)&VectorC, &PL);
 
                      kos1=sin(Pi*(PL.kat+90)/180);
                      koc1=cos(Pi*(PL.kat+90)/180);
@@ -5545,7 +5545,7 @@ static void	redcrck(char typ)
              memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
              if (VectorC.style==15)
              {
-                 parametry_lini(&VectorC, &PL);
+                 parametry_lini((LINIA*)&VectorC, &PL);
 
                  kos1=sin(Pi*(PL.kat+90)/180);
                  koc1=cos(Pi*(PL.kat+90)/180);
@@ -5580,7 +5580,7 @@ static void	redcrck(char typ)
              memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
              if (VectorC.style==15)
              {
-                 parametry_lini(&VectorC, &PL);
+                 parametry_lini((LINIA*)&VectorC, &PL);
 
                  kos1=sin(Pi*(PL.kat+90)/180);
                  koc1=cos(Pi*(PL.kat+90)/180);
@@ -6100,7 +6100,7 @@ int edit_load_character(AVECTOR *v)
         m_level++;
         set_menu_level(m_level);
 
-        menu_address[m_level-1]=&mLoad_Char_Thermal;
+        menu_address[m_level-1]=(char*)&mLoad_Char_Thermal;
         n0 = Simple_Menu_Proc(&mLoad_Char_Thermal);
 
         if (n0)
@@ -6149,7 +6149,7 @@ int edit_load_character(AVECTOR *v)
         m_level++;
         set_menu_level(m_level);
 
-        menu_address[m_level-1]=&mLoad_Char;
+        menu_address[m_level-1]=(char*)&mLoad_Char;
         n0 = Simple_Menu_Proc(&mLoad_Char);
 
         if (n0)
@@ -6484,7 +6484,7 @@ blokc_again:
     if (selection==SELECT_CROSS)
     {
         redcrC(1);
-        blok(dzic, odzic2, redrawbc, COMNDmbc);
+        blok(dzic, odzic2, redrawbc, (const int (**)(void))COMNDmbc);
 
         if (memcmp(Get_Stretch_Window(), Get_Block_Window(), sizeof(OKNO)) != 0) {
             a = 1;  //O was added to Oc and it is necessary to make array of rectangles   TO DO
@@ -6547,7 +6547,7 @@ int blokq(int (*DZI)(void *), int (*ODZI)(void *))
     int ret_oknok;
 
     redcrq(0);
-    blok(DZI,ODZI,Redraw_Block,COMNDmb);
+    blok(DZI,ODZI,Redraw_Block,(const int (**)(void))COMNDmb);
     redcrq(1);
 
 }
@@ -6566,9 +6566,9 @@ void find_adpq_adkq(int atrybut)
     {
         if (TRUE == Check_Attribute (ad->atrybut, atrybut))
         {
-           if (ADPQ==NULL) ADPQ=ad;
+           if (ADPQ==NULL) ADPQ=(char*)ad;
            adn=ad+sizeof(NAGLOWEK)+ad->n - 1;
-           if (adn> ADKQ)  ADKQ=adn;
+           if (adn> ADKQ)  ADKQ=(char*)adn;
         }
         obiekt_tok(NULL,adk,(char **) &ad,ONieOkreslony);
     }
@@ -6641,7 +6641,7 @@ oknoS(Xp,Yp,Xk,Yk);
 	}
 
   redcrC(1);
-  blok(dzic_q /*dzic2*/,odzic2,redrawbc,COMNDmbc);
+  blok(dzic_q /*dzic2*/,odzic2,redrawbc,(const int (**)(void))COMNDmbc);
 
   redcrC(2);
   if (przesunp()==ESC)
@@ -6834,7 +6834,7 @@ void Export(void)
   blok_name	[0] =	'\0' ;
   blok_type	[0] =	'\0' ;
   redcrE(0,	1);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrE(1,	1)	;
   if (przesunp()==ESC)
 	{ redcrE(2,	1)	;
@@ -6921,7 +6921,7 @@ void Zapamietaj(void)
   blok_name	[0] =	'\0' ;
   blok_type	[0] =	'\0' ;
   redcrE(0,	2);
-  blok(dzi,odzi,Redraw_Block,COMNDmb);
+  blok(dzi,odzi,Redraw_Block,(const int (**)(void))COMNDmb);
   redcrE(1,	2)	;
   if (przesunp()==ESC)
 	{ redcrE(2,	2)	;
@@ -6955,7 +6955,7 @@ void Set_Block	(void)
   static void (*REDdod)(void)=nooop;
   char blok_type [Max_Spec_Block] =	"";
   redcrE	(0, 0) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrE	(1, 0) ;
   if (przesunp	()	==	ESC)
   {
@@ -7082,9 +7082,9 @@ void Mark_Texts (int	opcja)
 /*-----------------------*/
 {
   redcr_mark_t	(opcja);
-  if (opcja==0) blok	(dzi,	odzi,	Redraw_Block, COMNDmark_t)	;
-	 else	if	(opcja==1) blok (dzi, odzi, Redraw_Block,	COMNDmark_ts) ;
-		else blok (dzi, odzi, Redraw_Block,	COMNDmark_t) ;
+  if (opcja==0) blok	(dzi,	odzi,	Redraw_Block, (const int (**)(void))COMNDmark_t)	;
+	 else	if	(opcja==1) blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmark_ts) ;
+		else blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmark_t) ;
   return;
 }
 
@@ -7246,7 +7246,7 @@ void Change_Properties (void)
 {
   Semaphore = FALSE;
   redcr_chp	(0);
-  blok (dzi, odzi, Redraw_Block,	COMNDmb_chp) ;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb_chp) ;
   if (check_if_obiekt(dane, dane+dane_size, Ablok, ONieOkreslony)) Change_Properties_dlg();
   redcr_chp	(1);
   if ((TTF_redraw) || (regen_ctx)) redraw();
@@ -7356,7 +7356,7 @@ void Extend	(void)
 		redcrEx(0);
 		ADP = NULL;
 		ADK = NULL;
-		blok(dzi, odzi, Redraw_Block, COMNDmb);
+		blok(dzi, odzi, Redraw_Block, (const int (**)(void))COMNDmb);
 		if ((ADP == NULL) && (ADK == NULL))
 		{
 			redcrEx(2);
@@ -7454,7 +7454,7 @@ void Trim(void)
 		redcrTr(0);
 		ADP = NULL;
 		ADK = NULL;
-		blok(dzi, odzi, Redraw_Block, COMNDmb);
+		blok(dzi, odzi, Redraw_Block, (const int (**)(void))COMNDmb);
 		if ((ADP == NULL) && (ADK == NULL))
 		{
 			redcrTr(2);
@@ -7547,7 +7547,7 @@ void Mirror(void)
 	TTF_redraw = FALSE;
 	redcrMirr(0);
 	global_no_pcx = TRUE;
-	blok(dzi, odzi, Redraw_Block, COMNDmb);
+	blok(dzi, odzi, Redraw_Block, (const int (**)(void))COMNDmb);
 	global_no_pcx = FALSE;
 	redcrMirr(1);
 	ret = Mirror_Proc();
@@ -7569,7 +7569,7 @@ void Mirror_X	(void)
  {
   redcrMirr	(0) ;
   global_no_pcx = TRUE;
-  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	COMNDmb) == 0)
+  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb) == 0)
    {
 	  global_no_pcx = FALSE;
       redcrMirr	(1) ;
@@ -7598,7 +7598,7 @@ void Mirror_Y	(void)
  {
   redcrMirr	(0) ;
   global_no_pcx = TRUE;
-  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	COMNDmb)	== 0)
+  if (blok_FIRSTB (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	== 0)
    {
 	  global_no_pcx = FALSE;
       redcrMirr	(1) ;
@@ -7840,7 +7840,7 @@ static void	array_rect_polar (int array_mode)
 {
   TTF_redraw = FALSE;
   redcrArray (0, array_mode) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrArray (1, array_mode) ;
   switch	(array_mode)
   {
@@ -8145,7 +8145,7 @@ void Hatch_Brick	(int hatch_type)
   comput_area = 0	;
   redcrHatch (10)	;
   /* 1. odszukanie granic kreskowania*/
-  blok_special	(dzi,	odzi,	Redraw_Block, COMNDmb) ;
+  blok_special	(dzi,	odzi,	Redraw_Block, (const int (**)(void))COMNDmb) ;
   /* 2. odszukanie punktu bazowego*/
   get_base_point(&x_origin, &y_origin);
   find_base_point(&x_origin, &y_origin);
@@ -8224,7 +8224,7 @@ void Hatch (void)
   comput_area = 0	;
   out_pole_ignore=FALSE;
   redcrHatch (0) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret = Hatch_Proc (	comput_area, 0,0,0,0	) ;
  
@@ -8271,7 +8271,7 @@ void Area (void)
   comput_area = 1	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret = Hatch_Proc (	comput_area, 0,0,0,0	) ;
   redcrHatch (2) ;
@@ -8302,7 +8302,7 @@ void Test_Area(void)  //Test_Area
   comput_area = 1	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret=Hatch_Proc_Test1 (	comput_area, 0,0,0,0	) ; 
  
@@ -8322,7 +8322,7 @@ void Area1 (void)
   comput_area = 1	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi_special, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi_special, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret = Hatch_Proc (	comput_area, 0,0,0,0	) ;
   redcrHatch (2) ;
@@ -8339,7 +8339,7 @@ void Srodek_ciezkosci (void)
   comput_area = 2	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret = Hatch_Proc (	comput_area, 0,0,0,0	) ;
   redcrHatch (2) ;
@@ -8357,7 +8357,7 @@ void Moment_statyczny (void)
   comput_area = 3	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   Os_odniesienia () ;
 
@@ -8387,7 +8387,7 @@ void Moment_bezwladnosci (void)
   comput_area = 4	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
 
   Os_odniesienia () ;
@@ -8418,7 +8418,7 @@ void Centr_mom_bezwl	(void)
   comput_area = 5	;
   out_pole_ignore=FALSE;
   redcrHatch (3) ;
-  blok (dzi, odzi, Redraw_Block,	COMNDmb)	;
+  blok (dzi, odzi, Redraw_Block,	(const int (**)(void))COMNDmb)	;
   redcrHatch (1) ;
   ret = Hatch_Proc (	comput_area, 0,0,0,0	) ;
   redcrHatch (2) ;

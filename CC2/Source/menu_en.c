@@ -223,7 +223,7 @@ POLE pmInsetEdit[] = {
 	{u8"",L' ',0,NULL},
 };
 
-TMENU mInsetEdit = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetEdit,NULL,NULL };
+TMENU mInsetEdit = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmInsetEdit,NULL,NULL };
 
 POLE pmInsetBlock[] = {
     {u8"",L' ',0,NULL},
@@ -293,7 +293,7 @@ POLE pmInsetBlock[] = {
 
 };
 
-TMENU mInsetBlock = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmInsetBlock,NULL,NULL };
+TMENU mInsetBlock = { 0,0,0,6,16,8,ICONS,CMNU,CMBR,CMTX,0,27,0,0,0,(POLE(*)[]) &pmInsetBlock,NULL,NULL };
 
 POLE pmArray[] = {
 	{u8"Rectangular",	'R', 116,NULL},
@@ -2721,7 +2721,7 @@ POLE pmSelect_Ins[] = {
 TMENU mSelect_Ins = { 2, 0, 0, 18, 17, 14, ICONS, CMNU, CMBR, CMTX, 0, ID_INSULATION, 0, 0,0,(POLE(*)[]) &pmSelect_Ins, NULL, NULL };
 
 POLE pmHatch[] = {
-	 {u8"Pattern\0//////////\0      ",'P',434,&m__list_hatch},
+	 {u8"Pattern\0//////////\0      ",'P',434,(TMENU*)&m__list_hatch},
 	 {u8"pattern Folder\0 \0      ",'F',597,NULL},
 	 {u8"Rotation angle\0 0\0      ", 'R', 435,&mKatH},
 	 {u8"Scale\0 1\0     ", 'S', 436,NULL},
@@ -3327,7 +3327,7 @@ TMENU mGruboscLiniiZ = { 5,0,0,26,52,12,0,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) 
 TMENU mKolorACF = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,31,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorACZ = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,48,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorSTATIC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,0,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
-PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(POLE(*)[]) & pmCzcionka,NULL,NULL};
+PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(PPOLE(*)[]) & pmCzcionka,NULL,NULL};
 
 /*
 static POLE pmFormat_r[21] = {
@@ -3513,7 +3513,7 @@ static POLE pmSektory_Arkusza[15] = {
 	   {u8"֎frame Color\0white\0              ",     'C',495,&mKolorACF},
 	   {u8"֎zones cOlor\0white\0              ",     'O',496,&mKolorACZ},
 	   {u8"Style\0Top\0              ",'S',497,&mSektory_Styl},
-	   {u8"Font\0 \0             ", 'F', 183,&mCzcionkaZ}};
+	   {u8"Font\0 \0             ", 'F', 183,(TMENU*)&mCzcionkaZ}};
 
 
 static POLE pmPrecision[] = {
@@ -3871,7 +3871,7 @@ static POLE pmTekstm[] = {
 	{u8"line Spacing\0 N\0    ", 'S', 410,&mLineSpacing},
 	{u8"Auto-interval\0 N\0   ", '+', 91,&mAutoInterwal},
 	{u8"Interval\0 1\0        ", '*', 234,NULL},
-	{u8"Font\0 \0             ", 'F', 183,&mCzcionka},
+	{u8"Font\0 \0             ", 'F', 183,(TMENU*)&mCzcionka},
 };
 
 static char t_t[16][12] = {
@@ -4058,7 +4058,7 @@ static POLE pmZmienne[] = {
 	  {u8"text Width factor\0      ", 'W',180,NULL},      //3
 	  {u8"Italic text\0            ", 'I',181, &mItalics},   //4
 	  {u8"Bold text\0              ", 'B',182, &mBold},    //5
-	  {u8"Font\0                   ", 'F',183, &mCzcionkaW},  //6
+	  {u8"Font\0                   ", 'F',183, (TMENU*)&mCzcionkaW},  //6
       {u8"Numeric format\0         ", 'N',697, &mLFormat},   //7
 	  {u8"Precision\0              ", 'P',184,NULL},   //8
 	  {u8"teRminators\0            ", 'R',185,&mStrzalka},  //9

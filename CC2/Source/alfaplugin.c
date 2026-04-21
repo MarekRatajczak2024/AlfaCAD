@@ -284,7 +284,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p1=*p1_;
             p2=*p2_;
             //return (int*)Pline_Line(p1, p2, (BLOK**)dane);
-            ret_i=Pline_Line(p1, p2, &dane, 0);
+            ret_i=Pline_Line(p1, p2, (BLOK**)&dane, 0);
             return (int*)ret_i;
         }
         break;
@@ -295,7 +295,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p1=*p1_;
             p2=*p2_;
             //return (int*)Pline_Arc((double)p1, (double)p2, dane);
-            ret_i=Pline_Arc(p1, p2, &dane, 0);
+            ret_i=Pline_Arc(p1, p2, (BLOK**)&dane, 0);
             return (int*)ret_i;
         }
         break;
@@ -339,11 +339,11 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return (char*)fillet_line_to_line(*(double *) param1, (LINIA *) param2, (LINIA *) param3, FALSE);
             break;
         case GETMENUP:
-            getmenupini (&((MENUPSTRUCT *)param1)->menu, &((MENUPSTRUCT *)param1)->st, (unsigned short*)&((MENUPSTRUCT *)param1)->cod, (int*)&((MENUPSTRUCT *)param1)->iconno);
+            getmenupini ((TMENU**)&((MENUPSTRUCT *)param1)->menu, (char*)&((MENUPSTRUCT *)param1)->st, (unsigned short*)&((MENUPSTRUCT *)param1)->cod, (int*)&((MENUPSTRUCT *)param1)->iconno);
             return 0;
             break;
         case SETMENUP:
-              menupini (((MENUPSTRUCT *)param1)->menu, ((MENUPSTRUCT *)param1)->st, (unsigned short)((MENUPSTRUCT *)param1)->cod, (int)((MENUPSTRUCT *)param1)->iconno);
+              menupini ((TMENU*)((MENUPSTRUCT *)param1)->menu, ((MENUPSTRUCT *)param1)->st, (unsigned short)((MENUPSTRUCT *)param1)->cod, (int)((MENUPSTRUCT *)param1)->iconno);
             return 0;
             break;
         case LOAD_CLIENT_BITMAP:
@@ -429,7 +429,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
                 eCustom.val_no_max = 1;
                 eCustom.mode = GV_DIST;
                 eCustom.format = "%-10.8lg";
-                eCustom.ESTRF = (char*)param1;
+                eCustom.ESTRF = (int (*)(BOOL))param1;
                 eCustom.extend = 0;
                 if (-1 != (npCustom = dodajstr(&eCustom)) && (EOF != sprintf(eCustom.st, "%10.8lg", *(double *) param2)))
                 {
@@ -448,7 +448,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
                 eCustom.val_no_max = 2;
                 eCustom.mode = GV_VECTOR ;
                 eCustom.format = "%#12.9lg\0%#12.9lg;%#8.3lf" ;
-                eCustom.ESTRF = (char*)param1;
+                eCustom.ESTRF = (int (*)(BOOL))param1;
                 eCustom.extend = 0;
                 if (-1 != (npCustom = dodajstr(&eCustom)) && (EOF != sprintf(eCustom.st, "%#12.9lg;%#8.3lf", *(double *) param2, *(double *) param3)))
                 {
@@ -519,7 +519,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             break;
         case SETBACKSPACEKEY:
             LASTFUN_BAK=LASTFUN;
-            LASTFUN=(char*)param1;
+            LASTFUN=(void (*)(void))param1;
             Cust_Semaphore=TRUE;
             return 0;
             break;
@@ -529,7 +529,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case LINEPARAMETERS:
-            parametry_lini ((char *)param1, (PLINIA *)param2) ;
+            parametry_lini ((LINIA *)param1, (PLINIA *)param2) ;
             return 0;
             break;
         case SET_LCSANGLE:
@@ -640,7 +640,7 @@ int alfaplugins(void)
     plugin_func_name_block = list_str_create(LIST_STR_NONE);
     plugin_func_name_aux = list_str_create(LIST_STR_NONE);
 
-    plug_ptr=&plugin_functions;
+    plug_ptr=(char*)plugin_functions;
 
     pm = pm_load(plug_ptr);
     

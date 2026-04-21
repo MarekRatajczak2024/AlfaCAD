@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
+    ## Downgrade incompatible pointer errors to warnings
+    add_compile_options(-Wno-error=incompatible-pointer-types)
+    ## Or disable the warning entirely (not recommended but works)
+    ## add_compile_options(-Wno-incompatible-pointer-types)
+endif()
+
 set(CMAKE_SYSTEM_VERSION 10.0.22000.0 CACHE STRING "" FORCE)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(alfacad C CXX)
 

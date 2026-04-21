@@ -721,8 +721,8 @@ extern void out_blok1(double x,double y,double k1,double k2,int trans,double z);
 extern int dodaj_blok(char *adr,char *adrk,double x,double y,double k1,double k2,int trans);
 extern void undo_blok(void);
 extern void Global_Undo(void);
-extern void blok(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const void (*COMND[])(void));
-extern void blok_items(int items, int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const void (*COMND[])(void));
+extern void blok(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void));
+extern void blok_items(int items, int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void));
 BOOL check_if_hidden (char *adp,char *adk,int atrybut);
 
 /*bib_cia*/

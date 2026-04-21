@@ -223,7 +223,7 @@ int chage_element_no(AVECTOR *V) {
 
     d=(int)V->property_no;
     sprintf(sk, "%d", d);
-    if (!get_string(&sk, "", MaxTextLen, 0, 211)) return -1;
+    if (!get_string(sk, "", MaxTextLen, 0, 211)) return -1;
     if (FALSE == calculator(sk, &retval_no, buf_ret) || retval_no < 1) {
         return -1;
     }
@@ -311,9 +311,9 @@ void Edit_Obiekt(void)
                                       prop_no=chage_element_no(V);
                                       if ((prop_no>=0) && (prop_no != prop_no_bak))
                                       {
-                                          rysuj_obiekt(V, 0, 0);
+                                          rysuj_obiekt((char*)V, 0, 0);
                                           V->property_no=(short)prop_no;
-                                          rysuj_obiekt(V, 0, 1);
+                                          rysuj_obiekt((char*)V, 0, 1);
                                           if (PTRS__Text_Style[zmwym.czcionka]->type == 2) redraw();
                                           else CUR_OFF(X, Y);
                                       }
@@ -467,7 +467,7 @@ void Find_Text (void)
   Semaphore=FALSE;
 
   strcpy(st_source,find_text);
-  if (!get_string (&st_source, "", MaxTextLen, 0, 102))
+  if (!get_string ( st_source, "", MaxTextLen, 0, 102))
    {
     return;
    }
@@ -609,7 +609,7 @@ void Find_and_Change_Text (void)
   l_founded=0;
   auto_change=TRUE;
   strcpy(st_source,change_text_source);
-  if (!get_string (&st_source, "", MaxTextLen, 0, 103))
+  if (!get_string ( st_source, "", MaxTextLen, 0, 103))
    {
     Unmark_Texts(3);
     return;
@@ -618,7 +618,7 @@ void Find_and_Change_Text (void)
   strcpy(change_text_source,st_source);
   
   strcpy(st_dest,change_text_dest);
-  if (!get_string (&st_dest, "", MaxTextLen, 0, 104))
+  if (!get_string (st_dest, "", MaxTextLen, 0, 104))
    {
     Unmark_Texts(3);
     return;
@@ -823,7 +823,7 @@ void Find_and_Change_Text (void)
        }
       adp += L->n + sizeof(NAGLOWEK) ;
     }
-    L = (NAGLOWEK*)adp;
+    L = (LINIA*)adp;
   }
   /*jezeli nie znaleziono zadnego*/
   if (l_founded==0)
@@ -904,7 +904,7 @@ void Automatic_numbering (void)
   
   auto_change=TRUE;
   strcpy(st_source,change_text_source);
-  if (!get_string (&st_source, "", MaxTextLen, 0, 103))
+  if (!get_string (st_source, "", MaxTextLen, 0, 103))
    {
     Unmark_Texts(3);
     return;
@@ -913,7 +913,7 @@ void Automatic_numbering (void)
   strcpy(change_text_source,st_source);
   
   strcpy(st_dest,change_text_dest);
-  if (!get_string (&st_dest, "", MaxTextLen, 0, 118 /*104*/))
+  if (!get_string (st_dest, "", MaxTextLen, 0, 118 /*104*/))
    {
     Unmark_Texts(3);
     return;
@@ -1087,7 +1087,7 @@ void Automatic_numbering (void)
       L = (LINIA*)adp;
       adp += L->n + sizeof(NAGLOWEK) ;
     }
-    L = (NAGLOWEK*)adp;
+    L = (LINIA*)adp;
   }
   /*****************************/
   if (li_founded==0)
@@ -1234,7 +1234,7 @@ void Automatic_numbering (void)
        }
       adp += L->n + sizeof(NAGLOWEK) ;
     }
-    L = (NAGLOWEK*)adp;
+    L = (LINIA*)adp;
   }
   /*jezeli nie znaleziono zadnego*/
   if (l_founded==0)
@@ -1295,7 +1295,7 @@ void Redraw_Text (BOOL b_draw)
     ObiektTok (&off, offk, &ad, Otekst) ;
     while (ad != -1)
     {
-      ptrs_tekst = (T_Point*)(dane + ad) ;
+      ptrs_tekst = (TEXT*)(dane + ad) ;
       if ((1 == (ptrs_tekst->widoczny = tekst_wybrany (ptrs_tekst))) &&
                 (strlen(ptrs_tekst->text)==0) &&
                 (ptrs_tekst->typ>2))

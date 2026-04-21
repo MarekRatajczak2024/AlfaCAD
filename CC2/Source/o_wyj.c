@@ -80,6 +80,10 @@
 #define YES _YES__
 #define NO _NO__
 
+#ifdef LINUX
+#define S_IREAD S_IRUSR
+#endif
+
 typedef unsigned long       DWORD;
 
 BOOL preview_blocked = FALSE;
@@ -2969,7 +2973,7 @@ double get_optimal_angle0(char  *adr,char  *adrk)
 
 GrContext* get_second_screen_bak_(void)
 {
-	return second_screen_bak_;
+	return (GrContext*)second_screen_bak_;
 }
 
 void backup_second_screen(void)
@@ -6287,7 +6291,7 @@ static void width_factor_TTF(void)
 	double d;
 	int ret;
 
-	DF_to_String(&sk, "%-6.4f", ((float)WIDTH/(float)HEIGHT)*1.9, 0);
+	DF_to_String(sk, "%-6.4f", ((float)WIDTH/(float)HEIGHT)*1.9, 0);
 	if (!get_string(sk, "", MaxTextLen, 0, 33)) return;
 	if (FALSE == calculator(sk, &retval_no, buf_ret) || retval_no < 1)
 	{
@@ -6713,7 +6717,7 @@ static int proc_dlg_desktop(int n)
 
 void Dump_View(int box, int x01, int y01, int x02, int y02, int x00, int y00)
 {
-	my_blit(dump_bitmap_p[box], 0, 0, x01, y01, x02 - x01, y02 - y01);
+	my_blit((BITMAP*)dump_bitmap_p[box], 0, 0, x01, y01, x02 - x01, y02 - y01);
 	return;
 }
 
@@ -6786,7 +6790,7 @@ void Desktop(void)
 		{
 			if (Get_dane0_DATA(client) != NULL)
 			{
-				ret = return_and_convert_bitmap(client, &dump_file, &real_x1, &real_y1, &real_x2, &real_y2, &drawing_file);
+				ret = return_and_convert_bitmap(client, dump_file, &real_x1, &real_y1, &real_x2, &real_y2, drawing_file);
 				if ((ret) && (strlen(dump_file) > 0))
 				{
 

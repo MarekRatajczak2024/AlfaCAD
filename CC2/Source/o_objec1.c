@@ -593,7 +593,7 @@ ustawienie flagi obiektt1 dla czworokata,
 {
 	int maxyno, x1no, x2no;
 
-	if (ptr_w->lp == 8 && SIMPW != (ptr_w->obiektt1 = Get_Rectangle_Type(ptr_w)))
+	if (ptr_w->lp == 8 && SIMPW != (ptr_w->obiektt1 = Get_Rectangle_Type((WIELOKAT*)ptr_w)))
 	{
 		return;
 	}

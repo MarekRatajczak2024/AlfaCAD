@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
+#ifdef LINUX
+#include <strings.h>
+#endif
 
 #include "list.h"
 #include "list_str.h"
@@ -30,6 +33,16 @@ int str_eq(const void *a, const void *b)
 int str_caseeq(const void *a, const void *b)
 {
     return str_eq_int(a, b, true);
+}
+
+//added on 14.04.2026
+char* strdup(const char* s) {
+    size_t len = strlen(s) + 1;
+    char* new_str = malloc(len);
+    if (new_str) {
+        memcpy(new_str, s, len);
+    }
+    return new_str;
 }
 
 

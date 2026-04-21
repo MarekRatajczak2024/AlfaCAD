@@ -85,7 +85,7 @@ get_graphf_param (T_Fstring key_name, T_Fstring ret_string)
   strcpy (&ptrsz__graphf_formula [i__buf_off], ret_string) ;
   i__buf_off += strlen (ret_string) + 1 ;
 
-  strcpy(&(pmGraphf [i__graphfno + 1].txt), &(s__graphf_names [i__graphfno].sz_graphf_name [0])) ;  
+  strcpy(pmGraphf [i__graphfno + 1].txt, &(s__graphf_names [i__graphfno].sz_graphf_name [0])) ;
   
   pmGraphf [i__graphfno + 1].wcod = ' ' ;
   pmGraphf [i__graphfno + 1].menu = NULL ;
@@ -112,7 +112,7 @@ int Read_Graph_Function(void)
         ptrsz__graphf_formula = realloc(ptrsz__graphf_formula, i__buf_off + 100);
     }
     
-    strcpy(&(pmGraphf[0].txt), _CURRENT_);
+    strcpy(pmGraphf[0].txt, _CURRENT_);
 
     pmGraphf[0].wcod = ' ';
     pmGraphf[0].menu = NULL;
@@ -341,8 +341,8 @@ aa:
     LiniaG.y2 = jednostkiOb(df_y2) ;
     if (NULL == Add_Object (&ptrs_block, (void *)&LiniaG))
     {
-        ptr_ob_begin = ptrs_block ;
-        ptr_ob_end = ptrs_block + sizeof (NAGLOWEK) + ((BLOK*)ptrs_block)->n - 1 ;
+        ptr_ob_begin = (char*)ptrs_block ;
+        ptr_ob_end = (char*)ptrs_block + sizeof (NAGLOWEK) + ((BLOK*)ptrs_block)->n - 1;
         blokzap (ptr_ob_begin, ptr_ob_end, Anormalny, COPY_PUT, 0) ;
 
         usun_obiekt (ptrs_block) ;

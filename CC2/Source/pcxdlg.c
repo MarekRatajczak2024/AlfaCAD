@@ -206,9 +206,9 @@ static void resize_image(int direction)
 	if (preserve_aspect)
 	{
 		if (direction == 0)  //X
-			strcpy(&scale_y, &scale_x);
+			strcpy(scale_y, scale_x);
 		else //Y
-			strcpy(&scale_x, &scale_y);
+			strcpy(scale_x, scale_y);
 	}
 
 
@@ -234,13 +234,13 @@ static void resize_image(int direction)
 static INPUTLINE edit[] =
 {
 	{ Xrow1 + ddXedit, Yrow1 + DYrow,  DXedit, 12, COLOR_NULL,COLOR_NULL,
-		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, scale_x, ID_SCALE_X,&digits,
+		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, scale_x, ID_SCALE_X,digits,
 	},
 	{   Xrow1 + DXcol + ddXedit, Yrow1 + DYrow,  DXedit, 12, COLOR_NULL,COLOR_NULL,
-		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, scale_y, ID_SCALE_Y,&digits,
+		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, scale_y, ID_SCALE_Y,digits,
 	},
 	{ Xrow1 + DXcol + ddXedit, Yrow1 + 2 * DYrow,  DXedit, 12, COLOR_NULL,COLOR_NULL,
-		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, angle, -1,&digits,
+		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, angle, -1,digits,
 	},
 
 };

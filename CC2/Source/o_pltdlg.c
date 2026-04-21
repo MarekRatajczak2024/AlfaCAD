@@ -42,6 +42,10 @@
 
 #include "dialog.h"
 
+#ifdef LINUX
+#define S_IREAD S_IRUSR
+#endif
+
 extern void utf8Upper(char* text);
 extern void setrgb2cmyk(int *color_c, int *color_m, int *color_y, int i);
 extern int GetColorAC1(int color);
@@ -453,13 +457,13 @@ static INPUTLINE edit_move_dx =
 {
   XpMove +50, YpMove + 1.5*DYLab, DXMoveEdit, DYEdit ,
 	COLOR_NULL,COLOR_NULL, COLOR_NULL,COLOR_NULL,COLOR_NULL,
-	5,0,1, il_move_dx, -1,&digits,
+	5,0,1, il_move_dx, -1, digits,
 };
 static INPUTLINE edit_move_dy =
 {
   XpMove + 50, YpMove + 2.4*DYLab, DXMoveEdit, DYEdit ,
 	COLOR_NULL,COLOR_NULL, COLOR_NULL,COLOR_NULL,COLOR_NULL,
-	5,0,1, il_move_dy, -1,&digits,
+	5,0,1, il_move_dy, -1, digits,
 };
 static INPUTLINE edit_file =
 { XpFileName+ DXIL, YpFileName+ 0.45 * DYLab, 320, DYEdit, COLOR_NULL,COLOR_NULL,
@@ -469,14 +473,14 @@ static INPUTLINE edit_pen_width =
 {
   XpSpeed + DXIL + DXSpeed, YpSpeed + 2 * DYLab + No_Pen * DYSpeedEdit + 2 * DYIL - 17, DXSpeedEdit, DYEdit ,
 	COLOR_NULL,COLOR_NULL, COLOR_NULL,COLOR_NULL,COLOR_NULL,
-	4,0,1, il_pen_width, -1,&digits,
+	4,0,1, il_pen_width, -1, digits,
 };
 
 static INPUTLINE edit_scale =
 {
   XpMove + 50, YpMove + 0.6 * DYLab, DXMoveEdit, DYEdit ,
 	COLOR_NULL,COLOR_NULL, COLOR_NULL,COLOR_NULL,COLOR_NULL,
-	4,0,1, il_scale, -1,&digits,
+	4,0,1, il_scale, -1, digits,
 };
 
 static LABEL  lab_table [LAB_SIZE];
@@ -623,7 +627,7 @@ static void set_struct_dialog_control (void)
     edit_table[i].enable = 1;
 	edit_table[i].id = -1;
     edit_table[i].txt = (char *)speed_text [i-EDIT_SPEED];
-	edit_table[i].legal = &xdigits;
+	edit_table[i].legal = xdigits;
   }
   
   for ( i = EDIT_WIDTH_INK; i < EDIT_WIDTH_INK + No_Pen; i++)
@@ -639,7 +643,7 @@ static void set_struct_dialog_control (void)
     edit_table[i].enable = 1;
 	edit_table[i].id = 999; // -1;
     edit_table[i].txt = (char *)width_ink_text [i-EDIT_WIDTH_INK];
-	edit_table[i].legal = &digits;
+	edit_table[i].legal = digits;
   }
   
   i = EDIT_COLOR;
@@ -660,7 +664,7 @@ static void set_struct_dialog_control (void)
       edit_table[i].enable = 1;
       edit_table[i].id = -1;
       edit_table[i].txt = (char *)color_text [j * No_Color + k];
-	  edit_table[i].legal = &numbers;
+	  edit_table[i].legal = numbers;
     }
   }
 
@@ -1179,7 +1183,7 @@ get_config_param_from_ini_file (T_Fstring key_name, T_Fstring ret_string)
    for (i = 0; i < no_plt_config_param; i++)
    {
        strcpy(plt_conf_par, plt_config_param [i]);
-       utf8Upper(&plt_conf_par);
+       utf8Upper(plt_conf_par);
 
       if (stricmp (key_name, plt_conf_par) == 0)
       {

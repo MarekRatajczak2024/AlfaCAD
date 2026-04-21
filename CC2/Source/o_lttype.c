@@ -146,7 +146,7 @@ get_config_param (T_Fstring key_name, T_Fstring ret_string)
 
    for (i = 0; i < no_lin_config_param; i++)
    {
-	   mylin_config_param = &lin_config_param[i];
+	   mylin_config_param = (char*)&lin_config_param[i];
 
       if (stricmp (key_name, mylin_config_param) == 0)
       {
@@ -279,7 +279,7 @@ int Add_New_Font_TTF_OTF(char *name, int type, int cur)
             return -1;
         }
 
-		find_any_font_face(sk, &face_name);
+		find_any_font_face(sk, face_name);
 
 		for (i = 0; i < WhNumberTextStyle; i++)
 		{
@@ -390,26 +390,26 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
 #endif
 		{
 			fontdir = otffont;
-			if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path))
+			if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path))
 			{
 				fontdir = winfont;
-				if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
+				if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path)) return NULL;
 			}
 		}
 		else
 		{
 			fontdir = winfont;
-			if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path))
+			if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path))
 			{
 				fontdir = otffont;
-				if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return NULL;
+				if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path)) return NULL;
 			}
 		}
 	}
 
-	find_any_font_face(ttf_file_path, &face_name);
+	find_any_font_face(ttf_file_path, face_name);
 
-    if (strlen(face_name)==0) strcpy(&face_name, &file);  //TO CHANGE
+    if (strlen(face_name)==0) strcpy(face_name, file);  //TO CHANGE
 
 	for (i = 0; i < i__font_nomax /*WhNumberTextStyle*/; i++)
 	{
@@ -602,8 +602,8 @@ static T_Font_Header *read_font_old(char *ptrsz_file)
 		goto err;
 	}
 
-	strcpy(&s_header.font_name, &s_header_old.font_name);
-	strcpy(&s_header.font_acad_name, &s_header_old.font_acad_name);
+	strcpy(s_header.font_name, s_header_old.font_name);
+	strcpy(s_header.font_acad_name, s_header_old.font_acad_name);
 	s_header.font_size = s_header_old.font_size;
 	s_header.num_char = (unsigned int)s_header_old.num_char;
 	s_header.first_char = (unsigned int)s_header_old.first_char;
@@ -1054,7 +1054,7 @@ get_fonts_param (T_Fstring key_name, T_Fstring ret_string)
           pmCzcionka[i_font_no].menu=NULL;
 		  font_namelen = strlen(&PTRS__Text_Style[i_font_no]->font_name[0]);
 
-          int same=(strcmp(pmCzcionka[i_font_no].txt, kochimincho));
+          int same=(strcmp(pmCzcionka[i_font_no].txt, (char*)kochimincho));
           if (same==0)
 		  {
 			 alfacad_logo_font = i_font_no;
@@ -1278,7 +1278,7 @@ int ReadStyles(int f, int version)
 	ptr = fontbuffer;
 	for (i = 0; i < nfonts; i++)
 	{   //scanning fonts
-		strcpy(&fontstyle[i].font_name, ptr);
+		strcpy(fontstyle[i].font_name, ptr);
 		len = strlen(fontstyle[i].font_name) + 1;
 		ptr += len;
 		fontstyle[i].number = (unsigned char)*ptr;
@@ -1474,7 +1474,7 @@ int ReadBlockStyles(int f)
 	ptr = fontbuffer;
 	for (i = 0; i < nfonts; i++)
 	{   //scanning fonts
-		strcpy(&fontstyle[i].font_name, ptr);
+		strcpy(fontstyle[i].font_name, ptr);
 		len = strlen(fontstyle[i].font_name) + 1;
 		ptr += len;
 		fontstyle[i].number = (unsigned char)*ptr;
@@ -1678,7 +1678,7 @@ int ReadTextStyle (void)
   {
     ptrsz_fn = PTRS__Text_Style [i_font]->font_name ;
 
-    menu_par_new ((*mTekstm.pola)[10].txt, &ptrsz_fn) ;
+    menu_par_new ((*mTekstm.pola)[10].txt, ptrsz_fn) ;
     
     mCzcionka.poz = i_font;
     TextG.czcionka = i_font;

@@ -31,6 +31,8 @@
 
 #include "leak_detector_c.h"
 
+static int np_tension=-1; /*the number of edit field  of tension*/
+
 static char *add_block(char b_type, char cltype);
 
 extern double Grid_to_Rad(double angle);
@@ -106,8 +108,6 @@ BOOL angle_changed;
 
 static int strwyj;
 static double Lx2, Ly2;
-
-//static int np_tension=-1;
 
 static int MAX_BUF_SPLINE=1000;
 static int MAX_BUF_ARC=1000;
@@ -579,10 +579,10 @@ static void out_temp_line(void)
 		if (curviness < 0.01) curviness = 0.01;
 		if (curviness > 1.0) curviness = 1.0;
 
+        get_tens_value(eTens.st, curviness);
 
-		get_tens_value(eTens.st, curviness);
+        Out_Edited_Draw_Param((ESTR *) &eTens, TRUE);
 
-		Out_Edited_Draw_Param((ESTR*)&eTens, TRUE);
 	}
 
 	setwritemode(COPY_PUT);
@@ -622,7 +622,7 @@ static void out_temp_line(void)
 	if (bspline.npts>4) bspline.xy[bspline.lp] = curviness;
 
 	if ((bspline.lp > 4) || (!orto))
-        rysuj_spline_(&bspline, &bspline.xy, COPY_PUT, -1, TRUE, FALSE, FALSE);
+        rysuj_spline_(&bspline, bspline.xy, COPY_PUT, -1, TRUE, FALSE, FALSE);
 
 	okno_all();
 
@@ -1238,7 +1238,7 @@ char *add_block(char b_type, char c_pltype)
 	}
 
 	memmove(&(ptrs_block->opis_obiektu[0]), &c_pltype, sizeof(c_pltype));
-	return ptrs_block;
+	return (char*)ptrs_block;
 }
 
 static void spline_pline_on(void)
@@ -1296,7 +1296,6 @@ void set_spline_tension_force(int typ)
 
 void set_spline_tension(int typ, BOOL set_np)
 {
-	static int np_tension;
 
 	if (typ == 1)
 	{
@@ -1420,7 +1419,6 @@ void spline_proc(double x0, double y0)
 	double buf_ret[1];
 	EVENT *ev;
 	BOOL ret;
-	static int np_tension;
 
 	line_g.x1 = line_temp.x1 = x0;
 	line_g.y1 = line_temp.y1 = y0;
@@ -2094,7 +2092,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((SPLINE *) nag)->shadowed = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2110,7 +2108,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((SOLIDARC *) nag)->shadowed = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2126,7 +2124,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((ELLIPTICALARC *) nag)->shadowed = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2143,7 +2141,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((ELLIPSE *) nag)->przec = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2159,7 +2157,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((LUK *) nag)->shadowed = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2176,7 +2174,7 @@ int remove_spline_shadow_flag(long_long l_offb, long_long l_offe, BOOL make_Ablo
                     ((OKRAG *) nag)->przec = 0;
                     i++;
                     ////rysuj_obiekt(nag, COPY_PUT, 1);  //be silent
-                    ptr_parent = FIRSTB(nag);
+                    ptr_parent = FIRSTB((char*)nag);
                     if (ptr_parent != NULL) {
                         if (ptr_parent->kod_obiektu == B_PLINE) {
                             if (ptr_parent->atrybut == Abad) ptr_parent->atrybut = Anormalny;
@@ -2310,8 +2308,8 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 				i_spline_no++;
 				nag->atrybut = s_atrybut;
 				((SPLINE*)nag)->shadowed = 1;
-                rysuj_obiekt(nag, COPY_PUT, 0);
-                ptr_parent = FIRSTB(nag);
+                rysuj_obiekt((char*)nag, COPY_PUT, 0);
+                ptr_parent = FIRSTB((char*)nag);
                 if (ptr_parent != NULL) {
                     if (ptr_parent->kod_obiektu == B_PLINE)
                     {
@@ -2367,9 +2365,9 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 				s_line.x2 = out_x[i + 1];
 				s_line.y2 = out_y[i + 1];
 
-                PTR__GTMP7 = ptr_block;
+                PTR__GTMP7 = (char*)ptr_block;
 				ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-                ptr_block=PTR__GTMP7;
+                ptr_block=(BLOK*)PTR__GTMP7;
 			}
 		}
 		else
@@ -2421,9 +2419,9 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 					s_line.x2 = out_x[i + 1];
 					s_line.y2 = out_y[i + 1];
 
-                    PTR__GTMP7 = ptr_block;
+                    PTR__GTMP7 = (char*)ptr_block;
 					ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-                    ptr_block=PTR__GTMP7;
+                    ptr_block=(BLOK*)PTR__GTMP7;
 				}
 
 				bnodes[2].tangent = bnodes_2_tangent_org;
@@ -2461,9 +2459,9 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 					s_line.x2 = out_x[i + 1];
 					s_line.y2 = out_y[i + 1];
 
-                    PTR__GTMP7 = ptr_block;
+                    PTR__GTMP7 = (char*)ptr_block;
 					ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-                    ptr_block=PTR__GTMP7;
+                    ptr_block=(BLOK*)PTR__GTMP7;
 				}
 			}
 
@@ -2498,9 +2496,9 @@ int make_spline_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL jo
 					s_line.x2 = out_x[i + 1];
 					s_line.y2 = out_y[i + 1];
 
-                    PTR__GTMP7 = ptr_block;
+                    PTR__GTMP7 = (char*)ptr_block;
 					ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-                    ptr_block=PTR__GTMP7;
+                    ptr_block=(BLOK*)PTR__GTMP7;
 				}
 
 			}
@@ -2673,9 +2671,9 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
                 s_line.x2 = xy[i + 2];
                 s_line.y2 = xy[i + 3];
 
-                PTR__GTMP7 = ptr_block;
+                PTR__GTMP7 = (char*)ptr_block;
                 ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-                ptr_block=PTR__GTMP7;
+                ptr_block=(BLOK*)PTR__GTMP7;
 
             }
 
@@ -2706,9 +2704,9 @@ int make_elliptical_shadows(long_long l_offb, long_long l_offe, int atrybut, BOO
             s_line.x2 = xy[i + 2];
             s_line.y2 = xy[i + 3];
 
-            PTR__GTMP7 = ptr_block;
+            PTR__GTMP7 = (char*)ptr_block;
             ptrs_line = dodaj_obiekt_reversed(ptr_block, &s_line);
-            ptr_block=PTR__GTMP7;
+            ptr_block=(BLOK*)PTR__GTMP7;
 
         }
 
@@ -2880,7 +2878,7 @@ int make_solidarc_shadows(long_long l_offb, long_long l_offe, int atrybut, BOOL 
     //generating solidarc elements and freeing memory
     for (j = 0; j < i_solidarc_no; j++)
     {
-        ptr_block=add_block(B_SHADOW, PL_SHADOW);
+        ptr_block=(BLOK*)add_block(B_SHADOW, PL_SHADOW);
         if (ptr_block==NULL) return 0;
         ptr_block->atrybut=atrybut;
         ln=solidarc_elements(buf_solidarc[j], &L_left, &L_right, &l_inner1, &l_inner2, &l_outer1, &l_outer2);

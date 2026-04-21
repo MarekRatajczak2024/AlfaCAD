@@ -301,7 +301,7 @@ int koniecL_factory (double *x, double *y, void *adr)
 void set_stretch_vector(int s_v, char *vector)
 {
     stretch_vector = s_v;
-    VectorS = vector;
+    VectorS = (AVECTOR*)vector;
 }
 
 void koniecL_ (double *x, double *y, void *adr)
@@ -620,7 +620,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
         case 1:
         case 2:
         case 3:
-            if (0 != linia_wybrana(v))
+            if (0 != linia_wybrana((LINIA*)v))
             {
                 funL(x, y, v);
                 if (punkt_w_prostokacie(*x, *y)) return 1;
@@ -631,7 +631,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
         case 19:  //force z
         case 7:  //displacement
         case 27:  //displacement z
-            if (0 != linia_wybrana(v))
+            if (0 != linia_wybrana((LINIA*)v))
             {
                 fun1L(x, y, v);
                 if (punkt_w_prostokacie(*x, *y)) return 1;
@@ -671,8 +671,8 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             if ((v->style==4) || (v->style==18))   //displacement doesn't have any load type
             {
                 if (v->variant > 0)
-                    sprintf(&Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
-                else sprintf(&Vtxt.text, "%s", load_symbol[(int) v->load]);
+                    sprintf(Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
+                else sprintf(Vtxt.text, "%s", load_symbol[(int) v->load]);
                 normalize_txt(&Vtxt);
 
                 if (tekst_wybrany(&Vtxt)) {
@@ -757,8 +757,8 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             if ((v->style==5) || (v->style==6)) //displacement doesn't have any load type
             {
                 if (v->variant > 0)
-                    sprintf(&Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
-                else sprintf(&Vtxt.text, "%s", load_symbol[(int) v->load]);
+                    sprintf(Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
+                else sprintf(Vtxt.text, "%s", load_symbol[(int) v->load]);
                 normalize_txt(&Vtxt);
 
                 if (tekst_wybrany(&Vtxt)) {
@@ -932,8 +932,8 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             if (v->style<28)//displacement doesn't have any load type
             {
                 if (v->variant > 0)
-                    sprintf(&Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
-                else sprintf(&Vtxt.text, "%s", load_symbol[(int) v->load]);
+                    sprintf(Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
+                else sprintf(Vtxt.text, "%s", load_symbol[(int) v->load]);
                 normalize_txt(&Vtxt);
 
                 if (tekst_wybrany(&Vtxt)) {
@@ -971,12 +971,12 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             Vtxt.wysokosc=zmwym.wysokosc/2;
 
             if (v->variant>0)
-                sprintf(&Vtxt.text, "%s%d",load_symbol[(int)v->load], v->variant);
-            else sprintf(&Vtxt.text, "%s",load_symbol[(int)v->load]);
+                sprintf(Vtxt.text, "%s%d",load_symbol[(int)v->load], v->variant);
+            else sprintf(Vtxt.text, "%s",load_symbol[(int)v->load]);
 
             if (vector_text_wybrany(&Lt, &Vtxt, v))
             {
-                if (global_set_stretch) set_stretch_vector(9, v); //load character edit
+                if (global_set_stretch) set_stretch_vector(9, (char*)v); //load character edit
                 *x=Vtxt.x; *y=Vtxt.y;
                 return 1;
             }
@@ -989,17 +989,17 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
         case 12: //trapezium N
         case 13:  //trapezium H
         case 14: //trapezium V
-             if (0 != linia_wybrana(v))
+             if (0 != linia_wybrana((LINIA*)v))
             {
                 funL(x, y, v);
                 if (punkt_w_prostokacie(*x, *y))
                 {
-                    if (global_set_stretch) set_stretch_vector(-1, v);
+                    if (global_set_stretch) set_stretch_vector(-1, (char*)v);
                     return 1;
                 }
                 else
                 {
-                    if (global_set_stretch) set_stretch_vector(-1, v);
+                    if (global_set_stretch) set_stretch_vector(-1, (char*)v);
                     return 0;
                 }
             }
@@ -1240,11 +1240,11 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                     ret= koniecL_factory(x, y, &Lt);
                     if (ret==1)
                     {
-                        if (global_set_stretch) set_stretch_vector(4, v); //magnitude1
+                        if (global_set_stretch) set_stretch_vector(4, (char*)v); //magnitude1
                     }
                     else if (ret==2)
                     {
-                        if (global_set_stretch) set_stretch_vector(5, v); //magnitude2
+                        if (global_set_stretch) set_stretch_vector(5, (char*)v); //magnitude2
                     }
                     if (punkt_w_prostokacie(*x, *y)) return 1;
                 }
@@ -1253,11 +1253,11 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                     ret= koniecL_factory(x, y, &Lth);
                     if (ret==1)
                     {
-                        if (global_set_stretch) set_stretch_vector(6, v); //thermal bar size side 1
+                        if (global_set_stretch) set_stretch_vector(6, (char*)v); //thermal bar size side 1
                     }
                     else if (ret==2)
                     {
-                        if (global_set_stretch) set_stretch_vector(7, v); //thermal bar size side 2
+                        if (global_set_stretch) set_stretch_vector(7, (char*)v); //thermal bar size side 2
                     }
                     if (punkt_w_prostokacie(*x, *y)) return 1;
                 }
@@ -1267,13 +1267,13 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                 int ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, v, &LL);
                 if (ret==1)
                 {
-                    if (global_set_stretch) set_stretch_vector(4, v); //magnitude1 edit
+                    if (global_set_stretch) set_stretch_vector(4, (char*)v); //magnitude1 edit
                     *x=Lt.x1; *y=Lt.y1;
                     return 1;
                 }
                 else if (ret==2)
                 {
-                    if (global_set_stretch) set_stretch_vector(5, v); //magnitude2 edit
+                    if (global_set_stretch) set_stretch_vector(5, (char*)v); //magnitude2 edit
                     *x=Lt.x2; *y=Lt.y2;
                     return 1;
                 }
@@ -1282,11 +1282,11 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                     Vtxt.wysokosc = zmwym.wysokosc / 2;
 
                     if (v->variant > 0)
-                        sprintf(&Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
-                    else sprintf(&Vtxt.text, "%s", load_symbol[(int) v->load]);
+                        sprintf(Vtxt.text, "%s%d", load_symbol[(int) v->load], v->variant);
+                    else sprintf(Vtxt.text, "%s", load_symbol[(int) v->load]);
 
                     if (vector_text_wybrany(&Lt, &Vtxt, v)) {
-                        if (global_set_stretch) set_stretch_vector(9, v); //load character edit
+                        if (global_set_stretch) set_stretch_vector(9, (char*)v); //load character edit
                         *x = Vtxt.x;
                         *y = Vtxt.y;
                         return 1;
@@ -1315,7 +1315,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                 }
                 if ((0 != linia_wybrana(&Lt1)) || (0 != linia_wybrana(&Lt2)))
                 {
-                    if (global_set_stretch) set_stretch_vector(9, v); //load character edit
+                    if (global_set_stretch) set_stretch_vector(9, (char*)v); //load character edit
                     *x=Vtxt.x; *y=Vtxt.y;
                     return 1;
                 }
@@ -1325,7 +1325,7 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
             break;
 
         case 16:
-            if (0 != linia_wybrana(v))
+            if (0 != linia_wybrana((LINIA*)v))
             {
                 funL(x, y, v);
                 if (punkt_w_prostokacie(*x, *y)) return 1;
@@ -1385,20 +1385,20 @@ int wvector_(double *x, double *y, void *adr, void(*funL)(double*, double*, void
                 if (tekst_wybrany(&Vtxt))
                 {
                     *x=v->x1; *y=v->y1;
-                    if (global_set_stretch) set_stretch_vector(8, v);
+                    if (global_set_stretch) set_stretch_vector(8, (char*)v);
                     return 1;
                 }
 
                 if (0 != linia_wybrana(&Lt))
                 {
                     *x=v->x2; *y=v->y2;
-                    if (global_set_stretch) set_stretch_vector(0, v);
+                    if (global_set_stretch) set_stretch_vector(0, (char*)v);
                     return 0;
                 }
             }
         break;
         default:
-            if (0 != linia_wybrana(v))
+            if (0 != linia_wybrana((LINIA*)v))
             {
                 funL(x, y, v);
                 if (punkt_w_prostokacie(*x, *y)) return 1;
@@ -1432,7 +1432,7 @@ int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*, void*
 #define Npts (90*3)  //for much more precission
     if (s->npts < 5)
     {
-        calc_bspline(s->lp, s->npts, s->xy, Npts, &out_x, &out_y);
+        calc_bspline(s->lp, s->npts, s->xy, Npts, out_x, out_y);
         for (i = 0; i < Npts - 1; i++)
         {
             L.x1 = out_x[i];
@@ -2805,7 +2805,7 @@ BOOL vector_przec (double *x, double *y, void *adr, void *adr1,
         case 1:
         case 2:
         case 3:
-            if (0 != linia_wybrana (v) 	      &&
+            if (0 != linia_wybrana ((LINIA*)v) 	      &&
                 0 != funLine (&x0, &y0, (void*)v, adr1))
             {
                 b_ret = TRUE ;
@@ -2863,7 +2863,7 @@ BOOL spline_przec(double *x, double *y, void *adr, void *adr1,
 #define Npts 90  //for more precission
     if (s->npts < 5)
     {
-        calc_bspline(s->lp, s->npts, s->xy, Npts, &out_x, &out_y);
+        calc_bspline(s->lp, s->npts, s->xy, Npts, out_x, out_y);
         for (i = 0; i < Npts - 1; i++)
         {
             L.x1 = out_x[i];
@@ -3314,7 +3314,7 @@ int przeciecieWS_(double *x, double *y, void *adr, void *adr1)
         if (s->npts < 5)
         {
 
-            calc_bspline(s->lp, s->npts, s->xy, Npts, &out_x, &out_y);
+            calc_bspline(s->lp, s->npts, s->xy, Npts, out_x, out_y);
 
             x1 = w->xy[w->lp - 2];
             y1 = w->xy[w->lp - 1];
@@ -3558,10 +3558,10 @@ int przeciecieSS_(double *x, double *y, void *adr, void *adr1)
 #define Npts 90  //for more precission
         if (s->npts < 5)  //can be bezier or multipoints
         {
-            calc_bspline(s->lp, s->npts, s->xy, Npts, &out_x, &out_y);
+            calc_bspline(s->lp, s->npts, s->xy, Npts, out_x, out_y);
             if (s1->npts < 5)  //can be 
             {
-                calc_bspline(s1->lp, s1->npts, s1->xy, Npts, &out_x1, &out_y1);
+                calc_bspline(s1->lp, s1->npts, s1->xy, Npts, out_x1, out_y1);
 
                 for (i = 0; i < Npts - 1; i++)
                 {
@@ -4621,7 +4621,7 @@ static void centruml_(double *x,double *y,void *adr)
 
 static BOOL centrum_vector_(double *x,double *y,void *adr)
 {   AVECTOR *v;
-    v=(LUK*)adr;
+    v=(AVECTOR*)adr;
     switch (v->style)
     {
         case 5:
@@ -5062,9 +5062,9 @@ BLOK *koniecP(double *xsel, double *ysel)
     { *xsel=X;*ysel=Y;
         switch(typ)
         {
-            case Blinia :     koniecL_ (&xsel, &ysel, adr) ;
+            case Blinia :     koniecL_ (xsel, ysel, adr) ;
                 break;
-            case Bluk   :     koniecl_ (&xsel, &ysel, adr) ;
+            case Bluk   :     koniecl_ (xsel, ysel, adr) ;
                 break;
             default     :     break;
         }

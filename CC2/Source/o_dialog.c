@@ -533,7 +533,7 @@ int Get_Global_Dialog_Flag(void)
 
 char *Get_Global_Dialog_Name(void)
 {
-	return &global_dialog_name;
+	return global_dialog_name;
 }
 
 BOOL get_block_changed(void)
@@ -1665,7 +1665,7 @@ static void draw_listbox(LISTBOX  * listbox)
 					   fontn.warstwa = Current_Layer;
 					   fontn.widoczny = 1;
 
-					   draw_font_name_ttf(&fontn, &fontn.text, list_screen, xt + 5, yt + HEIGHT / 2 + 4, x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
+					   draw_font_name_ttf(&fontn, fontn.text, list_screen, xt + 5, yt + HEIGHT / 2 + 4, x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
 
 				   }
 			   }
@@ -1953,7 +1953,7 @@ static int open_listbox(LISTBOX  * listbox)
   {
       x2+=jed_to_piks_y(12);
       set_listbox_slider=1;
-      listbox_address=listbox;
+      listbox_address=(char*)listbox;
   }
 
   if(!(listbox->flags & FLB_LIST))
@@ -2716,7 +2716,7 @@ static int find_combo_box(COMBOBOX *ComboBoxes,int SizeComboBoxT)
 						   fontn.widoczny = 1;
 
 						   
-						   draw_font_name_ttf(&fontn, &fontn.text, screen, x1 + 5, y1 + HEIGHT + vfv(10), x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
+						   draw_font_name_ttf(&fontn, fontn.text, screen, x1 + 5, y1 + HEIGHT + vfv(10), x2, fontn.kat, vfv(20.0), kolor, COPY_PUT, 0, 0);
 						  
 
 					   }
@@ -3000,7 +3000,7 @@ void Draw_ComboBox(COMBOBOX *ComboBox)
 							  fontn.warstwa = Current_Layer;
 							  fontn.widoczny = 1;
 
-							  draw_font_name_ttf(&fontn, &fontn.text, screen, x1 + 5, y1 + HEIGHT + 10, x2, fontn.kat, 20.0, kolor, COPY_PUT, 0, 0);
+							  draw_font_name_ttf(&fontn, fontn.text, screen, x1 + 5, y1 + HEIGHT + 10, x2, fontn.kat, 20.0, kolor, COPY_PUT, 0, 0);
 
 						  }
 					  }
@@ -3222,7 +3222,7 @@ void draw_push_button(BUTTON *Button)
                     ret = ViewInsBlock(Button->adr, FALSE);
             }
 
-            strcpy(&file, (char *)(Button->txt + 1));
+            strcpy(file, (char *)(Button->txt + 1));
             setcolor(ink);
             moveto(x0 + 1, y2 + 3);
             settextjustify(CENTER_TEXT, TOP_TEXT);
@@ -4319,7 +4319,7 @@ static void open_dlg(TDIALOG *dlg, char typ, BITMAP **dialog_screen, RECT *dialo
        {
            int var1, var2, var3, var4, ret;
            BITMAP *slbitmap;
-           SLIDER *slider=dlg->Sliders;
+           SLIDER *slider=(SLIDER*)dlg->Sliders;
 
            if ((typ==0) || (slider[i].flags & 0x800))
            {
@@ -4749,7 +4749,7 @@ static void init(char typ, TDIALOG *Dlg, PTMENU *tipsmenu)
          for (int i=0; i<Dlg->SizeSliderT; i++)
          {
              //BITMAP *slbitmap;
-             SLIDER *slider = Dlg->Sliders;
+             SLIDER *slider = (SLIDER*)Dlg->Sliders;
 
              if (slider[i].flags & 0xF0) continue;
 
@@ -4890,7 +4890,7 @@ int Dialog_in_dialog(TDIALOG *dlg)
     int ended=0;
     while (!ended)
     {
-        ev = GetEvent(&tipsmenu);
+        ev = GetEvent((TMENU*)&tipsmenu);
         switch (ev->What)
         {
             case evKeyDown  :
@@ -5006,7 +5006,7 @@ int Dialog(TDIALOG *dlg, DLG_COLOR *kolory, int(*fun)(int), BOOL m)
     get_size_and_disable_F11(dim);
 
 	global_dialog_flag = 1;
-	strncpy(&global_dialog_name, dlg->txt, 15);
+	strncpy(global_dialog_name, dlg->txt, 15);
     global_dialog_name[15]='\0';
 
     global_dialog_ptr=(char*)dlg;

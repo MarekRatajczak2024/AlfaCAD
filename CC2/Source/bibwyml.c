@@ -123,7 +123,7 @@ void *luk_w_in_block (void  *adr, BOOL draw)
     usun_blok(ADP1,ADK1);
     //inserting block into stirrup block
     B1->blok=Ablok;
-    nb1=(BLOK*)dodaj_obiekt(dane,B1);
+    nb1=(BLOK*)dodaj_obiekt((BLOK*)dane,B1);
     //freeing buffer
     free(B1);
     return nb1;

@@ -2912,7 +2912,7 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
     if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && ((char*)ad>dane) && ((char*)ad<(dane+dane_size)))
     {
         //check if next object is text or line then text
-        nag1 = (char*)ad + sizeof(NAGLOWEK) + ad->n;
+        nag1 = (NAGLOWEK*)((char*)ad + sizeof(NAGLOWEK) + ad->n);
         if (nag1->obiekt == Otekst)
         {
             t = (TEXT*)nag1;
@@ -2944,7 +2944,7 @@ static void rysuj_linia_(LINIA *ad,int mode,int kolor)
 
         else if (nag1->obiekt == Olinia)
         {
-            nag2 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+            nag2 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
             if (nag2->obiekt == Otekst)
             {
                 t = (TEXT*)nag2;
@@ -3120,7 +3120,7 @@ int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *
     xy[n++] = L_right->x2;
     xy[n++] = L_right->y2;
 
-    n = get_arc_points(l_inner, xy, n, FALSE, FALSE);
+    n = get_arc_points(l_inner, &xy, n, FALSE, FALSE);
 
     *n2=n;
 
@@ -3129,7 +3129,7 @@ int rysuj_solidarc_factory___(SOLIDARC *sa, LINIA *L_left, LINIA *L_right, LUK *
     xy[n++] = L_left->x2;
     xy[n++] = L_left->y2;
 
-    n = get_arc_points(l_outer, xy, n, TRUE, FALSE);
+    n = get_arc_points(l_outer, &xy, n, TRUE, FALSE);
 
     return n;
 
@@ -3210,7 +3210,7 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
         xy[n++] = p7l.x;
         xy[n++] = p7l.y;
 
-        n = get_arc_points(&linner, xy, n, FALSE, printer);
+        n = get_arc_points(&linner, (double **)xy, n, FALSE, printer);
         *n1=n;
 
         xy[n++] = p5l.x;
@@ -3218,11 +3218,11 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
         xy[n++] = p8l.x;
         xy[n++] = p8l.y;
 
-        n = get_arc_points(&louter, xy, n, TRUE, printer);
+        n = get_arc_points(&louter, (double **)xy, n, TRUE, printer);
     }
     else if (side==1)
     {
-        n = get_arc_points(&louter, xy, n, TRUE, printer);
+        n = get_arc_points(&louter, (double **)xy, n, TRUE, printer);
 
         *n2=n;
 
@@ -3231,11 +3231,11 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
         xy[n++] = p7l.x;
         xy[n++] = p7l.y;
 
-        n = get_arc_points(&linner, xy, n, FALSE, printer);
+        n = get_arc_points(&linner, (double **)xy, n, FALSE, printer);
     }
     else if (side==2)
     {
-        n = get_arc_points(&linner, xy, n, FALSE, printer);
+        n = get_arc_points(&linner, (double **)xy, n, FALSE, printer);
 
         *n1=n;
 
@@ -3244,7 +3244,7 @@ int rysuj_solidarc_factory(SOLIDARC *sa, int mode, int kolor, int side, int in, 
         xy[n++] = p8l.x;
         xy[n++] = p8l.y;
 
-        n = get_arc_points(&louter, xy, n, TRUE, printer);
+        n = get_arc_points(&louter, (double **)xy, n, TRUE, printer);
     }
 
     return n;
@@ -3498,7 +3498,7 @@ void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BO
                         solid_pattern.angle = sa->angle;
                         solid_pattern.dy = sa->dy;
 
-                        strcpy(&solid_pattern.pattern, &sa->patternname);
+                        strcpy(solid_pattern.pattern, sa->patternname);
 
                         if (!sa->widoczny) //filling screen only
                         {
@@ -3513,7 +3513,7 @@ void rysuj_solidarc_exe(SOLIDARC *sa, int mode, int kolor, int n, double *xy, BO
                             n = 8;
                         }
 
-                        fillpolypattern(n / 2, polypoints, &solid_pattern, pikseleX0(0), pikseleY0(0));
+                        fillpolypattern(n / 2, polypoints, (char*)&solid_pattern, pikseleX0(0), pikseleY0(0));
 
                         if (((sa->atrybut == Ablok) && (as_redraw)) ||
                             ((dragging_quad_move == TRUE) && (sa->atrybut == Aoblok))) {
@@ -4037,7 +4037,7 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
     if ((ad->blok == 1) && (ad->obiektt1 == 0) && (ad->obiektt2 == 1) && (ad->obiektt3 == 0) && ((char*)ad>dane) && ((char*)ad<(dane+dane_size)))
     {
         //check if next object is text or line then text
-        nag1 = (char*)ad + sizeof(NAGLOWEK) + ad->n;
+        nag1 = (NAGLOWEK*)((char*)ad + sizeof(NAGLOWEK) + ad->n);
         if (nag1->obiekt == Otekst)
         {
             t = (TEXT*)nag1;
@@ -4077,10 +4077,10 @@ static void rysuj_luk_(LUK *ad,int mode,int kolor)
 
         else if (nag1->obiekt == Olinia)
         {
-            nag2 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+            nag2 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
             if (nag2->obiekt != Otekst) {
                 nag1=nag2;
-                nag2 = (char *) nag1 + sizeof(NAGLOWEK) + nag1->n;
+                nag2 = (NAGLOWEK*)((char *) nag1 + sizeof(NAGLOWEK) + nag1->n);
             }
             if (nag2->obiekt == Otekst)
             {
@@ -4605,7 +4605,7 @@ void rysuj_spline_(SPLINE *ad, float *ad_xy, int mode, int kolor, BOOL count_mvc
                 bnodes_2_tangent_org = bnodes[2].tangent;
                 bnodes[2].tangent = bnodes_2_tangent;
                 get_control_points_reversed(bnodes[2], bnodes[1], tmp_spline.xy);
-                rysuj_spline_(&tmp_spline, &tmp_spline.xy, mode, kolor, count_mvcurb, TRUE, moving);
+                rysuj_spline_(&tmp_spline, (float*)&tmp_spline.xy, mode, kolor, count_mvcurb, TRUE, moving);
                 bnodes[2].tangent = bnodes_2_tangent_org;
         }
         
@@ -4614,14 +4614,14 @@ void rysuj_spline_(SPLINE *ad, float *ad_xy, int mode, int kolor, BOOL count_mvc
         {
             get_control_points(bnodes[i], bnodes[i+1], tmp_spline.xy);
             //get_control_points_3_difference(bnodes[i], bnodes[i + 1], bnodes[i-1], &tmp_spline.xy);  //it's for Catmull–Rom spline: https://en.wikipedia.org/wiki/Cubic_Hermite_spline
-            rysuj_spline_(&tmp_spline, &tmp_spline.xy ,mode, kolor, count_mvcurb, TRUE, moving);
+            rysuj_spline_(&tmp_spline, (float*)&tmp_spline.xy ,mode, kolor, count_mvcurb, TRUE, moving);
         }
 
         
         if ((node_count > 3)  &&  (ad->closed == 0))
         {
             get_control_points_end(bnodes[node_count - 2], bnodes[node_count - 1], tmp_spline.xy);
-            rysuj_spline_(&tmp_spline, &tmp_spline.xy ,mode, kolor, count_mvcurb, TRUE, moving);
+            rysuj_spline_(&tmp_spline, (float*)&tmp_spline.xy ,mode, kolor, count_mvcurb, TRUE, moving);
         }
 
 
@@ -4783,7 +4783,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
 
                     if (ad->translucent == 1)
                     {
-                        translucency_ptr = ad->xy;
+                        translucency_ptr = (char*)ad->xy;
                         translucency_ptr += (ad->lp * sizeof(float));
                         memmove(&translucency, translucency_ptr, sizeof(unsigned char));
                     }
@@ -4833,7 +4833,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
                 memmove(&solid_pattern.angle, angle_ptr, sizeof(short int));
                 memmove(&solid_pattern.dy, dy_ptr, sizeof(short int));
                 strcpy(solid_pattern.pattern, name_ptr);
-                Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), &solid_pattern, translucency, NULL);
+                Draw_Solid(NumPoints, PolyPoints, ad->pcx_solid, ad->obiektt3, pikseleX0(0 /*ad->xy[0]*/), pikseleY0(0 /*ad->xy[1]*/), (char*)&solid_pattern, translucency, NULL);
 
 
                 ////////////////  if Ablok
@@ -4943,7 +4943,7 @@ static void rysuj_wypelnienie_(WIELOKAT *ad,int mode,int kolor, int W3D, BOOL wp
           {
               if (ad->translucent == 1)
               {
-                  translucency_ptr = ad->xy;
+                  translucency_ptr = (char*)ad->xy;
                   translucency_ptr += (ad->lp * sizeof(float));
                   memmove(&translucency, translucency_ptr, sizeof(unsigned char));
               }
@@ -5137,7 +5137,7 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
             rysuj_luk_((LUK*)ad,mode,kolor);
    break;
       case   Owwielokat :
-          w=(SOLIDARC*)ad;
+          w=(WIELOKAT*)ad;
           if ((w->empty_typ>0) &&  (w->empty_typ<6) && (w->lp==8) && (trace_block==TRUE) && (((char*)w+w->n+sizeof(NAGLOWEK)-1)<=trace_block_end))
           {
               for(int i=0; i<(int)w->lp && i<MaxNumPoints; i++)
@@ -5329,7 +5329,7 @@ void rysuj_obiekt_b_w_sa_(char *ad, int mode,int kolor, char *ad0)
             rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, begin_line, end_line);
             break;
         case   Owwielokat :
-            w=(SOLIDARC*)ad0;
+            w=(WIELOKAT*)ad0;
             if ((w->empty_typ>0) &&  (w->empty_typ<6) && (w->lp==8) && (trace_block==TRUE) && (((char*)w+w->n+sizeof(NAGLOWEK)-1)<=trace_block_end))
             {
                 for(int i=0; i<(int)w->lp && i<MaxNumPoints; i++)
@@ -5790,7 +5790,7 @@ void blokquadfix(char  *adp,char  *adk,int atrybut,int mode, int kolor)
 
         if (ad->widoczny && TRUE == Check_Attribute (ad->atrybut, atrybut)) {
             if (ad->obiekt==OdBLOK) {
-                bbuf=ad;
+                bbuf=(BLOK*)ad;
                 if (bbuf->dlugosc_opisu_obiektu>17)
                 {
                     ptrs_desc_bl = (T_Desc_Ex_Block*)(&bbuf->opis_obiektu[0]);
@@ -5945,15 +5945,15 @@ void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor)
         {
             if ((ad->blok==ElemBlok) && ((ad->obiekt==Owwielokat) || (ad->obiekt==Osolidarc)))
             {
-                b=FIRSTB(ad);
+                b=FIRSTB((char*)ad);
                 if ((b->kod_obiektu == B_PLINE) && (b->opis_obiektu[0]== PL_TRACE))
                 {
                     adk_b=(char*)b + sizeof(NAGLOWEK) + b->n;
-                    blokzap(b,adk_b,ANieOkreslony,mode,kolor);
+                    blokzap((char*)b,adk_b,ANieOkreslony,mode,kolor);
                     //adp=adk_b;
                     //obiekt_tok((char*)adp,adk,(char **) &ad,ONieOkreslony);
                     //goto shortcut;
-                    ad=adk_b;
+                    ad=(NAGLOWEK*)adk_b;
                 }
                 else
                 {
@@ -6328,7 +6328,7 @@ void out_blok2 (double x,double y,double k1,double k2,
                  else if (((NAGLOWEK *) buf)->obiekt == Olinia)
                  {
                      if (ad_buf_no<4) {
-                         ad_buf[ad_buf_no].ad=ad;
+                         ad_buf[ad_buf_no].ad=(char*)ad;
                          ad_buf[ad_buf_no].p[0].x=((LINIA*)buf)->x1;
                          ad_buf[ad_buf_no].p[0].y=((LINIA*)buf)->y1;
                          ad_buf[ad_buf_no].p[1].x=((LINIA*)buf)->x2;
@@ -6353,7 +6353,7 @@ void out_blok2 (double x,double y,double k1,double k2,
 
              if  ((((NAGLOWEK*)buf)->obiekt==OdBLOK) || (((NAGLOWEK*)buf)->obiekt==Owwielokat) || ((((NAGLOWEK*)buf)->obiekt==Osolidarc)))
              {
-                rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, ad);
+                rysuj_obiekt_b_w_sa_(buf,COPY_PUT,1, (char*)ad);
              }
              else  rysuj_obiekt_(buf,COPY_PUT,1);
 
@@ -6385,8 +6385,8 @@ void out_blok2 (double x,double y,double k1,double k2,
         {
             if (ad_buf_no>0)  //polyline
             {
-                ni1 = get_quad(adl, 0, NULL, &quad0, &convex0);
-                ni2 = get_quad(adl, ad_buf_no, ad_buf, &quad1, &convex1);
+                ni1 = get_quad((char*)adl, 0, NULL, &quad0, &convex0);
+                ni2 = get_quad((char*)adl, ad_buf_no, ad_buf, &quad1, &convex1);
             }
         }
         else //solid

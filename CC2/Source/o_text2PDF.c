@@ -388,11 +388,11 @@ int text2PDF (char *in_file_name, char *out_file_name)
 #endif
             fontdir=otffont;
         else fontdir=winfont;
-        if (!findfile_recursive(fontdir, ptrsz_file, &ttf_file_path)) return 0;
+        if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path)) return 0;
     }
 
-    find_any_font_face(ttf_file_path, &face_name);
-    if (strlen(face_name)==0) strcpy(&face_name, &file);  //TO CHANGE
+    find_any_font_face(ttf_file_path, face_name);
+    if (strlen(face_name)==0) strcpy(face_name, file);  //TO CHANGE
 
     font_name = HPDF_LoadTTFontFromFile(pdf_doc, ttf_file_path, HPDF_TRUE);
     if (pdf_temp_error > 0)

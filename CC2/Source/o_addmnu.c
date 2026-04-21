@@ -1696,7 +1696,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
         case 12:
             line_place((LINIA*)V, xmin, ymin, xmax, ymax);
 
-            parametry_lini(V, &PL);
+            parametry_lini((LINIA*)V, &PL);
             kos=sin(Pi*(PL.kat+90)/180);
             koc=cos(Pi*(PL.kat+90)/180);
 

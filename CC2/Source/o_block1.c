@@ -361,12 +361,12 @@ static char* trans_scale_circle (OKRAG *ptrs_circle,
   i_make_type = (ptrs_circle->obiekt == Ookrag) ? DE_Add_SGP : DE_Add_Ell_Fill_SGP ;
   if (NULL == (ptrs_block = object_to_block ((void *)ptrs_circle, c_desc)))
   {
-    return ptrs_circle ;
+    return (char*)ptrs_circle ;
   }
   b_ret = Make_Ellipse (df_cx, df_cy, df_xaxis, df_yaxis, df_angle,
 		   i_mode, &ptrs_block, (void*)&s_circle, i_make_type, O2BlockPline, type, 255, ptrs_circle->kolor, 1) ;
 
-  return ptrs_block ;
+  return (char*)ptrs_block ;
 }
 
 static char *trans_scale_ellipse(ELLIPSE *ptrs_ellipse,
@@ -402,16 +402,16 @@ c_desc = (ptrs_ellipse->obiekt == Oellipse) ? PL_ELLIPSE : PL_ELLIPSE_FILL ;
 i_make_type = (ptrs_ellipse->obiekt == Oellipse) ? DE_Add_SGP : DE_Add_Ell_Fill_SGP ;
 if (NULL == (ptrs_block = object_to_block ((void *)ptrs_ellipse, c_desc)))
 {
-return ptrs_ellipse ;
+return (char*)ptrs_ellipse ;
 }
 
 b_ret = Make_Ellipse (df_cx, df_cy, df_xaxis, df_yaxis, df_angle, i_mode, &ptrs_block, (void*)&s_ellipse, i_make_type, O2BlockPline, type, s_ellipse.translucency, ptrs_ellipse->kolor, 1) ;
 
 //STEP 2
 
-transformacja_blok(ptrs_block,(char*) (long_long)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n-1,df_basex,df_basey, df_sx, df_sy, Tskala,0);
+transformacja_blok((char*)ptrs_block,(char*) (long_long)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n-1,df_basex,df_basey, df_sx, df_sy, Tskala,0);
 
-return ptrs_block ;
+return (char*)ptrs_block ;
 }
 
 BOOL trans_scale_circle_shadow(OKRAG *ptrs_circle,
@@ -478,7 +478,7 @@ BOOL trans_scale_arcs (double df_basex,
     {
       if (nag->obiekt == Oluk)
       {
-        nag = trans_scale_arc ((LUK*)nag, df_basex, df_basey, df_sx, df_sy, enforce) ;
+        nag = (NAGLOWEK*)trans_scale_arc ((LUK*)nag, df_basex, df_basey, df_sx, df_sy, enforce) ;
         if (nag==NULL) return FALSE;
         ptrs_ea = (ELLIPTICALARC *)(nag) ;
         l_offp = (long_long)nag + sizeof(NAGLOWEK) + ptrs_ea->n - (long_long)dane;
@@ -487,7 +487,7 @@ BOOL trans_scale_arcs (double df_basex,
       else if (nag->obiekt == Oellipticalarc)
         {
             if (Check_if_Equal(fmod(((ELLIPTICALARC *)nag)->angle, Pi/2.0), 0.0)==FALSE) {
-                ptrs_bl = trans_scale_ellipticalarc((ELLIPTICALARC *) nag, df_basex, df_basey, df_sx, df_sy, enforce);
+                ptrs_bl = (BLOK*)trans_scale_ellipticalarc((ELLIPTICALARC *) nag, df_basex, df_basey, df_sx, df_sy, enforce);
                 if (ptrs_bl == NULL) return FALSE;
                 l_offp = (long_long) ptrs_bl + sizeof(NAGLOWEK) + ptrs_bl->n - (long_long) dane;
                 l__Off_Bl_End = (long_long) (ADK - dane);
@@ -495,7 +495,7 @@ BOOL trans_scale_arcs (double df_basex,
         }
       else if (nag->obiekt == Okolo || nag->obiekt == Ookrag)
       {
-        nag = trans_scale_circle ((OKRAG *)nag, df_basex, df_basey, df_sx, df_sy, 0, enforce) ;
+        nag = (NAGLOWEK*)trans_scale_circle ((OKRAG *)nag, df_basex, df_basey, df_sx, df_sy, 0, enforce) ;
         if (nag==NULL) return FALSE;
         ptrs_el = (ELLIPSE*)(nag) ;
         l_offp = (long_long)nag + sizeof(NAGLOWEK) + ptrs_el->n - (long_long)dane;
@@ -504,7 +504,7 @@ BOOL trans_scale_arcs (double df_basex,
       else if (nag->obiekt == Ofilledellipse || nag->obiekt == Oellipse)
       {
           if (Check_if_Equal(fmod(((ELLIPSE *)nag)->angle, Pi/2.0), 0.0)==FALSE) {
-              ptrs_bl = trans_scale_ellipse((ELLIPSE *) nag, df_basex, df_basey, df_sx, df_sy, 0, enforce);
+              ptrs_bl = (BLOK*)trans_scale_ellipse((ELLIPSE *) nag, df_basex, df_basey, df_sx, df_sy, 0, enforce);
               if (ptrs_bl==NULL) return FALSE;
               l_offp = (long_long)ptrs_bl + sizeof(NAGLOWEK) + ptrs_bl->n - (long_long)dane;
               l__Off_Bl_End = (long_long)(ADK - dane) ;

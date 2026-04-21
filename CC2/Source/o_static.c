@@ -14,6 +14,8 @@
 *
 */
 
+#define _POSIX_C_SOURCE 200809L
+
 #define __O_STATIC__
 #include <stdlib.h>
 #ifdef LINUX
@@ -14615,3 +14617,4 @@ void Cross_section_forces(void)
 
 #undef __O_STATIC__
 
+#undef _POSIX_C_SOURCE

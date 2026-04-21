@@ -320,7 +320,7 @@ static void trim_line (void *ad, double x0, double y0)
 
 		if (ptrs_s->npts < 5)
 		{
-			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
 			for (i = 0; i < Npts - 1; i++)
 			{
@@ -838,7 +838,7 @@ static void trim_arc (void *ad, double x0, double y0)
 #define Npts 90  //for more precission
 		if (ptrs_s->npts < 5)
 		{
-			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
 			for (i = 0; i < Npts - 1; i++)
 			{
@@ -1277,7 +1277,7 @@ static void trim_circle (void *ad, double x0, double y0)
 
 		if (ptrs_s->npts < 5)
 		{
-			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+			calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
 			for (i = 0; i < Npts - 1; i++)
 			{
@@ -1708,7 +1708,7 @@ static void trim_ellipse (void *ad, double x0, double y0)
 
                     if (ptrs_s->npts < 5)
                     {
-                        calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+                        calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
                         for (i = 0; i < Npts - 1; i++)
                         {
@@ -2181,7 +2181,7 @@ static void trim_ellipticalarc (void *ad, double x0, double y0)
 
                     if (ptrs_s->npts < 5)
                     {
-                        calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+                        calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
                         for (i = 0; i < Npts - 1; i++)
                         {
@@ -2769,7 +2769,7 @@ static void trim_line_ob (LINIA *ptrs_line)
 
 			if (ptrs_s->npts < 5)
 			{
-				calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, &out_x, &out_y);
+				calc_bspline(ptrs_s->lp, ptrs_s->npts, ptrs_s->xy, Npts, out_x, out_y);
 
 				for (i = 0; i < Npts - 1; i++)
 				{
@@ -3612,7 +3612,7 @@ static BOOL break_pline (void *ptr_pl,
   l_off1 = (char*)PTR__GTMP1 - dane;
   l_off2 = (char*)PTR__GTMP2 - dane;
 
-  ptr_parent = FIRSTB(PTR__GTMP3);
+  ptr_parent = (char*)FIRSTB(PTR__GTMP3);
   if (ptr_parent != NULL) l_off3 = dane + dane_size - (char*)ptr_parent;
 
   zmien_atrybut (ptrh_beg, ptrh_end, Anormalny, Abad) ;
@@ -3850,7 +3850,7 @@ int trim_arc_to_quad (LUK *ptrs_arc, QUAD *quad, LUK *arc_tmp, LUK *arc_tmp1)
             line_tmp_w.y1 = quad->xy[i + 1];
         }
 
-        l=IntersectionLl (&line_tmp_w, ptrs_arc, &xi, &yi, &tl, &aa);
+        l=IntersectionLl (&line_tmp_w, ptrs_arc, xi, yi, tl, aa);
 
         if (l>0) {dx+=xi[0]; dy+=yi[0]; dl++;}
         if (l>1) {dx+=xi[1]; dy+=yi[1]; dl++;}

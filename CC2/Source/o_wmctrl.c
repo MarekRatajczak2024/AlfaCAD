@@ -39,10 +39,14 @@ Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 *   See readme_alfacad.txt for copyright information.
 *
 */
+#ifdef LINUX
+#define _DEFAULT_SOURCE
+#endif
 #ifndef MACOS
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <string.h>
 #include <locale.h>
@@ -1895,4 +1899,6 @@ int send_AppleScript_Exit(pid_t pid)
 
 
 #endif
-
+#ifdef LINUX
+#undef _DEFAULT_SOURCE
+#endif

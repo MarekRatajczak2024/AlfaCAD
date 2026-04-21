@@ -43,6 +43,10 @@
 
 #include "dialog.h"
 
+#ifdef LINUX
+#define S_IREAD S_IRUSR
+#endif
+
 extern void reset_previewed(void);
 extern void setviewport(int left, int top, int right, int bottom, int clip);
 extern void utf8Upper(char* text);
@@ -375,95 +379,95 @@ static INPUTLINE edit_p []=
         {
 #define IL_WIDTH_PAPER 30
 	{ XpEditPage, YpCondensed + 2.79 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_width_paper, IL_WIDTH_PAPER,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_width_paper, IL_WIDTH_PAPER,digits,
    },
 #define IL_HEIGHT_PAPER 31
 	{ XpEditPage, YpCondensed + 3.41 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_height_paper, IL_HEIGHT_PAPER,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_height_paper, IL_HEIGHT_PAPER,digits,
    },
 #define IL_MARGIN 32
 	{XpEditPage, YpCondensed + 2.17 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_margin, IL_MARGIN,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_margin, IL_MARGIN,digits,
    },
 #define IL_LINE_THINEST_WIDTH 33
 /*5*/   { XpEditThick, YpLineWidth+0.5*DYLab+1, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thinest_width, IL_LINE_THINEST_WIDTH,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thinest_width, IL_LINE_THINEST_WIDTH,digits,
    },
 #define IL_LINE_THIN_WIDTH 34
 /*6*/   { XpEditThick, YpLineWidth+1.1*DYLab+1, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thin_width, IL_LINE_THIN_WIDTH,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thin_width, IL_LINE_THIN_WIDTH,digits,
    },
 #define IL_LINE_NORM_WIDTH 35 
 /*7*/   { XpEditThick, YpLineWidth+1.7*DYLab+1, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_norm_width, IL_LINE_NORM_WIDTH,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_norm_width, IL_LINE_NORM_WIDTH,digits,
    },
 #define IL_LINE_THICK_WIDTH 36
 /*8*/   { XpEditThick, YpLineWidth+2.31*DYLab+1, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thick_width, IL_LINE_THICK_WIDTH,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thick_width, IL_LINE_THICK_WIDTH,digits,
    },
 #define IL_LINE_THICKEST_WIDTH 37
 /*9*/   { XpEditThick, YpLineWidth+2.92*DYLab+1, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thickest_width, IL_LINE_THICKEST_WIDTH,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_line_thickest_width, IL_LINE_THICKEST_WIDTH,digits,
    },
 #define IL_SCALE 38
 /*10*/   { XpEditPage, YpCondensed+ 0.93 * DYLab -21, DXEdit , 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_scale, IL_SCALE,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_scale, IL_SCALE,digits,
    },
 #define IL_PAGE 39
 /*11*/   { XpEditPage, YpCondensed+ 1.55 * DYLab -21, DXEdit , 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_page, IL_PAGE,&numbers, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_page, IL_PAGE,numbers,
    },
 #define IL_COPIES (-1) //14
 #define IL_THIN_POINT_PCX (-1) //15
 
 #define IL_LINE_THICK_CORRECT_H 40 //16
    { XpCANCEL + 4 /*XpDensity + 15*/, YpLineWidth+0.5*DYLab+2, 45, 12, COLOR_NULL,COLOR_NULL,
-      COLOR_NULL,COLOR_NULL,COLOR_NULL, 6, 0, 1, sz_line_thick_correction_H, IL_LINE_THICK_CORRECT_H,&digits, 
+      COLOR_NULL,COLOR_NULL,COLOR_NULL, 6, 0, 1, sz_line_thick_correction_H, IL_LINE_THICK_CORRECT_H,digits,
    },
 #define IL_LINE_THICK_CORRECT_V 41 //17
    { XpCANCEL + 52 /*XpDensity + 100*/, YpLineWidth+0.5*DYLab+2, 45, 12, COLOR_NULL,COLOR_NULL,
-      COLOR_NULL,COLOR_NULL,COLOR_NULL, 6, 0, 1, sz_line_thick_correction_V, IL_LINE_THICK_CORRECT_V,&digits, 
+      COLOR_NULL,COLOR_NULL,COLOR_NULL, 6, 0, 1, sz_line_thick_correction_V, IL_LINE_THICK_CORRECT_V,digits,
    },
 
 #define IL_LEFT_MARGIN 42
 
 	{ XpEditMargin+4, YpCondensed + 2.79 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_left_margin, IL_LEFT_MARGIN,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_left_margin, IL_LEFT_MARGIN,digits,
    },
 
  #define IL_TOP_MARGIN 43
 
 	{ XpEditMargin+4, YpCondensed + 3.41 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_top_margin, IL_TOP_MARGIN,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_top_margin, IL_TOP_MARGIN,digits,
    },
 
    #define IL_RIGHT_MARGIN 44
 
 	{ XpEditMargin1+4, YpCondensed + 2.79 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_right_margin, IL_RIGHT_MARGIN,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_right_margin, IL_RIGHT_MARGIN,digits,
    },
 
  #define IL_BOTTOM_MARGIN 45
 
 	{ XpEditMargin1+4, YpCondensed + 3.41 * DYLab - 21, DXEdit, 12, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_bottom_margin, IL_BOTTOM_MARGIN,&digits, 
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 5,0,1, sz_bottom_margin, IL_BOTTOM_MARGIN,digits,
    },
 
 #define IL_RANGE_X1 46
 /*5*/   { XpRange, YpLineWidth+0.5*DYLab+1, DXEditR, 12, COLOR_NULL,COLOR_NULL,
-          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_x1, IL_RANGE_X1,&digits,
+          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_x1, IL_RANGE_X1,digits,
     },
 #define IL_RANGE_Y1 47
 /*6*/   { XpRange, YpLineWidth+1.1*DYLab+1, DXEditR, 12, COLOR_NULL,COLOR_NULL,
-          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_y1, IL_RANGE_Y1,&digits,
+          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_y1, IL_RANGE_Y1,digits,
     },
 #define IL_RANGE_X2 48
 /*7*/   { XpRange, YpLineWidth+1.7*DYLab+1, DXEditR, 12, COLOR_NULL,COLOR_NULL,
-          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_x2, IL_RANGE_X2,&digits,
+          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_x2, IL_RANGE_X2,digits,
     },
 #define IL_RANGE_Y2 49
 /*8*/   { XpRange, YpLineWidth+2.31*DYLab+1, DXEditR, 12, COLOR_NULL,COLOR_NULL,
-          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_y2, IL_RANGE_Y2,&digits,
+          COLOR_NULL,COLOR_NULL,COLOR_NULL, 7,0,0, sz_range_y2, IL_RANGE_Y2,digits,
     },
 };
 
@@ -1256,7 +1260,7 @@ get_config_param (T_Fstring key_name, T_Fstring ret_string)
       //strupr (&prn_config_param [i]);
 
       strcpy(prn_conf_par, prn_config_param [i]);
-      utf8Upper(&prn_conf_par);
+      utf8Upper(prn_conf_par);
 
       if (stricmp (key_name, prn_conf_par) == 0)
       {
@@ -2193,8 +2197,8 @@ static BOOL get_prn_dlg_control (void)
   }
 
   if (listbox[2].txt[listbox[2].foff + listbox[2].poz] != NULL)
-	  strncpy(&prn_ini_date.printer, listbox[2].txt[listbox[2].foff + listbox[2].poz], 32);
-  else strcpy(&prn_ini_date.printer, "");
+	  strncpy(prn_ini_date.printer, listbox[2].txt[listbox[2].foff + listbox[2].poz], 32);
+  else strcpy(prn_ini_date.printer, "");
 
   flags = fnsplit (prn_file, drive, dir, file, ext);
   if (flags & WILDCARDS)
@@ -2229,13 +2233,13 @@ static int proc_dlg_prn_ini_date( int n)
 			{
 				if (prn_ini_date.prn_type == PRN_PDF)
 				{
-					if (Load_File(&image_file_name, img_formats[6], TRUE) == FALSE)
+					if (Load_File(image_file_name, img_formats[6], TRUE) == FALSE)
 					{
 						ret = Dlg_Ret_Val_Cancel;
 						break;
 					}
 				}
-				else if (Load_File(&image_file_name, img_formats[prn_ini_date.image_format_i], TRUE) == FALSE)
+				else if (Load_File(image_file_name, img_formats[prn_ini_date.image_format_i], TRUE) == FALSE)
 				{
 					ret = Dlg_Ret_Val_Cancel;
 					break;
@@ -2277,10 +2281,10 @@ static int proc_dlg_prn_ini_date( int n)
               prn_ini_date.xk = (float) Xmax;               /* okno do plotowania*/
               prn_ini_date.yk = (float) Ymax;
           }
-          mysprintf(&sz_range_x1,prn_ini_date.xp);
-          mysprintf(&sz_range_y1,prn_ini_date.yp);
-          mysprintf(&sz_range_x2,prn_ini_date.xk);
-          mysprintf(&sz_range_y2,prn_ini_date.yk);
+          mysprintf(sz_range_x1,prn_ini_date.xp);
+          mysprintf(sz_range_y1,prn_ini_date.yp);
+          mysprintf(sz_range_x2,prn_ini_date.xk);
+          mysprintf(sz_range_y2,prn_ini_date.yk);
 
           edit_p[16].txt=sz_range_x1;
           edit_p[17].txt=sz_range_y1;
@@ -2764,10 +2768,10 @@ static int get_prn_ini_date (float prn_width_paper, float prn_height_paper)
 	prn_ini_date.prn_width_paper = prn_width_paper;
 	prn_ini_date.prn_height_paper = prn_height_paper;
 
-    mysprintf(&sz_range_x1,prn_ini_date.xp);
-    mysprintf(&sz_range_y1,prn_ini_date.yp);
-    mysprintf(&sz_range_x2,prn_ini_date.xk);
-    mysprintf(&sz_range_y2,prn_ini_date.yk);
+    mysprintf(sz_range_x1,prn_ini_date.xp);
+    mysprintf(sz_range_y1,prn_ini_date.yp);
+    mysprintf(sz_range_x2,prn_ini_date.xk);
+    mysprintf(sz_range_y2,prn_ini_date.yk);
 
   Get_Default_Color_Dlg (&color_dlg);
   init_printer_dlg_control ();

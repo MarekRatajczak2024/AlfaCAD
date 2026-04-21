@@ -352,7 +352,7 @@ void Wymiarowanie_polilinii1(char *adr0, int opcja)
    {
      for (i=0; i<new_texts; i++)
       {
-       if (dodaj_obiekt(dane, (void*)&Tn[i])==NULL) return;
+       if (dodaj_obiekt((BLOK*)dane, (void*)&Tn[i])==NULL) return;
        rysuj_obiekt((char*)&Tn[i],COPY_PUT,1);
       }
      //summ length
@@ -371,7 +371,7 @@ void Wymiarowanie_polilinii1(char *adr0, int opcja)
      Tn1.blok=1;
      Tn1.warstwa=Current_Layer;
      Tn1.ukryty=0;
-     if (dodaj_obiekt(dane, (void*)&Tn1)==NULL) return;
+     if (dodaj_obiekt((BLOK*)dane, (void*)&Tn1)==NULL) return;
      rysuj_obiekt((char*)&Tn1,COPY_PUT,1);
    }
   return;
@@ -404,7 +404,7 @@ static int rysuj_zbrojenie(void)
    LiniaG.typ=128;
    LukG.typ=128;
    sprintf(blok_type,"%s", zb_glowne);
-   PlineW1(&blok_type);
+   PlineW1(blok_type);
 
    LiniaG.typ = Ltype;
    LukG.typ = Ltype;

@@ -6358,7 +6358,7 @@ char * tinyfd_editBox(
 
     if (tfd_quoteDetected(aTitle)) return tinyfd_editBox("INVALID TITLE WITH QUOTES", aMessage, aDefaultInput, fontface, fontfile, fontsize, fontwidth, etype, params, single);
     //if (tfd_quoteDetected(aMessage)) return tinyfd_editBox(aTitle, "INVALID MESSAGE WITH QUOTES", aDefaultInput, fontface, fontfile, fontsize, fontwidth, etype, params);
-    if (tfd_quoteDetected(aDefaultInput)) return tinyfd_editBox(aTitle, aMessage, "INVALID DEFAULT_INPUT WITH QUOTES", fontface, fontfile, fontsize, fontwidth, etype, params, single);
+    if (tfd_quoteDetected((char*)aDefaultInput)) return tinyfd_editBox(aTitle, aMessage, (const int*)"INVALID DEFAULT_INPUT WITH QUOTES", fontface, fontfile, fontsize, fontwidth, etype, params, single);
 
     lTitleLen =  aTitle ? strlen(aTitle) : 0 ;
     lMessageLen =  aMessage ? strlen(aMessage) : 0 ;
@@ -6379,9 +6379,9 @@ char * tinyfd_editBox(
         }
         strcat(lDialogString, "\" ") ;
         strcat(lDialogString, "default answer \"") ;
-        if ( aDefaultInput && strlen(aDefaultInput) )
+        if ( aDefaultInput && strlen((char*)aDefaultInput) )
         {
-            strcat(lDialogString, aDefaultInput) ;
+            strcat(lDialogString, (char*)aDefaultInput) ;
         }
         strcat(lDialogString, "\" ") ;
         if ( ! aDefaultInput )
@@ -6557,10 +6557,10 @@ char * tinyfd_editBox(
             strcat(lDialogString, aMessage);
             strcat(lDialogString, "\"");
         }
-        if (aDefaultInput && strlen(aDefaultInput))
+        if (aDefaultInput && strlen((char*)aDefaultInput))
         {
             strcat(lDialogString, " --entry-text=\"");
-            strcat(lDialogString, aDefaultInput);
+            strcat(lDialogString, (char*)aDefaultInput);
             strcat(lDialogString, "\"");
         }
         else
@@ -6595,9 +6595,9 @@ char * tinyfd_editBox(
             strcat(lDialogString, "\" " ) ;
         }
         strcat(lDialogString, " -entrytext \"" ) ;
-        if ( aDefaultInput && strlen(aDefaultInput) )
+        if ( aDefaultInput && strlen((char*)aDefaultInput) )
         {
-            strcat( lDialogString , aDefaultInput ) ;
+            strcat( lDialogString , (char*)aDefaultInput ) ;
         }
         strcat(lDialogString, "\"" ) ;
         strcat( lDialogString , ");echo $?$szAnswer");
@@ -6625,10 +6625,10 @@ char * tinyfd_editBox(
         }
         if ( aDefaultInput )
         {
-            if ( strlen(aDefaultInput) )
+            if ( strlen((char*)aDefaultInput) )
             {
                 strcat(lDialogString, "initialvalue='") ;
-                strcat(lDialogString, aDefaultInput) ;
+                strcat(lDialogString, (char*)aDefaultInput) ;
                 strcat(lDialogString, "',") ;
             }
         }
@@ -6676,10 +6676,10 @@ frontmost of process \\\"Python\\\" to true' ''');");
         }
         if ( aDefaultInput )
         {
-            if ( strlen(aDefaultInput) )
+            if ( strlen((char*)aDefaultInput) )
             {
                 strcat(lDialogString, "initialvalue='") ;
-                strcat(lDialogString, aDefaultInput) ;
+                strcat(lDialogString, (char*)aDefaultInput) ;
                 strcat(lDialogString, "',") ;
             }
         }
@@ -6771,10 +6771,10 @@ frontmost of process \\\"Python\\\" to true' ''');");
         }
         //strcat(lDialogString,"\" --right --no-wrap --rc-file=bluebox.rc --buttons-style=icon 80 128 2>/tmp/tinyfdt.txt") ;
         strcat(lDialogString,"\" 60 80 2>/tmp/tinyfdt.txt") ;
-        if ( aDefaultInput && strlen(aDefaultInput) )
+        if ( aDefaultInput && strlen((char*)aDefaultInput) )
         {
             strcat(lDialogString, "\"") ;
-            strcat(lDialogString, aDefaultInput) ;
+            strcat(lDialogString, (char*)aDefaultInput) ;
             strcat(lDialogString, "\" ") ;
         }
         if ( lWasGraphicDialog )
@@ -7690,9 +7690,9 @@ char * tinyfd_saveFileDialog(
     strcpy(aFilterPatterns[aNumOfFilterPatterns],ptr0);
     aNumOfFilterPatterns++;
 
-		if (tfd_quoteDetected(aTitle)) return tinyfd_saveFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
-		if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_saveFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
-		if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_saveFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES");
+		if (tfd_quoteDetected(aTitle)) return tinyfd_saveFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription);
+		if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_saveFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription);
+		if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_saveFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES");
 		for (i = 0; i < aNumOfFilterPatterns; i++)
 		{
 			if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_saveFileDialog("INVALID FILTER_PATTERN WITH QUOTES", aDefaultPathAndFile, 0, NULL, NULL);
@@ -8174,9 +8174,9 @@ char * tinyfd_openFileDialog(
     strcpy(aFilterPatterns[aNumOfFilterPatterns],ptr0);
     aNumOfFilterPatterns++;
 
-		if (tfd_quoteDetected(aTitle)) return tinyfd_openFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
-		if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_openFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
-		if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES", aAllowMultipleSelects);
+		if (tfd_quoteDetected(aTitle)) return tinyfd_openFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
+		if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_openFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
+		if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES", aAllowMultipleSelects);
 		for (i = 0; i < aNumOfFilterPatterns; i++)
 		{
 			if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_openFileDialog("INVALID FILTER_PATTERN WITH QUOTES", aDefaultPathAndFile, 0, NULL, NULL, aAllowMultipleSelects);
@@ -8770,9 +8770,9 @@ char * tinyfd_FileNameDialog(   //TO CHECK
     strcpy(aFilterPatterns[aNumOfFilterPatterns],ptr0);
     aNumOfFilterPatterns++;
 
-    if (tfd_quoteDetected(aTitle)) return tinyfd_openFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
-    if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_openFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
-    if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES", aAllowMultipleSelects);
+    if (tfd_quoteDetected(aTitle)) return tinyfd_openFileDialog("INVALID TITLE WITH QUOTES", aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
+    if (tfd_quoteDetected(aDefaultPathAndFile)) return tinyfd_openFileDialog(aTitle, "INVALID DEFAULT_PATH WITH QUOTES", aNumOfFilterPatterns, (char*)aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
+    if (tfd_quoteDetected(aSingleFilterDescription)) return tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, (char*)aFilterPatterns, "INVALID FILTER_DESCRIPTION WITH QUOTES", aAllowMultipleSelects);
     for (i = 0; i < aNumOfFilterPatterns; i++)
     {
         if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_openFileDialog("INVALID FILTER_PATTERN WITH QUOTES", aDefaultPathAndFile, 0, NULL, NULL, aAllowMultipleSelects);

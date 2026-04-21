@@ -203,7 +203,7 @@ static POLE pmTrace;
 
 int mTrace_min, mTrace_max;
 
-TMENU mTrace = {7,0,0,28,52,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr, 0, 0,0,&pmTrace, NULL, NULL} ;
+TMENU mTrace = {7,0,0,28,52,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr, 0, 0,0,(POLE (*)[])&pmTrace, NULL, NULL} ;
 
 static void  cur_off (double x, double y) ;
 static void  cur_on (double x, double y) ;
@@ -642,7 +642,7 @@ static BOOL add_trace_line_end (void )
 
     if (solid_temp.pattern == 1)
     {
-        scale_ptr = solid_temp.xy;
+        scale_ptr = (char*)solid_temp.xy;
         scale_ptr += (solid_temp.lp * sizeof(float));
         dx_ptr = scale_ptr;
         dx_ptr += sizeof(short int);
@@ -667,7 +667,7 @@ static BOOL add_trace_line_end (void )
             solid_temp.n = 8 + solid_temp.lp * sizeof(float);
         else
         {
-            translucency_ptr = solid_temp.xy;
+            translucency_ptr = (char*)solid_temp.xy;
             translucency_ptr += (solid_temp.lp * sizeof(float));
             memmove(translucency_ptr, &TraceTranslucency, sizeof(unsigned char));
 
@@ -691,7 +691,7 @@ static BOOL add_trace_line_end (void )
                 adp_b=(char*)b + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
                 reset_trace_block();
                 blokzap(adp_b,adk_b,ANieOkreslony,COPY_PUT,0);
-                blokzap(b, adk_b, ANieOkreslony, COPY_PUT, 1);
+                blokzap((char*)b, adk_b, ANieOkreslony, COPY_PUT, 1);
             }
         }
     }
@@ -1025,7 +1025,7 @@ if(b_strwyj)
 
     if (solid_temp.pattern == 1)
     {
-        scale_ptr = solid_temp.xy;
+        scale_ptr = (char*)solid_temp.xy;
         scale_ptr += (solid_temp.lp * sizeof(float));
         dx_ptr = scale_ptr;
         dx_ptr += sizeof(short int);
@@ -1050,7 +1050,7 @@ if(b_strwyj)
             solid_temp.n = 8 + solid_temp.lp * sizeof(float);
         else
         {
-            translucency_ptr = solid_temp.xy;
+            translucency_ptr = (char*)solid_temp.xy;
             translucency_ptr += (solid_temp.lp * sizeof(float));
             memmove(translucency_ptr, &TraceTranslucency, sizeof(unsigned char));
 
@@ -1205,7 +1205,7 @@ static BOOL add_trace_line_close(void)
 
             if (solid_temp.pattern == 1)
             {
-                scale_ptr = solid_temp.xy;
+                scale_ptr = (char*)solid_temp.xy;
                 scale_ptr += (solid_temp.lp * sizeof(float));
                 dx_ptr = scale_ptr;
                 dx_ptr += sizeof(short int);
@@ -1230,7 +1230,7 @@ static BOOL add_trace_line_close(void)
                     solid_temp.n = 8 + solid_temp.lp * sizeof(float);
                 else
                 {
-                    translucency_ptr = solid_temp.xy;
+                    translucency_ptr = (char*)solid_temp.xy;
                     translucency_ptr += (solid_temp.lp * sizeof(float));
                     memmove(translucency_ptr, &TraceTranslucency, sizeof(unsigned char));
 
@@ -1276,7 +1276,7 @@ static BOOL add_trace_line_close(void)
 
         if (solid_temp.pattern == 1)
         {
-            scale_ptr = solid_temp.xy;
+            scale_ptr = (char*)solid_temp.xy;
             scale_ptr += (solid_temp.lp * sizeof(float));
             dx_ptr = scale_ptr;
             dx_ptr += sizeof(short int);
@@ -1301,7 +1301,7 @@ static BOOL add_trace_line_close(void)
                 solid_temp.n = 8 + solid_temp.lp * sizeof(float);
             else
             {
-                translucency_ptr = solid_temp.xy;
+                translucency_ptr = (char*)solid_temp.xy;
                 translucency_ptr += (solid_temp.lp * sizeof(float));
                 memmove(translucency_ptr, &TraceTranslucency, sizeof(unsigned char));
 
@@ -3636,7 +3636,7 @@ mTrace_min=Trace_min;
 mTrace_max=Trace_max;
 
 d_line=0;
-mTrace.pola=pmFTrace;
+mTrace.pola=(POLE (*)[])pmFTrace;
 mTrace.max=mTrace_min;
 Trace_Dline_Tline();
 }
@@ -3648,7 +3648,7 @@ mTrace_min=Dline_min;
 mTrace_max=Dline_max;
 
 d_line=1;
-mTrace.pola=pmMLine;
+mTrace.pola=(POLE (*)[])pmMLine;
 mTrace.max=mTrace_min;  //TEMPORARY, goal is 7 to include arcs
 Trace_Dline_Tline();
 }
@@ -3660,7 +3660,7 @@ mTrace_min=Tline_min;
 mTrace_max=Tline_max;
 
 d_line=2;
-mTrace.pola=pmMLine;
+mTrace.pola=(POLE (*)[])pmMLine;
 mTrace.max=mTrace_min;  //TEMPORARY, goal is 7 to includ arcs
 Trace_Dline_Tline();
 }

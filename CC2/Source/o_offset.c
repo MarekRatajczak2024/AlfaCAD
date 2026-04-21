@@ -611,7 +611,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
     else if ((((NAGLOWEK*)ADP)->obiekt == OdBLOK) && (((BLOK*)ADP)->kod_obiektu == B_PLINE))
     {
         ptrs_b = (BLOK*)ADP;
-        nags = ADP + sizeof(NAGLOWEK) + B3 + ptrs_b->dlugosc_opisu_obiektu;
+        nags = (NAGLOWEK*)(ADP + sizeof(NAGLOWEK) + B3 + ptrs_b->dlugosc_opisu_obiektu);
         if (nags->obiekt == Ospline)
         {
             //polilyne of splines;
@@ -1014,7 +1014,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
                     }
                 }
 
-                get_polyline_offset_data(vertex_n, vertex, &capacity, &sizes, &closes, closed, distance, offset_smooth);
+                get_polyline_offset_data(vertex_n, vertex, &capacity, &sizes[0], closes, closed, distance, offset_smooth);
 
                 if (shadows_no == 0) blokzap(ADP, ADK, Ablok, COPY_PUT, 1);
                 zmien_atrybut(ADP, ADK, Ablok, Anormalny);
@@ -1071,7 +1071,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
                                 L.x2 = vertex[i + 1].x;
                                 L.y2 = vertex[i + 1].y;
 
-                                if (NULL == dodaj_obiekt(dane, &L))
+                                if (NULL == dodaj_obiekt((BLOK*)dane, &L))
                                 {
                                     free(vertex);
                                     if (shadows_no > 0) delete_spline_shadows(FALSE);
@@ -1086,11 +1086,11 @@ static BOOL copy_offset_object(double df_x, double df_y)
 
                                 if (l.r > 0.00001)
                                 {
-                                    if (NULL == dodaj_obiekt(dane, &l))
+                                    if (NULL == dodaj_obiekt((BLOK*)dane, &l))
                                     {
                                         free(vertex);
 
-                                        ptrs_off_ob = dane;
+                                        ptrs_off_ob = (NAGLOWEK*)dane;
                                         ADP = (char*)ptrs_off_ob;
                                         ADK = ADP + ptrs_off_ob->n - 1;
                                         zmien_atrybut(ADP, ADK, Anormalny, Ablok);
@@ -1113,10 +1113,10 @@ static BOOL copy_offset_object(double df_x, double df_y)
                                 L.x2 = vertex[m].x;
                                 L.y2 = vertex[m].y;
 
-                                if (NULL == dodaj_obiekt(dane, &L))
+                                if (NULL == dodaj_obiekt((BLOK*)dane, &L))
                                 {
                                     free(vertex);
-                                    ptrs_off_ob = dane;
+                                    ptrs_off_ob = (NAGLOWEK*)dane;
                                     ADP = (char*)ptrs_off_ob;
                                     ADK = ADP + ptrs_off_ob->n - 1;
                                     zmien_atrybut(ADP, ADK, Anormalny, Ablok);
@@ -1133,10 +1133,10 @@ static BOOL copy_offset_object(double df_x, double df_y)
 
                                 if (l.r > 0.00001)
                                 {
-                                    if (NULL == dodaj_obiekt(dane, &l))
+                                    if (NULL == dodaj_obiekt((BLOK*)dane, &l))
                                     {
                                         free(vertex);
-                                        ptrs_off_ob = dane;
+                                        ptrs_off_ob = (NAGLOWEK*)dane;
                                         ADP = (char*)ptrs_off_ob;
                                         ADK = ADP + ptrs_off_ob->n - 1;
                                         zmien_atrybut(ADP, ADK, Anormalny, Ablok);
@@ -1155,7 +1155,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
                 }
 
                 free(vertex);
-                ptrs_off_ob = dane;
+                ptrs_off_ob = (NAGLOWEK*)dane;
                 ADP = (char*)ptrs_off_ob;
                 ADK = ADP + ptrs_off_ob->n - 1;
                 if (shadows_no > 0) delete_spline_shadows(FALSE);
@@ -1167,7 +1167,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
             }
             else if (vertex_n > 0)
             {
-                if (NULL == (ptrs_off_ob = (NAGLOWEK*)Copy_Object(last_ptrs)))
+                if (NULL == (ptrs_off_ob = (NAGLOWEK*)Copy_Object((char*)last_ptrs)))
                 {
                     CUR_ON(X, Y);
                     return TRUE; 	/*!!!!!!*/

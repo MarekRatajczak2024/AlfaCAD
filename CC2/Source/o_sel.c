@@ -117,7 +117,7 @@ int tekst_w_prostokacie(TEXT  *ad)
   if (addl==0)
    {
      memmove(&ptrs_text_,ad, sizeof(NAGLOWEK) + ad->n);
-     strcat(&ptrs_text_.text," ");
+     strcat(ptrs_text_.text," ");
      ptrs_text_.dl+=1;
      ptrs_text_.n+=1;
      addl = Get_TextLen (&ptrs_text_, NULL) ;
@@ -182,7 +182,7 @@ int spline_w_prostokacie(SPLINE *ad)
 
 	if (ad->npts < 5)
 	{
-		calc_bspline(ad->lp, ad->npts, ad->xy, Npts, &out_x, &out_y);
+		calc_bspline(ad->lp, ad->npts, ad->xy, Npts, out_x, out_y);
 		for (i = 0; i < Npts; i++)
 		{
 			l = punkt_w_prostokacie(out_x[i], out_y[i]);
@@ -1581,7 +1581,7 @@ void wskaz_variable(void)
            && ad->obiekt==Otekst
            && (typ=sprawdz_obiekt(ad,typL,1)) !=0 )
       { 
-       adt=ad;
+       adt=(TEXT*)ad;
        if ((adt->typ==n_typ_zmienna) || (adt->typ==n_typ_komentarz) || (adt->typ==n_typ_port) || (adt->typ==n_typ_typ)
           || (adt->typ==n_typ_plik) || (adt->typ==n_etykieta_wew)  || (adt->obiektt2==O2BlockDim))
        {
@@ -1719,7 +1719,7 @@ void wskaz(int info)
 
   if (solid_in_progress_vertices() > 0)
     {
-        ad=solid_in_progress_ad();
+        ad=(NAGLOWEK*)solid_in_progress_ad();
         if ((typ = sprawdz_obiekt (ad, typL, info1)) != 0
         && TRUE == INITIAL_SEL_TEST (ad))
         {
@@ -1730,7 +1730,7 @@ void wskaz(int info)
     }
 
 
-  obiekt_tok((char*)dane,adh,(char*)&ad,ONieOkreslony);
+  obiekt_tok((char*)dane,adh, (char**)&ad,ONieOkreslony);
   while (ad!=NULL)
   {
 

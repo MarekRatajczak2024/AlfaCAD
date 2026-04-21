@@ -1689,8 +1689,7 @@ static void redcr(char typ,void (*REDROWd)(void))
 
 //blok i Block_Proc poprawiac rownolegle*/
 
-void blok(int (*DZI)(void *), int (*ODZI)(void *),
-		 void (*REDROWd)(void),const void (*COMND[])(void))
+void blok(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void))
 {
   void *ad;
   EVENT *ev;
@@ -1731,7 +1730,7 @@ void blok(int (*DZI)(void *), int (*ODZI)(void *),
 }
 
 void blok_items(int items, int (*DZI)(void *), int (*ODZI)(void *),
-          void (*REDROWd)(void),const void (*COMND[])(void))
+          void (*REDROWd)(void),const int (*COMND[])(void))
 {
     void *ad;
     EVENT *ev;
@@ -1816,7 +1815,7 @@ int blok_single(int (*DZI)(void *), int (*ODZI)(void *),
 }
 
 
-int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void))
+int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),const int (*COMND[])(void))
 {
   void *ad;
   EVENT *ev;
@@ -1852,7 +1851,7 @@ int blok_FIRSTB(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),v
 
 
 
-int blok_Ctrl_R(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void),void (*COMND[])(void))
+int blok_Ctrl_R(int (*DZI)(void *), int (*ODZI)(void *), void (*REDROWd)(void), const int (*COMND[])(void))  //const int (*COMND[])(void)
 {
   void *ad;
   

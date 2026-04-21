@@ -503,7 +503,7 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
   {
     mList_Blok.maxw = 0 ;
   }
-  mList_Blok.pola = pmList_Blok ;
+  mList_Blok.pola = (POLE(*)[])pmList_Blok ;
   return k ;
 }
 
@@ -675,13 +675,13 @@ void Insert_Block (INSERT *insert, int to_block, BOOL block)
   
   ADP=ADK=NULL;
 
-  ptrs__sel_blok = find_block_name(insert->block_name, 1);
+  ptrs__sel_blok = (BLOK*)find_block_name(insert->block_name, 1);
 
  if (ptrs__sel_blok != NULL)
   {
 
-   if (to_block==0) ptrs__sel_blok = copy_this_block (ptrs__sel_blok) ;
-     else ptrs__sel_blok = copy_this_block_b (ptrs__sel_blok) ;
+   if (to_block==0) ptrs__sel_blok = copy_this_block ((char*)ptrs__sel_blok) ;
+     else ptrs__sel_blok = copy_this_block_b ((char*)ptrs__sel_blok) ;
 
     if (FALSE == Get_List_Block (&X0, &Y0, &ADP, &ADK, &blok_name [7], MaxLen - 10))
      {

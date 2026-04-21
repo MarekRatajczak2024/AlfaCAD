@@ -455,7 +455,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, 0, 0, xx1, xx2, y, j, kos,koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
             }
           }
@@ -469,7 +469,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
               else if (j>0)
                  {
                    get_xxyy(x0, y0, 0, 0,xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
            }
         }
@@ -487,7 +487,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                    else if (j>0)
                     {
                       get_xxyy(x0, y0, 0, 0,xx1, xx2, y, j, kos, koc);
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla0_map,nr);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla0_map,nr);
                     }
                 }
               }
@@ -501,7 +501,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                     else if (j>0)
                      {
                       get_xxyy(x0, y0, 0, 0,xx1, xx2, y, j, kos, koc);
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,nr);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,nr);
                      }
                 }
            }
@@ -518,7 +518,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, 0, 0,xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
            }
            else                     //kolor 1
@@ -531,7 +531,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, 0, 0,xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,nr);
                  }
            }
          }
@@ -609,7 +609,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y, j, kos, koc);				             			  				   
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
             }
           }
@@ -624,7 +624,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                  {
                    get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y, j, kos, koc);
 				  
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
            }
         }
@@ -643,7 +643,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                     {
                       get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y, j, kos, koc);
 					 
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla0_map,nr);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla0_map,nr);
                     }
                 }
               }
@@ -658,7 +658,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                      {
                       get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y - y_0, j, kos, koc);
 					 
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,nr);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,nr);
                      }
                 }
            }
@@ -676,7 +676,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                  {
                    get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y - y_0, j, kos, koc);
 				   				  				   
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,nr);
                  }
            }
            else                     //kolor 1
@@ -690,7 +690,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                  {
                    get_xxyy(x0, y0, x_0, y_0, xx1, xx2, y - y_0, j, kos, koc);
 				                   			   
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,nr);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,nr);
                  }
            }
          }
@@ -763,7 +763,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, 0, 0, xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,0);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,0);
                  }
             }
           }
@@ -777,7 +777,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
               else if (j>0)
                  {
                    get_xxyy(x0, y0, 0,0, xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,0);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,0);
                  }
            }
         }
@@ -795,7 +795,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                    else if (j>0)
                     {
                       get_xxyy(x0, y0, 0,0,xx1, xx2, y, j, kos, koc);
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla0_map,0);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla0_map,0);
                     }
                 }
               }
@@ -809,7 +809,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                     else if (j>0)
                      {
                       get_xxyy(x0, y0,0,0, xx1, xx2, y, j, kos, koc);
-                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,0);
+                      GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,0);
                      }
                 }
            }
@@ -826,7 +826,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0,0,0, xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_punktu_map,0);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_punktu_map,0);
                  }
            }
            else                     //kolor 1
@@ -839,7 +839,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
                 else if (j>0)
                  {
                    get_xxyy(x0, y0, 0,0,xx1, xx2, y, j, kos, koc);
-                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_tla_map,0);
+                   GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_tla_map,0);
                  }
            }
          }
@@ -914,7 +914,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
 		
 			}
          get_xxyy(x0, y0, 0,0,x, x+i, y, j, kos, koc);
-         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_map,nr);
+         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_map,nr);
        }
   }
 
@@ -941,7 +941,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
 		nr = 0;
 
          get_xxyy(x0, y0, 0,0,x, x+i, y, j, kos, koc);
-         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_map,nr);
+         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_map,nr);
        }
   }
 
@@ -968,7 +968,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
 
          get_xxyy(x0, y0, x_0, y_0, x, x+i, y, j, kos, koc);
 
-         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_map,nr);
+         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_map,nr);
        }
   }
 
@@ -1030,7 +1030,7 @@ void  get_xxyy1(int x0, int y0, int x_0, int y_0, int xx1_, int xx2_, int y, int
 		
 			}
          get_xxyy(x0, y0, x_0, y_0, x, x+i, y, j, kos, koc);
-         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,xxyy,kolor_map,nr);
+         GrFilledPolygon(4,__minx,__miny,__maxx,__maxy,(int*)xxyy,kolor_map,nr);
        }
   }
 
@@ -1714,11 +1714,11 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 	/* we really need a palette */
 	if (!pal) {
 		want_palette = FALSE;
-		pal = tmppal;
+		pal = &tmppal;
 	}
 
 	pcx = buffer;
-	pcx_header = pcx;
+	pcx_header = (PCXheader*)pcx;
 
 	bit_per_pixel = pcx_header->bits_per_pixel;
 
@@ -1834,7 +1834,7 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 				tmppal[c].b = (ch >> 2);
 			    pcx++;
 			}
-			pal = tmppal;
+			pal = &tmppal;
 			pcx += (256 * 3);
 		}
 	}
@@ -1850,12 +1850,12 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 		if ((bpp != 8) && (!want_palette))
 			pal = NULL;
 
-		b = _fixup_loaded_bitmap(b, pal, dest_depth);
+		b = _fixup_loaded_bitmap(b, *pal, dest_depth);
 	}
 
 	/* construct a fake palette if 8-bit mode is not involved */
 	if ((bpp != 8) && (dest_depth != 8) && want_palette)
-		generate_332_palette(pal);
+		generate_332_palette(*pal);
 
 	return b;
 }
@@ -1895,7 +1895,7 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 
 	aspect1 = fabs(1 - sk_x);
 
-	head = pcx->pcx;
+	head = (PCXheader*)pcx->pcx;
 	width = (head->xmax - head->xmin);
 	height = (head->ymax - head->ymin);
 	png_data = pcx->pcx + sizeof(PCXheader);
@@ -1905,7 +1905,7 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 
 	if (kod_obiektu == 2)
 	{
-		png1 = load_memory_png(png_data, png_mem, &pal);
+		png1 = load_memory_png(png_data, png_mem, pal);
 	}
 	else if (kod_obiektu == 1)
 	{
@@ -1913,7 +1913,7 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 	}
     else if (kod_obiektu == 3)
     {
-        png1 = load_memory_jpg(png_data, png_mem, &pal);
+        png1 = load_memory_jpg(png_data, png_mem, pal);
     }
 
 	if (png1 == NULL) return 1;
@@ -2582,14 +2582,14 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 
 	aspect1 = fabs(1 - sk_x);
 
-	head = pcx->pcx;
+	head = (PCXheader*)pcx->pcx;
 	width = (head->xmax - head->xmin);
 	height = (head->ymax - head->ymin);
 	png_data = pcx->pcx + sizeof(PCXheader);
 	png_mem = width * height * 4 + 100;  //4 BYTES per pixel , 100 is reserve
-	if (kod_obiektu==2) png1 = load_memory_png(png_data, png_mem, &pal);
+	if (kod_obiektu==2) png1 = load_memory_png(png_data, png_mem, pal);
 	else if (kod_obiektu == 1) png1 = load_memory_pcx(pcx->pcx, &pal);
-    else if (kod_obiektu == 3) png1 = load_memory_jpg(png_data, png_mem, &pal);
+    else if (kod_obiektu == 3) png1 = load_memory_jpg(png_data, png_mem, pal);
 
     if (pcx->v_flip == 1)
     {

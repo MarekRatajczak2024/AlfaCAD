@@ -172,7 +172,7 @@ void Animate_dynamics(void)
     {
        if ((ptrs_spline->multiple==1) && (Layers[ptrs_spline->warstwa].on)) //to animate and layer is visible
        {
-           ptrs_block=FIRSTB(ptrs_spline);
+           ptrs_block=FIRSTB((char*)ptrs_spline);
            if (ptrs_block != NULL)
            {
                if ((ptrs_block->kod_obiektu == B_EXPORT) && (ptrs_block->dlugosc_opisu_obiektu > 1) && (ptrs_block->flag & 1))

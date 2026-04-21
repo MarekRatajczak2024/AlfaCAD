@@ -2687,7 +2687,7 @@ static POLE pmSolidHatchPatternAngle[] = {
 };
 static TMENU mSolidHatchPatternAngle = { 4,0,0,4,79,6,ICONS,CMNU,CMBR,CMTX,0, 13 ,0,0,0,(POLE(*)[]) & pmSolidHatchPatternAngle,NULL,NULL };
 
-PTMENU m__list_hatch = { 0, 0, 0, PATERN_NAME_MAXLEN - 1,66, 6,TADD | FIXED , CMNU,CMBR,CMTX,0,   ID_END,   0, 0,0,(POLE(*)[]) & pm__list_hatch_predef, NULL,NULL };
+PTMENU m__list_hatch = { 0, 0, 0, PATERN_NAME_MAXLEN - 1,66, 6,TADD | FIXED , CMNU,CMBR,CMTX,0,   ID_END,   0, 0,0,(PPOLE(*)[]) & pm__list_hatch_predef, NULL,NULL };
 
 static POLE pmSolidHatchPattern[] = {
 		{u8"Імідж фолдєр\0",L'І',597,NULL},
@@ -2708,7 +2708,7 @@ POLE pmSelect_Ins[] = {
 TMENU mSelect_Ins = { 2, 0, 0, 18, 17, 14, ICONS, CMNU, CMBR, CMTX, 0, ID_INSULATION, 0, 0,0,(POLE(*)[]) &pmSelect_Ins, NULL, NULL };
 
 POLE pmHatch[] = {
-	 {u8"Візерунок\0//////////\0",L'В',434,&m__list_hatch},
+	 {u8"Візерунок\0//////////\0",L'В',434,(TMENU*)&m__list_hatch},
 	 {u8"Фолдєр з візерунками\0\0",L'Ф',597,NULL},
 	 {u8"кут Повороту\00\0", L'П', 435,&mKatH},
 	 {u8"Масштаб\01\0", L'М', 436,NULL},
@@ -3314,7 +3314,7 @@ TMENU mGruboscLiniiZ = { 5,0,0,26,52,12,0,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) 
 TMENU mKolorACF = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,31,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorACZ = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,48,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorSTATIC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,0,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
-PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(POLE(*)[]) & pmCzcionka,NULL,NULL};
+PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(PPOLE(*)[]) & pmCzcionka,NULL,NULL};
 
 /*
 static POLE pmFormat_r[21] = {
@@ -3498,7 +3498,7 @@ static POLE pmSektory_Arkusza[15] = {
 	   {u8"֎Колір рамки\0білий\0",     L'К',495,&mKolorACF},
 	   {u8"֎кОлір зони\0білий\0",     L'О',496,&mKolorACZ},
 	   {u8"Стиль\0Верх\0",L'С',497,&mSektory_Styl},
-	   {u8"шриФт\0\0", L'Ф', 183,&mCzcionkaZ} };
+	   {u8"шриФт\0\0", L'Ф', 183,(TMENU*)&mCzcionkaZ} };
 
 static POLE pmPrecision[] = {
         {u8"точність Сили\0\0",         L'С',727,NULL},
@@ -3853,7 +3853,7 @@ static POLE pmTekstm[] = {
 	{u8"Міжрядковий інтервал\01.0\0", L'М', 410,&mLineSpacing},
 	{u8"Автоінтервал\0Н\0", L'А', 91,&mAutoInterwal},
 	{u8"Інтервал\01\0", L'І', 234,NULL},
-	{u8"Шрифт\0\0", L'Ш', 183,&mCzcionka},
+	{u8"Шрифт\0\0", L'Ш', 183,(TMENU*)&mCzcionka},
 };
 
 static char t_t[16][32] = {
@@ -4039,7 +4039,7 @@ static POLE pmZmienne[] = {
 	  {u8"Фактор ширини\0", L'Ф',180,NULL},
 	  {u8"текст Курсивом\0", L'К',181, &mItalics},
 	  {u8"Жирний текст\0", L'Ж',182, &mBold},
-	  {u8"Шрифт\0", L'Ш',183, &mCzcionkaW},
+	  {u8"Шрифт\0", L'Ш',183, (TMENU*)&mCzcionkaW},
       {u8"Числовий формат\0", L'Ч',697, &mLFormat},
 	  {u8"тОчність\0", L'О',184,NULL},
 	  {u8"тЕрмінатори\0", L'Е',185,&mStrzalka},

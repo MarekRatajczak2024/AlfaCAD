@@ -6111,6 +6111,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         int ret;
                         char row_file[MaxTextLen]="";
                         char row_file_name[MaxTextLen]="";
+                        char *row_file_p;
                         char row_weekday[6]="";
                         int row_day;
                         char row_month[6]="";
@@ -6148,12 +6149,17 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                              &row_month, &row_year, &row_time, &row_zone, &row_size, &row_type);
 
                                 if ((strcmp(row_file, "filelist.txt") == 0) || (ret < 9)) continue;
+
+                                if ((row_file[strlen(row_file)-1]) == '/') continue;
                                 //checking if file exists
 
-
                                 row_file_name[0] = '\0';
-                                const size_t len = strlen(row_file);
-                                it = uri_decode(row_file, len, row_file_name);
+                                row_file_p=strrchr(row_file,'/');
+                                if (row_file_p==NULL) row_file_p=row_file;
+                                else row_file_p++;
+
+                                const size_t len = strlen(row_file_p);
+                                it = uri_decode(row_file_p, len, row_file_name);
 
                                 ///////////////////////
                                 FILENAMEMAXC = sizeof(row_file_name) + 6;
@@ -6183,7 +6189,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name);
 
                                     snprintf(params, sizeof(params), "--connect-timeout 5 -m 20 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
-                                            cloud_user, cloud_password, cloud_ads0_url, row_file, cloud_ads0,
+                                            cloud_user, cloud_password, cloud_ads0_url, row_file_p, cloud_ads0,
                                             row_file_name);
 #ifdef LINUX
                                     runcode = (int)SystemSilent((char*)"curl", params);
@@ -6199,6 +6205,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             if (n_ads > 0) {
                                 for (i = 0; i < n_list; i++) {
                                     if ((strcmp(strarray[i], "filelist.txt") == 0) ||
+                                        (strstr(strarray[i], "..<DIR>") != NULL) ||
                                         (strstr(strarray[i], ".<DIR>") != NULL))
                                         continue;
                                     //checking if file exists

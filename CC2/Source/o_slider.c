@@ -458,16 +458,16 @@ static int slider(void)
     gui_border_dark = palette_color[8];
     gui_border_light = palette_color[15];
 
-    set_dialog_color(the_dialog, gui_fg_color, gui_bg_color);
+    set_dialog_color((DIALOG *)the_dialog, gui_fg_color, gui_bg_color);
 
    /* white color for d_clear_proc and the d_?text_procs */
    //the_dialog[0].bg = makecol(0, 0, 0);
 
    /* shift the dialog 2 pixels away from the border */
-   position_dialog(the_dialog, 200, 200);
+   position_dialog((DIALOG *)the_dialog, 200, 200);
    
    /* do the dialog */
-   do_dialog(the_dialog, -1);
+   do_dialog((DIALOG *)the_dialog, -1);
 
    CUR_OFF(X,Y);
    CUR_ON(X,Y);

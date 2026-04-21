@@ -1304,21 +1304,21 @@ BOOL Make_Ellipse_Shadow(double df_xc,
 		df_x2 = df_xc + df_xaxis * cos(df_elangle);
 		df_y2 = df_yc + df_yaxis * sin(df_elangle);
 		Rotate_Point(df_si, df_co, df_xc, df_yc, df_x2, df_y2, &df_x2, &df_y2);
-        PTR__GTMP7 = ptrptr_adb;
+        PTR__GTMP7 = (char*)ptrptr_adb;
         if (FALSE == elipse_seg_shadow(df_xc, df_yc, df_x1, df_y1, df_x2, df_y2, i_mode, ptrptr_adb, ptr_ob, i_type, obiektt2))
 		{
 			return FALSE;
 		}
-        ptrptr_adb=PTR__GTMP7;
+        ptrptr_adb=(BLOK*)PTR__GTMP7;
 		df_x1 = df_x2;
 		df_y1 = df_y2;
 	}
-    PTR__GTMP7 = ptrptr_adb;
+    PTR__GTMP7 = (char*)ptrptr_adb;
     if (FALSE == elipse_seg_shadow(df_xc, df_yc, df_x1, df_y1, df_sx, df_sy, i_mode, ptrptr_adb, ptr_ob, i_type, obiektt2))
 	{
 		return FALSE;
 	}
-    ptrptr_adb=PTR__GTMP7;
+    ptrptr_adb=(BLOK*)PTR__GTMP7;
 	if (mvcurb.akton)
 	{
 		i__ell_count = i + 1;
@@ -1362,23 +1362,23 @@ BOOL Make_Ellipse_Arc_Shadow(double df_xc,
 	{
 		df_x2 = df_xc + df_xaxis * cos(df_elangle);
 		df_y2 = df_yc + df_yaxis * sin(df_elangle);
-        PTR__GTMP7 = ptrptr_adb;
+        PTR__GTMP7 = (char*)ptrptr_adb;
 		if (FALSE == elipse_seg_shadow(df_xc, df_yc, df_x1, df_y1, df_x2, df_y2, 0, ptrptr_adb, ptr_ob, i_type, obiektt2))
 		{
 			return FALSE;
 		}
-        ptrptr_adb=PTR__GTMP7;
+        ptrptr_adb=(BLOK*)PTR__GTMP7;
 		df_x1 = df_x2;
 		df_y1 = df_y2;
 	}
 	df_x2 = df_xc + df_xaxis * cos(df_angle_end);
 	df_y2 = df_yc + df_yaxis * sin(df_angle_end);
-    PTR__GTMP7 = ptrptr_adb;
+    PTR__GTMP7 = (char*)ptrptr_adb;
 	if (FALSE == elipse_seg_shadow(df_xc, df_yc, df_x1, df_y1, df_x2, df_y2, 0, ptrptr_adb, ptr_ob, i_type, obiektt2))
 	{
 		return FALSE;
 	}
-    ptrptr_adb=PTR__GTMP7;
+    ptrptr_adb=(BLOK*)PTR__GTMP7;
 	return TRUE;
 }
 
@@ -1480,7 +1480,7 @@ elipse_seg (double X0, double Y0,
        {
            s_solid.translucent=1;
 
-           translucency_ptr = s_solid.xy;
+           translucency_ptr = (char*)s_solid.xy;
            translucency_ptr += (s_solid.lp * sizeof(float));
            memmove(translucency_ptr, &translucency, sizeof(unsigned char));
 

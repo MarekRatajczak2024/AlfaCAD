@@ -148,7 +148,7 @@ BOOL Get_Private_Profile_Strings(T_Fstring lpApplicationName, BOOL (*f)(T_Fstrin
 
   strcpy(ApplicName, lpApplicationName);
 
-  utf8Upper(&ApplicName);
+  utf8Upper((char*)&ApplicName);
 
   while (!feof(stru_ini))
   {
@@ -234,7 +234,7 @@ BOOL Get_Private_Profile_Strings_Hatch(T_Fstring lpApplicationName, BOOL(*f)(T_F
 
 
 	strcpy(ApplicName, lpApplicationName);
-	utf8Upper(&ApplicName);
+	utf8Upper((char*)&ApplicName);
 	
 	while (!feof(stru_ini))
 	{

@@ -416,7 +416,7 @@ static BOOL add_solid (void)
      if (solid.pattern == 1)
      {
          solid.translucent = 0;
-         scale_ptr = solid.xy;
+         scale_ptr = (char*)solid.xy;
          scale_ptr += (solid.lp * sizeof(float));
          dx_ptr = scale_ptr;
          dx_ptr += sizeof(short int);
@@ -441,7 +441,7 @@ static BOOL add_solid (void)
               solid.n = 8 + solid.lp * sizeof(float);
          else
          {
-             translucency_ptr = solid.xy;
+             translucency_ptr = (char*)solid.xy;
              translucency_ptr += (solid.lp * sizeof(float));
              memmove(translucency_ptr, &SolidTranslucency, sizeof(unsigned char));
 
@@ -690,7 +690,7 @@ int solid_in_progress_vertices(void)
 
 char *solid_in_progress_ad(void)
 {
-    return &solid;
+    return (char*)&solid;
 }
 
 void Solid_ (void)

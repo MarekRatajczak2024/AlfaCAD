@@ -1305,7 +1305,7 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             if (tekst_wybrany(Vtxt1)) return 2;
             break;
         case 15:  //thermal
-            parametry_lini(v, &PL);
+            parametry_lini((LINIA *) v, &PL);
             kos1=sin(Pi*(PL.kat+90)/180);
             koc1=cos(Pi*(PL.kat+90)/180);
 

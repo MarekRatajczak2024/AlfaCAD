@@ -207,7 +207,11 @@ Mirror, not_implemented, not_implemented,
 Break, Trim, Extend,
 profilowanie, Chamfer,
 Offset, Divide_Point, Global_Undo,
-Array_Rect, Array_Polar, Array_Polar_Rot, Mirror_X, Mirror_Y
+Array_Rect, Array_Polar, Array_Polar_Rot, Mirror_X, Mirror_Y,
+nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
 };
 
 /*--------------------------*/
@@ -397,7 +401,7 @@ static void Zmien_dx_dy(void)
  if (bitmap_view==TRUE)
   {
     sprintf(sk, "%g", dx);
-	if (!read_esc(&sk, 10, 113))
+	if (!read_esc(sk, 10, 113))
 	{
 		undo_pcx_blockzap();
         pcx_outlines_view_off();
@@ -414,7 +418,7 @@ static void Zmien_dx_dy(void)
          }
        dx=d;
     sprintf(sk, "%g", dx);
-	if (!read_esc(&sk, 10, 114))
+	if (!read_esc(sk, 10, 114))
 	{
 		undo_pcx_blockzap();
         pcx_outlines_view_off();
@@ -549,7 +553,11 @@ static void Zmien_x_y(void)
 }
 
 static void (*COMNDb[])(void)={ Zapamietaj, WezBlok, Export, Import, Open_Catalog, Import_DXF, nooop, nooop, Change_Hatch, export_block_PCX,  Set_Block, Explode,  ciagnij_quad, List_Blocks,
-                                Explode_ap , Usun_bloki_DXF, Korekta_blokow, nooop, Save_Layer_on, Save_Layer_off, Zmien_dx_dy, Change_Params_PCX, Kalibracja_PCX, WstawPCX, WstawPNG, WstawJPG, VectorizeALX} ;
+                                Explode_ap , Usun_bloki_DXF, Korekta_blokow, nooop, Save_Layer_on, Save_Layer_off, Zmien_dx_dy, Change_Params_PCX, Kalibracja_PCX, WstawPCX, WstawPNG, WstawJPG, VectorizeALX,
+                                nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+                                nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+                                nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,
+                                nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,nooop,} ;
 
 
 TMENU mGeometria={6,0,0,24,1,3,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmGeometria,NULL,NULL};
@@ -754,12 +762,12 @@ void Spline_Amendment(void)
 
                                 CUR_OFF(X, Y);
 
-                                rysuj_obiekt(S, COPY_PUT, 0);
+                                rysuj_obiekt((char*)S, COPY_PUT, 0);
 
                                 //amending original spline
                                 S->xy[S->lp] = bspline.xy[bspline.lp];
 
-                                rysuj_obiekt(S, COPY_PUT, 1);
+                                rysuj_obiekt((char*)S, COPY_PUT, 1);
 
                                 CUR_ON(X, Y);
 

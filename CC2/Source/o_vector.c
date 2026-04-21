@@ -201,7 +201,7 @@ void magnitude2line(AVECTOR *V, double factor)
     double kat, kos, koc;
     double x0, y0, x2, y2;
 
-    parametry_lini(V, &PL);
+    parametry_lini((LINIA*)V, &PL);
     kat = PL.kat;
     kos = sin(PL.kat * Pi / 180);
     koc = cos(PL.kat * Pi / 180);
@@ -739,67 +739,61 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
         lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
 
         parametry_lini(L, &PL);
-        if (set_arc_stage==0)
-        {
-            V->angle1=V->angle2=Pi_*PL.kat/180;
-            if (!options1.uklad_izometryczny)
-            {
-                V->r=PL.dl;
-            }
-            else
-            {
-                V->r=PL.dl;
-                //convert vector to isometric
-                double dx, dy;
-                float x1, y1, x2, y2;
-                double r, rx, ry;
-                ////int ret = cartesian_vector_to_isometric(V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
-                //int ret = cartesian_vector_to_isometric_in_plane(plane, V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
 
-                V->r=(float)isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
+        if ((V->style)!=16) {
+            if (set_arc_stage == 0) {
+                V->angle1 = V->angle2 = Pi_ * PL.kat / 180;
+                if (!options1.uklad_izometryczny) {
+                    V->r = PL.dl;
+                } else {
+                    V->r = PL.dl;
+                    //convert vector to isometric
+                    double dx, dy;
+                    float x1, y1, x2, y2;
+                    double r, rx, ry;
+                    ////int ret = cartesian_vector_to_isometric(V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
+                    //int ret = cartesian_vector_to_isometric_in_plane(plane, V->x2 - V->x1, V->y2 - V->y1, &dx, &dy);
 
+                    V->r = (float) isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
+
+                }
+            } else if (set_arc_stage == 1) {
+                if ((V->style == 5) || (V->style == 8) || (V->style == 21) || (V->style == 23) || (V->style == 25) || (V->style == 28) || (V->style == 30) || (V->style == 32))
+                    V->angle2 = Pi_ * PL.kat / 180;
+                else V->angle1 = Pi_ * PL.kat / 180;
+            } else if (set_arc_stage == 2) {
+                switch (V->style) {
+                    case 21:
+                    case 22:
+                        plane = XZ_PLANE;
+                        break;
+                    case 23:
+                    case 24:
+                        plane = YZ_PLANE;
+                        break;
+                    case 25:
+                    case 26:
+                        plane = XY_PLANE;
+                        break;
+                    case 28:
+                    case 29:
+                        plane = XZ_PLANE;
+                        break;
+                    case 30:
+                    case 31:
+                        plane = YZ_PLANE;
+                        break;
+                    case 32:
+                    case 33:
+                        plane = XY_PLANE;
+                        break;
+                    default:
+                        plane = -1;
+                        break;
+                }
+                if (plane > -1) V->r = (float) isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
+                else V->r = PL.dl;
             }
-        }
-        else if (set_arc_stage==1)
-        {
-            if ((V->style==5) || (V->style==8) || (V->style==21) || (V->style==23) || (V->style==25) || (V->style==28) || (V->style==30) || (V->style==32))
-                V->angle2=Pi_*PL.kat/180;
-            else V->angle1=Pi_*PL.kat/180;
-        }
-        else if (set_arc_stage==2)
-        {
-            switch (V->style)
-            {
-                case 21:
-                case 22:
-                    plane = XZ_PLANE;
-                    break;
-                case 23:
-                case 24:
-                    plane = YZ_PLANE;
-                    break;
-                case 25:
-                case 26:
-                    plane = XY_PLANE;
-                    break;
-                case 28:
-                case 29:
-                    plane = XZ_PLANE;
-                    break;
-                case 30:
-                case 31:
-                    plane = YZ_PLANE;
-                    break;
-                case 32:
-                case 33:
-                    plane = XY_PLANE;
-                    break;
-                default:
-                    plane=-1;
-                    break;
-            }
-            if (plane>-1)  V->r=(float)isometric_vector_length_f_in_plane(plane, V->x1, V->y1, V->x2, V->y2);
-            else V->r=PL.dl;
         }
         //V->x1=L->x1;
         //V->y1=L->y1;
@@ -993,7 +987,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                 case 12:
                     if (!(V->cartflags & 1))
                     {
-                        parametry_lini(V, &PL1);
+                        parametry_lini((LINIA*)V, &PL1);
                         angle0 = Pi_ * (PL.kat / 180);
                         angle1 = Pi_ * (PL1.kat / 180);
                         angle2 = Angle_Normal(angle0 + Pi_ / 2);
@@ -1010,7 +1004,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         // Compute the unit perpendicular direction (same as forward)
-                        parametry_lini(V, &PL1);
+                        parametry_lini((LINIA*)V, &PL1);
                         double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180.);
                         double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                         if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -1032,7 +1026,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     }
                     break;
                 case 15:
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     angle0=Pi_*(PL.kat/180);
                     angle1=Pi_*(PL1.kat/180);
                     angle2=Angle_Normal(angle0);
@@ -1137,7 +1131,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                 case 12:
                     if (!(V->cartflags & 1))
                     {
-                        parametry_lini(V, &PL1);
+                        parametry_lini((LINIA*)V, &PL1);
                         angle0 = Pi_ * (PL.kat / 180);
                         angle1 = Pi_ * (PL1.kat / 180);
                         angle2 = Angle_Normal(angle0 + Pi_ / 2);
@@ -1154,7 +1148,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         // Compute the unit perpendicular direction (same as forward)
-                        parametry_lini(V, &PL1);
+                        parametry_lini((LINIA*)V, &PL1);
                         double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180.);
                         double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                         if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -1176,7 +1170,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     }
                     break;
                 case 15:
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     angle0=Pi_*(PL.kat/180);
                     angle1=Pi_*(PL1.kat/180);
                     angle2=Angle_Normal(angle0);
@@ -1335,7 +1329,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
             case 12:
                 if (!(V->cartflags & 1))
                 {
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     angle0 = Pi_ * (PL.kat / 180);
                     angle1 = Pi_ * (PL1.kat / 180);
                     angle2 = Angle_Normal(angle0 + Pi_ / 2);
@@ -1352,7 +1346,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 else
                 {
                     // Compute the unit perpendicular direction (same as forward)
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180.);
                     double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                     if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -1374,7 +1368,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 break;
             case 15:
-                parametry_lini(V, &PL1);
+                parametry_lini((LINIA*)V, &PL1);
                 angle0=Pi_*(PL.kat/180);
                 angle1=Pi_*(PL1.kat/180);
                 angle2=Angle_Normal(angle0);
@@ -1479,7 +1473,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
             case 12:
                 if (!(V->cartflags & 1))
                 {
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     angle0 = Pi_ * (PL.kat / 180);
                     angle1 = Pi_ * (PL1.kat / 180);
                     angle2 = Angle_Normal(angle0 + Pi_ / 2);
@@ -1496,7 +1490,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 else
                 {
                     // Compute the unit perpendicular direction (same as forward)
-                    parametry_lini(V, &PL1);
+                    parametry_lini((LINIA*)V, &PL1);
                     double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL1.kat / 180.);
                     double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
                     if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
@@ -1518,7 +1512,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 break;
             case 15:
-                parametry_lini(V, &PL1);
+                parametry_lini((LINIA*)V, &PL1);
                 angle0=Pi_*(PL.kat/180);
                 angle1=Pi_*(PL1.kat/180);
                 angle2=Angle_Normal(angle0);
@@ -1604,7 +1598,7 @@ void outvectoror3 (LINIA *L, AVECTOR *V, int mode,int pl)
         switch (V->style)
         {
             case 15:
-                parametry_lini(V, &PL1);
+                parametry_lini((LINIA*)V, &PL1);
 
                 kos1=sin(Pi*(PL1.kat+90)/180);
                 koc1=cos(Pi*(PL1.kat+90)/180);
@@ -1641,7 +1635,7 @@ void outvectoror3 (LINIA *L, AVECTOR *V, int mode,int pl)
         switch (V->style)
         {
             case 15:
-                parametry_lini(V, &PL1);
+                parametry_lini((LINIA*)V, &PL1);
 
                 kos1=sin(Pi*(PL1.kat+90)/180);
                 koc1=cos(Pi*(PL1.kat+90)/180);
@@ -3474,6 +3468,12 @@ static void poczatekV (double X0, double Y0)
                  float mag1=VectorG.magnitude1;
                  VectorG.magnitude1=VectorG.magnitude2;
                  VectorG.magnitude2=mag1;
+             }
+             if (VectorG.style==16)
+             {
+                 redcr(1);
+                 //orto=orto_;
+                 return;
              }
          }
          break;

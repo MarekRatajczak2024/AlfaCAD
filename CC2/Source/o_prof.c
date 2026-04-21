@@ -420,7 +420,7 @@ static char *fillet_line_line (double df_r, LINIA*L1,LINIA *L2,double X1,double 
     Check_Pline (adb) ;
   }
   b_undo_prof = TRUE;
-  return lps__arc_prof;
+  return (char*)lps__arc_prof;
 }
 
 char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2, BOOL inverted)
@@ -844,7 +844,7 @@ static char* fillet_line_circle (double df_r,
   CUR_OFF (X, Y) ;
   CUR_ON(X,Y);
   b_undo_prof = TRUE ;
-  return lps__arc_prof ;
+  return (char*)lps__arc_prof ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1152,8 +1152,8 @@ static void undo_chamfer (void)
   blokzap (adp, adk, Ablok, COPY_PUT, 0);
   memcpy (ptrs__line1, &s__line1_old, sizeof (LINIA));
   memcpy (ptrs__line2, &s__line2_old, sizeof (LINIA));
-  rysuj_obiekt(ptrs__line1, COPY_PUT, 1);
-  rysuj_obiekt(ptrs__line2, COPY_PUT, 1);
+  rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
+  rysuj_obiekt((char*)ptrs__line2, COPY_PUT, 1);
   CUR_OFF (X, Y) ;
   CUR_ON (X, Y);
   b_undo_chamfer = FALSE;
@@ -1350,7 +1350,7 @@ static BOOL first_line (void)
   {
     df__ob1_x=X;
     df__ob1_y=Y;
-    rysuj_obiekt (ptrs__line1, XOR_PUT, 1) ;
+    rysuj_obiekt ((char*)ptrs__line1, XOR_PUT, 1) ;
     out_krz(X,Y);
     ret = TRUE;
   }
@@ -1365,7 +1365,7 @@ static BOOL second_line (void)
   type = Blinia ;
   if ((ptrs__line2 = (LINIA*)select_w(&type, NULL)) != NULL)
   {
-      rysuj_obiekt (ptrs__line2, XOR_PUT, 1) ;
+      rysuj_obiekt ((char*)ptrs__line2, XOR_PUT, 1) ;
     out_krz(X,Y);
     ret = chamfer (df__ob1_x,df__ob1_y,X,Y);
   }
@@ -1524,7 +1524,7 @@ aa: komunikat0 (44);
     while(1) {
         ev = Get_Event_Point(NULL, &X0, &Y0);
         if (ev->What == evKeyDown && ev->Number == 0) {
-            rysuj_obiekt(ptrs__line1, COPY_PUT, 1);
+            rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
             CUR_OFF(X, Y);
             CUR_ON(X, Y);
             goto aa;
@@ -1538,8 +1538,8 @@ aa: komunikat0 (44);
         }
         else
         {
-            rysuj_obiekt(ptrs__line1, COPY_PUT, 1);
-            if (ptrs__line2) rysuj_obiekt(ptrs__line2, COPY_PUT, 1);
+            rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
+            if (ptrs__line2) rysuj_obiekt((char*)ptrs__line2, COPY_PUT, 1);
             break;
         }
       if( ev->What==evCommandP)

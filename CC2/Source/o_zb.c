@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 /*   ______   ___       ___         ____     ______  ____
 *   /\  _  \ /\_ \    /'___\       /\  _`\  /\  _  \/\  _`\
 *   \ \ \L\ \\//\ \  /\ \__/   __  \ \ \/\_\\ \ \L\ \ \ \/\ \
@@ -21,6 +22,9 @@
 #include<dos.h>
 #include <stdint.h>
 #else
+#ifdef MACOS
+#include <stdint.h>
+#endif
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
@@ -73,6 +77,8 @@ typedef unsigned long DWORD;
 #ifdef LINUX
 #define _write write
 #define _read read
+//#define _POSIX_C_SOURCE 200809L
+#include <signal.h>
 #endif
 
 
@@ -849,7 +855,7 @@ static BOOL ver2_0_to_2_1 (long_long off, long_long offk)
 	            break ;
       case OdBLOK : adb = (BLOK*)(dane + ad);
 	            adh=(char *)adb+sizeof(NAGLOWEK)+adb->n-1;
-     	            change_types_2_0_to_2_1 (adb, adh);
+     	            change_types_2_0_to_2_1 ((char*)adb, adh);
            	    break ;        
       default     :
 	            break ;
@@ -1172,7 +1178,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 
 			memmove(&new_text, old_text, sizeof(TEXT3));
 
-			len=mazovia2utf8(old_text->text, &new_text.text, MaxMultitextLen + 1);
+			len=mazovia2utf8(old_text->text, new_text.text, MaxMultitextLen + 1);
 			
 			new_text.dl = strlen(new_text.text);
 
@@ -1200,11 +1206,11 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 					len_desc_old_text = ptrs_desc_bl->len;
 
 					memmove(&new_block, adb, sizeof(BLOK));
-					len_desc_new_text = mazovia2utf8(ptrs_desc_bl->sz_type, &new_sz_type, MaxLen) + 1;
+					len_desc_new_text = mazovia2utf8(ptrs_desc_bl->sz_type, new_sz_type, MaxLen) + 1;
 					len_desc_new = len_desc_old + (len_desc_new_text - len_desc_old_text);
 					if (len_desc_new_text == len_desc_old_text)
 					{
-						strncpy(ptrs_desc_bl->sz_type, &new_sz_type, len_desc_old_text);
+						strncpy(ptrs_desc_bl->sz_type, new_sz_type, len_desc_old_text);
 						off = ad + sizeof(NAGLOWEK) + B3 + adb->dlugosc_opisu_obiektu;
 					}
 					else
@@ -1215,7 +1221,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 							new_ptrs_desc_bl->x = ptrs_desc_bl->x;
 							new_ptrs_desc_bl->y = ptrs_desc_bl->y;
 							new_ptrs_desc_bl->len = len_desc_new_text;
-							strcpy(new_ptrs_desc_bl->sz_type, &new_sz_type);
+							strcpy(new_ptrs_desc_bl->sz_type, new_sz_type);
 
 							adb_address = Change_Block_Descript(adb, (void *)new_ptrs_desc_bl, len_desc_new);
 							free(new_ptrs_desc_bl);
@@ -1226,7 +1232,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 				else off = ad + sizeof(NAGLOWEK) + B3 + adb->dlugosc_opisu_obiektu;
 			}
 			else off = ad + sizeof(NAGLOWEK) + B3 + adb->dlugosc_opisu_obiektu;
-            if ((blok_no==0) && (block_type!=NULL)) strcpy(block_type, &new_sz_type);
+            if ((blok_no==0) && (block_type!=NULL)) strcpy(block_type, new_sz_type);
                 blok_no++;
 			break;
 		default:  off = ad + sizeof(NAGLOWEK) + ((NAGLOWEK*)(dane + ad))->n;
@@ -1311,7 +1317,7 @@ static BOOL ver4_1_to_4_2(long_long off, long_long offk)  //FOR THE FUTURE
                             new_ptrs_desc_bl->x = ptrs_desc_bl->x;
                             new_ptrs_desc_bl->y = ptrs_desc_bl->y;
                             new_ptrs_desc_bl->len = len_desc_new_text;
-                            strcpy(new_ptrs_desc_bl->sz_type, &new_sz_type);
+                            strcpy(new_ptrs_desc_bl->sz_type, new_sz_type);
 
                             adb_address = Change_Block_Descript(adb, (void *)new_ptrs_desc_bl, len_desc_new);
                             free(new_ptrs_desc_bl);
@@ -1343,8 +1349,8 @@ static void ver4_0_to_4_1_Layer(void)
 	//converting Layers
 	for (i = 0; i < No_Layers; i++)
 	{
-		len = mazovia2utf8(Layers[i].name, &nameUTF8, maxlen_w);
-		strncpy(Layers[i].name, &nameUTF8, maxlen_w);
+		len = mazovia2utf8(Layers[i].name, nameUTF8, maxlen_w);
+		strncpy(Layers[i].name, nameUTF8, maxlen_w);
 		Layers[i].len_name = strlen(Layers[i].name);
 	}
 }
@@ -1361,13 +1367,13 @@ void ver4_0_to_4_1_Spec(T_spec_name *ptrs_specs, int i_spec_no)
 	for (i = 0; i < i_spec_no; i++)
 	{
 		
-		strcpy(&old_spec_name, ptrs_specs[i].spec_name);
-		len = mazovia2utf8(&old_spec_name, &new_spec_name, Max_Spec_Name);
-		strcpy(ptrs_specs[i].spec_name, &new_spec_name);
+		strcpy(old_spec_name, ptrs_specs[i].spec_name);
+		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name);
+		strcpy(ptrs_specs[i].spec_name, new_spec_name);
 
-		strcpy(&old_spec_value, ptrs_specs[i].spec_value);
-		len = mazovia2utf8(&old_spec_value, &new_spec_value, Max_Spec_Value);
-		strcpy(ptrs_specs[i].spec_value, &new_spec_value);
+		strcpy(old_spec_value, ptrs_specs[i].spec_value);
+		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value);
+		strcpy(ptrs_specs[i].spec_value, new_spec_value);
 	}
 }
 
@@ -1384,13 +1390,13 @@ static void ver4_0_to_4_1_Table(void)
 
 	for (i = 0; i < Max_No_Spec; i++)
 	{
-		get_spec_name(i, &old_spec_name);
-		len = mazovia2utf8(&old_spec_name, &new_spec_name, Max_Spec_Name);
-		put_spec_name(i, &new_spec_name);
+		get_spec_name(i, old_spec_name);
+		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name);
+		put_spec_name(i, new_spec_name);
 
-		get_spec_string(i, &old_spec_value);
-		len = mazovia2utf8(&old_spec_value, &new_spec_value, Max_Spec_Value);
-		put_spec_string(i, &new_spec_value);
+		get_spec_string(i, old_spec_value);
+		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value);
+		put_spec_string(i, new_spec_value);
 	}
 
 }
@@ -1797,7 +1803,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 		  sourceLen = sizeof(LAYER)*i_layersno;
 		  destLen = compressBound(sourceLen);
 
-		  ret = compress(layersBuf, &destLen, &Layers, (uLong)sizeof(LAYER));
+		  ret = compress((Bytef*)layersBuf, &destLen, (Bytef*)Layers, (uLong)sizeof(LAYER));
 		  if (ret != Z_OK)
 		  {
 			  if (ret == Z_MEM_ERROR) *numer_bledu = 186;
@@ -1819,7 +1825,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
 		  destLenIntlong = destLenInt;
 		  destLen= sizeof(LAYER)*MAX_NUMBER_OF_LAYERS + 1024;
-		  ret = uncompress(&Layers, &destLen, layersBuf, destLenIntlong);
+		  ret = uncompress((Bytef*)&Layers, &destLen, (Bytef*)layersBuf, destLenIntlong);
 		  //memmove(&Layers, layersBuf, destLen);
 		  free(layersBuf);
 		  if (ret != Z_OK)
@@ -3015,7 +3021,7 @@ int pisz_zbior(char *argv, BOOL b_erase, int every)
 		}
 	}
 
-		if (dane_size + 1000 > Get_Disk_Free_Space(&argv0))      /*1000 +- na zmienne globalne*/
+		if (dane_size + 1000 > Get_Disk_Free_Space(argv0))      /*1000 +- na zmienne globalne*/
 		{
 			{error_code = 201;  goto error; }
 		}
@@ -3062,7 +3068,7 @@ int pisz_zbior(char *argv, BOOL b_erase, int every)
 			}
 			else
 			{
-				ret = get_fonts_for_dxf(&charfont_numbers);
+				ret = get_fonts_for_dxf(charfont_numbers);
 				//adding the current font
 				charfont_numbers[TextG.czcionka] = 1;
 				//adding dimensioning font
@@ -3073,7 +3079,7 @@ int pisz_zbior(char *argv, BOOL b_erase, int every)
 			}
 
 			//EMBEDED PATTERNS EXTENSION
-			pattern_library_no = get_patterns_for_solids(&pattern_numbers);
+			pattern_library_no = get_patterns_for_solids(pattern_numbers);
 			if (write(f, &pattern_library_no, sizeof(int)) != sizeof(int)) { error_code = 210;  goto error; }
 			for (i = 0; i < solid_pattern_library_no; i++)
 			{
@@ -3132,7 +3138,7 @@ int get_fonts_for_dxf(unsigned char *charfont_numbers)
 		case OdBLOK:
 			break;
 		case Otekst:
-			adt = nag;
+			adt = (TEXT*)nag;
 			font_index = adt->czcionka;
 			charfont_numbers[font_index] = 1;
 			break;
@@ -3179,7 +3185,7 @@ int get_patterns_for_solids(unsigned char* pattern_numbers)
 			w = (WIELOKAT *)nag;
 			if (w->pattern == 1)
 			{   
-				scale_ptr = w->xy;
+				scale_ptr = (char*)w->xy;
 				scale_ptr += (w->lp * sizeof(float));
 				dx_ptr = scale_ptr;
 				dx_ptr += sizeof(short int);
@@ -3356,7 +3362,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 				{
 					if (ad->obiekt == Otekst)
 					{
-						adt = ad;
+						adt = (TEXT*)ad;
 						font_index = adt->czcionka;
 						charfont_numbers[font_index] = 1;
 						have_texts = TRUE;
@@ -3366,7 +3372,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 						w = (WIELOKAT*)ad;
 						if (w->pattern == 1)
 						{
-							scale_ptr = w->xy;
+							scale_ptr = (char*)w->xy;
 							scale_ptr += (w->lp * sizeof(float));
 							dx_ptr = scale_ptr;
 							dx_ptr += sizeof(short int);
@@ -3417,7 +3423,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 					l = sizeof(NAGLOWEK) + ad->n;
 					if (ad->obiekt == OdBLOK)
 					{
-						ad_b = ad;
+						ad_b = (char*)ad;
 						b = (BLOK *)ad_b;
 						
 						ad_e = ad_b + l;
@@ -3434,14 +3440,14 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 							{
 								if (((NAGLOWEK *)ad_b)->obiekt == Otekst)
 								{
-									adt = ad_b;
+									adt = (TEXT*)ad_b;
 									font_index = adt->czcionka;
 									charfont_numbers[font_index] = 1;
 									have_texts = TRUE;
 								}
                                 else if (((NAGLOWEK*)ad_b)->obiekt == Olinia)
                                 {
-                                    LINIA *L=(NAGLOWEK*)ad_b;
+                                    LINIA *L=(LINIA*)ad_b;
                                     if (L->n + sizeof(NAGLOWEK) !=  sizeof (LINIA) )
                                     {
                                       int a=0;
@@ -3452,7 +3458,7 @@ int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, i
 									w = (WIELOKAT*)ad_b;
 									if (w->pattern == 1)
 									{
-										scale_ptr = w->xy;
+										scale_ptr = (char*)w->xy;
 										scale_ptr += (w->lp * sizeof(float));
 										dx_ptr = scale_ptr;
 										dx_ptr += sizeof(short int);
@@ -3656,11 +3662,11 @@ DWORD SystemSilent(char* strFunct, char* strstrParams)
 DWORD RunSilent(char* strFunct, char* strstrParams)
 {
     int ret;
-    char script[MAXPATH];
-    char command[MAXPATH];
+    char script[MAXPATH*2];
+    char command[MAXPATH*2];
     char *ptr_str;
 
-    strcpy(&script, strFunct);
+    strcpy(script, strFunct);
     ptr_str=strstr(script, ".exe");
     if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
     || (strcmp(strFunct, "gmsh.exe")==0) || (strcmp(strFunct, "ElmerGrid.exe")==0) || (strcmp(strFunct, "ElmerSolver.exe")==0))
@@ -3695,7 +3701,7 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 DWORD SystemSilent(char* strFunct, char* strstrParams)
 {
     int ret;
-    char command[MAXPATH];
+    char command[MAXPATH*2];
     char *ptr_str;
 
     sprintf(command, "%s %s", strFunct, strstrParams);
@@ -4460,7 +4466,7 @@ get_vectorization_param (T_Fstring key_name, T_Fstring ret_string)
         //strupr (&prn_config_param [i]);
 
         strcpy(vectorization_par, vectorization_param [i]);
-        utf8Upper(&vectorization_par);
+        utf8Upper(vectorization_par);
 
         if (stricmp (key_name, vectorization_par) == 0)
         {
@@ -5204,7 +5210,7 @@ error1:
 
 	   if (alfab_version < verb4_1) //(strcmp(blok_naglowka, VERB4_1) != 0)
 	   {
-		   len = mazovia2utf8(buf, &buf_utf8, lenmax-10);
+		   len = mazovia2utf8(buf, buf_utf8, lenmax-10);
 		   strncpy(buf, buf_utf8, lenmax - 10);
 	   }
 

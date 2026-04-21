@@ -409,7 +409,7 @@ static BOOL break_line (void)
         L1=(LINIA *)L_2_;
         L1->n=20;
 
-        ptr_pline= FIRSTB(L_2_);
+        ptr_pline= (char*)FIRSTB((char*)L_2_);
 
           b__line_break1 = TRUE;
           b__line_break2 = TRUE;
@@ -418,7 +418,7 @@ static BOOL break_line (void)
         {
           rysuj_obiekt((char *)& s__L1, COPY_PUT, 1);
           L2=(LINIA*)korekta_obiekt((void *)ptr__object,(void*)&s__L1);
-          ptr_pline= FIRSTB(L2);
+          ptr_pline= (char*)FIRSTB((char*)L2);
 
             b__line_break1 = TRUE;
         }
@@ -426,13 +426,13 @@ static BOOL break_line (void)
           {
             rysuj_obiekt((char *)& s__L2, COPY_PUT, 1);
             L2=(LINIA*)korekta_obiekt((void *)ptr__object,(void*)&s__L2);
-            ptr_pline= FIRSTB(L2);
+            ptr_pline= (char*)FIRSTB((char*)L2);
 
               b__line_break2 = TRUE;
           }
            else
             {
-              ptr_pline = FIRSTB(ptr__object);
+              ptr_pline = (char*)FIRSTB(ptr__object);
             }
 
      //adding cut part
@@ -445,12 +445,12 @@ static BOOL break_line (void)
                       (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_POLYGON) ||
                       (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_RECTANGLE)
                      )) {
-                     ptr_parent = FIRSTB(ptr_pline);
+                     ptr_parent = (char*)FIRSTB(ptr_pline);
                  } else ptr_parent = ptr_pline;
              } else ptr_parent = NULL;
 
 
-             dodaj_obiekt(ptr_parent, &s__L3);
+             dodaj_obiekt((BLOK*)ptr_parent, &s__L3);
              rysuj_obiekt((char *) &s__L3, COPY_PUT, 1);
 
              b__line_break3 = TRUE;
@@ -664,7 +664,7 @@ static BOOL break_arc (void)
     l1=(LUK *)l_2_;
     l1->n=24;
 
-    ptr_pline= FIRSTB(l_2_);
+    ptr_pline= (char*)FIRSTB((char*)l_2_);
     b__arc_break1 = TRUE;
     b__arc_break2 = TRUE;
    }
@@ -679,7 +679,7 @@ static BOOL break_arc (void)
       l->kat1=s__l1.kat1;
       l->kat2=s__l1.kat2;
 
-      ptr_pline= FIRSTB(l);
+      ptr_pline= (char*)FIRSTB((char*)l);
       b__arc_break1 = TRUE;
     }
     else if (fabs (s__l2.kat1 - s__l2.kat2) > OZero)
@@ -693,12 +693,12 @@ static BOOL break_arc (void)
       l->kat1=s__l2.kat1;
       l->kat2=s__l2.kat2;
 
-      ptr_pline= FIRSTB(l);
+      ptr_pline= (char*)FIRSTB((char*)l);
       b__arc_break2 = TRUE;
     }
       else
       {
-          ptr_pline = FIRSTB(ptr__object);
+          ptr_pline = (char*)FIRSTB(ptr__object);
       }
 
     //adding cut part
@@ -711,13 +711,13 @@ static BOOL break_arc (void)
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_POLYGON) ||
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_RECTANGLE)
                     )) {
-                    ptr_parent = FIRSTB(ptr_pline);
+                    ptr_parent = (char*)FIRSTB(ptr_pline);
                 } else ptr_parent = ptr_pline;
             } else ptr_parent = NULL;
 
             s__l3.shadowed=0;
             s__l3.rezerwa=0;
-            dodaj_obiekt(ptr_parent, &s__l3);
+            dodaj_obiekt((BLOK*)ptr_parent, &s__l3);
             rysuj_obiekt((char *) &s__l3, COPY_PUT, 1);
 
             b__arc_break3 = TRUE;
@@ -789,7 +789,7 @@ static BOOL break_ellipticalarc (void)
         el1=(ELLIPTICALARC *)el_2_;
         el1->n=32;
 
-        ptr_pline= FIRSTB(el_2_);
+        ptr_pline= (char*)FIRSTB((char*)el_2_);
         b__ellipticalarc_break1 = TRUE;
         b__ellipticalarc_break2 = TRUE;
     }
@@ -806,7 +806,7 @@ static BOOL break_ellipticalarc (void)
         el->kat1=s__el1.kat1;
         el->kat2=s__el1.kat2;
 
-        ptr_pline= FIRSTB(el);
+        ptr_pline= (char*)FIRSTB((char*)el);
         b__ellipticalarc_break1 = TRUE;
     }
     else if (fabs (s__el2.kat1 - s__el2.kat2) > OZero)
@@ -822,12 +822,12 @@ static BOOL break_ellipticalarc (void)
         el->kat1=s__el2.kat1;
         el->kat2=s__el2.kat2;
 
-        ptr_pline= FIRSTB(el);
+        ptr_pline= (char*)FIRSTB((char*)el);
         b__ellipticalarc_break2 = TRUE;
     }
     else
     {
-        ptr_pline = FIRSTB(ptr__object);
+        ptr_pline = (char*)FIRSTB(ptr__object);
     }
     //adding cut part
     if (break_and_leave==TRUE) {
@@ -839,13 +839,13 @@ static BOOL break_ellipticalarc (void)
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_POLYGON) ||
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_RECTANGLE)
                     )) {
-                    ptr_parent = FIRSTB(ptr_pline);
+                    ptr_parent = (char*)FIRSTB(ptr_pline);
                 } else ptr_parent = ptr_pline;
             } else ptr_parent = NULL;
 
             s__el3.shadowed=0;
             s__el3.rezerwa=0;
-            dodaj_obiekt(ptr_parent, &s__el3);
+            dodaj_obiekt((BLOK*)ptr_parent, &s__el3);
             rysuj_obiekt((char *) &s__el3, COPY_PUT, 1);
 
             b__ellipticalarc_break3 = TRUE;
@@ -946,7 +946,7 @@ static BOOL break_circle (void)
   if (b__circle_break1)
   {
     rysuj_obiekt ((char *)&s__l1, COPY_PUT, 1) ;
-    ptr_pline= FIRSTB(&s__l1);
+    ptr_pline= (char*)FIRSTB((char*)&s__l1);
   }
 
     //adding cut part
@@ -959,11 +959,11 @@ static BOOL break_circle (void)
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_POLYGON) ||
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_RECTANGLE)
                     )) {
-                    ptr_parent = FIRSTB(ptr_pline);
+                    ptr_parent = (char*)FIRSTB(ptr_pline);
                 } else ptr_parent = ptr_pline;
             } else ptr_parent = NULL;
 
-            dodaj_obiekt(ptr_parent, &s__l2);
+            dodaj_obiekt((BLOK*)ptr_parent, &s__l2);
             rysuj_obiekt((char *) &s__l2, COPY_PUT, 1);
 
             b__circle_break2 = TRUE;
@@ -1073,7 +1073,7 @@ static BOOL break_ellipse (void)
     if (b__ellipse_break1)
     {
         rysuj_obiekt ((char *)&s__el1, COPY_PUT, 1) ;
-        ptr_pline= FIRSTB(&s__el1);
+        ptr_pline= (char*)FIRSTB((char*)&s__el1);
     }
 
     //adding cut part
@@ -1086,14 +1086,14 @@ static BOOL break_ellipse (void)
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_POLYGON) ||
                      (((BLOK *) ptr_pline)->opis_obiektu[0] == PL_RECTANGLE)
                     )) {
-                    ptr_parent = FIRSTB(ptr_pline);
+                    ptr_parent = (char*)FIRSTB(ptr_pline);
                 } else ptr_parent = ptr_pline;
             } else ptr_parent = NULL;
 
             s__el2.shadowed=0;
             s__el2.rezerwa=0;
 
-            dodaj_obiekt(ptr_parent, &s__el2);
+            dodaj_obiekt((BLOK*)ptr_parent, &s__el2);
             rysuj_obiekt((char *) &s__el2, COPY_PUT, 1);
 
             b__ellipse_break2 = TRUE;
@@ -1256,7 +1256,7 @@ static BOOL obiect_to_break (void **ptr_ob_pl)
                          usun_obiekt(dane);
                          ptr__object = dodaj_obiekt(ptrs_b, buff_ptrs_b);
                          ((NAGLOWEK*)ptr__object)->blok = 1;
-                         obiekt_tok_all(ptr__object, (char*)ptr__object + ptrs_pl_n, &ptr__object, Blinia);
+                         obiekt_tok_all(ptr__object, (char*)ptr__object + ptrs_pl_n, ptr__object, Blinia);
                          free(buff_ptrs_b);
                      }
                  }
@@ -1455,7 +1455,7 @@ static BOOL break_pline___ (void)
   l_off1 = (char*)PTR__GTMP1 - dane;
   l_off2 = (char*)PTR__GTMP2 - dane;
 
-  ptr_parent = FIRSTB(PTR__GTMP3);
+  ptr_parent = (char*)FIRSTB(PTR__GTMP3);
   if (ptr_parent!=NULL) l_off3 = (char*)ptr_parent - dane;
 
   zmien_atrybut(ptrh_beg, ptrh_end, Anormalny, Abad);
@@ -1751,7 +1751,7 @@ BOOL break_pline(void)
     l_off1 = (char*)PTR__GTMP1 - dane;
     l_off2 = (char*)PTR__GTMP2 - dane;
 
-    ptr_parent = FIRSTB(PTR__GTMP3);
+    ptr_parent = (char*)FIRSTB(PTR__GTMP3);
     if (ptr_parent != NULL) l_off3 = dane + dane_size - (char*)ptr_parent;
 
     zmien_atrybut(ptrh_beg, ptrh_end, Anormalny, Abad);

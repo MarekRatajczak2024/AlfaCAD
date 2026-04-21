@@ -14,6 +14,8 @@
 typedef __int32 int32_t;
 #endif
 
+#include <stdint.h>
+
 int32_t utf8_is_continuation(char c);
 int32_t utf8_validate(char * s);
 size_t utf8_strlen(char * s);

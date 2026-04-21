@@ -451,10 +451,10 @@ static char sz__width_text [11] = "";
 static INPUTLINE s__edit [] =
 {
    { XpComboBox, YpGrFontName + 4*DYName, DXLayerName, DYComboBox, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 10,0,1, sz__height_text, -1,&digits,
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 10,0,1, sz__height_text, -1,digits,
    },
    { XpComboBox, YpGrFontName + 5*DYName, DXLayerName, DYComboBox, COLOR_NULL,COLOR_NULL,
-	COLOR_NULL,COLOR_NULL,COLOR_NULL, 10,0,1, sz__width_text, -1,&digits,
+	COLOR_NULL,COLOR_NULL,COLOR_NULL, 10,0,1, sz__width_text, -1,digits,
    },
 } ;
 
@@ -544,12 +544,12 @@ static void set_struct_dialog_control (void)
     /*warstwy*/
   for (i = 0; i < 6; i++)
   {
-	  layer_name_txt[i] = &Layers[i].name;
+	  layer_name_txt[i] = Layers[i].name;
   }
 
   for (i = 6; i < No_Layers ; i++)
   {
-    layer_name_txt [i] = &Layers [i].name;
+    layer_name_txt [i] = Layers [i].name;
   }
   
   layer_name_txt [NoLayers] = NoChange ;
@@ -1653,7 +1653,7 @@ static void change_properties
                    //for already translucent solid, even if transluc==255
                    if (ob1->translucent == 1)
                    {
-                       translucency_ptr = ob1->xy;
+                       translucency_ptr = (char*)ob1->xy;
                        translucency_ptr += (ob1->lp * sizeof(float));
                        memmove(translucency_ptr, &transluc, sizeof(unsigned char));
                    }
@@ -1663,7 +1663,7 @@ static void change_properties
                        solid_temp.translucent = 1;
                        solid_temp.n = 8 + solid_temp.lp * sizeof(float) + sizeof(unsigned char);
 
-                       translucency_ptr = solid_temp.xy;
+                       translucency_ptr = (char*)solid_temp.xy;
                        translucency_ptr += (solid_temp.lp * sizeof(float));
                        memmove(translucency_ptr, &transluc, sizeof(unsigned char));
 

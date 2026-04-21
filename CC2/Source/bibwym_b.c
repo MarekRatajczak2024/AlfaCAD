@@ -216,7 +216,7 @@ int WymNowy(void)
     else
     if(WymInter)
     {
-      rysuj_obiekt(&Ls, COPY_PUT, 1);
+      rysuj_obiekt((char*)&Ls, COPY_PUT, 1);
     }
   }
   return 1;
@@ -403,10 +403,10 @@ static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex
     Lw.obiektt2 = O2BlockDim;
     Lw.obiektt3 = O3WymRoz;
     if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2) {
-        PTR__GTMP7 = nb;
+        PTR__GTMP7 = (char*)nb;
         if (dodaj_obiekt(nb, &Lw) == NULL) return;
-        else rysuj_obiekt(&Lw, COPY_PUT, 1);
-        nb = PTR__GTMP7;
+        else rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+        nb = (BLOK*)PTR__GTMP7;
     }
 
     Lw.x1 = L1.x1;
@@ -426,10 +426,10 @@ static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex
     St.n = 8 /*4*/ + St.lp * sizeof (float) ;
     St.obiektt2 = O2BlockDim;
     St.obiektt3 = O3NoWymRoz;
-    PTR__GTMP7=nb;
+    PTR__GTMP7=(char*)nb;
     if(dodaj_obiekt(nb,&St)==NULL) return;
     else rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
-    nb=PTR__GTMP7;
+    nb=(BLOK*)PTR__GTMP7;
 
 
     if ((from_dxf==1) && (vertex_no>2)) //possibly another vectors
@@ -444,10 +444,10 @@ static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex
             Lw.obiektt2 = O2BlockDim;
             Lw.obiektt3 = O3NoWymRoz;
             if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2) {
-                PTR__GTMP7 = nb;
+                PTR__GTMP7 = (char*)nb;
                 if (dodaj_obiekt(nb, &Lw) == NULL) return;
-                else rysuj_obiekt(&Lw, COPY_PUT, 1);
-                nb = PTR__GTMP7;
+                else rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+                nb = (BLOK*)PTR__GTMP7;
             }
             Lw.x1 = Lw.x2;
             Lw.y1 = Lw.y2;
@@ -514,16 +514,16 @@ static void add_leader(TEXT *leader_text, int to_block, int from_dxf, int vertex
     Lw.obiektt2 = O2BlockDim;
     Lw.obiektt3 = O3NoWymRoz;
     if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2) {
-        PTR__GTMP7=nb;
+        PTR__GTMP7=(char*)nb;
         if (dodaj_obiekt(nb, &Lw) == NULL) return;
-        else rysuj_obiekt(&Lw, COPY_PUT, 1);
-        nb=PTR__GTMP7;
+        else rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+        nb=(BLOK*)PTR__GTMP7;
     }
 
-        PTR__GTMP7 = nb;
+        PTR__GTMP7 = (char*)nb;
         if (dodaj_obiekt(nb, (void *) &T) == NULL) return;
-        else rysuj_obiekt(&T, COPY_PUT, 1);
-        nb = PTR__GTMP7;
+        else rysuj_obiekt((char*)&T, COPY_PUT, 1);
+        nb = (BLOK*)PTR__GTMP7;
 
     if (from_dxf==0) {
         CUR_OFF(X, Y);

@@ -15,6 +15,7 @@
 */
 
 #ifdef LINUX
+#define _DEFAULT_SOURCE
 #include <dlfcn.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -675,5 +676,7 @@ void pm_plugin_alfa(pm_manager_t *pm, const char *name)
         return;
     p->param();
 }
-
+#ifdef LINUX
+#undef _DEFAULT_SOURCE
+#endif
 

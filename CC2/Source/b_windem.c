@@ -97,7 +97,7 @@ static void decod_fn (POLE *pmuser, POLE *pmuserno, int *mmax)
 
   strcpy(dec_pwd, decodeString(enc_pwd, key_));
 
-  ptr_alfa1 = strstr(&dec_pwd, "@Al");
+  ptr_alfa1 = strstr(dec_pwd, "@Al");
   if (ptr_alfa1 != NULL)
   {
 	  ptr_alfa2 = strstr(ptr_alfa1, "AD");

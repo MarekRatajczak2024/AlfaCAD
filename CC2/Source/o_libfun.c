@@ -1349,7 +1349,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
        change_bs2s(ret_string);
        strcpy(default_path_TTF, ret_string);
        if (default_path_TTF[strlen(default_path_TTF)]!='/')
-           strcat(&default_path_TTF,"/");
+           strcat(default_path_TTF,"/");
    }
    else
    if (stricmp (key_name, IC_OTF_FONTS) == 0 )
@@ -1357,7 +1357,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
        change_bs2s(ret_string);
        strcpy(default_path_OTF, ret_string);
        if (default_path_OTF[strlen(default_path_OTF)]!='/')
-           strcat(&default_path_OTF,"/");
+           strcat(default_path_OTF,"/");
    }
    else
    if (stricmp (key_name, IC_BIBLIOTEKA) == 0 )

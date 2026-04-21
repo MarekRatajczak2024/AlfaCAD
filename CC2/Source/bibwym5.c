@@ -191,7 +191,7 @@ static double Xkat,Ykat;
   if(Lr.x1!=Lr.x2 || Lr.y1!=Lr.y2)
    if(dodaj_obiekt((BLOK *)dane, (void*)&Lr)==NULL) return 0;
    else if(WymInter) {
-       rysuj_obiekt(&Lr, COPY_PUT, 1);
+       rysuj_obiekt((char*)&Lr, COPY_PUT, 1);
        CUR_OFF(x,y);
    }
   return 1;

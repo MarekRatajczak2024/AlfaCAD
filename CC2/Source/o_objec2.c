@@ -297,7 +297,7 @@ BLOK *LASTB_A(char *ado)
         }
         if (OdBLOK_array[i].address>ado) break;
     }
-    return adb;
+    return (BLOK*)adb;
 }
 
 BLOK *FIRSTB_A(char *ado)  //NOT OPTIMIZED YET
@@ -312,7 +312,7 @@ BLOK *FIRSTB_A(char *ado)  //NOT OPTIMIZED YET
         if (OdBLOK_array[i].address<ado) adb=OdBLOK_array[i].address;  //we assume that ((NAGLOWEK*)ado)->blok==1
         if (OdBLOK_array[i].address>ado) break;
     }
-    return adb;
+    return (BLOK*)adb;
 }
 
 BLOK *LASTB(char  *ado)

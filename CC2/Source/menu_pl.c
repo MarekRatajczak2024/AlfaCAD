@@ -2688,7 +2688,7 @@ static POLE pmSolidHatchPatternAngle[] = {
 };
 static TMENU mSolidHatchPatternAngle = { 4,0,0,4,79,6,ICONS,CMNU,CMBR,CMTX,0, 13 ,0,0,0,(POLE(*)[]) & pmSolidHatchPatternAngle,NULL,NULL };
 
-PTMENU m__list_hatch = { 0, 0, 0, PATERN_NAME_MAXLEN - 1,66, 6,TADD | FIXED , CMNU,CMBR,CMTX,0,   ID_END,   0, 0,0,(POLE(*)[]) & pm__list_hatch_predef, NULL,NULL };
+PTMENU m__list_hatch = { 0, 0, 0, PATERN_NAME_MAXLEN - 1,66, 6,TADD | FIXED , CMNU,CMBR,CMTX,0,   ID_END,   0, 0,0,(PPOLE(*)[]) & pm__list_hatch_predef, NULL,NULL };
 
 static POLE pmSolidHatchPattern[] = {
 		{u8"Wzór\0 ",'W',597,NULL},
@@ -2709,7 +2709,7 @@ POLE pmSelect_Ins[] = {
 TMENU mSelect_Ins = { 2, 0, 0, 18, 17, 14, ICONS, CMNU, CMBR, CMTX, 0, ID_INSULATION, 0, 0,0,(POLE(*)[]) &pmSelect_Ins, NULL, NULL };
 
 POLE pmHatch[] = {
-	 {u8"Wzorzec\0//////////\0      ",'W',434,&m__list_hatch},
+	 {u8"Wzorzec\0//////////\0      ",'W',434,(TMENU*)&m__list_hatch},
 	 {u8"Folder wzorców\0 \0      ",'F',597,NULL},
 	 {u8"Kąt obrotu\0 0\0      ", 'K', 435,NULL},
 	 {u8"Skala\0 1\0     ", 'S', 436,NULL},
@@ -3313,7 +3313,7 @@ TMENU mGruboscLiniiZ = { 5,0,0,26,52,12,0,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) 
 TMENU mKolorACF = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,31,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorACZ = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,48,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 TMENU mKolorSTATIC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,0,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
-PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(POLE(*)[]) & pmCzcionka,NULL,NULL};
+PTMENU mCzcionkaZ = { 1,/*MaxMenuWinFont*/ 0,/*MaxMenuWinFont*/ 0,FONTNAMELEN + 1,74,10,FIXED,CMNU,CMBR,CMTX,0,69,0,0,0,(PPOLE(*)[]) & pmCzcionka,NULL,NULL};
 
 /*
 static POLE pmFormat_r[21] = {
@@ -3500,7 +3500,7 @@ static POLE pmSektory_Arkusza[15] = {
 		{ u8"֎Kolor ramki\0biały\0              ", 'K',495,&mKolorACF },
 		{ u8"֎kolor sekTora\0biały\0              ", 'T',496,&mKolorACZ },
 		{ u8"stYl\0 góra\0              ",'Y',497,&mSektory_Styl },
-		{ u8"Czcionka\0 \0             ", 'C', 183,&mCzcionkaZ }};
+		{ u8"Czcionka\0 \0             ", 'C', 183,(TMENU*)&mCzcionkaZ }};
 
 
 static POLE pmPrecision[] = {
@@ -3858,7 +3858,7 @@ static POLE pmTekstm[] = {
 	{u8"Odstep linii\0 N\0    ", 'O', 410,&mLineSpacing},
 	{u8"Auto-interwał\0   N\0   ", 'A', 91,&mAutoInterwal},
 	{u8"Interwał\0 1\0          ", 'I', 234,NULL},
-	{u8"Czcionka\0 \0             ",'C', 183,&mCzcionka},
+	{u8"Czcionka\0 \0             ",'C', 183,(TMENU*)&mCzcionka},
 };
 
 static char t_t[16][12] = {
@@ -4045,7 +4045,7 @@ static POLE pmZmienne[] = {
 	  {u8"wsp. Szerokości tekstu\0            ", 'S',180,NULL},
 	  {u8"tekst Pochylony\0 N\0               ", 'P',181, &mItalics},
 	  {u8"tekst poGrubiony\0 N\0              ", 'G',182,&mBold},
-	  {u8"Czcionka\0                          ", 'C',183, &mCzcionkaW},
+	  {u8"Czcionka\0                          ", 'C',183, (TMENU*)&mCzcionkaW},
       {u8"Format numeryczny\0                 ", 'F',697, &mLFormat},
 	  {u8"Dokładność\0 .01\0                  ", 'D',184,NULL},
 	  {u8"ogRaniczniki\0 <--->\0              ", 'R',185,&mStrzalka},

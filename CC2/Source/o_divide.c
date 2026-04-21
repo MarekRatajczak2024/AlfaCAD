@@ -1659,7 +1659,8 @@ static void redcr_divide (char typ)
   static void  (*CUR_oFF)(double ,double) ;
   static int ( *SW[3])(), akt, sel_cur, sel_gor, sel_nr, kom0 ;
   static TMENU *menu ;
-  static char st [POLE_TXT_MAX], cod=' ';
+  static char st [POLE_TXT_MAX];
+  static unsigned short cod=' ';
   static int iconno=0;
 
   if (typ == 0)

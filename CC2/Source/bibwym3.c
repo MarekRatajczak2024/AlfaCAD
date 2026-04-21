@@ -375,10 +375,10 @@ static int wyznacz_tekst(BOOL draw)
   {
 
       //breaking dim line
-      break_dim_line(dane, Anormalny, 1, 1, draw);
+      break_dim_line((NAGLOWEK*)dane, Anormalny, 1, 1, draw);
 
       //outtextxy_w(&T,COPY_PUT);
-      if (draw) rysuj_obiekt(&T, COPY_PUT, 1);
+      if (draw) rysuj_obiekt((char*)&T, COPY_PUT, 1);
 
   }
   return 1;
@@ -521,7 +521,7 @@ static int wyznacz_tekst_clock(void)
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
   else if(WymInter)
   {
-      rysuj_obiekt(&T, COPY_PUT, 1);
+      rysuj_obiekt((char*)&T, COPY_PUT, 1);
   }
   return 1;
 }
@@ -668,7 +668,7 @@ static int s1(void)
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
      else if(WymInter)
      {
-         rysuj_obiekt(&L, COPY_PUT, 1);
+         rysuj_obiekt((char*)&L, COPY_PUT, 1);
      }
      Ls1.typ = 32 /*0*/;
      n1=w.x2>w.x0 ? 1 : -1;
@@ -680,7 +680,7 @@ static int s1(void)
      if(dodaj_obiekt((BLOK*)dane,(void*)&Ls1)==NULL) return 0;
      else if(WymInter)
      {
-         rysuj_obiekt(&Ls1, COPY_PUT, 1);
+         rysuj_obiekt((char*)&Ls1, COPY_PUT, 1);
      }
    }
   L.x1=(float)(w.x2-Kp2*cos(Pi*(kat.kat+ukat)/180.));
@@ -691,7 +691,7 @@ static int s1(void)
   if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
   else if(WymInter)
   {
-      rysuj_obiekt(&L, COPY_PUT, 1);
+      rysuj_obiekt((char*)&L, COPY_PUT, 1);
   }
   L.typ = 32 /*0*/;
   n1=w.x2>w.x0 ? 1 : -1;
@@ -725,7 +725,7 @@ static int s2(void)
      Ls1.y2=(float)(w.y0-n2*K1_5*fabs(kat.sin));
      if(dodaj_obiekt((BLOK*)dane,&Ls1)==NULL) return 0;
      else if(WymInter) {
-         rysuj_obiekt(&Ls1, COPY_PUT, 1);
+         rysuj_obiekt((char*)&Ls1, COPY_PUT, 1);
      }
    }
   Ko.warstwa=Current_Layer;
@@ -1015,7 +1015,7 @@ static int outs(BOOL draw)
               else if (WymInter)
               {
                   //outline(&Lw, COPY_PUT, 0);
-                  if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+                  if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
               }
       }
   }
@@ -1101,7 +1101,7 @@ static int outs(BOOL draw)
         if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
         else if (WymInter)
         {
-            if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+            if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
         }
 
   if (wym_okregu == 0)
@@ -1119,7 +1119,7 @@ static int outs(BOOL draw)
               if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
               else if (WymInter)
               {
-                  if (draw) rysuj_obiekt(&Lw, COPY_PUT, 1);
+                  if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
               }
       }
   }
@@ -1238,7 +1238,7 @@ static int outss(void)
    if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
    else if(WymInter)
    {
-       rysuj_obiekt(&Lw, COPY_PUT, 1);
+       rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
    }
 
 /*  Lw.warstwa=Current_Layer; */
@@ -1250,7 +1250,7 @@ static int outss(void)
    if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
    else if(WymInter)
    {
-       rysuj_obiekt(&Lw, COPY_PUT, 1);
+       rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
    }
 
 

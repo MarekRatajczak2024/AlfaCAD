@@ -13,6 +13,7 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
+#define _DEFAULT_SOURCE
 
 #define __BIB_E__
 #pragma warning(disable : 4996)
@@ -2463,7 +2464,7 @@ void out_cur_on_factory(double X, double Y, int circle)
 		{
 			if (current_cursor_fx != copy_cursor_pattern_fx)
 			{
-				strncpy(&solid_pattern_library_item.pattern_name, &SolidHatchPatternName, 31);
+				strncpy(solid_pattern_library_item.pattern_name, SolidHatchPatternName, 31);
 				solid_pattern_library_item.pattern_name[31] = '\0';
 				Copy_cursor_pattern_bitmap(&solid_pattern_library_item);
 				copy_cursor_pattern_fx = current_cursor_fx;
@@ -2912,13 +2913,13 @@ void  grid_on(void)
     {
       if (!grid_kom) ErrList(1);
       grid_kom=1;
-      Set_Screenplay(second_screen);  //to return to second screen after the message
+      Set_Screenplay((BITMAP*)second_screen);  //to return to second screen after the message
       return;
     }
   if(grid_kom)
   {
       komunikat(0); grid_kom=0;
-      Set_Screenplay(second_screen);  //to return to second screen after the message
+      Set_Screenplay((BITMAP*)second_screen);  //to return to second screen after the message
   }
 
   setcolor(kolory.border/*LIGHTGRAY*/);
@@ -5879,7 +5880,7 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
         L.typ = 64;
 
         if (linia_visible(&L))
-            rysuj_obiekt_(&L, mode, kolor);
+            rysuj_obiekt_((char*)&L, mode, kolor);
     }
 
     if ((v->style==V_EDGE_FIXED) || (v->style==V_EDGE_FIXED_INV) || (v->style==V_EDGE_ARC_FIXED) || (v->style==V_EDGE_ARC_FIXED_INV))
@@ -5891,7 +5892,7 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
        L.y2= (float)(y0 - psize * kos1);
 
         if (linia_visible(&L))
-            rysuj_obiekt_(&L, mode, kolor);
+            rysuj_obiekt_((char*)&L, mode, kolor);
     }
     else if ((v->style==V_EDGE_ROLL) || (v->style==V_EDGE_ROLL_INV) || (v->style==V_EDGE_ARC_ROLL) || (v->style==V_EDGE_ARC_ROLL_INV))
     {
@@ -5903,7 +5904,7 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
         k.r=(float)(fabs(psize * 0.5));
 
         if (Check_Draw_Pieslice (&k))
-            rysuj_obiekt_(&k, mode, kolor);
+            rysuj_obiekt_((char*)&k, mode, kolor);
     }
     else
     {
@@ -5983,7 +5984,7 @@ void draw_arrow(double x0, double y0, double x1, double y1, double x2, double y2
         w.n = 32;
 
         if (wielokat_visible(&w))
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
     }
 }
 
@@ -6019,7 +6020,7 @@ void draw_spring(double x0, double y0, double x1, double y1, double x2, double y
         L.x2 = (float)(n*spring[i+2]*psize+x0);
         L.y2 = (float)(spring[i+3]*psize+y0);
         if (linia_visible(&L))
-            rysuj_obiekt_(&L, mode, kolor);
+            rysuj_obiekt_((char*)&L, mode, kolor);
     }
 }
 
@@ -6088,7 +6089,7 @@ void draw_wave(double x0, double y0, double x1, double y1, double x2, double y2,
         }
 
         //if (spline_visible(&s))
-        rysuj_obiekt_(&s, mode, kolor);
+        rysuj_obiekt_((char*)&s, mode, kolor);
     }
     else if (fabs(dl)>0.001)
     {
@@ -6101,7 +6102,7 @@ void draw_wave(double x0, double y0, double x1, double y1, double x2, double y2,
         L.y1=y1;
         L.x2=x2;
         L.y2=y2;
-        rysuj_obiekt_(&L, mode, kolor);
+        rysuj_obiekt_((char*)&L, mode, kolor);
     }
     Set_Control_Points_View(cpv);
 }
@@ -9274,7 +9275,7 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            rysuj_obiekt_(&w, mode, kolor);
+            rysuj_obiekt_((char*)&w, mode, kolor);
 
             if (TRANSLUCENCY!=TRANS) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
             set_mode_solid();
@@ -9920,7 +9921,7 @@ void Copy_cursor_pattern_bitmap(SOLID_PATTERN_LIBRARY_ITEM* solid_pattern_librar
 	solid_pattern.dy = SolidHatchPatternDy;
 	solid_pattern.flag = 0;
 
-	bi = setfillpattern_gregre_scaled(&solid_pattern, FALSE, 0.0, SolidHatchPatternDx, SolidHatchPatternDy, NULL, NULL);
+	bi = setfillpattern_gregre_scaled((char*)&solid_pattern, FALSE, 0.0, SolidHatchPatternDx, SolidHatchPatternDy, NULL, NULL);
 	xy[0] = 0; xy[1] = 0; xy[2] = cursor_icon_size; xy[3] = 0; xy[4] = cursor_icon_size; xy[5] = cursor_icon_size; xy[6] = 0; xy[7] = cursor_icon_size;
 	polygon(cursor_pattern_bitmap0, 4, xy, 0);
 	rotate_sprite(cursor_pattern_bitmap, cursor_pattern_bitmap0, 0, 0, itofix(fixangles[SolidHatchPatternAngle]));  //0,0
@@ -10722,7 +10723,7 @@ if (ctx_ok==TRUE)
  }
  int l_solid = 0;
 
-	 Set_Screenplay(second_screen);
+	 Set_Screenplay((BITMAP*)second_screen);
 	 oknoS(Xp, Yp, Xk, Yk);
 
 	 adh = dane;
@@ -10823,7 +10824,7 @@ if (ctx_ok==TRUE)
 							 }
 							 set_mode_trans();
 
-							 scale_ptr = w->xy;
+							 scale_ptr = (char*)w->xy;
 							 scale_ptr += (w->lp * sizeof(float));
 							 dx_ptr = scale_ptr;
 							 dx_ptr += sizeof(short int);
@@ -10837,8 +10838,8 @@ if (ctx_ok==TRUE)
 							 memmove(&solid_pattern.dx, dx_ptr, sizeof(short int));
 							 memmove(&solid_pattern.angle, angle_ptr, sizeof(short int));
 							 memmove(&solid_pattern.dy, dy_ptr, sizeof(short int));
-							 strcpy(&solid_pattern.pattern, name_ptr);
-							 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), &solid_pattern, TRANSLUCENCY, NULL);
+							 strcpy(solid_pattern.pattern, name_ptr);
+							 Draw_Solid(NumPoints, PolyPoints, w->pcx_solid, w->obiektt3, pikseleX0(0), pikseleY0(0), (char*)&solid_pattern, TRANSLUCENCY, NULL);
 
 
                              ///////////////  if Ablok
@@ -10915,7 +10916,7 @@ if (ctx_ok==TRUE)
                                          {
                                              if (w->translucent == 1)
                                              {
-                                                 translucency_ptr = w->xy;
+                                                 translucency_ptr = (char*)w->xy;
                                                  translucency_ptr += (w->lp * sizeof(float));
                                                  memmove(&translucency, translucency_ptr, sizeof(unsigned char));
 
@@ -11014,7 +11015,7 @@ if (ctx_ok==TRUE)
 
                                      if (w->translucent == 1)
                                      {
-                                         translucency_ptr = w->xy;
+                                         translucency_ptr = (char*)w->xy;
                                          translucency_ptr += (w->lp * sizeof(float));
                                          memmove(&translucency, translucency_ptr, sizeof(unsigned char));
 
@@ -11741,7 +11742,7 @@ p_point compute2DPolygonCentroid2(T_PixelTVal* vertices, int vertexCount)
 	P[3][0] = vertices[6];
 	P[3][1] = vertices[7];
 
-	FindCG(4, P, &CG);
+	FindCG(4, P, CG);
 	centroid.x = CG[0];
 	centroid.y = CG[1];
 	return centroid;
@@ -12249,7 +12250,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
  		licznik_obiektow++;
 	    L=(LINIA *)nag;
  		if ((L->typ == HATCH_OUTLINE_TYPE) && (Get_Point_View() == FALSE)) break;
-        select_color_type(L);
+        select_color_type((char*)L);
 
         int typl = (L->typ & 31);
         if (typl==0) pattern_offset = 0;
@@ -12258,7 +12259,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                 ////TEMPORARY
                if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
                {
-                   GRAPH_DATA *graph_data=(char*)L + sizeof(LINIA);
+                   GRAPH_DATA *graph_data=(GRAPH_DATA*)((char*)L + sizeof(LINIA));
                    int flags = graph_data->flags;
                    int nx = graph_data->nx;
                }
@@ -12267,7 +12268,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 		if ((L->blok == 1) && (L->obiektt1 == 0) && (L->obiektt2 == 1) && (L->obiektt3 == 0))
 		{
 			//check if next object is text or line then text
-			nag1 = (char*)nag + sizeof(NAGLOWEK) + L->n;
+			nag1 = (NAGLOWEK*)((char*)nag + sizeof(NAGLOWEK) + L->n);
 			if (nag1->obiekt == Otekst)
 			{
 				t = (TEXT*)nag1;
@@ -12302,7 +12303,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 			}
 			else if (nag1->obiekt == Olinia)
 			{
-				nag1 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+				nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
 				if (nag1->obiekt == Otekst)
 				{
 					t = (TEXT*)nag1;
@@ -12422,7 +12423,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 	   o=(OKRAG*)nag;
 	   if ((o->typ == HATCH_OUTLINE_TYPE) && (Get_Point_View() == FALSE)) break;
 	   if(!(o->widoczny=okrag_wybrany(o))) break;
-       select_color_type(o);
+       select_color_type((char*)o);
 	   pattern_count = TRUE;
 	   pattern_offset = 0;
 	   DrawCircle(pikseleX0(o->x),pikseleY0(o->y),pikseleDX(o->r), mode);
@@ -12435,7 +12436,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
        e=(ELLIPSE*)nag;
        if(!(e->widoczny=elipsa_wybrana_prec(e))) break;
 
-       select_color_type(e);
+       select_color_type((char*)e);
 
        if ((e->warstwa==Current_Layer) || (options1.view_only_current_layer==0))
        {
@@ -12521,7 +12522,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                if ((ea->blok == 1) && (ea->obiektt1 == 0) && (ea->obiektt2 == 1) && (ea->obiektt3 == 0))
                {
                    //check if next object is text or line then text
-                   nag1 = (char*)nag + sizeof(NAGLOWEK) + ea->n;
+                   nag1 = (NAGLOWEK*)((char*)nag + sizeof(NAGLOWEK) + ea->n);
                    if (nag1->obiekt == Otekst)
                    {
                        t = (TEXT*)nag1;
@@ -12552,9 +12553,9 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                    }
                    else if (nag1->obiekt == Olinia)
                    {
-                       nag1 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+                       nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
                        if (nag1->obiekt == Olinia)
-                           nag1 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+                           nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
                        if (nag1->obiekt == Otekst)
                        {
                            t = (TEXT*)nag1;
@@ -12762,7 +12763,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 		   {
 			   if (w->translucent == 1)
 			   {
-				   translucency_ptr = w->xy;
+				   translucency_ptr = (char*)w->xy;
 				   translucency_ptr += (w->lp * sizeof(float));
 				   memmove(&translucency, translucency_ptr, sizeof(unsigned char));
 
@@ -12876,7 +12877,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 
 			  if (w->translucent == 1)
 			  {
-				  translucency_ptr = w->xy;
+				  translucency_ptr = (char*)w->xy;
 				  translucency_ptr += (w->lp * sizeof(float));
 				  memmove(&translucency, translucency_ptr, sizeof(unsigned char));
 				  
@@ -13045,14 +13046,14 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 	   l=(LUK*)nag;
 	   if ((l->typ == HATCH_OUTLINE_TYPE) && (Get_Point_View() == FALSE)) break;
 	   if(!(l->widoczny=luk_wybrany(l))) break;
-       select_color_type(l);
+       select_color_type((char*)l);
 	   pattern_count = TRUE;
 
        //checking if arc is dimensioning arc
        if ((l->blok == 1) && (l->obiektt1 == 0) && (l->obiektt2 == 1) && (l->obiektt3 == 0))
        {
            //check if next object is text or line then text
-           nag1 = (char*)nag + sizeof(NAGLOWEK) + l->n;
+           nag1 = (NAGLOWEK*)((char*)nag + sizeof(NAGLOWEK) + l->n);
            if (nag1->obiekt == Otekst)
            {
                t = (TEXT*)nag1;
@@ -13090,9 +13091,9 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
            }
            else if (nag1->obiekt == Olinia)
            {
-               nag1 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+               nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
                if (nag1->obiekt == Olinia)
-                   nag1 = (char*)nag1 + sizeof(NAGLOWEK) + nag1->n;
+                   nag1 = (NAGLOWEK*)((char*)nag1 + sizeof(NAGLOWEK) + nag1->n);
                if (nag1->obiekt == Otekst)
                {
                    t = (TEXT*)nag1;
@@ -13237,7 +13238,7 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                        setfillstyle_(SOLID_FILL, GetColorAC(8));
                    }
 
-                   select_color_type(ptrs_vector);
+                   select_color_type((char*)ptrs_vector);
 
                    Draw_Vector(ptrs_vector, mode, 1, 1);
                }
@@ -13575,7 +13576,7 @@ void  redraw_cur(BOOL cur)
 
 	if (bitmap_on_front_exist)
 	{
-		Set_Screenplay(second_screen);
+		Set_Screenplay((BITMAP*)second_screen);
 		rysuj_skin();
 		Set_Screenplay(screen);
 	}
@@ -13727,7 +13728,7 @@ void  redraw_cur(BOOL cur)
 
 	 if (bitmap_on_front_exist)
 	 {
-		 Set_Screenplay(second_screen);
+		 Set_Screenplay((BITMAP*)second_screen);
 		 rysuj_skin();
 		 Set_Screenplay(screen);
 	 }
@@ -16361,3 +16362,5 @@ void report_mem_leak_(void)
 }
 
 #undef __BIB_E__
+
+#undef _DEFAULT_SOURCE

@@ -510,7 +510,7 @@ void Info_about_object(char *ad)
 	 menu_par_new((*mInfoAbout.pola)[iY2].txt, sk) ;
 	 act(iY2);
      
-     parametry_lini(ad, &pl) ;
+     parametry_lini((LINIA*)ad, &pl) ;
      dX = lx2 - lx1 ;
      dY = ly2 - ly1 ;
      dl = milimetryob (pl.dl) ;
@@ -531,7 +531,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iDY].txt, sk) ;
 	 act(iDY);
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -541,7 +541,7 @@ void Info_about_object(char *ad)
          inact(iEdgeInverted);
      }
 
-     nazwa_bloku(ad,&sk);
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -663,12 +663,12 @@ void Info_about_object(char *ad)
         menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
         act(iLWidth);
 
-        nazwa_bloku_first(ad,&sk, &p_h_w_z);
+        nazwa_bloku_first(ad, &sk[0], &p_h_w_z);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
         act(iInnerBlockName);
 
-        nazwa_bloku(ad,&sk);
+        nazwa_bloku(ad, sk);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
         act(iOuterBlockName);
@@ -687,7 +687,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad, sk);
      LiniaG.kolor=((TEXT *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -748,12 +748,12 @@ void Info_about_object(char *ad)
          act(iLineSpacing);
      }
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
 
-     nazwa_bloku(ad,&sk);
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -772,7 +772,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;     
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad,sk);
      LiniaG.kolor=((LUK *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -830,7 +830,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLenght].txt, sk) ;
 	 act(iLenght);
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
@@ -840,7 +840,7 @@ void Info_about_object(char *ad)
            inact(iEdgeInverted);
        }
 
-     nazwa_bloku(ad,&sk);    
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -859,7 +859,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
       act(1);
 
-      nazwa_koloru(ad,&sk);
+      nazwa_koloru(ad, sk);
       LiniaG.kolor=((SOLIDARC *)ad)->kolor;
       menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
       act(iColor);
@@ -938,12 +938,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLenght].txt, sk) ;
       act(iLenght);
 
-      nazwa_bloku_first(ad,&sk, &p_h_w_z);
+      nazwa_bloku_first(ad, sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
 
-      nazwa_bloku(ad,&sk);
+      nazwa_bloku(ad, sk);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
       act(iOuterBlockName);
@@ -962,7 +962,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
       act(1);
 
-      nazwa_koloru(ad,&sk);
+      nazwa_koloru(ad, sk);
       LiniaG.kolor=((ELLIPTICALARC *)ad)->kolor;
       menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
       act(iColor);
@@ -1012,12 +1012,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iAngle2].txt, sk) ;
       act(iAngle2);
 
-      nazwa_bloku_first(ad,&sk, &p_h_w_z);
+      nazwa_bloku_first(ad, sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
 
-      nazwa_bloku(ad,&sk);
+      nazwa_bloku(ad, sk);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
       act(iOuterBlockName);
@@ -1036,7 +1036,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad, sk);
      LiniaG.kolor=((OKRAG *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -1076,12 +1076,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iArea].txt, sk) ;
 	 act(iArea);
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
 
-     nazwa_bloku(ad,&sk); 
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -1100,7 +1100,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
       act(1);
 
-      nazwa_koloru(ad,&sk);
+      nazwa_koloru(ad, sk);
       LiniaG.kolor=((ELLIPSE *)ad)->kolor;
       menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
       act(iColor);
@@ -1152,12 +1152,12 @@ void Info_about_object(char *ad)
       act(iArea);
        */
 
-      nazwa_bloku_first(ad,&sk, &p_h_w_z);
+      nazwa_bloku_first(ad, sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
 
-      nazwa_bloku(ad,&sk);
+      nazwa_bloku(ad, sk);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
       act(iOuterBlockName);
@@ -1176,7 +1176,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad, sk);
      LiniaG.kolor=((OKRAG *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -1206,12 +1206,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iArea].txt, sk) ;
 	 act(iArea);
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
 
-     nazwa_bloku(ad,&sk);   
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -1230,7 +1230,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
       act(1);
 
-      nazwa_koloru(ad,&sk);
+      nazwa_koloru(ad, sk);
       LiniaG.kolor=((ELLIPSE *)ad)->kolor;
       menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
       act(iColor);
@@ -1265,12 +1265,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iOpacity].txt, sk) ;
       act(iOpacity);
 
-      nazwa_bloku_first(ad,&sk, &p_h_w_z);
+      nazwa_bloku_first(ad, sk, &p_h_w_z);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
       act(iInnerBlockName);
 
-      nazwa_bloku(ad,&sk);
+      nazwa_bloku(ad, sk);
       sk[40]='\0';
       menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
       act(iOuterBlockName);
@@ -1289,7 +1289,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad, sk);
      LiniaG.kolor=((WIELOKAT *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -1349,7 +1349,7 @@ void Info_about_object(char *ad)
      {
          if (((WIELOKAT *)ad)->translucent==1)
          {
-             translucency_ptr = ((WIELOKAT *)ad)->xy;
+             translucency_ptr = (char*)((WIELOKAT *)ad)->xy;
              translucency_ptr += (((WIELOKAT *)ad)->lp * sizeof(float));
              memmove(&translucency, translucency_ptr, sizeof(unsigned char));
          }
@@ -1362,12 +1362,12 @@ void Info_about_object(char *ad)
          act(iOpacity);
      }
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
 
-     nazwa_bloku(ad,&sk);    
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -1385,7 +1385,7 @@ void Info_about_object(char *ad)
    menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk);
    act(1);
 
-   nazwa_koloru(ad, &sk);
+   nazwa_koloru(ad,  sk);
    LiniaG.kolor=((SPLINE *)ad)->kolor;
    menu_par_new((*mInfoAbout.pola)[iColor].txt, sk);
    act(iColor);
@@ -1443,12 +1443,12 @@ void Info_about_object(char *ad)
 	   act(iY4);
    }
 
-   nazwa_bloku_first(ad, &sk, &p_h_w_z);
+   nazwa_bloku_first(ad,  sk, &p_h_w_z);
    sk[40] = '\0';
    menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk);
    act(iInnerBlockName);
 
-   nazwa_bloku(ad, &sk);
+   nazwa_bloku(ad,  sk);
    sk[40] = '\0';
    menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk);
    act(iOuterBlockName);
@@ -1468,7 +1468,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk) ;
 	 act(1);
 
-     nazwa_koloru(ad,&sk);
+     nazwa_koloru(ad, sk);
      LiniaG.kolor=((T_Point *)ad)->kolor;
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
@@ -1488,12 +1488,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
 
-     nazwa_bloku_first(ad,&sk, &p_h_w_z);
+     nazwa_bloku_first(ad, sk, &p_h_w_z);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
 	 act(iInnerBlockName);
 
-     nazwa_bloku(ad,&sk);
+     nazwa_bloku(ad, sk);
 	 sk[40]='\0';
      menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
 	 act(iOuterBlockName);
@@ -1557,12 +1557,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iPxlDy].txt, sk);
       act(iPxlDy);
 
-	nazwa_bloku_first(ad, &sk, &p_h_w_z);
+	nazwa_bloku_first(ad, sk, &p_h_w_z);
 	sk[40] = '\0';
 	menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk);
 	act(iInnerBlockName);
 
-	nazwa_bloku(ad, &sk);
+	nazwa_bloku(ad, sk);
 	sk[40] = '\0';
 	menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk);
 	act(iOuterBlockName);
@@ -1613,7 +1613,7 @@ void Info_about_object(char *ad)
 
         ly2 = milimetryobyl(((AVECTOR *)ad)->x2, (((AVECTOR *)ad)->y2));
 
-        parametry_lini(ad, &pl) ;
+        parametry_lini((LINIA*)ad, &pl) ;
         dX = lx2 - lx1 ;
         dY = ly2 - ly1 ;
         dl = milimetryob (pl.dl) ;
@@ -1692,7 +1692,7 @@ void Info_about_object(char *ad)
                 menu_par_new((*mInfoAbout.pola)[iMagnitude].txt, sk) ;
                 act(iMagnitude);
                 (*mInfoAbout.pola)[iMagnitude].iconno=730;
-                parametry_lini(ad, &pl) ;
+                parametry_lini((LINIA*)ad, &pl) ;
                 dX = lx2 - lx1 ;
                 dY = ly2 - ly1 ;
                 dl = milimetryob (pl.dl) ;
@@ -1859,12 +1859,12 @@ void Info_about_object(char *ad)
                 break;
         }
 
-        nazwa_bloku_first(ad,&sk, &p_h_w_z);
+        nazwa_bloku_first(ad, sk, &p_h_w_z);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iInnerBlockName].txt, sk) ;
         act(iInnerBlockName);
 
-        nazwa_bloku(ad,&sk);
+        nazwa_bloku(ad, sk);
         sk[40]='\0';
         menu_par_new((*mInfoAbout.pola)[iOuterBlockName].txt, sk) ;
         act(iOuterBlockName);

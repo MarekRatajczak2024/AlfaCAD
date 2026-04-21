@@ -13,7 +13,7 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
-
+#define _POSIX_C_SOURCE 200112L
 #define __RYSUJ__
 
 #include<forwin.h>
@@ -4260,7 +4260,7 @@ void draw_font_name_ttf(TEXT *t, char *t_text, BITMAP *bmp, int x0, int y0, int 
 	len_pxl = 0;
 	while (*ptr != '\0')
 	{
-		unicode = utf8_to_ucs2(ptr, &ptr1);
+		unicode = utf8_to_ucs2((uint8_t *)ptr, (uint8_t **)&ptr1);
 		len_pxl += gk_char_width(rend, unicode);
 		if (len_pxl > max_pxl) break;
 		i += ptr1 - ptr;
@@ -4770,10 +4770,10 @@ void Initialize_Desktop_font(char *font_name)
     sprintf(winvar, "%s/WinFonts/TTF/", homedir);
 #endif
 
-    if (strlen(default_path_TTF)>0) winfont=&default_path_TTF;
+    if (strlen(default_path_TTF)>0) winfont=default_path_TTF;
     else winfont = winvar;  //if IC_TTF_FONTS doesn't exists
 
-    if (strlen(default_path_OTF)>0) otffont=&default_path_OTF;
+    if (strlen(default_path_OTF)>0) otffont=default_path_OTF;
 
 	gk_set_font_path(winfont);
 
@@ -4886,7 +4886,7 @@ typedef struct
 
 BITMAP *client_bitmap_load[MAX_CLIENT_BITMAP]={NULL};
  */
-
+/*
 BITMAP *load_png_(char* png_file, PALETTE pal)
 {
 	char bitmap_file[MAXPATH];
@@ -4900,6 +4900,7 @@ void load_png__(BITMAP_LOAD *png_load)
 	PALETTE pal;
 	char bitmap_file[MAXPATH];
 	sprintf(bitmap_file, "%s/%s.png", _BITMAPS_, png_load->png_file);
+
 	png_load->png_b=load_png(bitmap_file, pal);
 	png_load->png_p = (char*)png_load->png_b;
 }
@@ -4912,7 +4913,7 @@ void load_png___(BITMAP **png_b, char *png_file, char **png_p)
     *png_b = load_png(bitmap_file, pal);
     *png_p = &png_b;
 }
-
+*/
 char *get_XDG_CURRENT_DESKTOP(void)
 {
     return XDG_CURRENT_DESKTOP;
@@ -5241,8 +5242,8 @@ void Load_Mem_Bitmaps(int tier)
             break;
     }
     */
-    icon_upgrademark_pmem = icon_upgrademark_mem;
-    icon_noupgrademark_pmem = icon_noupgrademark_mem;
+    icon_upgrademark_pmem = (char*)icon_upgrademark_mem;
+    icon_noupgrademark_pmem = (char*)icon_noupgrademark_mem;
 
 #ifdef ALLEGRO5
     icon_alfacad_mem = load_memory_png(icon_alfacad_pm, png_mem96, (RGB *) &pal);
@@ -5254,20 +5255,20 @@ void Set_Mem_Bitmaps(int tier_)
 {
     switch (tier_) {
         case 0:
-            icon_no_d_pmem = icon_no_d_mem;
-            icon_yes_d_pmem = icon_yes_d_mem;
+            icon_no_d_pmem = (char*)icon_no_d_mem;
+            icon_yes_d_pmem = (char*)icon_yes_d_mem;
             break;
         case 1:
-            icon_no_d_pmem = icon_no_dx1_5_mem;
-            icon_yes_d_pmem = icon_yes_dx1_5_mem;
+            icon_no_d_pmem = (char*)icon_no_dx1_5_mem;
+            icon_yes_d_pmem = (char*)icon_yes_dx1_5_mem;
             break;
         case 2:
-            icon_no_d_pmem = icon_no_dx2_mem;
-            icon_yes_d_pmem = icon_yes_dx2_mem;
+            icon_no_d_pmem = (char*)icon_no_dx2_mem;
+            icon_yes_d_pmem = (char*)icon_yes_dx2_mem;
             break;
         default:
-            icon_no_d_pmem = icon_no_d_mem;
-            icon_yes_d_pmem = icon_yes_d_mem;
+            icon_no_d_pmem = (char*)icon_no_d_mem;
+            icon_yes_d_pmem = (char*)icon_yes_d_mem;
             break;
     }
 }
@@ -5330,7 +5331,7 @@ void Load_Bitmaps_pre(int HEIGHT_)
         if (bt == NULL) printf("%s\n", bitmap_load_pre[i].png_file);
         /////////////////
         *bitmap_load_pre[i].png_b = bt;
-        *bitmap_load_pre[i].png_p = *bitmap_load_pre[i].png_b;
+        *bitmap_load_pre[i].png_p = (char*)bt; //bitmap_load_pre[i].png_b;
     }
 }
 
@@ -5367,7 +5368,7 @@ void Load_Bitmaps(int HEIGHT_)
         if (bt == NULL) printf("%s\n", bitmap_load[i].png_file);
 /////////////////
         *bitmap_load[i].png_b = bt;
-        *bitmap_load[i].png_p = *bitmap_load[i].png_b;
+        *bitmap_load[i].png_p = (char*)bt; //bitmap_load[i].png_b;
     }
 }
 
@@ -5418,7 +5419,7 @@ int _al_mangled_main(int argc, char *argv[])
   BOOL drv_ok;
   int n1, schowek;
   TMENU *menu=&menug;
-  TA *COMND=&COMNDg;
+  TA *COMND=(void (***)(void))COMNDg;
   void (*FF)(void)=nooop;
   int gdriver, gmode;
   int err;
@@ -5543,10 +5544,10 @@ int _al_mangled_main(int argc, char *argv[])
     if (NOCHDIR == FALSE)
     {
         strcpy(strAppPath, argv[0]);
-        ptr_s = strrchr(&strAppPath,'/');
+        ptr_s = strrchr(strAppPath,'/');
          if (ptr_s!=NULL) *ptr_s='\0';
         printf("%s\n",strAppPath);
-        int ret1 = chdir(&strAppPath);
+        int ret1 = chdir(strAppPath);
         if (ret1==-1)
         {
             printf("%s\n","Wrong name of AlfaCAD folder");
@@ -6226,7 +6227,7 @@ if (child==0)
      }
      else if ((n1>0) && (n1<=((sizeof(COMNDg)/sizeof(COMNDg[0])))))
      {
-	   FF=COMND[n1-1];
+	   FF=(void (*)(void))COMND[n1-1];
        LASTFUN=FF;
        FF();
        menu->flags &= 0x44;
@@ -6244,3 +6245,5 @@ END_OF_MAIN()
 #endif
 
 #undef __RYSUJ__
+
+#undef _POSIX_C_SOURC

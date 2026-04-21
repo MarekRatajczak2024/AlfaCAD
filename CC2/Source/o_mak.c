@@ -133,9 +133,9 @@ void makro_esc(void)
 
 	bufor_makra_esc[0] = (char*)'\15';
 	bufor_makra_esc[1] = '\0';
-	mkbuf = bufor_makra_esc;
-	mkbuf_end = bufor_makra_esc + 1;
-	aktmakro = bufor_makra_esc;
+	mkbuf = bufor_makra_esc[0];
+	mkbuf_end = bufor_makra_esc[0] + 1;
+	aktmakro = bufor_makra_esc[0];
 }
 
 void makro_wine(void)

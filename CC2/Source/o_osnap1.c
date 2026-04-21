@@ -582,7 +582,7 @@ static int intersection_spline(
 //#define Npts 90  //for more precission
 
 
-	calc_bspline(ptrs_spline->lp, ptrs_spline->npts, ptrs_spline->xy, Npts, &out_x, &out_y);
+	calc_bspline(ptrs_spline->lp, ptrs_spline->npts, ptrs_spline->xy, Npts, &out_x[0], &out_y[0]);
 	for (i = 0; i < Npts - 1; i++)
 	{
 			s_line.x1 = out_x[i];
@@ -772,7 +772,7 @@ int IntersectionSW(SPLINE *ptrs_spline,
 	float out_x[MaxNpts], out_y[MaxNpts];
 
 //#define Npts 90  //for more precission
-	calc_bspline(ptrs_spline->lp, ptrs_spline->npts, ptrs_spline->xy, Npts, &out_x, &out_y);
+	calc_bspline(ptrs_spline->lp, ptrs_spline->npts, ptrs_spline->xy, Npts, &out_x[0], &out_y[0]);
 
 	i_ret = 0;
 	for (i = 0; i < Npts - 1; i++)
@@ -818,7 +818,7 @@ int IntersectionSS(SPLINE *ptrs_spline1,
 
 //#define Npts 90
 
-	calc_bspline(ptrs_spline2->lp, ptrs_spline2->npts, ptrs_spline2->xy, Npts, &out_x, &out_y);
+	calc_bspline(ptrs_spline2->lp, ptrs_spline2->npts, ptrs_spline2->xy, Npts, &out_x[0], &out_y[0]);
 	
 	i_ret = 0;
 	for (i = 0; i < Npts - 1; i++)

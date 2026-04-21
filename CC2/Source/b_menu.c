@@ -1651,6 +1651,22 @@ char *strcasestr(const char *str, const char *pattern) {
 }
 #endif
 
+#ifdef LINUX
+char *strcasestr(const char *haystack, const char *needle) {
+    if (!*needle) return (char *)haystack;
+    for (; *haystack; haystack++) {
+        if (toupper(*haystack) == toupper(*needle)) {
+            const char *h = haystack, *n = needle;
+            while (*h && *n && toupper(*h) == toupper(*n)) {
+                h++; n++;
+            }
+            if (!*n) return (char *)haystack;
+        }
+    }
+    return NULL;
+}
+#endif
+
 int vfv(int v)
 {
     return (int)((float)v*fv);
@@ -2169,7 +2185,7 @@ static void pusk(int x,int y)
 
     if (menu_level==0)  return;  //just for a case
 
-    tmenu=menu_address[menu_level-1];
+    tmenu=(TMENU*)menu_address[menu_level-1];
 
     size=tmenu->maxw?tmenu->maxw:tmenu->max;
     xr=((tmenu->flags&NVERT)?size*tmenu->xdl:tmenu->xdl);
@@ -2545,7 +2561,7 @@ void show_hide_tip(TMENU * menu, BOOL show)
     if (menu!=NULL) {
         if (menu->flags & 0x100)
         {
-            menu_ = menu;
+            menu_ = (PTMENU*)menu;
             txt = &((*(menu_->pola))[0].txt[0]);
             ptrsz_temp0 = (*(menu_->pola))[menu_->foff + menu_->poz].txt;
         }
@@ -3244,7 +3260,7 @@ void baronoff_(TMENU  * menu)
     if (menu!=NULL) {
         if (menu->flags & 0x100)
         {
-            menu_ = menu;
+            menu_ = (PTMENU*)menu;
             txt = &((*(menu_->pola))[0].txt[0]);
             ptrsz_temp = (*(menu_->pola))[menu_->foff + menu_->poz].txt;
         }
@@ -4804,7 +4820,7 @@ void activate_menu(TMENU *menu) {
 static int menu_init_slider(int *var1, int *var2, int *var3, int *var4)
 {
     TMENU *tmenu;
-    tmenu=menu_address[menu_level-1];
+    tmenu=(TMENU*)menu_address[menu_level-1];
 
     *var1=tmenu->foff;  //  n_first_layer_in_dlg;
     *var2=tmenu->foff+tmenu->maxw; //  n_last_layer_in_dlg+1;
@@ -4820,7 +4836,7 @@ static int menu_grab_slider(void *dp3, int d2)
     int (*SlideFun)(int*, int*, int*, int*);
 
     TMENU *tmenu;
-    tmenu=menu_address[menu_level-1];
+    tmenu=(TMENU*)menu_address[menu_level-1];
 
     SlideFun = (int(*)(int *, int *, int *, int *))dp3;
 
@@ -5228,10 +5244,10 @@ if (BAR_POINTER) show_mouse(NULL);
      }
 
      menu->flags = menu->flags | NAWOPEN;
-     if(openwh (menu))
+     if(openwh ((TMENU*)menu))
      {
-         baron (menu) ;
-         activate (menu) ;
+         baron ((TMENU*)menu) ;
+         activate ((TMENU*)menu) ;
      }
  }
 
@@ -7528,7 +7544,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
   int key_p=0;
   time_t ctrl_time1, ctrl_time2;
 
-  menu_ = menu;
+  menu_ = (PTMENU*)menu;
 
     if (menu!=NULL) {
         if (menu->flags & 0x100)
@@ -8438,7 +8454,7 @@ int  getcom(TMENU *menu)
   if (menu!=NULL) {
       if (menu->flags & 0x100)
       {
-          menu_ = menu;
+          menu_ = (PTMENU*)menu;
           txt = &((*(menu_->pola))[0].txt[0]);
           search_ok=TRUE;
           strcpy(search_str,"");
@@ -9016,7 +9032,7 @@ int  getcom(TMENU *menu)
      {
        if (menu->flags & FIXED)
        {
-           PTMENU *menu_=menu;
+           PTMENU *menu_=(PTMENU*)menu;
            menu2=(*(menu_->pola))[n-1].menu;
        }
        else menu2=(*(menu->pola))[n-1].menu;
@@ -9501,7 +9517,7 @@ void ch_color (void)
 
             rysuj_obiekt(object_info_ad, COPY_PUT, 1);
 
-            nazwa_koloru(object_info_ad, &sk);
+            nazwa_koloru(object_info_ad, sk);
             LiniaG.kolor=Menu_No_to_Color_No(i_color);
             menu_par_new ((*mInfoAboutA.pola)[menu_n].txt, sk);
 
@@ -10227,7 +10243,7 @@ int choose_object(int type_address_no, TYPE_ADDRESS *type_address)
             sprintf(o_layer_s, " (%d)", type_address[i].layer);
             strcat(txt, o_layer_s);
         }
-        strcpy(&(*mObjectSelected.pola)[i].txt, txt);
+        strcpy((*mObjectSelected.pola)[i].txt, txt);
         mObjectSelected.max++;
     }
 
@@ -11435,7 +11451,7 @@ void ch_angle (void)
             {
                 case 4:  //force
                 case 7:  //displacement
-                    parametry_lini((AVECTOR *) object_info_ad, &PL);
+                    parametry_lini((LINIA *) object_info_ad, &PL);
                     kat=PL.kat;
                     kos=sin(a1);
                     koc=cos(a1);
@@ -11766,7 +11782,7 @@ void ch_magnitude1 (void)
                 case 32:  //rotation xy
                 case 33:  //-rotation xy
                     magnitude2angle(((AVECTOR *) object_info_ad), rotation_magnitude);
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, rotation_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, rotation_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
@@ -11777,13 +11793,13 @@ void ch_magnitude1 (void)
                 case 13:
                 case 14:
                     ((AVECTOR *) object_info_ad)->magnitude1 = (float) w0;
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, load_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, load_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
                 case 15:
                     ((AVECTOR *) object_info_ad)->magnitude1 = (float) w0;
-                    set_decimal_format(&sk_info, ((AVECTOR *)object_info_ad)->magnitude1, thermal_precision);
+                    set_decimal_format(sk_info, ((AVECTOR *)object_info_ad)->magnitude1, thermal_precision);
                     //menu update
                     menu_par_new((*mInfoAboutA.pola)[menu_n].txt, sk_info);
                     break;
@@ -11996,7 +12012,7 @@ void ch_opacity (void)
                     if ((s->empty_typ==0) && (s->pattern==0))
                     {
                         if (s->translucent == 1) {
-                            translucency_ptr = s->xy;
+                            translucency_ptr = (char*)s->xy;
                             translucency_ptr += (s->lp * sizeof(float));
                             memmove(translucency_ptr, &i_translucency, sizeof(unsigned char));
                         } else //needs correction
@@ -12251,7 +12267,7 @@ void ch_font_t (void)
     menu_address[menu_level-1]=(char*)&mCzcionka;
     Set_HEIGHT_high();
 
-    Test_Menu (&mCzcionka);
+    Test_Menu ((TMENU*)&mCzcionka);
 
     i_font = ((TEXT*)object_info_ad)->czcionka;
     if ((mCzcionka.maxw==0) || (mCzcionka.maxw>i_font))
@@ -12265,7 +12281,7 @@ void ch_font_t (void)
         mCzcionka.poz=mCzcionka.maxw-1;
     }
 
-    n = Simple_Menu_Proc(&mCzcionka);
+    n = Simple_Menu_Proc((TMENU*)&mCzcionka);
 
     Set_HEIGHT_back();
     ret = empty_dlg();
@@ -12860,7 +12876,7 @@ int Simple_Menu_Proc (TMENU *menu)
 
     menu->flags = menu->flags | NAWOPEN;
 
-  menu_address[menu_level - 1] = menu;
+  menu_address[menu_level - 1] = (char*)menu;
 
   show_mouse(NULL);
   openwh (menu) ;

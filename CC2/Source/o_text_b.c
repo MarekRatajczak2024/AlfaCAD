@@ -757,7 +757,7 @@ void view_font_name(TEXT *t)
   char font_typ[24];
   char font_just[6];
 
-  strcpy(&font_name,PTRS__Text_Style[t->czcionka]->font_name);
+  strcpy(&font_name[0],PTRS__Text_Style[t->czcionka]->font_name);
   sprintf(font_high,"%-6.2f",t->wysokosc);
   sprintf(font_angle,"%-6.2f",t->kat * (360 / (2 * Pi)));
   strcat(font_name," ");
@@ -1071,7 +1071,7 @@ static int pisz(BOOL repeat)
 	if (WhNumberTextStyle == 0) { ErrList(17); return 1; }
 	if (TextG.dl) {
         if (dodaj_obiekt(NULL, &TextG) == NULL) return 1;
-        rysuj_obiekt(&TextG, COPY_PUT, 1);
+        rysuj_obiekt((char*)&TextG, COPY_PUT, 1);
     }
 
 
@@ -1101,7 +1101,7 @@ static int pisz(BOOL repeat)
             komunikat0(121);
         } else {
 
-            strcpy(&tekst, &TextG.text);
+            strcpy(tekst, TextG.text);
             ptr_tekst = tekst;
             //poszukiwanie liczby calkowitej na koncu lancucha
             len = strlen(TextG.text);
@@ -1119,11 +1119,11 @@ static int pisz(BOOL repeat)
             }
             if (bad_char == FALSE) {
                 *ptr_tekst = '\0';
-                strcpy(&TextG.text, tekst);
+                strcpy(TextG.text, tekst);
                 sufiks2 += tekst_interwal;
-                sprintf(&TextG.text, "%s%ld", tekst, sufiks2);
+                sprintf(TextG.text, "%s%ld", tekst, sufiks2);
             } else {
-                strcpy(&TextG.text[0], "");
+                strcpy(TextG.text, "");
                 komunikat0(0);
 
                 if (text_edit_dialog == FALSE) ret = get_string(&TextG.text[0], "", MaxTextLen * 2, 0, 13);
@@ -1180,7 +1180,7 @@ static int multipisz(void)
 	if (WhNumberTextStyle == 0) { ErrList(17); return 1; }
 	if (TextG.dl) {
         if (dodaj_obiekt(NULL, &TextG) == NULL) return 1;
-        rysuj_obiekt(&TextG, COPY_PUT, 1);
+        rysuj_obiekt((char*)&TextG, COPY_PUT, 1);
         flip_screen();
     }
 	if (auto_tekst == FALSE)
@@ -1214,7 +1214,7 @@ static int multipisz(void)
 	else
 	{
 
-		strcpy(&tekst, &TextG.text);
+		strcpy(tekst, TextG.text);
 		ptr_tekst = tekst;
 		//searching integer number at the end of the string
 		len = strlen(TextG.text);
@@ -1240,9 +1240,9 @@ static int multipisz(void)
 			while ((*ptr_tekst == '\n') || (*ptr_tekst == '\r'))
 				ptr_tekst++;
 			*ptr_tekst = '\0';
-			strcpy(&TextG.text, tekst);
+			strcpy(TextG.text, tekst);
 			sufiks2 += tekst_interwal;
-			sprintf(&TextG.text, "%s%ld", tekst, sufiks2);
+			sprintf(TextG.text, "%s%ld", tekst, sufiks2);
 		}
 		else
 		{
@@ -1508,7 +1508,7 @@ int Tekst_factory(char *prefix, BOOL repeat)
 
 	edit_functions = TRUE;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
-	strcpy(&TextG.text, prefix);
+	strcpy(TextG.text, prefix);
 	TextG.multiline = 0;
 
 	redcr(0);
@@ -2087,8 +2087,8 @@ BOOL Wejscie_Text(void *ad)
     strcpy(sk,Current_File_Directory);
 	strncpy(utf8text, ad_text->text, MaxTextLen-1);
 	utf8text[MaxTextLen - 1] = '\0';
-	count=utf82unicode(&utf8text, &unicodetext);
-	unicode2win(&unicodetext, &sk_f, count);
+	count=utf82unicode((unsigned char*)utf8text, (unsigned char*)unicodetext);
+	unicode2win((char*)unicodetext, sk_f, count);
 
     strcat(sk, sk_f);
    }
@@ -2096,8 +2096,8 @@ BOOL Wejscie_Text(void *ad)
   {
 	  strncpy(sk, ad_text->text, MaxTextLen - 1);
 	  sk[MaxTextLen - 1] = '\0';
-	  count = utf82unicode(&sk, &unicodetext);
-	  unicode2win(&unicodetext, &sk, count);
+	  count = utf82unicode((unsigned char*)sk, (unsigned char*)unicodetext);
+	  unicode2win((char*)unicodetext, sk, count);
   }
   strcpy(zbior_danych_2,""); /*kasowanie rysunku dolaczonego*/
 
@@ -2309,7 +2309,7 @@ static int Ins_atrybut(TEXT *Td)           //atrybut
     TextGa.n=T18+TextGa.dl;
 
     if (dodaj_obiekt((BLOK*)dane, (void*)&TextGa)==NULL) return 0;
-        rysuj_obiekt(&TextGa, COPY_PUT, 1);
+        rysuj_obiekt((char*)&TextGa, COPY_PUT, 1);
    }
    else
     {
@@ -2339,7 +2339,7 @@ static int Ins_atrybut(TEXT *Td)           //atrybut
      TextGa.n=T18+TextGa.dl;
   
      if (dodaj_obiekt((BLOK*)dane, (void*)&TextGa)==NULL) return 0;
-        rysuj_obiekt(&TextGa, COPY_PUT, 1);
+        rysuj_obiekt((char*)&TextGa, COPY_PUT, 1);
     }
    }
 error_stru:
@@ -2400,7 +2400,7 @@ int GoEditText(void)
 	////FreeMouse();
 #endif
 	TTF_redraw = FALSE;
-	ret = EditText(&GMultiText, GMultiParams, mynCmdShow, &single, &tab);
+	ret = EditText(GMultiText, GMultiParams, mynCmdShow, &single, &tab);
 #ifndef LINUX
 	////LockMouse();
 #endif
@@ -2413,7 +2413,7 @@ int GoEditText(void)
 	}
 	else
 	{
-		Add_String_To_List(&GMultiText);
+		Add_String_To_List(GMultiText);
 
 		eT.st=GMultiText;
 		ret1=change_multitext(0, ret);
@@ -2504,7 +2504,7 @@ void  Edit_Text(void  *ad)
 
   if (multiline == 1)
   {
-	  strcpy(&GMultiText, ad_text->text);
+	  strcpy(GMultiText, ad_text->text);
 	  GMultiParams = ad_text->bold * 2 + ad_text->italics * 4 + ad_text->underline * 8 + ad_text->justowanie * 16 + ad_text->ukryty * 64;
 	  MEDITFUN = GoEditText;
 	  edit_functions = TRUE;
@@ -2650,7 +2650,7 @@ void  edit_text_tab_f2(void  *ad)
   if (ad_text->multiline)
   {
 	  memmove(&TextG, ad_text, sizeof(NAGLOWEK) + ad_text->n);
-	  strcpy(&GMultiText, ad_text->text);
+	  strcpy(GMultiText, ad_text->text);
 	  GMultiParams = ad_text->bold * 2 + ad_text->italics * 4 + ad_text->underline * 8 + ad_text->justowanie * 16  + ad_text->ukryty * 64;
 	  edit_functions = TRUE;
 	  komunikat0(39);
@@ -2706,7 +2706,7 @@ void  edit_text_f3(void  *ad)
   
   if (ad_text->multiline)
   {
-	  strcpy(&GMultiText, ad_text->text);
+	  strcpy(GMultiText, ad_text->text);
 	  GMultiParams = ad_text->bold * 2 + ad_text->italics * 4 + ad_text->underline * 8 + ad_text->justowanie * 16 + ad_text->ukryty * 64;
 	  MEDITFUN = GoEditText;
 	  edit_functions = TRUE;

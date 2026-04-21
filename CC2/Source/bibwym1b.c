@@ -457,13 +457,13 @@ static void near uaktualnij_polaw (void)
 		 
   if (i_menu_color>=16)
    {
-	 strcpy(&sk,"");
+	 strcpy(sk,"");
      sprintf(sk,u8"֍[X] %#ld",zmwym.Lkolor);
      sk1=strpbrk(sk," ");
    }  
    else
     {
-	 return_menu_par0((*mKolorL.pola)[i_menu_color].txt,&sk);
+	 return_menu_par0((*mKolorL.pola)[i_menu_color].txt,sk);
 	 sk1=strpbrk(sk," ");
     }
     
@@ -478,13 +478,13 @@ static void near uaktualnij_polaw (void)
 		 &mKolorT.foff, &mKolorT.poz) ;
   if (i_menu_color>=16)
    {
-	 strcpy(&sk,"");
+	 strcpy(sk,"");
      sprintf(sk,u8"֍[X] %#ld",zmwym.Tkolor);
      sk1=strpbrk(sk," ");
    }  
    else
     {
-	 return_menu_par0((*mKolorT.pola)[i_menu_color].txt,&sk);
+	 return_menu_par0((*mKolorT.pola)[i_menu_color].txt,sk);
 	 sk1=strpbrk(sk," ");
     } 
     

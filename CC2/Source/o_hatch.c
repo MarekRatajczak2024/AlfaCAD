@@ -404,7 +404,7 @@ static BOOL check_mem_list (int i_pattern_namesno)
   m__list_hatch.maxw = 0; //MaxMenuWin ;
   m__list_hatch.maxw0 = 0; //MaxMenuWin;
   m__list_hatch.max = i_pattern_namesno + 3 ;
-  l_size += Get_Menu_Image_Size (&m__list_hatch) ;
+  l_size += Get_Menu_Image_Size ((TMENU*)&m__list_hatch) ;
   if (l_size < l_free - 500) /*500 - rezerwa na dalsze alokacje */
   {
     ptrs__hatch_def_param = (T_PTR_Hatch_Def_Param)malloc(i_pattern_namesno * sizeof(T_Hatch_Def_Param));
@@ -490,13 +490,13 @@ static void set_list_string (int i_pattern_namesno)
 
   }
 
-  m__list_hatch.pola = &pm__list_hatch_predef ;
+  m__list_hatch.pola = (PPOLE(*)[])&pm__list_hatch_predef ;
 
   if (i_pattern_namesno > 0)
 
   {
 
-    m__list_hatch.pola = (POLE ( *)[])(pm__list_hatch) ;
+    m__list_hatch.pola = (PPOLE ( *)[])(pm__list_hatch) ;
 
   }
 
@@ -993,7 +993,7 @@ void hatch_image_pattern_scale(int poz)
 
     if (strlen(SolidHatchPatternName) > 0)
     {
-        strncpy(&solid_pattern_library_item.pattern_name, &SolidHatchPatternName, 31);
+        strncpy(solid_pattern_library_item.pattern_name, SolidHatchPatternName, 31);
         solid_pattern_library_item.pattern_name[31] = '\0';
         CUR_OFF(X, Y);
         Copy_cursor_pattern_bitmap(&solid_pattern_library_item);
@@ -1521,7 +1521,7 @@ BOOL grab_hatch_pattern(void)
     {
         global_point_in_solid = FALSE;
         global_any_choice = FALSE;
-        adb = find_first_hatch_block(ad, &x0b, &y0b);
+        adb = (BLOK*)find_first_hatch_block(ad, &x0b, &y0b);
 
         if (adb != NULL)
         {
@@ -1529,14 +1529,14 @@ BOOL grab_hatch_pattern(void)
             l_abd = (long_long)adb - (long_long)dane;
 
             adbe = (char*)adb + (long)(sizeof(NAGLOWEK) + adb->n - 1);  //MODIFIED!!! long_long
-            adbs = find_hatch_solid_pattern(adb, adbe);
+            adbs = find_hatch_solid_pattern((char*)adb, adbe);
 
             if (adbs != NULL)
             {
                 w = (WIELOKAT*)adbs;
                 if ((w->empty_typ == 0) && (w->pattern == 1))
                 {
-                    scale_ptr = w->xy;
+                    scale_ptr = (char*)w->xy;
                     scale_ptr += (w->lp * sizeof(float));
                     dx_ptr = scale_ptr;
                     dx_ptr += sizeof(short int);
@@ -1607,7 +1607,7 @@ int Hatch_Proc ( int comput_area, double df_apx1, double df_apy1, double df_apx2
    {
      strcpy(pattern_file,s_hatch_param_df_name);
 
-     normalize_file_name(&pattern_file);
+     normalize_file_name(pattern_file);
      if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))
          strcat(pattern_file, _SOLID_SUFFIX_);
 
@@ -1643,7 +1643,7 @@ once_again_view:
             global_any_choice =  FALSE;
 			memcpy(&Linia_G, &LiniaG, sizeof(LINIA));
             if (((NAGLOWEK *)ad)->obiekt==Olinia) memcpy(&LiniaG, (LINIA*)ad, sizeof(LINIA));  //for vector patterns only
-			adb = find_first_hatch_block(ad, &x0b, &y0b);
+			adb = (BLOK*)find_first_hatch_block(ad, &x0b, &y0b);
 			
 			if (adb != NULL)
 			{
@@ -1656,16 +1656,16 @@ once_again_view:
 
 				adbe = /*(long_long)*/ (char*)adb + (long)(sizeof(NAGLOWEK) + adb->n - 1);  //MODIFIED!!!  long_long
 
-				li = zmien_atrybut_hatch_outline(adb, adbe, ANieOkreslony, Ablok, 1);
+				li = zmien_atrybut_hatch_outline((char*)adb, adbe, ANieOkreslony, Ablok, 1);
 				okno_r();
-				zmien_atrybut_preserve_hatch_outline(adb, adbe, ANieOkreslony, Ausuniety);
+				zmien_atrybut_preserve_hatch_outline((char*)adb, adbe, ANieOkreslony, Ausuniety);
 				okno_all();
-				usun_blok(adb, adbe);
+				usun_blok((char*)adb, adbe);
 
                 adb=(BLOK*)PTR__GTMP7;
 
-                NAGLOWEK *nag=(char*)adb+sizeof(NAGLOWEK)+B3+adb->dlugosc_opisu_obiektu;
-                NAGLOWEK *nag1=(char*)nag+sizeof(NAGLOWEK)+nag->n;
+                NAGLOWEK *nag=(NAGLOWEK*)((char*)adb+sizeof(NAGLOWEK)+B3+adb->dlugosc_opisu_obiektu);
+                NAGLOWEK *nag1=(NAGLOWEK*)((char*)nag+sizeof(NAGLOWEK)+nag->n);
 
 				df_x = x0b;
 				df_y = y0b;
@@ -1722,7 +1722,7 @@ once_again_view:
       }
      strcpy(pattern_file,s_hatch_param_df_name);
 
-      normalize_file_name(&pattern_file);
+      normalize_file_name(pattern_file);
      if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))
          strcat(pattern_file, _SOLID_SUFFIX_);
 
@@ -1758,7 +1758,7 @@ once_again_view:
 		  pattern_file_new[PATERN_NAME_MAXLEN - 1] = '\0';
 
 		  ////utf82none(pattern_file_new);  //UTF8 file name
-          normalize_file_name(&pattern_file_new);
+          normalize_file_name(pattern_file_new);
 
           if ((strcmp(pattern_file_new, "________") == 0) || (strcmp(pattern_file_new, "XXXXXXXX") == 0))
               strcat(pattern_file_new, _SOLID_SUFFIX_);
@@ -1799,7 +1799,7 @@ once_again_view:
   	if (ptrs__hatch_def_param!=NULL)
 	  strcpy(pattern_file, &(*m__list_hatch.pola)[i_a_hatch_pattern_no].txt[0]);
 
-      normalize_file_name(&pattern_file);
+      normalize_file_name(pattern_file);
       if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))
           strcat(pattern_file, _SOLID_SUFFIX_);
 
@@ -1842,7 +1842,7 @@ once_again_view:
           strcpy(s__def_param.sz_name, __IMAGE);
           strcpy(s_hatch_param_df_name, __IMAGE);
 
-          normalize_file_name(&pattern_file);
+          normalize_file_name(pattern_file);
           if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))
               strcat(pattern_file, _SOLID_SUFFIX_);
 
@@ -1890,7 +1890,7 @@ once_again_view:
               strcpy(s__def_param.sz_name, "__IMAGE");
               strcpy(s_hatch_param_df_name, "__IMAGE");
 
-              normalize_file_name(&pattern_file);
+              normalize_file_name(pattern_file);
               if ((strcmp(pattern_file, "________") == 0) || (strcmp(pattern_file, "XXXXXXXX") == 0))
                   strcat(pattern_file, _SOLID_SUFFIX_);
 
@@ -1908,7 +1908,7 @@ once_again_view:
               strcpy(s__def_param.sz_name, "__SOLID");
               strcpy(s_hatch_param_df_name, "__SOLID");
 
-              normalize_file_name(&pattern_file);
+              normalize_file_name(pattern_file);
 
               strcat(pattern_file, ".axx");
           }

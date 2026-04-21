@@ -328,7 +328,7 @@ int korekta_parblok1_1(void  *st,long n)
   Object_Tok_All1_1 (&off, offk, &ad, OdBLOK) ;
   while (ad != -1 && ad <= off_ob)
   {
-     b = (BLOK1_1*)(dane + ad) ;
+     b = (BLOK*)(dane + ad) ;
      off_endb = ad + sizeof(NAGLOWEK1_1) + b->n - 1 ;
      if (ad <= off_ob && off_endb >= off_ob)
      {
@@ -414,7 +414,7 @@ char* Add_Block_Object_older(BLOK** ptrptr_adb, void* ad, long l_move)
     if (nag->obiekt == OdBLOK)
     {
         blok_nag = (BLOK*)ad;
-        if (TRUE != Check_Object(blok_nag, FALSE))
+        if (TRUE != Check_Object((NAGLOWEK*)blok_nag, FALSE))
         {
             return NULL;
         }
@@ -485,7 +485,7 @@ char* Add_Block_Object(BLOK** ptrptr_adb, void* ad, long l_move)
 	if (nag->obiekt == OdBLOK)
 	{
         blok_nag = (BLOK*)ad;
-		if (TRUE != Check_Object(blok_nag, FALSE))
+		if (TRUE != Check_Object((NAGLOWEK*)blok_nag, FALSE))
 		{
 			return NULL;
 		}
@@ -509,7 +509,7 @@ char* Add_Block_Object(BLOK** ptrptr_adb, void* ad, long l_move)
     del_dane0=dane0-dane00;
     if (del_dane0!=0)
     {
-        if (adb != NULL) adb = (char*)adb + del_dane0;
+        if (adb != NULL) adb = (BLOK*)((char*)adb + del_dane0);
         if (shift_ad)
             ad = (char*)ad + del_dane0;
     }
@@ -590,7 +590,7 @@ char* Add_Block_Object_Ex(BLOK** ptrptr_adb, void* ad, long l_move)
     del_dane0=dane0-dane00;
 	if (del_dane0 != 0)
 	{
-		if (adb != NULL) adb = (char*)adb + del_dane0;
+		if (adb != NULL) adb = (BLOK*)((char*)adb + del_dane0);
 		if (shift_ad)
 			ad = (char*)ad + del_dane0;
 	}
@@ -659,7 +659,7 @@ char *Add_Block_Object_Insert (BLOK ** ptrptr_adb, void  *ad, long l_move)
     del_dane0=dane0-dane00;
 	if (del_dane0 != 0)
 	{
-		if (adb != NULL) adb = (char*)adb + del_dane0;
+		if (adb != NULL) adb = (BLOK*)((char*)adb + del_dane0);
 		if (shift_ad)
 			ad = (char*)ad + del_dane0;
 	}
@@ -1640,7 +1640,7 @@ unsigned char  *Change_Block_Descript(BLOK *ptr_block, void *ptr_description, in
 		memmove((void*)st, ptr_description, len_descr);
 		return NULL;
 	}
-	if (n > 0 && !SetBufferDaneSize(ll)) { ErrList(18); return ptr_block; }
+	if (n > 0 && !SetBufferDaneSize(ll)) { ErrList(18); return (unsigned char*)ptr_block; }
 
     del_dane0=dane0-dane00;
     if (del_dane0!=0)
@@ -1893,22 +1893,22 @@ void zmien_atrybut_preserve_hatch_outline(char  *adr, char  *adrk, int aold, int
 		{
 			if ((nag->obiekt == Olinia) && (((LINIA*)(nag))->typ != HATCH_OUTLINE_TYPE))
 			{
-				rysuj_obiekt(nag, COPY_PUT, 0);
+				rysuj_obiekt((char*)nag, COPY_PUT, 0);
 				nag->atrybut = anew;
 			}
 			else if ((nag->obiekt == Oluk) && (((LUK*)(nag))->typ != HATCH_OUTLINE_TYPE))
 			{
-				rysuj_obiekt(nag, COPY_PUT, 0);
+                rysuj_obiekt((char*)nag, COPY_PUT, 0);
 				nag->atrybut = anew;
 			}
 			else if ((nag->obiekt == Ookrag) && (((OKRAG*)(nag))->typ != HATCH_OUTLINE_TYPE))
 			{
-				rysuj_obiekt(nag, COPY_PUT, 0);
+				rysuj_obiekt((char*)nag, COPY_PUT, 0);
 				nag->atrybut = anew;
 			}
 			else if (nag->obiekt == Owwielokat)
 			{
-				rysuj_obiekt(nag, COPY_PUT, 0);
+				rysuj_obiekt((char*)nag, COPY_PUT, 0);
 				nag->atrybut = anew;
 			}
 		}

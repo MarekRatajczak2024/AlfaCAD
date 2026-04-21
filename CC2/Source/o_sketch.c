@@ -124,7 +124,7 @@ static BOOL add_sketch_line (void)
     }
     Set_Second_Screen();
       set_pattern_offset(patt_offs_bak);
-      rysuj_obiekt(&LiniaG, COPY_PUT,1);
+      rysuj_obiekt((char*)&LiniaG, COPY_PUT,1);
       patt_offs_bak = get_pattern_offset();
     Set_Screen();
     flip_screen();

@@ -550,7 +550,7 @@ static TDIALOG load_file_dlg =
 	2, &label,
 	1, &gr_box,
 	32,&edit,	/*edit*/
-	1, images_t,		/*image*/
+	1, &images_t,		/*image*/
 	4, &button,
 	0, NULL, //&listbox,		/*listbox*/
 	0, &combobox,
@@ -692,11 +692,25 @@ get_config_param (T_Fstring key_name, T_Fstring ret_string)
    }
    else if (stricmp(key_name, IC_KATALOG) == 0)
 	{
-		set_default_param(ret_string, &default_drive_cat,
-			default_path_cat);
+		set_default_param(ret_string, &default_drive_cat,default_path_cat);
+        /*  this doesn't work with Plasma
+#ifdef LINUX
+#ifndef MACOS
+        //if ((ret_string[0]!='/') && (ret_string[0]!='.') && (strstr(ret_string,"..")==NULL))
+        //  sprintf(default_path_cat, "%s/",ret_string);
+#endif
+#endif
+        */
 		save_path_cat();
-		set_default_param(ret_string, &default_drive_cat0,
-			default_path_cat0);
+		set_default_param(ret_string, &default_drive_cat0,default_path_cat0);
+        /*  this doesn't work with Plasma
+#ifdef LINUX
+#ifndef MACOS
+       //if ((ret_string[0]!='/') && (ret_string[0]!='.') && (strstr(ret_string,"..")==NULL))
+       //    sprintf(default_path_cat0, "%s/",ret_string);
+#endif
+#endif
+         */
 		save_path_cat0();
 	}
    else
@@ -1420,7 +1434,7 @@ int ViewInsBlock(long adr, BOOL set_color)
     dane_buf=dane;
     dane=ptr_buf;
 
-    ADP1=ptr_blk;
+    ADP1=(char*)ptr_blk;
     ADK1=(char*)ptr_blk+sizeof(NAGLOWEK)+(ptr_blk->n)-1;
 
     skala_punktu = TRUE;
@@ -2528,10 +2542,10 @@ static BOOL list_spec (void)
 
   poz = listbox [LIST_SPECIFICATION].poz + listbox [LIST_SPECIFICATION].foff ;
   lpsz_txt = s__table_spec_name [poz].spec_value ;
-  strcpy (edit_specification, lpsz_txt) ;
+  strcpy (edit_specification[0], lpsz_txt) ;
   ////Draw_Input_Line (&edit [EDIT_SPEC]) ;
   lpsz_txt = s__table_spec_name [poz].spec_name ;
-  strcpy (edit_specification_name, lpsz_txt) ;
+  strcpy (edit_specification_name[0], lpsz_txt) ;
 
   return TRUE ;
 }
@@ -2964,14 +2978,14 @@ switch (type)
 		ext__ = EXT_FONT;
 		ext_ = EXT__FONT;
 		
-		strcpy(&ptrs__drives_current_dir_win, winfont);
+		strcpy(ptrs__drives_current_dir_win, winfont);
 		break;
       case INI_OTF_FONT:
           b__load_file = FALSE;
           ext__ = EXT_FONT;
           ext_ = EXT__FONT;
 
-          strcpy(&ptrs__drives_current_dir_win, otffont);
+          strcpy(ptrs__drives_current_dir_win, otffont);
           break;
       case ZAPIS_OUT:
           b__load_file = FALSE ;
@@ -2992,10 +3006,11 @@ switch (type)
     case CONVERT_OLD_FILE:
 	case EDIT_TABLE : 
 					if (strlen(old_mask_file)==0)
-					{        
-                         strcpy (&sz__current_mask, ext__);
-                       }
-                         else strcpy (sz__current_mask, old_mask_file); 
+					{
+                         strcpy (sz__current_mask, ext__);
+                    }
+                    else
+                        strcpy (sz__current_mask, old_mask_file);
              break;
     case INI_BLOK:
     case SAVE_BLOK:

@@ -237,7 +237,7 @@ static void set_list_string (void)
   {
     mList_String.maxw = 0 ;
   }
-  mList_String.pola = pmList_String ;
+  mList_String.pola = (POLE(*)[])pmList_String ;
 }
 
 
