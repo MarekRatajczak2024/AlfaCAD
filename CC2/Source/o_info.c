@@ -40,12 +40,14 @@ extern BLOK *LASTB(char *ado);
 extern void parametry_lini3D (LINIA3D  *L,PLINIA3D *PL);
 extern void return_menu_par (char *pole, char * par);
 extern void return_menu_par0 (char *pole, char * par);
-extern BOOL Add_String_To_List (char *ptr_string);
+extern void Add_String_To_List (char *ptr_string);
 extern void TTF_logo(int x, int y);
 extern char *Colors_Name_txt [MAXCOLOR + 1];
 extern void decodingwin(char *text);
 extern long_long Get_memory_size(void);
 extern void Set_Memory_Size(unsigned long size);
+extern double get_vector_angle(double kat);
+
 extern char digits[16];
 extern char numbers[16];
 extern BOOL Semaphore;
@@ -112,7 +114,7 @@ static void uaktualnij_pola (void)
 
   mem_virtual = Get_Free_Virtual_Memory();
 
-  sprintf (sk, "%#ld / %#ld", Get_Buf_Mem_Size () / 1024, Get_memory_size() / 1024) ;
+  sprintf (sk, "%lld / %lld", Get_Buf_Mem_Size () / 1024, Get_memory_size() / 1024) ;
   menu_par_new((*mInfo.pola)[0].txt, sk) ;
 
   imageBMPsize1=Get_imageBMPsize() / (1024 * 1000);
@@ -120,19 +122,19 @@ static void uaktualnij_pola (void)
   imageBMPsize_total_used1 = imageBMPsize_total_used / (1024 * 1000);
  
 //  sprintf (sk, "%#ld", imageBMPsize / 1024/*mem_virtual*/) ;
-  sprintf (sk, "%#ld/%#ld (%#ld)", imageBMPsize1, imageBMPsize_total_used1, imageBMPsize_used1) ;
+  sprintf (sk, "%lld/%lld (%lld)", imageBMPsize1, imageBMPsize_total_used1, imageBMPsize_used1) ;
   menu_par_new((*mInfo.pola)[1].txt, sk) ;
 
   sprintf (sk, "%lu", dane_size - 8 /*4*/) ;
   menu_par_new((*mInfo.pola)[2].txt, sk) ;
 
-  sprintf (sk, "%#lu", Bufor_Wydruku / 1024 ) ;
+  sprintf (sk, "%llu", Bufor_Wydruku / 1024 ) ;
   menu_par_new((*mInfo.pola)[3].txt, sk) ;
 
   sprintf (sk, "%u", Get_Buf_Mak_Size ()) ;
   menu_par_new((*mInfo.pola)[4].txt, sk) ;
 
-  sprintf (sk, "%#lu/%#lu", Bufor_PCX / 1024, Wielkosc_Plata / 1024) ;
+  sprintf (sk, "%llu/%llu", Bufor_PCX / 1024, Wielkosc_Plata / 1024) ;
   menu_par_new((*mInfo.pola)[5].txt, sk) ;
 
   strcpy(sk1, Current_File_Directory);
@@ -282,7 +284,7 @@ void nazwa_koloru(char *ad1, char *sk)
    }
     else if (((LINIA *)ad1)->kolor>15) 
      {
-      sprintf (sk, u8"%#ld", ((LINIA *)ad1)->kolor) ;
+      sprintf (sk, u8"%d", ((LINIA *)ad1)->kolor) ;
      } 
        else
         {
@@ -456,7 +458,7 @@ void Info_about_object(char *ad)
 	 menu_par_new((*mInfoAbout.pola)[iObject].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, u8"%#ld", ((LINIA *)ad)->warstwa + 1) ;
+     sprintf (sk, u8"%d", ((LINIA *)ad)->warstwa + 1) ;
      strcat(sk,u8" '");
      strcat(sk,Layers[((LINIA *)ad)->warstwa].name);
      strcat(sk,u8"'");
@@ -490,22 +492,22 @@ void Info_about_object(char *ad)
         act(iEdgeInverted);
      }
 
-     lx1 =  milimetryobxl(((LINIA *)ad)->x1, (((LINIA *)ad)->y1)) ;
+     lx1 =  milimetryobxl(((LINIA *)ad)->x1, (((LINIA *)ad)->y1), 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
 	 menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =   milimetryobyl(((LINIA *)ad)->x1, (((LINIA *)ad)->y1)) ;
+     ly1 =   milimetryobyl(((LINIA *)ad)->x1, (((LINIA *)ad)->y1), 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
 	 menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
 
-     lx2 =  milimetryobxl(((LINIA *)ad)->x2, (((LINIA *)ad)->y2));
+     lx2 =  milimetryobxl(((LINIA *)ad)->x2, (((LINIA *)ad)->y2), 0);
      sprintf (sk, "%13.9lf", lx2) ;
 	 menu_par_new((*mInfoAbout.pola)[iX2].txt, sk) ;
 	 act(iX2);
 
-     ly2 = milimetryobyl(((LINIA *)ad)->x2, (((LINIA *)ad)->y2));
+     ly2 = milimetryobyl(((LINIA *)ad)->x2, (((LINIA *)ad)->y2), 0);
      sprintf (sk, "%13.9lf", ly2) ;
 	 menu_par_new((*mInfoAbout.pola)[iY2].txt, sk) ;
 	 act(iY2);
@@ -513,8 +515,11 @@ void Info_about_object(char *ad)
      parametry_lini((LINIA*)ad, &pl) ;
      dX = lx2 - lx1 ;
      dY = ly2 - ly1 ;
-     dl = milimetryob (pl.dl) ;
-     angle = pl.kat - get_angle_l();
+     ////dl = milimetryob (pl.dl) ;
+     dl=sqrt(dX*dX+dY*dY);  //due to both cartesian and isometric system
+
+     ////angle = pl.kat - get_angle_l();
+     angle = get_vector_angle(pl.kat);
      sprintf (sk, "%8.7lf", angle);
      menu_par_new((*mInfoAbout.pola)[iAngle1].txt, sk) ;
 	 act(iAngle1);
@@ -641,7 +646,7 @@ void Info_about_object(char *ad)
             }
         }
 
-        sprintf (sk, u8"%#ld", ((LINIA *)adbp)->warstwa + 1) ;
+        sprintf (sk, u8"%d", ((LINIA *)adbp)->warstwa + 1) ;
         strcat(sk,u8" '");
         strcat(sk,Layers[((LINIA *)adbp)->warstwa].name);
         strcat(sk,u8"'");
@@ -680,7 +685,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((TEXT *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((TEXT *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((TEXT *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -692,12 +697,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
 
-     lx1 =  milimetryobxl(((TEXT *)ad)->x, (((TEXT *)ad)->y)) ;
+     lx1 =  milimetryobxl(((TEXT *)ad)->x, (((TEXT *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobyl(((TEXT *)ad)->x, (((TEXT *)ad)->y)) ;
+     ly1 =  milimetryobyl(((TEXT *)ad)->x, (((TEXT *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
@@ -765,7 +770,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((LUK *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((LUK *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((LUK *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -799,12 +804,12 @@ void Info_about_object(char *ad)
          act(iEdgeInverted);
      }
 
-     lx1 =  milimetryobxl(((LUK *)ad)->x, (((LUK *)ad)->y)) ;
+     lx1 =  milimetryobxl(((LUK *)ad)->x, (((LUK *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobyl(((LUK *)ad)->x, (((LUK *)ad)->y)) ;
+     ly1 =  milimetryobyl(((LUK *)ad)->x, (((LUK *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
@@ -852,7 +857,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
       act(iObject);
 
-      sprintf (sk, "%#ld", ((SOLIDARC *)ad)->warstwa + 1) ;
+      sprintf (sk, "%d", ((SOLIDARC *)ad)->warstwa + 1) ;
       strcat(sk," '");
       strcat(sk,Layers[((SOLIDARC *)ad)->warstwa].name);
       strcat(sk,"'");
@@ -871,12 +876,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
       act(iLWidth);
 
-      lx1 =  milimetryobxl(((SOLIDARC *)ad)->x, (((SOLIDARC *)ad)->y)) ;
+      lx1 =  milimetryobxl(((SOLIDARC *)ad)->x, (((SOLIDARC *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", lx1) ;
       menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
       act(iX1);
 
-      ly1 =  milimetryobyl(((SOLIDARC *)ad)->x, (((SOLIDARC *)ad)->y)) ;
+      ly1 =  milimetryobyl(((SOLIDARC *)ad)->x, (((SOLIDARC *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", ly1) ;
       menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
       act(iY1);
@@ -955,7 +960,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
       act(iObject);
 
-      sprintf (sk, "%#ld", ((ELLIPTICALARC *)ad)->warstwa + 1) ;
+      sprintf (sk, "%d", ((ELLIPTICALARC *)ad)->warstwa + 1) ;
       strcat(sk," '");
       strcat(sk,Layers[((ELLIPTICALARC *)ad)->warstwa].name);
       strcat(sk,"'");
@@ -977,12 +982,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
       act(iLWidth);
 
-      lx1 =  milimetryobxl(((ELLIPTICALARC *)ad)->x, (((ELLIPTICALARC *)ad)->y)) ;
+      lx1 =  milimetryobxl(((ELLIPTICALARC *)ad)->x, (((ELLIPTICALARC *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", lx1) ;
       menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
       act(iX1);
 
-      ly1 =  milimetryobyl(((ELLIPTICALARC *)ad)->x, (((ELLIPTICALARC *)ad)->y)) ;
+      ly1 =  milimetryobyl(((ELLIPTICALARC *)ad)->x, (((ELLIPTICALARC *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", ly1) ;
       menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
       act(iY1);
@@ -1029,7 +1034,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((OKRAG *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((OKRAG *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((OKRAG *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -1051,12 +1056,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
 
-     lx1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y)) ;
+     lx1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobyl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y)) ;
+     ly1 =  milimetryobyl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
@@ -1093,7 +1098,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
       act(iObject);
 
-      sprintf (sk, "%#ld", ((ELLIPSE *)ad)->warstwa + 1) ;
+      sprintf (sk, "%d", ((ELLIPSE *)ad)->warstwa + 1) ;
       strcat(sk," '");
       strcat(sk,Layers[((ELLIPSE *)ad)->warstwa].name);
       strcat(sk,"'");
@@ -1115,12 +1120,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
       act(iLWidth);
 
-      lx1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((OKRAG *)ad)->y)) ;
+      lx1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((OKRAG *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", lx1) ;
       menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
       act(iX1);
 
-      ly1 =  milimetryobyl(((ELLIPSE *)ad)->x, (((OKRAG *)ad)->y)) ;
+      ly1 =  milimetryobyl(((ELLIPSE *)ad)->x, (((OKRAG *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", ly1) ;
       menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
       act(iY1);
@@ -1169,7 +1174,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((OKRAG *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((OKRAG *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((OKRAG *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -1181,12 +1186,12 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
 	 act(iColor);
 
-     lx1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y)) ;
+     lx1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y)) ;
+     ly1 =  milimetryobxl(((OKRAG *)ad)->x, (((OKRAG *)ad)->y), 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
@@ -1223,7 +1228,7 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
       act(iObject);
 
-      sprintf (sk, "%#ld", ((ELLIPSE *)ad)->warstwa + 1) ;
+      sprintf (sk, "%d", ((ELLIPSE *)ad)->warstwa + 1) ;
       strcat(sk," '");
       strcat(sk,Layers[((ELLIPSE *)ad)->warstwa].name);
       strcat(sk,"'");
@@ -1235,12 +1240,12 @@ void Info_about_object(char *ad)
       menu_par_new((*mInfoAbout.pola)[iColor].txt, sk) ;
       act(iColor);
 
-      lx1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((ELLIPSE *)ad)->y)) ;
+      lx1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((ELLIPSE *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", lx1) ;
       menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
       act(iX1);
 
-      ly1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((ELLIPSE *)ad)->y)) ;
+      ly1 =  milimetryobxl(((ELLIPSE *)ad)->x, (((ELLIPSE *)ad)->y), 0) ;
       sprintf (sk, "%13.9lf", ly1) ;
       menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
       act(iY1);
@@ -1282,7 +1287,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((WIELOKAT *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((WIELOKAT *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((WIELOKAT *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -1301,44 +1306,44 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
 	 act(iLWidth);
 
-     lx1 =  milimetryobxl(((WIELOKAT *)ad)->xy[0], ((WIELOKAT *)ad)->xy[1]) ;
+     lx1 =  milimetryobxl(((WIELOKAT *)ad)->xy[0], ((WIELOKAT *)ad)->xy[1], 0) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobyl(((WIELOKAT *)ad)->xy[0], ((WIELOKAT *)ad)->xy[1]) ;
+     ly1 =  milimetryobyl(((WIELOKAT *)ad)->xy[0], ((WIELOKAT *)ad)->xy[1], 0) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
 
-     lx2 =  milimetryobxl(((WIELOKAT *)ad)->xy[2], ((WIELOKAT *)ad)->xy[3]) ;
+     lx2 =  milimetryobxl(((WIELOKAT *)ad)->xy[2], ((WIELOKAT *)ad)->xy[3], 0) ;
      sprintf (sk, "%13.9lf", lx2) ;
      menu_par_new((*mInfoAbout.pola)[iX2].txt, sk) ;
 	 act(iX2);
 
-     ly2 =  milimetryobyl(((WIELOKAT *)ad)->xy[2], ((WIELOKAT *)ad)->xy[3]) ;
+     ly2 =  milimetryobyl(((WIELOKAT *)ad)->xy[2], ((WIELOKAT *)ad)->xy[3], 0) ;
      sprintf (sk, "%13.9lf", ly2) ;
      menu_par_new((*mInfoAbout.pola)[iY2].txt, sk) ;
 	 act(iY2);
 
-     lx3 =  milimetryobxl(((WIELOKAT *)ad)->xy[4], ((WIELOKAT *)ad)->xy[5]) ;
+     lx3 =  milimetryobxl(((WIELOKAT *)ad)->xy[4], ((WIELOKAT *)ad)->xy[5], 0) ;
      sprintf (sk, "%13.9lf", lx3) ;
      menu_par_new((*mInfoAbout.pola)[iX3].txt, sk) ;
 	 act(iX3);
 
-     ly3 =  milimetryobyl(((WIELOKAT *)ad)->xy[4], ((WIELOKAT *)ad)->xy[5]) ;
+     ly3 =  milimetryobyl(((WIELOKAT *)ad)->xy[4], ((WIELOKAT *)ad)->xy[5], 0) ;
      sprintf (sk, "%13.9lf", ly3) ;
      menu_par_new((*mInfoAbout.pola)[iY3].txt, sk) ;
 	 act(iY3);
 
      if (((WIELOKAT *)ad)->lp==8)
       {
-       lx4 =  milimetryobxl(((WIELOKAT *)ad)->xy[6], ((WIELOKAT *)ad)->xy[7]) ;
+       lx4 =  milimetryobxl(((WIELOKAT *)ad)->xy[6], ((WIELOKAT *)ad)->xy[7], 0) ;
        sprintf (sk, "%13.9lf", lx4) ;
        menu_par_new((*mInfoAbout.pola)[iX4].txt, sk) ;
 	   act(iX4);
 
-       ly4 =  milimetryobyl(((WIELOKAT *)ad)->xy[6], ((WIELOKAT *)ad)->xy[7]) ;
+       ly4 =  milimetryobyl(((WIELOKAT *)ad)->xy[6], ((WIELOKAT *)ad)->xy[7], 0) ;
        sprintf (sk, "%13.9lf", ly4) ;
        menu_par_new((*mInfoAbout.pola)[iY4].txt, sk) ;
 	   act(iY4);
@@ -1378,7 +1383,7 @@ void Info_about_object(char *ad)
    menu_par_new((*mInfoAbout.pola)[0].txt, sk);
    act(iObject);
 
-   sprintf(sk, "%#ld", ((SPLINE *)ad)->warstwa + 1);
+   sprintf(sk, "%d", ((SPLINE *)ad)->warstwa + 1);
    strcat(sk, " '");
    strcat(sk, Layers[((SPLINE *)ad)->warstwa].name);
    strcat(sk, "'");
@@ -1400,44 +1405,44 @@ void Info_about_object(char *ad)
    menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk);
    act(iLWidth);
 
-   lx1 =  milimetryobxl(((SPLINE *)ad)->xy[0], ((SPLINE *)ad)->xy[1]);
+   lx1 =  milimetryobxl(((SPLINE *)ad)->xy[0], ((SPLINE *)ad)->xy[1], 0);
    sprintf(sk, "%13.9lf", lx1);
    menu_par_new((*mInfoAbout.pola)[iX1].txt, sk);
    act(iX1);
 
-   ly1 =  milimetryobyl(((SPLINE *)ad)->xy[0], ((SPLINE *)ad)->xy[1]);
+   ly1 =  milimetryobyl(((SPLINE *)ad)->xy[0], ((SPLINE *)ad)->xy[1], 0);
    sprintf(sk, "%13.9lf", ly1);
    menu_par_new((*mInfoAbout.pola)[iY1].txt, sk);
    act(iY1);
 
-   lx2 =  milimetryobxl(((SPLINE *)ad)->xy[2], ((SPLINE *)ad)->xy[3]) ;
+   lx2 =  milimetryobxl(((SPLINE *)ad)->xy[2], ((SPLINE *)ad)->xy[3], 0) ;
    sprintf(sk, "%13.9lf", lx2);
    menu_par_new((*mInfoAbout.pola)[iX2].txt, sk);
    act(iX2);
 
-   ly2 =  milimetryobyl(((SPLINE *)ad)->xy[2], ((SPLINE *)ad)->xy[3]) ;
+   ly2 =  milimetryobyl(((SPLINE *)ad)->xy[2], ((SPLINE *)ad)->xy[3], 0) ;
    sprintf(sk, "%13.9lf", ly2);
    menu_par_new((*mInfoAbout.pola)[iY2].txt, sk);
    act(iY2);
 
-   lx3 =  milimetryobxl(((SPLINE *)ad)->xy[4], ((SPLINE *)ad)->xy[5]) ;
+   lx3 =  milimetryobxl(((SPLINE *)ad)->xy[4], ((SPLINE *)ad)->xy[5], 0) ;
    sprintf(sk, "%13.9lf", lx3);
    menu_par_new((*mInfoAbout.pola)[iX3].txt, sk);
    act(iX3);
 
-   ly3 =  milimetryobyl(((SPLINE *)ad)->xy[4], ((SPLINE *)ad)->xy[5]) ;
+   ly3 =  milimetryobyl(((SPLINE *)ad)->xy[4], ((SPLINE *)ad)->xy[5], 0) ;
    sprintf(sk, "%13.9lf", ly3);
    menu_par_new((*mInfoAbout.pola)[iY3].txt, sk);
    act(iY3);
 
    if (((SPLINE *)ad)->lp > 6)
    {
-       lx4 =  milimetryobxl(((SPLINE *)ad)->xy[6], ((SPLINE *)ad)->xy[7]) ;
+       lx4 =  milimetryobxl(((SPLINE *)ad)->xy[6], ((SPLINE *)ad)->xy[7], 0) ;
 	   sprintf(sk, "%13.9lf", lx4);
 	   menu_par_new((*mInfoAbout.pola)[iX4].txt, sk);
 	   act(iX4);
 
-       ly4 =  milimetryobyl(((SPLINE *)ad)->xy[6], ((SPLINE *)ad)->xy[7]) ;
+       ly4 =  milimetryobyl(((SPLINE *)ad)->xy[6], ((SPLINE *)ad)->xy[7], 0) ;
 	   sprintf(sk, "%13.9lf", ly4);
 	   menu_par_new((*mInfoAbout.pola)[iY4].txt, sk);
 	   act(iY4);
@@ -1458,10 +1463,11 @@ void Info_about_object(char *ad)
   else if (((NAGLOWEK*)ad)->obiekt==Opoint)
    {   
      strcpy(sk, objects[8]);
+     if (((T_Point *)ad)->cartflags & 1) strcat(sk, isometric_info);
      menu_par_new((*mInfoAbout.pola)[0].txt, sk) ;
 	 act(iObject);
 
-     sprintf (sk, "%#ld", ((T_Point *)ad)->warstwa + 1) ;
+     sprintf (sk, "%d", ((T_Point *)ad)->warstwa + 1) ;
      strcat(sk," '");
      strcat(sk,Layers[((T_Point *)ad)->warstwa].name);
      strcat(sk,"'");
@@ -1478,12 +1484,12 @@ void Info_about_object(char *ad)
      (*mInfoAbout.pola)[iPType].iconno=point_icon[((T_Point *)ad)->typ];
      act(iPType);
 
-     lx1 =  milimetryobxl(((T_Point *)ad)->x, ((T_Point *)ad)->y) ;
+     lx1 =  milimetryobxl(((T_Point *)ad)->x, ((T_Point *)ad)->y, ((T_Point *)ad)->cartflags) ;
      sprintf (sk, "%13.9lf", lx1) ;
      menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
 	 act(iX1);
 
-     ly1 =  milimetryobyl(((T_Point *)ad)->x, ((T_Point *)ad)->y) ;
+     ly1 =  milimetryobyl(((T_Point *)ad)->x, ((T_Point *)ad)->y, ((T_Point *)ad)->cartflags) ;
      sprintf (sk, "%13.9lf", ly1) ;
      menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
 	 act(iY1);
@@ -1515,19 +1521,19 @@ void Info_about_object(char *ad)
     menu_par_new((*mInfoAbout.pola)[0].txt, sk);
     act(iObject);
 
-	sprintf(sk, "%#ld", ((B_PCX *)ad)->warstwa + 1);
+	sprintf(sk, "%d", ((B_PCX *)ad)->warstwa + 1);
 	strcat(sk, " '");
 	strcat(sk, Layers[((B_PCX *)ad)->warstwa].name);
 	strcat(sk, "'");
 	menu_par_new((*mInfoAbout.pola)[iLayer].txt, sk);
 	act(1);
 
-    lx1 =  milimetryobxl(((B_PCX *)ad)->x, ((B_PCX *)ad)->y) ;
+    lx1 =  milimetryobxl(((B_PCX *)ad)->x, ((B_PCX *)ad)->y, 0) ;
 	sprintf(sk, "%13.9lf", lx1);
 	menu_par_new((*mInfoAbout.pola)[iX1].txt, sk);
 	act(iX1);
 
-    ly1 =  milimetryobyl(((B_PCX *)ad)->x, ((B_PCX *)ad)->y) ;
+    ly1 =  milimetryobyl(((B_PCX *)ad)->x, ((B_PCX *)ad)->y, 0) ;
 	sprintf(sk, "%13.9lf", ly1);
 	menu_par_new((*mInfoAbout.pola)[iY1].txt, sk);
 	act(iY1);
@@ -1571,10 +1577,11 @@ void Info_about_object(char *ad)
   else if (((NAGLOWEK*)ad)->obiekt==Ovector)
     {
         strcpy(sk, objects[18]);
+        if (((AVECTOR *)ad)->cartflags & 1) strcat(sk, isometric_info);
         menu_par_new((*mInfoAbout.pola)[iObject].txt, sk) ;
         act(iObject);
 
-        sprintf (sk, u8"%#ld", ((AVECTOR *)ad)->warstwa + 1) ;
+        sprintf (sk, u8"%d", ((AVECTOR *)ad)->warstwa + 1) ;
         strcat(sk,u8" '");
         strcat(sk,Layers[((AVECTOR *)ad)->warstwa].name);
         strcat(sk,u8"'");
@@ -1596,27 +1603,28 @@ void Info_about_object(char *ad)
         menu_par_new((*mInfoAbout.pola)[iLWidth].txt, sk) ;
         act(iLWidth);
 
-        lx1 =  milimetryobxl(((AVECTOR *)ad)->x1, (((AVECTOR *)ad)->y1)) ;
+        lx1 =  milimetryobxl(((AVECTOR *)ad)->x1, (((AVECTOR *)ad)->y1), (((AVECTOR *)ad)->cartflags)) ;
         sprintf (sk, "%13.9lf", lx1) ;
         menu_par_new((*mInfoAbout.pola)[iX1].txt, sk) ;
         act(iX1);
         edit_param_no[iX1]=TRUE;
 
-        ly1 =   milimetryobyl(((AVECTOR *)ad)->x1, (((AVECTOR *)ad)->y1)) ;
+        ly1 =   milimetryobyl(((AVECTOR *)ad)->x1, (((AVECTOR *)ad)->y1), (((AVECTOR *)ad)->cartflags)) ;
         sprintf (sk, "%13.9lf", ly1) ;
         menu_par_new((*mInfoAbout.pola)[iY1].txt, sk) ;
         act(iY1);
         edit_param_no[iY1]=TRUE;
 
 
-        lx2 =  milimetryobxl(((AVECTOR *)ad)->x2, (((AVECTOR *)ad)->y2));
+        lx2 =  milimetryobxl(((AVECTOR *)ad)->x2, (((AVECTOR *)ad)->y2), (((AVECTOR *)ad)->cartflags));
 
-        ly2 = milimetryobyl(((AVECTOR *)ad)->x2, (((AVECTOR *)ad)->y2));
+        ly2 = milimetryobyl(((AVECTOR *)ad)->x2, (((AVECTOR *)ad)->y2), (((AVECTOR *)ad)->cartflags));
 
         parametry_lini((LINIA*)ad, &pl) ;
         dX = lx2 - lx1 ;
         dY = ly2 - ly1 ;
-        dl = milimetryob (pl.dl) ;
+        ////dl = milimetryob (pl.dl) ;
+        dl=sqrt(dX*dX+dY*dY);  //due to both cartesian and isometric system
 
         sprintf (sk, "%13.9lf", dl);
         menu_par_new((*mInfoAbout.pola)[iLenght].txt, sk) ;
@@ -1656,8 +1664,8 @@ void Info_about_object(char *ad)
                 menu_par_new((*mInfoAbout.pola)[iY2].txt, sk) ;
                 act(iY2);
                 edit_param_no[iY2]=TRUE;
-
-                angle = pl.kat - get_angle_l();
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle1].txt, sk) ;
                 act(iAngle1);
@@ -1679,8 +1687,8 @@ void Info_about_object(char *ad)
                 act(iLoadCharacter);
                 if (((AVECTOR *)ad)->load>0) (*mInfoAbout.pola)[iLoadCharacter].iconno=((AVECTOR *)ad)->load+786;
                 else (*mInfoAbout.pola)[iLoadCharacter].iconno=797;
-
-                angle = pl.kat - get_angle_l();
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle].txt, sk) ;
                 act(iAngle);
@@ -1695,8 +1703,10 @@ void Info_about_object(char *ad)
                 parametry_lini((LINIA*)ad, &pl) ;
                 dX = lx2 - lx1 ;
                 dY = ly2 - ly1 ;
-                dl = milimetryob (pl.dl) ;
-                angle = pl.kat - get_angle_l();
+                ////dl = milimetryob (pl.dl) ;
+                dl=sqrt(dX*dX+dY*dY);
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle].txt, sk) ;
                 act(iAngle);
@@ -1770,7 +1780,8 @@ void Info_about_object(char *ad)
                 act(iY2);
                 edit_param_no[iY2]=TRUE;
                 //angle1
-                angle = pl.kat - get_angle_l();
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle1].txt, sk) ;
                 act(iAngle1);
@@ -1806,7 +1817,8 @@ void Info_about_object(char *ad)
                 act(iY2);
                 edit_param_no[iY2]=TRUE;
                 //angle1
-                angle = pl.kat - get_angle_l();
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle1].txt, sk) ;
                 act(iAngle1);
@@ -1846,7 +1858,8 @@ void Info_about_object(char *ad)
                 act(iY2);
                 edit_param_no[iY2]=TRUE;
                 //angle1
-                angle = pl.kat - get_angle_l();
+                ////angle = pl.kat - get_angle_l();
+                angle = get_vector_angle(pl.kat);
                 sprintf (sk, "%8.7lf", angle);
                 menu_par_new((*mInfoAbout.pola)[iAngle1].txt, sk) ;
                 act(iAngle1);

@@ -42,7 +42,7 @@
 
 #include "leak_detector_cpp.hpp"
 
-extern BOOL Add_String_To_List1 (char *ptr_string) ;
+extern void Add_String_To_List1 (char *ptr_string) ;
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 

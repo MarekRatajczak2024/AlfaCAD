@@ -494,6 +494,7 @@ static char* komunikaty_kom[] =
 /*224*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń (żelbet):",
 /*225*/u8"Wprowadź współczynnik przeskalowania wynikowych rozproszonych sił reakcji podpór: ",
 /*226*/u8"Wprowadź precyzję reakcji: ",
+/*227*/u8"Wprowadź współczynnik przeskalowania wynikowych naprężeń stycznych: ",
 "",
 "",
 };
@@ -666,12 +667,13 @@ static char* komunikaty0[] =
 /*164*/u8"",
 /*165*/u8"",
 /*166*/u8"",  //custom text
-/*167*/u8"Wskaż schemat ramy lyb kratownicy do analizy statycznej/dynamicznej",
+/*167*/u8"Wskaż schemat ramy lub kratownicy do analizy statycznej/dynamicznej",
 /*168*/u8"Wymiarowanie (aby rozpocząć wymiarowanie kąta, dotknij dowolnej linii lub wektora elementu)",
 /*169*/u8"Wskaż element ramy lub kratownicy",
 /*170*/u8"Umieść linię przekrojową w żądanych współrzędnych elementu. Kliknij aby zapisać wartości w schowku",
 /*171*/u8"Wskaż schemat płyty do analizy statycznej (MES)",
 /*172*/u8"Wskaż schemat tarczy do analizy statycznej (MES)",
+/*173*/u8"Wskaż schemat rusztu do analizy statycznej/dynamicznej",
 };
 
 static char* messages_str[] =
@@ -939,9 +941,26 @@ static char confirm[] = u8"Potwierdź";
 #define _CANNOT_OPEN_ u8"Nie można otworzyć "
 #define _CANNOT_READ_ u8"Nie można odczytać "
 #define _DEFAULT_TAKEN_ u8"Przyjęto domyślne parametry drewna"
+
+#define _in_ u8"w "
+#define _mm_ u8"mm"
+#define _inch_ u8"cal"
+
+#define _default_cover_mm_ u8", domyślnie c=35) "
+#define _default_cover_in_ u8", domyślnie c=1.5) "
+
+#define _R_SECTION_ u8"Wprowadź h;b;c (wysokość; szerokość; otulenie osiowe"
+#define _I_SECTION_ u8"Wprowadź h;b;w;t;c (wysokość; szerokość; grubość środnika; półki; otulenie osiowe"
+#define _T_SECTION_ u8"Wprowadź h;b;w;t;c (wysokość; szerokość; grubość środnika; półki; otulenie osiowe"
+#define _CT_SECTION_ u8"Wprowadź d;t;c (średnica zewnętrzna; grubość ścianki; otulenie osiowe"
+#define _ST_SECTION_ u8"Wprowadź b;t;c (szerokość=wysokość; grubość ścianki; otulenie osiowe"
+#define _RT_SECTION_ u8"Wprowadź h;b;t;c (wysokość; szerokość; grubość ścianki; otulenie osiowe"
+
 #endif
 
 #ifdef __O_STATIC__
+
+#define STATIC_ANALYSIS u8"Statyka"
 
 #define _SELECT_STATE_ "Stan graniczny (kombinacja)"
 #define _SELECT_STATE_C_ L'S'
@@ -971,13 +990,18 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _unknown_standard_ u8"Nieznany standard"
 #define _element_graph_data_failed_ u8"Nie udało się utworzyć bloku danych sił wynikowych dla elementu"
 #define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
+#define _vector_of_member_is_isometric_ u8"Wektor elementu układu statycznego należy do rzutu izometrycznego"
+#define _vector_of_load_is_isometric_ u8"Wektor obciążenia należy do rzutu izometrycznego"
 
 #define _FRAME3DD_ u8"%FRAME:"
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
-#define _FRAME3DD_ES u8"%MARCO:"
+#define _FRAME3DD_ES u8"%PÓRTICO:"
 
+#define _neither_ u8"ani"
+#define _or_ u8"ani"
 #define _FRAME_ID_NOT_FOUND_ u8"'%RAMA: ID' nie znaleziono"
+#define _NOT_DEFINED_ u8"nie jest określone"
 
 #define _Yes_ "Tak"
 #define _No_ "Nie"
@@ -1217,13 +1241,359 @@ char *frame3dd[]={
  /*206*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisując symetryczną macierz 'podwójną'",
  /*207*/ u8"błąd testu równowagi",
  /*208*/ u8"błąd podczas otwierania pliku zapisu błędów .err",
+  /*209*/ u8"",
+ /*210*/ u8"",
+ /*211*/ u8"Błąd równowagi względnej RMS (średnia kwadratowa): %e",
+ /*212*/ u8"Macierz sztywności nie jest dodatnio określona",
+ /*213*/ u8"Sprawdź, czy wszystkie sześć stopni swobody jest ograniczonych",
+ /*214*/ u8"Jeśli uwzględniona jest sztywność geometryczna, zmniejsz obciążenia",
 };
 
 #define _ERROR_FREE_COMPLETION_ u8"zakończenie bez błędów"
 
 #endif
 
+#ifdef __O_GRID__
+
+#define STATIC_ANALYSIS u8"Statyka"
+
+static char* static_param[] =
+{
+    "gabaryt obwiedni sil osiowych",
+    "gabaryt obwiedni sil tnacych",
+    "gabaryt obwiedni momentow",
+    "gabaryt obwiedni ugiec",
+    "gabaryt strzalki reakcji",
+    "gabaryt symbolu reakcji momentowej",
+    "gabaryt obwiedni naprezen osiowych",
+    "gabaryt obwiedni naprezen strefowych",
+    "gabaryt naprezen w zelbecie",
+    "gabaryt formy drgan",
+    "gabaryt stopnia zbrojenia",
+    "gabaryt scinania plyt"
+
+    "referencja sily osiowej",
+    "referencja sily tnacej",
+    "referencja momentu gnacego",
+    "referencja ugiecia",
+    "referencja sily reakcji",
+    "referencja momentu reakcji",
+    "referencja naprezen osiowych",
+    "referencja naprezen scinajacych",
+    "referencja naprezen w betonie",
+    "referencja formy drgan",
+    "referencja stopnia zbrojenia",
+    "referencja scinania plyt",
+
+};
+
+static int no_static_param = sizeof(static_param) / sizeof(static_param[0]);
+
+#define _SELECT_STATE_ "Stan graniczny (kombinacja)"
+#define _SELECT_STATE_C_ L'S'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"Nośności (SGN)",L'N',0,NULL},
+	{u8"Użytkowalności (SGU)",L'U',0,NULL},
+    {u8"użytkowalności (Quasi-stałe)",L'Q',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
+#define _PROCEED_GRID_ u8"Przeprowadzić analizę statyczną wskazanego rusztu?"
+
+#define _incorrectly_defined_ u8"błędnie zdefiniowana"
+#define _property_not_defined_ u8"właściwość nie zdefiniowana lub zdefiniowana niepoprawnie"
+#define _reaction_not_associated_ u8"reakcja niezwiązana z żadnym znanym węzłem"
+#define _reaction_not_enough_in_Y_ u8"Konstrukcja nie jest wystarczająco podparta w osi Y. Dodaj brakujące podparcie."
+#define _reaction_not_enough_in_X_ u8"Konstrukcja nie jest wystarczająco podparta w osi X. Dodaj brakujące podparcie."
+#define _reaction_not_enough_in_X_Y_ u8"Konstrukcja nie jest wystarczająco podparta w osiach X i Y. Dodaj brakujące podparcia."
+#define _node_size_not_associated_ u8"rozmiar węzła niepowiązany z żadnym znanym węzłem"
+#define _force_not_associated_ u8"niepowiązana(y) z żadnym znanym węzłem"
+#define _load_not_associated_ u8"niepowiązane z żadnym znanym elementem"
+#define _thermal_load_inside_element_ u8"nie na całym elemencie o współrzędnych węzłów:"
+#define _unknown_standard_ u8"Nieznany standard"
+#define _element_graph_data_failed_ u8"Nie udało się utworzyć bloku danych sił wynikowych dla elementu"
+#define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
+#define _soil_property_not_defined_ u8"Sztywność gruntu (moduł podłoża) nie jest zdefiniowana we właściwościach belki Winklera"
+#define _vector_of_member_not_isometric_ u8"Wektor elementu układu statycznego nie należy do rzutu izometrycznego"
+#define _vector_of_load_not_isometric_ u8"Wektor obciążenia nie należy do rzutu izometrycznego"
+
+#define _GRID_ u8"%GRID:"
+#define _GRID_PL u8"%RUSZT:"
+#define _GRID_UA u8"%РОСТВЕРК:"
+#define _GRID_ES u8"%EMPARRILLADO:"
+
+#define _neither_ u8"ani"
+#define _or_ u8"ani"
+#define _GRID_ID_NOT_FOUND_ u8"'%GRID: ID' nie znaleziono"
+#define _NOT_DEFINED_ u8"nie jest określone"
+
+#define _Yes_ "Tak"
+#define _No_ "Nie"
+#define _YES_NO_ESC_ u8"TNtn\033"
+#define _YES_ 'T'
+#define _yes_ 't'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define __FRAME3DD__ "Frame3dd"
+
+static char confirm[] = u8"Potwierdź";
+#define _CANNOT_CREATE_DEFORMATION_BLOCK_ u8"Nie można utworzyć bloku kształtu deformacji"
+#define _CANNOT_CREATE_FORCE_BLOCK_ u8"Nie można utworzyć bloku wykresu sił"
+#define _CANNOT_CREATE_MOMENT_BLOCK_ u8"Nie można utworzyć bloku wykresu momentów"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Nie można utworzyć bloku wykresu naprężeń"
+#define _CANNOT_CREATE_SHEAR_STRESS_BLOCK_ u8"Nie można utworzyć bloku wykresu naprężeń ścinających"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
+#define _CANNOT_CREATE_RESULTS_PDF_FILE_ u8"Nie można utworzyć pliku wyników w formacie PDF"
+#define _CANNOT_OPEN_RESULTS_PDF_FILE_ u8"Nie można otworzyć pliku PDF z wynikami"
+#define _INSTALL_PDF_VIEWER_ u8"Proszę zainstalować przeglądarkę PDF \"Okular\" lub \"Evince\""
+
+#define _CANNOT_OPEN_DEFORMATION_DATA_FILE_ u8"Nie można otworzyć pliku z danymi deformacji"
+#define _CANNOT_OPEN_RESULTS_DATA_FILE_ u8"Nie można otworzyć pliku danych wyników"
+#define _CANNOT_OPEN_DYNAMIC_RESULTS_DATA_FILE_ u8"Nie można otworzyć pliku danych wyników dynamicznych"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Nie można utworzyć bloku węzłów i elementów"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Nie można utworzyć bloku reakcji"
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Nie można utworzyć nowej warstwy. Utworzono już zbyt wiele warstw"
+#define _CANNOT_FIND_LAYER_ u8"Nie można znaleźć żądanej warstwy"
+
+static char *frame3dd[]={
+ /*0*/ u8"zakończenie bez błędów",
+ /*1*/ u8"nieznany błąd",
+ /*2*/ u8"błąd z opcjami wiersza poleceń (patrz sekcja 11 powyżej)",
+ /*3*/ u8"błąd z opcją wiersza poleceń dla odkształcenia przy ścinaniu -s",
+ /*4*/ u8"błąd z opcją wiersza poleceń dotyczącą sztywności geometrycznej -g",
+ /*5*/ u8"błąd z opcją wiersza poleceń dla masy skupionej -l",
+ /*6*/ u8"błąd z opcją wiersza poleceń dla metody analizy modalnej -m",
+ /*7*/ u8"błąd z opcją wiersza poleceń dla tolerancji analizy modalnej -t",
+ /*8*/ u8"błąd z opcją wiersza poleceń dotyczącą przesunięcia analizy modalnej -f",
+ /*9*/ u8"błąd z opcją wiersza poleceń dla szybkości panoramowania -p",
+ /*10*/ u8"błąd z opcją wiersza poleceń dla kondensacji macierzy -r",
+ /*11*/ u8"błąd podczas otwierania pliku danych wejściowych",
+ /*12*/ u8"błąd podczas otwierania tymczasowo oczyszczonego pliku danych wejściowych do zapisu",
+ /*13*/ u8"błąd podczas otwierania tymczasowo oczyszczonego pliku danych wejściowych do odczytu",
+ /*14*/ u8"błąd podczas otwierania pliku danych wyjściowych",
+ /*15*/ u8" błąd podczas tworzenia ścieżki do tymczasowych plików danych wyjściowych",
+ /*16*/ u8" błąd podczas tworzenia nazwy ścieżki tymczasowego pliku danych wyjściowych",
+ /*17*/ u8"błąd podczas otwierania pliku danych wyjściowych .CSV (arkusz kalkulacyjny)",
+ /*18*/ u8"błąd podczas otwierania pliku danych wyjściowych .M (matlab)",
+ /*19*/ u8"błąd podczas otwierania pliku danych wyjściowych siły wewnętrznej do zapisu",
+ /*20*/ u8"błąd podczas otwierania pliku danych wyjściowych sił wewnętrznych do odczytu",
+ /*21*/ u8"błąd podczas otwierania pliku danych wyjściowych niezdeformowanej siatki",
+ /*22*/ u8"błąd podczas otwierania pliku danych wyjściowych zdeformowanej siatki",
+ /*23*/ u8"błąd podczas otwierania pliku skryptu kreślącego w celu zapisania wykresów pierwszego przypadku obciążenia statycznego",
+ /*24*/ u8"błąd podczas otwierania pliku skryptu kreślącego w celu dołączenia wyników drugiego i wyższych przypadków obciążenia statycznego",
+ /*25*/ u8"błąd podczas otwierania pliku skryptu kreślącego w celu dołączenia wykresów modalnych",
+ /*26*/ u8"błąd podczas otwierania pliku skryptu kreślącego w celu dołączenia animacji modalnych",
+ /*27*/ u8"błąd podczas otwierania pliku danych siatki modalnej",
+ /*28*/ u8"błąd podczas otwierania pliku danych animacji siatki modalnej",
+ /*29*/ u8"błąd podczas otwierania pliku debugowania danych masowych, MassData.txt",
+ /*30*/ u8"Macierz systemu dopasowania krzywej sześciennej dla odkształcenia elementu nie jest określona dodatnio",
+ /*31*/ u8"niedodatnia określona macierz sztywności statycznej strukturalnej",
+ /*32*/ u8"błąd w analizie wartości własnych. Spróbuj ponownie ze zmniejszoną lub zerową liczbą postaci drgań",
+ /*33*/ u8"zakończenie bez błędów",
+ /*34*/ u8"zakończenie bez błędów",
+ /*35*/ u8"zakończenie bez błędów",
+ /*36*/ u8"bezbłędne zakończenie",
+ /*37*/ u8"zakończenie bez błędów",
+ /*38*/ u8"zakończenie bez błędów",
+ /*39*/ u8"zakończenie bez błędów",
+ /*40*/ u8"błąd w pliku danych wejściowych",
+ /*41*/ u8"Błąd formatowania danych wejściowych w danych węzła, numer węzła poza zakresem",
+ /*42*/ u8"Błąd formatowania danych wejściowych w danych węzła lub elementu, węzeł niepołączony",
+ /*43*/ u8"zakończenie bez błędów",
+ /*44*/ u8"zakończenie bez błędów",
+ /*45*/ u8"zakończenie bez błędów",
+ /*46*/ u8"zakończenie bez błędów",
+ /*47*/ u8"zakończenie bez błędów",
+ /*48*/ u8"zakończenie bez błędów",
+ /*49*/ u8"zakończenie bez błędów",
+ /*50*/ u8"zakończenie bez błędów",
+ /*51*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, numer elementu ramki poza zakresem",
+ /*52*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, numer węzła poza zakresem",
+ /*53*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, wartość przekroju ujemnego",
+ /*54*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, pole przekroju poprzecznego wynosi 0 (zero)",
+ /*55*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, powierzchnia ścinania i moduł ścinania wynoszą 0 (zero)",
+ /*56*/ u8"błąd formatowania danych wejściowych w danych elementu ramy, skrętny moment bezwładności wynosi 0 (zero)",
+ /*57*/ u8"błąd formatowania danych wejściowych w danych elementu ramy, moment bezwładności zginający wynosi 0 (zero)",
+ /*58*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, wartość modułu jest niedodatnia",
+ /*59*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, wartość gęstości masy jest niedodatnia",
+ /*60*/ u8"Błąd formatowania danych wejściowych w danych elementu ramki, element ramki zaczyna się i kończy w tym samym węźle",
+ /*61*/ u8"błąd formatowania danych wejściowych w danych elementu ramki, element ramki ma długość zero",
+ /*62*/ u8"błąd formatowania danych wejściowych w danych elementu ramy, wskaźnik wytrzymałości przekroju na skręcanie wynosi 0 (zero)",
+ /*63*/ u8"błąd formatowania danych wejściowych w danych elementu ramy, wskaźnik wytrzymałości przekroju na zginanie wynosi 0 (zero)",
+ /*64*/ u8"zakończenie bez błędów",
+ /*65*/ u8"bezbłędne zakończenie",
+ /*66*/ u8"zakończenie bez błędów",
+ /*67*/ u8"zakończenie bez błędów",
+ /*68*/ u8"bezbłędne zakończenie",
+ /*69*/ u8"zakończenie bez błędów",
+ /*70*/ u8"zakończenie bez błędów",
+ /*71*/ u8"błąd formatowania danych wejściowych ze zmienną 'shear' określającą odkształcenie przy ścinaniu",
+ /*72*/ u8"błąd formatowania danych wejściowych ze zmienną 'geom' określającą sztywność geometryczną",
+ /*73*/ u8"Błąd formatowania danych wejściowych ze zmienną 'exagg_static' określającą przeskalowanie siatki statycznej",
+ /*74*/ u8"błąd formatowania danych wejściowych ze zmienną 'dx' określającą długość przyrostu siły wewnętrznej w osi x",
+ /*75*/ u8"zakończenie bez błędów",
+ /*76*/ u8"zakończenie bez błędów",
+ /*77*/ u8"zakończenie bez błędów",
+ /*78*/ u8"zakończenie bez błędów",
+ /*79*/ u8"zakończenie bez błędów",
+ /*80*/ u8"błąd formatowania danych wejściowych w danych reakcji, liczba węzłów z reakcjami poza zakresem",
+ /*81*/ u8"Błąd formatowania danych wejściowych w danych reakcji, numer węzła poza zakresem",
+ /*82*/ u8"Błąd formatowania danych wejściowych w danych reakcji, dane reakcji nie są równe 1 (jeden) ani 0 (zero)",
+ /*83*/ u8"Błąd formatowania danych wejściowych w danych reakcji, określony węzeł nie ma żadnych reakcji",
+ /*84*/ u8"błąd formatowania danych wejściowych w danych reakcji, konstrukcja niedostatecznie utwierdzona",
+ /*85*/ u8"błąd formatowania danych wejściowych w danych reakcji, struktura całkowicie utwierdzona",
+ /*86*/ u8"Błąd formatowania danych wejściowych w danych dotyczących bezwładności dodatkowego węzła, numer węzła poza zakresem",
+ /*87*/ u8"Błąd formatowania danych wejściowych w danych masy dodatkowej wiązki, numer elementu ramki poza zakresem",
+ /*88*/ u8"błąd formatowania danych wejściowych w danych masowych, element ramki o masie niedodatniej",
+ /*89*/ u8"zakończenie bez błędów",
+ /*90*/ u8"błąd formatowania danych wejściowych w danych kondensacji macierzy, liczba węzłów ze skondensowanymi stopniami swobody jest mniejsza niż całkowita liczba węzłów",
+ /*91*/ u8"Błąd formatowania danych wejściowych w danych kondensacji matrycy, numer węzła poza zakresem",
+ /*92*/ u8"Błąd formatowania danych wejściowych w danych kondensacji matrycy, numer trybu poza zakresem",
+ /*93*/ u8"zakończenie bez błędów",
+ /*94*/ u8"błąd formatowania danych wejściowych w danych kondensacji matrycy, liczba skondensowanych stopni swobody większa niż liczba modów",
+ /*95*/ u8"zakończenie bez błędów",
+ /*96*/ u8"zakończenie bez błędów",
+ /*97*/ u8"zakończenie bez błędów",
+ /*98*/ u8"zakończenie bez błędów",
+ /*99*/ u8"zakończenie bez błędów",
+ /*100*/ u8"Błąd formatowania danych wejściowych podczas ładowania danych",
+ /*101*/ u8"liczba przypadków obciążeń statycznych musi być większa od zera",
+ /*102*/ u8"liczba przypadków obciążeń statycznych musi być mniejsza niż 112", //64 30
+ /*103*/ u8"zakończenie bez błędów",
+ /*104*/ u8"zakończenie bez błędów",
+ /*105*/ u8"zakończenie bez błędów",
+ /*106*/ u8"zakończenie bez błędów",
+ /*107*/ u8"zakończenie bez błędów",
+ /*108*/ u8"zakończenie bez błędów",
+ /*109*/ u8"zakończenie bez błędów",
+ /*110*/ u8"zakończenie bez błędów",
+ /*111*/ u8"zakończenie bez błędów",
+ /*112*/ u8"zakończenie bez błędów",
+ /*113*/ u8"zakończenie bez błędów",
+ /*114*/ u8"zakończenie bez błędów",
+ /*115*/ u8"zakończenie bez błędów",
+ /*116*/ u8"zakończenie bez błędów",
+ /*117*/ u8"zakończenie bez błędów",
+ /*118*/ u8"zakończenie bez błędów",
+ /*119*/ u8"zakończenie bez błędów",
+ /*120*/ u8"zakończenie bez błędów",
+ /*121*/ u8"Błąd formatowania danych wejściowych w danych obciążenia węzła, numer węzła poza zakresem",
+ /*122*/ u8"zakończenie bez błędów",
+ /*123*/ u8"zakończenie bez błędów",
+ /*124*/ u8"zakończenie bez błędów",
+ /*125*/ u8"zakończenie bez błędów",
+ /*126*/ u8"zakończenie bez błędów",
+ /*127*/ u8"zakończenie bez błędów",
+ /*128*/ u8"zakończenie bez błędów",
+ /*129*/ u8"zakończenie bez błędów",
+ /*130*/ u8"zakończenie bez błędów",
+ /*131*/ u8"błąd formatowania danych wejściowych w równomiernie rozłożonych danych obciążenia, liczba równomiernych obciążeń jest większa niż liczba elementów ramy",
+ /*132*/ u8"Błąd formatowania danych wejściowych w równomiernie rozłożonych danych obciążenia, numer elementu ramki poza zakresem",
+ /*133*/ u8"zakończenie bez błędów",
+ /*134*/ u8"zakończenie bez błędów",
+ /*135*/ u8"zakończenie bez błędów",
+ /*136*/ u8"zakończenie bez błędów",
+ /*137*/ u8"zakończenie bez błędów",
+ /*138*/ u8"zakończenie bez błędów",
+ /*139*/ u8"zakończenie bez błędów",
+ /*140*/ u8"Błąd formatowania danych wejściowych w danych obciążenia o rozkładzie trapezowym, za dużo obciążeń o rozkładzie trapezowym",
+ /*141*/ u8"Błąd formatowania danych wejściowych w danych obciążenia o rozkładzie trapezowym, numer elementu ramki poza zakresem",
+ /*142*/ u8"Błąd formatowania danych wejściowych w danych obciążenia o rozkładzie trapezowym, x1 < 0",
+ /*143*/ u8"Błąd formatowania danych wejściowych w danych obciążenia o rozkładzie trapezowym, x1 > x2",
+ /*144*/ u8"Błąd formatowania danych wejściowych w danych obciążenia o rozkładzie trapezowym, x2 > L",
+ /*145*/ u8"zakończenie bez błędów",
+ /*146*/ u8"zakończenie bez błędów",
+ /*147*/ u8"zakończenie bez błędów",
+ /*148*/ u8"zakończenie bez błędów",
+ /*149*/ u8"zakończenie bez błędów",
+ /*150*/ u8"błąd formatowania danych wejściowych w skupionych danych obciążenia wewnętrznego, liczba skupionych obciążeń jest większa niż liczba elementów ramy",
+ /*151*/ u8"Błąd formatowania danych wejściowych w wewnętrznych danych obciążenia skupionego, numer elementu ramki poza zakresem",
+ /*152*/ u8"błąd formatowania danych wejściowych w wewnętrznych danych obciążenia skupionego, lokalizacja x mniejsza niż 0 lub większa niż L",
+ /*153*/ u8"zakończenie bez błędów",
+ /*154*/ u8"zakończenie bez błędów",
+ /*155*/ u8"zakończenie bez błędów",
+ /*156*/ u8"zakończenie bez błędów",
+ /*157*/ u8"zakończenie bez błędów",
+ /*158*/ u8"zakończenie bez błędów",
+ /*159*/ u8"zakończenie bez błędów",
+ /*160*/ u8"błąd formatowania danych wejściowych w danych obciążenia termicznego, liczba obciążeń termicznych większa niż liczba elementów ramy",
+ /*161*/ u8"Błąd formatowania danych wejściowych w danych obciążenia termicznego, numer elementu ramki poza zakresem",
+ /*162*/ u8"Błąd formatowania danych wejściowych w danych obciążenia termicznego, numer elementu ramki poza zakresem",
+ /*163*/ u8"zakończenie bez błędów",
+ /*164*/ u8"zakończenie bez błędów",
+ /*165*/ u8"zakończenie bez błędów",
+ /*166*/ u8"zakończenie bez błędów",
+ /*167*/ u8"zakończenie bez błędów",
+ /*168*/ u8"zakończenie bez błędów",
+ /*169*/ u8"zakończenie bez błędów",
+ /*170*/ u8"zakończenie bez błędów",
+ /*171*/ u8"błąd formatowania danych wejściowych w zadanych przemieszczeniach, zadane przemieszczenia można zastosować tylko we współrzędnych z reakcjami",
+ /*172*/ u8"zakończenie bez błędów",
+ /*173*/ u8"zakończenie bez błędów",
+ /*174*/ u8"zakończenie bez błędów",
+ /*175*/ u8"zakończenie bez błędów",
+ /*176*/ u8"zakończenie bez błędów",
+ /*177*/ u8"zakończenie bez błędów",
+ /*178*/ u8"zakończenie bez błędów",
+ /*179*/ u8"zakończenie bez błędów",
+ /*180*/ u8"zakończenie bez błędów",
+ /*181*/ u8"Uwaga: niestabilność sprężysta (macierz sztywności sprężystej + geometrycznej nieokreślona dodatnio)",
+ /*182*/ u8"Uwaga: duże odkształcenie (średnie odkształcenie osiowe w jednym lub większej liczbie elementów jest większe niż 0,001)",
+ /*183*/ u8"Uwaga: duże odkształcenie i niestabilność sprężysta",
+ /*184*/ u8"zakończenie bez błędów",
+ /*185*/ u8"zakończenie bez błędów",
+ /*186*/ u8"zakończenie bez błędów",
+ /*187*/ u8"zakończenie bez błędów",
+ /*188*/ u8"zakończenie bez błędów",
+ /*189*/ u8"zakończenie bez błędów",
+ /*190*/ u8"zakończenie bez błędów",
+ /*191*/ u8"zakończenie bez błędów",
+ /*192*/ u8"zakończenie bez błędów",
+ /*193*/ u8"zakończenie bez błędów",
+ /*194*/ u8"zakończenie bez błędów",
+ /*195*/ u8"zakończenie bez błędów",
+ /*196*/ u8"zakończenie bez błędów",
+ /*197*/ u8"zakończenie bez błędów",
+ /*198*/ u8"zakończenie bez błędów",
+ /*199*/ u8"zakończenie bez błędów",
+ /*200*/ u8"błąd alokacji pamięci",
+ /*201*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisując wektor 'zmiennoprzecinków'",
+ /*202*/ u8"błąd podczas otwierania pliku danych wyjściowych podczas zapisywania wektora 'int'",
+ /*203*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisującego macierz 'zmiennoprzecinkowych'",
+ /*204*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisującego macierz 'podwójnych'",
+ /*205*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisującego symetryczną macierz 'zmiennoprzecinkową'",
+ /*206*/ u8"błąd podczas otwierania pliku danych wyjściowych zapisując symetryczną macierz 'podwójną'",
+ /*207*/ u8"błąd testu równowagi",
+ /*208*/ u8"błąd podczas otwierania pliku zapisu błędów .err",
+ /*209*/ u8"",
+ /*210*/ u8"",
+ /*211*/ u8"Błąd równowagi względnej RMS (średnia kwadratowa): %e",
+ /*212*/ u8"Macierz sztywności nie jest dodatnio określona",
+ /*213*/ u8"Sprawdź, czy wszystkie sześć stopni swobody jest ograniczonych",
+ /*214*/ u8"Jeśli uwzględniona jest sztywność geometryczna, zmniejsz obciążenia",
+};
+
+#define _ERROR_FREE_COMPLETION_ u8"zakończenie bez błędów"
+
+#endif
+
+
 #ifdef __O_PLATE__
+
+#define STATIC_ANALYSIS u8"Statyka"
+
+static char* static_plate_param[] =
+{
+    "gabaryt scinania plyt"
+    "referencja scinania plyt",
+};
+
+static int no_static_plate_param = sizeof(static_plate_param) / sizeof(static_plate_param[0]);
 
 #define _PLATE_ u8"%PLATE:"
 #define _PLATE_PL u8"%PŁYTA:"
@@ -1234,6 +1604,8 @@ char *frame3dd[]={
 
 #define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
+#define _vector_of_member_is_isometric_ u8"Wektor elementu układu statycznego należy do rzutu izometrycznego"
+#define _vector_of_load_is_isometric_ u8"Wektor obciążenia należy do rzutu izometrycznego"
 static char confirm[] = u8"Potwierdź";
 
 #define _gmsh_error_ u8"Błąd gmsh"
@@ -1283,23 +1655,35 @@ static char confirm[] = u8"Potwierdź";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym"
-#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer"
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym."
+#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer."
 #define _unknown_standard_ u8"Nieznany standard"
 
 #endif
 
 #ifdef __O_SHIELD__
 
+#define STATIC_ANALYSIS u8"Statyka"
+
+static char* static_shield_param[] =
+{
+    "gabaryt scinania plyt"
+    "referencja scinania plyt",
+};
+
+static int no_static_shield_param = sizeof(static_shield_param) / sizeof(static_shield_param[0]);
+
 #define _SHIELD_ u8"%SHIELD:"
 #define _SHIELD_PL u8"%TARCZA:"
-#define _SHIELD_UA u8"%ЩИТ:"
-#define _SHIELD_ES u8"%ESCUDO:"
+#define _SHIELD_UA u8"%СТІНА-БАЛКА:"
+#define _SHIELD_ES u8"%DIAFRAGMA:"
 
 #define _property_not_defined_ u8"właściwość nie zdefiniowana lub zdefiniowana niepoprawnie"
 
 #define _cannot_create_folder_ u8"Nie można utworzyć katalogu plików"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Nie można otworzyć pliku wyników"
+#define _vector_of_member_is_isometric_ u8"Wektor elementu układu statycznego należy do rzutu izometrycznego"
+#define _vector_of_load_is_isometric_ u8"Wektor obciążenia należy do rzutu izometrycznego"
 static char confirm[] = u8"Potwierdź";
 
 #define _gmsh_error_ u8"Błąd gmsh"
@@ -1349,16 +1733,13 @@ static char confirm[] = u8"Potwierdź";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _CANNOT_PROCEED_IN_32BIT_ u8"Płyta wygląda OK ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym"
-#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer"
+#define _CANNOT_PROCEED_IN_32BIT_ u8"Tarcza wygląda OK, ale moduł obliczeniowy Elmer FEM nie pracuje w systemie 32-bitowym."
+#define _BUY_NEW_COMPUTER_  u8"Kup nowy komputer."
 #define _unknown_standard_ u8"Nieznany standard"
 
 #define _load_not_associated_ u8"niepowiązane z żadną z krawędzi"
 
 #endif
-
-
-
 
 #ifdef __O_TEXT3PDF__
 #define _CANNOT_CREATE_PDF_ u8"błąd: nie można utworzyć dokumentu PDF\n"

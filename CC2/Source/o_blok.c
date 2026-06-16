@@ -117,7 +117,11 @@ extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
 extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
 extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
 extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
-
+extern int get_thermal_flipped(AVECTOR *v);
+extern double cartesian_vector_length(double i_dx, double i_dy, double *pl_dx, double *pl_dy);
+extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
+                                double dx_loc, double dy_loc, double dz_loc,
+                                double *px, double *py, double *pdx, double *pdy);
 extern BOOL Semaphore;
 
 #ifdef ALLEGRO5
@@ -233,8 +237,10 @@ extern void reset_stretch_vector(void);
 extern void *get_vector_s(void);
 extern int Vf_n (BOOL b_graph_value);
 extern int Vf1_n (BOOL b_graph_value);
+extern int Vf10_n (BOOL b_graph_value);
 extern int Vf1_1_n (BOOL b_graph_value);
 extern int Vf2_n (BOOL b_graph_value);
+extern int Vf11_n (BOOL b_graph_value);
 extern int Vth1_n (BOOL b_graph_value);
 extern int Vm_n (BOOL b_graph_value);
 extern int Vn_n (BOOL b_graph_value);
@@ -246,7 +252,13 @@ extern void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outvectoror3 (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror3Z (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror3Y (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void outvectoror4 (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror4Z (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror4Y (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror10 (LINIA *L, AVECTOR *V, int mode,int pl);
+extern void outvectoror11 (LINIA *L, AVECTOR *V, int mode,int pl);
 extern void magnitude2angle(AVECTOR *V, double factor);
 
 extern void set_eVa(ESTR *eVx);
@@ -887,7 +899,6 @@ static int wszystkie_warstwy (void)
   return	0;
 }
 
-
 static int all_from_layer(void)
 /*-------------------------------*/
 {
@@ -896,7 +907,7 @@ static int all_from_layer(void)
 	char sk[MaxTextLen] = "";
 
 	if (!get_string(sk, numbers, MaxTextLen, 0, 195)) return 0;
-	sel_layer = atoi(sk) - 1;
+	sel_layer = atoi_(sk) - 1;
 	if ((sel_layer > 255) || (sel_layer < 0))
 	{
 		ErrList(214);
@@ -1106,6 +1117,14 @@ static int Vf1_n_(BOOL b_graph_value)
     return ret;
 }
 
+static int Vf10_n_(BOOL b_graph_value)
+{
+    int ret = Vf10_n(b_graph_value);
+    strwyj=1;
+    VectorC.angle1=VectorG.angle1;
+    return ret;
+}
+
 static int Vf1_1_n_(BOOL b_graph_value)
 {
     int ret = Vf1_1_n(b_graph_value);
@@ -1122,6 +1141,14 @@ static int Vf2_n_(BOOL b_graph_value)
     strwyj=1;
     VectorC.magnitude2=VectorG.magnitude2;
     if (VectorC.style==17) VectorC.magnitude1=VectorG.magnitude2;
+    return ret;
+}
+
+static int Vf11_n_(BOOL b_graph_value)
+{
+    int ret = Vf11_n(b_graph_value);
+    strwyj=1;
+    VectorC.angle2=VectorG.angle2;
     return ret;
 }
 
@@ -1240,7 +1267,7 @@ static void	cur_onq(double	x,double	y)
 {
     PLINIA	PL;
     ////cursel_on(x, y);
-    L.x2=x; L.y2=y;
+    L.x2=(float)x; L.y2=(float)y;
     outlineor(&L,COPY_PUT,1);
     parametry_linior (&L,	&PL);
     DX = PL.dl *	PL.cos;	DY= PL.dl *	PL.sin;
@@ -1335,7 +1362,7 @@ static void	cur_onk(double	x,double	y)
   double angle_l;
 
   //cursel_on(x, y);
-  L.x2=x; L.y2=y;
+  L.x2=(float)x; L.y2=(float)y;
   outlineor(&L,COPY_PUT,1);
   parametry_linior (&L,	&PL);
   angle_l=get_angle_l();
@@ -1364,7 +1391,7 @@ static void	cur_onk(double	x,double	y)
 static void  cur_onv(double x,double y)
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
@@ -1372,7 +1399,7 @@ static void  cur_onv(double x,double y)
 static void  cur_onv1(double x,double y)
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror1 (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
@@ -1380,31 +1407,79 @@ static void  cur_onv1(double x,double y)
 static void  cur_onv2(double x,double y)
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror2 (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
 
-static void  cur_onv3(double x,double y)
+static void  cur_onv10(double x,double y)   //thermal angle1
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror10 (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv11(double x,double y)  //thermal angle2
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror11 (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv3(double x,double y)  //point 1 Y cart
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror3 (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
 
-static void  cur_onv4(double x,double y)
+static void  cur_onv3Z(double x,double y) //point 1 Z iso
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror3Z (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv3Y(double x,double y) //point 1 Y iso
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror3Y (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv4(double x,double y)  //point 2 Y cart
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror3 (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv4Z(double x,double y)  //point 2 Z iso
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror3Z (&LiniaG, &VectorC, COPY_PUT, 1) ;
+    cursor_on(x, y);
+}
+
+static void  cur_onv4Y(double x,double y)  //point 2 Y iso
+/*----------------------------------------*/
+{
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
+    outvectoror3Y (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
 
 static void  cur_onv5(double x,double y)
 /*----------------------------------------*/
 {
-    LiniaG.x2=x; LiniaG.y2=y;
+    LiniaG.x2=(float)x; LiniaG.y2=(float)y;
     outvectoror4 (&LiniaG, &VectorC, COPY_PUT, 1) ;
     cursor_on(x, y);
 }
@@ -1413,7 +1488,7 @@ static void	cur_onkZ(double	x,double	y)
 {
   PLINIA	PL;
   cursel_on(x, y);
-  L.x2=x; L.y2=y;
+  L.x2=(float)x; L.y2=(float)y;
   outlineor(&L,XOR_PUT,1);
   parametry_linior (&L,	&PL);
   DX = PL.dl *	PL.cos;	DY= PL.dl *	PL.sin;
@@ -1903,9 +1978,9 @@ static void	lustro_x_x_kopiuj	(void)
 }
 
 /*------Kopiuj-----------------------------------------------------*/
-void Add_Arm_Block(char *adp, char *adk, long *l_block_size, double DX, double DY)
+void Add_Arm_Block(char *adp, char *adk, long *l_block_size, double DX_, double DY_)
 {
-  Add_Block (adp,adk, l_block_size, DX,DY,0,0, 0,0,0,0, Tprzesuw);
+  Add_Block (adp,adk, l_block_size, DX_, DY_,0,0, 0,0,0,0, Tprzesuw);
 }
 
 int kopiujk(void)
@@ -5083,7 +5158,7 @@ static void	redcrck(char typ)
   static	int (	*SW[4])();
   double n;
   PLINIA PL, PLth;
-  LINIA Lth=Ldef, Lp=Ldef;
+  LINIA Lth=Ldef, Lth1=Ldef, Lt=Ldef, Lt1=Ldef, Lp=Ldef;
   double koc1, kos1, koc1th, kos1th;
   double xmax, ymax;
   int stretch_v;
@@ -5255,10 +5330,13 @@ static void	redcrck(char typ)
                  case 20:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
+                     ////for isometric vector in Y axis
+                     if ((VectorC.style==10) &&  (VectorC.cartflags & 1)) n*=-1;
+
                      LiniaG.x1 = VectorC.x1;
                      LiniaG.y1 = VectorC.y1;
                      LiniaG.x2 = VectorC.x1;
-                     LiniaG.y2 = VectorC.y1 + (float)n*(VectorC.magnitude1/((VectorC.style==10) ? load_magnitude : flood_magnitude));
+                     LiniaG.y2 = VectorC.y1 + (float)n*(VectorC.magnitude1/(((VectorC.style==10) || (VectorC.style==20)) ? load_magnitude : flood_magnitude));
                      parametry_lini((LINIA*)&VectorC, &PL);
                      break;
                  case 11:
@@ -5308,6 +5386,9 @@ static void	redcrck(char typ)
 
                          if (iso_L1_x1<iso_L1_x2) n=1;
                          else n=-1;
+
+                         ////for isometric vector in Y axis
+                         n*=-1;
 
                          ret = trapezoid_base_isometric_x(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
@@ -5360,22 +5441,37 @@ static void	redcrck(char typ)
                  case 15:
                      parametry_lini((LINIA*)&VectorC, &PL);
 
-                     kos1=sin(Pi*(PL.kat+90)/180);
-                     koc1=cos(Pi*(PL.kat+90)/180);
+                     if (VectorC.cartflags & 1) {
 
-                     Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;   //thermal_depth_size
-                     Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
-                     Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
-                     Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
+                         PLINIA PLth1;
+                         double perpendicular_iso_angle;
+                         get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-                     parametry_lini(&Lth, &PLth);
-                     kos1th=sin(Pi*(PLth.kat+90)/180.);
-                     koc1th=cos(Pi*(PLth.kat+90)/180.);
+                         LiniaG.x1 = Lth.x1;
+                         LiniaG.y1 = Lth.y1;
+                         LiniaG.x2 = Lt.x1;
+                         LiniaG.y2 = Lt.y1;
 
-                     LiniaG.x1 = Lth.x1;
-                     LiniaG.y1 = Lth.y1;
-                     LiniaG.x2 = Lth.x1 + (float)(VectorC.magnitude1/thermal_magnitude)*koc1th;
-                     LiniaG.y2 = Lth.y1 + (float)(VectorC.magnitude1/thermal_magnitude)*kos1th;
+                     }
+                     else {
+
+                         kos1 = sin(Pi * (PL.kat + 90) / 180);
+                         koc1 = cos(Pi * (PL.kat + 90) / 180);
+
+                         Lth.x1 = (float)((VectorC.x1 + VectorC.x2) / 2. + (float) (VectorC.r / depth_magnitude) * koc1);   //thermal_depth_size
+                         Lth.y1 = (float)((VectorC.y1 + VectorC.y2) / 2. + (float) (VectorC.r / depth_magnitude) * kos1);
+                         Lth.x2 = (float)((VectorC.x1 + VectorC.x2) / 2. - (float) (VectorC.r / depth_magnitude) * koc1);
+                         Lth.y2 = (float)((VectorC.y1 + VectorC.y2) / 2. - (float) (VectorC.r / depth_magnitude) * kos1);
+
+                         parametry_lini(&Lth, &PLth);
+                         kos1th = sin(Pi * (PLth.kat + 90) / 180.);
+                         koc1th = cos(Pi * (PLth.kat + 90) / 180.);
+
+                         LiniaG.x1 = Lth.x1;
+                         LiniaG.y1 = Lth.y1;
+                         LiniaG.x2 = (float)(Lth.x1 + (float) (VectorC.magnitude1 / thermal_magnitude) * koc1th);
+                         LiniaG.y2 = (float)(Lth.y1 + (float) (VectorC.magnitude1 / thermal_magnitude) * kos1th);
+                     }
                      break;
              }
              eVf.x=maxX/2 + 5 ;
@@ -5391,7 +5487,77 @@ static void	redcrck(char typ)
              set_eVa(&eVf);
 
              CUR_ON=cur_onv1;
+
+             ////CUR_ON(LiniaG.x1, LiniaG.x2);  //////////
          }
+        else if (stretch_v==10)   //angle1 as magnitude1 for thermal in isometric
+        {
+            memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
+            SERV[71]=Inverse_VectorC;
+
+            parametry_lini((LINIA*)&VectorC, &PL);
+
+            if (VectorC.cartflags & 1) {
+
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+
+                LiniaG.x1 = Lth1.x1;
+                LiniaG.y1 = Lth1.y1;
+                LiniaG.x2 = Lt1.x1;
+                LiniaG.y2 = Lt1.y1;
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vf10_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv10;
+
+                ////CUR_ON(LiniaG.x1, LiniaG.x2);  //////////
+            }
+           else {
+                kos1 = sin(Pi * (PL.kat + 90) / 180);
+                koc1 = cos(Pi * (PL.kat + 90) / 180);
+
+                Lth.x1 = (float)((VectorC.x1 + VectorC.x2) / 2. + (float) (VectorC.r / depth_magnitude) * koc1);  //thermal_depth_size
+                Lth.y1 = (float)((VectorC.y1 + VectorC.y2) / 2. + (float) (VectorC.r / depth_magnitude) * kos1);
+                Lth.x2 = (float)((VectorC.x1 + VectorC.x2) / 2. - (float) (VectorC.r / depth_magnitude) * koc1);
+                Lth.y2 = (float)((VectorC.y1 + VectorC.y2) / 2. - (float) (VectorC.r / depth_magnitude) * kos1);
+
+                parametry_lini(&Lth, &PLth);
+
+                kos1th = sin(Pi * (PLth.kat + 90) / 180);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180);
+
+                LiniaG.x1 = Lth.x1;
+                LiniaG.y1 = Lth.y1;
+                LiniaG.x2 = (float)(Lth.x1 + (float) (VectorC.magnitude1 / thermal_magnitude) * koc1th);
+                LiniaG.y2 = (float)(Lth.y1 + (float) (VectorC.magnitude1 / thermal_magnitude) * kos1th);
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vf1_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv1;
+            }
+        }
          else if (stretch_v==5)   //magnitude2
          {
              memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
@@ -5404,6 +5570,10 @@ static void	redcrck(char typ)
                  case 20:
                      if (VectorC.x1<VectorC.x2) n=1;
                      else n=-1;
+
+                     ////for isometric vector in Y axis
+                     if ((VectorC.style==10) &&  (VectorC.cartflags & 1)) n*=-1;
+
                      LiniaG.x1 = VectorC.x2;
                      LiniaG.y1 = VectorC.y2;
                      LiniaG.x2 = VectorC.x2;
@@ -5457,6 +5627,9 @@ static void	redcrck(char typ)
                          if (iso_L1_x1<iso_L1_x2) n=1;
                          else n=-1;
 
+                         ////for isometric vector in Y axis
+                         n*=-1;
+
                          ret = trapezoid_base_isometric_x(VectorC.x1, VectorC.y1, VectorC.x2, VectorC.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
                          double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
@@ -5508,22 +5681,37 @@ static void	redcrck(char typ)
                  case 15:
                      parametry_lini((LINIA*)&VectorC, &PL);
 
-                     kos1=sin(Pi*(PL.kat+90)/180);
-                     koc1=cos(Pi*(PL.kat+90)/180);
+                     if (VectorC.cartflags & 1) {
 
-                     Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                     Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
-                     Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
-                     Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
+                         PLINIA PLth1;
+                         double perpendicular_iso_angle;
+                         get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-                     parametry_lini(&Lth, &PLth);
-                     kos1th=sin(Pi*(PLth.kat+90)/180);
-                     koc1th=cos(Pi*(PLth.kat+90)/180);
+                         LiniaG.x1 = Lth.x2;
+                         LiniaG.y1 = Lth.y2;
+                         LiniaG.x2 = Lt.x2;
+                         LiniaG.y2 = Lt.y2;
 
-                     LiniaG.x1 = Lth.x2;
-                     LiniaG.y1 = Lth.y2;
-                     LiniaG.x2 = Lth.x2 + (float)(VectorC.magnitude2/thermal_magnitude)*koc1th;
-                     LiniaG.y2 = Lth.y2 + (float)(VectorC.magnitude2/thermal_magnitude)*kos1th;
+                     }
+                     else {
+                         kos1 = sin(Pi * (PL.kat + 90) / 180);
+                         koc1 = cos(Pi * (PL.kat + 90) / 180);
+
+                         Lth.x1 = (float)((VectorC.x1 + VectorC.x2) / 2. + (float) (VectorC.r / depth_magnitude) * koc1);  //thermal_depth_size
+                         Lth.y1 = (float)((VectorC.y1 + VectorC.y2) / 2. + (float) (VectorC.r / depth_magnitude) * kos1);
+                         Lth.x2 = (float)((VectorC.x1 + VectorC.x2) / 2. - (float) (VectorC.r / depth_magnitude) * koc1);
+                         Lth.y2 = (float)((VectorC.y1 + VectorC.y2) / 2. - (float) (VectorC.r / depth_magnitude) * kos1);
+
+                         parametry_lini(&Lth, &PLth);
+                         kos1th = sin(Pi * (PLth.kat + 90) / 180);
+                         koc1th = cos(Pi * (PLth.kat + 90) / 180);
+
+                         LiniaG.x1 = Lth.x2;
+                         LiniaG.y1 = Lth.y2;
+                         LiniaG.x2 = (float)(Lth.x2 + (float) (VectorC.magnitude2 / thermal_magnitude) * koc1th);
+                         LiniaG.y2 = (float)(Lth.y2 + (float) (VectorC.magnitude2 / thermal_magnitude) * kos1th);
+
+                     }
                      break;
              }
              eVf.x=maxX/2 + 5 ;
@@ -5539,77 +5727,264 @@ static void	redcrck(char typ)
              set_eVa(&eVf);
 
              CUR_ON=cur_onv2;
+
+             ////CUR_ON(LiniaG.x1, LiniaG.x2);  //////////
          }
-         else if (stretch_v==6)   //thermal bar side 1
+        else if (stretch_v==11)   //angle2 as magnitude2 for thermal
+        {
+            memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
+            SERV[71]=Inverse_VectorC;
+
+            parametry_lini((LINIA*)&VectorC, &PL);
+
+            if (VectorC.cartflags & 1) {
+
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+
+                LiniaG.x1 = Lth1.x2;
+                LiniaG.y1 = Lth1.y2;
+                LiniaG.x2 = Lt1.x2;
+                LiniaG.y2 = Lt1.y2;
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vf11_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv11;
+
+                ////CUR_ON(LiniaG.x1, LiniaG.x2);  //////////
+
+            }
+            else
+            {
+                kos1=sin(Pi*(PL.kat+90)/180);
+                koc1=cos(Pi*(PL.kat+90)/180);
+
+                Lth.x1 = (float)((VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1);  //thermal_depth_size
+                Lth.y1 = (float)((VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1);
+                Lth.x2 = (float)((VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1);
+                Lth.y2 = (float)((VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1);
+
+                parametry_lini(&Lth, &PLth);
+                kos1th=sin(Pi*(PLth.kat+90)/180);
+                koc1th=cos(Pi*(PLth.kat+90)/180);
+
+                LiniaG.x1 = Lth.x2;
+                LiniaG.y1 = Lth.y2;
+                LiniaG.x2 = (float)(Lth.x2 + (float)(VectorC.magnitude2/thermal_magnitude)*koc1th);
+                LiniaG.y2 = (float)(Lth.y2 + (float)(VectorC.magnitude2/thermal_magnitude)*kos1th);
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vf2_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv2;
+            }
+
+        }
+        else if (stretch_v==6)  //thermal bar side 1 axis Y and Z (iso)
+        {
+            memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
+            if (VectorC.style==15)
+            {
+                parametry_lini((LINIA*)&VectorC, &PL);
+
+                if (VectorC.cartflags & 1) {
+
+                    PLINIA PLth1;
+                    double perpendicular_iso_angle;
+                    get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+
+                    LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
+                    LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
+                    LiniaG.x2 = Lth.x1;
+                    LiniaG.y2 = Lth.y1;
+
+                    eVf.x=maxX/2 + 5 ;
+                    eVf.y= ESTR_Y;
+                    eVf.lmax=12;
+                    eVf.val_no_max	= 1 ;
+                    eVf.mode	= GV_DIST	;
+                    eVf.format = format_float;
+                    eVf.ESTRF=Vth1_n_;
+                    eVf.extend = 0;
+                    np = dodajstr(&eVf);
+
+                    set_eVa(&eVf);
+
+                    CUR_ON=cur_onv3Z; //Z axis iso
+                }
+                else
+                {
+                kos1=sin(Pi*(PL.kat+90)/180);
+                koc1=cos(Pi*(PL.kat+90)/180);
+
+                Lth.x1 = (float)((VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1);  //thermal_depth_size
+                Lth.y1 = (float)((VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1);
+                Lth.x2 = (float)((VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1);
+                Lth.y2 = (float)((VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1);
+
+                LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
+                LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
+                LiniaG.x2 = Lth.x2;
+                LiniaG.y2 = Lth.y2;
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vth1_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv3;    //y axis cart
+                }
+
+
+            }
+        }
+        else if (stretch_v==12)  //thermal bar side 1 axis Y (iso)
+        {
+            memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
+            if (VectorC.style==15)
+            {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+
+                LiniaG.x1 = (Lth1.x1+Lth1.x2)/2.f;
+                LiniaG.y1 = (Lth1.y1+Lth1.y2)/2.f;
+                LiniaG.x2 = Lth1.x1;
+                LiniaG.y2 = Lth1.y1;
+
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vth1_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
+
+                set_eVa(&eVf);
+
+                CUR_ON=cur_onv3Y;
+            }
+        }
+        else if (stretch_v==7)  //thermal bar side 2  axis Y / Z (iso)
          {
              memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
              if (VectorC.style==15)
              {
                  parametry_lini((LINIA*)&VectorC, &PL);
+                 if (VectorC.cartflags & 1) {
 
-                 kos1=sin(Pi*(PL.kat+90)/180);
-                 koc1=cos(Pi*(PL.kat+90)/180);
+                     PLINIA PLth1;
+                     double perpendicular_iso_angle;
+                     get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-                 Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                 Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
-                 Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
-                 Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
+                     LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
+                     LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
+                     LiniaG.x2 = Lth.x2;
+                     LiniaG.y2 = Lth.y2;
 
-                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
-                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
-                 LiniaG.x2 = Lth.x2;
-                 LiniaG.y2 = Lth.y2;
+                     eVf.x=maxX/2 + 5 ;
+                     eVf.y= ESTR_Y;
+                     eVf.lmax=12;
+                     eVf.val_no_max	= 1 ;
+                     eVf.mode	= GV_DIST	;
+                     eVf.format = format_float;
+                     eVf.ESTRF=Vth2_n_;
+                     eVf.extend = 0;
+                     np = dodajstr(&eVf);
 
-                 eVf.x=maxX/2 + 5 ;
-                 eVf.y= ESTR_Y;
-                 eVf.lmax=12;
-                 eVf.val_no_max	= 1 ;
-                 eVf.mode	= GV_DIST	;
-                 eVf.format = format_float;
-                 eVf.ESTRF=Vth1_n_;
-                 eVf.extend = 0;
-                 np = dodajstr(&eVf);
+                     set_eVa(&eVf);
 
-                 set_eVa(&eVf);
+                     CUR_ON=cur_onv4Z; //Z axis iso
+                 }
+                 else {
 
-                 CUR_ON=cur_onv3;
+                     kos1 = sin(Pi * (PL.kat + 90) / 180);
+                     koc1 = cos(Pi * (PL.kat + 90) / 180);
+
+                     Lth.x1 = (float) ((VectorC.x1 + VectorC.x2) / 2. + (float) (VectorC.r / depth_magnitude) * koc1);  //thermal_depth_size
+                     Lth.y1 = (float) ((VectorC.y1 + VectorC.y2) / 2. + (float) (VectorC.r / depth_magnitude) * kos1);
+                     Lth.x2 = (float) ((VectorC.x1 + VectorC.x2) / 2. - (float) (VectorC.r / depth_magnitude) * koc1);
+                     Lth.y2 = (float) ((VectorC.y1 + VectorC.y2) / 2. - (float) (VectorC.r / depth_magnitude) * kos1);
+
+                     LiniaG.x1 = (Lth.x1 + Lth.x2) / 2.0f;
+                     LiniaG.y1 = (Lth.y1 + Lth.y2) / 2.0f;
+                     LiniaG.x2 = Lth.x1;
+                     LiniaG.y2 = Lth.y1;
+
+                     eVf.x = maxX / 2 + 5;
+                     eVf.y = ESTR_Y;
+                     eVf.lmax = 12;
+                     eVf.val_no_max = 1;
+                     eVf.mode = GV_DIST;
+                     eVf.format = format_float;
+                     eVf.ESTRF = Vth2_n_;
+                     eVf.extend = 0;
+                     np = dodajstr(&eVf);
+
+                     set_eVa(&eVf);
+
+                     CUR_ON = cur_onv4;
+                 }
              }
          }
-         else if (stretch_v==7)   //thermal bar side 2
-         {
-             memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
-             if (VectorC.style==15)
-             {
-                 parametry_lini((LINIA*)&VectorC, &PL);
+        else if (stretch_v==13)  //thermal bar side 2  axis Y (iso)
+        {
+            memmove(&VectorC, (AVECTOR *) get_vector_s(), sizeof(AVECTOR));
+            if (VectorC.style==15)
+            {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(&VectorC, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-                 kos1=sin(Pi*(PL.kat+90)/180);
-                 koc1=cos(Pi*(PL.kat+90)/180);
+                LiniaG.x1 = (Lth1.x1+Lth1.x2)/2.f;
+                LiniaG.y1 = (Lth1.y1+Lth1.y2)/2.f;
+                LiniaG.x2 = Lth1.x2;
+                LiniaG.y2 = Lth1.y2;
 
-                 Lth.x1 = (VectorC.x1+VectorC.x2)/2. + (float)(VectorC.r/depth_magnitude)*koc1;  //thermal_depth_size
-                 Lth.y1 = (VectorC.y1+VectorC.y2)/2. + (float)(VectorC.r/depth_magnitude)*kos1;
-                 Lth.x2 = (VectorC.x1+VectorC.x2)/2. - (float)(VectorC.r/depth_magnitude)*koc1;
-                 Lth.y2 = (VectorC.y1+VectorC.y2)/2. - (float)(VectorC.r/depth_magnitude)*kos1;
+                eVf.x=maxX/2 + 5 ;
+                eVf.y= ESTR_Y;
+                eVf.lmax=12;
+                eVf.val_no_max	= 1 ;
+                eVf.mode	= GV_DIST	;
+                eVf.format = format_float;
+                eVf.ESTRF=Vth2_n_;
+                eVf.extend = 0;
+                np = dodajstr(&eVf);
 
-                 LiniaG.x1 = (Lth.x1+Lth.x2)/2.0f;
-                 LiniaG.y1 = (Lth.y1+Lth.y2)/2.0f;
-                 LiniaG.x2 = Lth.x1;
-                 LiniaG.y2 = Lth.y1;
+                set_eVa(&eVf);
 
-                 eVf.x=maxX/2 + 5 ;
-                 eVf.y= ESTR_Y;
-                 eVf.lmax=12;
-                 eVf.val_no_max	= 1 ;
-                 eVf.mode	= GV_DIST	;
-                 eVf.format = format_float;
-                 eVf.ESTRF=Vth2_n_;
-                 eVf.extend = 0;
-                 np = dodajstr(&eVf);
-
-                 set_eVa(&eVf);
-
-                 CUR_ON=cur_onv4;
-             }
-         }
+                CUR_ON=cur_onv4Y;
+            }
+        }
          else if (stretch_v==8)   //stretching radius of node
          {
              memmove(&VectorC, (AVECTOR*)get_vector_s(), sizeof(AVECTOR));
@@ -5617,8 +5992,8 @@ static void	redcrck(char typ)
              LiniaG.x1=VectorC.x1;
              LiniaG.y1=VectorC.y1;
 
-             LiniaG.x2=VectorC.x1-(float)VectorC.r*cos(0);
-             LiniaG.y2=VectorC.y1+(float)VectorC.r*sin(0);
+             LiniaG.x2=(float)(VectorC.x1-(float)VectorC.r*cos(0));
+             LiniaG.y2=(float)(VectorC.y1+(float)VectorC.r*sin(0));
 
              Px=LiniaG.x2;
              Py=LiniaG.y2;
@@ -5735,6 +6110,7 @@ static int ciagnijk(void)
 	{
 	  DX = DX0;	DY	= DY0;
 	}
+
 	transformacja_blok(ADP,ADK,DX,DY,0,0,Tprzesuw,0);
 
     reset_stretch_vector();
@@ -5925,11 +6301,11 @@ static void	utwierdzenie_luku(LUK *adluk)
   if(adluk->obiektt1!=Sztywny)
   {if	((adluk->blok != ElemBlok)	||	(swobodny_blok	==	TRUE))
 	 {
-	  x=adluk->x+adluk->r*cos(adluk->kat1);
-	  y=adluk->y+adluk->r*sin(adluk->kat1);
+	  x=adluk->x+adluk->r*cos((double)adluk->kat1);
+	  y=adluk->y+adluk->r*sin((double)adluk->kat1);
 	  w1=punkt_w_prostokacie(x,y);
-	  x=adluk->x+adluk->r*cos(adluk->kat2);
-	  y=adluk->y+adluk->r*sin(adluk->kat2);
+	  x=adluk->x+adluk->r*cos((double)adluk->kat2);
+	  y=adluk->y+adluk->r*sin((double)adluk->kat2);
 	  w2=punkt_w_prostokacie(x,y);
 	  if(w1 && !w2) adluk->obiektt1=Utwierdzony2;
 	  else if(!w1 && w2)	adluk->obiektt1=Utwierdzony1;
@@ -5944,11 +6320,11 @@ static void	utwierdzenie_solidarc(SOLIDARC *adsa)
     if(adsa->obiektt1!=Sztywny)
     {if	((adsa->blok != ElemBlok)	||	(swobodny_blok	==	TRUE))
         {
-            x=adsa->x+adsa->r*cos(adsa->kat1);
-            y=adsa->y+adsa->r*sin(adsa->kat1);
+            x=adsa->x+adsa->r*cos((double)adsa->kat1);
+            y=adsa->y+adsa->r*sin((double)adsa->kat1);
             w1=punkt_w_prostokacie(x,y);
-            x=adsa->x+adsa->r*cos(adsa->kat2);
-            y=adsa->y+adsa->r*sin(adsa->kat2);
+            x=adsa->x+adsa->r*cos((double)adsa->kat2);
+            y=adsa->y+adsa->r*sin((double)adsa->kat2);
             w2=punkt_w_prostokacie(x,y);
             if(w1 && !w2) adsa->obiektt1=Utwierdzony2;
             else if(!w1 && w2)	adsa->obiektt1=Utwierdzony1;
@@ -6365,7 +6741,7 @@ static void	redcrC(char	typ)
 		addf_draw ();
 		getmenupini(&menu,st,&cod,&iconno);
         break;
-      case 11	:
+      case 12	:
             menupini(menu,st,cod,iconno);
             komunikat0(0);
             getmenupini(&menu,st,&cod,&iconno);
@@ -6500,7 +6876,7 @@ blokc_again:
     }
     else
     {
-        redcrC(11);
+        redcrC(12);
 
         DX=o.x01-X; DY=o.y01-Y;
         if (DX!=0 || DY!=0) mvcurp(DX,DY); //MOVING CURSOR

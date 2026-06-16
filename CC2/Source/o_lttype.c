@@ -42,7 +42,7 @@
 #include "message.h"
 #include "menu.h"
 
-////#include "leak_detector_c.h"
+#include "leak_detector_c.h"
 
 GLYPH_FACE *face_ttf[128];
 TTF_font_files ttf_font_files;
@@ -345,7 +345,7 @@ int Add_New_Font_TTF_OTF(char *name, int type, int cur)
 
 }
 
-static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
+static T_Font_Header *read_font_TTF_OTF___(char *ptrsz_file, int no)
 /*-------------------------------------------------------------*/
 {
 	int flags;
@@ -476,6 +476,138 @@ static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
 	return ptrs_header;
 }
 
+static T_Font_Header *read_font_TTF_OTF(char *ptrsz_file, int no)
+/*-------------------------------------------------------------*/
+{
+	int flags;
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="", ext_[MAXEXT]="";
+	T_Font_Header *ptrs_header, s_header;
+	char file_ext[32]="";
+	long l_alloc;
+	char pathname[MAXPATH]="";
+	char ttf_file_path[MAXPATH]="";
+	GLYPH_FACE *new_face_ttf;
+	int path_len, face_len;
+	int i;
+	char face_name[128]="";
+	int ret_err;
+	char lff_name[64]="", aft_name[64]="", aft_font[64]="";
+    char *fontdir;
+
+    flags = fnsplit(ptrsz_file, drive, dir, file, ext);
+
+	if (my_file_exists(ptrsz_file)) strcpy(ttf_file_path, ptrsz_file);
+	else
+	{
+        strcpy(ext_, ext);
+#ifndef LINUX
+        if (strcmp(_strupr(ext_),".OTF")==0)
+#else
+        if (strcmp(strupr(ext_),".OTF")==0)
+#endif
+		{
+			fontdir = otffont;
+			if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path))
+			{
+				fontdir = winfont;
+				if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path)) return NULL;
+			}
+		}
+		else
+		{
+			fontdir = winfont;
+			if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path))
+			{
+				fontdir = otffont;
+				if (!findfile_recursive(fontdir, ptrsz_file, ttf_file_path)) return NULL;
+			}
+		}
+	}
+
+	find_any_font_face(ttf_file_path, face_name);
+
+    if (strlen(face_name)==0) strcpy(face_name, file);  //TO CHANGE
+
+	for (i = 0; i < i__font_nomax /*WhNumberTextStyle*/; i++)
+	{
+		if ((ttf_font_files.Alfa_loaded[i] == TRUE) &&
+			(strcmp(ttf_font_files.face[i], face_name) == 0))
+		{
+			return NULL;
+		}
+	}
+
+	strncpy(s_header.font_name, file, FONTNAMELEN-1);
+	s_header.font_name[FONTNAMELEN-1] = '\0';
+	s_header.num_char = 0;
+
+	sprintf(file_ext, "%s%s", file, ext);
+
+	pathname[0] = '\0';
+	strcat(pathname, EXT); // FIXED: Simplified path assignment
+	ptrs_header = NULL;
+
+	strncpy(s_header.s_alloc_param.file_buf, pathname,13);
+	l_alloc = sizeof(T_Font_Header) + s_header.num_char * sizeof(char);
+    ptrs_header = (T_Font_Header*)malloc(l_alloc);
+	if (ptrs_header == NULL)
+	{
+		ErrList(12);
+		return ptrs_header;
+	}
+	memcpy((void*)ptrs_header, &s_header, sizeof(T_Font_Header));
+	ptrs_header->ptrsz_widths = (unsigned char*)(ptrs_header + 1);
+
+	face_ttf[no] = gk_load_face_from_file(ttf_file_path, 0);
+	if (face_ttf[no] == NULL)
+	{
+		// FIX 1: Clean up ptrs_header if the font file cannot be loaded
+		free(ptrs_header);
+		return NULL;
+	}
+
+	path_len = strlen(ttf_file_path) + 1;
+	ttf_file[no] = (char *)malloc(path_len);
+	if (ttf_file[no] == NULL)
+	{
+		// FIX 2: Defensive check for OOM
+		free(ptrs_header);
+		return NULL;
+	}
+	strcpy(ttf_file[no], ttf_file_path);
+	ttf_font_files.file[no] = ttf_file[no];
+
+	face_len = strlen(face_name) + 1;
+	ttf_face[no] = (char *)malloc(face_len);
+	if (ttf_face[no] == NULL)
+	{
+		// FIX 3: Clean up previous allocations if this one fails
+		free(ttf_file[no]);
+		free(ptrs_header);
+		return NULL;
+	}
+	strcpy(ttf_face[no], face_name);
+	ttf_font_files.face[no] = ttf_face[no];
+
+	ttf_font_files.Alfa_loaded[no] = TRUE;
+	ttf_font_files.PDF_embeded[no] = FALSE;
+
+	strncpy(ptrs_header->font_acad_name, file_ext, 33);
+	ptrs_header->font_acad_name[33] = '\0';
+
+	ptrs_header->ptrsz_font = NULL;
+
+	ptrs_header->type = 2;
+	ptrs_header->place_xms = 1;
+	ptrs_header->place_buf = 0;
+	ptrs_header->place_buf_font = 0;
+	return ptrs_header;
+}
+
+
 int Add_New_Font_CHR(char *name)
 {
 	int i;
@@ -487,6 +619,7 @@ int Add_New_Font_CHR(char *name)
 	int flags;
 	int font_no;
 	int font_namelen;
+	T_Font_Header *ptrs_header;
 
 #ifndef LINUX
 	sprintf(sk, "FONTS\\CHR\\%s.chr",name);
@@ -496,6 +629,7 @@ int Add_New_Font_CHR(char *name)
 	flags = fnsplit(sk, drive, dir, file, ext);
 
 	font_no = WhNumberTextStyle;
+
 	if (NULL == (PTRS__Text_Style[font_no] =
 		read_font_old(sk/*, font_no*/)) ||
 		0 == PTRS__Text_Style[font_no]->place_xms)
@@ -532,7 +666,7 @@ int Add_New_Font_CHR(char *name)
 
 }
 
-static T_Font_Header *read_font_old(char *ptrsz_file)
+static T_Font_Header *read_font_old___(char *ptrsz_file)
 /*-----------------------------------------------------*/
 {
 	int f;
@@ -680,6 +814,172 @@ err:
 	ErrList(11);
 	return NULL;
 }
+
+static T_Font_Header *read_font_old(char *ptrsz_file)
+/*-----------------------------------------------------*/
+{
+	int f;
+	unsigned roz1;
+	T_Font_Header_Old s_header_old;
+	T_Font_Header s_header;
+	T_Font_Header *ptrs_header;
+	T_Font_File_Header s_file_header;
+	long l_alloc;
+	char pathname[MAXPATH]="";
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
+
+	char pathname0[MAXPATH]="";
+	char drive0[MAXDRIVE]="";
+	char dir0[MAXDIR]="";
+	char file0[MAXFILE]="";
+	char ext0[MAXEXT]="";
+	char font_file[MAXPATH]="";
+	int flags, flags1;
+	long l1, l2;
+	char *bufor_testowy = NULL; // FIX 1: Initialize to NULL to make cleanup safe
+	unsigned int was_read;
+	int poz_widths;
+	int  header_size, header_old_size, file_header_size;
+
+	// FIX 2: Initialize structures to zero to prevent copying uninitialized stack pointers via memcpy
+	memset(&s_header, 0, sizeof(T_Font_Header));
+	memset(&s_header_old, 0, sizeof(T_Font_Header_Old));
+
+	strcpy(font_file, "");
+
+#ifdef NET_VERSION
+	flags1 = fnsplit(argv0, drive0, dir0, file0, ext0);
+	strcat(font_file, drive0);
+	strcat(font_file, dir0);
+#endif
+	strcat(font_file, ptrsz_file);
+	flags = fnsplit(ptrsz_file, drive, dir, file, ext);
+	pathname[0] = '\0';
+	strcat(pathname, file);
+#define EXT ".TMP"
+	strcat(pathname, EXT);
+	ptrs_header = NULL;
+	f = open(font_file, O_RDONLY | O_BINARY);
+	if (f == -1)
+	{
+		strcat(str, font_file /*ptrsz_file*/);
+		ErrListStr(str);
+		return ptrs_header;
+	}
+
+	file_header_size = sizeof(T_Font_File_Header);
+
+	if (read(f, &s_file_header, sizeof(T_Font_File_Header)) != sizeof(T_Font_File_Header))
+	{
+		goto err;
+	}
+
+	if ((0 != strncmp(s_file_header.comment, FONTVER, FONTVER_LEN)) && (0 != strncmp(s_file_header.comment, FONTVERNEW, FONTVER_LEN)))
+	{
+		goto err;
+	}
+
+	if (read(f, &s_header_old, sizeof(T_Font_Header_Old)) != sizeof(T_Font_Header_Old))
+	{
+		goto err;
+	}
+
+	strcpy(s_header.font_name, s_header_old.font_name);
+	strcpy(s_header.font_acad_name, s_header_old.font_acad_name);
+	s_header.font_size = s_header_old.font_size;
+	s_header.num_char = (unsigned int)s_header_old.num_char;
+	s_header.first_char = (unsigned int)s_header_old.first_char;
+	s_header.height = s_header_old.height;
+	s_header.vert_margin = s_header_old.vert_margin;
+	s_header.margin_char = s_header_old.margin_char;
+	s_header.last_height = s_header_old.last_height;
+	s_header.font_aspect = s_header_old.font_aspect;
+	s_header.place_xms = s_header_old.place_xms;
+	s_header.place_buf = s_header_old.place_buf;
+	s_header.place_buf_font = s_header_old.place_buf_font;
+	s_header.type = s_header_old.type;
+	s_header.reserve = s_header_old.reserve;
+	s_header.s_alloc_param = s_header_old.s_alloc_param;
+
+#ifdef BIT64
+#ifndef LINUX
+  poz_widths = lseek(f, -12, SEEK_CUR);
+#else
+#ifdef ARM64
+	poz_widths = lseek(f, -24, SEEK_CUR);
+#else
+    poz_widths = lseek(f, -16, SEEK_CUR);
+#endif
+#endif
+#endif
+    header_old_size = sizeof(T_Font_Header_Old);
+	header_size = sizeof(T_Font_Header);
+
+	strncpy(s_header.s_alloc_param.file_buf, pathname, 13);
+	s_header.s_alloc_param.file_buf[12] = '\0'; // FIX 3: Force null-termination
+
+	l_alloc = sizeof(T_Font_Header) + s_header.num_char * sizeof(char);
+    ptrs_header = (T_Font_Header*)malloc(l_alloc);
+	if (ptrs_header == NULL)
+	{
+		ErrList(12);
+		close(f);
+		return ptrs_header;
+	}
+	memcpy((void*)ptrs_header, &s_header, sizeof(T_Font_Header));
+	ptrs_header->ptrsz_widths = (unsigned char*)(ptrs_header + 1);
+	ptrs_header->place_xms = 1;
+	ptrs_header->ptrsz_font = NULL;
+
+	l_alloc -= sizeof(T_Font_Header);
+
+	if (read(f, (void*)(ptrs_header->ptrsz_widths), (unsigned)l_alloc) != l_alloc)
+	{
+		goto err;
+	}
+
+	// FIX 4: Correct font allocation math to properly reflect 64-bit structural padding
+	l_alloc = (s_header.num_char) * sizeof(T_Font_Off) + s_header.font_size;
+    bufor_testowy = (char *)malloc(l_alloc + 1000);
+	if (bufor_testowy == NULL)
+	{
+		ErrList(12);
+		goto err;
+	}
+
+	was_read = read(f, (void*)bufor_testowy, (unsigned)l_alloc);
+	if (was_read != l_alloc)
+	{
+		goto err; // FIX 5: Will now safely jump to err and free bufor_testowy
+	}
+
+	ptrs_header->ptrs_off = (T_Font_Off*)bufor_testowy;
+	ptrs_header->ptrsz_font = (char*)ptrs_header->ptrs_off + (s_header.num_char * sizeof(T_Font_Off));
+
+	ptrs_header->place_xms = 1;
+	ptrs_header->place_buf = 0;
+	ptrs_header->place_buf_font = 0;
+	close(f);
+	return ptrs_header;
+
+err:
+	// FIX 6: Conditional cleanup loop to secure the heap from cascading failures
+	if (bufor_testowy != NULL)
+	{
+		free(bufor_testowy);
+	}
+	if (ptrs_header != NULL)
+	{
+		free(ptrs_header);
+	}
+	close(f);
+	ErrList(11);
+	return NULL;
+}
+
 
 int Add_New_Font_AFF(char *name)
 {
@@ -882,6 +1182,8 @@ void DoneBuffers3(void)
 { int i;
 char str[16];
 int gk;
+
+/*
   
   for (i=0; i< i__font_nomax; i++)  //MaxNumberTextStyle
 	  if ((char *)PTRS__Text_Style[i]!=NULL) 
@@ -891,7 +1193,6 @@ int gk;
 			  free((char *)PTRS__Text_Style[i]->ptrs_off);
 			  free((char *)PTRS__Text_Style[i]);
 		  }
-		  
 		  else
 		  {
               ////  !!!!!!!!!!!!!!! NO IDEA IF NEEDED, HAS TO BE CONFIRMED
@@ -900,7 +1201,6 @@ int gk;
                   //   gk_unload_face(face_ttf[i]);  //this can crash after operations in Dialog
                   face_ttf[i] = NULL;
               }
-
 			  free((char *)PTRS__Text_Style[i]);
 		  }
 		  //freeing ttf_path_names
@@ -910,6 +1210,35 @@ int gk;
 			  free(ttf_font_files.face[i]);
 		  }
 	  }
+  */
+  // 1. CLEAR MAIN DRAWING FONTS
+for (i = 0; i < i__font_nomax; i++)
+{
+	if (PTRS__Text_Style[i] != NULL)
+	{
+		if ((PTRS__Text_Style[i]->type < 2) || (PTRS__Text_Style[i]->type == 3))
+		{
+			if (PTRS__Text_Style[i]->ptrs_off != NULL) free((char*)PTRS__Text_Style[i]->ptrs_off);
+			free((char*)PTRS__Text_Style[i]);
+		}
+		else
+		{
+			if (face_ttf[i] != NULL)
+            {
+                /////  gk_unload_face(face_ttf[i]);   //still crashing
+                face_ttf[i] = NULL;
+            }
+			free((char*)PTRS__Text_Style[i]);
+		}
+		// Clean tracking strings
+		if (ttf_font_files.Alfa_loaded[i] == TRUE)
+		{
+			free(ttf_font_files.file[i]);
+			free(ttf_font_files.face[i]);
+		}
+	}
+}
+
 
   Free_Desktop_font();
   Free_ini_font();

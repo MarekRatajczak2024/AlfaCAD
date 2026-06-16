@@ -244,7 +244,7 @@ static int read_estr(void)
 {
   int zn ;
   void (*CUR)(int ,int);
-  char *ptr, *ptrsz_format1, *ptrsz_format2 ;
+  char *ptr, *ptrsz_format1, *ptrsz_format2, *ptrsz_format3, *ptrsz_format4 ;
   char buf [MaxTextLen*2+1];
   char buf1 [MaxTextLen*2+1];
   BOOL b_graph_value, b_ret ;
@@ -326,6 +326,19 @@ static int read_estr(void)
       strcpy (buf1, et [np]->st) ;
       ptrsz_format2 = ptrsz_format1 = et [np]->format ;
       ptrsz_format2 += strlen (ptrsz_format2) + 1 ;
+
+      if (et[np]->val_no_max > 2) {
+          ptrsz_format3 = ptrsz_format1 = et[np]->format;
+          ptrsz_format3 += strlen(ptrsz_format3) + 1;
+          ptrsz_format3 += strlen(ptrsz_format3) + 1;
+      }
+        if (et[np]->val_no_max > 3) {
+            ptrsz_format4 = ptrsz_format1 = et[np]->format;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+        }
+
       if (et [np]->val_no_max == 0)
       {
 	strcpy (et [np]->st, buf) ;
@@ -333,19 +346,26 @@ static int read_estr(void)
       else
       if (et [np]->val_no == 1)
       {
-	if (ptrsz_format1 [0] == '\001')
-	{
-	  sprintf (et [np]->st, ++ptrsz_format1, (int)et[np]->values [0]);
-	}
-	else
-	{
-	  sprintf (et [np]->st, ptrsz_format1, et[np]->values [0]);
-	}
+        if (ptrsz_format1 [0] == '\001')
+        {
+          sprintf (et [np]->st, ++ptrsz_format1, (int)et[np]->values [0]);
+        }
+        else
+        {
+          sprintf (et [np]->st, ptrsz_format1, et[np]->values [0]);
+        }
       }
-      else
-      if (et [np]->val_no == 2)
+      else if (et [np]->val_no == 2)
       {
 	    sprintf (et [np]->st, ptrsz_format2, et[np]->values [0], et[np]->values [1]);
+      }
+      else if (et [np]->val_no == 3)
+      {
+          sprintf (et [np]->st, ptrsz_format3, et[np]->values [0], et[np]->values [1], et[np]->values [2]);
+      }
+      else if (et [np]->val_no >= 4)
+      {
+          sprintf (et [np]->st, ptrsz_format4, et[np]->values [0], et[np]->values [1], et[np]->values [2], et[np]->values [3]);
       }
 
       if (0 == et [np]->ESTRF (b_graph_value))
@@ -376,7 +396,7 @@ static int read_estr_zn(char zn0)
 {
   int zn ;
   void (*CUR)(int ,int);
-  char *ptrsz_format1, *ptrsz_format2 ;
+  char *ptrsz_format1, *ptrsz_format2, *ptrsz_format3, *ptrsz_format4 ; ;
   char buf [MaxTextLen];
   char buf1 [MaxTextLen];
   BOOL b_graph_value, b_ret ;
@@ -425,6 +445,19 @@ static int read_estr_zn(char zn0)
       strcpy (buf1, et [np]->st) ;
       ptrsz_format2 = ptrsz_format1 = et [np]->format ;
       ptrsz_format2 += strlen (ptrsz_format2) + 1 ;
+
+        if (et[np]->val_no_max > 2) {
+            ptrsz_format3 = ptrsz_format1 = et[np]->format;
+            ptrsz_format3 += strlen(ptrsz_format3) + 1;
+            ptrsz_format3 += strlen(ptrsz_format3) + 1;
+        }
+        if (et[np]->val_no_max > 3) {
+            ptrsz_format4 = ptrsz_format1 = et[np]->format;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+            ptrsz_format4 += strlen(ptrsz_format4) + 1;
+        }
+
       if (et [np]->val_no_max == 0)
       {
 	    strcpy (et [np]->st, buf) ;
@@ -444,6 +477,15 @@ static int read_estr_zn(char zn0)
       {
 	    sprintf (et [np]->st, ptrsz_format2, et[np]->values [0], et[np]->values [1]);
       }
+      else if (et [np]->val_no == 3)
+      {
+          sprintf (et [np]->st, ptrsz_format3, et[np]->values [0], et[np]->values [1], et[np]->values [2]);
+      }
+      else if (et [np]->val_no >= 4)
+      {
+          sprintf (et [np]->st, ptrsz_format4, et[np]->values [0], et[np]->values [1], et[np]->values [2], et[np]->values [3]);
+      }
+
       if (0 == et [np]->ESTRF (b_graph_value))
       {
 	    strcpy (et [np]->st, buf1) ;

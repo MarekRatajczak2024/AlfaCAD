@@ -14,7 +14,7 @@
 *
 */
 
-#define __O_SHIELD__
+#define __O_SHIELD__  // NOLINT
 #include <stdlib.h>
 #ifdef LINUX
 #include <dirent.h>
@@ -125,6 +125,7 @@ extern void Rotate_Point(double si, double co, double x1, double y1, /*center po
 
 extern BOOL check_if_point_on_line_segment(double p1x, double p1y, double p2x, double p2y, double px, double py);
 extern BOOL check_if_point_on_arc_segment(double xc, double yc, double r, double startAngle, double endAngle, double x, double y);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
 
 extern TMENU mVector;
 extern BOOL glb_silent;
@@ -139,6 +140,66 @@ extern DWORD run_with_timeout(char* command, int timeout);
 static char T_text[64];
 
 #define TIMEOUT_SECONDS 15
+
+typedef enum
+{
+    ST_shear=0,
+    ST_shear_ref,
+}STATIC_PLATE;
+
+extern double shear_desire_footprint; //Max out-of-plane plate shear diagram in mm
+extern double cfg_ref_shear_base;  // 30 kN/m (SI) or f(30) kips/in (IMP)
+
+BOOL get_static_shield_param (T_Fstring key_name, T_Fstring ret_string)
+/*-------------------------------------------------------------------*/
+{
+    int i, val_int;
+    double val_double;
+    char static_par[128];
+
+    //strupr (key_name);
+    utf8Upper(key_name);
+
+    for (i = 0; i < no_static_shield_param; i++)
+    {
+        //strupr (&prn_config_param [i]);
+
+        strcpy(static_par, static_shield_param[i]);
+        utf8Upper(static_par);
+
+        if (stricmp (key_name, static_par) == 0)
+        {
+            break;
+        }
+    }
+    if (i >= no_static_shield_param)
+    {
+        return FALSE;
+    }
+
+    switch (i)
+    {
+        case ST_shear:
+            if ( sscanf ( ret_string, "%lf", &val_double) == 1 )
+            {
+                if (val_double > 0)
+                    shear_desire_footprint = val_double;
+            }
+            break;
+        case ST_shear_ref:
+            if ( sscanf ( ret_string, "%lf", &val_double) == 1 )
+            {
+                if (val_double > 0)
+                    cfg_ref_shear_base = val_double;
+            }
+            break;
+        default:
+            break;
+    }
+    return TRUE;
+}
+
+
 
 static int draw_label(LINIA *L, LINIA *Le, double dx, double r1, double r2, double vpar, double precision, int bold, char *suffix, char *prefix)
 {
@@ -286,12 +347,12 @@ typedef struct {              //                                                
 */
 ///UNIT_FACTORS unit_factors_si={1.0, 0.001, 100.0,0.000001, 10000.0,0.000001, 0.000000001,1000.0,1e-12,1.0,1000.0,1000.0,1000000,1.0, 1000.0, 1000.0, 9.81, 0.001};
 
-UNIT_FACTORS unit_factors_sh_si={0.001, 1.0, 0.0001, 1.0, 0.00000001, 0.000001, 0.000000001, 1.0e9,  1.0, 1.0, 1.0, 1000.0, 1000, 1000.0, 1000.0, .000001, 9.81, 0.001};
-UNIT_FACTORS unit_factors_sh_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
+UNIT_FACTORS unit_factors_sh_si={0.001, 1.0, 0.0001, 1.0, 0.00000001, 0.000001, 0.000000001, 1.0e9,  1.0, 1.0, 1.0, 1000.0, 1000, 1000.0, 1000.0, .000001, 9.80665, 0.001};
+UNIT_FACTORS unit_factors_sh_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 386.09 /*9806.6504*/, 1.0};
 
 extern PROP_PRECISIONS SI_precisions;
 extern PROP_PRECISIONS IMP_precisions;
-PROP_PRECISIONS *prop_precisions_sh=&SI_precisions;  //just to initialize
+PROP_PRECISIONS *prop_precisions_sh;
 
 extern double dim_precision;
 extern double t_precision;
@@ -312,6 +373,9 @@ extern double displacement_magnitude;
 extern double load_magnitude;
 extern double flood_magnitude;
 extern double shear_magnitude;
+
+extern BOOL rescaling_menu_mode;
+BOOL refresh_rescaling_shield_menu_mode=1;
 
 double dim_precision_sh=0.0001;
 
@@ -335,7 +399,7 @@ static T_Hatch_Param 		    s_hatch_param = {1, 0, 1, 0, 0, 0} ;
 static ST_PROPERTY *sh_property=NULL;
 int sh_property_no=0;
 
-static ST_PROPERTY prt_def_sh={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0};
+static ST_PROPERTY prt_def_sh={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0,0,0,0,0,0};
 
 static ST_LOAD_FACTORS *sh_load_factors=NULL;
 int sh_load_factors_no=0;
@@ -674,6 +738,8 @@ int create_shield(BLOK *b, int style, int number, int body_no, int *first, int *
             parametry_lini(L, &PL);
             dl = PL.dl * dxl;
 
+            sh_edge[sh_edge_no].dl=(float)PL.dl;
+
             sh_edge[sh_edge_no].style = style;
             sh_edge[sh_edge_no].number = number;
             sh_edge[sh_edge_no].body_number = body_no;
@@ -744,6 +810,11 @@ int create_shield(BLOK *b, int style, int number, int body_no, int *first, int *
         } else if (nag->obiekt == Oluk) {
             l = (LUK *) nag;
             dr = l->r * dxr;
+
+            float kat1=l->kat1;
+            float kat2=l->kat2;
+            if (kat2<kat1) kat2+=(float)Pi2;
+            sh_edge[sh_edge_no].dl=(float)(l->r*(kat2-kat1));
 
             sh_edge[sh_edge_no].node1 = -1;
             sh_edge[sh_edge_no].node2 = -1;
@@ -975,7 +1046,7 @@ static int factor_record(unsigned char load, unsigned char variant)
             }
         }
     }
-    return -1;
+    return -load;
 }
 
 extern BOOL rout;
@@ -2255,6 +2326,8 @@ void Shield_analysis(void) {
     int body_prop_no;
     BOOL ULSLC_flag[5];
 
+    float SPLINE_TENSION=0.95f;
+
     float (*jednostkiObX)(double mob);
     float (*jednostkiObY)(double mob);
 
@@ -2426,6 +2499,7 @@ void Shield_analysis(void) {
 
 
     ////properties
+    prop_precisions_sh=&SI_precisions;  //just to initialize
     /////////////////////////
     if (Jednostki == 1)   //mm
     {
@@ -2819,7 +2893,7 @@ void Shield_analysis(void) {
 
     if (strlen(ptr_id_short)==0)
     {
-        sprintf(report_row, "%s", _SHIELD_ID_NOT_FOUND_);
+        sprintf(report_row, "%s%s", _SHIELD_ID_NOT_FOUND_, rn);
         strcat(report, report_row);
     }
     /////////////////
@@ -2978,6 +3052,69 @@ void Shield_analysis(void) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok))
         {
             v = (AVECTOR *) nag;
+            //first scan
+            if ((v->style>3) && (v->cartflags & 1))  //load
+            {
+                switch (v->style)
+                {
+                    double ex1, ey1, ex2, ey2;
+
+                    case 4:  //F
+                    case 5:  //M
+                    case 6:  //-M
+                    case 7:  //PD
+                    case 8:  //PR
+                    case 9:  //-PR
+                    case 17: //QP
+                    case 19: //FZ
+                    case 21: //MXZ
+                    case 22: //-MXZ
+                    case 23: //MYZ
+                    case 24: //-MYZ
+                    case 25: //MXY
+                    case 26: //-MXY
+                    case 27: //PDZ
+                    case 28: //RXZ
+                    case 29: //-RXZ
+                    case 30: //RYZ
+                    case 31: //-RYZ
+                    case 32: //RXY
+                    case 33: //-RXY
+                        //pointwise load
+                        if (options1.uklad_izometryczny) {
+                            cartesian_to_isometric(milimetryobx(v->x1), milimetryoby(v->y1), &ex1, &ey1);
+                        } else {
+                            ex1 = milimetryobx(v->x1);
+                            ey1 = milimetryoby(v->y1);
+                        }
+                        sprintf(report_row, "<%f;%f> %s%s", ex1, ey1, _vector_of_load_is_isometric_, rn);
+                        break;
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                    case 14:
+                    case 18:
+                    case 20:
+                        //distributed load
+                        if (options1.uklad_izometryczny) {
+                            cartesian_to_isometric(milimetryobx(v->x1), milimetryoby(v->y1), &ex1, &ey1);
+                            cartesian_to_isometric(milimetryobx(v->x2), milimetryoby(v->y2), &ex2, &ey2);
+                        } else {
+                            ex1 = milimetryobx(v->x1);
+                            ey1 = milimetryoby(v->y1);
+                            ex2 = milimetryobx(v->x2);
+                            ey2 = milimetryoby(v->y2);
+                        }
+                        sprintf(report_row, "<%f;%f> <%f;%f> %s%s", ex1, ey1, ex2, ey2, _vector_of_load_is_isometric_, rn);
+                        break;
+                }
+                strcat(report, report_row);
+                //goto error;  //let's check others
+
+                obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
+                continue;
+            }
 
             if (((v->style>3) && (v->style<7)) || ((v->style>9) && (v->style<15)) || ((v->style>16) && (v->style<19)))
             {
@@ -3091,6 +3228,9 @@ void Shield_analysis(void) {
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
     }
+
+    //showing early report about members and loads (isometry)
+    if (strlen(report) > 0) goto sh_error;
 
     ///removing Ablok flags to assign load to bodies
     zmien_atrybut_undo(dane, dane + dane_size);
@@ -4924,8 +5064,8 @@ void Shield_analysis(void) {
     for (i = 0; i < sh_node_no; i++) {
         set_decimal_format(par[0], milimetryobx(sh_node[i].x) * geo_units_factor, dim_precision_sh);
         set_decimal_format(par[1], milimetryoby(sh_node[i].y) * geo_units_factor, dim_precision_sh);
-        set_decimal_format(par[2], max(milimetryob((double) sh_node[i].d) * geo_units_factor, dxl_min),
-                           dim_precision_sh);
+
+        set_decimal_format(par[2], max(milimetryob((double) sh_node[i].d) * geo_units_factor, dxl_min), dim_precision_sh);
 
         fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", i + 1, par[0], par[1], par[2]);
     }
@@ -4935,8 +5075,13 @@ void Shield_analysis(void) {
     {
         set_decimal_format(par[0], milimetryobx(sh_node_emb[i].x) * geo_units_factor, dim_precision_sh);
         set_decimal_format(par[1], milimetryoby(sh_node_emb[i].y) * geo_units_factor, dim_precision_sh);
-        set_decimal_format(par[2], max(milimetryob((double) sh_node_emb[i].d) * geo_units_factor, dxl_min),
-                           dim_precision_sh);
+
+        // --- FIX: Keep embedded elements locked down to object units ---
+        double element_size_object = (double)sh_node_emb[i].d * geo_units_factor;
+        if (element_size_object < (double)dxl_min) element_size_object = (double)dxl_min;
+        set_decimal_format(par[2], element_size_object, dim_precision_sh);
+
+        ////set_decimal_format(par[2], max(milimetryob((double) sh_node_emb[i].d) * geo_units_factor, dxl_min),dim_precision_sh);
 
         fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", sh_node_no + i + 1, par[0], par[1], par[2]);
         sh_node_emb[i].emb_no=sh_node_no + i + 1;
@@ -4948,8 +5093,13 @@ void Shield_analysis(void) {
     {
         set_decimal_format(par[0], milimetryobx(sh_node_emb_edge[i].x) * geo_units_factor, dim_precision_sh);
         set_decimal_format(par[1], milimetryoby(sh_node_emb_edge[i].y) * geo_units_factor, dim_precision_sh);
-        set_decimal_format(par[2], max(milimetryob((double) sh_node_emb_edge[i].d) * geo_units_factor, dxl_min),
-                           dim_precision_sh);
+
+        // --- FIX: Keep embedded edge elements locked down to object units ---
+        double element_size_object = (double)sh_node_emb_edge[i].d * geo_units_factor;
+        if (element_size_object < (double)dxl_min) element_size_object = (double)dxl_min;
+        set_decimal_format(par[2], element_size_object, dim_precision_sh);
+
+        ////set_decimal_format(par[2], max(milimetryob((double) sh_node_emb_edge[i].d) * geo_units_factor, dxl_min),dim_precision_sh);
 
         fprintf(f, "Point(%d) = {%s, %s, 0, %s};\n", sh_node_no + sh_node_emb_no + i + 1, par[0], par[1], par[2]);
         sh_node_emb_edge[i].emb_no=sh_node_no + sh_node_emb_no + i + 1;
@@ -12934,6 +13084,102 @@ void Shield_analysis(void) {
         double Qngraphmax=50.0;   //50 mm on drawing, no more, for reasonable graphic view
         double Qtgraphmax=50.0;
 
+        //preparing shear_magnitude, if is Auto mode, it will be individually for each state
+        if (rescaling_menu_mode==0)  //Auto
+        {
+            if (sti==0)  //SLS
+            {
+
+                if (refresh_rescaling_shield_menu_mode==1)
+                {
+                    {
+                        BOOL retval = Get_Private_Profile_Strings ((T_Fstring)STATIC_ANALYSIS, get_static_shield_param);
+                        refresh_rescaling_shield_menu_mode=0;
+                    }
+                }
+
+                // 1. Accumulate total supported edge length in raw drawing sheet millimeters
+                double total_dl_mm = 0.0;
+                for (int ie = 0; ie < sh_edge_no; ie++) {
+                    if ((sh_edge[ie].restraint > 0) && (sh_edge[ie].restraint != 5)) {
+                        if (sh_edge[ie].style != 3)
+                            total_dl_mm += sh_edge[ie].dl; // Raw drawing canvas mm
+                    }
+                }
+
+                // 2. Normalize raw totals to current active solver force units (kN or kips)
+                total_load_x /= unit_factors_sh->R_f;
+                total_load_y /= unit_factors_sh->R_f;
+
+                // TRANSLATE DRAWING MM BACK TO SOLVER OBJECT GEOMETRY UNITS
+                double total_dl_object;
+                if (strcmp(UNITS, "SI") == 0) {
+                    total_dl_object = total_dl_mm * SkalaF / 1000.;
+                } else {
+                    total_dl_object = total_dl_mm * SkalaF / 25.4;
+                }
+
+                // Calculate distributed global reaction baselines
+                double average_reaction_y = fabs(total_load_y) / total_dl_object;
+                double average_reaction_x = fabs(total_load_x) / total_dl_object;
+
+                // PREVENT ZERO DROPOUT ON PASSIVE AXES ---
+                // If an axis has no net total load (e.g. symmetric structure), anchor its baseline
+                // to the active axis to keep the relative comparison stable
+                if (average_reaction_x < 0.001 && average_reaction_y > 0.001) average_reaction_x = average_reaction_y;
+                if (average_reaction_y < 0.001 && average_reaction_x > 0.001) average_reaction_y = average_reaction_x;
+
+                /// Integrating the Corrected RMS Factor
+                double sum_Qn_squared = 0.0;  // normal
+                double sum_Qt_squared = 0.0;  // tangential
+                int node_count = 0;
+
+                int idx = 0;
+                while (idx < mesh_boundaries_no) {
+                    if ((mesh_boundary[idx].restraint > 5) || (mesh_boundary[idx].restraint == 4)) {
+                        // Nodal reactions extracted from solver matrix
+                        double q1n = fabs(mesh_boundary[idx].state1[sti].Rn / unit_factors_sh->R_f);
+                        double q2n = fabs(mesh_boundary[idx].state2[sti].Rn / unit_factors_sh->R_f);
+
+                        double q1t = fabs(mesh_boundary[idx].state1[sti].Rt / unit_factors_sh->R_f);
+                        double q2t = fabs(mesh_boundary[idx].state2[sti].Rt / unit_factors_sh->R_f);
+
+                        sum_Qn_squared += (q1n * q1n) + (q2n * q2n);
+                        sum_Qt_squared += (q1t * q1t) + (q2t * q2t);
+                        node_count += 2;
+                    }
+                    idx++;
+                }
+
+                // PURE ROOT-MEAN-SQUARE CALCULATION (NO COMPLEX DENOMINATORS) ---
+                double Qn_rms = (node_count > 0) ? sqrt(sum_Qn_squared / node_count) : average_reaction_y;
+                double Qt_rms = (node_count > 0) ? sqrt(sum_Qt_squared / node_count) : average_reaction_x;
+
+                // Apply the standard 1.5 volatility multiplier cleanly
+                average_reaction_y += 1.5 * (Qn_rms - average_reaction_y);
+                average_reaction_x += 1.5 * (Qt_rms - average_reaction_x);
+
+                // MATCH CONFIGURATION REFERENCE BASELINES
+                double cfg_ref_shear;
+                if (strcmp(UNITS, "SI") == 0) {
+                    cfg_ref_shear = cfg_ref_shear_base; // e.g. 50.0
+                } else {
+                    cfg_ref_shear = cfg_ref_shear_base * 0.00571015;
+                }
+
+                double gov_max_Qy = (average_reaction_y > cfg_ref_shear) ? average_reaction_y : cfg_ref_shear;
+                double gov_max_Qx = (average_reaction_x > cfg_ref_shear) ? average_reaction_x : cfg_ref_shear;
+
+                // UNIFORM DRAWING SCALING FACTOR
+                double shear_magnitude_y = (gov_max_Qy > 0.0001) ? (gov_max_Qy / shear_desire_footprint) : 1.0;
+                double shear_magnitude_x = (gov_max_Qx > 0.0001) ? (gov_max_Qx / shear_desire_footprint) : 1.0;
+
+                // COUPLING MATRIX TO A UNIFIED MAGNITUDE VECTOR ---
+                // Selecting the max ensures both orthogonal envelope views map to the exact same visual sheet scale
+                shear_magnitude = max(shear_magnitude_x, shear_magnitude_y);
+            }
+        }
+
         int edge=0;
         i = 0;
         while (i < mesh_boundaries_no)
@@ -13447,7 +13693,7 @@ void Shield_analysis(void) {
                 if (jj>0)
                 {
                     s.lp = jj;
-                    s.xy[s.lp]=0.75f;
+                    s.xy[s.lp]=SPLINE_TENSION;
                     s.n = 8 + (s.lp + 1 ) * sizeof(float);
                     s.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
                     s.closed=0;
@@ -13471,7 +13717,7 @@ void Shield_analysis(void) {
 
                     //tangential
                     st.lp = jj;
-                    st.xy[st.lp]=0.75f;
+                    st.xy[st.lp]=SPLINE_TENSION;
                     st.n = 8 + (st.lp + 1 ) * sizeof(float);
                     st.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
                     st.closed=0;
@@ -13600,7 +13846,7 @@ void Shield_analysis(void) {
                     if (sti>1)
                     {
                         s1.lp = jj;
-                        s1.xy[s1.lp]=0.75f;
+                        s1.xy[s1.lp]=SPLINE_TENSION;
                         s1.n = 8 + (s1.lp + 1 ) * sizeof(float);
                         s1.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
                         s1.closed=0;
@@ -13626,7 +13872,7 @@ void Shield_analysis(void) {
 
                         //tangental
                         st1.lp = jj;
-                        st1.xy[st1.lp]=0.75f;
+                        st1.xy[st1.lp]=SPLINE_TENSION;
                         st1.n = 8 + (st1.lp + 1 ) * sizeof(float);
                         st1.npts=6; //6 means B-Spline multipoints,  //5 means Cardinal multipoints
                         st1.closed=0;

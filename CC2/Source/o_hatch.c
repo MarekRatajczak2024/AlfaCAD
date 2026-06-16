@@ -340,6 +340,7 @@ error :
 BOOL Read_Hatch_Pattern (void)
 /*---------------------------*/
 {
+
   if (10000 > Get_Disk_Free_Space (""))
   {
     return FALSE ;
@@ -411,6 +412,14 @@ static BOOL check_mem_list (int i_pattern_namesno)
     b_ret = TRUE ;
   }
   return b_ret ;
+}
+
+void Destroy_Hatch_Patterns(void)
+{
+    if (ptrs__hatch_def_param!=NULL) {
+        free(ptrs__hatch_def_param);
+        ptrs__hatch_def_param=NULL;
+    }
 }
 
 static void set_list_string (int i_pattern_namesno)

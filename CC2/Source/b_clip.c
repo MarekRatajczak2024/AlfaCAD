@@ -23,7 +23,7 @@
 #include "b_clip.h"
 #include "rysuj_e.h"
 
-////#include "leak_detector_c.h"
+#include "leak_detector_c.h"
 
 #define MaxNumPolygonPoints 200
 
@@ -815,6 +815,44 @@ unsigned int getRGBgreen(double m, double max_m) {
     return (r << 16) | (g << 8) | b;
 }
 
+unsigned int getRGBcolor(COLOR_ kolor, double m, double max_m) {
+    unsigned char r, g, b;
+    double intensity;
+
+    // Handle edge case for max_m = 0 to avoid division by zero
+    if (max_m == 0) {
+        return (255 << 16) | (255 << 8) | 255; // Return white
+    }
+
+    if (m > 0) {
+        intensity = fmin(m / max_m, 1.0);
+
+        // Linear interpolation from 255 (white) to target component
+        // As intensity -> 1.0, value -> kolor component
+        // As intensity -> 0.0, value -> 255
+        r = (unsigned char)(255 - (255 - kolor.red) * intensity);
+        g = (unsigned char)(255 - (255 - kolor.gre) * intensity);
+        b = (unsigned char)(255 - (255 - kolor.blu) * intensity);
+    }
+        // Assuming you want same behavior for negative m as in your green function,
+        // otherwise, handle negative values differently.
+    else if (m < 0) {
+        intensity = fmin(-m / max_m, 1.0);
+        r = (unsigned char)(255 - (255 - kolor.red) * intensity);
+        g = (unsigned char)(255 - (255 - kolor.gre) * intensity);
+        b = (unsigned char)(255 - (255 - kolor.blu) * intensity);
+    }
+    else {
+        // m = 0, fully white
+        r = 255;
+        g = 255;
+        b = 255;
+    }
+
+    return (r << 16) | (g << 8) | b;
+}
+
+
 // Procedure to set colors for triangle vertices
 void setTriangleVertexColors(double m1, double m2, double m3, double max_m, unsigned int colors[3]) {
     colors[0] = getRGB(m1, max_m);
@@ -868,7 +906,10 @@ void Draw_Solid (int numpoints, T_PixelTVal * polypoints, unsigned int pcx_solid
 	  return;
   }
 
-  if (gradient!=NULL) memmove(&gradient8, gradient, sizeof(GRADIENT4));
+  if (gradient!=NULL)
+  {
+      memmove(&gradient8, gradient, sizeof(GRADIENT4));
+  }
 
   if (FALSE == Clip_Solid0 (numpoints, polypoints, &num_wy, poly_wy))
   {

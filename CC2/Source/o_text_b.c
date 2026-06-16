@@ -43,7 +43,7 @@
 
 void view_font_name(TEXT *);
 
-extern BOOL Add_String_To_List (char *) ;
+extern void Add_String_To_List (char *) ;
 extern GrContext *get_second_screen(void);
 extern GrContext *second_screen_back;
 extern BOOL TTF_redraw;
@@ -860,32 +860,130 @@ int  kat_dt(void)
   return 0;
 }
 
-int  kat_t90(void)  //adding 90 deg
+/*  //old stuff
+int  kat_t90_(void)  //normalazing angle of text to closest higher 90 deg axis in Cartesian or cartesian + isometric axis
 { Cur_offd (X, Y) ;
-  if (TRUE==Check_if_LT(TextG.kat,(Pi / 2))) TextG.kat = Pi / 2 ;
-    else if (TRUE==Check_if_LT(TextG.kat,Pi)) TextG.kat = Pi ;
-      else if (TRUE==Check_if_LT(TextG.kat,(3 * Pi / 2))) TextG.kat = (3 * Pi / 2) ;
-       else if (TRUE==Check_if_LT(TextG.kat,(2 * Pi))) TextG.kat = 0 ;
+    if ((options1.uklad_izometryczny) && (TRUE==Check_if_LT(TextG.kat,30.*Pi/180.))) TextG.kat = (float)(30.*Pi/180.);
+    else if (TRUE==Check_if_LT(TextG.kat,(Pi / 2.))) TextG.kat = (float)(Pi / 2.) ;
+    else if ((options1.uklad_izometryczny) && (TRUE==Check_if_LT(TextG.kat,150.*Pi/180.))) TextG.kat = (float)(150.*Pi/180.);
+    else if (TRUE==Check_if_LT(TextG.kat,Pi)) TextG.kat = (float)Pi ;
+    else if ((options1.uklad_izometryczny) && (TRUE==Check_if_LT(TextG.kat,210.*Pi/180.))) TextG.kat = (float)(210.*Pi/180.);
+    else if (TRUE==Check_if_LT(TextG.kat,(3. * Pi / 2.))) TextG.kat = (float)(3. * Pi / 2.) ;
+    else if ((options1.uklad_izometryczny) && (TRUE==Check_if_LT(TextG.kat,330.*Pi/180.))) TextG.kat = (float)(330.*Pi/180.);
+    else if (TRUE==Check_if_LT(TextG.kat,(2 * Pi))) TextG.kat = 0.f ;
 
   Cur_ond (X, Y) ;
   view_font_name(&TextG);
   return 0;
 }
 
-int  kat_t0(void)
+int  kat_t0_(void) //normalazing angle of text to closest lower 90 deg axis in Cartesian or cartesian + isometric axis
 {
   Cur_offd (X, Y) ;
-  if (TextG.kat < 0) TextG.kat = (2 * Pi) + TextG.kat;
+  if (TextG.kat < 0) TextG.kat = (float)(2. * Pi) + TextG.kat;
 
-  if (TRUE==Check_if_GT(TextG.kat,(3 * Pi / 2)) || (TextG.kat == 0)) TextG.kat = (3 * Pi / 2) ;
-    else if (TRUE==Check_if_GT(TextG.kat,Pi)) TextG.kat = Pi ;
-      else if (TRUE==Check_if_GT(TextG.kat,(Pi / 2))) TextG.kat = (Pi / 2) ;
-       else if (TRUE==Check_if_GT(TextG.kat,0)) TextG.kat = 0 ;
+  if ((options1.uklad_izometryczny) && (TRUE==Check_if_GT(TextG.kat,330.*Pi/180.))) TextG.kat = (float)(330.*Pi/180.);
+  else if (TRUE==Check_if_GT(TextG.kat,(3. * Pi / 2.)) || (TextG.kat == 0.f)) TextG.kat = (float)(3. * Pi / 2.) ;
+  else if ((options1.uklad_izometryczny) && (TRUE==Check_if_GT(TextG.kat,210.*Pi/180.))) TextG.kat = (float)(210.*Pi/180.);
+  else if (TRUE==Check_if_GT(TextG.kat,Pi)) TextG.kat = (float)Pi ;
+  else if ((options1.uklad_izometryczny) && (TRUE==Check_if_GT(TextG.kat,150.*Pi/180.))) TextG.kat = (float)(150.*Pi/180.);
+  else if (TRUE==Check_if_GT(TextG.kat,(Pi / 2.))) TextG.kat = (float)(Pi / 2.) ;
+  else if ((options1.uklad_izometryczny) && (TRUE==Check_if_GT(TextG.kat,30.*Pi/180.))) TextG.kat = (float)(30.*Pi/180.);
+  else if (TRUE==Check_if_GT(TextG.kat,0)) TextG.kat = 0.f ;
   Cur_ond (X, Y) ;
   view_font_name(&TextG);
   return 0;
 }
+ */
 
+// Static arrays containing pre-calculated radian values for instant CPU lookups
+// Indices:  0=0°, 1=30°, 2=90°, 3=150°, 4=180°, 5=210°, 6=270°, 7=330°
+static const float ISO_AXES[8] = {
+        0.0f,
+        0.52359877f, // 30°
+        1.57079632f, // 90°
+        2.61799387f, // 150°
+        3.14159265f, // 180°
+        3.66519142f, // 210°
+        4.71238898f, // 270°
+        5.75958653f  // 330°
+};
+
+static const float CART_AXES[4] = {
+        0.0f,
+        1.57079632f, // 90°
+        3.14159265f, // 180°
+        4.71238898f  // 270°
+};
+
+int kat_t90(void) // PageUp: Snap to closest HIGHER axis
+{
+    Cur_offd(X, Y);
+
+    // 1. Normalize angle tightly within [0, 2*Pi)
+    while (TextG.kat < 0.f) TextG.kat += 6.2831853f;
+    while (TextG.kat >= 6.2831853f) TextG.kat -= 6.2831853f;
+
+    // 2. High-Speed Array Pointer Traversal
+    if (options1.uklad_izometryczny) {
+        for (int i = 0; i < 8; i++) {
+            if (TextG.kat < ISO_AXES[i] - 0.001f) { // Epsilon handles float rounding safety
+                TextG.kat = ISO_AXES[i];
+                goto done;
+            }
+        }
+        TextG.kat = ISO_AXES[0]; // Loop back to 0°
+    } else {
+        for (int i = 0; i < 4; i++) {
+            if (TextG.kat < CART_AXES[i] - 0.001f) {
+                TextG.kat = CART_AXES[i];
+                goto done;
+            }
+        }
+        TextG.kat = CART_AXES[0]; // Loop back to 0°
+    }
+
+    done:
+    Cur_ond(X, Y);
+    view_font_name(&TextG);
+    return 0;
+}
+
+int kat_t0(void) // PageDown: Snap to closest LOWER axis
+{
+    Cur_offd(X, Y);
+
+    // 1. Normalize angle tightly within [0, 2*Pi)
+    while (TextG.kat < 0.f) TextG.kat += 6.2831853f;
+    while (TextG.kat >= 6.2831853f) TextG.kat -= 6.2831853f;
+
+    // 2. High-Speed Backward Array Pointer Traversal
+    if (options1.uklad_izometryczny) {
+        // Handle exact zero or very close to zero wrap-around
+        if (TextG.kat <= 0.001f) { TextG.kat = ISO_AXES[7]; goto done; }
+
+        for (int i = 7; i >= 0; i--) {
+            if (TextG.kat > ISO_AXES[i] + 0.001f) {
+                TextG.kat = ISO_AXES[i];
+                goto done;
+            }
+        }
+    } else {
+        if (TextG.kat <= 0.001f) { TextG.kat = CART_AXES[3]; goto done; }
+
+        for (int i = 3; i >= 0; i--) {
+            if (TextG.kat > CART_AXES[i] + 0.001f) {
+                TextG.kat = CART_AXES[i];
+                goto done;
+            }
+        }
+    }
+
+    done:
+    Cur_ond(X, Y);
+    view_font_name(&TextG);
+    return 0;
+}
 
 static void  cur_off(double x,double y)
 {
@@ -1428,7 +1526,7 @@ re_edit:
 
 	komunikat0(121);
 	LengthT = strlen(TextG.text);
-	TextG.x = X; TextG.y = Y; TextG.dl = LengthT;
+	TextG.x = (float)X; TextG.y = (float)Y; TextG.dl = LengthT;
 	TextG.n = T18 + TextG.dl;
 
 	TextG.width = 0;
@@ -1509,7 +1607,7 @@ int Tekst_factory(char *prefix, BOOL repeat)
 	edit_functions = TRUE;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 	strcpy(TextG.text, prefix);
-	TextG.multiline = 0;
+	TextG.multiline = 1;  //there will be always 2 rows
 
 	redcr(0);
 	//Cur_offd(X, Y);
@@ -1531,6 +1629,8 @@ re_edit:
 		TextG.multiline = 1;
 	}
 
+	//the very lasy check, because it can happen in alfamtext
+	if (strchr(TextG.text, '\n')) TextG.multiline = 1;
 
     if (!ret)
     {

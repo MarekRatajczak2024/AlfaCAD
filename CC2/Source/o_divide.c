@@ -183,7 +183,7 @@ static BOOL make_divide (int mode, double df_x, double df_y, long * ptrl_off, vo
       PointG.typ=0;
       b_ret = Add_Point (df_x, df_y) ;
       PointG.typ=typ_bak;
-      *ptrl_off = ((b_ret == TRUE) ? sizeof (T_Point) : 0 ) ;
+      *ptrl_off = (long)((b_ret == TRUE) ? sizeof (T_Point) : 0 ) ;
   }
   else
   {

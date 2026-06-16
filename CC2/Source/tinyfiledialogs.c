@@ -94,7 +94,7 @@ Thanks for contributions, bug corrections & thorough testing to:
 
 #include "tinyfiledialogs.h"
 
-//#include "leak_detector_c.h"  //due to malloc located somewhere else
+#include "leak_detector_c.h"  //due to malloc located somewhere else
 
 
 #define MAX_PATH_OR_CMD 1024 /* _MAX_PATH or MAX_PATH */
@@ -127,6 +127,8 @@ static int global_cursor_pos=0;
 char tinyfd_version[8] = "3.8.8";
 
 extern void set_geometry(int single);
+extern char _EDIT_TEXT_;  // NOLINT
+extern char _EDIT_FILE_;  // NOLINT
 
 BOOL get_editbox_geometry_set(void);
 BOOL get_editbox_geometry_line_set(void);
@@ -1655,7 +1657,11 @@ wchar_t * tinyfd_saveFileDialogW(
         }
 
         ofn.lStructSize = sizeof(OPENFILENAMEW);
-        ofn.hwndOwner = GetForegroundWindow();
+
+        ////ofn.hwndOwner = GetForegroundWindow();
+        ofn.hwndOwner = GetAncestor(GetForegroundWindow(), GA_ROOTOWNER); // <-- MUST FIX HERE TOO!
+
+        ofn.hInstance = 0;
         ofn.hInstance = 0;
         ofn.lpstrFilter = wcslen(lFilterPatterns) ? lFilterPatterns : NULL;
         ofn.lpstrCustomFilter = NULL;
@@ -1779,14 +1785,30 @@ wchar_t * tinyfd_openFileDialogW(
         }
 
         ofn.lStructSize = sizeof(OPENFILENAME);
-        ofn.hwndOwner = GetForegroundWindow();
+        ////ofn.hwndOwner = GetForegroundWindow();
+    /* ======================================================================
+     PURE C WIN32 ROOT FIX (No MFC, No C++ Required!)
+     ====================================================================== */
+    /* GetAncestor is a native Windows C function. It looks up AlfaCAD's
+       main window handle automatically using the active process thread. */
+    ////HWND hTrueMainFrame = GetAncestor(GetForegroundWindow(), GA_ROOTOWNER);
+
+    ////if (hTrueMainFrame == NULL)
+    ////{
+    ////    hTrueMainFrame = GetForegroundWindow(); /* Safe standard fallback */
+    ////}
+    ////ofn.hwndOwner = hTrueMainFrame;
+
+    ofn.hwndOwner = GetAncestor(GetForegroundWindow(), GA_ROOTOWNER); // <-- MUST FIX HERE TOO!
+
+    /* ====================================================================== */
         ofn.hInstance = 0;
         ofn.lpstrFilter = wcslen(lFilterPatterns) ? lFilterPatterns : NULL;
         ofn.lpstrCustomFilter = NULL;
         ofn.nMaxCustFilter = 0;
         ofn.nFilterIndex = 1;
         ofn.lpstrFile = lBuff;
-		ofn.nMaxFile = lFullBuffLen;
+        ofn.nMaxFile = lFullBuffLen;
         ofn.lpstrFileTitle = NULL;
         ofn.nMaxFileTitle = MAX_PATH_OR_CMD / 2;
         ofn.lpstrInitialDir = wcslen(lDirname) ? lDirname : NULL;
@@ -1902,7 +1924,9 @@ wchar_t * tinyfd_selectFolderDialogW(
 
         lHResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 
-        bInfo.hwndOwner = GetForegroundWindow();
+        ////bInfo.hwndOwner = GetForegroundWindow();
+        bInfo.hwndOwner = GetAncestor(GetForegroundWindow(), GA_ROOTOWNER); // <-- MUST FIX HERE TOO
+
         bInfo.pidlRoot = NULL;
         bInfo.pszDisplayName = lBuff;
         bInfo.lpszTitle = aTitle && wcslen(aTitle) ? aTitle : NULL;
@@ -2340,7 +2364,6 @@ static char* FileNameDialogWinGui(
 
     return lTmpChar;
 }
-
 
 
 static char * selectFolderDialogWinGui(
@@ -3350,8 +3373,6 @@ char* tinyfd_FileNameDialog(
     return p;
 }
 
-
-
 char * tinyfd_selectFolderDialog(
         char const * aTitle , /* NULL or "" */
         char const * aDefaultPath ) /* NULL or "" */
@@ -3520,7 +3541,14 @@ static int detectPresence( char const * aExecutable )
 
    strcat( lTestedString , aExecutable ) ;
    strcat( lTestedString, " 2>/dev/null ");
+
    lIn = popen( lTestedString , "r" ) ;
+    // CRITICAL SAFETY SHIELD: Guard against popen failing due to resource limits
+    if ( lIn == NULL )
+    {
+        if (tinyfd_verbose) printf("detectPresence %s %d (popen failed)\n", aExecutable, 0);
+        return 0;
+    }
    if ( ( fgets( lBuff , sizeof( lBuff ) , lIn ) != NULL )
     && ( ! strchr( lBuff , ':' ) ) && ( strncmp(lBuff, "no ", 3) ) )
    {   /* present */
@@ -4248,6 +4276,7 @@ int tfd_kdialogPresent(void)   //REPLACED
 		}
         */
 		lKdialogPresent = detectPresence("./kdialog4alfa") ;
+
         //lKdialogPresent = 1 ;
 		if ( lKdialogPresent && !getenv("SSH_TTY") )
 		{
@@ -6476,8 +6505,10 @@ char * tinyfd_editBox(
         strcat(lDialogString,  params) ;
         strcat(lDialogString, "\"") ;
 
-        if (*single==0)  strcat( lDialogString ," 2 >/tmp/tinyfdt.txt");    ///);if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
-        strcat( lDialogString ,");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
+
+        if (strstr(aTitle,&_EDIT_FILE_)!=NULL)  //check if edit text or edit file
+            strcat( lDialogString ," 2 >/tmp/tinyfdt.txt");    ///);if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
+        strcat( lDialogString ,");if [ $? = 0 ];then echo \"1$szAnswer\";else echo \"0$szAnswer\";fi");
     }
     else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() ))
     {
@@ -6922,15 +6953,106 @@ frontmost of process \\\"Python\\\" to true' ''');");
         return NULL ;
     }
 
-    while ( fgets( lBuff_ex , sizeof( lBuff_ex ) , lIn ) != NULL )
-    {
-        continue;
+    // 1. Grab the single-line payload safely (no loop needed)
+    if (fgets(lBuff_ex, sizeof(lBuff_ex), lIn) != NULL) {
+        size_t len = strlen(lBuff_ex);
+        if (len > 0 && lBuff_ex[len - 1] == '\n') lBuff_ex[len - 1] = '\0';
     }
-    printf(lBuff_ex);
-    pclose( lIn );
+
+    if (strstr(aTitle, &_EDIT_FILE_)==NULL)
+    {
+
+        /*
+        // 1. Grab the single-line payload safely (no loop needed)
+        if (fgets(lBuff_ex, sizeof(lBuff_ex), lIn) != NULL) {
+            size_t len = strlen(lBuff_ex);
+            if (len > 0 && lBuff_ex[len - 1] == '\n') lBuff_ex[len - 1] = '\0';
+        }
+         */
+
+        printf(lBuff_ex);
+        pclose(lIn);
+
+        // 2. Identify the status code flag
+        if (lBuff_ex[0] == '1') lResult = 1;
+        else lResult = 0;
+
+        // 3. Shift text payload into lBuff, cutting off the '1' or '0' status flag
+        strcpy(lBuff, lBuff_ex + 1);
+
+        // 4. Extract parameters and geometry (\x1D) exactly as you always did
+
+        //finding params and geometry
+        char *pos1D = strchr(lBuff, '\x1D');
+        if (pos1D != NULL) {
+            char *pos_p = pos1D + 1;
+
+            char *pos2t = strstr(pos_p, ">>");
+            if (pos2t != NULL) {
+                *single = -1;
+                free(lDialogString);
+                return NULL;
+            }
+
+            if (pos_p[0] == '0') {
+                free(lDialogString);
+                return NULL;
+            }
+
+            char *pos_g = strchr(pos_p, ',');
+            if (pos_g != NULL) {
+                if ((strcmp(etype, "TEXT") == 0) || (strcmp(etype, "INFO") == 0))  //cut cursor position
+                {
+                    if (*single == 1) {
+                        strcpy(editbox_geometry_line, pos_g + 1);
+                        char *pos_c = strchr(editbox_geometry_line, '>');
+                        if (pos_c != NULL) *pos_c = '\0';
+                    } else {
+                        strcpy(editbox_geometry_text, pos_g + 1);
+                        char *pos_c = strchr(editbox_geometry_text, '>');
+                        if (pos_c != NULL) *pos_c = '\0';
+                    }
+                } else strcpy(editbox_geometry_file, pos_g + 1);
+                *pos_g = '\0';
+            }
+
+            strcpy(params, pos1D + 1);
+            *pos1D = '\0';
+        }
 
 
-    if (*single==0)
+        // ==================================================================
+        // NEW DOWNSTREAM UNPACKING LOOP (Restores true ASCII 10 line breaks)
+        // ==================================================================
+        // Search for every "\n" text sequence and swap it back into a real line break (code 10)
+        char *text_ptr = lBuff;
+        while ((text_ptr = strstr(text_ptr, "\\n")) != NULL) {
+            text_ptr[0] = 10; // Overwrite the backslash with ASCII 10 (Line break)
+
+            // Shift the rest of the string left by 1 character to erase the leftover 'n'
+            memmove(text_ptr + 1, text_ptr + 2, strlen(text_ptr + 2) + 1);
+            text_ptr++; // Move forward to scan the remainder of the block
+        }
+        // ==================================================================
+
+        if (!lResult) {
+            free(lDialogString);
+            return NULL;
+        }
+
+        if (lWasBasicXterm) {
+            if (strstr(lBuff, "^[")) /* esc was pressed */
+            {
+                free(lDialogString);
+                return NULL;
+            }
+        }
+
+        free(lDialogString);
+        //printf( "lBuff: %s\n" , lBuff ) ;
+        return lBuff;
+    }
+    else
     {
         if (lBuff_ex[0] == '1') {
 
@@ -6941,112 +7063,94 @@ frontmost of process \\\"Python\\\" to true' ''');");
             inTotal = 0;
             if (lInt != NULL) {
                 while ((chunk = fread(lBuff, 1, sizeof(lBuff), lInt)) != 0)  //NULL
-                    {
-                      inTotal += chunk;
-                    }
+                {
+                    inTotal += chunk;
+                }
                 lBuff[inTotal] = '\0';
-                if (lBuff[inTotal - 1] == '\n') lBuff[inTotal - 1] = '\0';
+                if (inTotal > 0 && lBuff[inTotal - 1] == '\n') lBuff[inTotal - 1] = '\0';
                 fclose(lInt);
             } else strcpy(lBuff, "");
-        } else
-        {
+        } else {
             strcpy(lBuff, "");
             lResult = 0;
         }
-    }
-    else
-    {
-        strcpy(lBuff, lBuff_ex+1);
 
-        if (lBuff_ex[0] == '1') lResult = 1;
-        else lResult = 0;
-    }
+        pclose(lIn);
+
         //finding params and geometry
-        char *pos1D=strchr(lBuff, '\x1D');
-        if (pos1D!=NULL)
+        char *pos1D = strchr(lBuff, '\x1D');
+        if (pos1D != NULL)
         {
-            char *pos_p=pos1D+1;
+            char *pos_p = pos1D + 1;
 
-            char *pos2t=strstr(pos_p, ">>");
-            if (pos2t!=NULL)
-            {
-                *single=-1;
+            char *pos2t = strstr(pos_p, ">>");
+            if (pos2t != NULL) {
+                *single = -1;
                 free(lDialogString);
-                return NULL ;
+                return NULL;
             }
 
-            if (pos_p[0]=='0')
-            {
+            if (pos_p[0] == '0') {
                 free(lDialogString);
-                return NULL ;
+                return NULL;
             }
 
-            char *pos_g=strchr(pos_p, ',');
-            if (pos_g!=NULL)
-            {
-                if ((strcmp(etype,"TEXT")==0) ||  (strcmp(etype,"INFO")==0))  //cut cursor position
+            char *pos_g = strchr(pos_p, ',');
+            if (pos_g != NULL) {
+                if ((strcmp(etype, "TEXT") == 0) || (strcmp(etype, "INFO") == 0))  //cut cursor position
                 {
-                    if (*single==1)
-                    {
+                    if (*single == 1) {
                         strcpy(editbox_geometry_line, pos_g + 1);
                         char *pos_c = strchr(editbox_geometry_line, '>');
-                        if (pos_c!=NULL) *pos_c='\0';
-                    }
-                    else {
+                        if (pos_c != NULL) *pos_c = '\0';
+                    } else {
                         strcpy(editbox_geometry_text, pos_g + 1);
                         char *pos_c = strchr(editbox_geometry_text, '>');
-                        if (pos_c!=NULL) *pos_c='\0';
+                        if (pos_c != NULL) *pos_c = '\0';
                     }
-                }
-                else strcpy(editbox_geometry_file, pos_g+1);
-                *pos_g='\0';
+                } else strcpy(editbox_geometry_file, pos_g + 1);
+                *pos_g = '\0';
             }
 
-            strcpy(params, pos1D+1);
-            *pos1D='\0';
+            strcpy(params, pos1D + 1);
+            *pos1D = '\0';
         }
 
-        if ( lBuff[strlen( lBuff ) -1] == '\n' )
-        {
-            lBuff[strlen( lBuff ) -1] = '\0' ;
+        if (lBuff[strlen(lBuff) - 1] == '\n') {
+            lBuff[strlen(lBuff) - 1] = '\0';
         }
 
+        if (fileExists("/tmp/tinyfdt.txt")) {
+            wipefile("/tmp/tinyfdt.txt");
+            remove("/tmp/tinyfdt.txt");
+        }
 
-    if ( fileExists("/tmp/tinyfdt.txt") )
-    {
-        wipefile("/tmp/tinyfdt.txt");
-        remove("/tmp/tinyfdt.txt");
-    }
+        if (fileExists("/tmp/tinyfd.txt")) {
+            wipefile("/tmp/tinyfd.txt");
+            remove("/tmp/tinyfd.txt");
+        }
+        if (fileExists("/tmp/tinyfd0.txt")) {
+            wipefile("/tmp/tinyfd0.txt");
+            remove("/tmp/tinyfd0.txt");
+        }
 
-    if ( fileExists("/tmp/tinyfd.txt") )
-    {
-        wipefile("/tmp/tinyfd.txt");
-        remove("/tmp/tinyfd.txt");
-    }
-    if ( fileExists("/tmp/tinyfd0.txt") )
-    {
-        wipefile("/tmp/tinyfd0.txt");
-        remove("/tmp/tinyfd0.txt");
-    }
-
-    if ( ! lResult )
-    {
-        free(lDialogString);
-        return NULL ;
-    }
-
-    if ( lWasBasicXterm )
-    {
-        if ( strstr(lBuff,"^[") ) /* esc was pressed */
-        {
+        if (!lResult) {
             free(lDialogString);
-            return NULL ;
+            return NULL;
         }
-    }
 
-    free(lDialogString);
-    //printf( "lBuff: %s\n" , lBuff ) ;
-    return lBuff;
+        if (lWasBasicXterm) {
+            if (strstr(lBuff, "^[")) /* esc was pressed */
+            {
+                free(lDialogString);
+                return NULL;
+            }
+        }
+
+        free(lDialogString);
+        //printf( "lBuff: %s\n" , lBuff ) ;
+        return lBuff;
+    }
 }
 
 /////////////////

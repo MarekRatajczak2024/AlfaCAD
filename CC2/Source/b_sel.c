@@ -118,6 +118,12 @@ extern double isometric_angle_to_cartesian_angle_rad(double iso_angle_rad);
 extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
 extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
 extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2,float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+extern int get_thermal_flipped(AVECTOR *v);
+extern double cartesian_vector_length(double i_dx, double i_dy, double *pl_dx, double *pl_dy);
+extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
+                                double dx_loc, double dy_loc, double dz_loc,
+                                double *px, double *py, double *pdx, double *pdy);
+extern int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float ypp);
 
 extern double dim_precision;
 extern double force_precision;
@@ -125,6 +131,7 @@ extern double displacement_precision;
 extern double moment_precision;
 extern double rotation_precision;
 extern double load_precision;
+extern double thermal_precision;
 
 static int vector_filter=-1;
 
@@ -737,45 +744,56 @@ int linia_wybrana(LINIA *ad)
 			    jednostkiN(ad->x2),jednostkiN(ad->y2)); }
 
 
-int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
+int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, TEXT *Vtxt_, TEXT *Vtxt1_, AVECTOR* v, LINIA *L)
 {
     int ret=0;
     double n;
-    LINIA Lt, Lth, Lp=Ldef;;
+    LINIA Lt, Lth, Lt1, Lth1, Lp=Ldef;
     double Ltx, Lty;
-    PLINIA PL, PL1, PLth;
-    double koc1, kos1, koc2, kos2, koc1th, kos1th;
-    double dx, dy, dx1, dy1;
+    PLINIA PL, PL1, PL1_, PLth;
+    double koc1, kos1, koc2, kos2, koc2_, kos2_, koc1th, kos1th;
+    double dx, dy, dx1, dy1, dx_, dy_, dx1_, dy1_;
     float ymax, xmax;
     double h_factor;
     double kat1, kos, koc;
     double arrow_angle;
+    int flipped=0;
+    double iso_angle;
+
+    Vtxt->wysokosc=Vtxt1->wysokosc=Vtxt_->wysokosc=Vtxt1_->wysokosc=(float)zmwym.wysokosc;
     
     switch (v->style) {
         case 10:   //trapezium Y
         case 17:   //trapezium Y slab
         case 20:   //trapezium Z
-            if (L->x1<L->x2) n=1;
-            else n=-1;
+            if (!(v->cartflags & 1) || (v->style != 10)) {
+                if (v->x1 < v->x2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(v));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
 
             if (v->flags & 1) n*=-1;
 
             if ((!(v->cartflags & 1)) || (v->style!=10))
             {
-                Lt.x1 = L->x1;
-                Lt.y1 = L->y1 + n * (v->magnitude1 / ((v->style == 10) ? load_magnitude : flood_magnitude));
-                Lt.x2 = L->x2;
-                Lt.y2 = L->y2 + n * (v->magnitude2 / ((v->style == 10) ? load_magnitude : flood_magnitude));
+                Lt.x1 = (float)L->x1;
+                Lt.y1 = (float)(L->y1 + n * (v->magnitude1 / (((v->style == 10) || (v->style == 20)) ? load_magnitude : flood_magnitude)));
+                Lt.x2 = (float)L->x2;
+                Lt.y2 = (float)(L->y2 + n * (v->magnitude2 / (((v->style == 10) || (v->style == 20)) ? load_magnitude : flood_magnitude)));
             }
             else
             {
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
-                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude1 / ((v->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
-                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude2 / ((v->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
-                Lt.x1 = L->x1 + dx1_cart;
-                Lt.y1 = L->y1 + dy1_cart;
-                Lt.x2 = L->x2 + dx2_cart;
-                Lt.y2 = L->y2 + dy2_cart;
+                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude1 / (((v->style == 10) || (v->style == 20)) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (v->magnitude2 / (((v->style == 10) || (v->style == 20)) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                Lt.x1 = (float)(L->x1 + dx1_cart);
+                Lt.y1 = (float)(L->y1 + dy1_cart);
+                Lt.x2 = (float)(L->x2 + dx2_cart);
+                Lt.y2 = (float)(L->y2 + dy2_cart);
             }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
@@ -794,12 +812,16 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
                 kos1 = sin(cart_angle);
                 koc1 = cos(cart_angle);
+
+                kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
+                koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
 
             if (v->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
             if (Lt.x1==Lt.x2)
             {
 
@@ -856,17 +878,57 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                     dy1 = Vtxt->wysokosc *h_factor* kos1;
                 }
             }
+            } else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=normalize_txt_angle(PL1.kat*Pi/180);
+                int mag_sign1 = (v->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (v->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(v->x1, v->y1, v->x2, v->y2, Lt.x1, Lt.y1)==1) {
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    dx = -Vtxt->wysokosc * h_factor * koc1;
+                    dy = -Vtxt->wysokosc * h_factor * kos1;
+                }
+
+                if (is_point_on_left(v->x1, v->y1, v->x2, v->y2, Lt.x2, Lt.y2)==1) {
+                    dx1 = 0;
+                    dy1 = 0;
+                } else {
+                    dx1 = -Vtxt1->wysokosc * h_factor * koc1;
+                    dy1 = -Vtxt1->wysokosc * h_factor * kos1;
+                }
+            }
+
+            Vtxt->x=(float)(Lt.x1+dx);
+            Vtxt->y=(float)(Lt.y1+dy);
+
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
+            Vtxt->kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt->justowanie=j_do_lewej;
             else Vtxt->justowanie=j_do_prawej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=normalize_txt_angle(PL1.kat*Pi/180);
+            } else {
+                Vtxt->kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt->justowanie = j_do_lewej;
+            }
+
+            Vtxt1->x=(float)(Lt.x2+dx1);
+            Vtxt1->y=(float)(Lt.y2+dy1);
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
+            Vtxt1->kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt1->justowanie=j_do_prawej;
             else  Vtxt1->justowanie=j_do_lewej;
+            } else {
+                Vtxt1->kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt1->justowanie = j_do_prawej;
+            }
+
+            set_decimal_format(Vtxt->text, v->magnitude1, load_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, load_precision);
 
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
@@ -883,19 +945,29 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 kat1=PL.kat;
                 kos=sin(PL.kat*Pi/180);
                 koc=cos(PL.kat*Pi/180);
-
+            }
+            else {
+                kos = 0.0;
+                koc = 1.0;
             }
 
-            if (L->y1<L->y2) n=1;
-            else n=-1;
+            if (!(v->cartflags & 1)) {
+                if (v->y1 < v->y2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(v));
+                ////for isometric vector in X axis
+                if (flipped) n = -1 ;
+                else n = 1;
+            }
 
             if (v->flags & 1) n*=-1;
 
             if (!(v->cartflags & 1))
             {
-                Lt.x1 = L->x1 - n * (v->magnitude1 / load_magnitude);;
+                Lt.x1 = (float)(L->x1 - n * (v->magnitude1 / load_magnitude));
                 Lt.y1 = L->y1;
-                Lt.x2 = L->x2 - n * (v->magnitude2 / load_magnitude);
+                Lt.x2 = (float)(L->x2 - n * (v->magnitude2 / load_magnitude));
                 Lt.y2 = L->y2;
             }
             else
@@ -903,10 +975,10 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
                 ret = isometric_vector_to_cartesian(- n * (v->magnitude1 / load_magnitude), 0, &dx1_cart, &dy1_cart);
                 ret = isometric_vector_to_cartesian(- n * (v->magnitude2 / load_magnitude), 0, &dx2_cart, &dy2_cart);
-                Lt.x1 = L->x1 + dx1_cart;
-                Lt.y1 = L->y1 + dy1_cart;
-                Lt.x2 = L->x2 + dx2_cart;
-                Lt.y2 = L->y2 + dy2_cart;
+                Lt.x1 = (float)(L->x1 + dx1_cart);
+                Lt.y1 = (float)(L->y1 + dy1_cart);
+                Lt.x2 = (float)(L->x2 + dx2_cart);
+                Lt.y2 = (float)(L->y2 + dy2_cart);
             }
 
             Ltx=(Lt.x1 + Lt.x2)/2;
@@ -928,9 +1000,10 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             }
 
             if (v->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
             if (Lt.y1<Lt.y2)
             {
                 if (Lt.x1>L->x1)
@@ -976,15 +1049,47 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                     dy1 = -Vtxt->wysokosc *h_factor* kos1;
                 }
             }
+            }
+            else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=(PL1.kat*Pi/180);
+                int mag_sign1 = (v->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (v->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(v->x1, v->y1, v->x2, v->y2, Lt.x1, Lt.y1) == 1) {
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    dx = -Vtxt->wysokosc * h_factor * koc1;
+                    dy = -Vtxt->wysokosc * h_factor * kos1;
+                }
+            }
+
+            Vtxt->x=(float)(Lt.x1+dx);
+            Vtxt->y=(float)(Lt.y1+dy);
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
+            Vtxt->kat=(float)(PL1.kat*Pi/180);
             Vtxt->justowanie=j_do_lewej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=(PL1.kat*Pi/180);
+            } else {
+                Vtxt->kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt->justowanie = j_do_lewej;
+            }
+
+            Vtxt1->x=(float)(Lt.x2+dx1);
+            Vtxt1->y=(float)(Lt.y2+dy1);
+            if ((!(v->cartflags & 1)) || (v->style != 10)) {
+            Vtxt1->kat=(float)(PL1.kat*Pi/180);
             Vtxt1->justowanie=j_do_prawej;
+            } else {
+                Vtxt1->kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt1->justowanie = j_do_prawej;
+            }
+
+            set_decimal_format(Vtxt->text, v->magnitude1, load_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, load_precision);
 
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
@@ -1044,7 +1149,7 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             dy1 = 0;
 
             if (v->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
             if (((v->magnitude1<0) && !(v->flags & 1)) ||
@@ -1070,6 +1175,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             Vtxt1->kat=(float)(PL1.kat*Pi/180.);
             Vtxt1->justowanie=j_do_prawej;
 
+            set_decimal_format(Vtxt->text, v->magnitude1, load_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, load_precision);
+
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
             normalize_txt(Vtxt1);
@@ -1090,9 +1198,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 if (v->flags & 1) n *= -1;
 
                 Lt.x1 = L->x1;
-                Lt.y1 = ymax + n * (v->magnitude1 / load_magnitude);
+                Lt.y1 = (float)(ymax + n * (v->magnitude1 / load_magnitude));
                 Lt.x2 = L->x2;
-                Lt.y2 = ymax + n * (v->magnitude2 / load_magnitude);
+                Lt.y2 = (float)(ymax + n * (v->magnitude2 / load_magnitude));
             }
             else
             {
@@ -1103,6 +1211,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
 
                 if (iso_L1_x1<iso_L1_x2) n=1;
                 else n=-1;
+
+                ////for isometric vector in Y axis
+                n*=-1;
 
                 ret = trapezoid_base_isometric_x(L->x1, L->y1, L->x2, L->y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
@@ -1131,6 +1242,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
                 kos1 = sin(cart_angle);
                 koc1 = cos(cart_angle);
+
+                kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
+                koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
 
             dx=0;
@@ -1139,9 +1253,10 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             dy1=0;
 
             if (v->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
+            if (!(v->cartflags & 1)) {
             if (Lt.x1<Lt.x2)
             {
 
@@ -1174,17 +1289,57 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                     dy1 = Vtxt->wysokosc *h_factor* kos1;
                 }
             }
+            }
+            else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=normalize_txt_angle(PL1.kat*Pi/180);
+                int mag_sign1 = (v->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (v->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(Lp.x1, Lp.y1, Lp.x2, Lp.y2, Lt.x1, Lt.y1)==1) {
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    dx = -Vtxt->wysokosc * h_factor * koc1;
+                    dy = -Vtxt->wysokosc * h_factor * kos1;
+                }
+
+                if (is_point_on_left(Lp.x1, Lp.y1, Lp.x2, Lp.y2, Lt.x2, Lt.y2)==1) {
+                    dx1 = 0;
+                    dy1 = 0;
+                } else {
+                    dx1 = -Vtxt1->wysokosc * h_factor * koc1;
+                    dy1 = -Vtxt1->wysokosc * h_factor * kos1;
+                }
+            }
+
+
+            Vtxt->x=(float)(Lt.x1+dx);
+            Vtxt->y=(float)(Lt.y1+dy);
+            if (!(v->cartflags & 1)) {
+            Vtxt->kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt->justowanie=j_do_lewej;
             else Vtxt->justowanie=j_do_prawej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=normalize_txt_angle(PL1.kat*Pi/180);
-            if (Lt.x1<Lt.x2) Vtxt1->justowanie=j_do_prawej;
-            else  Vtxt1->justowanie=j_do_lewej;
+            } else {
+                Vtxt->kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt->justowanie = j_do_lewej;
+            }
+            Vtxt1->x=(float)(Lt.x2+dx1);
+            Vtxt1->y=(float)(Lt.y2+dy1);
+            if (!(v->cartflags & 1)) {
+                Vtxt1->kat = (float) normalize_txt_angle(PL1.kat * Pi / 180);
+                if (Lt.x1 < Lt.x2) Vtxt1->justowanie = j_do_prawej;
+                else Vtxt1->justowanie = j_do_lewej;
+            } else {
+                    Vtxt1->kat = (float) (PL1.kat * Pi_ / 180.);
+                    Vtxt1->justowanie = j_do_prawej;
+                }
+
+            set_decimal_format(Vtxt->text, v->magnitude1, load_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, load_precision);
 
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
@@ -1204,9 +1359,9 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
 
                 if (v->flags & 1) n *= -1;
 
-                Lt.x1 = xmax - n * (v->magnitude1 / load_magnitude);
+                Lt.x1 = (float)(xmax - n * (v->magnitude1 / load_magnitude));
                 Lt.y1 = v->y1;
-                Lt.x2 = xmax - n * (v->magnitude2 / load_magnitude);
+                Lt.x2 = (float)(xmax - n * (v->magnitude2 / load_magnitude));
                 Lt.y2 = v->y2;
             }
             else
@@ -1256,7 +1411,7 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
             dy1=0;
 
             if (v->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
             if (Lt.y1<Lt.y2)
@@ -1290,14 +1445,17 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
                 }
             }
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=(PL1.kat*Pi/180);
+            Vtxt->x=(float)(Lt.x1+dx);
+            Vtxt->y=(float)(Lt.y1+dy);
+            Vtxt->kat=(float)(PL1.kat*Pi/180);
             Vtxt->justowanie=j_do_lewej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=(PL1.kat*Pi/180);
+            Vtxt1->x=(float)(Lt.x2+dx1);
+            Vtxt1->y=(float)(Lt.y2+dy1);
+            Vtxt1->kat=(float)(PL1.kat*Pi/180);
             Vtxt1->justowanie=j_do_prawej;
+
+            set_decimal_format(Vtxt->text, v->magnitude1, load_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, load_precision);
 
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
@@ -1311,63 +1469,123 @@ int vector_magnitude_text_wybrany(TEXT *Vtxt, TEXT *Vtxt1, AVECTOR* v, LINIA *L)
 
             n=1;
 
-            Lth.x1 = (v->x1+v->x2)/2 + n*(v->r/depth_magnitude)*koc1;   //thermal_depth_size
-            Lth.y1 = (v->y1+v->y2)/2 + n*(v->r/depth_magnitude)*kos1;
-            Lth.x2 = (v->x1+v->x2)/2 - n*(v->r/depth_magnitude)*koc1;
-            Lth.y2 = (v->y1+v->y2)/2 - n*(v->r/depth_magnitude)*kos1;
+            if (v->cartflags & 1) {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(v, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+            }
+           else {
+                Lth.x1 = (float) ((v->x1 + v->x2) / 2 + n * (v->r / depth_magnitude) * koc1);   //thermal_depth_size
+                Lth.y1 = (float) ((v->y1 + v->y2) / 2 + n * (v->r / depth_magnitude) * kos1);
+                Lth.x2 = (float) ((v->x1 + v->x2) / 2 - n * (v->r / depth_magnitude) * koc1);
+                Lth.y2 = (float) ((v->y1 + v->y2) / 2 - n * (v->r / depth_magnitude) * kos1);
 
-            parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180);
-            koc1th=cos(Pi*(PLth.kat+90)/180);
+                parametry_lini(&Lth, &PLth);
+                kos1th = sin(Pi * (PLth.kat + 90) / 180);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180);
 
-            Lt.x1 = Lth.x1 + (v->magnitude1/thermal_magnitude)*koc1th;
-            Lt.y1 = Lth.y1 + (v->magnitude1/thermal_magnitude)*kos1th;
-            Lt.x2 = Lth.x2 + (v->magnitude2/thermal_magnitude)*koc1th;
-            Lt.y2 = Lth.y2 + (v->magnitude2/thermal_magnitude)*kos1th;
+                Lt.x1 = (float) (Lth.x1 + (v->magnitude1 / thermal_magnitude) * koc1th);
+                Lt.y1 = (float) (Lth.y1 + (v->magnitude1 / thermal_magnitude) * kos1th);
+                Lt.x2 = (float) (Lth.x2 + (v->magnitude2 / thermal_magnitude) * koc1th);
+                Lt.y2 = (float) (Lth.y2 + (v->magnitude2 / thermal_magnitude) * kos1th);
 
-            Ltx=(Lt.x1 + Lt.x2)/2;
-            Lty=(Lt.y1 + Lt.y2)/2;
+            }
+
+            Ltx = (Lt.x1 + Lt.x2) / 2;
+            Lty = (Lt.y1 + Lt.y2) / 2;
 
             parametry_lini(&Lt, &PL1);
-            kos2=sin(Pi*(PL1.kat+90)/180);
-            koc2=cos(Pi*(PL1.kat+90)/180);
+            kos2 = sin(Pi * (PL1.kat + 90) / 180);
+            koc2 = cos(Pi * (PL1.kat + 90) / 180);
 
             dx = 0;
             dy = 0;
             dx1 = 0;
             dy1 = 0;
 
-            if (v->magnitude1<0)
-            {
+            if (v->magnitude1 < 0) {
                 dx = -Vtxt->wysokosc * koc2;
                 dy = -Vtxt->wysokosc * kos2;
             }
 
-            if (v->magnitude2<0)
-            {
+            if (v->magnitude2 < 0) {
                 dx1 = -Vtxt->wysokosc * koc2;
                 dy1 = -Vtxt->wysokosc * kos2;
             }
 
-            Vtxt->x=Lt.x1+dx;
-            Vtxt->y=Lt.y1+dy;
-            Vtxt->kat=(PL1.kat*Pi/180);
-            Vtxt->justowanie=j_do_lewej;
-            Vtxt1->x=Lt.x2+dx1;
-            Vtxt1->y=Lt.y2+dy1;
-            Vtxt1->kat=(PL1.kat*Pi/180);
-            Vtxt1->justowanie=j_do_prawej;
+            Vtxt->x = (float)(Lt.x1 + dx);
+            Vtxt->y = (float)(Lt.y1 + dy);
+            Vtxt->kat = (float)((PL1.kat * Pi / 180));
+            Vtxt->justowanie = j_do_lewej;
+            Vtxt1->x = (float)(Lt.x2 + dx1);
+            Vtxt1->y = (float)(Lt.y2 + dy1);
+            Vtxt1->kat = (float)((PL1.kat * Pi / 180));
+            Vtxt1->justowanie = j_do_prawej;
+
+            set_decimal_format(Vtxt->text, v->magnitude1, thermal_precision);
+            set_decimal_format(Vtxt1->text, v->magnitude2, thermal_precision);
 
             normalize_txt(Vtxt);
             if (tekst_wybrany(Vtxt)) return 1;
             normalize_txt(Vtxt1);
             if (tekst_wybrany(Vtxt1)) return 2;
+
+            if (v->cartflags & 1)
+            {
+                parametry_lini(&Lt1, &PL1_);
+                kos2_ = sin(Pi * (PL1_.kat + 90) / 180);
+                koc2_ = cos(Pi * (PL1_.kat + 90) / 180);
+
+                dx_ = 0;
+                dy_ = 0;
+                dx1_ = 0;
+                dy1_ = 0;
+
+                if (v->angle1<0)
+                {
+                    dx_ = -Vtxt_->wysokosc * koc2_;
+                    dy_ = -Vtxt_->wysokosc * kos2_;
+                }
+
+                if (v->angle2<0)
+                {
+                    dx1_ = -Vtxt_->wysokosc * koc2_;
+                    dy1_ = -Vtxt_->wysokosc * kos2_;
+
+                }
+
+                Vtxt_->x=Lt1.x1+(float)dx_;
+                Vtxt_->y=Lt1.y1+(float)dy_;
+                Vtxt_->kat=(float)(PL1_.kat*Pi/180);
+                Vtxt_->justowanie=j_do_lewej;
+                Vtxt1_->x=Lt1.x2+(float)dx1_;
+                Vtxt1_->y=Lt1.y2+(float)dy1_;
+                Vtxt1_->kat=(float)(PL1_.kat*Pi/180);
+                Vtxt1_->justowanie=j_do_prawej;
+
+                if (get_thermal_flipped(v))
+                {
+                    set_decimal_format(Vtxt_->text, v->angle2, thermal_precision);
+                    set_decimal_format(Vtxt1_->text, v->angle1, thermal_precision);
+                }
+                else
+                {
+                    set_decimal_format(Vtxt_->text, v->angle1, thermal_precision);
+                    set_decimal_format(Vtxt1_->text, v->angle2, thermal_precision);
+                }
+
+                normalize_txt(Vtxt_);
+                if (tekst_wybrany(Vtxt_)) return 3;
+                normalize_txt(Vtxt1_);
+                if (tekst_wybrany(Vtxt1_)) return 4;
+            }
             break;
+
     }
     return ret;
 }
 
-int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)
+int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)  //WARNING, maybe position of Vltxt nust be adjusted too to isometric
 {  double Ltx, Lty;
     PLINIA PL, PL1;
     double koc1, kos1;
@@ -1384,6 +1602,7 @@ int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)
         case 10:   //trapezium Y
         case 17:   //trapezium Y slab
         case 20:   //trapezium Z
+
         if (L->x1 < L->x2) {
             if (L->y2 < v->y2)
             {
@@ -1504,10 +1723,10 @@ int vector_text_wybrany(LINIA *L, TEXT *Vtxt, AVECTOR* v)
             break;
     }
 
-    Vtxt->x=Ltx+dx2;
-    Vtxt->y=Lty+dy2;
+    Vtxt->x=(float)(Ltx+dx2);
+    Vtxt->y=(float)(Lty+dy2);
     Vtxt->justowanie=j_srodkowo;
-    Vtxt->kat=(PL1.kat*Pi/180);
+    Vtxt->kat=(float)(PL1.kat*Pi/180);
 
     normalize_txt(Vtxt);
 
@@ -1518,11 +1737,11 @@ int vector_wybrany(AVECTOR *ad)
 {
     double x0,y0;
     double n;
-    LINIA L=Ldef, /*L1=Ldef,*/ Lth=Ldef, Lt=Ldef, LL=Ldef, Lp=Ldef;
+    LINIA L=Ldef, /*L1=Ldef,*/ Lth=Ldef, Lt=Ldef, Lth1=Ldef, Lt1=Ldef, LL=Ldef, Lp=Ldef;
     ELLIPTICALARC ea=eldef;
     LUK l;
     OKRAG O;
-    TEXT Vtxt=Tdef, Vtxt1;
+    TEXT Vtxt=Tdef, Vtxt1, Vtxt_=Tdef, Vtxt1_;
     PLINIA PL, PLth;
     double kats, kata2;
     double kat, kos, koc, kos1th, koc1th;
@@ -1534,6 +1753,8 @@ int vector_wybrany(AVECTOR *ad)
     double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
     double arrow_angle;
     float xmax, ymax;
+    int flipped=0;
+    double iso_angle;
 
     if (vector_filter>-1) {
         int vmarker=pow(2,ad->style);
@@ -1546,9 +1767,11 @@ int vector_wybrany(AVECTOR *ad)
     Vtxt.warstwa = ad->warstwa;
     Vtxt.atrybut=ad->atrybut;
     Vtxt.czcionka=zmwym.czcionka;
-    Vtxt.wysokosc=zmwym.wysokosc;
-    Vtxt.width_factor=zmwym.width_factor;
+    Vtxt.wysokosc=(float)zmwym.wysokosc;
+    Vtxt.width_factor=(float)zmwym.width_factor;
     memcpy(&Vtxt1, &Vtxt, sizeof(TEXT));
+    memcpy(&Vtxt_, &Vtxt, sizeof(TEXT));
+    memcpy(&Vtxt1_, &Vtxt, sizeof(TEXT));
 
     ra=Get_Point_Size () / arrowf;
 
@@ -1644,8 +1867,8 @@ int vector_wybrany(AVECTOR *ad)
             if (tekst_wybrany(&Vtxt)) return 1;
 
             Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
-            Vtxt.x=ad->x1+(ad->r - Vtxt.wysokosc - 0.5)*cos(kats);
-            Vtxt.y=ad->y1+(ad->r - Vtxt.wysokosc - 0.5)*sin(kats);
+            Vtxt.x=(float)(ad->x1+(ad->r - Vtxt.wysokosc - 0.5)*cos(kats));
+            Vtxt.y=(float)(ad->y1+(ad->r - Vtxt.wysokosc - 0.5)*sin(kats));
 
             if (ad->variant>0)
                 sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
@@ -1797,7 +2020,15 @@ int vector_wybrany(AVECTOR *ad)
                                      jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
             L.warstwa=ad->warstwa;
 
-            if (LL.x1<LL.x2) n=1; else n=-1;
+            if (!(ad->cartflags & 1) || (ad->style != 10)) {
+                if (LL.x1 < LL.x2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ad));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
 
             if (ad->flags & 1) n*=-1;
 
@@ -1805,14 +2036,14 @@ int vector_wybrany(AVECTOR *ad)
             {
                 L.x1=LL.x1;
                 L.x2=LL.x2;
-                L.y1=LL.y1+(float)(n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude));
-                L.y2=LL.y2+(float)(n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude));
+                L.y1=LL.y1+(float)(n*ad->magnitude1/(((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude));
+                L.y2=LL.y2+(float)(n*ad->magnitude2/(((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude));
             }
             else
             {
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
-                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
-                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / (((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / (((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
                 L.x1 = LL.x1 + (float)dx1_cart;
                 L.y1 = LL.y1 + (float)dy1_cart;
                 L.x2 = LL.x2 + (float)dx2_cart;
@@ -1829,7 +2060,7 @@ int vector_wybrany(AVECTOR *ad)
             set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
             set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
@@ -1838,7 +2069,6 @@ int vector_wybrany(AVECTOR *ad)
             if (ad->variant>0)
                 sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
             else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
-
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -1855,13 +2085,19 @@ int vector_wybrany(AVECTOR *ad)
                 LL.y2+=0.001f;
             }
 
-
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
             L.warstwa=ad->warstwa;
 
-
-            if (LL.y1<LL.y2) n=1; else n=-1;
+            if (!(ad->cartflags & 1)) {
+                if (ad->y1 < ad->y2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ad));
+                ////for isometric vector in X axis
+                if (flipped) n = -1;
+                else n = 1;
+            }
 
             if (ad->flags & 1) n*=-1;
 
@@ -1893,7 +2129,7 @@ int vector_wybrany(AVECTOR *ad)
             set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
             set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
@@ -1952,16 +2188,15 @@ int vector_wybrany(AVECTOR *ad)
             set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
             set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
                 sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
             else sprintf(Vtxt.text, "%s",load_symbol[(int)ad->load]);
-
 
             if (vector_text_wybrany(&L, &Vtxt, ad)) return 1;
 
@@ -2010,6 +2245,9 @@ int vector_wybrany(AVECTOR *ad)
                 if (iso_L1_x1<iso_L1_x2) n=1;
                 else n=-1;
 
+                ////for isometric vector in Y axis
+                n*=-1;
+
                 ret = trapezoid_base_isometric_x(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
@@ -2034,7 +2272,7 @@ int vector_wybrany(AVECTOR *ad)
             set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
             set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
@@ -2119,7 +2357,7 @@ int vector_wybrany(AVECTOR *ad)
             set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
             set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
@@ -2144,41 +2382,87 @@ int vector_wybrany(AVECTOR *ad)
             L.warstwa=ad->warstwa;
             parametry_lini((LINIA*)ad, &PL);
             kat=PL.kat;
-            kos=sin(Pi*(PL.kat+90)/180);
-            koc=cos(Pi*(PL.kat+90)/180);
 
-            Lth.x1 = (ad->x1+ad->x2)/2.f + (float)((ad->r/depth_magnitude)*koc); //thermal_depth_size
-            Lth.y1 = (ad->y1+ad->y2)/2.f + (float)((ad->r/depth_magnitude)*kos);
-            Lth.x2 = (ad->x1+ad->x2)/2.f - (float)((ad->r/depth_magnitude)*koc);
-            Lth.y2 = (ad->y1+ad->y2)/2.f - (float)((ad->r/depth_magnitude)*kos);
+            if (ad->cartflags & 1) {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(ad, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-            if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
-                                  jednostkiN(Lth.x2), jednostkiN(Lth.y2))) return 1;
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(Lth.x2), jednostkiN(Lth.y2)))
+                    return 1;
 
-            parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180.);
-            koc1th=cos(Pi*(PLth.kat+90)/180.);
+                if (prostokat_odcinek(jednostkiN(Lt.x1), jednostkiN(Lt.y1),
+                                      jednostkiN(Lt.x2), jednostkiN(Lt.y2)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(Lt.x1), jednostkiN(Lt.y1)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
+                                      jednostkiN(Lt.x2), jednostkiN(Lt.y2)))
+                    return 1;
 
-            L.x1 = Lth.x1 + (float)((ad->magnitude1/thermal_magnitude)*koc1th);
-            L.y1 = Lth.y1 + (float)((ad->magnitude1/thermal_magnitude)*kos1th);
-            L.x2 = Lth.x2 + (float)((ad->magnitude2/thermal_magnitude)*koc1th);
-            L.y2 = Lth.y2 + (float)((ad->magnitude2/thermal_magnitude)*kos1th);
 
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
-                                  jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
-            if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
-                                  jednostkiN(L.x1), jednostkiN(L.y1))) return 1;
-            if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
-                                  jednostkiN(L.x2), jednostkiN(L.y2))) return 1;
+                if (prostokat_odcinek(jednostkiN(Lth1.x1), jednostkiN(Lth1.y1),
+                                      jednostkiN(Lth1.x2), jednostkiN(Lth1.y2)))
+                    return 1;
 
-            set_decimal_format(Vtxt.text, ad->magnitude1, load_precision);
-            set_decimal_format(Vtxt1.text, ad->magnitude2, load_precision);
+                if (prostokat_odcinek(jednostkiN(Lt1.x1), jednostkiN(Lt1.y1),
+                                      jednostkiN(Lt1.x2), jednostkiN(Lt1.y2)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth1.x1), jednostkiN(Lth1.y1),
+                                      jednostkiN(Lt1.x1), jednostkiN(Lt1.y1)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth1.x2), jednostkiN(Lth1.y2),
+                                      jednostkiN(Lt1.x2), jednostkiN(Lt1.y2)))
+                    return 1;
 
-            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, ad, &LL);
+            }
+            else {
+                kos = sin(Pi * (PL.kat + 90) / 180);
+                koc = cos(Pi * (PL.kat + 90) / 180);
+
+                Lth.x1 = (ad->x1 + ad->x2) / 2.f + (float) ((ad->r / depth_magnitude) * koc); //thermal_depth_size
+                Lth.y1 = (ad->y1 + ad->y2) / 2.f + (float) ((ad->r / depth_magnitude) * kos);
+                Lth.x2 = (ad->x1 + ad->x2) / 2.f - (float) ((ad->r / depth_magnitude) * koc);
+                Lth.y2 = (ad->y1 + ad->y2) / 2.f - (float) ((ad->r / depth_magnitude) * kos);
+
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(Lth.x2), jednostkiN(Lth.y2)))
+                    return 1;
+
+
+                parametry_lini(&Lth, &PLth);
+                kos1th = sin(Pi * (PLth.kat + 90) / 180.);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180.);
+
+                L.x1 = Lth.x1 + (float) ((ad->magnitude1 / thermal_magnitude) * koc1th);
+                L.y1 = Lth.y1 + (float) ((ad->magnitude1 / thermal_magnitude) * kos1th);
+                L.x2 = Lth.x2 + (float) ((ad->magnitude2 / thermal_magnitude) * koc1th);
+                L.y2 = Lth.y2 + (float) ((ad->magnitude2 / thermal_magnitude) * kos1th);
+
+                if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+                                      jednostkiN(L.x2), jednostkiN(L.y2)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(L.x1), jednostkiN(L.y1)))
+                    return 1;
+                if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
+                                      jednostkiN(L.x2), jednostkiN(L.y2)))
+                    return 1;
+            }
+
+            set_decimal_format(Vtxt.text, ad->magnitude1, thermal_precision);
+            set_decimal_format(Vtxt1.text, ad->magnitude2, thermal_precision);
+
+            set_decimal_format(Vtxt_.text, ad->angle1, thermal_precision);
+            set_decimal_format(Vtxt1_.text, ad->angle1, thermal_precision);
+
+            ret=vector_magnitude_text_wybrany(&Vtxt, &Vtxt1, &Vtxt_, &Vtxt1_, ad, &LL);
             if (ret>0) return 1;
 
             Vtxt.justowanie=j_srodkowo;
-            Vtxt.wysokosc=zmwym.wysokosc/2;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc/2.);
 
             if (ad->variant>0)
                 sprintf(Vtxt.text, "%s%d",load_symbol[(int)ad->load], ad->variant);
@@ -2191,7 +2475,6 @@ int vector_wybrany(AVECTOR *ad)
         case 16:
             if (prostokat_odcinek(jednostkiN(ad->x1), jednostkiN(ad->y1),
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))) return 1;
-
 
             O.x=ad->x1;
             O.y=ad->y1;
@@ -2251,16 +2534,15 @@ int vector_wybrany(AVECTOR *ad)
     return 0;
 }
 
-
 int vector_w_prostokacie(AVECTOR *ad)
 {
     double x0,y0;
     double n;
-    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef, LL=Ldef, Lp=Ldef;;
+    LINIA L=Ldef, L1=Ldef, Lth=Ldef, Lt=Ldef, Lth1=Ldef, Lt1=Ldef, LL=Ldef, Lp=Ldef;;
     LUK l;
     OKRAG O;
     ELLIPTICALARC ea=eldef;
-    TEXT Vtxt=Tdef, Vtxt1;
+    TEXT Vtxt=Tdef, Vtxt1, Vtxt_, Vtxt1_;
     PLINIA PL, PLth;
     double kat, kos, koc, koc1th, kos1th;
     double ra;
@@ -2268,6 +2550,8 @@ int vector_w_prostokacie(AVECTOR *ad)
     int plane;
     double arrow_angle;
     float xmax, ymax;
+    int flipped=0;
+    double iso_angle;
 
 #define arrowf 1.0
 
@@ -2277,6 +2561,8 @@ int vector_w_prostokacie(AVECTOR *ad)
     Vtxt.wysokosc=(float)zmwym.wysokosc;
     Vtxt.width_factor=(float)zmwym.width_factor;
     memcpy(&Vtxt1, &Vtxt, sizeof(TEXT));
+    memcpy(&Vtxt_, &Vtxt, sizeof(TEXT));
+    memcpy(&Vtxt1_, &Vtxt, sizeof(TEXT));
 
     ra=Get_Point_Size () / arrowf;
 
@@ -2384,7 +2670,15 @@ int vector_w_prostokacie(AVECTOR *ad)
                 LL.x2+=0.001f;
             }
 
-            if (LL.x1<LL.x2) n=1; else n=-1;
+            if (!(ad->cartflags & 1) || (ad->style != 10)) {
+                if (LL.x1 < LL.x2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ad));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
 
             if (ad->flags & 1) n*=-1;
 
@@ -2392,14 +2686,14 @@ int vector_w_prostokacie(AVECTOR *ad)
             {
                 L.x1=LL.x1;
                 L.x2=LL.x2;
-                L.y1=LL.y1+(float)(n*ad->magnitude1/((ad->style==10) ? load_magnitude : flood_magnitude));
-                L.y2=LL.y2+(float)(n*ad->magnitude2/((ad->style==10) ? load_magnitude : flood_magnitude));
+                L.y1=LL.y1+(float)(n*ad->magnitude1/(((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude));
+                L.y2=LL.y2+(float)(n*ad->magnitude2/(((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude));
             }
             else
             {
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
-                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
-                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / ((ad->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude1 / (((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ad->magnitude2 / (((ad->style==10) || (ad->style==20)) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
                 L.x1 = LL.x1 + (float)dx1_cart;
                 L.y1 = LL.y1 + (float)dy1_cart;
                 L.x2 = LL.x2 + (float)dx2_cart;
@@ -2428,7 +2722,15 @@ int vector_w_prostokacie(AVECTOR *ad)
                 LL.y2+=0.001f;
             }
 
-            if (LL.y1<LL.y2) n=1; else n=-1;
+            if (!(ad->cartflags & 1)) {
+                if (LL.y1 < LL.y2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ad));
+                ////for isometric vector in X axis
+                if (flipped) n = -1;
+                else n = 1;
+            }
 
             if (ad->flags & 1) n*=-1;
 
@@ -2546,6 +2848,9 @@ int vector_w_prostokacie(AVECTOR *ad)
                 if (iso_L1_x1<iso_L1_x2) n=1;
                 else n=-1;
 
+                ////for isometric vector in Y axis
+                n*=-1;
+
                 ret = trapezoid_base_isometric_x(LL.x1, LL.y1, LL.x2, LL.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
@@ -2642,31 +2947,63 @@ int vector_w_prostokacie(AVECTOR *ad)
                                   jednostkiN(ad->x2), jednostkiN(ad->y2))  !=3) return 0;
 
             parametry_lini((LINIA*)ad, &PL);
-            kat=PL.kat;
-            kos=sin(Pi*(PL.kat+90)/180.);
-            koc=cos(Pi*(PL.kat+90)/180.);
+            kat = PL.kat;
+            if (ad->cartflags & 1) {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(ad, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-            Lth.x1 = (ad->x1+ad->x2)/2.f + (float)((ad->r/depth_magnitude)*koc); //thermal_depth_size
-            Lth.y1 = (ad->y1+ad->y2)/2.f + (float)((ad->r/depth_magnitude)*kos);
-            Lth.x2 = (ad->x1+ad->x2)/2.f - (float)((ad->r/depth_magnitude)*koc);
-            Lth.y2 = (ad->y1+ad->y2)/2.f - (float)((ad->r/depth_magnitude)*kos);
+                if (prostokat_odcinek(jednostkiN(Lt.x1), jednostkiN(Lt.y1),
+                                      jednostkiN(Lt.x2), jednostkiN(Lt.y2)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(Lt.x1), jednostkiN(Lt.y1)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
+                                      jednostkiN(Lt.x2), jednostkiN(Lt.y2)) != 3)
+                    return 0;
 
-            parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180.);
-            koc1th=cos(Pi*(PLth.kat+90)/180.);
 
-            L.x1 = Lth.x1 + (float)((ad->magnitude1/thermal_magnitude)*koc1th);
-            L.y1 = Lth.y1 + (float)((ad->magnitude1/thermal_magnitude)*kos1th);
-            L.x2 = Lth.x2 + (float)((ad->magnitude2/thermal_magnitude)*koc1th);
-            L.y2 = Lth.y2 + (float)((ad->magnitude2/thermal_magnitude)*kos1th);
+                if (prostokat_odcinek(jednostkiN(Lt1.x1), jednostkiN(Lt1.y1),
+                                      jednostkiN(Lt1.x2), jednostkiN(Lt1.y2)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth1.x1), jednostkiN(Lth1.y1),
+                                      jednostkiN(Lt1.x1), jednostkiN(Lt1.y1)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth1.x2), jednostkiN(Lth1.y2),
+                                      jednostkiN(Lt1.x2), jednostkiN(Lt1.y2)) != 3)
+                    return 0;
 
-            if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
-                                  jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
-                                  jednostkiN(L.x1), jednostkiN(L.y1)) !=3) return 0;
-            if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
-                                  jednostkiN(L.x2), jednostkiN(L.y2)) !=3) return 0;
+            }
+            else
+            {
+                kos = sin(Pi * (PL.kat + 90) / 180.);
+                koc = cos(Pi * (PL.kat + 90) / 180.);
 
+                Lth.x1 = (ad->x1 + ad->x2) / 2.f + (float) ((ad->r / depth_magnitude) * koc); //thermal_depth_size
+                Lth.y1 = (ad->y1 + ad->y2) / 2.f + (float) ((ad->r / depth_magnitude) * kos);
+                Lth.x2 = (ad->x1 + ad->x2) / 2.f - (float) ((ad->r / depth_magnitude) * koc);
+                Lth.y2 = (ad->y1 + ad->y2) / 2.f - (float) ((ad->r / depth_magnitude) * kos);
+
+                parametry_lini(&Lth, &PLth);
+                kos1th = sin(Pi * (PLth.kat + 90) / 180.);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180.);
+
+                L.x1 = Lth.x1 + (float) ((ad->magnitude1 / thermal_magnitude) * koc1th);
+                L.y1 = Lth.y1 + (float) ((ad->magnitude1 / thermal_magnitude) * kos1th);
+                L.x2 = Lth.x2 + (float) ((ad->magnitude2 / thermal_magnitude) * koc1th);
+                L.y2 = Lth.y2 + (float) ((ad->magnitude2 / thermal_magnitude) * kos1th);
+
+                if (prostokat_odcinek(jednostkiN(L.x1), jednostkiN(L.y1),
+                                      jednostkiN(L.x2), jednostkiN(L.y2)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth.x1), jednostkiN(Lth.y1),
+                                      jednostkiN(L.x1), jednostkiN(L.y1)) != 3)
+                    return 0;
+                if (prostokat_odcinek(jednostkiN(Lth.x2), jednostkiN(Lth.y2),
+                                      jednostkiN(L.x2), jednostkiN(L.y2)) != 3)
+                    return 0;
+            }
             return 1;
             break;
         case 16:
@@ -2841,7 +3178,7 @@ int vector_drag_wybrany(AVECTOR *ad)
 
             ret=arc_to_isometric_ellipticalarc_a_ea(plane, &l, &ea);
             ret=prostokat_ellipticalarc(&ea);
-            if(ret==4) ret=0;
+            ////if(ret==4) ret=0;   ////????
             return ret;
             break;
         case 10:
@@ -3973,7 +4310,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
 /*------------------------------------*/
 {  LUK l;
    OKRAG o;
-   LINIA L1, L2, Ls=Ldef, Lt=Ldef, Lth=Ldef;
+   LINIA L1, L2, Ls=Ldef, Lt=Ldef, Lth=Ldef, Lt1=Ldef, Lth1=Ldef, Lp=Ldef;
    WIELOKAT w=S4def;
    SOLIDARC sa=sadef;
    ELLIPTICALARC ea=eldef;
@@ -3987,6 +4324,8 @@ int Vector_Selected(AVECTOR *ptrs_vector)
    float ymax, xmax;
    int plane;
    int ret;
+   int flipped;
+   double arrow_angle;
 
 #ifndef arrowf
 #define arrowf 1.0
@@ -3994,6 +4333,11 @@ int Vector_Selected(AVECTOR *ptrs_vector)
 
     df_psize = Get_Point_Size () / 4;   //disk
     df_psize1 = Get_Point_Size () / 2 ; //circle
+
+    L1.x1 = ptrs_vector->x1;
+    L1.y1 = ptrs_vector->y1;
+    L1.x2 = ptrs_vector->x2;
+    L1.y2 = ptrs_vector->y2;
 
     switch (ptrs_vector->style)
     {
@@ -4021,10 +4365,7 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 18: //slab force
         case 19: //force z
             ra=Get_Point_Size () / arrowf;
-            L1.x1=ptrs_vector->x1;
-            L1.y1=ptrs_vector->y1;
-            L1.x2=ptrs_vector->x2;
-            L1.y2=ptrs_vector->y2;
+            
             parametry_lini(&L1, &PL);
             kat1=PL.kat;
             kos=sin(PL.kat*Pi/180);
@@ -4064,10 +4405,6 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
             if (vector_okrag_wybrany(ptrs_vector, 0, df_psize1)) return 1;
 
-            L1.x1 = ptrs_vector->x1;
-            L1.y1 = ptrs_vector->y1;
-            L1.x2 = ptrs_vector->x2;
-            L1.y2 = ptrs_vector->y2;
             parametry_lini(&L1, &PL);
             kat1 = PL.kat;
 
@@ -4227,14 +4564,22 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 20:
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
-            if (ptrs_vector->x1<ptrs_vector->x2) n=1;
-            else n=-1;
+            if (!(ptrs_vector->cartflags & 1) || (ptrs_vector->style != 10)) {
+                if (L1.x1 < L1.x2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ptrs_vector));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
+
             if (ptrs_vector->flags & 1) n*=-1;
 
             Lt.x1 = ptrs_vector->x1;
-            Lt.y1 = ptrs_vector->y1 + n*(ptrs_vector->magnitude1/load_magnitude);
+            Lt.y1 = (float)(ptrs_vector->y1 + n*(ptrs_vector->magnitude1/load_magnitude));
             Lt.x2 = ptrs_vector->x2;
-            Lt.y2 = ptrs_vector->y2 + n*(ptrs_vector->magnitude2/load_magnitude);
+            Lt.y2 = (float)(ptrs_vector->y2 + n*(ptrs_vector->magnitude2/load_magnitude));
 
             w.xy[0]=ptrs_vector->x1;
             w.xy[1]=ptrs_vector->y1;
@@ -4252,13 +4597,21 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 11:
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
-            if (ptrs_vector->y1<ptrs_vector->y2) n=1;
-            else n=-1;
+            if (!(ptrs_vector->cartflags & 1) || (ptrs_vector->style != 10)) {
+                if (L1.x1 < L1.x2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ptrs_vector));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
+
             if (ptrs_vector->flags & 1) n*=-1;
 
-            Lt.x1 = ptrs_vector->x1 - n*(ptrs_vector->magnitude1/load_magnitude);
+            Lt.x1 = (float)(ptrs_vector->x1 - n*(ptrs_vector->magnitude1/load_magnitude));
             Lt.y1 = ptrs_vector->y1;
-            Lt.x2 = ptrs_vector->x2 - n*(ptrs_vector->magnitude2/load_magnitude);
+            Lt.x2 = (float)(ptrs_vector->x2 - n*(ptrs_vector->magnitude2/load_magnitude));
             Lt.y2 = ptrs_vector->y2;
 
             w.xy[0]=ptrs_vector->x1;
@@ -4279,8 +4632,19 @@ int Vector_Selected(AVECTOR *ptrs_vector)
 
             parametry_lini((LINIA*)ptrs_vector, &PL);
 
-            kos1=sin(Pi*(PL.kat+90)/180);
-            koc1=cos(Pi*(PL.kat+90)/180);
+            if (!(ptrs_vector->cartflags & 1)) {
+                arrow_angle = M_PI * (PL.kat + 90.0) / 180.0;
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            } else {
+                double iso_angle = cartesian_angle_to_isometric_angle(M_PI * PL.kat / 180.);
+                // Add 90° in isometric space (counter-clockwise perpendicular)
+                double iso_perp = fmod(iso_angle + M_PI / 2.0, 2.0 * M_PI);
+                if (iso_perp < 0.0) iso_perp += 2.0 * M_PI;
+                arrow_angle = isometric_angle_to_cartesian_angle_rad(iso_perp);
+                kos1 = sin(arrow_angle);
+                koc1 = cos(arrow_angle);
+            }
 
             n=1;
             if (ptrs_vector->flags & 1) n*=-1;
@@ -4303,28 +4667,49 @@ int Vector_Selected(AVECTOR *ptrs_vector)
             if (wielokat_wybrany(&w)) return 1;
 
             break;
-        case 13:
+        case 13:  //trapezium H
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
-            if (ptrs_vector->x1<ptrs_vector->x2)
-            {
-                n=1;
-                w.xy[1]=w.xy[3]=max(ptrs_vector->y1, ptrs_vector->y2);
-                ymax=max(ptrs_vector->y1, ptrs_vector->y2);
-            }
-            else
-            {
-                n=-1;
-                w.xy[1]=w.xy[3]=min(ptrs_vector->y1, ptrs_vector->y2);
-                ymax=min(ptrs_vector->y1, ptrs_vector->y2);
-            }
-            if (ptrs_vector->flags & 1) n*=-1;
+            if (!(ptrs_vector->cartflags & 1)) {
+                if (ptrs_vector->x1 < ptrs_vector->x2) {
+                    n = 1;
+                    w.xy[1] = w.xy[3] = max(ptrs_vector->y1, ptrs_vector->y2);
+                    ymax = max(ptrs_vector->y1, ptrs_vector->y2);
+                } else {
+                    n = -1;
+                    w.xy[1] = w.xy[3] = min(ptrs_vector->y1, ptrs_vector->y2);
+                    ymax = min(ptrs_vector->y1, ptrs_vector->y2);
+                }
 
-            Lt.x1 = ptrs_vector->x1;
-            Lt.y1 = ymax + n*(ptrs_vector->magnitude1/load_magnitude);
-            Lt.x2 = ptrs_vector->x2;
-            Lt.y2 = ymax + n*(ptrs_vector->magnitude2/load_magnitude);
+                if (ptrs_vector->flags & 1) n *= -1;
 
+                Lt.x1 = ptrs_vector->x1;
+                Lt.y1 = ymax + n * (ptrs_vector->magnitude1 / load_magnitude);
+                Lt.x2 = ptrs_vector->x2;
+                Lt.y2 = ymax + n * (ptrs_vector->magnitude2 / load_magnitude);
+            }
+            else {
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret = cartesian_to_isometric(L1.x1, L1.y1, &iso_L1_x1, &iso_L1_y1);
+                ret = cartesian_to_isometric(L1.x2, L1.y2, &iso_L1_x2, &iso_L1_y2);
+
+                if (iso_L1_x1 < iso_L1_x2) n = 1;
+                else n = -1;
+
+                ////for isometric vector in Y axis
+                n *= -1;
+
+                ret = trapezoid_base_isometric_x(L1.x1, L1.y1, L1.x2, L1.y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(0., n * (ptrs_vector->magnitude1 / load_magnitude), &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0., n * (ptrs_vector->magnitude2 / load_magnitude), &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float) dx1_cart;
+                Lt.y1 = Lp.y1 + (float) dy1_cart;
+                Lt.x2 = Lp.x2 + (float) dx2_cart;
+                Lt.y2 = Lp.y2 + (float) dy2_cart;
+            }
 
             w.xy[0]=ptrs_vector->x1;
             w.xy[2]=ptrs_vector->x2;
@@ -4352,23 +4737,42 @@ int Vector_Selected(AVECTOR *ptrs_vector)
         case 14:
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
-            if (ptrs_vector->y1<ptrs_vector->y2)
-            {
-                n=1;
-                w.xy[0]=w.xy[2]=min(ptrs_vector->x1, ptrs_vector->x2);
-                xmax=min(ptrs_vector->x1, ptrs_vector->x2);
+            if (!(ptrs_vector->cartflags & 1)) {
+                if (ptrs_vector->y1 < ptrs_vector->y2) {
+                    n = 1;
+                    w.xy[0] = w.xy[2] = min(ptrs_vector->x1, ptrs_vector->x2);
+                    xmax = min(ptrs_vector->x1, ptrs_vector->x2);
+                } else {
+                    n = -1;
+                    w.xy[0] = w.xy[2] = max(ptrs_vector->x1, ptrs_vector->x2);
+                    xmax = max(ptrs_vector->x1, ptrs_vector->x2);
+                }
+
+                Lt.x1 = xmax - n * (ptrs_vector->magnitude1 / load_magnitude);
+                Lt.y1 = ptrs_vector->y1;
+                Lt.x2 = xmax - n * (ptrs_vector->magnitude2 / load_magnitude);
+                Lt.y2 = ptrs_vector->y2;
             }
             else
             {
-                n=-1;
-                w.xy[0]=w.xy[2]=max(ptrs_vector->x1, ptrs_vector->x2);
-                xmax=max(ptrs_vector->x1, ptrs_vector->x2);
-            }
+                //projection on x axis
+                double iso_L1_x1, iso_L1_y1, iso_L1_x2, iso_L1_y2;
+                ret=cartesian_to_isometric(L1.x1, L1.y1, &iso_L1_x1, &iso_L1_y1);
+                ret=cartesian_to_isometric(L1.x2, L1.y2, &iso_L1_x2, &iso_L1_y2);
 
-            Lt.x1 = xmax - n*(ptrs_vector->magnitude1/load_magnitude);
-            Lt.y1 = ptrs_vector->y1;
-            Lt.x2 = xmax - n*(ptrs_vector->magnitude2/load_magnitude);
-            Lt.y2 = ptrs_vector->y2;
+                if (iso_L1_y1<iso_L1_y2) n=1;
+                else n=-1;
+
+                ret = trapezoid_base_isometric_y(L1.x1, L1.y1, L1.x2, L1.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
+                ret = isometric_vector_to_cartesian(-n * (ptrs_vector->magnitude1 / load_magnitude), 0., &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(-n * (ptrs_vector->magnitude2 / load_magnitude), 0., &dx2_cart, &dy2_cart);
+                Lt.x1 = Lp.x1 + (float)dx1_cart;
+                Lt.y1 = Lp.y1 + (float)dy1_cart;
+                Lt.x2 = Lp.x2 + (float)dx2_cart;
+                Lt.y2 = Lp.y2 + (float)dy2_cart;
+            }
 
             w.xy[1]=ptrs_vector->y1;
             w.xy[3]=ptrs_vector->y2;
@@ -4394,43 +4798,72 @@ int Vector_Selected(AVECTOR *ptrs_vector)
 
             break;
         case 15:
+            n=1;
+
             if (linia_wybrana((LINIA*)ptrs_vector)) return 1;
 
             parametry_lini((LINIA*)ptrs_vector, &PL);
 
-            kos1=sin(Pi*(PL.kat+90)/180);
-            koc1=cos(Pi*(PL.kat+90)/180);
+            if (ptrs_vector->cartflags & 1) {
+                PLINIA PLth1;
+                double perpendicular_iso_angle;
+                get_isometric_thermal_gradient(ptrs_vector, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
 
-            L1.x1 = ptrs_vector->x1;
-            L1.y1 = ptrs_vector->y1;
-            L1.x2 = ptrs_vector->x2;
-            L1.y2 = ptrs_vector->y2;
+                w.xy[0] = Lth.x1;
+                w.xy[1] = Lth.y1;
+                w.xy[2] = Lth.x2;
+                w.xy[3] = Lth.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
 
-            Lth.x1 = (ptrs_vector->x1 + ptrs_vector->x2)/2 + (ptrs_vector->r/depth_magnitude)*koc1;  //thermal_depth_size
-            Lth.y1 = (ptrs_vector->y1 + ptrs_vector->y2)/2 + (ptrs_vector->r/depth_magnitude)*kos1;
-            Lth.x2 = (ptrs_vector->x1 + ptrs_vector->x2)/2 - (ptrs_vector->r/depth_magnitude)*koc1;
-            Lth.y2 = (ptrs_vector->y1 + ptrs_vector->y2)/2 - (ptrs_vector->r/depth_magnitude)*kos1;
+                w.lp = 8;
+                if (wielokat_wybrany(&w)) return 1;
 
-            parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180);
-            koc1th=cos(Pi*(PLth.kat+90)/180);
+                w.xy[0] = Lth1.x1;
+                w.xy[1] = Lth1.y1;
+                w.xy[2] = Lth1.x2;
+                w.xy[3] = Lth1.y2;
+                w.xy[4] = Lt1.x2;
+                w.xy[5] = Lt1.y2;
+                w.xy[6] = Lt1.x1;
+                w.xy[7] = Lt1.y1;
 
-            Lt.x1 = Lth.x1 + (ptrs_vector->magnitude1/thermal_magnitude)*koc1th;
-            Lt.y1 = Lth.y1 + (ptrs_vector->magnitude1/thermal_magnitude)*kos1th;
-            Lt.x2 = Lth.x2 + (ptrs_vector->magnitude2/thermal_magnitude)*koc1th;
-            Lt.y2 = Lth.y2 + (ptrs_vector->magnitude2/thermal_magnitude)*kos1th;
+                w.lp = 8;
+                if (wielokat_wybrany(&w)) return 1;
 
-            w.xy[0]=Lth.x1;
-            w.xy[1]=Lth.y1;
-            w.xy[2]=Lth.x2;
-            w.xy[3]=Lth.y2;
-            w.xy[4]=Lt.x2;
-            w.xy[5]=Lt.y2;
-            w.xy[6]=Lt.x1;
-            w.xy[7]=Lt.y1;
+            }
+            else {
+                kos1 = sin(Pi * (PL.kat + 90) / 180);
+                koc1 = cos(Pi * (PL.kat + 90) / 180); 
 
-            w.lp=8;
-            if (wielokat_wybrany(&w)) return 1;
+                Lth.x1 = (float)((ptrs_vector->x1 + ptrs_vector->x2) / 2 + (ptrs_vector->r / depth_magnitude) * koc1);  //thermal_depth_size
+                Lth.y1 = (float)((ptrs_vector->y1 + ptrs_vector->y2) / 2 + (ptrs_vector->r / depth_magnitude) * kos1);
+                Lth.x2 = (float)((ptrs_vector->x1 + ptrs_vector->x2) / 2 - (ptrs_vector->r / depth_magnitude) * koc1);
+                Lth.y2 = (float)((ptrs_vector->y1 + ptrs_vector->y2) / 2 - (ptrs_vector->r / depth_magnitude) * kos1);
+
+                parametry_lini(&Lth, &PLth);
+                kos1th = sin(Pi * (PLth.kat + 90) / 180);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180);
+
+                Lt.x1 = (float)(Lth.x1 + (ptrs_vector->magnitude1 / thermal_magnitude) * koc1th);
+                Lt.y1 = (float)(Lth.y1 + (ptrs_vector->magnitude1 / thermal_magnitude) * kos1th);
+                Lt.x2 = (float)(Lth.x2 + (ptrs_vector->magnitude2 / thermal_magnitude) * koc1th);
+                Lt.y2 = (float)(Lth.y2 + (ptrs_vector->magnitude2 / thermal_magnitude) * kos1th);
+
+                w.xy[0] = Lth.x1;
+                w.xy[1] = Lth.y1;
+                w.xy[2] = Lth.x2;
+                w.xy[3] = Lth.y2;
+                w.xy[4] = Lt.x2;
+                w.xy[5] = Lt.y2;
+                w.xy[6] = Lt.x1;
+                w.xy[7] = Lt.y1;
+
+                w.lp = 8;
+                if (wielokat_wybrany(&w)) return 1;
+            }
 
             break;
         case 16:

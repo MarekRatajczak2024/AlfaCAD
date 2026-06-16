@@ -58,6 +58,7 @@
 
 #include "forlinux.h"
 
+
 #define MIN_H 800 //1024
 #define MIN_V 540 //640
 
@@ -356,6 +357,8 @@ extern int TTF_text_len(char *text);
 extern int utf8len(const char *s);
 
 extern void fill_demo_keys(void);;
+extern void Destroy_Hatch_Patterns(void);
+
 #ifdef MACOS
 extern int send_AppleScript_Exit(pid_t pid);
 extern pid_t get_e_pid(void);
@@ -391,6 +394,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double ss_magnitude;
 extern double src_magnitude;
 extern double q_magnitude;
 extern double p_magnitude;
@@ -423,6 +427,7 @@ extern void save_mouse_wheel(void);
 extern BOOL Semaphore;
 extern BOOL check_file_buffer(void);
 
+extern BOOL rescaling_menu_mode;
 
 static BITMAP *second_screen_bak_=NULL;
 
@@ -2439,6 +2444,27 @@ BITMAP *icon_rigid_springs_nosprings_d;
 char *icon_vector_member_style_d_p;
 char *icon_rigid_springs_nosprings_d_p;
 
+BITMAP *icon_stress_steel_wood;
+BITMAP *icon_stress_RC;
+BITMAP *icon_shear_stress_steel_wood;
+char *icon_stress_steel_wood_p;
+char *icon_stress_RC_p;
+char *icon_shear_stress_steel_wood_p;
+BITMAP *icon_concrete;
+char *icon_concrete_p;
+
+BITMAP *icon_R_section;
+BITMAP *icon_I_section;
+BITMAP *icon_T_section;
+BITMAP *icon_CT_section;
+BITMAP *icon_ST_section;
+BITMAP *icon_RT_section;
+char *icon_R_section_p;
+char *icon_I_section_p;
+char *icon_T_section_p;
+char *icon_CT_section_p;
+char *icon_ST_section_p;
+char *icon_RT_section_p;
 
 BITMAP *icon_hourglass;
 char *icon_hourglass_p;
@@ -2504,6 +2530,8 @@ BITMAP *icon_slab_fem;
 char *icon_slab_fem_p;
 BITMAP *icon_shield_fem;
 char *icon_shield_fem_p;
+BITMAP *icon_beam_grid;
+char *icon_beam_grid_p;
 BITMAP *icon_slab_edge_rolled;
 char *icon_slab_edge_rolled_p;
 BITMAP *icon_slab_edge_hinged;
@@ -2533,6 +2561,13 @@ BITMAP *icon_IMP;
 char *icon_IMP_p;
 BITMAP *icon_factory_reset;
 char *icon_factory_reset_p;
+
+BITMAP *icon_menu_auto_choice;
+char *icon_menu_auto_choice_p;
+BITMAP *icon_menu_choice;
+char *icon_menu_choice_p;
+BITMAP *icon_autoplay;
+char *icon_autoplay_p;
 
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -3051,7 +3086,8 @@ BOOL DrawToPrn0 (int serial_mode, int init_prn_dlg)
   float prn_width_paper=210.0;
   float prn_height_paper=297.0;
 
-  kk = Print2Page(1);
+ kk = Print2Page(1);
+
 #ifndef LINUX
   prn_width_paper = (float)GetPrintPageWidth();
   prn_height_paper = (float)GetPrintPageHeight();
@@ -3930,7 +3966,7 @@ void dxf_out (void)
 {
   int acad_version ;
 
-  acad_version = 2;
+  acad_version = 2;  //it must be always 3 to get "HEADER10.DXT" and perform  $ACADVER as AC1024
   DxfOut (acad_version) ;
   set_scrsave_time ();
 }
@@ -4465,6 +4501,7 @@ int Restore_params(void)
     r_magnitude=Drawing_Params[DRAWING_NUMBER].r_magnitude;
     rm_magnitude=Drawing_Params[DRAWING_NUMBER].rm_magnitude;
     s_magnitude=Drawing_Params[DRAWING_NUMBER].s_magnitude;
+    ss_magnitude=Drawing_Params[DRAWING_NUMBER].ss_magnitude;
     src_magnitude=Drawing_Params[DRAWING_NUMBER].src_magnitude;
     q_magnitude=Drawing_Params[DRAWING_NUMBER].q_magnitude;
     p_magnitude=Drawing_Params[DRAWING_NUMBER].p_magnitude;
@@ -4472,6 +4509,7 @@ int Restore_params(void)
     memmove(&static_colors, &Drawing_Params[DRAWING_NUMBER].static_colors, sizeof(STATIC_COLORS));
     memmove(&static_stress_colors, &Drawing_Params[DRAWING_NUMBER].static_stress_colors, sizeof(STATIC_STRESS_COLORS));
 
+    rescaling_menu_mode=Drawing_Params[DRAWING_NUMBER].rescaling_menu_mode;
     //zeroing
     for (i=0; i<32; i++) put_ctx_bitmap(i, NULL);
 
@@ -4629,12 +4667,15 @@ int Deposit_params(void)
     Drawing_Params[DRAWING_NUMBER].r_magnitude=r_magnitude;
     Drawing_Params[DRAWING_NUMBER].rm_magnitude=rm_magnitude;
     Drawing_Params[DRAWING_NUMBER].s_magnitude=s_magnitude;
+    Drawing_Params[DRAWING_NUMBER].ss_magnitude=ss_magnitude;
     Drawing_Params[DRAWING_NUMBER].src_magnitude=src_magnitude;
     Drawing_Params[DRAWING_NUMBER].q_magnitude=q_magnitude;
     Drawing_Params[DRAWING_NUMBER].p_magnitude=p_magnitude;
 
     memmove(&Drawing_Params[DRAWING_NUMBER].static_colors, &static_colors, sizeof(STATIC_COLORS));
     memmove(&Drawing_Params[DRAWING_NUMBER].static_stress_colors, &static_stress_colors, sizeof(STATIC_STRESS_COLORS));
+
+    Drawing_Params[DRAWING_NUMBER].rescaling_menu_mode=rescaling_menu_mode;
 
 	return 1;
 }
@@ -5412,19 +5453,19 @@ void Koniec(void)
 
    remove_int(Check_ConfigureNotify);
 
-   DoneBuffers1();
+   DoneBuffers1();   //rgb-map etc
    komunikat_str("@ 2");  // !!!!!!!!!
-   DoneBuffers2();
+   DoneBuffers2();   //admin
    komunikat_str("@ 4");
-   DoneBuffers4();
+   DoneBuffers4();   //gx gy
    komunikat_str("@ 5");
-   DoneBuffers5();
+   DoneBuffers5();   //graph formula
    komunikat_str("@ 6");
-   DoneBuffers6();
+   DoneBuffers6();   //usunstr(lp)
    komunikat_str("@ 7");
-   DoneBuffers7();
+   DoneBuffers7();  //s_string_list.ptrsz_list
    komunikat_str("@ 8");
-   DoneBuffers8();
+   DoneBuffers8();  //strarray
    komunikat_str("@ 9");
    Done_CUPS_Printers();
    komunikat_str("@ 10");
@@ -5477,7 +5518,11 @@ void Koniec(void)
    //strcat(byebye, ".");  //See you soon! Na razie! Hasta luego!!!!....
    //komunikat_str(byebye);
 
-   DoneBuffers3();
+   DoneBuffers3();   //PTRS__Text_Style
+
+   Destroy_Bitmaps(); ////
+
+   Destroy_Hatch_Patterns();
 
    exit_alf=TRUE;
 

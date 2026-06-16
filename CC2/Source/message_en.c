@@ -484,14 +484,15 @@ static char* komunikaty_kom[] =
 /*216*/u8"Enter the rescaling factor for the resulting support concentrated reaction forces: ",
 /*217*/u8"Enter the rescaling factor for the resulting support reaction moments: ",
 /*218*/u8"Enter section depth rescaling factor: ",
-/*219*/u8"Enter the rescaling factor for the resulting stresses (steel, timber): ",
+/*219*/u8"Enter the rescaling factor for the resulting axial stresses (steel, timber): ",
 /*220*/u8"Enter axial & shear stress precision: ",
 /*221*/u8"Enter the exaggerating factor of modal vibration modes deformation: ",
 /*222*/u8"Enter the rescaling factor for the resulting reinforcement percentage: ",
 /*223*/u8"Enter surface load rescaling factor: ",
-/*224*/u8"Enter the rescaling factor for the resulting stresses (RC): ",
+/*224*/u8"Enter the rescaling factor for the resulting axial stresses (RC): ",
 /*225*/u8"Enter the rescaling factor for the resulting support distributed reaction forces: ",
 /*226*/u8"Enter reactions precision: ",
+/*227*/u8"Enter the rescaling factor for the resulting shear stresses: ",
 "",
 "",
 };
@@ -671,6 +672,7 @@ static char* komunikaty0[] =
 /*170*/u8"Place the section line at the desired element coordinates. Click to save the values to the clipboard",
 /*171*/u8"Indicate the plate diagram for static analysis (FEM)",
 /*172*/u8"Indicate the shield diagram for static analysis (FEM)",
+/*173*/u8"Indicate the grid diagram for static/dynamic analysis",
 };
 
 static char* messages_str[] =
@@ -940,9 +942,26 @@ static char confirm[] = u8"Confirm";
 #define _CANNOT_OPEN_ u8"Unable to open "
 #define _CANNOT_READ_ u8"Unable to read "
 #define _DEFAULT_TAKEN_ u8"Default wood parameters were adopted"
+
+#define _in_ u8"in "
+#define _mm_ u8"mm"
+#define _inch_ u8"inch"
+
+#define _default_cover_mm_ u8", default c=35) "
+#define _default_cover_in_ u8", default c=1.5) "
+
+#define _R_SECTION_ u8"Enter h;b;c (height; width; axial cover"
+#define _I_SECTION_ u8"Enter h;b;w;t;c (height; width; web thickness; flange thickness; axial cover"
+#define _T_SECTION_ u8"Enter h;b;w;t;c (height; width; web thickness; flange thickness; axial cover"
+#define _CT_SECTION_ u8"Enter d;t;c (outer diameter; wall thickness; axial cover"
+#define _ST_SECTION_ u8"Enter b;t;c (width=height; wall thickness; axial cover"
+#define _RT_SECTION_ u8"Enter h;b;t;c (height; width; wall thickness; axial cover"
+
 #endif
 
 #ifdef __O_STATIC__
+
+#define STATIC_ANALYSIS u8"Static"
 
 #define _SELECT_STATE_ "Limit state (combination)"
 #define _SELECT_STATE_C_ L'L'
@@ -972,13 +991,18 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _unknown_standard_ u8"Unknown standard"
 #define _element_graph_data_failed_ u8"It was unabled to create resulting forces data block for element"
 #define _cannot_create_folder_ u8"Cannot create file directory"
+#define _vector_of_member_is_isometric_ u8"The vector of the member of the static system belongs to the isometric projection"
+#define _vector_of_load_is_isometric_ u8"The vector of the load belongs to the isometric projection."
 
 #define _FRAME3DD_ u8"%FRAME:"
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
-#define _FRAME3DD_ES u8"%MARCO:"
+#define _FRAME3DD_ES u8"%PÓRTICO:"
 
+#define _neither_ u8"either"
+#define _or_ u8"or"
 #define _FRAME_ID_NOT_FOUND_ u8"'%FRAME: ID' not found"
+#define _NOT_DEFINED_ u8"is not specified"
 
 #define _Yes_ "Yes"
 #define _No_ "No"
@@ -1218,6 +1242,340 @@ char *frame3dd[]={
     /*206*/ u8"error in opening an output data file saving a symmetric matrix of 'doubles'",
     /*207*/ u8"equilibrium test error",
     /*208*/ u8"error opening error log file .err",
+    /*209*/ u8"",
+    /*210*/ u8"",
+    /*211*/ u8"RMS (Root-Mean-Square) relative equilibrium error: %e",
+    /*212*/ u8"The Stiffness Matrix is not positive-definite",
+    /*213*/ u8"Check that all six degrees of freedom are restrained",
+    /*214*/ u8"If geometric stiffness is included, reduce the loads",
+    };
+
+#define _ERROR_FREE_COMPLETION_ u8"error-free completion"
+
+#endif
+
+#ifdef __O_GRID__
+
+#define STATIC_ANALYSIS u8"Static"
+
+static char* static_param[] =
+{
+    "axial force desire footprint",
+    "shear force desire footprint",
+    "moment desire footprint",
+    "deflection desire footprint",
+    "reaction force desire footprint",
+    "reaction moment desire footprint",
+    "axial stress desire footprint",
+    "shear stress desire footprint",
+    "stress rc desire footprint",
+    "vibration mode desire footprint",
+    "reinforcement ratio footprint",
+    "plate shear desire footprint",
+
+    "axial force reference",
+    "shear force reference",
+    "moment reference",
+    "deflection reference",
+    "reaction force reference",
+    "reaction moment reference",
+    "axial stress reference",
+    "shear stress reference",
+    "stress rc reference",
+    "vibration mode reference",
+    "reinforcement ratio reference",
+    "plate shear reference"
+};
+
+static int no_static_param = sizeof(static_param) / sizeof(static_param[0]);
+
+#define _SELECT_STATE_ "Limit state (combination)"
+#define _SELECT_STATE_C_ L'L'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"Ultimate limit state (ULS)",'U',0,NULL},
+	{u8"Serviceability limit state (SLS)",'S',0,NULL},
+    {u8"serviceability limit state (Quasi-permanent)",'Q',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
+#define _PROCEED_GRID_ u8"Proceed static analysis of the specified grid?"
+
+#define _incorrectly_defined_ u8"incorrectly defined"
+#define _property_not_defined_ u8"property not defined or defined incorrectly"
+#define _reaction_not_associated_ u8"reaction not associated with any known node"
+#define _reaction_not_enough_in_Y_ u8"Structure insufficiently supported in Y axis. Add missing support."
+#define _reaction_not_enough_in_X_ u8"Structure insufficiently supported in X axis. Add missing support."
+#define _reaction_not_enough_in_X_Y_ u8"Structure insufficiently supported in X and Y axes. Add missing supports."
+#define _node_size_not_associated_ u8"node size not associated with any known node"
+#define _force_not_associated_ u8"not associated with any known node"
+#define _load_not_associated_ u8"not associated with any known element"
+#define _thermal_load_inside_element_ u8"not on the entire element with nodes coordinates:"
+#define _unknown_standard_ u8"Unknown standard"
+#define _element_graph_data_failed_ u8"It was unabled to create resulting forces data block for element"
+#define _cannot_create_folder_ u8"Cannot create file directory"
+#define _soil_property_not_defined_ u8"Soil stiffness (subgrade module) not defined in property of Winkler beam"
+#define _vector_of_member_not_isometric_ u8"The vector of the member of the static system does not belong to the isometric projection"
+#define _vector_of_load_not_isometric_ u8"The vector of the load does not belong to the isometric projection."
+
+#define _GRID_ u8"%GRID:"
+#define _GRID_PL u8"%RUSZT:"
+#define _GRID_UA u8"%РОСТВЕРК:"
+#define _GRID_ES u8"%EMPARRILLADO:"
+
+#define _neither_ u8"either"
+#define _or_ u8"or"
+#define _GRID_ID_NOT_FOUND_ u8"'%GRID: ID' was not found"
+#define _NOT_DEFINED_ u8"is not specified"
+
+#define _Yes_ "Yes"
+#define _No_ "No"
+#define _YES_NO_ESC_ u8"YNyn\033"
+#define _YES_ 'Y'
+#define _yes_ 'y'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define __FRAME3DD__ "Frame3dd"
+
+static char confirm[] = u8"Confirm";
+#define _CANNOT_CREATE_DEFORMATION_BLOCK_ u8"Unable to create deform shape block"
+#define _CANNOT_CREATE_FORCE_BLOCK_ u8"Unable to create force graph block"
+#define _CANNOT_CREATE_MOMENT_BLOCK_ u8"Unable to create moment graph block"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"Unable to create stress graph block"
+#define _CANNOT_CREATE_SHEAR_STRESS_BLOCK_ u8"Unable to create shear stress graph block"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
+#define _CANNOT_CREATE_RESULTS_PDF_FILE_ u8"Unable to create results PDF file"
+#define _CANNOT_OPEN_RESULTS_PDF_FILE_ u8"Unable to open results PDF file"
+#define _INSTALL_PDF_VIEWER_ u8"Install \"Okular\" or \"Evince\" PDF viewer, please"
+
+#define _CANNOT_OPEN_DEFORMATION_DATA_FILE_ u8"Unable to open deformation data file"
+#define _CANNOT_OPEN_RESULTS_DATA_FILE_ u8"Unable to open results data file"
+#define _CANNOT_OPEN_DYNAMIC_RESULTS_DATA_FILE_ u8"Unable to open dynamic results data file"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"Unable to create nodes and elements block"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Unable to create reactions block"
+#define _CANNOT_CREATE_NEW_LAYER_ u8"Unable to create new layer. To many layers already created"
+#define _CANNOT_FIND_LAYER_ u8"Unable to find desired layer"
+
+static char *frame3dd[]={
+    /*0*/ u8"error-free completion",
+    /*1*/ u8"unknown error",
+    /*2*/ u8"error with the command line options (see Section 11, above)",
+    /*3*/ u8"error with the command line option for shear deformation -s",
+    /*4*/ u8"error with the command line option for geometric stiffness -g",
+    /*5*/ u8"error with the command line option for lumped mass -l",
+    /*6*/ u8"error with the command line option for modal analysis method -m",
+    /*7*/ u8"error with the command line option for modal analysis tolerance -t",
+    /*8*/ u8"error with the command line option for modal analysis shift -f",
+    /*9*/ u8"error with the command line option for pan rate -p",
+    /*10*/ u8"error with the command line option for matrix condensation -r",
+    /*11*/ u8"error in opening the Input Data file",
+    /*12*/ u8"error in opening the temporary cleaned input data file for writing",
+    /*13*/ u8"error in opening the temporary cleaned input data file for reading",
+    /*14*/ u8"error in opening the Output Data file",
+    /*15*/ u8" error in creating the path for temporary output data files",
+    /*16*/ u8" error in creating the temporary output data file path name",
+    /*17*/ u8"error in opening the .CSV (spread-sheet) output data file",
+    /*18*/ u8"error in opening the .M (matlab) output data file",
+    /*19*/ u8"error in opening the interior force output data file for writing",
+    /*20*/ u8"error in opening the interior force output data file for reading",
+    /*21*/ u8"error in opening the undeformed mesh ouput data file",
+    /*22*/ u8"error in opening the deformed mesh ouput data file",
+    /*23*/ u8"error in opening the plotting script file for writing first static load case plots",
+    /*24*/ u8"error in opening the plotting script file for appending second and higher static load case results",
+    /*25*/ u8"error in opening the plotting script file for appending modal plots",
+    /*26*/ u8"error in opening the plotting script file for appending modal animations",
+    /*27*/ u8"error in opening the modal mesh data file",
+    /*28*/ u8"error in opening the modal mesh animation data file",
+    /*29*/ u8"error in opening the mass data debugging file , MassData.txt",
+    /*30*/ u8"cubic curvefit system matrix for element deformation is not positive definite",
+    /*31*/ u8"non-positive definite structural static stiffness matrix",
+    /*32*/ u8"error in eigen-problem analysis. Try again with reduced or zero number of dynamic modes",
+    /*33*/ u8"error-free completion",
+    /*34*/ u8"error-free completion",
+    /*35*/ u8"error-free completion",
+    /*36*/ u8"error-free completion",
+    /*37*/ u8"error-free completion",
+    /*38*/ u8"error-free completion",
+    /*39*/ u8"error-free completion",
+    /*40*/ u8"error in input data file",
+    /*41*/ u8"input data formatting error in the node data, node number out of range",
+    /*42*/ u8"input data formatting error in node or element data, unconnected node",
+    /*43*/ u8"error-free completion",
+    /*44*/ u8"error-free completion",
+    /*45*/ u8"error-free completion",
+    /*46*/ u8"error-free completion",
+    /*47*/ u8"error-free completion",
+    /*48*/ u8"error-free completion",
+    /*49*/ u8"error-free completion",
+    /*50*/ u8"error-free completion",
+    /*51*/ u8"input data formatting error in the frame element data, frame element number out of range",
+    /*52*/ u8"input data formatting error in the frame element data, node number out of range",
+    /*53*/ u8"input data formatting error in the frame element data, negative section value",
+    /*54*/ u8"input data formatting error in the frame element data, cross section area is 0 (zero)",
+    /*55*/ u8"input data formatting error in the frame element data, shear area and shear modulus are 0 (zero)",
+    /*56*/ u8"input data formatting error in the frame element data, torsional moment of inertia is 0 (zero)",
+    /*57*/ u8"input data formatting error in the frame element data, bending moment of inertia is 0 (zero)",
+    /*58*/ u8"input data formatting error in the frame element data, modulus value is non-positive",
+    /*59*/ u8"input data formatting error in the frame element data, mass density value is non-positive",
+    /*60*/ u8"nput data formatting error in the frame element data, frame element starts and stops at the same node",
+    /*61*/ u8"input data formatting error in the frame element data, frame element has length of zero",
+    /*62*/ u8"input data formatting error in the frame element data, torsional section modulus is 0 (zero)",
+    /*63*/ u8"input data formatting error in the frame element data, elastic section modulus is 0 (zero)",
+    /*64*/ u8"error-free completion",
+    /*65*/ u8"error-free completion",
+    /*66*/ u8"error-free completion",
+    /*67*/ u8"error-free completion",
+    /*68*/ u8"error-free completion",
+    /*69*/ u8"error-free completion",
+    /*70*/ u8"error-free completion",
+    /*71*/ u8"input data formatting error with the 'shear' variable specifying shear deformation",
+    /*72*/ u8"input data formatting error with the 'geom' variable specifying geometric stiffness",
+    /*73*/ u8"input data formatting error with the 'exagg_static' variable specifying static mesh exageration",
+    /*74*/ u8"input data formatting error with the 'dx' variable specifying the length of the internal force x-axis increment",
+    /*75*/ u8"error-free completion",
+    /*76*/ u8"error-free completion",
+    /*77*/ u8"error-free completion",
+    /*78*/ u8"error-free completion",
+    /*79*/ u8"error-free completion",
+    /*80*/ u8"input data formatting error in reaction data, number of nodes with reactions out of range",
+    /*81*/ u8"input data formatting error in reaction data, node number out of range",
+    /*82*/ u8"input data formatting error in reaction data, reaction data is not 1 (one) or 0 (zero)",
+    /*83*/ u8"input data formatting error in reaction data, specified node has no reactions",
+    /*84*/ u8"input data formatting error in reaction data, under-restrained structure",
+    /*85*/ u8"input data formatting error in reaction data, fully restrained structure",
+    /*86*/ u8"input data formatting error in extra node inertia data, node number out of range",
+    /*87*/ u8"input data formatting error in extra beam mass data, frame element number out of range",
+    /*88*/ u8"input data formatting error in mass data, frame element with non-positive mass",
+    /*89*/ u8"error-free completion",
+    /*90*/ u8"input data formatting error in matrix condensation data, number of nodes with condensed degrees of freedom are less than the total number of nodes",
+    /*91*/ u8"input data formatting error in matrix condensation data, node number out of range",
+    /*92*/ u8"input data formatting error in matrix condensation data, mode number out of range",
+    /*93*/ u8"error-free completion",
+    /*94*/ u8"input data formatting error in matrix condensation data, number of condensed degrees of freedom greater than number of modes",
+    /*95*/ u8"error-free completion",
+    /*96*/ u8"error-free completion",
+    /*97*/ u8"error-free completion",
+    /*98*/ u8"error-free completion",
+    /*99*/ u8"error-free completion",
+    /*100*/ u8"input data formatting error in load data",
+    /*101*/ u8"number of static load cases must be greater than zero",
+    /*102*/ u8"number of static load cases must be less than 112",   //64 30
+    /*103*/ u8"error-free completion",
+    /*104*/ u8"error-free completion",
+    /*105*/ u8"error-free completion",
+    /*106*/ u8"error-free completion",
+    /*107*/ u8"error-free completion",
+    /*108*/ u8"error-free completion",
+    /*109*/ u8"error-free completion",
+    /*110*/ u8"error-free completion",
+    /*111*/ u8"error-free completion",
+    /*112*/ u8"error-free completion",
+    /*113*/ u8"error-free completion",
+    /*114*/ u8"error-free completion",
+    /*115*/ u8"error-free completion",
+    /*116*/ u8"error-free completion",
+    /*117*/ u8"error-free completion",
+    /*118*/ u8"error-free completion",
+    /*119*/ u8"error-free completion",
+    /*120*/ u8"error-free completion",
+    /*121*/ u8"input data formatting error in nodal load data, node number out of range",
+    /*122*/ u8"error-free completion",
+    /*123*/ u8"error-free completion",
+    /*124*/ u8"error-free completion",
+    /*125*/ u8"error-free completion",
+    /*126*/ u8"error-free completion",
+    /*127*/ u8"error-free completion",
+    /*128*/ u8"error-free completion",
+    /*129*/ u8"error-free completion",
+    /*130*/ u8"error-free completion",
+    /*131*/ u8"input data formatting error in uniformly-distributed load data, number of uniform loads is greater than the number of frame elements",
+    /*132*/ u8"input data formatting error in uniformly-distributed load data, frame element number out of range",
+    /*133*/ u8"error-free completion",
+    /*134*/ u8"error-free completion",
+    /*135*/ u8"error-free completion",
+    /*136*/ u8"error-free completion",
+    /*137*/ u8"error-free completion",
+    /*138*/ u8"error-free completion",
+    /*139*/ u8"error-free completion",
+    /*140*/ u8"input data formatting error in trapezoidally-distributed load data, too many trapezoidally distributed loads",
+    /*141*/ u8"input data formatting error in trapezoidally-distributed load data, frame element number out of range",
+    /*142*/ u8"input data formatting error in trapezoidally-distributed load data, x1 < 0",
+    /*143*/ u8"input data formatting error in trapezoidally-distributed load data, x1 > x2",
+    /*144*/ u8"input data formatting error in trapezoidally-distributed load data, x2 > L",
+    /*145*/ u8"error-free completion",
+    /*146*/ u8"error-free completion",
+    /*147*/ u8"error-free completion",
+    /*148*/ u8"error-free completion",
+    /*149*/ u8"error-free completion",
+    /*150*/ u8"input data formatting error in concentrated internal load data, number concentrated loads greater than number of frame elements",
+    /*151*/ u8"input data formatting error in internal concentrated load data, frame element number out of range",
+    /*152*/ u8"input data formatting error in internal concentrated load data, x-location less than 0 or grater than L",
+    /*153*/ u8"error-free completion",
+    /*154*/ u8"error-free completion",
+    /*155*/ u8"error-free completion",
+    /*156*/ u8"error-free completion",
+    /*157*/ u8"error-free completion",
+    /*158*/ u8"error-free completion",
+    /*159*/ u8"error-free completion",
+    /*160*/ u8"input data formatting error in thermal load data, number thermal loads greater than number of frame elements",
+    /*161*/ u8"input data formatting error in thermal load data, frame element number out of range",
+    /*162*/ u8"input data formatting error in thermal load data, frame element number out of range",
+    /*163*/ u8"error-free completion",
+    /*164*/ u8"error-free completion",
+    /*165*/ u8"error-free completion",
+    /*166*/ u8"error-free completion",
+    /*167*/ u8"error-free completion",
+    /*168*/ u8"error-free completion",
+    /*169*/ u8"error-free completion",
+    /*170*/ u8"error-free completion",
+    /*171*/ u8"input data formatting error in prescribed displacement data, prescribed displacements may be applied only at coordinates with reactions",
+    /*172*/ u8"error-free completion",
+    /*173*/ u8"error-free completion",
+    /*174*/ u8"error-free completion",
+    /*175*/ u8"error-free completion",
+    /*176*/ u8"error-free completion",
+    /*177*/ u8"error-free completion",
+    /*178*/ u8"error-free completion",
+    /*179*/ u8"error-free completion",
+    /*180*/ u8"error-free completion",
+    /*181*/ u8"Warning: elastic instability (elastic + geometric stiffness matrix not positive definite)",
+    /*182*/ u8"Warning: large strain (the average axial strain in one or more elements is greater than 0.001)",
+    /*183*/ u8"Warning: large strain and elastic instability",
+    /*184*/ u8"error-free completion",
+    /*185*/ u8"error-free completion",
+    /*186*/ u8"error-free completion",
+    /*187*/ u8"error-free completion",
+    /*188*/ u8"error-free completion",
+    /*189*/ u8"error-free completion",
+    /*190*/ u8"error-free completion",
+    /*191*/ u8"error-free completion",
+    /*192*/ u8"error-free completion",
+    /*193*/ u8"error-free completion",
+    /*194*/ u8"error-free completion",
+    /*195*/ u8"error-free completion",
+    /*196*/ u8"error-free completion",
+    /*197*/ u8"error-free completion",
+    /*198*/ u8"error-free completion",
+    /*199*/ u8"error-free completion",
+    /*200*/ u8"memory allocation error",
+    /*201*/ u8"error in opening an output data file saving a vector of 'floats'",
+    /*202*/ u8"error in opening an output data file saving a vector of 'ints'",
+    /*203*/ u8"error in opening an output data file saving a matrix of 'floats'",
+    /*204*/ u8"error in opening an output data file saving a matrix of 'doubles'",
+    /*205*/ u8"error in opening an output data file saving a symmetric matrix of 'floats'",
+    /*206*/ u8"error in opening an output data file saving a symmetric matrix of 'doubles'",
+    /*207*/ u8"equilibrium test error",
+    /*208*/ u8"error opening error log file .err",
+    /*209*/ u8"",
+    /*210*/ u8"",
+    /*211*/ u8"RMS (Root-Mean-Square) relative equilibrium error: %e",
+    /*212*/ u8"The Stiffness Matrix is not positive-definite",
+    /*213*/ u8"Check that all six degrees of freedom are restrained",
+    /*214*/ u8"If geometric stiffness is included, reduce the loads",
     };
 
 #define _ERROR_FREE_COMPLETION_ u8"error-free completion"
@@ -1225,6 +1583,16 @@ char *frame3dd[]={
 #endif
 
 #ifdef __O_PLATE__
+
+#define STATIC_ANALYSIS u8"Static"
+
+static char* static_plate_param[] =
+{
+    "plate shear desire footprint",
+    "plate shear reference"
+};
+
+static int no_static_plate_param = sizeof(static_plate_param) / sizeof(static_plate_param[0]);
 
 #define _PLATE_ u8"%PLATE:"
 #define _PLATE_PL u8"%PŁYTA:"
@@ -1235,6 +1603,8 @@ char *frame3dd[]={
 
 #define _cannot_create_folder_ u8"Cannot create file directory"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
+#define _vector_of_member_is_isometric_ u8"The vector of the member of the static system belongs to the isometric projection"
+#define _vector_of_load_is_isometric_ u8"The vector of the load belongs to the isometric projection."
 static char confirm[] = u8"Confirm";
 
 #define _gmsh_error_ u8"gmsh error"
@@ -1284,23 +1654,35 @@ static char confirm[] = u8"Confirm";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _CANNOT_PROCEED_IN_32BIT_ u8"The plate looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
-#define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
+#define _CANNOT_PROCEED_IN_32BIT_ u8"The plate looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system."
+#define _BUY_NEW_COMPUTER_  u8"Buy a new computer."
 #define _unknown_standard_ u8"Unknown standard"
 
 #endif
 
 #ifdef __O_SHIELD__
 
+#define STATIC_ANALYSIS u8"Static"
+
+static char* static_shield_param[] =
+{
+    "plate shear desire footprint",
+    "plate shear reference"
+};
+
+static int no_static_shield_param = sizeof(static_shield_param) / sizeof(static_shield_param[0]);
+
 #define _SHIELD_ u8"%SHIELD:"
 #define _SHIELD_PL u8"%TARCZA:"
-#define _SHIELD_UA u8"%ЩИТ:"
-#define _SHIELD_ES u8"%ESCUDO:"
+#define _SHIELD_UA u8"%СТІНА-БАЛКА:"
+#define _SHIELD_ES u8"%DIAFRAGMA:"
 
 #define _property_not_defined_ u8"property not defined or defined incorrectly"
 
 #define _cannot_create_folder_ u8"Cannot create file directory"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"Unable to open results file"
+#define _vector_of_member_is_isometric_ u8"The vector of the member of the static system belongs to the isometric projection"
+#define _vector_of_load_is_isometric_ u8"The vector of the load belongs to the isometric projection."
 static char confirm[] = u8"Confirm";
 
 #define _gmsh_error_ u8"gmsh error"
@@ -1350,7 +1732,7 @@ static char confirm[] = u8"Confirm";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _CANNOT_PROCEED_IN_32BIT_ u8"The shield looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system"
+#define _CANNOT_PROCEED_IN_32BIT_ u8"The shield looks OK, but the Elmer FEM compute module doesn't work in a 32-bit system."
 #define _BUY_NEW_COMPUTER_  u8"Buy a new computer"
 #define _unknown_standard_ u8"Unknown standard"
 

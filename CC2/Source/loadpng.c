@@ -24,6 +24,8 @@
 #include <allegro/internal/aintern.h>
 #include "loadpng.h"
 
+#include "leak_detector_c.h"
+
 double _png_screen_gamma = -1.0;
 int _png_compression_level = Z_BEST_COMPRESSION;
 

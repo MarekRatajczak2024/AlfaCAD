@@ -74,6 +74,7 @@
 #include "o_static.h"
 #include "o_plate.h"
 #include "o_shield.h"
+#include "o_grid.h"
 #include "o_animate_dynamics.h"
 
 #include "icon_yes_d.h"
@@ -161,6 +162,8 @@ extern void CURON(void);
 extern void  QInitialize(int argc, char *argv[]);
 
 extern int slider(void);
+
+extern void StartPrinterWarmer(void);
 
 char default_path_TTF[MAXPATH]="";
 char default_path_OTF[MAXPATH]="";
@@ -329,14 +332,16 @@ extern void set_fv(float fv_);
 extern void reini_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
 extern void reini_edit_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
 
-extern void SteelUS(void);
 extern void TimberUS(void);
 extern void TimberCA(void);
+extern void ConcreteUS(void);
 extern void SteelEU(void);
+extern void ConcreteEU(void);
 extern void SteelUK(void);
 extern void SteelCA(void);
 extern void SteelAU(void);
 extern void SteelCN(void);
+extern void SteelUS(void);
 
 #ifndef LINUX
 extern void init_file_dropped_fill_buf(void);
@@ -353,6 +358,7 @@ extern void Blok(void);
 extern void Change_Properties(void);
 extern void Spline_Amendment(void);
 extern void Change_Vectors(void);
+extern void Information_about (void);
 
 extern void set_scrsave_time (void);
 extern int	getdisk(void);
@@ -2324,6 +2330,28 @@ extern BITMAP *icon_rigid_springs_nosprings_d;
 extern char *icon_vector_member_style_d_p;
 extern char *icon_rigid_springs_nosprings_d_p;
 
+extern BITMAP *icon_stress_steel_wood;
+extern BITMAP *icon_stress_RC;
+extern BITMAP *icon_shear_stress_steel_wood;
+extern char *icon_stress_steel_wood_p;
+extern char *icon_stress_RC_p;
+extern char *icon_shear_stress_steel_wood_p;
+extern BITMAP *icon_concrete;
+extern char *icon_concrete_p;
+
+extern BITMAP *icon_R_section;
+extern BITMAP *icon_I_section;
+extern BITMAP *icon_T_section;
+extern BITMAP *icon_CT_section;
+extern BITMAP *icon_ST_section;
+extern BITMAP *icon_RT_section;
+extern char *icon_R_section_p;
+extern char *icon_I_section_p;
+extern char *icon_T_section_p;
+extern char *icon_CT_section_p;
+extern char *icon_ST_section_p;
+extern char *icon_RT_section_p;
+
 extern BITMAP *icon_hourglass_mem;
 extern BITMAP *icon_hourglassx1_5_mem;
 extern BITMAP *icon_hourglassx2_mem;
@@ -2389,6 +2417,8 @@ extern BITMAP *icon_slab_fem;
 extern char *icon_slab_fem_p;
 extern BITMAP *icon_shield_fem;
 extern char *icon_shield_fem_p;
+extern BITMAP *icon_beam_grid;
+extern char *icon_beam_grid_p;
 extern BITMAP *icon_slab_edge_rolled;
 extern char *icon_slab_edge_rolled_p;
 extern BITMAP *icon_slab_edge_hinged;
@@ -2418,6 +2448,13 @@ extern BITMAP *icon_IMP;
 extern char *icon_IMP_p;
 extern BITMAP *icon_factory_reset;
 extern char *icon_factory_reset_p;
+
+extern BITMAP *icon_menu_auto_choice;
+extern char *icon_menu_auto_choice_p;
+extern BITMAP *icon_menu_choice;
+extern char *icon_menu_choice_p;
+extern BITMAP *icon_autoplay;
+extern char *icon_autoplay_p;
 
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
@@ -3302,6 +3339,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_slab_geo_black,"slab_geo_black",&icon_slab_geo_black_p },
         {&icon_slab_fem,"slab_fem",&icon_slab_fem_p },
         {&icon_shield_fem,"shield_fem",&icon_shield_fem_p },
+        {&icon_beam_grid,"beam_grid",&icon_beam_grid_p },
         {&icon_slab_edge_rolled,"slab_edge_rolled",&icon_slab_edge_rolled_p },
         {&icon_slab_edge_hinged,"slab_edge_hinged",&icon_slab_edge_hinged_p },
         {&icon_slab_edge_free,"slab_edge_free",&icon_slab_edge_free_p },
@@ -3313,7 +3351,9 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_SI,"SI",&icon_SI_p },
         {&icon_SI,"IMP",&icon_IMP_p },
         {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
-        {&icon_factory_reset,"factory_reset",&icon_factory_reset_p },
+        {&icon_menu_auto_choice,"menu_auto_choice",&icon_menu_auto_choice_p },
+        {&icon_menu_choice,"menu_choice",&icon_menu_choice_p },
+        {&icon_autoplay,"autoplay",&icon_autoplay_p },
         {&icon_solid_translucent,"solid_translucent",&icon_solid_translucent_p },
         {&icon_solid_gtranslucent,"solid_gtranslucent",&icon_solid_gtranslucent_p },
         {&icon_fixed_roller_x, "fixed_roller_x", &icon_fixed_roller_x_p },
@@ -3343,6 +3383,16 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_rotation_xy_rev, "rotation_xy_rev", &icon_rotation_xy_rev_p },
         {&icon_vector_member_style_d, "vector_member_style_d", &icon_vector_member_style_d_p },
         {&icon_rigid_springs_nosprings_d, "rigid_springs_nosprings_d", &icon_rigid_springs_nosprings_d_p },
+        {&icon_stress_steel_wood, "stress_steel_wood", &icon_stress_steel_wood_p },
+        {&icon_stress_RC, "stress_RC", &icon_stress_RC_p },
+        {&icon_shear_stress_steel_wood, "shear_stress_steel_wood", &icon_shear_stress_steel_wood_p },
+        {&icon_concrete, "concrete", &icon_concrete_p },
+        {&icon_R_section, "R_section", &icon_R_section_p },
+        {&icon_I_section, "I_section", &icon_I_section_p },
+        {&icon_T_section, "T_section", &icon_T_section_p },
+        {&icon_CT_section, "CT_section", &icon_CT_section_p },
+        {&icon_ST_section, "ST_section", &icon_ST_section_p },
+        {&icon_RT_section, "RT_section", &icon_RT_section_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -3414,7 +3464,7 @@ extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, Shield_analysis, SteelEU, SteelUK, nooop, SteelAU, SteelCN,SteelUS, nooop, SteelCA, TimberUS, TimberCA};
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Information_about, Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, Shield_analysis, Grid_analysis,SteelEU, ConcreteEU,SteelUK, nooop, SteelAU, SteelCN,SteelUS,ConcreteUS, SteelCA, TimberUS, TimberCA};
 
 //#define WOOD 28 //26   //the number of function for wood choice
 int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);
@@ -3443,6 +3493,14 @@ int setenv(const char *name, const char *value, int overwrite)
     return _putenv_s(name, value);
 }
 #endif
+
+// 1. Define the search function to accept the size
+int find_index(void (*target)(void), void (**array)(void), size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        if (array[i] == target) return (int)i;
+    }
+    return -1;
+}
 
 void Free_alft(void)
 {
@@ -4125,7 +4183,7 @@ void reset_font(void)
 	f_ini = fopen(font_file_name, "wt");
 
 	fprintf(f_ini, "%s\n", font_name);
-	fprintf(f_ini, "%ld,%ld,%ld,%ld,%ld\n", MP_SIZE, ED_INF_HEIGHT, BAR_G, HEIGHT, WIDTH);
+	fprintf(f_ini, "%d,%d,%d,%d,%d\n", MP_SIZE, ED_INF_HEIGHT, BAR_G, HEIGHT, WIDTH);
 	fclose(f_ini);
 	
 }
@@ -4242,7 +4300,7 @@ void draw_font_name_ttf(TEXT *t, char *t_text, BITMAP *bmp, int x0, int y0, int 
 	gk_rend_set_error_char(rend, 0);
 	gk_rend_set_undefined_char(rend, 0);
 
-	gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
+	gk_rend_set_size_subpixel(rend, (unsigned int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (unsigned int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
 	
 	if (t->italics) gk_rend_set_italic_angle_in_degrees(rend, 10.5);
 	if (t->bold) gk_rend_set_bold_strength(rend, TTF_bold_factor);
@@ -4260,10 +4318,10 @@ void draw_font_name_ttf(TEXT *t, char *t_text, BITMAP *bmp, int x0, int y0, int 
 	len_pxl = 0;
 	while (*ptr != '\0')
 	{
-		unicode = utf8_to_ucs2((uint8_t *)ptr, (uint8_t **)&ptr1);
+		unicode = utf8_to_ucs2((uint8_t *)ptr, (const uint8_t **)&ptr1);
 		len_pxl += gk_char_width(rend, unicode);
 		if (len_pxl > max_pxl) break;
-		i += ptr1 - ptr;
+		i += (int)(ptr1 - ptr);
 		ptr = ptr1;
 	}
 
@@ -4293,7 +4351,7 @@ void Get_Face_Character_yMax(TEXT *t, int *yMax)
 
 void Amend_Draw_TTF_text(TEXT *t, float wysokosc_p)
 {
-	gk_rend_set_size_subpixel(rend_ini, (int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
+	gk_rend_set_size_subpixel(rend_ini, (unsigned int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (unsigned int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
 }
 
 void Init_Draw_TTF_text(TEXT *t, double kat, float wysokosc_p, COLOR_ kolor)
@@ -4313,7 +4371,7 @@ void Init_Draw_TTF_text(TEXT *t, double kat, float wysokosc_p, COLOR_ kolor)
 	gk_rend_set_error_char(rend_ini, 0);
 	gk_rend_set_undefined_char(rend_ini, 0);
 
-	gk_rend_set_size_subpixel(rend_ini, (int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
+	gk_rend_set_size_subpixel(rend_ini, (unsigned int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0) + 0.5), (unsigned int)((wysokosc_p*TTF_height_factor*64.0) + 0.5));
 	
 	if (t->italics) gk_rend_set_italic_angle_in_degrees(rend_ini, 10.5);
 	if (t->bold) gk_rend_set_bold_strength(rend_ini, TTF_bold_factor);
@@ -4367,7 +4425,7 @@ void Draw_TTF_text(TEXT *t, char *t_text, BITMAP *bmp, int x0, int y0, double ka
 	gk_rend_set_error_char(rend, 0);
 	gk_rend_set_undefined_char(rend, 0);
 
-	gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0)+0.5), (int)((wysokosc_p*TTF_height_factor*64.0)+0.5));
+	gk_rend_set_size_subpixel(rend, (unsigned int)((wysokosc_p*t->width_factor*TTF_width_factor*64.0)+0.5), (unsigned int)((wysokosc_p*TTF_height_factor*64.0)+0.5));
 	
 	if (t->italics) gk_rend_set_italic_angle_in_degrees(rend, 10.5);
 	if (t->bold) gk_rend_set_bold_strength(rend, TTF_bold_factor);
@@ -4463,7 +4521,7 @@ int TTF_text_len(char *text)
 
 	if (!rend_UI) return 0;
 
-	gk_rend_set_size_pixels(rend_UI, WIDTH*ttf_h, HEIGHT*ttf_v); //
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH*ttf_h), (unsigned int)(HEIGHT*ttf_v)); //
 	gk_rend_set_bold_strength(rend_UI, 50);
 	gk_text_size_utf8(rend_UI, text, &text_h, &text_v);
 	return text_h;
@@ -4473,7 +4531,7 @@ int TTF_char_len(unsigned int unicode)
 {
 	if (!rend_UI) return 0;
 
-	gk_rend_set_size_pixels(rend_UI, WIDTH*ttf_h, HEIGHT*ttf_v); //
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH*ttf_h), (unsigned int)(HEIGHT*ttf_v)); //
 	gk_rend_set_bold_strength(rend_UI, 50);
 	return gk_char_width(rend_UI, unicode);
 }
@@ -4500,7 +4558,7 @@ int TTF_text_len_pos(char *text, int pos)
 	strncpy(buf, text, (MaxTextLen*2));
 	buf[pos]='\0';
 
-	gk_rend_set_size_pixels(rend_UI, WIDTH*ttf_h, HEIGHT*ttf_v); //
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH*ttf_h), (unsigned int)(HEIGHT*ttf_v)); //
 	gk_rend_set_bold_strength(rend_UI, 50);
 	gk_text_size_utf8(rend_UI, buf, &text_h, &text_v);
 	return text_h;
@@ -4532,7 +4590,7 @@ BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos)
 
     strncpy(buf, text, (MaxTextLen*2));
 
-    gk_rend_set_size_pixels(rend_UI, WIDTH*ttf_h, HEIGHT*ttf_v); //
+    gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH*ttf_h), (unsigned int)(HEIGHT*ttf_v)); //
     gk_rend_set_bold_strength(rend_UI, 50);
     gk_text_size_utf8(rend_UI, buf, &text_h, &text_v);
 
@@ -4560,9 +4618,9 @@ BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos)
     return TRUE;
 }
 
-int my_text_length(FONT *font, const char *text)
+int my_text_length(FONT *font_, const char *text)
 {
-	return TTF_text_len(text);
+	return TTF_text_len((char*)text);
 }
 
 void TTF_text_UI_(BITMAP *ui_screen, const char *text, int x, int y, int *text_h, int *text_v)
@@ -4577,7 +4635,7 @@ void TTF_text_UI_(BITMAP *ui_screen, const char *text, int x, int y, int *text_h
 
 	if (!face_UI) return;
 	if (!rend_UI) return;
-	gk_rend_set_size_pixels(rend_UI, WIDTH*ttf_h, HEIGHT*ttf_v);
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH*ttf_h), (unsigned int)(HEIGHT*ttf_v));
 	
 	getcolor_RGB_char(&red, &green, &blue, getcolor());
 
@@ -4609,7 +4667,7 @@ void TTF_text_UI_W_H_(BITMAP *ui_screen, const char* text, int x, int y, int* te
 
 	if (!face_UI) return;
 	if (!rend_UI) return;
-	gk_rend_set_size_pixels(rend_UI, WIDTH__ * ttf_h, HEIGHT__ * ttf_v);
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(WIDTH__ * ttf_h), (unsigned int)(HEIGHT__ * ttf_v));
 
 	getcolor_RGB_char(&red, &green, &blue, getcolor());
 
@@ -4681,37 +4739,35 @@ void Free_winvar(void)
 	if (winvar!=NULL) free(winvar);
 }
 
+// CLEAR DESKTOP USER INTERFACE FONT
 void Free_Desktop_font()
 {
-	int gk;
-	if (face_UI != NULL)
-	{
-		gk_unload_face(face_UI);
-		gk_done_renderer(rend_UI);
-		
-		rend_UI = NULL;
-		face_UI = NULL;
-	}
+    if (face_UI != NULL)
+    {
+        gk_unload_face(face_UI);
+        gk_done_renderer(rend_UI);
+        rend_UI = NULL;
+        face_UI = NULL;
+    }
 }
 
+// CLEAR LAST DRAWING FONT
 void Free_ini_font()
 {
-	int gk;
-	
 		if (rend_ini != NULL)
 		   gk_done_renderer(rend_ini);
 		
 		rend_ini = NULL;
 }
 
-void Save_Desktop_font(char *font_name)
+void Save_Desktop_font(char *font_name_)
 {
 	FILE *f_ini;
 	//saving in file font.ini
 	FONTNUMBER = 0;
 
 	f_ini = fopen(font_file_name, "wt");
-	fprintf(f_ini, "%s\n", font_name);
+	fprintf(f_ini, "%s\n", font_name_);
 	fprintf(f_ini, "%d,%d,%d,%d,%d\n", MP_SIZE, ED_INF_HEIGHT, BAR_G, HEIGHT, WIDTH);
 	
 	fclose(f_ini);
@@ -4721,7 +4777,7 @@ void set_ttf_digits27_len(void)
 {
 	ttf_digits27_len = TTF_text_len("999.999999999; 999.999999999");
 	ttf_digits13_len = TTF_text_len("999.999999999");
-	ttf_width_w = (float)(TTF_text_len("WWWWWWWWWWWWWWWWWWWW")) / 20.0;
+	ttf_width_w = (float)(TTF_text_len("WWWWWWWWWWWWWWWWWWWW") / 20.0);
     PL266 = 50 * TTF_text_len("0");
     PL366 = 75 * TTF_text_len("0");
 }
@@ -4731,7 +4787,7 @@ void Initialize_alft(void)
 	alft = (char*)malloc(roz_in);
 }
 
-void Initialize_Desktop_font(char *font_name)
+void Initialize_Desktop_font(char *font_name_)
 {
 	size_t requiredSize;
 	int color;
@@ -4777,7 +4833,7 @@ void Initialize_Desktop_font(char *font_name)
 
 	gk_set_font_path(winfont);
 
-	face_UI = gk_load_face_from_file(font_name, 0); 
+	face_UI = gk_load_face_from_file(font_name_, 0);
 	if (!face_UI) {
         printf("%s\n", "Cannot find last desktop font file. Setting up default one...");
         face_UI = gk_load_face_from_file("DejaVuSans.ttf", 0);
@@ -4804,17 +4860,17 @@ void Initialize_Desktop_font(char *font_name)
 	gk_rend_set_error_char(rend_UI, 0);
 	gk_rend_set_undefined_char(rend_UI, 0);
 
-	flags = fnsplit(font_name, drive, dir, file, ext);
+	flags = fnsplit(font_name_, drive, dir, file, ext);
 	strcat(file, ext);
 	strcpy(Czcionka_Pulpitu, file);
-	strcpy(Desktop_Font_File, font_name);
+	strcpy(Desktop_Font_File, font_name_);
 
 	find_font_face(Desktop_Font_File);
 
 	set_ttf_digits27_len();
 }
 
-void Set_Desktop_font(char *font_name)
+void Set_Desktop_font(char *font_name_)
 {
 	int color;
 	COLOR_ kolor;
@@ -4824,7 +4880,7 @@ void Set_Desktop_font(char *font_name)
 	gk_unload_face(face_UI);
 	gk_done_renderer(rend_UI);
 
-	face_UI = gk_load_face_from_file(font_name, 0);  //"DejaVuSans.ttf"
+	face_UI = gk_load_face_from_file(font_name_, 0);  //"DejaVuSans.ttf"
 	
 	if (!face_UI) return;
 
@@ -4833,7 +4889,7 @@ void Set_Desktop_font(char *font_name)
 	rend_UI = gk_create_renderer(face_UI, keep_UI);
 	if (!rend_UI) return;
 
-	gk_rend_set_size_pixels(rend_UI, HEIGHT*0.85, HEIGHT*0.9);
+	gk_rend_set_size_pixels(rend_UI, (unsigned int)(HEIGHT*0.85), (unsigned int)(HEIGHT*0.9));
 	getcolor_RGB_char(&red, &green, &blue, getcolor());
 	gk_rend_set_text_color(rend_UI, red, green, blue);
 	
@@ -5068,6 +5124,7 @@ int delete_all_client_bitmaps(void)
             free(Client_Bitmaps[i]);
         }
     }
+    return 1;
 }
 
 
@@ -5453,6 +5510,13 @@ int _al_mangled_main(int argc, char *argv[])
   int ii, neb;
 
 
+  //something to do on start:
+
+    ////size_t idn = sizeof(COMNDg) / sizeof(COMNDg[0]);
+
+    ////int idx = find_index(SteelEU, COMNDg, idn);
+    ////mRegion.off = idx - mApplications.off - 1;  //To correct index in case of added function to Applications in main menu
+
 #ifndef FORWIN32  
  _crt0_startup_flags = _crt0_startup_flags | _CRT0_FLAG_FILL_SBRK_MEMORY;
 #endif
@@ -5539,13 +5603,19 @@ int _al_mangled_main(int argc, char *argv[])
     char strAppPath[MAXPATH];
     char *ptr_s;
 
+    // Extract path using argv[0] (Works flawlessly in both Debug and Release)
+    strcpy(strAppPath, argv[0]);
+    ptr_s = strrchr(strAppPath,'/');
+    if (ptr_s != NULL) {
+        *ptr_s = '\0';
+    } else {
+        strcpy(strAppPath, ".");
+    }
+
 #ifdef NDEBUG
     //changing folder - for file type association program purpose
     if (NOCHDIR == FALSE)
     {
-        strcpy(strAppPath, argv[0]);
-        ptr_s = strrchr(strAppPath,'/');
-         if (ptr_s!=NULL) *ptr_s='\0';
         printf("%s\n",strAppPath);
         int ret1 = chdir(strAppPath);
         if (ret1==-1)
@@ -5553,7 +5623,6 @@ int _al_mangled_main(int argc, char *argv[])
             printf("%s\n","Wrong name of AlfaCAD folder");
             exit(0);
         }
-
     }
 #endif
    Set_XWindow_header_height();
@@ -5630,10 +5699,11 @@ else if ((child == 2) || (child == 4)) Child_Message(1);
 
 #ifndef LINUX
 ret = GoRegtestCall(testCall);
+StartPrinterWarmer();
 #endif
 
-sprintf(RYSUJ$1,"RYSUJ$.%03ld",Client_number);
-sprintf(HATCH_TEMP_FILE,"ALFHATCH.%03ld",Client_number);
+sprintf(RYSUJ$1,"RYSUJ$.%03d",Client_number);
+sprintf(HATCH_TEMP_FILE,"ALFHATCH.%03d",Client_number);
 
 music_avail=FALSE; 
 
@@ -5644,6 +5714,13 @@ int errno;
 allegro_init();
 
  ret= set_window_icon();
+/*
+#if defined(_WIN32) && !defined(NDEBUG)
+    // Force Allegro to use standard Win32 window messages
+    // instead of global low-level kernel hooks (WH_MOUSE_LL)
+    set_config_string("mouse", "mouse_driver", "WMSG");
+#endif
+*/
 
  //install_timer();
  nbuttons = install_mouse();
@@ -5916,7 +5993,7 @@ if (child==0)
 
 #ifndef LINUX
   init_file_dropped_fill_buf();
-#endif;
+#endif
 
   //reseting client bitmaps
   for (i = 0; i < MAX_CLIENT_BITMAP; i++) client_bitmap_load[i]=NULL;

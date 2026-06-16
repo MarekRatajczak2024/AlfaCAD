@@ -91,9 +91,9 @@ double isometric_vector_angle(double x1, double y1, double x2, double y2) {
  * Inputs:
  *   x1, y1 - Starting point in Cartesian (drawing) coordinates
  *   x2, y2 - Ending point in Cartesian (drawing) coordinates
- *
+ *   &pl_dx, &pl_dy - Pointers to vector components
  * Returns:
- *   The length in the same units as krok_g / object units (world units)
+ *   The length in the same object units (world units)
  */
 double isometric_vector_length(double x1, double y1, double x2, double y2, double *pl_dx, double *pl_dy) {
     double dx = x2 - x1;
@@ -130,6 +130,131 @@ double isometric_vector_length_f(float x1, float y1, float x2, float y2) {
     // Euclidean distance in isometric space (preserves true length)
     return sqrt(i_dx * i_dx + i_dy * i_dy);
 }
+
+/*
+ * Convert isometric vector components back to Cartesian components
+ * and calculate the resulting Cartesian length.
+ *
+ * Inputs:
+ *   i_dx, i_dy - Vector components in the isometric system
+ *   &pl_dx, &pl_dy - Pointers to store the resulting Cartesian components
+ * Returns:
+ *   The Euclidean length in the Cartesian system
+ */
+double cartesian_vector_length_(double i_dx, double i_dy, double *pl_dx, double *pl_dy) {
+    if (i_dx == 0.0 && i_dy == 0.0) {
+        *pl_dx = 0.0;
+        *pl_dy = 0.0;
+        return 0.0;
+    }
+
+    double sqrt3 = sqrt(3.0);
+
+    // Invert the transformation:
+    // dx = (i_dx - i_dy) * (sqrt(3) / 2)
+    // dy = (i_dx + i_dy) / 2
+    double dx = (i_dx - i_dy) * (sqrt3 * 0.5);
+    double dy = (i_dx + i_dy) * 0.5;
+
+    if (pl_dx != NULL) *pl_dx = dx;
+    if (pl_dy != NULL) *pl_dy = dy;
+
+    return sqrt(dx * dx + dy * dy);
+}
+
+double cartesian_vector_length__(double i_dx, double i_dy, double *pl_dx, double *pl_dy) {
+    // In isometric drawing, the X-axis is at 30 degrees, Y-axis is at 150 degrees
+    double cos30 = 0.86602540378; // sqrt(3)/2
+    double sin30 = 0.5;
+
+    double angle=atan2(i_dy, i_dx)*180/Pi;
+
+    // x-component: (i_dx forward on 30 deg) - (i_dy back on 30 deg)
+    double dx = (i_dx - i_dy) * cos30;
+
+    // y-component: (i_dx up on 30 deg) + (i_dy up on 30 deg)
+    double dy = (i_dx + i_dy) * sin30;
+
+    if (pl_dx != NULL) *pl_dx = dx;
+    if (pl_dy != NULL) *pl_dy = dy;
+
+    // Return the actual distance on the flat paper
+    return sqrt((dx) * (dx) + (dy) * (dy));
+}
+
+double cartesian_vector_length(double dx, double dy, double *world_x, double *world_y) {
+    double inv_cos30 = 1.0 / (sqrt(3.0) / 2.0); // 1.1547
+
+    // Invert the projection to get real-world components
+    // world_x corresponds to the Isometric X-axis (30 deg)
+    // world_y corresponds to the Isometric Y-axis (150 / -30 deg)
+
+    double wx = (dy + (dx / sqrt(3.0)));
+    double wy = (dy - (dx / sqrt(3.0)));
+
+    if (world_x != NULL) *world_x = wx;
+    if (world_y != NULL) *world_y = wy;
+
+    return sqrt(wx * wx + wy * wy);
+}
+
+
+
+
+/*
+ * Convert isometric vector components back to Cartesian components
+ * and calculate the resulting Cartesian length.
+ *
+ * Inputs:
+ *   x1, y1 - Starting point in Cartesian (drawing) coordinates
+ *   x2, y2 - Ending point in Cartesian (drawing) coordinates
+ *   &pl_dx, &pl_dy - Pointers to store the resulting Cartesian components
+ * Returns:
+ *   The Euclidean length in the Cartesian system
+ */
+double cartesian_vector_length_d(double x1, double y1, double x2, double y2,  double *pl_dx, double *pl_dy) {
+    double i_dx = x2 - x1;
+    double i_dy = y2 - y1;
+
+    if (i_dx == 0.0 && i_dy == 0.0) {
+        *pl_dx = 0.0;
+        *pl_dy = 0.0;
+        return 0.0;
+    }
+
+    double sqrt3 = sqrt(3.0);
+
+    // Invert the transformation:
+    // dx = (i_dx - i_dy) * (sqrt(3) / 2)
+    // dy = (i_dx + i_dy) / 2
+    double dx = (i_dx - i_dy) * (sqrt3 * 0.5);
+    double dy = (i_dx + i_dy) * 0.5;
+
+    *pl_dx = dx;
+    *pl_dy = dy;
+
+    return sqrt(dx * dx + dy * dy);
+}
+
+double cartesian_vector_length_f(float x1, float y1, float x2, float y2) {
+    double i_dx = x2 - x1;
+    double i_dy = y2 - y1;
+
+    if (i_dx == 0.0 && i_dy == 0.0) {
+        return 0.0;
+    }
+
+    double sqrt3 = sqrt(3.0);
+
+    // Invert the transformation:
+    // dx = (i_dx - i_dy) * (sqrt(3) / 2)
+    // dy = (i_dx + i_dy) / 2
+    double dx = (i_dx - i_dy) * (sqrt3 * 0.5);
+    double dy = (i_dx + i_dy) * 0.5;
+
+    return sqrt(dx * dx + dy * dy);
+}
+
 
 #define INV_SQRT3 (1.0 / sqrt(3.0))
 

@@ -161,7 +161,7 @@ BOOL Check_Object (NAGLOWEK *adr_nag, BOOL b_correct)
 	{
         //check if not extended data for Graph
         unsigned char *flags;
-        flags=(char*)L + sizeof (LINIA);
+       flags=(char*)L + sizeof (LINIA);
         if ((*flags==71) || (*flags==45)) break;  //it's extended data
 	  ErrList (40);
 	  return FALSE;

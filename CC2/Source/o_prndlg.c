@@ -2217,7 +2217,7 @@ static int proc_dlg_prn_ini_date( int n)
   char image_file_name[MAXPATH];
   int paper_format;
   PRIV_PRN_WINDOW  *priv_prn_window;
-  BOOL pro_set, pro_set1;
+  BOOL pro_set, pro_set1, pro_set2;
 
 
  int img_formats[] = { SAVE_BMP, SAVE_PNG, SAVE_JPEG, SAVE_TIFF, SAVE_PCX, SAVE_EPS, SAVE_PDF };
@@ -2389,9 +2389,11 @@ static int proc_dlg_prn_ini_date( int n)
 #ifndef LINUX
           pro_set=0;
 		  pro_set1 = 1;
+	  	  pro_set2 = 1;
 #else
           pro_set=1;
 		  pro_set1 = 1;
+	  	  pro_set2 = 1;
 #endif
 		  sprintf(edit_p[0].txt, "%.1f", prn_ini_date.prn_width_paper);
 		  sprintf(edit_p[1].txt, "%.1f", prn_ini_date.prn_height_paper);
@@ -2404,8 +2406,8 @@ static int proc_dlg_prn_ini_date( int n)
 
 		Set_Enable_Edit(&printer_dlg, IL_PAGE, pro_set);
 		Set_Enable_Edit(&printer_dlg, IL_MARGIN, 1);
-		Set_Enable_Edit(&printer_dlg, IL_WIDTH_PAPER, pro_set);
-		Set_Enable_Edit(&printer_dlg, IL_HEIGHT_PAPER, pro_set);
+		Set_Enable_Edit(&printer_dlg, IL_WIDTH_PAPER, pro_set2);
+		Set_Enable_Edit(&printer_dlg, IL_HEIGHT_PAPER, pro_set2);
 
 		listbox[LS_IMAGE_FORMAT].enable = 0;
 
@@ -2469,6 +2471,13 @@ static int proc_dlg_prn_ini_date( int n)
 
 	case IL_WIDTH_PAPER:
 	case IL_HEIGHT_PAPER:
+  	     //check if width and height doesn't exceed max printer size
+  	if (atof((*printer_dlg.InputLines)[0].txt) > prn_ini_date.prn_width_paper)
+  		sprintf((*printer_dlg.InputLines)[0].txt, "%.1f", prn_ini_date.prn_width_paper);
+
+  	if (atof((*printer_dlg.InputLines)[1].txt) > prn_ini_date.prn_height_paper)
+  		sprintf((*printer_dlg.InputLines)[1].txt, "%.1f", prn_ini_date.prn_height_paper);
+
 	case IL_MARGIN:
 	case IL_SCALE:
 	case IL_LEFT_MARGIN:
@@ -2557,7 +2566,7 @@ static void init_printer_dlg_control (void)
 /*----------------------------------------*/
 {
 	int i;
-    BOOL pro_set, pro_set1;
+    BOOL pro_set, pro_set1, pro_set2;
 
   Check_Radio_Button ( &printer_dlg, BUT_CONDENSED_Y, BUT_CONDENSED_N,
     prn_ini_date.condensed == TRUE ? BUT_CONDENSED_N : BUT_CONDENSED_Y, FALSE);
@@ -2621,9 +2630,11 @@ static void init_printer_dlg_control (void)
 #ifndef LINUX
       pro_set=0;
 	  pro_set1 = 1;
+  	  pro_set2 = 1;
 #else
       pro_set=1;
 	  pro_set1 = 1;
+  	  pro_set2 = 1;
 #endif
 	  Set_Enable_Button(&printer_dlg, BUT_DENSITY_DRAFT, pro_set);
 	  Set_Enable_Button(&printer_dlg, BUT_DENSITY_NORMAL, pro_set);
@@ -2633,8 +2644,8 @@ static void init_printer_dlg_control (void)
 
 	  Set_Enable_Edit(&printer_dlg, IL_PAGE, pro_set);
 	  Set_Enable_Edit(&printer_dlg, IL_MARGIN, 1);
-	  Set_Enable_Edit(&printer_dlg, IL_WIDTH_PAPER, pro_set);
-	  Set_Enable_Edit(&printer_dlg, IL_HEIGHT_PAPER, pro_set);
+	  Set_Enable_Edit(&printer_dlg, IL_WIDTH_PAPER, pro_set2);  //pro_set
+	  Set_Enable_Edit(&printer_dlg, IL_HEIGHT_PAPER, pro_set2); //pro_set
 
 	  listbox[LS_IMAGE_FORMAT].enable = pro_set;
 

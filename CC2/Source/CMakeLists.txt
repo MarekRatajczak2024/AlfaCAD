@@ -17,6 +17,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(alfacad C CXX)
 
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-pragma-pack)
+    add_compile_options(-Wno-ignored-pragmas)
+endif()
+
 ################################################################################
 ## Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
@@ -313,8 +318,6 @@ set(Source_Files
     "../../../CC2/Source/colors.c"
     "../../../CC2/Source/dxfdlg.c"
     "../../../CC2/Source/EndianSwap.cpp"
-    #"../../../CC2/Source/Fleditor.cpp"
-    #"../../../CC2/Source/FLTKeditor.cpp"
     "../../../CC2/Source/fnmerge.c"
     "../../../CC2/Source/fnsplit.c"
     "../../../CC2/Source/forlinux.c"
@@ -373,7 +376,6 @@ set(Source_Files
     "../../../CC2/Source/o_measur.c"
     "../../../CC2/Source/o_memory_win.c"
     "../../../CC2/Source/o_mirror.c"
-    #"../../../CC2/Source/o_noumb.c"
     "../../../CC2/Source/o_objec1.c"
     "../../../CC2/Source/o_objec2.c"
     "../../../CC2/Source/o_object.c"
@@ -404,9 +406,7 @@ set(Source_Files
     "../../../CC2/Source/o_solid.c"
     "../../../CC2/Source/o_spec.c"
     "../../../CC2/Source/o_spline.c"
-    #"../../../CC2/Source/o_testdrive.c"
     "../../../CC2/Source/o_text_b.c"
-    #"../../../CC2/Source/o_tools.c"
     "../../../CC2/Source/o_trace.c"
     "../../../CC2/Source/o_transform.cpp"
     "../../../CC2/Source/o_trim.c"
@@ -417,7 +417,6 @@ set(Source_Files
     "../../../CC2/Source/o_zb.c"
     "../../../CC2/Source/pcx.c"
     "../../../CC2/Source/pcxdlg.c"
-    #"../../../CC2/Source/Qeditor.cpp"
     "../../../CC2/Source/bibrys.c"
     "../../../CC2/Source/rysuj.c"
     "../../../CC2/Source/Strlwr1.c"
@@ -490,8 +489,11 @@ set(Source_Files
     "../../../CC2/Source/b_ffind.c"
     "../../../CC2/Source/o_static.h"
     "../../../CC2/Source/o_static.c"
-    "../../../CC2/Source/woods_US.c"
     "../../../CC2/Source/o_combinations.c"
+    "../../../CC2/Source/o_grid.h"
+    "../../../CC2/Source/o_grid.c"
+    "../../../CC2/Source/o_upgrade_stiffness.cpp"
+    "../../../CC2/Source/woods_US.c"
     "../../../CC2/Source/uri_encode.c"
     "../../../CC2/Source/o_text2PDF.c"
     "../../../CC2/Source/utf8.c"
@@ -514,9 +516,6 @@ set(Source_Files
     "../../../allegro5-4.4.3/addons/jpgalleg/src/error.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/init.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/io.c"
-
-    #"../../../CC2/Source/present_window.cpp"
-    #"../../../CC2/Source/present_window.h"
 )
 source_group("Source Files" FILES ${Source_Files})
 

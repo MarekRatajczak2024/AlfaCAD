@@ -34,7 +34,7 @@ static int  nooop1(void)
 extern int Get_Current_Color (void) ;
 extern int Save_Message0_Image (void) ;
 extern void Put_Message0_Image (int) ;
-extern BOOL Add_String_To_List (char *) ;
+extern void Add_String_To_List (char *) ;
 extern void Set_Float_Flag (BOOL) ;
 extern void redcrMP (int type, int type1);
 extern int Change_Orto (void) ;

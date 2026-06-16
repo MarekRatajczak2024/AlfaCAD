@@ -1610,7 +1610,7 @@ void redraw_trace (void)
 {
    if ( s_trace.b_line == TRUE)
    {
-     rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 1) ;  //TUTAJ
+     rysuj_obiekt ((char*)&s_trace.line, COPY_PUT, 1) ;
    }
 }
 

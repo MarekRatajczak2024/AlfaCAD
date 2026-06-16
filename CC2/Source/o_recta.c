@@ -814,151 +814,198 @@ static void redcrRECT (int type)
       komunikat0(0);
       CUR_OFF (X,Y) ;
       CUR_OFF = CUR_oFF ;
-      CUR_ON = CUR_oN ; 
-      
-      angle_l=get_angle_l();
-      
-      if (strwyj == 0)
-      {
-	     df_x1 = s_window.x2 - s_window.x1 ;
-	     df_y1 = s_window.y2 - s_window.y1 ;
-      }
+      CUR_ON = CUR_oN ;
 
-	if (angle_l==0)
-	{
-	/*nalezy uzaleznic kierunek generowania od sposobu definiowania okna*/
-	/*przypadek 1 punkt 3*/
-	  prectangle.x1=0;			prectangle.y1=0;
-	  prectangle.x2=fabs(df_x1);	prectangle.y2=0;
-	  prectangle.x3=fabs(df_x1);	prectangle.y3=-fabs(df_y1);
-	  prectangle.x4=0;			prectangle.y4=-fabs(df_y1);
-	  /*przesuniecie prectangle*/
-           base_point_x=prectangle.x3;
-           base_point_y=prectangle.y3;
-	  if (df_x1>0)
-	   {
-	   prectangle.x1-=df_x1;
-	   prectangle.x2-=df_x1;
-	   prectangle.x3-=df_x1;
-	   prectangle.x4-=df_x1;
-           base_point_x=prectangle.x1;
-	   }
-	  if (df_y1<0)
-	   {
-	   prectangle.y1-=df_y1;
-	   prectangle.y2-=df_y1;
-	   prectangle.y3-=df_y1;
-	   prectangle.y4-=df_y1;
 
-           base_point_y=prectangle.y1;
-	   }
+     angle_l = get_angle_l();
+     sina = get_sina();
+     cosa = get_cosa();
 
-	}
-	else
-	 {
-	  sina=get_sina();
-	  cosa=get_cosa();
-	  if (strwyj==1)
-	  {
+    if (strwyj == 1)
+    {
+        // =========================================================================
+        // MODE A: NUMERICAL INPUT (strwyj == 1)
+        // =========================================================================
+
+        double w = fabs(df_x1);
+        double h = fabs(df_y1);
+
+        // Calculate global screen deltas from cursor tracking
+        double scr_dx = s_window.x2 - s_window.x1;
+        double scr_dy = s_window.y2 - s_window.y1;
+
+        // Project screen deltas back into local space vectors to determine the real sector
+        double loc_dx = 0.0;
+        double loc_dy = 0.0;
+
         if (!options1.uklad_izometryczny)
         {
-            prectangle.x1 = 0;
-            prectangle.y1 = 0;
-            prectangle.x2 = -df_x1 * cosa;
-            prectangle.y2 = -df_x1 * sina;
-            prectangle.x3 = -(df_x1 * cosa) + (df_y1 * sina);
-            prectangle.y3 = -(df_x1 * sina) - (df_y1 * cosa);
-            prectangle.x4 = df_y1 * sina;
-            prectangle.y4 = -df_y1 * cosa;
+            // Inverse rotation matrix to find the true local quadrant direction
+            loc_dx =  scr_dx * cosa + scr_dy * sina;
+            loc_dy = -scr_dx * sina + scr_dy * cosa;
         }
         else
         {
-            prectangle.x1 = 0;
-            prectangle.y1 = 0;
-            ret = isometric_to_cartesian(-df_x1, 0., &prectangle.x2, &prectangle.y2);
-            ret = isometric_to_cartesian(-df_x1, -df_y1, &prectangle.x3, &prectangle.y3);
-            ret = isometric_to_cartesian(0., -df_y1, &prectangle.x4, &prectangle.y4);
+            // Inverse isometric projection to find the true local isometric sector
+            // (Assumes standard 30-degree isometric projection axes setup)
+            double cos30 = 0.8660254;
+            double sin30 = 0.5000000;
+            loc_dx =  (scr_dx / (2.0 * cos30)) + (scr_dy / (2.0 * sin30));
+            loc_dy = -(scr_dx / (2.0 * cos30)) + (scr_dy / (2.0 * sin30));
         }
 
-          base_point_x=prectangle.x1;
-          base_point_y=prectangle.y1;
+        // Define the local coordinate canvas variables
+        double lx1 = 0, lx2 = 0, lx3 = 0, lx4 = 0;
+        double ly1 = 0, ly2 = 0, ly3 = 0, ly4 = 0;
+        double lbx = 0, lby = 0;
 
-          if (s_window.x2>s_window.x1)
-          {
-              if (s_window.y2 < s_window.y1)  /*1-3*/
-              {
-                  base_point_x=prectangle.x4;  //done
-                  base_point_y=prectangle.y4;
-              }
-              else
-              {
-                  base_point_x=prectangle.x2;  //done //???
-                  base_point_y=prectangle.y2;
-              }
-          }
-          else
-          {
-              if (s_window.y2>s_window.y1)  /*3-1*/
-              {
-                  //4 or 1
-                  double l2=(X-prectangle.x2)*(X-prectangle.x2)+(Y-prectangle.y2)*(Y-prectangle.y2);
-                  double l3=(X-prectangle.x3)*(X-prectangle.x3)+(Y-prectangle.y3)*(Y-prectangle.y3);
-                  if (l2<l3)
-                  {
-                      base_point_x = prectangle.x1;
-                      base_point_y = prectangle.y1;
-                  }
-                  else
-                  {
-                      base_point_x = prectangle.x4;
-                      base_point_y = prectangle.y4;
-                  }
-              }
-              else
-              {
-                  base_point_x=prectangle.x2;
-                  base_point_y=prectangle.y2;
-              }
-          }
-	  }
-	  else
-	  {
-	  if (s_window.x2>s_window.x1)
-	   {
-	    if (s_window.y2<s_window.y1)  /*1-3*/
-	     {
-	      prectangle.x1=s_window.x1-s_window.x2; 	prectangle.y1=s_window.y1-s_window.y2;
-	      prectangle.x2=L1window.x1-s_window.x2;	prectangle.y2=L1window.y1-s_window.y2;
-	      prectangle.x3=0;				prectangle.y3=0;
-	      prectangle.x4=L1window.x2-s_window.x2;	prectangle.y4=L1window.y2-s_window.y2;
-	     }
-	     else  /*4-2*/
-	      {
-	      prectangle.x1=L1window.x2-s_window.x2; 	prectangle.y1=L1window.y2-s_window.y2;
-	      prectangle.x2=0;				prectangle.y2=0;
-	      prectangle.x3=L1window.x1-s_window.x2;	prectangle.y3=L1window.y1-s_window.y2;
-	      prectangle.x4=s_window.x1-s_window.x2;	prectangle.y4=s_window.y1-s_window.y2;
-	      }
-	   }
-	    else
-	    {
-	     if (s_window.y2>s_window.y1)  /*3-1*/
-	     {
-  	      prectangle.x1=0;  			prectangle.y1=0;
-	      prectangle.x2=L1window.x2-s_window.x2;	prectangle.y2=L1window.y2-s_window.y2;
-	      prectangle.x3=s_window.x1-s_window.x2;	prectangle.y3=s_window.y1-s_window.y2;
-	      prectangle.x4=L1window.x1-s_window.x2;	prectangle.y4=L1window.y1-s_window.y2;
-	     }
-	     else  /*2-4*/
-	      {
-	       prectangle.x1=L1window.x1-s_window.x2; 	prectangle.y1=L1window.y1-s_window.y2;
-	       prectangle.x4=0;				prectangle.y4=0;
-	       prectangle.x3=L1window.x2-s_window.x2;	prectangle.y3=L1window.y2-s_window.y2;
-	       prectangle.x2=-s_window.x2+s_window.x1;	prectangle.y2=-s_window.y2+s_window.y1;
-	      }
-	    }
-	  }
-	 }
+        // Assign local vertices to maintain a strict loop using the local vectors
+        if (loc_dx >= 0)
+        {
+            if (loc_dy >= 0)  /* Sector 1: Up-Right */
+            {
+                lx1 = -w; ly1 = -h; // Base Point (1st click)
+                lx2 = 0;  ly2 = -h;
+                lx3 = 0;  ly3 = 0;  // Origin (2nd point)
+                lx4 = -w; ly4 = 0;
+                lbx = lx1; lby = ly1;
+            }
+            else          /* Sector 4: Down-Right */
+            {
+                lx1 = -w; ly1 = 0;
+                lx2 = 0;  ly2 = 0;  // Origin (2nd point)
+                lx3 = 0;  ly3 = h;
+                lx4 = -w; ly4 = h;  // Base Point (1st click)
+                lbx = lx4; lby = ly4;
+            }
+        }
+        else
+        {
+            if (loc_dy >= 0)  /* Sector 2: Up-Left */
+            {
+                lx1 = 0; ly1 = -h;
+                lx2 = w; ly2 = -h; // Base Point (1st click)
+                lx3 = w; ly3 = 0;
+                lx4 = 0; ly4 = 0;  // Origin (2nd point)
+                lbx = lx2; lby = ly2;
+            }
+            else          /* Sector 3: Down-Left */
+            {
+                lx1 = 0; ly1 = 0;  // Origin (2nd point)
+                lx2 = w; ly2 = 0;
+                lx3 = w; ly3 = h;  // Base Point (1st click)
+                lx4 = 0; ly4 = h;
+                lbx = lx3; lby = ly3;
+            }
+        }
+
+        // Transform local values back to global canvas space based on view type
+        if (!options1.uklad_izometryczny)
+        {
+            // Apply rotation matrix using local angle constants
+            prectangle.x1 = s_window.x1 + (lx1 * cosa - ly1 * sina);
+            prectangle.y1 = s_window.y1 + (lx1 * sina + ly1 * cosa);
+
+            prectangle.x2 = s_window.x1 + (lx2 * cosa - ly2 * sina);
+            prectangle.y2 = s_window.y1 + (lx2 * sina + ly2 * cosa);
+
+            prectangle.x3 = s_window.x1 + (lx3 * cosa - ly3 * sina);
+            prectangle.y3 = s_window.y1 + (lx3 * sina + ly3 * cosa);
+
+            prectangle.x4 = s_window.x1 + (lx4 * cosa - ly4 * sina);
+            prectangle.y4 = s_window.y1 + (lx4 * sina + ly4 * cosa);
+
+            base_point_x = s_window.x1 + (lbx * cosa - lby * sina);
+            base_point_y = s_window.y1 + (lbx * sina + lby * cosa);
+        }
+        else
+        {
+            // Apply isometric projection conversions cleanly
+            double tx1, ty1, tx2, ty2, tx3, ty3, tx4, ty4, tbx, tby;
+
+            isometric_to_cartesian(lx1, ly1, &tx1, &ty1);
+            isometric_to_cartesian(lx2, ly2, &tx2, &ty2);
+            isometric_to_cartesian(lx3, ly3, &tx3, &ty3);
+            isometric_to_cartesian(lx4, ly4, &tx4, &ty4);
+            isometric_to_cartesian(lbx, lby, &tbx, &tby);
+
+            prectangle.x1 = s_window.x1 + tx1;  prectangle.y1 = s_window.y1 + ty1;
+            prectangle.x2 = s_window.x1 + tx2;  prectangle.y2 = s_window.y1 + ty2;
+            prectangle.x3 = s_window.x1 + tx3;  prectangle.y3 = s_window.y1 + ty3;
+            prectangle.x4 = s_window.x1 + tx4;  prectangle.y4 = s_window.y1 + ty4;
+
+            base_point_x  = s_window.x1 + tbx;  base_point_y  = s_window.y1 + tby;
+        }
+    }
+    else
+    {
+        // =========================================================================
+        // MODE B: MOUSE CURSOR ONLY (strwyj == 0) - YOUR UNTOUCHED ORIGINAL LOGIC
+        // =========================================================================
+        df_x1 = s_window.x2 - s_window.x1;
+        df_y1 = s_window.y2 - s_window.y1;
+
+        if (angle_l == 0)
+        {
+            prectangle.x1 = 0;              prectangle.y1 = 0;
+            prectangle.x2 = fabs(df_x1);    prectangle.y2 = 0;
+            prectangle.x3 = fabs(df_x1);    prectangle.y3 = -fabs(df_y1);
+            prectangle.x4 = 0;              prectangle.y4 = -fabs(df_y1);
+
+            base_point_x = prectangle.x3;
+            base_point_y = prectangle.y3;
+
+            if (df_x1 > 0)
+            {
+                prectangle.x1 -= df_x1; prectangle.x2 -= df_x1;
+                prectangle.x3 -= df_x1; prectangle.x4 -= df_x1;
+                base_point_x = prectangle.x1;
+            }
+            if (df_y1 < 0)
+            {
+                prectangle.y1 -= df_y1; prectangle.y2 -= df_y1;
+                prectangle.y3 -= df_y1; prectangle.y4 -= df_y1;
+                base_point_y = prectangle.y1;
+            }
+        }
+        else
+        {
+            if (s_window.x2 > s_window.x1)
+            {
+                if (s_window.y2 < s_window.y1) /*1-3*/
+                {
+                    prectangle.x1 = s_window.x1 - s_window.x2; prectangle.y1 = s_window.y1 - s_window.y2;
+                    prectangle.x2 = L1window.x1 - s_window.x2; prectangle.y2 = L1window.y1 - s_window.y2;
+                    prectangle.x3 = 0;                         prectangle.y3 = 0;
+                    prectangle.x4 = L1window.x2 - s_window.x2; prectangle.y4 = L1window.y2 - s_window.y2;
+                }
+                else /*4-2*/
+                {
+                    prectangle.x1 = L1window.x2 - s_window.x2; prectangle.y1 = L1window.y2 - s_window.y2;
+                    prectangle.x2 = 0;                         prectangle.y2 = 0;
+                    prectangle.x3 = L1window.x1 - s_window.x2; prectangle.y3 = L1window.y1 - s_window.y2;
+                    prectangle.x4 = s_window.x1 - s_window.x2; prectangle.y4 = s_window.y1 - s_window.y2;
+                }
+            }
+            else
+            {
+                if (s_window.y2 > s_window.y1) /*3-1*/
+                {
+                    prectangle.x1 = 0;                         prectangle.y1 = 0;
+                    prectangle.x2 = L1window.x2 - s_window.x2; prectangle.y2 = L1window.y2 - s_window.y2;
+                    prectangle.x3 = s_window.x1 - s_window.x2; prectangle.y3 = s_window.y1 - s_window.y2;
+                    prectangle.x4 = L1window.x1 - s_window.x2; prectangle.y4 = L1window.y1 - s_window.y2;
+                }
+                else /*2-4*/
+                {
+                    prectangle.x1 = L1window.x1 - s_window.x2; prectangle.y1 = L1window.y1 - s_window.y2;
+                    prectangle.x4 = 0;                         prectangle.y4 = 0;
+                    prectangle.x3 = L1window.x2 - s_window.x2; prectangle.y3 = L1window.y2 - s_window.y2;
+                    prectangle.x2 = -s_window.x2 + s_window.x1;prectangle.y2 = -s_window.y2 + s_window.y1;
+                }
+            }
+        }
+    }
       break ;
     case 7 :
         menupini(&mKatR, _RECTA_R_, _RECTA_C_, 35);

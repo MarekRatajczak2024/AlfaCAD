@@ -1718,7 +1718,7 @@ static void change_properties
                             break;
                     }
                 }
-                else if ((options1.uklad_izometryczny) && (ob4->cartflags==1) && ob4->style==0)
+                else if ((options1.uklad_izometryczny) && (ob4->cartflags & 1) && ob4->style==0)
                 {
                     switch (lps_change_param->i_vector1)
                     {

@@ -5358,12 +5358,15 @@
     <ClCompile Include="..\..\Source\IH_section_CN_si.c" />
     <ClCompile Include="..\..\Source\L_section_CA_si.c" />
     <ClCompile Include="..\..\Source\L_section_CN_si.c" />
+    <ClCompile Include="..\..\Source\o_grid.c" />
     <ClCompile Include="..\..\Source\o_plate.c" />
     <ClCompile Include="..\..\Source\o_plate_reactions.c" />
+    <ClCompile Include="..\..\Source\o_printerwarmer.cpp" />
     <ClCompile Include="..\..\Source\o_section_block.c" />
     <ClCompile Include="..\..\Source\o_shield.c" />
     <ClCompile Include="..\..\Source\o_shield_reactions.c" />
     <ClCompile Include="..\..\Source\o_slider.c" />
+    <ClCompile Include="..\..\Source\o_upgrade_stiffness.cpp" />
     <ClCompile Include="..\..\Source\RT_section_AU_si.c" />
     <ClCompile Include="..\..\Source\RT_section_CA_si.c" />
     <ClCompile Include="..\..\Source\RT_section_CN_si.c" />
@@ -5380,6 +5383,7 @@
     <ClInclude Include="..\..\..\CC2\Source\loadpng.h" />
     <ClInclude Include="..\..\..\CC2\source\res\resource.h" />
     <ClInclude Include="..\..\..\CC2\Source\TTF.h" />
+    <ClInclude Include="..\..\Source\o_grid.h" />
     <ClInclude Include="..\..\Source\o_shield.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1595,6 +1595,21 @@ struct
     char *S_data;
     int Ss_no;
     char *Ss_data;
+    //extensions for GRID
+    int Dz_no;
+    char *Dz_data;
+    int Rx_no;
+    char *Rx_data;
+    int Vz_no;
+    char *Vz_data;
+    int My_no;
+    char *My_data;
+    int Tx_no;
+    char *Tx_data;
+    int rm_no;
+    char *rm_data;
+    int rM_no;
+    char *rM_data;
 } SECTION_GRAPH_DATA;
 typedef  SECTION_GRAPH_DATA  *SECTION_GRAPH_DATA_;
 
@@ -1615,6 +1630,19 @@ struct
     float S_max;
     float Ss_min;
     float Ss_max;
+    //extensions for GRID
+    float Dz_min;
+    float Dz_max;
+    float Rx_min;
+    float Rx_max;
+    float Vz_min;
+    float Vz_max;
+    float My_min;
+    float My_max;
+    float Tx_min;
+    float Tx_max;
+    float r_min;
+    float r_max;
 } SECTION_FORCES;
 typedef  SECTION_FORCES  *SECTION_FORCES_;
 
@@ -1693,8 +1721,7 @@ typedef  LINIA  * LINIA_;
 
 #define MAXGRAPHDATANUMBER 256
 
-    typedef
-struct
+typedef struct
 { unsigned atrybut  : 3;
     unsigned obiekt   : 4;
     unsigned obiektt1 : 2;
@@ -1702,30 +1729,29 @@ struct
     unsigned obiektt3 : 1;
     unsigned widoczny : 1;
     unsigned przec    : 1;
-    unsigned blok     : 1;                     //2
-    unsigned int n ; //    : 32;               //6
+    unsigned blok     : 1;
+    unsigned int n ;
     unsigned warstwa  : 8;
-    unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
+    unsigned kolor    : 8;   // 0 - 255
     unsigned typ      : 8;
-    unsigned reserve  : 8;                     //10
+    //unsigned reserve  : 8;
     float x1          ;  //first point or center point
     float y1          ;  //first point or center point
     float x2          ;  //second point
     float y2          ;  //second point
-    float r;  //for arcs                       //30
-    //float angle;
+    float r;  //for arcs
     unsigned load      :8;  //0 undefined, 1 dead, 2 live, 3 live roof load, 4 wind, 5 snow, 6 seismic, 7 rainwater load or ice water load, 8 hydraulic loads from soil, 9  F = hydraulic loads from fluids
     unsigned variant   :8;  //0 undefined, 1..255 number of load character with different factors
     unsigned flags     :8;  //0  regular   1 inverted
     unsigned cartflags :2;  //0 regular  1 isometric
-    unsigned foundflags :6;  //0 regular & 1 spring z support, &2 spring x support & 4 sprint y support
+    unsigned foundflags :6;  //0 regular & 1 spring z support, &2 spring x support & 4 spring y support
     float angle1;
     float angle2;
     float magnitude1; //power magnitude or start magnitude
-    float magnitude2; //end magnitude          //50
+    float magnitude2; //end magnitude
     unsigned style    : 8;
-    unsigned reserve1 : 8;                     //52
-    unsigned property_no : 16;                          //54
+    unsigned reserve1 : 8;
+    unsigned property_no : 16;
 } AVECTOR;
 typedef  AVECTOR  * AVECTOR_;
 
@@ -1848,9 +1874,11 @@ typedef
        unsigned int n ; //   : 32;
        unsigned warstwa  : 8;
        unsigned kolor    : 8;
-       unsigned typ      : 8;     /*0 normalny, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
-       //unsigned typ      : 6;     /*0 normalny, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
-       //unsigned rotation : 2;     /* 0=0deg, 1=90deg, 2=180deg, 3=270deg*/
+       unsigned typ      : 6;    //8 /*0 normal, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
+      //Simple=0,Base point=1,Junction=7,pin point=8, pin_g 9, pin_d 10, pin_s=11, Fixed=12,fixed L,fixed R,fixed U,Pinned,pinned L,pinned R,pinned U,fixed Roller,fixed roller L,fixed roller R,fixed roller U,
+      //pinned roller,pinned roller L,pinned roller R,pinned roller U,no rotation Z,fixed roller X,fixed roller XU,fixed roller Y,fixed roller Y (Up),
+      //pinned roller X,pinned roller X (Up),pinned roller Y,pinned roller Y (Up)=36,   up to 63 types
+       unsigned cartflags : 2;     /* 0=normal, 1=isometric*/
        float x           ; 
        float y           ;
     } T_Point ;    
@@ -2653,7 +2681,8 @@ typedef struct tagRECT {
 #define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
 #define L2def {Anormalny,Olinia,0,0,0,1,0,0,  48, 0,7,64, 0,0,0,0, Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
 
-#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
+////#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
+#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
 /*
  unsigned atrybut  : 3;
     unsigned obiekt   : 4;
@@ -2706,7 +2735,7 @@ typedef struct tagRECT {
 #define FEdef  {Anormalny,Ofilledellipse,0,0,0,1,0,0, 24, 0,7,64,  255, 0,0,0,0,0}
 #define eldef  {Anormalny,Oellipticalarc,0,0,0,1,0,0, 32, 0,7,64,  0,0, 0,0,0,0,0,0,0}
 
-#define PointDef {Anormalny,Opoint,0,0,0,1,0,0, 12, 0,7,0, 0,0}
+#define PointDef {Anormalny,Opoint,0,0,0,1,0,0, 12, 0,7,0, 0, 0,0}
 #define ldef  {Anormalny,Oluk,0,0,0,1,0,0, 24, 0,7,64, 0,0, 0,0,0, 0,0}
 #define l2def  {Anormalny,Oluk,0,0,0,1,0,0, 56, 0,7,64, 0,0,0, 0,0,  Anormalny,Oluk,0,0,0,1,0,0, 24, 0,7,64, 0,0,0, 0,0}
 
@@ -3137,6 +3166,7 @@ typedef struct
 	byte_ gre;
 	byte_ blu;
 } COLOR_;
+
 #pragma pack(4)
 
 typedef COLOR_ COLOR[256];
@@ -3301,6 +3331,12 @@ typedef struct
     float f3;
 } FE_DATA3_EX;
 
+typedef struct
+{
+    float f1;  //for torque is the member sector
+    float f2;
+} FE_TORQUE;
+
 enum PlaneType { XY_PLANE=0, XZ_PLANE, YZ_PLANE };
 
 /*
@@ -3412,5 +3448,7 @@ DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];
 */
 
 #ifdef ARM64
-#pragma pack(8)
+#pragma pack(8) // Legally forces 8 downstream for Mac
+#else
+#pragma pack(4) // Legally forces 4 downstream for Windows
 #endif

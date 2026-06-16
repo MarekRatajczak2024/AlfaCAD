@@ -43,6 +43,7 @@ char _EDIT_FILE_[]=u8"Редагування файла";
 
 #define _NEW_WINDOW_ u8"Бажаєте відкрити нове вікно креслення?"
 #define _NEW_WINDOW_T_ u8"Нове вікно"
+#define _NETWORK_PRINTER_ u8"Підключаємося до вашого мережевого принтера..."
 
 int max_quote = 293;
 #define _QUOTE_ u8"quotesua.dat"
@@ -1595,6 +1596,7 @@ static POLE pmInfo[] = {
 TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Лінія",u8"Лінія 3D",u8"Текст",u8"Дуга",u8"Коло",u8"Диск",u8"Багатокутник/суцільний",u8"Суцільний 3D",u8"Точка", u8"Сплайн",u8"Зображення",u8"Полилінія",u8"Слід",u8"Штрихування",u8"Еліптична дуга",u8"Еліпс",u8"Еліптичний диск", u8"Суцільна дуга", u8"Вектор"};
+char* isometric_info=" (ізометричний)";
 
 #define __PLATE__ u8" (ПЛИТА)"
 #define __HOLE__  u8" (ОТВІР)"
@@ -1865,10 +1867,10 @@ static POLE pmVector_cartesian[] = {
           {u8"Теплове навантаження\0\0",L'Т',752,&mLoad_Char_Thermal},
           {u8"розмір вузла (радіус)\0\0",L'0',786,NULL},
 
-          {u8"Контур плити або щита\0\0",L'К',846,NULL},
-          {u8"Дупло у плиті або щита\0\0",L'Д',844,NULL},
+          {u8"Контур плити або стіни-балки\0\0",L'К',846,NULL},
+          {u8"Дупло у плиті або стіни-балки\0\0",L'Д',844,NULL},
           {u8"стІна\0\0",L'І',843,NULL},
-          {u8"Район плити або щита\0\0",L'Р',842,NULL},
+          {u8"Район плити або стіни-балки\0\0",L'Р',842,NULL},
           {u8"поверхневе навантаження плити\0\0",L'Й',845,&mLoad_Char},
           {u8"зосереджене навантаження плити\0\0",L'К',856,&mLoad_Char},
 
@@ -1912,10 +1914,10 @@ static POLE pmVector_isometric[] = {
           {u8"Теплове навантаження\0\0",L'Т',752,&mLoad_Char_Thermal},
           {u8"розмір вузла (радіус)\0\0",L'0',786,NULL},
 
-          ////{u8"Контур плити або щита\0\0",L'К',846,NULL},
-          ////{u8"Дупло у плиті або щита\0\0",L'Д',844,NULL},
+          ////{u8"Контур плити або стіни-балки\0\0",L'К',846,NULL},
+          ////{u8"Дупло у плиті або стіни-балки\0\0",L'Д',844,NULL},
           ////{u8"стІна\0\0",L'І',843,NULL},
-          ////{u8"Район плити або щита\0\0",L'Р',842,NULL},
+          ////{u8"Район плити або стіни-балки\0\0",L'Р',842,NULL},
           ////{u8"поверхневе навантаження плити\0\0",L'Й',845,&mLoad_Char},
           ////{u8"зосереджене навантаження плити\0\0",L'К',856,&mLoad_Char},
 
@@ -3464,7 +3466,7 @@ static POLE pmKartezjanskiGeodezyjny[] = {
          {u8"Ізометрична",L'І',868,NULL}
 };
 	 
-static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,163,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 static POLE pmPointOrigin[3] = {
 		 {u8"Початкова точка\0 ",L'П',106,NULL},
@@ -3548,22 +3550,30 @@ static POLE pmReactionMagnitude[] = {
 	   {u8"Розподілені сили реакції\0 \0",L'Р',864,NULL},
 	  };
 
-static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,50,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 
 static POLE pmStressMagnitude[] = {
-       {u8"напруження в Сталі/деревині\0 \0",L'С',775,NULL},
-	   {u8"напруження в Залізобетоні\0 \0",L'З',6,NULL},
+       {u8"напруження в Сталі/деревині\0 \0",L'С',901,NULL},
+	   {u8"напруження в Залізобетоні\0 \0",L'З',902,NULL},
+       {u8"Дотичні напруження\0 \0",L'Д',903,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 3,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,48,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+
+static POLE pmRescalingMode[] = {
+       {u8"Автоматичний вибір\0 \0",L'А',899,NULL},
+	   {u8"вибір Меню\0 \0",L'М',900,NULL},
+	  };
+
+static TMENU mRescalingMode = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,55,0,0,0,(POLE(*)[]) &pmRescalingMode,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"масштаб Сили\0\0",           L'С',727,NULL},
@@ -3584,9 +3594,10 @@ static POLE pmMagnitude[] = {
        {u8"точність Чисел\0\0",         L'Ч',184,NULL}, //&mPrecision},
        {u8"Кольори\0\0",                L'К',495,NULL}, //&mStaticColors},
        {u8"скинути масштабування\0 \0", L'І',860,&mResetMagnitude},
+       {u8"режим масштаба Авто/меню\0 \0",L'А',898,&mRescalingMode},
 };
 
-static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 19,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Формат\0 A4\0     ",L'Ф',96,&mFormat_r},

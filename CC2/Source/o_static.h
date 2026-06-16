@@ -12,12 +12,15 @@ typedef struct
     double b;  //Cross-sectional depth in z axis  in mm or in
     double A;  //Cross-sectional area of a prismatic frame element in mm^2 or in^2
     double Asy; //Shear area in the local y-axis of a prismatic frame element in mm^2 or in^2
-    double Asz; //Shear area in the local y-axis of a prismatic frame element in mm^2 or in^2
-    double Jx; //Torsional moment of inertia of a frame element in mm^4
+    double Asz; //Shear area in the local z-axis of a prismatic frame element in mm^2 or in^2
+    double Aply; //Plastic shear area for shear acting parallel to the y-axis in^2  or mm^2
+    double Aplz; //Plastic shear area for shear acting parallel to the z-axis in^2  or mm^2
+    double Jx; //St. Venant Torsional Constant It, replacing Torsional moment of inertia Jp of a frame element in mm^4
     double Iy; //Moment of inertia for bending about the local y axis in mm^4
     double Iz; //Moment of inertia for bending about the local z axis in mm^4
     double Wy; //Elastic section modulus about y-axis in m^3  or in^3
     double Wz; //Elastic section modulus about z-axis  in m^3 or in^3
+    double Wt; //St. Venant Torsional Section Modulus in^3 or  mm^3
     double E;  //Modulus of elasticity of a frame element in
     double G;  //Shear modulus of elasticity of frame element
     double r;  //the roll angle of the frame element, in degrees
@@ -37,6 +40,8 @@ typedef struct
     double fck; //fck characteristic yield strength of concrete; γc partial safety factor for reinforcing steel
     double fcd; //Design yield strength of reinforcing steel fcd=fck/γc where fck characteristic yield strength of concrete; γc partial safety factor for concrete
                 //The partial safety factor for rebar in Eurocodes is  γc = 1.5 for concrete
+    double ks;  //Soil stiffness (kN/m^3 or kip/in^3)
+    double ds;  //Soil density (kg/m^3 or kip/in^3)
     int ok;
 } ST_PROPERTY;
 
@@ -44,20 +49,21 @@ typedef struct
 {
     double x;
     double y;
-    ////float x;
-    ////float y;
+    double z;
 
     double radius;
     int real;
     int restraint;
+    int winkler_group;
+    int winkler_element_first;
+    int winkler_element_last;
 } ST_NODE;
 
 typedef struct
 {
     double x;
     double y;
-    ////float x;
-    ////float y;
+    double z;
 
     double radius;
     int flag;
@@ -77,16 +83,34 @@ typedef struct
 
 typedef struct
 {
+    int node;
+    int active;
+    int x;
+    int y;
+    int z;
+    int xx;
+    int yy;
+    int zz;
+} ST_FOUNDATION;
+
+typedef struct
+{
     int node1;
     int node2;
     int node1r;
     int node2r;
     int property_no;
     double length;
+    double length_cart;
+    int n1y;
+    int n2y;
     int n1z;
     int n2z;
     double koc;
     double kos;
+    short invert;
+    short flags;   //0 normal, 1 Winkler, 2 spring
+    int peer;  //or itself is peer==st_element_no, or -1
 } ST_ELEMENT;
 
 typedef struct
@@ -95,7 +119,11 @@ typedef struct
     int node;
     double fx;
     double fy;
-    double mz;
+    double fz;
+    double mx;  //about X axis, so in YZ plane
+    double my;  //about Y axis, so in XZ plane
+    double mz;  //about Z axis, so in XY plane
+    int style;
     int factor_record;
     int take_it;
 } ST_NODE_FORCE_MOMENT;
@@ -106,6 +134,7 @@ typedef struct
     int element;
     double qx;
     double qy;
+    double qz;
     int factor_record;
     int take_it;
     int flag;
@@ -123,6 +152,10 @@ typedef struct
     double dlxy2;
     double qy1;
     double qy2;
+    double dlxz1;
+    double dlxz2;
+    double qz1;
+    double qz2;
     int factor_record;
     int take_it;
 } ST_TRAPEZOID_LOAD;
@@ -133,6 +166,7 @@ typedef struct
     int element;
     double fx;
     double fy;
+    double fz;
     double dlx;
     int factor_record;
     int take_it;
@@ -142,9 +176,12 @@ typedef struct
 {
     int layer;
     int element;
-    double ydepth;
-    double deltatplus;
+    double hdepth;
+    double bdepth;
+    double deltatplus;  //default direction in frame and Z axis in grid
     double deltatminus;
+    double deltatplusY;  //Y axis in grid
+    double deltatminusY;
     int factor_record;
     int take_it;
 } ST_THERMAL_LOAD;
@@ -155,7 +192,10 @@ typedef struct
     int node;
     double dx;
     double dy;
-    double dzz;
+    double dz;
+    double dxx;  //about X axis, so in YZ plane
+    double dyy;  //about Y axis, so in XZ plane
+    double dzz;  //about Z axis, so in XY plane
     int factor_record;
     int take_it;
 } ST_DISPLACEMENT;
@@ -228,7 +268,7 @@ typedef struct {              //                                                
    double S_f; //Stress  (out)                                                      kPa -> Mpa          kip
    double Ma_f;//Mass                                                               kPa -> tone         kip
    double c_f; //concrete cover  should be no less than 35 mm / 1.5" in for beams and 55 mm / 2"  for columns
-
+   double ks; //for soil stiffness
 } UNIT_FACTORS;
 
 typedef struct {
@@ -236,6 +276,7 @@ double dim_precision;
 double A_precision;
 double J_precision;
 double I_precision;
+double W_precision;
 double E_precision;
 double G_precision;
 double p_precision;
@@ -282,6 +323,12 @@ typedef struct {
     double Fx_max;
     double Fy_min;
     double Fy_max;
+    double Fz_min;
+    double Fz_max;
+    double Mxx_min;
+    double Mxx_max;
+    double Myy_min;
+    double Myy_max;
     double Mzz_min;
     double Mzz_max;
 } COMBI_REACION;
@@ -299,18 +346,53 @@ typedef struct {
     double Nx_max;
     double Vy_min;
     double Vy_max;
+    double Vz_min;
+    double Vz_max;
+    double Tx_min;
+    double Tx_max;
+    double My_min;
+    double My_max;
     double Mz_min;
     double Mz_max;
     double Dx_min;
     double Dx_max;
     double Dy_min;
     double Dy_max;
+    double Dz_min;
+    double Dz_max;
+    double Rx_min;
+    double Rx_max;
     double Sp_min;
     double Sp_max;
     double Sm_min;
     double Sm_max;
+    double winNx_pM;
+    double winNx_pm;
+    double winMy_pM;
+    double winMy_pm;
+    double winMz_pM;
+    double winMz_pm;
+    double winTx_pM;
+    double winTx_pm;
+    double winNx_mM;
+    double winNx_mm;
+    double winMy_mM;
+    double winMy_mm;
+    double winMz_mM;
+    double winMz_mm;
+    double winTx_mM;
+    double winTx_mm;
+
     double Ss;
 } COMBI_FORCES;
+
+typedef struct {
+    double x;
+
+    double r_min;
+    double r_max;
+
+} W_REACTIONS;
 
 typedef struct {
     int nx;
@@ -318,16 +400,42 @@ typedef struct {
     double Nxm;
     double VyM;
     double Vym;
+    double VzM;
+    double Vzm;
+    double TxM;
+    double Txm;
+    double MyM;
+    double Mym;
     double MzM;
     double Mzm;
     double DxM;
     double Dxm;
     double DyM;
     double Dym;
+    double DzM;
+    double Dzm;
+    double RxM;
+    double Rxm;
     double SpM;
     double Spm;
     double SmM;
     double Smm;
+    double winNx_pM;
+    double winNx_pm;
+    double winMy_pM;
+    double winMy_pm;
+    double winMz_pM;
+    double winMz_pm;
+    double winTx_pM;
+    double winTx_pm;
+    double winNx_mM;
+    double winNx_mm;
+    double winMy_mM;
+    double winMy_mm;
+    double winMz_mM;
+    double winMz_mm;
+    double winTx_mM;
+    double winTx_mm;
     COMBI_FORCES *fd;
 } COMBI_ELEMENT;
 
@@ -337,6 +445,7 @@ typedef struct {
   double Vy;
   double Vz;
   double Tx;
+  //double Mx;
   double My;
   double Mz;
   double Dx;
@@ -348,5 +457,25 @@ typedef struct {
   double Ss;
 } DATA_ROW;
 
+
+typedef struct {
+    int n;
+    char fail_reason[32];
+} ST_FAILED_PROPERTY;
+
+// Place these definitions in a shared header (.h) file visible to both C and C++
+typedef struct {
+    double max_Nx;
+    double max_My;
+    double max_Mz;
+} C_StructuralEnvelope;
+
+typedef struct {
+    double Ax, Asy, Asz, Jx, Iy, Iz;
+} C_ElementStiffness;
+
+typedef struct {
+    double h, b, w, t, ro, ri;  //height, width web thickness, flange thickness, outer radius, inner radius
+} SECTION_PAR;
 
 #endif //LIBFUN_PL_H_O_STATIC_H

@@ -1674,9 +1674,9 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             else n=-1;
 
             Lt.x1 = V->x1;
-            Lt.y1 = V->y1 + n*(V->magnitude1/((V->style==10) ? load_magnitude : flood_magnitude));
+            Lt.y1 = V->y1 + n*(V->magnitude1/(((V->style==10) || (V->style==20)) ? load_magnitude : flood_magnitude));
             Lt.x2 = V->x2;
-            Lt.y2 = V->y2 + n*(V->magnitude2/((V->style==10) ? load_magnitude : flood_magnitude));
+            Lt.y2 = V->y2 + n*(V->magnitude2/(((V->style==10) || (V->style==20)) ? load_magnitude : flood_magnitude));
 
             line_place(&Lt, xmin, ymin, xmax, ymax);
             break;
@@ -1776,7 +1776,7 @@ vector_place (AVECTOR *V, double *xmin, double *ymin, double *xmax, double *ymax
             Vtxt.x=V->x2;
             Vtxt.y=V->y2;
             Vtxt.kat=0;
-            Vtxt.wysokosc=zmwym.wysokosc*0.75;
+            Vtxt.wysokosc=(float)(zmwym.wysokosc*0.75);
             Vtxt.justowanie=j_do_lewej;
 
             set_decimal_format(Vtxt1.text, V->magnitude1, dim_precision);

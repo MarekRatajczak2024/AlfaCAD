@@ -49,7 +49,7 @@ extern void setcolor(int kolor);
 extern void view_scale(void);
 extern int getx(void);
 extern int gety(void);
-extern BOOL Add_String_To_List (char *ptr_string);
+extern void Add_String_To_List (char *ptr_string);
 extern void DF_to_String (char *ptrsz_buf, char *ptrsz_format, double df_val, int max_size);
 extern BOOL glb_silent;
 extern void     settextjustify(int horiz, int vert);
@@ -425,10 +425,9 @@ void komunikat_len(int n)
 
 }
 
-BOOL Add_String_To_List1 (char *ptr_string)
+void Add_String_To_List1 (char *ptr_string)
 {
 Add_String_To_List ( ptr_string ) ;
-return TRUE;
 }
 
 void komunikat_str(char *st)

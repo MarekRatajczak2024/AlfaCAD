@@ -29,6 +29,8 @@
 #include "o_editst.h"
 #include "unicode.h"
 
+#include "leak_detector_c.h"
+
 #define DXIL 	8 //6  //0   //copy from o_dialog,h
 
 #define LINE myline
@@ -39,7 +41,7 @@
 extern void Odczyt_licznikow(void);
 
 extern char *get_komunikat_ptr (int n) ;
-extern BOOL Add_String_To_List (char *) ;
+extern void Add_String_To_List (char *) ;
 extern BOOL Get_Str_From_List (char *, int, int, int, int) ;
 extern void Get_Current_Pos (int *, int *) ;
 extern void Set_Current_Pos (void);
@@ -683,6 +685,7 @@ int posutf8tomaxend(const unsigned char *s, int maxend)
 	return len;
 }
 
+/*
 int findlentopxl(const char *s, int max_pxl)
 {
 	int i=0;
@@ -703,8 +706,32 @@ int findlentopxl(const char *s, int max_pxl)
 	}
 	return i;
 }
+*/
+int findlentopxl(const char *s, int max_pxl)
+{
+	int i=0;
+	int len_pxl=0;
+	unsigned int unicode;
+	const char *ptr;  /* Changed to const char* */
+	const char *ptr1; /* Changed to const char* */
 
-int findfpostopxl(/*const unsigned*/ char *s, int max_pxl)
+	ptr = s;
+
+	while ((len_pxl < max_pxl) && (*ptr!='\0'))
+	{
+		/* Explicitly cast the address to (const uint8_t**), matching the signature */
+		unicode = utf8_to_ucs2((const uint8_t*)ptr, (const uint8_t**)&ptr1);
+		len_pxl+=TTF_char_len(unicode);
+		i += (int)(ptr1 - ptr);
+		ptr = ptr1;
+		if (unicode==UTF8_BAD_LEADING_BYTE)
+			break;
+	}
+	return i;
+}
+
+/*
+int findfpostopxl(char *s, int max_pxl)
 {
 	int i = 0;
 	int len_pxl = 0;
@@ -726,6 +753,31 @@ int findfpostopxl(/*const unsigned*/ char *s, int max_pxl)
 	}
 	return i;
 }
+*/
+int findfpostopxl(char *s, int max_pxl)
+{
+	int i = 0;
+	int len_pxl = 0;
+	unsigned int unicode;
+	const char *ptr, *ptr1; /* Changed to const char* to match const qualification */
+	/* ptr0 and full_length are removed since they were unused variables causing warnings */
+
+	ptr = s;
+	len_pxl = TTF_text_len(s);
+	if (len_pxl == 0) return 0;
+
+	while ((len_pxl > max_pxl) && (*ptr != '\0'))
+	{
+		/* Explicitly cast to (const uint8_t*) and (const uint8_t**) to satisfy the API */
+		unicode = utf8_to_ucs2((const uint8_t*)ptr, (const uint8_t**)&ptr1);
+		len_pxl -= TTF_char_len(unicode);
+		if (ptr1 == ptr) return i; // possibly error in encoding
+		i += (int)(ptr1 - ptr);
+		ptr = ptr1;
+	}
+	return i;
+}
+
 
 
 void my_show_mouse(BITMAP* sc)
@@ -1499,7 +1551,7 @@ do
 
  if ((c == ENTER) || (c == F10) || (c == F9))
  {
-   Add_String_To_List (s) ;
+   Add_String_To_List ((char*)s) ;
  }
  else if (c == F11)
  {
@@ -1733,7 +1785,7 @@ aa:
 
  if ((c == ENTER) || (c == F10) || (c == F9))
  {
-   Add_String_To_List (s) ;
+   Add_String_To_List ((char*)s) ;
  }
  *lpos_cur0 = lpos_cur + fpos;
  return c;
@@ -1815,6 +1867,9 @@ int get_string (char *tekst, char *legal, int maxlength, int width0, int kom)
    
    komunikat(k);
    MVCUR=LCUR;
+
+	mouse_x_=x;
+	mouse_y_=y;
 
 #ifdef ALLEGRO5
 #ifndef MACOS

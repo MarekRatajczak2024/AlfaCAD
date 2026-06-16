@@ -48,6 +48,7 @@
 
 #ifndef LINUX
 #include "AlfaObjects\GlobalDllObjects.h"
+#include "o_printerwarmer.h"
 #else
 #include <stdio.h>
 #include <cups/cups.h>
@@ -178,6 +179,9 @@ BOOL SetDefaultPrinter_(char* printer_name);
 extern void Odczyt_licznikow(void);
 
 extern BOOL MacOS15;
+
+extern void komunikat_str_short(char* st, BOOL stay, BOOL center);
+extern void remove_short_notice(void);
 }
 
 extern int win2unicodefactory(char* wintext, char* unicodetext, int codepage);
@@ -188,12 +192,75 @@ extern int GET_ALL_PRINTERS(void);
 extern int GET_DEF_PRINTER(char *szPName, int *iBufferSize);
 extern int win2unicode(char *wintext, char *unicodetext);
 
+extern
+int Win_Initial_Message(char* logoandquote, char* Ainfo);
+
 
 #ifndef LINUX
 extern int VeryMy_GetOpenFolder(HWND hwnd, char* f_name, char* sz__current_path_file, char* sz__default_path_file, char* sz__current_mask, char* dlg_name);
 static HDC hDC=NULL;
 static LPDEVMODE devmode;
 extern HWND win_get_window_(void);
+
+// Custom class to mimic your working File Dialog forcing behavior
+class CAlphaPrintDialog__ : public CPrintDialog
+{
+public:
+	CAlphaPrintDialog__(BOOL bPrintSetupOnly, DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES, CWnd* pParentWnd = NULL)
+		: CPrintDialog(bPrintSetupOnly, dwFlags, pParentWnd) {}
+
+protected:
+	virtual BOOL OnInitDialog() {
+		CPrintDialog::OnInitDialog();
+
+		// LIFT IT UP: Force the dialog to the absolute front of the Z-order stack
+		SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+		// Optional: Center it perfectly inside your AlphaCAD main window frame
+		CenterWindow(AfxGetMainWnd());
+
+		return TRUE;
+	}
+};
+
+class CAlphaPrintDialog : public CPrintDialog
+{
+public:
+	CAlphaPrintDialog(BOOL bPrintSetupOnly, DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES, CWnd* pParentWnd = NULL)
+		: CPrintDialog(bPrintSetupOnly, dwFlags, pParentWnd) {}
+
+protected:
+	virtual BOOL OnInitDialog() {
+		CPrintDialog::OnInitDialog();
+
+		// ======================================================================
+		// PARAMETER MANIPULATION OVERRIDE FOR THE SYSTEM PRINTER DIALOG
+		// ======================================================================
+		// 1. Force the OS Window Manager to inject the structural TOPMOST extended style.
+		// This makes the window act like a high-priority notification layer.
+		ModifyStyleEx(0, WS_EX_TOPMOST | WS_EX_APPWINDOW);
+
+		// 2. Clear any clipping restrictions that allow the dialog to fall behind its parent
+		ModifyStyle(WS_CHILD, WS_POPUP);
+
+		// 3. Brute-force the window to the front of the monitor stack
+		::SetWindowPos(GetSafeHwnd(), HWND_TOPMOST, 0, 0, 0, 0,
+					   SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+
+		// 4. Forcefully grab focus away from the underlying AlfaCAD thread
+		::SetForegroundWindow(GetSafeHwnd());
+		::SetActiveWindow(GetSafeHwnd());
+
+		// 5. Center it cleanly inside AlfaCAD's workspace frame so it's instantly visible
+		CenterWindow(AfxGetMainWnd());
+
+		return TRUE;
+	}
+};
+
+
+
+
 #endif
 static BOOL hdc_deleted=TRUE;
 
@@ -382,11 +449,14 @@ void Initial_Message(char file_name[255])
  msgbox.lpszIcon = MAKEINTRESOURCE(IDI_ALFA);
  
 
- ret = MessageBoxIndirect(&msgbox); // 65); // 65);  MB_OK);
+ ////ret = MessageBoxIndirect(&msgbox); // 65); // 65);  MB_OK);
+
+ ret = Win_Initial_Message(logoandquote, Ainfo);
  
 if (ret == IDCANCEL) exit(0);
 #else
-    char str_linux[100]="";
+	char str_linux[100]="";
+#ifdef MACOS
     struct utsname *buf = (struct utsname*)malloc(sizeof(utsname));
     ret = uname(buf);
 
@@ -400,7 +470,7 @@ if (ret == IDCANCEL) exit(0);
     free(buf);
 
     ///////////////////
-#ifdef LINUX
+#else LINUX
     char *session_type = getenv("XDG_SESSION_TYPE");
 
     if (session_type != NULL) {
@@ -465,6 +535,7 @@ if (ret == IDCANCEL) exit(0);
 	if (ret==2) ret=0;
 #endif
 #else
+
     ret = tinyfd_messageBox(
             Ainfo , /* NULL or "" */
             logoandquote, /* NULL or ""  may contain \n and \t */
@@ -755,6 +826,9 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
 
         printf("tinyfd_FileNameDialog\n");
 
+		// FIX: Get the active main window handle of AlfaCAD
+		HWND hMainWnd = AfxGetMainWnd() ? AfxGetMainWnd()->GetSafeHwnd() : NULL;
+
         lTheOpenFileName = tinyfd_FileNameDialog(       //tinyfd_FileNameDialog
             dlg_name,
             sz__current_path_file,
@@ -841,7 +915,26 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
 	strcpy(f_name, lTheOpenFileName);
 
     ret=Save_Update_flex(1, &curr_h, &curr_v);
+#ifndef LINUX
+	// ======================================================================
+	// THE SMOKING GUN FIX: HEAL ALFACAD AFTER TINYFD FOCUS STEAL
+	// ======================================================================
+	// tinyfiledialogs leaves AlfaCAD trapped in a background state when it closes.
+	// This forces Windows to restore AlfaCAD as the active top-level workspace.
+	HWND hMainAppWindow = ::GetActiveWindow();
+	if (hMainAppWindow == NULL)
+	{
+		// Fallback: If GetActiveWindow fails, grab it from MFC directly
+		if (AfxGetMainWnd() != NULL) hMainAppWindow = AfxGetMainWnd()->GetSafeHwnd();
+	}
 
+	if (hMainAppWindow != NULL)
+	{
+		::SetActiveWindow(hMainAppWindow);
+		::SetForegroundWindow(hMainAppWindow);
+	}
+	// ======================================================================
+#endif
 	return 1;
 
 }
@@ -904,7 +997,26 @@ int My_GetOpenFolder(char *f_name, char *sz__current_path_file, char *sz__defaul
     CUR_ON(PozX0,PozY0);
 
     ret = Save_Update_flex(1, &curr_h, &curr_v);
+#ifndef LINUX
+	// ======================================================================
+	// THE SMOKING GUN FIX: HEAL ALFACAD AFTER TINYFD FOCUS STEAL
+	// ======================================================================
+	// tinyfiledialogs leaves AlfaCAD trapped in a background state when it closes.
+	// This forces Windows to restore AlfaCAD as the active top-level workspace.
+	HWND hMainAppWindow = ::GetActiveWindow();
+	if (hMainAppWindow == NULL)
+	{
+		// Fallback: If GetActiveWindow fails, grab it from MFC directly
+		if (AfxGetMainWnd() != NULL) hMainAppWindow = AfxGetMainWnd()->GetSafeHwnd();
+	}
 
+	if (hMainAppWindow != NULL)
+	{
+		::SetActiveWindow(hMainAppWindow);
+		::SetForegroundWindow(hMainAppWindow);
+	}
+	// ======================================================================
+#endif
     //if (!folder_name) return 0;
     if (strlen(f_name)==0) return 0;
     return 1;
@@ -1061,69 +1173,326 @@ int Print2Page(int WINPRINT_DEF)
 	temp2=(LPCTSTR)temp1;
 	winspooltext="WINSPOOL";
 
+ 	// ======================================================================
+ 	// THE SYNCHRONIZATION GATE
+ 	// ======================================================================
+ 	// If the user opens the print setup panel incredibly fast, and the
+ 	// background warming thread is still mid-handshake, we wait safely for it to
+ 	// finish. This permanently stops the threads from colliding and crashing!
+ 	if (!IsPrinterWarmedUp())
+ 	{
+ 		komunikat_str_short((char*)_NETWORK_PRINTER_, FALSE, TRUE);
+ 		int loopSafetyWatchdog = 0;
+ 		while (!IsPrinterWarmedUp() && loopSafetyWatchdog < 200)
+ 		{
+ 			// Pause for 100 milliseconds to let the background thread work
+ 			::Sleep(100);
 
-	hDC = CreateDC(winspooltext, temp2, NULL, NULL);
+ 			// Safety watchdog: after 20 seconds, break out no matter what
+ 			// to prevent freezing AlphaCAD if the printer disconnected
+ 			loopSafetyWatchdog++;
+ 		}
+ 		komunikat_str_short((char*)"", FALSE, TRUE);
+ 		remove_short_notice();
+ 	}
+ 	// ======================================================================
+
+#ifndef LINUX
+#ifndef BIT64
+    komunikat_str_short((char*)_NETWORK_PRINTER_, FALSE, TRUE);
+#endif
+#endif
+
+	////hDC = CreateDC(winspooltext, temp2, NULL, NULL);
+	///devmode contains the pre-verified printer properties from the dialog, Windows skips the network query and generates the hDC almost instantly.
+ 	hDC = CreateDC(winspooltext, temp2, NULL, devmode);
     ASSERT(hDC);
-    //DWORD err=GetLastError();
 
-    /*
-    CString printerName = szPName;
-    DWORD infoSize, numBytes;
-    HANDLE hPrinter;
-    bool ok = OpenPrinter(printerName.GetBuffer(), (LPHANDLE)&hPrinter, 0);
-    if (!ok)
-    {
-        printf("QWin32PrintEngine::initialize: OpenPrinter failed\n");
-    }
-    GetPrinter(hPrinter, 2, NULL, 0, &infoSize);
-    HGLOBAL hMem;
-    hMem = GlobalAlloc(GHND, infoSize);
-    PRINTER_INFO_2* pInfo;
-    pInfo = (PRINTER_INFO_2*)GlobalLock(hMem);
-    ok = GetPrinter(hPrinter, 2, (LPBYTE)pInfo, infoSize, &numBytes);
-    if (!ok)
-    {
-        printf("QWin32PrintEngine::initialize: GetPrinter failed\n");
-    }
-    DEVMODE* devMode;
-    devMode = pInfo->pDevMode;
-    HDC hdc = NULL;
-    hdc = CreateDC(NULL, printerName.GetString(), 0, devMode);
-    hDC = hdc;
-    */
+#ifndef LINUX
+#ifndef BIT64
+    komunikat_str_short((char*)"", FALSE, TRUE);
+    remove_short_notice();
+#endif
+#endif
+
+
 
     cups_printer.printer_name = temp1;
 
     set_cups_default_printer_name(&cups_printer);
  }
- else
- {
- 	Error1=0;
- 	CPrintDialog dlg(FALSE);
-	if (dlg.DoModal() == IDOK)
-		{
-			CString temp = "Device selected: " + dlg.GetDeviceName();
 
-			strcpy(temp1, dlg.GetDeviceName())	;
-			temp2=(LPCTSTR)temp1;
-			devmode = dlg.GetDevMode();
+#ifdef OLDSTUFF
+	else
+{
+    // ======================================================================
+    // PASS 2: AUTOMATED FAST PRINTING (NO DANGEROUS UI, NO DRIVER CRASHES)
+    // ======================================================================
+    Error1 = 0;
+
+    char szDefaultPrinter[256] = {0};
+    DWORD dwSize = sizeof(szDefaultPrinter);
+
+    // 1. Fetch the Windows OS default printer name instantly from cache
+    if (::GetDefaultPrinterA(szDefaultPrinter, &dwSize))
+    {
+        strncpy(temp1, szDefaultPrinter, sizeof(temp1) - 1);
+        temp1[sizeof(temp1) - 1] = '\0';
+        temp2 = (LPCTSTR)temp1;
+
+    	/*
+        // 2. Fetch the default settings structure directly from the system registry.
+        // This is safe, pure data processing—no windows open, so nothing can crash!
+        HANDLE hPrinter = NULL;
+        if (::OpenPrinterA(const_cast<LPSTR>(temp2), &hPrinter, NULL))
+        {
+            LONG dwNeeded = ::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), NULL, NULL, 0);
+            if (dwNeeded > 0)
+            {
+                devmode = (LPDEVMODE)malloc(dwNeeded);
+                if (devmode != NULL)
+                {
+                    if (::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), devmode, NULL, DM_OUT_BUFFER) != IDOK)
+                    {
+                        free(devmode);
+                        devmode = NULL; // Safe fallback if structure reading fails
+                    }
+                }
+            }
+            ::ClosePrinter(hPrinter);
+        }
+        */
+    	/*
+    	// Fetch the default settings structure directly from the system registry.
+    	HANDLE hPrinter = NULL;
+    	if (::OpenPrinterA(const_cast<LPSTR>(temp2), &hPrinter, NULL))
+    	{
+    		// PASS 1: Find out how much memory the printer properties need
+    		LONG dwNeeded = ::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), NULL, NULL, 0);
+    		if (dwNeeded > 0)
+    		{
+    			devmode = (LPDEVMODE)malloc(dwNeeded);
+    			if (devmode != NULL)
+    			{
+    				// PASS 2: THE SECURE HANDSHAKE
+    				// Using DM_OUT_BUFFER | DM_IN_BUFFER forces Windows to pull the current active system-driver settings
+    				// (like an active A5 paper selection) straight out of the user profile registry into your pointer!
+    				LONG lResult = ::DocumentPropertiesA(
+						NULL,
+						hPrinter,
+						const_cast<LPSTR>(temp2),
+						devmode,        // Output buffer
+						NULL,           // No prompt window
+						DM_OUT_BUFFER   // Extract current user configuration state
+					);
+
+    				if (lResult != IDOK)
+    				{
+    					free(devmode);
+    					devmode = NULL;
+    				}
+    			}
+    		}
+    		::ClosePrinter(hPrinter);
+    	}
+    	*/
+    	/*
+    	// Fetch the active user settings structure directly from the system registry.
+    	HANDLE hPrinter = NULL;
+    	if (::OpenPrinterA(const_cast<LPSTR>(temp2), &hPrinter, NULL))
+    	{
+    		// STEP 1: Determine the memory block layout allocation boundaries
+    		LONG dwNeeded = ::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), NULL, NULL, 0);
+    		if (dwNeeded > 0)
+    		{
+    			devmode = (LPDEVMODE)malloc(dwNeeded);
+    			if (devmode != NULL)
+    			{
+    				// STEP 2: Pre-populate the buffer with the machine's global base layout
+    				::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), devmode, NULL, DM_OUT_BUFFER);
+
+    				// STEP 3: THE LIVE SYSTEM HANDSHAKE (THE PREFERENCES MERGE)
+    				// Passing BOTH flags tells Windows to fetch the user's customized preference profile
+    				// (like an active A5 selection) from the system registry and merge it right over the base.
+    				LONG lResult = ::DocumentPropertiesA(
+						NULL,
+						hPrinter,
+						const_cast<LPSTR>(temp2),
+						devmode,          // Output target block
+						devmode,          // Input base block to merge into
+						DM_OUT_BUFFER | DM_IN_BUFFER // Force a registry profile sync
+					);
+
+    				if (lResult != IDOK)
+    				{
+    					free(devmode);
+    					devmode = NULL;
+    				}
+    			}
+    		}
+    		::ClosePrinter(hPrinter);
+    	}
+        */
+    	// STEP 1: Configure an explicit, authenticated Win32 access request
+    	PRINTER_DEFAULTSA pd = { 0 };
+    	pd.pDatatype = NULL;
+    	pd.pDevMode  = NULL;
+    	// PRINTER_ACCESS_USE grants permission to read the live User Preferences registry bucket
+    	pd.DesiredAccess = PRINTER_ACCESS_USE;
+
+    	HANDLE hPrinter = NULL;
+    	// Pass our 'pd' structure pointer as the last parameter instead of NULL
+    	if (::OpenPrinterA(const_cast<LPSTR>(temp2), &hPrinter, &pd))
+    	{
+    		// STEP 2: Determine the memory block layout allocation boundaries
+    		LONG dwNeeded = ::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), NULL, NULL, 0);
+    		if (dwNeeded > 0)
+    		{
+    			devmode = (LPDEVMODE)malloc(dwNeeded);
+    			if (devmode != NULL)
+    			{
+    				// STEP 3: Pre-populate the buffer with the machine's global base layout
+    				::DocumentPropertiesA(NULL, hPrinter, const_cast<LPSTR>(temp2), devmode, NULL, DM_OUT_BUFFER);
+
+    				// STEP 4: THE LIVE SYSTEM HANDSHAKE (THE PREFERENCES MERGE)
+    				// Now that our connection handle has PRINTER_ACCESS_USE permissions,
+    				// Windows will successfully pull the active A5 layout from the registry!
+    				LONG lResult = ::DocumentPropertiesA(
+						NULL,
+						hPrinter,
+						const_cast<LPSTR>(temp2),
+						devmode,          // Output target block
+						devmode,          // Input base block to merge into
+						DM_OUT_BUFFER | DM_IN_BUFFER // Force a registry profile sync
+					);
+
+    				if (lResult != IDOK)
+    				{
+    					free(devmode);
+    					devmode = NULL;
+    				}
+    			}
+    		}
+    		::ClosePrinter(hPrinter);
+    	}
+
     }
-     else Error1=1;
+    else
+    {
+        // No default printer is set up in Windows
+        ::MessageBoxA(NULL, "Printing Error: No default printer discovered in Windows. Please assign a printer in Windows Settings.", "Error", MB_OK | MB_ICONERROR);
+        return 0;
+    }
 
-    GlobalFree(dlg.m_pd.hDevMode);
-    GlobalFree(dlg.m_pd.hDevNames);
-	if (dlg.GetPrinterDC()!=NULL)
-	    DeleteDC(dlg.GetPrinterDC());
-	hDC = NULL;
-	if (Error1==1)  return 0;
+    hDC = NULL;
+    winspooltext = "WINSPOOL";
 
-    winspooltext="WINSPOOL";
+    // 3. Open the Device Context using our safely extracted properties
+    hDC = ::CreateDCA(winspooltext, temp2, NULL, devmode);
+    ASSERT(hDC);
 
-	hDC = CreateDC(winspooltext, temp2, NULL, NULL); //devmode1); //NULL);
-	ASSERT(hDC);
-   //DWORD err = GetLastError();
+    // Clean up our local data copy immediately
+    if (devmode != NULL)
+    {
 
- }
+    		// --- STEP 1: VERIFY MODERN FIELD ASSIGNMENTS ---
+    		// Modern IPP class drivers specify the active paper boundary via standard sizing flags.
+    		// If the DM_PAPERSIZE bit is checked, the driver has confirmed a layout change!
+    		if (devmode->dmFields & DM_PAPERSIZE)
+    		{
+    			// 1 = Letter, 9 = A4, 11 = A5, 258 = Custom
+    			short currentPaperID = devmode->dmPaperSize;
+
+    			// If it specifically reports 11 (DMPAPER_A5), you can force-override your layout
+    			// fallback bounds instantly without relying on broken driver handshakes!
+    			if (currentPaperID == 11 || currentPaperID == DMPAPER_A5)
+    			{
+    				// A5 metrics at 600 DPI calculated natively:
+    				// Width:  148mm -> 5.82 inches * 600 = 3496 pixels
+    				// Height: 210mm -> 8.26 inches * 600 = 4960 pixels
+    				printf("AlfaCAD Target Verified: Active Layout is A5\n");
+    			}
+    		}
+
+    		// --- STEP 2: CHECK EXPLICIT USER HEIGHT/WIDTH ---
+    		// If the user set a highly specific custom tray configuration, the size values
+    		// will be written directly into dmPaperWidth and dmPaperLength in tenths of a millimeter.
+    		if ((devmode->dmFields & DM_PAPERWIDTH) && (devmode->dmFields & DM_PAPERLENGTH))
+    		{
+    			// For an A5 sheet, width will report 1480 and length will report 2100
+    			double paperWidthInMM  = devmode->dmPaperWidth / 10.0;
+    			double paperHeightInMM = devmode->dmPaperLength / 10.0;
+
+    			// Use these raw millimeter dimensions to scale your AlfaCAD drawing tiles instantly!
+    			if (paperWidthInMM > 0 && paperHeightInMM > 0)
+    			{
+    				// Calculate your active pixels using your 600 DPI logpixelx variable:
+    				int modernWidthInPixels  = (int)((paperWidthInMM / 25.4) * 600);
+    				int modernHeightInPixels = (int)((paperHeightInMM / 25.4) * 600);
+    			}
+    		}
+
+
+
+
+    	/////////////////////
+        free(devmode);
+        devmode = NULL;
+    }
+}
+#endif
+	else
+	{
+		// ======================================================================
+		// PASS 2: SIMPLIFIED RAW SPYING (ZERO DRIVER HARMFUL HANDSHAKES)
+		// ======================================================================
+		Error1 = 0;
+
+		char szDefaultPrinter[256] = {0};
+		DWORD dwSize = sizeof(szDefaultPrinter);
+
+		// 1. Fetch the default printer name instantly from the OS cache
+		if (::GetDefaultPrinterA(szDefaultPrinter, &dwSize))
+		{
+			strncpy(temp1, szDefaultPrinter, sizeof(temp1) - 1);
+			temp1[sizeof(temp1) - 1] = '\0';
+			temp2 = (LPCTSTR)temp1;
+		}
+		else
+		{
+			::MessageBoxA(NULL, "Printing Error: No default printer discovered in Windows. Please assign a printer in Windows Settings.", "Error", MB_OK | MB_ICONERROR);
+			return 0;
+		}
+
+		winspooltext = "WINSPOOL";
+
+		// ======================================================================
+		// THE SYNCHRONIZATION GATE
+		// ======================================================================
+		// If the engineer opens the print setup panel incredibly fast, and the
+		// background warming thread is still mid-handshake, we wait safely for it to
+		// finish. This permanently stops the threads from colliding and crashing!
+		int loopSafetyWatchdog = 0;
+		while (!IsPrinterWarmedUp() && loopSafetyWatchdog < 200)
+		{
+			// Pause for 100 milliseconds to let the background thread work
+			::Sleep(100);
+
+			// Safety watchdog: after 20 seconds, break out no matter what
+			// to prevent freezing AlphaCAD if the printer disconnected
+			loopSafetyWatchdog++;
+		}
+		// ======================================================================
+
+
+
+		// 2. Open a basic, un-handshaked Device Context directly.
+		// Passing NULL as the last argument completely bypasses the driver's profile engine.
+		// It runs in less than a millisecond because your startup thread warmer already primed it!
+		hDC = ::CreateDCA(winspooltext, temp2, NULL, NULL);
+		ASSERT(hDC);
+	}
+
 
   devicecaps.aspectx= GetDeviceCaps(hDC, ASPECTX);
   devicecaps.aspecty= GetDeviceCaps(hDC, ASPECTY);
@@ -1147,6 +1516,21 @@ int Print2Page(int WINPRINT_DEF)
   devicecaps.logpixely= GetDeviceCaps(hDC, LOGPIXELSY);
 
   if (WINPRINT_DEF) DeleteDC(hDC);
+
+	// ========================================================
+	// THE GLOBAL FOCUS HEALER FOR ALFACAD
+	// ========================================================
+	// If we just finished a pass, force AlfaCAD's main frame back to the top of
+	// the OS focus chain. This guarantees that subsequent 'OpenFile' dialogs
+	// will open in front of the screen normally!
+	CWnd* pMainWnd = AfxGetMainWnd();
+	if (pMainWnd != NULL && !WINPRINT_DEF)
+	{
+		// Force Windows to restore AlfaCAD as the top-level user interaction layer
+		::SetForegroundWindow(pMainWnd->GetSafeHwnd());
+		pMainWnd->SetActiveWindow();
+	}
+
 #else
     http_t *http=CUPS_HTTP_DEFAULT;
     cups_dest_t *dest;

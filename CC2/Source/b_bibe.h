@@ -124,6 +124,7 @@ typedef struct DRAWING_PARAMS
     double rotation_precision;
     double stress_precision;
     double r_precision;
+    double mass_precision;
 
     double n_magnitude;
     double v_magnitude;
@@ -132,12 +133,15 @@ typedef struct DRAWING_PARAMS
     double r_magnitude;
     double rm_magnitude;
     double s_magnitude;
+    double ss_magnitude;
     double src_magnitude;
     double q_magnitude;
     double p_magnitude;
 
     STATIC_COLORS static_colors;
     STATIC_STRESS_COLORS static_stress_colors;
+
+    BOOL rescaling_menu_mode;
 
 } DRAWING_PARAMS;
 

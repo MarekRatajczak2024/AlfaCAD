@@ -16,9 +16,19 @@
 
 #include <forwin.h>
 #ifndef LINUX
-#include <conio.h> 
+#include <conio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <ctype.h>
 #else
 #include <stdio.h>
+////// added for atoi_ atol_
+#include <stdlib.h>
+#include <limits.h>
+#include <errno.h>
+#include <ctype.h>
+//////
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -37,6 +47,51 @@ extern int my_getch(void);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int atoi_(const char *st)
+{
+    char *endptr;
+
+    errno = 0; // CRITICAL: Reset errno before the call
+    long val = strtol(st, &endptr, 10);
+
+    // 1. Check for strtol range errors or no conversion
+    if (errno == ERANGE || endptr == st) return 0;
+
+    // 2. Check if the parsed long fits into a standard int
+    if (val > INT_MAX || val < INT_MIN) return 0;
+
+    // 3. Skip trailing whitespace (optional but highly recommended)
+    while (isspace((unsigned char)*endptr)) {
+        endptr++;
+    }
+
+    // 4. Reject if trailing non-whitespace characters remain
+    if (*endptr != '\0') return 0;
+
+    return (int)val;
+}
+
+long atol_(const char *st)
+{
+    char *endptr;
+
+    errno = 0; // CRITICAL: Reset errno before the call
+    long val = strtol(st, &endptr, 10);
+
+    // 1. Check for strtol range errors or no conversion
+    if (errno == ERANGE || endptr == st) return 0;
+
+    // 2. Skip trailing whitespace
+    while (isspace((unsigned char)*endptr)) {
+        endptr++;
+    }
+
+    // 3. Reject if trailing non-whitespace characters remain
+    if (*endptr != '\0') return 0;
+
+    return val;
+}
 
 
 #ifdef LINUX

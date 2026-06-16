@@ -1210,9 +1210,10 @@ static int action_window_str (Display *disp, char mode) {/*{{{*/
     }
 }/*}}}*/
 
-
-static int list_current_desktop (Display *disp) {/*{{{*/
-    unsigned long *cur_desktop = NULL;
+/*
+static int list_current_desktop_ (Display *disp) {
+    //unsigned long *cur_desktop = NULL;
+    gchar *cur_desktop = NULL;
     Window root = DefaultRootWindow(disp);
     if (! (cur_desktop = (unsigned long *)get_property(disp, root,
             XA_CARDINAL, "_NET_CURRENT_DESKTOP", NULL))) {
@@ -1228,6 +1229,64 @@ static int list_current_desktop (Display *disp) {/*{{{*/
     printf("%-2d\n", *cur_desktop);
     return EXIT_SUCCESS;
 }
+
+static int list_current_desktop__ (Display *disp) {
+    unsigned long *cur_desktop = NULL;
+    Window root = DefaultRootWindow(disp);
+
+    // Attempt 1: EWMH standard
+    cur_desktop = (unsigned long *)get_property(disp, root, XA_CARDINAL, "_NET_CURRENT_DESKTOP", NULL);
+
+    // Attempt 2: Legacy ICCCM / WindowMaker fallback
+    if (!cur_desktop) {
+        cur_desktop = (unsigned long *)get_property(disp, root, XA_CARDINAL, "_WIN_WORKSPACE", NULL);
+    }
+
+    // If both failed, handle the error
+    if (!cur_desktop) {
+        fputs("Cannot get current desktop properties. "
+              "(_NET_CURRENT_DESKTOP or _WIN_WORKSPACE property)\n", stderr);
+        return EXIT_FAILURE; // No need to free here since cur_desktop is guaranteed to be NULL
+    }
+
+    // Print the dereferenced desktop index
+    printf("%-2ld\n", *cur_desktop);
+
+    // FIX: Free the allocated buffer on successful path to prevent the leak
+    g_free(cur_desktop);
+
+    return EXIT_SUCCESS;
+}
+*/
+
+static int list_current_desktop (Display *disp) {
+    Window root = DefaultRootWindow(disp);
+
+    // 1. Try primary EWMH atom
+    unsigned long *cur_desktop = (unsigned long *)get_property(disp, root, XA_CARDINAL, "_NET_CURRENT_DESKTOP", NULL);
+
+    // 2. If primary failed, try secondary fallback atom
+    if (!cur_desktop) {
+        cur_desktop = (unsigned long *)get_property(disp, root, XA_CARDINAL, "_WIN_WORKSPACE", NULL);
+    }
+
+    // 3. If both allocations failed, exit safely (no memory was allocated)
+    if (!cur_desktop) {
+        fputs("Cannot get current desktop properties. "
+              "(_NET_CURRENT_DESKTOP or _WIN_WORKSPACE property)\n", stderr);
+        return EXIT_FAILURE;
+    }
+
+    // 4. Print value cleanly using your corrected 64-bit specifier
+    printf("%-2ld\n", (long)*cur_desktop);
+
+    // 5. Explicitly free the heap allocation
+    //g_free(cur_desktop);
+    free(cur_desktop);
+
+    return EXIT_SUCCESS;
+}
+
 
 static int list_desktops (Display *disp) {/*{{{*/
     unsigned long *num_desktops = NULL;
@@ -1631,7 +1690,7 @@ static gchar *get_property (Display *disp, Window win, /*{{{*/
     unsigned long ret_bytes_after;
     unsigned long tmp_size;
     unsigned char *ret_prop;
-    gchar *ret;
+    void *ret;
     
     xa_prop_name = XInternAtom(disp, prop_name, False);
     
@@ -1654,6 +1713,8 @@ static gchar *get_property (Display *disp, Window win, /*{{{*/
     }
 
     /* null terminate the result to make string handling easier */
+
+    /*
     tmp_size = (ret_format / (32 / sizeof(long))) * ret_nitems;
     ret = g_malloc(tmp_size + 2);
     memcpy(ret, ret_prop, tmp_size);
@@ -1662,7 +1723,34 @@ static gchar *get_property (Display *disp, Window win, /*{{{*/
     if (size) {
         *size = tmp_size;
     }
-    
+     */
+    /* Correct X11 property size calculation */
+    if (ret_format == 32) {
+        tmp_size = ret_nitems * sizeof(long);
+    } else if (ret_format == 16) {
+        tmp_size = ret_nitems * sizeof(short);
+    } else {
+        tmp_size = ret_nitems * sizeof(char);
+    }
+
+    // Allocate memory
+    ////gchar *ret = g_malloc(tmp_size + 2);
+
+    // Standard C Allocation
+    ret = malloc(tmp_size + 2);
+    if (!ret) {
+        XFree(ret_prop);
+        return NULL; // Safe fallback if system out of memory
+    }
+    memcpy(ret, ret_prop, tmp_size);
+    // Clear out trailing padding bytes safely
+    ((char*)ret)[tmp_size] = '\0';
+    ((char*)ret)[tmp_size + 1] = '\0';
+
+    if (size) {
+        *size = tmp_size;
+    }
+
     XFree(ret_prop);
     return ret;
 }/*}}}*/

@@ -36,7 +36,7 @@ int str_caseeq(const void *a, const void *b)
 }
 
 //added on 14.04.2026
-char* strdup(const char* s) {
+static char* strdup__(const char* s) {
     size_t len = strlen(s) + 1;
     char* new_str = malloc(len);
     if (new_str) {
@@ -45,6 +45,15 @@ char* strdup(const char* s) {
     return new_str;
 }
 
+static char* strdup(const char* s) {
+    if (s == NULL) return NULL;
+    size_t len = strlen(s) + 1;
+    char* new_str = malloc(len);
+    if (new_str) {
+        memcpy(new_str, s, len); // Your memcpy is also safe and efficient
+    }
+    return new_str;
+}
 
 list_str_t *list_str_create(list_str_flags_t flags)
 {

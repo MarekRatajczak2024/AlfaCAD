@@ -186,6 +186,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double ss_magnitude;
 extern double src_magnitude;
 extern double p_magnitude;
 extern double q_magnitude;
@@ -199,6 +200,7 @@ extern double d_magnitude0;
 extern double r_magnitude0;
 extern double rm_magnitude0;
 extern double s_magnitude0;
+extern double ss_magnitude0;
 extern double src_magnitude0;
 extern double p_magnitude0;
 extern double q_magnitude0;
@@ -212,11 +214,17 @@ extern double d_magnitude_imp0;
 extern double r_magnitude_imp0;
 extern double rm_magnitude_imp0;
 extern double s_magnitude_imp0;
+extern double ss_magnitude_imp0;
 extern double src_magnitude_imp0;
 extern double p_magnitude_imp0;
 extern double q_magnitude_imp0;
 extern double sp_magnitude_imp0;
 extern double sm_magnitude_imp0;
+
+extern BOOL rescaling_menu_mode;
+extern BOOL refresh_rescaling_menu_mode;
+extern BOOL refresh_rescaling_plate_menu_mode;
+extern BOOL refresh_rescaling_shield_menu_mode;
 
 extern TMENU mTTF_OTF;
 extern void Resize_Vector (void);
@@ -234,6 +242,14 @@ static TMENU mParametry = { 10,0,0,30,1,3,ICONS | TADD | 0x2,CMNU,CMBR,CMTX,0,0,
 
 static BOOL go_refresh=FALSE;
 static BOOL vector_refresh=FALSE;
+
+void inifiledependncy(void)
+{
+    //refreshing static settings
+    refresh_rescaling_menu_mode=1;
+    refresh_rescaling_plate_menu_mode=1;
+    refresh_rescaling_shield_menu_mode=1;
+}
 
  void  formatA(void)
 {
@@ -373,6 +389,26 @@ void Uklad_izometryczny(void)
     menu_par_new((*mParametry.pola)[4].txt, ParTxt[4]);
     go_refresh=TRUE;
     drawp(&mParametry);
+}
+
+void RescalingAutoMode(void)
+{
+    char sk[MaxTextLen] = "";
+    rescaling_menu_mode=0;
+
+    sprintf(sk, "%s", (rescaling_menu_mode==0)? "Auto" : "Menu");  //rescaling mode Auto / Menu
+    menu_par_new((*mMagnitude.pola)[18].txt, sk);
+    drawp (&mParametry) ;
+}
+
+void RescalingMenuMode(void)
+{
+    char sk[MaxTextLen] = "";
+    rescaling_menu_mode=1;
+
+    sprintf(sk, "%s", (rescaling_menu_mode==0)? "Auto" : "Menu");  //rescaling mode Auto / Menu
+    menu_par_new((*mMagnitude.pola)[18].txt, sk);
+    drawp (&mParametry) ;
 }
 
 void ramka_on(void)
@@ -1051,12 +1087,14 @@ void Change_Magnitude(int kom_no, double *parameter, int menu_number)
     }
     else if (menu_number==12)
     {
-        sprintf(sk, "%lg/%lg", s_magnitude, src_magnitude) ;
+        sprintf(sk, "%lg/%lg/%g", s_magnitude, src_magnitude, ss_magnitude) ;
         menu_par_new ((*mMagnitude.pola)[menu_number].txt, sk) ;
         DF_to_String (sk, "%lg", s_magnitude, 6) ;
         menu_par_new ((*mStressMagnitude.pola)[0].txt, sk) ;
         DF_to_String (sk, "%lg", src_magnitude, 6) ;
         menu_par_new ((*mStressMagnitude.pola)[1].txt, sk) ;
+        DF_to_String (sk, "%lg", ss_magnitude, 6) ;
+        menu_par_new ((*mStressMagnitude.pola)[2].txt, sk) ;
     }
     else if (menu_number==10)
     {
@@ -1190,6 +1228,11 @@ void S_Magnitude(void)
     Change_Magnitude(219, &s_magnitude, 12);
 }
 
+void SS_Magnitude(void)
+{
+    Change_Magnitude(227, &ss_magnitude, 12);
+}
+
 void SRC_Magnitude(void)
 {
     Change_Magnitude(224, &src_magnitude, 12);
@@ -1236,6 +1279,7 @@ void reset_magnitude_SI(void)
         r_magnitude=r_magnitude0;
         rm_magnitude=rm_magnitude0;
         s_magnitude=s_magnitude0;
+        ss_magnitude=ss_magnitude0;
         src_magnitude=src_magnitude0;
         q_magnitude=q_magnitude0;
         sp_magnitude=sp_magnitude0;
@@ -1256,6 +1300,10 @@ void reset_magnitude_SI(void)
          */
 
         uaktualnij_polap();
+
+        go_refresh=TRUE;
+        vector_refresh=TRUE;
+
         Change = TRUE;
     }
     return;
@@ -1292,6 +1340,7 @@ void reset_magnitude_IMP(void)
         r_magnitude=r_magnitude_imp0;
         rm_magnitude=rm_magnitude_imp0;
         s_magnitude=s_magnitude_imp0;
+        ss_magnitude=ss_magnitude_imp0;
         src_magnitude=src_magnitude_imp0;
         q_magnitude=q_magnitude_imp0;
         sp_magnitude=sp_magnitude_imp0;
@@ -1311,6 +1360,8 @@ void reset_magnitude_IMP(void)
         rm_precision=rm_precision_imp0;
          */
 
+        go_refresh=TRUE;
+        vector_refresh=TRUE;
 
         uaktualnij_polap();
         Change = TRUE;
@@ -1535,18 +1586,23 @@ int ret;
 
     sprintf(sk, "%lg", rm_magnitude);
     menu_par_new((*mMagnitude.pola)[11].txt, sk);
-    sprintf(sk, "%lg/%lg", s_magnitude, src_magnitude);
+    sprintf(sk, "%lg/%lg/%lg", s_magnitude, src_magnitude, ss_magnitude);
     menu_par_new((*mMagnitude.pola)[12].txt, sk);
 
     sprintf(sk, "%lg", s_magnitude);
     menu_par_new((*mStressMagnitude.pola)[0].txt, sk);
     sprintf(sk, "%lg", src_magnitude);
     menu_par_new((*mStressMagnitude.pola)[1].txt, sk);
+    sprintf(sk, "%lg", ss_magnitude);
+    menu_par_new((*mStressMagnitude.pola)[2].txt, sk);
 
     sprintf(sk, "%lg", p_magnitude);   //% of reinforcement
     menu_par_new((*mMagnitude.pola)[13].txt, sk);
     sprintf(sk, "%lg", q_magnitude);  //exaggerate modal modes of vibrations
     menu_par_new((*mMagnitude.pola)[14].txt, sk);
+
+    sprintf(sk, "%s", (rescaling_menu_mode==0)? "Auto" : "Menu");  //rescaling mode Auto / Menu
+    menu_par_new((*mMagnitude.pola)[18].txt, sk);
 
     sprintf(sk, "%lg", force_precision);
     menu_par_new((*mPrecision.pola)[0].txt, sk);
@@ -1661,6 +1717,8 @@ void  Edycja_ALFACAD_INI(void)
   ////LockMouse();
 #endif
   preview_blocked = FALSE;
+
+  if (ret_edit) inifiledependncy();
   return;
 }
 
@@ -2118,8 +2176,8 @@ static void (* COMND[])(void)={
                      Force_Precision, Moment_Precision, Displacement_Precision, Rotation_Precision, Load_Precision, Thermal_Precision, Stress_Precision, Reaction_Precision,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,
                      kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorS,kolorSX,
-                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, reset_magnitude_SI, reset_magnitude_IMP, R_Magnitude, QN_Magnitude,
-                     Uklad_kartezjanski, Uklad_geodezyjny, Uklad_izometryczny
+                     Load_Magnitude, Flood_Magnitude, S_Magnitude, SRC_Magnitude, SS_Magnitude,reset_magnitude_SI, reset_magnitude_IMP, R_Magnitude, QN_Magnitude,
+                     Uklad_kartezjanski, Uklad_geodezyjny, Uklad_izometryczny, RescalingAutoMode, RescalingMenuMode
 };
 
 /*----------------------------------------------------*/

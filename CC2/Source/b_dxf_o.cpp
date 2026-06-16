@@ -117,11 +117,19 @@ extern int isometric_polar_to_cartesian(double x1, double y1,double length, doub
 extern int circle_to_isometric_ellipse_o_e(enum PlaneType plane, OKRAG *o, ELLIPSE *e);
 extern double get_elliptical_tangent_angle(double main_axis_angle, double xr, double yr, double end_angle);
 extern void Get_EllipticalArc_EndPoints (double df_xc, double df_yc, double df_xaxis,  double df_yaxis, double df_angle, double df_sangle0, double df_eangle0, double *x1, double *y1, double *x2, double *y2);
+extern int get_thermal_flipped(AVECTOR *v);
+extern double cartesian_vector_length(double i_dx, double i_dy, double *pl_dx, double *pl_dy);
+extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
+                                double dx_loc, double dy_loc, double dz_loc,
+                                double *px, double *py, double *pdx, double *pdy);
+extern int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float ypp);
+
 extern BOOL Check_if_GE (double x, double y);
 extern BOOL Check_if_LT (double x, double y);
 extern BOOL Check_if_LE (double x, double y);
 
 extern char *load_symbol[];
+extern int MAX_ARROWS_NO;
 
 extern double dim_precision;
 extern double thermal_precision;
@@ -1044,6 +1052,14 @@ int PISZ_TABLES::PiszViewPorts()
 		PiszGrupa(100, (char*)"AcDbSymbolTableRecord") == ErrorWeWy ||
 		PiszGrupa(100, (char*)"AcDbViewportTableRecord") == ErrorWeWy) return ErrorWeWy;
 
+        // 1. Calculate the physical dimensions
+        double width = Xmax - Xmin;
+        double height = Ymax - Ymin;
+
+    // 2. Prevent division-by-zero errors just in case
+        double aspectRatio = (height != 0.0) ? (width / height) : 1.0;
+
+// 3. Write out the codes correctly to the DXF file
 	if (PiszGrupa(2, (char*)"*ACTIVE") == ErrorWeWy ||
 		PiszGrupa(70, 0) == ErrorWeWy ||
 		PiszGrupa(10, Xmin) == ErrorWeWy ||
@@ -1064,15 +1080,15 @@ int PISZ_TABLES::PiszViewPorts()
 		PiszGrupa(17, 0) == ErrorWeWy ||
 		PiszGrupa(27, 0) == ErrorWeWy ||
 		PiszGrupa(37, 0) == ErrorWeWy ||
-		PiszGrupa(40, Xmax-Xmin) == ErrorWeWy ||
-		PiszGrupa(41, Ymax-Ymin) == ErrorWeWy ||
+		PiszGrupa(40, height) == ErrorWeWy ||
+		PiszGrupa(41, aspectRatio) == ErrorWeWy ||
 		PiszGrupa(42, 50) == ErrorWeWy ||
 		PiszGrupa(43, 0) == ErrorWeWy ||
 		PiszGrupa(44, 0) == ErrorWeWy ||
 		PiszGrupa(50, 0) == ErrorWeWy ||
 		PiszGrupa(51, 0) == ErrorWeWy ||
 		PiszGrupa(71, 0) == ErrorWeWy ||
-		PiszGrupa(72, (Ymax - Ymin) / 2.0) == ErrorWeWy ||
+		PiszGrupa(72, 1000) == ErrorWeWy ||
 		PiszGrupa(73, 1) == ErrorWeWy ||
 		PiszGrupa(74, 3) == ErrorWeWy ||
 		PiszGrupa(75, snap_) == ErrorWeWy ||
@@ -2494,6 +2510,7 @@ int PISZ_OBJECTS::RysujTransKolo(OKRAG* k, int translucency)
 {
     char code123[10];
     int code123i;
+    int dxf_transparency_value;
 
     if(PiszGrupa(0,(char*)POLYLINE)==ErrorWeWy ||
        PiszGrupa(5, handle_hex) == ErrorWeWy ||
@@ -2502,7 +2519,10 @@ int PISZ_OBJECTS::RysujTransKolo(OKRAG* k, int translucency)
     if(k->kolor!=CBYLAYER &&
        PiszGrupa(62,(int)color_dxf (k->kolor))==ErrorWeWy) return ErrorWeWy;
 
-    if (PiszGrupa(440,(int)translucency)==ErrorWeWy) return ErrorWeWy;
+    // 1. Construct the 32-bit DXF transparency mask
+    dxf_transparency_value = 0x02000000 | (translucency & 0xFF);
+    // 2. Write it out to your DXF stream
+    if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
 
     if (PiszGrupa(100, (char*)"AcDb2dPolyline") == ErrorWeWy) return ErrorWeWy;
     if(PiszGrupa(66,1)==ErrorWeWy     ||
@@ -2518,7 +2538,7 @@ int PISZ_OBJECTS::RysujTransKolo(OKRAG* k, int translucency)
     if(k->kolor!=CBYLAYER &&
        PiszGrupa(62,(int)color_dxf (k->kolor))==ErrorWeWy) return ErrorWeWy;
 
-    if (PiszGrupa(440,(int)translucency)==ErrorWeWy) return ErrorWeWy;
+    if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
 
     if(PiszGrupa(10,(double)(k->x-k->r*.5))==ErrorWeWy  ||
        PiszGrupa(20,(double)(k->y))==ErrorWeWy  ||
@@ -2533,7 +2553,7 @@ int PISZ_OBJECTS::RysujTransKolo(OKRAG* k, int translucency)
     if(k->kolor!=CBYLAYER &&
        PiszGrupa(62,(int)color_dxf (k->kolor))==ErrorWeWy) return ErrorWeWy;
 
-    if (PiszGrupa(440,(int)translucency)==ErrorWeWy) return ErrorWeWy;
+    if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
 
     if(PiszGrupa(10,(double)(k->x+k->r*.5))==ErrorWeWy  ||
        PiszGrupa(20,(double)(k->y))==ErrorWeWy  ||
@@ -2656,7 +2676,10 @@ int PISZ_OBJECTS::RysujFilledEllipse(ELLIPSE *fe)
 
     if(fe->kolor!=CBYLAYER && PiszGrupa(62,(int)color_dxf (fe->kolor))==ErrorWeWy) return ErrorWeWy;
 
-    if (PiszGrupa(440,(int)fe->translucency)==ErrorWeWy) return ErrorWeWy;
+    // 1. Construct the 32-bit DXF transparency mask
+    int dxf_transparency_value = 0x02000000 | (fe->translucency & 0xFF);
+    // 2. Write it out to your DXF stream
+    if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
 
     if ( PiszGrupa(100, (char*)"AcDbChatch") == ErrorWeWy) return ErrorWeWy;
 
@@ -2747,6 +2770,11 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
         if (PiszGrupa(999, (char*)"invisible") == ErrorWeWy) return ErrorWeWy;
     }
 
+    /*  it's older version, but there is a problem with p2
+    float kat01=ea->kat1;
+    float kat02=ea->kat2;
+    if (kat02<kat01) kat02+=Pi2;
+
     if (ea->rx>=ea->ry) {
         kos = sin(ea->angle);
         koc = cos(ea->angle);
@@ -2756,8 +2784,8 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
         ery=ea->ry;
         Rotate_Point(kos, koc, 0, 0, ea->rx, 0, &x1, &y1);
         eratio = ea->ry / ea->rx;
-        kat1=Angle_Normal(ea->kat1);
-        kat2=Angle_Normal(ea->kat2);
+        kat1=Angle_Normal(kat01);
+        kat2=Angle_Normal(kat02);
     }
     else
     {
@@ -2770,8 +2798,8 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
         ery=ea->rx;
         Rotate_Point(kos, koc, 0, 0, erx, 0, &x1, &y1);
         eratio = ery / erx;
-        kat1=Angle_Normal(ea->kat1+Pi/2.0);
-        kat2=Angle_Normal(ea->kat2+Pi/2.0);
+        kat1=Angle_Normal(kat01+Pi/2.0);
+        kat2=Angle_Normal(kat02+Pi/2.0);
     }
 
 
@@ -2782,9 +2810,48 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
     df_y2-=ea->y;
     Rotate_Point(kos_, koc_, 0, 0, df_x1, df_y1, &df_x1_, &df_y1_);
     Rotate_Point(kos_, koc_, 0, 0, df_x2, df_y2, &df_x2_, &df_y2_);
+    */
 
-
+    /*  it's upgraded
     //par 1
+    if (Check_if_Equal(kat1, 0.0)) p1=0.0;
+    else if (Check_if_Equal(kat1, Pi)) p1=Pi;
+    else {
+        vx1 = df_x1_;
+        vy1 = sqrt(erx * erx - df_x1_ * df_x1_);
+
+        if (df_y1_ < 0) vy1 *= (-1);  // FIX: Added underscore to df_y1_
+
+        vx2 = 1.0;
+        vy2 = 0.0;
+        dot = vx1 * vx2 + vy1 * vy2;
+        det = vx1 * vy2 - vy1 * vx2;
+        p1 = -atan2(det, dot);
+        p1 = fmod(p1, Pi2);
+        if (p1 < 0) p1 += Pi2;
+    }
+
+    //par 2
+    if (Check_if_Equal(kat2, 0.0)) p2=0.0;
+    else if (Check_if_Equal(kat2, Pi)) p2=Pi;
+    else {
+        vx1 = df_x2_;
+        vy1 = sqrt(erx * erx - df_x2_ * df_x2_);
+
+        if (df_y2_ < 0) vy1 *= (-1);  // FIX: Added underscore to df_y2_
+
+        vx2 = 1.0;
+        vy2 = 0.0;
+        dot = vx1 * vx2 + vy1 * vy2;
+        det = vx1 * vy2 - vy1 * vx2;
+        p2 = -atan2(det, dot);
+        p2 = fmod(p2, Pi2);
+        if (p2 < 0) p2 += Pi2;
+    }
+     */
+
+    /*  here is upgraded but also worng
+     //par 1
     if (Check_if_Equal(kat1, 0.0)) p1=0.0;
     else if (Check_if_Equal(kat1, Pi)) p1=Pi;
     else {
@@ -2817,7 +2884,54 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
         p2 = fmod(p2, Pi2);
         if (p2 < 0) p2 += Pi2;
     }
+     */
+     //funal version
+    float kat01 = ea->kat1;
+    float kat02 = ea->kat2;
+    if (kat02 < kat01) kat02 += Pi2;
 
+    if (ea->rx >= ea->ry) {
+        // --- CASE 1: HORIZONTAL/WIDE ELLIPSE ---
+        kos = sin(ea->angle);
+        koc = cos(ea->angle);
+        erx = ea->rx;
+        ery = ea->ry;
+        Rotate_Point(kos, koc, 0, 0, ea->rx, 0, &x1, &y1);
+        eratio = ea->ry / ea->rx;
+
+        // Local angles relative to major axis are exactly your internal angles
+        kat1 = kat01;
+        kat2 = kat02;
+    }
+    else {
+        // --- CASE 2: VERTICAL/TALL ELLIPSE ---
+        // DXF major axis rotates +90 degrees to point along the tall 'ry' axis
+        eangle = Angle_Normal(ea->angle + Pi / 2.0);
+        kos = sin(eangle);
+        koc = cos(eangle);
+        erx = ea->ry; // Major radius is ry
+        ery = ea->rx; // Minor radius is rx
+        Rotate_Point(kos, koc, 0, 0, erx, 0, &x1, &y1);
+        eratio = ery / erx;
+
+        // FIX: Shift local angles back by 90 deg because the DXF axis moved forward by 90 deg
+        kat1 = kat01 - Pi / 2.0;
+        kat2 = kat02 - Pi / 2.0;
+    }
+
+    // --- MATHEMATICALLY EXACT PARAMETRIC TRANSLATION ---
+    // Converts geometric local angles into DXF parametric parameters
+    p1 = atan2(sin(kat1) / eratio, cos(kat1));
+    p2 = atan2(sin(kat2) / eratio, cos(kat2));
+
+    // Normalize parameters between [0, 2*Pi]
+    p1 = fmod(p1, Pi2); if (p1 < 0) p1 += Pi2;
+    p2 = fmod(p2, Pi2); if (p2 < 0) p2 += Pi2;
+
+    // Enforce the strict DXF outer-world sequencing rule (p2 > p1)
+    if (p2 < p1) {
+        p2 += Pi2;
+    }
 
     if(PiszGrupa(10,(double)(ea->x))==ErrorWeWy  ||
        PiszGrupa(20,(double)(ea->y))==ErrorWeWy  ||
@@ -2831,9 +2945,16 @@ int PISZ_OBJECTS::RysujEllipticalArc(ELLIPTICALARC *ea)
        PiszGrupa(220,(double)(0.0))==ErrorWeWy  ||
        PiszGrupa(230,(double)(1.0))==ErrorWeWy) return ErrorWeWy;
 
+    double dxf_p1 = p1;
+    double dxf_p2 = p2;
+
+    if (dxf_p2 < dxf_p1) {
+        dxf_p2 += Pi2;
+    }
+
     if (PiszGrupa(40,(double)(eratio))==ErrorWeWy ) return ErrorWeWy;
-    if (PiszGrupa(41,(double)(p1))==ErrorWeWy ) return ErrorWeWy;
-    if (PiszGrupa(42,(double)(p2))==ErrorWeWy ) return ErrorWeWy;
+    if (PiszGrupa(41,(double)(dxf_p1))==ErrorWeWy ) return ErrorWeWy;
+    if (PiszGrupa(42,(double)(dxf_p2))==ErrorWeWy ) return ErrorWeWy;
     else return OkWeWy;
 }
 
@@ -2875,8 +2996,13 @@ int PISZ_OBJECTS::RysujLuk(LUK* l)
   }
 
 	 if (PiszGrupa(100, (char*)"AcDbArc") == ErrorWeWy) return ErrorWeWy;
-     if (PiszGrupa(50,(double)(l->kat1)*180/Pi)==ErrorWeWy  ||
-     PiszGrupa(51,(double)(l->kat2)*180/Pi)==ErrorWeWy ) return ErrorWeWy;
+
+    float kat1=l->kat1;
+    float kat2=l->kat2;
+    if (kat2<kat1) kat2+=Pi2;
+
+     if (PiszGrupa(50,(double)(kat1)*180/Pi)==ErrorWeWy  ||
+     PiszGrupa(51,(double)(kat2)*180/Pi)==ErrorWeWy ) return ErrorWeWy;
   else return OkWeWy;
 }
 
@@ -2888,6 +3014,11 @@ int PISZ_OBJECTS::RysujSolidArc(SOLIDARC* sa)
     double width1, width2;
     double x1, y1, x2, y2, kat1, kat2, dkat, bulge;
 
+    if ((sa->kat1<0) || (sa->kat2<0) || ( sa->kat2 < sa->kat1))
+    {
+        int a=0;
+    }
+
 	if(PiszGrupa(0,(char*)LWPOLYLINE)==ErrorWeWy ||
 	PiszGrupa(5, handle_hex) == ErrorWeWy ||
 	PiszGrupa(100, (char*)"AcDbEntity") == ErrorWeWy ||
@@ -2896,7 +3027,10 @@ int PISZ_OBJECTS::RysujSolidArc(SOLIDARC* sa)
 
     if ((sa->empty_typ == 0) && (sa->pattern == 0) && (sa->translucent == 1))
     {
-        if (PiszGrupa(440, (int)sa->translucency) == ErrorWeWy) return ErrorWeWy;
+        // 1. Construct the 32-bit DXF transparency mask
+        int dxf_transparency_value = 0x02000000 | (sa->translucency & 0xFF);
+        // 2. Write it out to your DXF stream
+        if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
     }
     if (PiszGrupa(100, (char*)"AcDbPolyline") == ErrorWeWy) return ErrorWeWy;
 
@@ -2945,7 +3079,10 @@ int PISZ_OBJECTS::RysujSolid(WIELOKAT * s)
 	  translucency_ptr += (s->lp * sizeof(float));
 	  memmove(&translucency, translucency_ptr, sizeof(unsigned char));
 
-	  if (PiszGrupa(440, (int)translucency) == ErrorWeWy) return ErrorWeWy;
+      // 1. Construct the 32-bit DXF transparency mask
+      int dxf_transparency_value = 0x02000000 | (translucency & 0xFF);
+      // 2. Write it out to your DXF stream
+      if (PiszGrupa(440, dxf_transparency_value)== ErrorWeWy) return ErrorWeWy;
   }
   if (PiszGrupa(100, (char*)"AcDbTrace") == ErrorWeWy) return ErrorWeWy;
 
@@ -4096,7 +4233,7 @@ void PISZ_OBJECTS::draw_arrow_to_DXF(double x0, double y0, double x1, double y1,
     }
 }
 
-void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, double x2, double y2, double koc, double kos, double n1, double ra, AVECTOR *v)
+void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, double x2, double y2, double koc, double kos, double n1, double ra, AVECTOR *v, BOOL axis)
 {
     SPLINE s=Splinedef;
     LINIA L=Ldef;
@@ -4105,7 +4242,13 @@ void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, 
     int i;
     int ret;
 
-    if ((v->magnitude1==0) && (v->magnitude2==0)) return;
+    if (axis)
+    {
+        if ((v->angle1 == 0) && (v->angle2 == 0)) return;
+    }
+    else {
+        if ((v->magnitude1 == 0) && (v->magnitude2 == 0)) return;
+    }
 
     dx=ra;
     dy=ra/4;
@@ -4162,9 +4305,17 @@ void PISZ_OBJECTS::draw_wave_to_DXF(double x0, double y0, double x1, double y1, 
     else if (fabs(dl)>0.001)
     {
         L.warstwa=v->warstwa;
-       
-        if (n1==1) L.kolor=1;
-        else L.kolor=5;
+        if (axis)
+        {
+            if (n1 == 1) L.kolor = 1;
+            else L.kolor = 5;
+        }
+        else
+        {
+            if (n1 == 1) L.kolor = 1;
+            else L.kolor = 5;
+        }
+
         L.typ=64;
         L.x1=(float)x1;
         L.y1=(float)y1;
@@ -4275,7 +4426,7 @@ void PISZ_OBJECTS::make_arcarrows_to_DXF(LUK *l, AVECTOR *v, double kat)
     while (TRUE == Check_if_GT (df_line_rem, (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
 }
 
-void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat)
+void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat, BOOL axis)
 {
     //arrows
     int i;
@@ -4297,6 +4448,21 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
     double del_angle;
     double shift;
     double THE_END=0. ; /*-df_seg_len/2.*/
+    int flipped=0;
+    int non_flipped=0;
+    int zero_mag=0;
+
+    if (Check_if_Equal(v->magnitude1, 0.) && Check_if_Equal(v->magnitude2, 0.)) zero_mag=1;
+
+    if (!(v->cartflags & 1)) {
+        if (x1 > x2) flipped=1;
+        if (x1 < x2) non_flipped=1;
+    }
+    else
+    {
+        flipped = get_thermal_flipped(v);
+        non_flipped = !flipped;
+    }
 
     df_psize = Get_Point_Size ();
 
@@ -4325,8 +4491,11 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
             }
             else
             {
-                if (x1 > x2) angle = Angle_Normal(angle0 + 60./180.*Pi_);
-                else angle = Angle_Normal(angle0 - 120./180.*Pi_);
+                if (flipped)
+                //if (x1 > x2)
+                    angle = Angle_Normal(angle0 + 60./180.*Pi_);
+                else
+                    angle = Angle_Normal(angle0 - 120./180.*Pi_);
             }
             break;
         case 11:
@@ -4493,6 +4662,8 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                 case 10:
                 case 17:
                 case 20:
+                    if  ((v->cartflags & 1) && (v->style==10) && (zero_mag) && (non_flipped)) n1*=-1;
+
                     if (v->flags & 1)
                     {
                         df_x0 = p.x;
@@ -4507,10 +4678,10 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
                         if ((p.y - df_y) > -0.001) {
                             df_y1 = p.y - ra1 * kos;
-                            if (x1 > x2) n1 = -1;
+                            if (flipped) n1 = -1;
                         } else {
                             df_y1 = p.y + ra1 * kos;
-                            if (x1 < x2) n1 = -1;
+                            if (non_flipped) n1 = -1;
                         }
                         n1*=-1;
                     }
@@ -4546,10 +4717,10 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
                         if ((p.y - df_y) > -0.001) {
                             df_y1 = df_y + ra1 * kos;
-                            if (x1 > x2) n1 = -1;
+                            if (flipped) n1 = -1;
                         } else {
                             df_y1 = df_y - ra1 * kos;
-                            if (x1 < x2) n1 = -1;
+                            if (non_flipped) n1 = -1;
                         }
                     }
                     break;
@@ -4639,10 +4810,10 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
                         n1 = 1;
 
-                        Lt1.x1 = df_x;
-                        Lt1.y1 = df_y;
-                        Lt1.x2 = p.x;
-                        Lt1.y2 = p.y;
+                        Lt1.x1 = (float)df_x;
+                        Lt1.y1 = (float)df_y;
+                        Lt1.x2 = (float)p.x;
+                        Lt1.y2 = (float)p.y;
 
                         parametry_lini(&Lt1, &PL1);
                         if (PL1.dl > 0) {
@@ -4675,10 +4846,10 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
                         n1 = 1;
 
-                        Lt1.x1 = df_x;
-                        Lt1.y1 = df_y;
-                        Lt1.x2 = p.x;
-                        Lt1.y2 = p.y;
+                        Lt1.x1 = (float)df_x;
+                        Lt1.y1 = (float)df_y;
+                        Lt1.x2 = (float)p.x;
+                        Lt1.y2 = (float)p.y;
 
                         parametry_lini(&Lt1, &PL1);
                         if (PL1.dl > 0) {
@@ -4711,7 +4882,7 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                         if ((!(v->cartflags & 1)))
                             df_x1 = df_x;
 
-                        if (x1 < x2) {
+                        if (non_flipped) {
                             if (p.y < df_y) n1 = -1;
                             df_y1 = p.y - n1 * ra1 * kos;
                         } else {
@@ -4732,7 +4903,7 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                         {
                             df_x1 = df_x;
 
-                            if (x1 < x2) {
+                            if (non_flipped) {
                                 if (p.y < df_y) n1 = -1;
                                 df_y1 = df_y + n1 * ra1 * kos;
                             } else {
@@ -4838,18 +5009,41 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 
                     n1=1;
 
-                    Lt1.x1=df_x;
-                    Lt1.y1=df_y;
-                    Lt1.x2=p.x;
-                    Lt1.y2=p.y;
-
-                    parametry_lini(&Lt1, &PL1);
-                    if (PL1.dl>0)
+                    Lt1.x1=(float)df_x;
+                    Lt1.y1=(float)df_y;
+                    Lt1.x2=(float)p.x;
+                    Lt1.y2=(float)p.y;
+                    if (v->cartflags & 1)
                     {
-                        if (PL1.kat < kat) PL1.kat += 360;
-                        del_angle = PL1.kat - kat;
+                        if (axis) {
+                            int flip = get_thermal_flipped(v);
+                            //printf("flip=%d\n", flip);
+                            parametry_lini(&Lt1, &PL1);
+                            if (PL1.dl > 0) {
+                                n1 = (float)is_point_on_left(x1, y1, x2, y2, (Lt1.x1+Lt1.x2)/2.f, (Lt1.y1+Lt1.y2)/2.f);
 
-                        if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                                //n1 *= (float)((flip == 1) ? -1 : 1);
+                            }
+                        }
+                        else {
+                            parametry_lini(&Lt1, &PL1);
+                            if (PL1.dl > 0) {
+
+                                if (PL1.kat < kat) PL1.kat += 360;
+                                del_angle = PL1.kat - kat;
+
+                                if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                            }
+                        }
+                    }
+                    else {
+                        parametry_lini(&Lt1, &PL1);
+                        if (PL1.dl > 0) {
+                            if (PL1.kat < kat) PL1.kat += 360;
+                            del_angle = PL1.kat - kat;
+
+                            if (fabs(del_angle - 90) > 1.0) n1 = -1;
+                        }
                     }
 
                     df_x1 = df_x + n1*ra1 * koc;
@@ -4878,9 +5072,11 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                 else
                     draw_spring_to_DXF(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, angle, katS, koc1, kos1, koc2, kos2, /*n1 **/ ra, v);
             }
-            else draw_wave_to_DXF(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v);
+            else draw_wave_to_DXF(df_x0, df_y0, df_x1, df_y1, df_x2, df_y2, koc, kos, n1, ra, v, axis);
             df_l0 += df_seg_len_dens ;
             i++ ;
+
+            if ((v->style != 15) && (i>MAX_ARROWS_NO)) break;  //TEMPORARY for safety
         }
     }
     while (TRUE == Check_if_GT (df_line_rem,  (v->style<V_EDGE_SIMPLE) ? df_seg_len/2. : THE_END /*-df_seg_len/2.*/)) ;
@@ -4890,8 +5086,8 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
 int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 {  char sufiks_bloku[10];
     double df_psize, df_psize1 ;
-    PLINIA PL, PL1, PLth;
-    LINIA L1=Ldef, L2=Ldef, L3=Ldef, L4=Ldef, Lt=Ldef, Ls=Ldef, Lth=Ldef, Ln=Ldef, Ln1=Ldef, Lp=Ldef;
+    PLINIA PL, PL1, PL1_, PLth, PLth1;
+    LINIA L1=Ldef, L2=Ldef, L3=Ldef, L4=Ldef, Lt=Ldef, Lt1=Ldef, Ls=Ldef, Lth=Ldef, Lth1=Ldef, Ln=Ldef, Ln1=Ldef, Lp=Ldef;
     SOLIDARC sa=sadef;
     WIELOKAT w=S4def;
     OKRAG O=Odef;
@@ -4902,10 +5098,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
     double kat1, kos, koc, kats, kata2;
     double ra;
     double katS=25.0;
-    TEXT Vtxt=Tdef, Vltxt=Tdef, Vtxt1=Tdef;
-    double n, dx, dy, dx1, dy1, dx2, dy2, Kps, Kp2s, K1_5, Ltx, Lty;
+    TEXT Vtxt=Tdef, Vltxt=Tdef, Vtxt_=Tdef, Vtxt1_=Tdef, Vtxt1=Tdef;
+    double n, dx, dy, dx1, dy1, dx_, dy_, dx1_, dy1_, dx2, dy2, Kps, Kp2s, K1_5, Ltx, Lty;
     int kolorS;
-    double koc1, kos1, koc2, kos2, koc1th, kos1th;
+    double koc1, kos1, koc2, kos2, koc1_, kos1_, koc2_, kos2_, koc1th, kos1th, koc1th1, kos1th1;
     int grubosc, s;
     double  xs, ys;
     int TRANS=25;
@@ -4922,6 +5118,9 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
     double arrow_angle;
     double h_factor;
     double ea_start_x, ea_start_y, ea_end_x, ea_end_y;
+    double perpendicular_iso_angle;
+    int flipped=0;
+    double iso_angle;
 
 #define arrowf 1.0
 
@@ -4977,8 +5176,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
     memmove(&L3, &L1, sizeof(LINIA));
     memmove(&L4, &L1, sizeof(LINIA));
     memmove(&Lt, &L1, sizeof(LINIA));
+    memmove(&Lt1, &L1, sizeof(LINIA));
     memmove(&Ls, &L1, sizeof(LINIA));
     memmove(&Lth, &L1, sizeof(LINIA));
+    memmove(&Lth1, &L1, sizeof(LINIA));
     memmove(&Ln, &L1, sizeof(LINIA));
     memmove(&Ln1, &L1, sizeof(LINIA));
 
@@ -5001,10 +5202,14 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
     Vtxt.width_factor=(float)zmwym.width_factor;
     memmove(&Vtxt1, &Vtxt, sizeof(TEXT));
     memmove(&Vltxt, &Vtxt, sizeof(TEXT));
+    memmove(&Vtxt_, &Vtxt, sizeof(TEXT));
+    memmove(&Vtxt1_, &Vtxt, sizeof(TEXT));
     Vltxt.wysokosc=Vltxt.wysokosc/2;
 
     strcpy(Vtxt.text, "");
     strcpy(Vtxt1.text, "");
+    strcpy(Vtxt_.text, "");
+    strcpy(Vtxt1_.text, "");
 
     switch (ptrs_vector->style)
     {
@@ -5132,6 +5337,11 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             l.kat1=ptrs_vector->angle1;
             l.kat2=ptrs_vector->angle2;
 
+            if (l.kat2 < l.kat1)
+            {
+                l.kat2 += 2.*Pi_;
+            }
+
             if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
             {
                 kats=Angle_Normal(ptrs_vector->angle1);
@@ -5230,6 +5440,11 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             l.kat1=ptrs_vector->angle1;
             l.kat2=ptrs_vector->angle2;
 
+            if (l.kat2 < l.kat1)
+            {
+                l.kat2 += 2.*Pi_;
+            }
+
             if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
             {
                 kats=Angle_Normal(ptrs_vector->angle1);
@@ -5277,23 +5492,30 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             }
 
-            if (L1.x1<L1.x2) n=1;
-            else n=-1;
+            if (!(ptrs_vector->cartflags & 1) || (ptrs_vector->style != 10)) {
+                if (L1.x1<L1.x2) n=1;
+                else n=-1;
+            } else {
+                flipped = (get_thermal_flipped(ptrs_vector));
+                ////for isometric vector in Y axis
+                if (flipped) n = 1;
+                else n = -1;
+            }
 
             if (ptrs_vector->flags & 1) n*=-1;
 
             if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
             {
                 Lt.x1 = L1.x1;
-                Lt.y1 = (float)(L1.y1 + n * (ptrs_vector->magnitude1 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)));
+                Lt.y1 = (float)(L1.y1 + n * (ptrs_vector->magnitude1 / (((ptrs_vector->style == 10) || (ptrs_vector->style == 20)) ? load_magnitude : flood_magnitude)));
                 Lt.x2 = L1.x2;
-                Lt.y2 = (float)(L1.y2 + n * (ptrs_vector->magnitude2 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)));
+                Lt.y2 = (float)(L1.y2 + n * (ptrs_vector->magnitude2 / (((ptrs_vector->style == 10) || (ptrs_vector->style == 20)) ? load_magnitude : flood_magnitude)));
             }
             else
             {
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
-                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude1 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
-                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude2 / ((ptrs_vector->style == 10) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude1 / (((ptrs_vector->style == 10) || (ptrs_vector->style == 20)) ? load_magnitude : flood_magnitude)),  &dx1_cart, &dy1_cart);
+                ret = isometric_vector_to_cartesian(0,  n * (ptrs_vector->magnitude2 / (((ptrs_vector->style == 10) || (ptrs_vector->style == 20)) ? load_magnitude : flood_magnitude)),  &dx2_cart, &dy2_cart);
                 Lt.x1 = (float)(L1.x1 + dx1_cart);
                 Lt.y1 = (float)(L1.y1 + dy1_cart);
                 Lt.x2 = (float)(L1.x2 + dx2_cart);
@@ -5306,7 +5528,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             parametry_lini(&Lt, &PL1);
             if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style!=10))
             {
-                //parametry_lini(&Lt, &PL1);
                 kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
                 koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
@@ -5319,12 +5540,16 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
                 kos1 = sin(cart_angle);
                 koc1 = cos(cart_angle);
+
+                kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
+                koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
 
             if (ptrs_vector->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
             if (Lt.x1==Lt.x2)
             {
 
@@ -5389,17 +5614,58 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                     dy2 = Vltxt.wysokosc *h_factor* kos1;
                 }
             }
+            } else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
+                dx2 = 0;
+                dy2 = 0;
+
+                int mag_sign1 = (ptrs_vector->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (ptrs_vector->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(L1.x1, L1.y1, L1.x2, L1.y2, Lt.x1, Lt.y1)==1) {
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    dx = -Vtxt.wysokosc * h_factor * koc1;
+                    dy = -Vtxt.wysokosc * h_factor * kos1;
+                }
+
+                if (/*(mag_sign2 == 1) && */(is_point_on_left(L1.x1, L1.y1, L1.x2, L1.y2, Lt.x2, Lt.y2)==1)) {
+                    dx1 = 0;
+                    dy1 = 0;
+                } else {
+                    dx1 = -Vtxt1.wysokosc * h_factor * koc1;
+                    dy1 = -Vtxt1.wysokosc * h_factor * kos1;
+                    dx2 = -Vltxt.wysokosc * h_factor * koc1;
+                    dy2 = -Vltxt.wysokosc * h_factor * kos1;
+                }
+            }
 
             Vtxt.x=(float)(Lt.x1+dx);
             Vtxt.y=(float)(Lt.y1+dy);
+
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
             Vtxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180.);
             if (Lt.x1<Lt.x2) Vtxt.justowanie=j_do_lewej;
             else Vtxt.justowanie=j_do_prawej;
+            } else {
+                Vtxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt.justowanie = j_do_lewej;
+            }
+
             Vtxt1.x=(float)(Lt.x2+dx1);
             Vtxt1.y=(float)(Lt.y2+dy1);
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
             Vtxt1.kat=Vltxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt1.justowanie=j_do_prawej;
             else  Vtxt1.justowanie=j_do_lewej;
+            } else {
+                Vtxt1.kat = Vltxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt1.justowanie = j_do_prawej;
+            }
 
             Vltxt.x=(float)(Ltx+dx2);
             Vltxt.y=(float)(Lty+dy2);
@@ -5429,8 +5695,15 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             }
 
-            if (L1.y1<L1.y2) n=1;
-            else n=-1;
+            if (!(ptrs_vector->cartflags & 1)) {
+                if (L1.y1 < L1.y2) n = 1;
+                else n = -1;
+            } else {
+                flipped = (get_thermal_flipped(ptrs_vector));
+                ////for isometric vector in X axis
+                if (flipped) n = -1;
+                else n = 1;
+            }
 
             if (ptrs_vector->flags & 1) n*=-1;
 
@@ -5473,69 +5746,90 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             }
 
             if (ptrs_vector->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
-            if (Lt.y1<Lt.y2)
-            {   if (Lt.x1>L1.x1)
-                {
-                    dx=-Vtxt.wysokosc*h_factor*koc1;
-                    dy=-Vtxt.wysokosc*h_factor*kos1;
-                }
-                else
-                {
-                    dx = 0;
-                    dy = 0;
-                }
-                if (Lt.x2>L1.x2)
-                {
-                    dx1=-Vtxt.wysokosc*h_factor*koc1;
-                    dy1=-Vtxt.wysokosc*h_factor*kos1;
-                    dx2=-Vltxt.wysokosc*h_factor*koc1;
-                    dy2=-Vltxt.wysokosc*h_factor*kos1;
-                }
-                else {
-                    dx1 = 0;
-                    dy1 = 0;
-                    dx2 = 0;
-                    dy2 = 0;
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
+                if (Lt.y1 < Lt.y2) {
+                    if (Lt.x1 > L1.x1) {
+                        dx = -Vtxt.wysokosc * h_factor * koc1;
+                        dy = -Vtxt.wysokosc * h_factor * kos1;
+                    } else {
+                        dx = 0;
+                        dy = 0;
+                    }
+                    if (Lt.x2 > L1.x2) {
+                        dx1 = -Vtxt.wysokosc * h_factor * koc1;
+                        dy1 = -Vtxt.wysokosc * h_factor * kos1;
+                        dx2 = -Vltxt.wysokosc * h_factor * koc1;
+                        dy2 = -Vltxt.wysokosc * h_factor * kos1;
+                    } else {
+                        dx1 = 0;
+                        dy1 = 0;
+                        dx2 = 0;
+                        dy2 = 0;
+                    }
+                } else {
+                    if (Lt.x1 > L1.x1) {
+                        dx = 0;
+                        dy = 0;
+                    } else {
+                        dx = -Vtxt.wysokosc * h_factor * koc1;
+                        dy = -Vtxt.wysokosc * h_factor * kos1;
+                    }
+                    if (Lt.x2 > L1.x2) {
+                        dx1 = 0;
+                        dy1 = 0;
+                        dx2 = 0;
+                        dy2 = 0;
+                    } else {
+                        dx1 = -Vtxt.wysokosc * h_factor * koc1;
+                        dy1 = -Vtxt.wysokosc * h_factor * kos1;
+                        dx2 = -Vltxt.wysokosc * h_factor * koc1;
+                        dy2 = -Vltxt.wysokosc * h_factor * kos1;
+                    }
                 }
             }
-            else
-            {   if (Lt.x1>L1.x1)
-                {
+            else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
+                dx2 = 0;
+                dy2 = 0;
+
+                int mag_sign1 = (ptrs_vector->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (ptrs_vector->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(L1.x1, L1.y1, L1.x2, L1.y2, Lt.x1, Lt.y1) == 1) {
                     dx = 0;
                     dy = 0;
-                }
-                else
-                {
-                    dx = -Vtxt.wysokosc*h_factor * koc1;
-                    dy = -Vtxt.wysokosc*h_factor* kos1;
-                }
-                if (Lt.x2>L1.x2)
-                {
-                    dx1 = 0;
-                    dy1 = 0;
-                    dx2 = 0;
-                    dy2 = 0;
-                }
-                else
-                {
-                    dx1 = -Vtxt.wysokosc*h_factor * koc1;
-                    dy1 = -Vtxt.wysokosc*h_factor * kos1;
-                    dx2 = -Vltxt.wysokosc*h_factor * koc1;
-                    dy2 = -Vltxt.wysokosc*h_factor * kos1;
+                } else {
+                    dx = -Vtxt.wysokosc * h_factor * koc1;
+                    dy = -Vtxt.wysokosc * h_factor * kos1;
                 }
             }
 
             Vtxt.x=(float)(Lt.x1+dx);
             Vtxt.y=(float)(Lt.y1+dy);
+
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
             Vtxt.kat=(float)(PL1.kat*Pi/180.);
             Vtxt.justowanie=j_do_lewej;
+            } else {
+                Vtxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt.justowanie = j_do_lewej;
+            }
+
             Vtxt1.x=(float)(Lt.x2+dx1);
             Vtxt1.y=(float)(Lt.y2+dy1);
+            if ((!(ptrs_vector->cartflags & 1)) || (ptrs_vector->style != 10)) {
             Vtxt1.kat=Vltxt.kat=(float)(PL1.kat*Pi/180.);
             Vtxt1.justowanie=j_do_prawej;
+            } else {
+                Vtxt1.kat = Vltxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt1.justowanie = j_do_prawej;
+            }
 
             Vltxt.x=(float)(Ltx+dx2);
             Vltxt.y=(float)(Lty+dy2);
@@ -5606,7 +5900,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             dy2 = 0;
 
             if (ptrs_vector->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
             if (((ptrs_vector->magnitude1<0) && !(ptrs_vector->flags & 1)) ||
@@ -5707,6 +6001,9 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 if (iso_L1_x1<iso_L1_x2) n=1;
                 else n=-1;
 
+                ////for isometric vector in Y axis
+                n*=-1;
+
                 ret = trapezoid_base_isometric_x(L1.x1, L1.y1, L1.x2, L1.y2,&Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
 
                 double dx1_cart, dy1_cart, dx2_cart, dy2_cart;
@@ -5736,6 +6033,9 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 double cart_angle=isometric_angle_to_cartesian_angle_rad(iso_perp);
                 kos1 = sin(cart_angle);
                 koc1 = cos(cart_angle);
+
+                kos1 = sin(Pi * (PL1.kat + 90.) / 180.);
+                koc1 = cos(Pi * (PL1.kat + 90.) / 180.);
             }
 
             dx=0;
@@ -5746,9 +6046,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             dy2=0;
 
             if (ptrs_vector->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
+            if (!(ptrs_vector->cartflags & 1)) {
             if (Lt.x1<Lt.x2)
             {
                 
@@ -5789,17 +6090,59 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                     dy2 = Vltxt.wysokosc *h_factor* kos1;
                 }
             }
+            }
+            else {
+                dx = 0;
+                dy = 0;
+                dx1 = 0;
+                dy1 = 0;
+                dx2 = 0;
+                dy2 = 0;
+
+                int mag_sign1 = (ptrs_vector->magnitude1 >= 0.) ? 1 : -1;
+                int mag_sign2 = (ptrs_vector->magnitude2 >= 0.) ? 1 : -1;
+
+                if (is_point_on_left(Lp.x1, Lp.y1, Lp.x2, Lp.y2, Lt.x1, Lt.y1)==1) {
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    dx = -Vtxt.wysokosc * h_factor * koc1;
+                    dy = -Vtxt.wysokosc * h_factor * kos1;
+                }
+
+                if (is_point_on_left(Lp.x1, Lp.y1, Lp.x2, Lp.y2, Lt.x2, Lt.y2)==1) {
+                    dx1 = 0;
+                    dy1 = 0;
+                } else {
+                    dx1 = -Vtxt1.wysokosc * h_factor * koc1;
+                    dy1 = -Vtxt1.wysokosc * h_factor * kos1;
+                    dx2 = -Vltxt.wysokosc * h_factor * koc1;
+                    dy2 = -Vltxt.wysokosc * h_factor * kos1;
+                }
+            }
 
             Vtxt.x=Lt.x1+(float)dx;
             Vtxt.y=Lt.y1+(float)dy;
+            if (!(ptrs_vector->cartflags & 1)) {
             Vtxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt.justowanie=j_do_lewej;
             else Vtxt.justowanie=j_do_prawej;
+            } else {
+                Vtxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt.justowanie = j_do_lewej;
+            }
             Vtxt1.x=Lt.x2+(float)dx1;
             Vtxt1.y=Lt.y2+(float)dy1;
+            if (!(ptrs_vector->cartflags & 1))
+            {
             Vtxt1.kat=Vltxt.kat=(float)normalize_txt_angle(PL1.kat*Pi/180);
             if (Lt.x1<Lt.x2) Vtxt1.justowanie=j_do_prawej;
             else  Vtxt1.justowanie=j_do_lewej;
+            }
+            else {
+                Vtxt1.kat = Vltxt.kat = (float) (PL1.kat * Pi_ / 180.);
+                Vtxt1.justowanie = j_do_prawej;
+            }
 
             Vltxt.x=(float)(Ltx+dx2);
             Vltxt.y=(float)(Lty+dy2);
@@ -5887,7 +6230,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             dy2=0;
 
             if (ptrs_vector->cartflags & 1)
-                h_factor=1.2;
+                h_factor=h_factor_iso;
             else h_factor=1.0;
 
             if (Lt.y1<Lt.y2)
@@ -5957,23 +6300,30 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             break;
         case 15:
 
-            kos1=sin(Pi*(PL.kat+90)/180.);
-            koc1=cos(Pi*(PL.kat+90)/180.);
+            n = 1.;
+            if (ptrs_vector->cartflags & 1) {
+                get_isometric_thermal_gradient(ptrs_vector, 1., &Lth, &Lt, &Lth1, &Lt1, &PLth, &PLth1, &perpendicular_iso_angle);
+            }
+            else {
+                kos1 = sin(Pi * (PL.kat + 90) / 180.);
+                koc1 = cos(Pi * (PL.kat + 90) / 180.);
 
 
-            Lth.x1 = (float)((L1.x1+L1.x2)/2. + (ptrs_vector->r/depth_magnitude)*koc1);  //thermal_depth_size
-            Lth.y1 = (float)((L1.y1+L1.y2)/2 + (ptrs_vector->r/depth_magnitude)*kos1);
-            Lth.x2 = (float)((L1.x1+L1.x2)/2. - (ptrs_vector->r/depth_magnitude)*koc1);
-            Lth.y2 = (float)((L1.y1+L1.y2)/2. - (ptrs_vector->r/depth_magnitude)*kos1);
+                Lth.x1 = (float) ((L1.x1 + L1.x2) / 2. + (ptrs_vector->r / depth_magnitude) * koc1);  //thermal_depth_size
+                Lth.y1 = (float) ((L1.y1 + L1.y2) / 2 + (ptrs_vector->r / depth_magnitude) * kos1);
+                Lth.x2 = (float) ((L1.x1 + L1.x2) / 2. - (ptrs_vector->r / depth_magnitude) * koc1);
+                Lth.y2 = (float) ((L1.y1 + L1.y2) / 2. - (ptrs_vector->r / depth_magnitude) * kos1);
 
-            parametry_lini(&Lth, &PLth);
-            kos1th=sin(Pi*(PLth.kat+90)/180.);
-            koc1th=cos(Pi*(PLth.kat+90)/180.);
+                parametry_lini(&Lth, &PLth);
+                kos1th = sin(Pi * (PLth.kat + 90) / 180.);
+                koc1th = cos(Pi * (PLth.kat + 90) / 180.);
 
-            Lt.x1 = Lth.x1 + (float)((ptrs_vector->magnitude1/thermal_magnitude)*koc1th);
-            Lt.y1 = Lth.y1 + (float)((ptrs_vector->magnitude1/thermal_magnitude)*kos1th);
-            Lt.x2 = Lth.x2 + (float)((ptrs_vector->magnitude2/thermal_magnitude)*koc1th);
-            Lt.y2 = Lth.y2 + (float)((ptrs_vector->magnitude2/thermal_magnitude)*kos1th);
+                Lt.x1 = Lth.x1 + (float) ((ptrs_vector->magnitude1 / thermal_magnitude) * koc1th);
+                Lt.y1 = Lth.y1 + (float) ((ptrs_vector->magnitude1 / thermal_magnitude) * kos1th);
+                Lt.x2 = Lth.x2 + (float) ((ptrs_vector->magnitude2 / thermal_magnitude) * koc1th);
+                Lt.y2 = Lth.y2 + (float) ((ptrs_vector->magnitude2 / thermal_magnitude) * kos1th);
+            }
+
 
             parametry_lini(&Lt, &PL1);
             kos2=sin(Pi*(PL1.kat+90)/180.);
@@ -5983,6 +6333,8 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             dy = 0;
             dx1 = 0;
             dy1 = 0;
+            dx2=0;
+            dy2=0;
 
             if (ptrs_vector->magnitude1<0)
             {
@@ -6005,11 +6357,63 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             Vtxt1.kat=(float)(PL1.kat*Pi/180);
             Vtxt1.justowanie=j_do_prawej;
 
+            Vltxt.x=(float)(Ltx+dx2);
+            Vltxt.y=(float)(Lty+dy2);
+            Vltxt.justowanie=j_srodkowo;
+
             set_decimal_format(Vtxt.text, ptrs_vector->magnitude1, thermal_precision);
             set_decimal_format(Vtxt1.text, ptrs_vector->magnitude2, thermal_precision);
 
             normalize_txt(&Vtxt);
             normalize_txt(&Vtxt1);
+            if (ptrs_vector->cartflags & 1)
+            {
+                parametry_lini(&Lt1, &PL1_);
+                kos2_ = sin(Pi * (PL1_.kat + 90) / 180);
+                koc2_ = cos(Pi * (PL1_.kat + 90) / 180);
+
+                dx_ = 0;
+                dy_ = 0;
+                dx1_ = 0;
+                dy1_ = 0;
+
+                if (ptrs_vector->angle1<0)
+                {
+                    dx_ = -Vtxt_.wysokosc * koc2_;
+                    dy_ = -Vtxt_.wysokosc * kos2_;
+                }
+
+                if (ptrs_vector->angle2<0)
+                {
+                    dx1_ = -Vtxt_.wysokosc * koc2_;
+                    dy1_ = -Vtxt_.wysokosc * kos2_;
+
+                }
+
+                Vtxt_.x=Lt1.x1+(float)dx_;
+                Vtxt_.y=Lt1.y1+(float)dy_;
+                Vtxt_.kat=(float)(PL1_.kat*Pi/180);
+                Vtxt_.justowanie=j_do_lewej;
+                Vtxt1_.x=Lt1.x2+(float)dx1_;
+                Vtxt1_.y=Lt1.y2+(float)dy1_;
+                Vtxt1_.kat=(float)(PL1_.kat*Pi/180);
+                Vtxt1_.justowanie=j_do_prawej;
+
+                if (get_thermal_flipped(ptrs_vector))
+                {
+                    set_decimal_format(Vtxt_.text, ptrs_vector->angle2, thermal_precision);
+                    set_decimal_format(Vtxt1_.text, ptrs_vector->angle1, thermal_precision);
+                }
+                else
+                {
+                    set_decimal_format(Vtxt_.text, ptrs_vector->angle1, thermal_precision);
+                    set_decimal_format(Vtxt1_.text, ptrs_vector->angle2, thermal_precision);
+                }
+
+                normalize_txt(&Vtxt_);
+                normalize_txt(&Vtxt1_);
+            }
+
             break;
         case 16:
             Ln.x1 = L1.x1 + (float)((ptrs_vector->r/radius_magnitude)*koc);   //thermal_depth_size
@@ -6033,8 +6437,19 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
     Vtxt.dl = strlen(Vtxt.text);
     Vtxt1.dl = strlen(Vtxt1.text);
+    Vltxt.dl = strlen(Vltxt.text);
     Vtxt.n = T18 + Vtxt.dl;
     Vtxt1.n = T18 + Vtxt1.dl;
+    Vltxt.n = T18 + Vltxt.dl;
+
+    if ((ptrs_vector->style==15) && (ptrs_vector->cartflags & 1))
+    {
+        Vtxt_.dl = strlen(Vtxt_.text);
+        Vtxt1_.dl = strlen(Vtxt1_.text);
+        Vtxt_.n = T18 + Vtxt_.dl;
+        Vtxt1_.n = T18 + Vtxt1_.dl;
+    }
+
 
     L2.x1 = L1.x1 + (float)(ra * koc);
     L2.y1 = L1.y1 + (float)(ra * kos);
@@ -6096,9 +6511,8 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                     kos1 = sin(arrow_angle);
                     koc1 = cos(arrow_angle);
                 }
-                make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+                make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat, 0);
             }
-
 
             break;
         case 1:
@@ -6380,6 +6794,8 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
         case V_EDGE_ARC_ROLL:  //roll edge
         case V_EDGE_ARC_ROLL_INV:  //roll edge flipped
 
+            grubosc=(ptrs_vector->typ & 224 ) / 32;
+
             if (ptrs_vector->style==5)
             {
                 linestyle(ptrs_vector->typ);
@@ -6397,6 +6813,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 sa.r = ptrs_vector->r;
                 sa.kat1 = ptrs_vector->angle1;
                 sa.kat2 = ptrs_vector->angle2;
+                if (sa.kat2 < sa.kat1)
+                {
+                    sa.kat2 += 2.*Pi_;
+                }
                 sa.width1 = (float)ra / 4;
                 sa.width2 = (float)ra / 4;
 
@@ -6419,6 +6839,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 sa.r = ptrs_vector->r;
                 sa.kat1 = ptrs_vector->angle1;
                 sa.kat2 = ptrs_vector->angle2;
+                if (sa.kat2 < sa.kat1)
+                {
+                    sa.kat2 += 2.*Pi_;
+                }
                 sa.width1 = (float)ra / 4;
                 sa.width2 = (float)ra / 4;
 
@@ -6454,10 +6878,15 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.kat1=ptrs_vector->angle1;
                 l.kat2=ptrs_vector->angle2;
 
+                //if (l.kat2 < sa.kat1)
+                //{
+                //    l.kat2 += 2.*Pi_;
+                //}
+
                 ea.atrybut = ptrs_vector->atrybut;
                 ea.warstwa = ptrs_vector->warstwa;
                 ea.kolor = vkolor;
-                ea.typ=128;
+                ea.typ = 128;  //extra thick
                 linestyle(ea.typ);
                 ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
 
@@ -6496,10 +6925,15 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.kat1=ptrs_vector->angle1;
                 l.kat2=ptrs_vector->angle2;
 
+                //if (l.kat2 < l.kat1)
+                //{
+                //    l.kat2 += 2.*Pi_;
+                //}
+
                 ea.atrybut = ptrs_vector->atrybut;
                 ea.warstwa = ptrs_vector->warstwa;
                 ea.kolor = vkolor;
-                ea.typ=128;
+                ea.typ= 128; //extra thick
                 linestyle(ea.typ);
                 ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
 
@@ -6524,6 +6958,12 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.r = ptrs_vector->r;
                 l.kat1 = ptrs_vector->angle1;
                 l.kat2 = ptrs_vector->angle2;
+
+                if (l.kat2 < l.kat1)
+                {
+                    l.kat2 += 2.*Pi_;
+                }
+
                 l.typ = grubosc * 32 + 1;
 
                 if(RysujLuk(&l)==ErrorWeWy) return ErrorWeWy;
@@ -6545,6 +6985,12 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.r = ptrs_vector->r;
                 l.kat1 = ptrs_vector->angle1;
                 l.kat2 = ptrs_vector->angle2;
+
+                if (l.kat2 < l.kat1)
+                {
+                    l.kat2 += 2.*Pi_;
+                }
+
                 l.typ = grubosc * 32 + 1;
 
                 if(RysujLuk(&l)==ErrorWeWy) return ErrorWeWy;
@@ -6578,13 +7024,19 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.r=ptrs_vector->r;
                 l.kat1=ptrs_vector->angle1;
                 l.kat2=ptrs_vector->angle2;
+
+                //if (l.kat2 < l.kat1)
+                //{
+                //    l.kat2 += 2.*Pi_;
+                //}
+
                 //l.typ=grubosc * 32 + 1;
                 //rysuj_obiekt_(&l, mode, kolor);
 
                 ea.atrybut = ptrs_vector->atrybut;
                 ea.warstwa = ptrs_vector->warstwa;
                 ea.kolor = vkolor;
-                ea.typ=grubosc * 32 + 1;
+                ea.typ = grubosc * 32 + 1;
                 linestyle(ea.typ);
                 ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
 
@@ -6622,12 +7074,18 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.r=ptrs_vector->r;
                 l.kat1=ptrs_vector->angle1;
                 l.kat2=ptrs_vector->angle2;
+
+                //if (l.kat2 < l.kat1)
+                //{
+                //    l.kat2 += 2.*Pi_;
+                //}
+
                 //l.typ=grubosc * 32 + 1;
                 //rysuj_obiekt_(&l, mode, kolor);
                 ea.atrybut = ptrs_vector->atrybut;
                 ea.warstwa = ptrs_vector->warstwa;
                 ea.kolor = vkolor;
-                ea.typ=grubosc * 32 + 1;
+                ea.typ = grubosc * 32 + 1;
                 linestyle(ea.typ);
                 ret=arc_to_isometric_ellipticalarc_a_ea(static_cast<PlaneType>(plane), &l, &ea);
 
@@ -6654,6 +7112,12 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 l.r=ptrs_vector->r;
                 l.kat1=ptrs_vector->angle1;
                 l.kat2=ptrs_vector->angle2;
+
+                if (l.kat2 < l.kat1)
+                {
+                    l.kat2 += 2.*Pi_;
+                }
+
                 l.typ=ptrs_vector->typ;
 
                 if (RysujLuk(&l) == FALSE) return FALSE;
@@ -6807,7 +7271,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             w.empty_typ = 0;
 
-            if ((!(ptrs_vector->cartflags & 1))  || (ptrs_vector->style!=10))  //TUTAJ
+            if ((!(ptrs_vector->cartflags & 1))  || (ptrs_vector->style!=10))
             {
                 w.xy[0] = L1.x1;
                 w.xy[1] = L1.y1;
@@ -6871,7 +7335,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 arrow_angle=Pi_ / 2.;
             else arrow_angle=150./180.*Pi_;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
@@ -6946,7 +7410,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             if (!(ptrs_vector->cartflags & 1)) arrow_angle=0.;
             else arrow_angle=30./180.*Pi_;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
@@ -7002,10 +7466,11 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if(RysujSolid(&w)==ErrorWeWy) return ErrorWeWy;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle /*Pi_*(PL.kat+90.0)/180.0*/, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle /*Pi_*(PL.kat+90.0)/180.0*/, ptrs_vector, PL.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+            if(RysujText(&Vltxt)==ErrorWeWy) return ErrorWeWy;
 
             break;
         case V_EDGE_SIMPLE:  //simple supported edge
@@ -7034,7 +7499,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_ * (PL.kat + 90.0) / 180.0, ptrs_vector, PL.kat, 0);
 
             break;
         case 13:  //trapezium H
@@ -7128,10 +7593,11 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 arrow_angle=Pi_ / 2.;
             else arrow_angle=150./180.*Pi_;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+            if(RysujText(&Vltxt)==ErrorWeWy) return ErrorWeWy;
 
             break;
         case 14:  //trapezium V
@@ -7226,10 +7692,11 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 arrow_angle=0.;
             else arrow_angle=30./180.*Pi_;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], arrow_angle, ptrs_vector, PL.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+            if(RysujText(&Vltxt)==ErrorWeWy) return ErrorWeWy;
 
             break;
 
@@ -7283,13 +7750,72 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if(RysujSolid(&w)==ErrorWeWy) return ErrorWeWy;
 
-            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_*(PLth.kat+90.0)/180.0, ptrs_vector, PLth.kat);
+            make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], Pi_*(PLth.kat+90.0)/180.0, ptrs_vector, PLth.kat, 0);
 
             if(RysujText(&Vtxt)==ErrorWeWy) return ErrorWeWy;
             if(RysujText(&Vtxt1)==ErrorWeWy) return ErrorWeWy;
+            if(RysujText(&Vltxt)==ErrorWeWy) return ErrorWeWy;
+
+            if (ptrs_vector->cartflags & 1) {
+
+                Lth1.typ = 64;
+
+                if(RysujLinia(&Lth1)==ErrorWeWy) return ErrorWeWy;
+
+                w.empty_typ = 0;
+                w.xy[0] = Lth1.x1;
+                w.xy[1] = Lth1.y1;
+                w.xy[2] = Lth1.x2;
+                w.xy[3] = Lth1.y2;
+                w.xy[4] = Lt1.x2;
+                w.xy[5] = Lt1.y2;
+                w.xy[6] = Lt1.x1;
+                w.xy[7] = Lt1.y1;
+                w.lp = 8;
+                w.n = 40;
+
+                L1.typ = 64;
+                L1.x1 = w.xy[2];
+                L1.y1 = w.xy[3];
+                L1.x2 = w.xy[4];
+                L1.y2 = w.xy[5];
+
+                if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
+
+                L1.x1 = w.xy[6];
+                L1.y1 = w.xy[7];
+
+                if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
+
+                L1.x2 = w.xy[0];
+                L1.y2 = w.xy[1];
+
+                if(RysujLinia(&L1)==ErrorWeWy) return ErrorWeWy;
+
+                w.translucent = 1;
+                translucency = TRANS;
+
+                translucency_ptr = (char *) w.xy;
+                translucency_ptr += (w.lp * sizeof(float));
+                memmove(translucency_ptr, &translucency, sizeof(unsigned char));
+
+                w.n = 8 + w.lp * sizeof(float) + sizeof(unsigned char);
+
+                if(RysujSolid(&w)==ErrorWeWy) return ErrorWeWy;
+
+                //double angle  = Pi_ * (270.0) / 180.0;
+                double angle = Pi_ * (PLth1.kat + 90.0) / 180.0;
+
+                angle = Pi_ * perpendicular_iso_angle / 180.;
+
+                make_arrows_to_DXF(w.xy[0], w.xy[1], w.xy[2], w.xy[3], w.xy[6], w.xy[7], w.xy[4], w.xy[5], angle, ptrs_vector, PLth.kat, 1);
+
+                if(RysujText(&Vtxt_)==ErrorWeWy) return ErrorWeWy;
+                if(RysujText(&Vtxt1_)==ErrorWeWy) return ErrorWeWy;
+            }
+
             break;
         case 16:
-            ////PRINT_TRANSLUCENCY=TRANS;
             K.x=ptrs_vector->x1;
             K.y=ptrs_vector->y1;
             K.r=ptrs_vector->r;
@@ -7298,8 +7824,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             {
                 if (RysujTransKolo(&K, TRANS) == ErrorWeWy) return ErrorWeWy;
             }
-
-            ////PRINT_TRANSLUCENCY=255;
 
             l.typ = 64;
             l.x=ptrs_vector->x1;

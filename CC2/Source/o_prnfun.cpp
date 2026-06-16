@@ -8363,7 +8363,7 @@ if (NO_REFLECTION)
 
      ptrs__prn_ini_date->color_mode=0;
 
-	 //TUTAJ NALEZY PRZYJAC WIELKOSC STRONY Z INFORMACJI O DRUKARCE  //TODO!!!
+	 //HERE YOU SHOULD USE THE PAGE SIZE FROM YOUR PRINTER INFORMATION  //TODO!!!
    }
 
   buforowanie_wydruku = TRUE;

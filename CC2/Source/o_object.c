@@ -501,7 +501,7 @@ char* Add_Block_Object(BLOK** ptrptr_adb, void* ad, long l_move)
 	ll = dane_size + n;
 
     BOOL shift_ad;
-    if ((ad>=dane) && (ad<=(dane+dane_size))) shift_ad=TRUE;
+    if (((char*)ad>=dane) && ((char*)ad<=(dane+dane_size))) shift_ad=TRUE;
     else shift_ad=FALSE;
 
 	if (!SetBufferDaneSize(ll)) { ErrList(18); return NULL; }

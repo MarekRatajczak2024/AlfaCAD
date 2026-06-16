@@ -26,6 +26,9 @@
 #include "leak_detector_c.h"
 
 extern int Simple_Menu_Proc (TMENU *) ;
+extern int get_menu_level(void);
+extern void set_menu_level(int menu_l);
+
 extern char *GetStringFromClipboard(void);
 extern void PutStringToClipboard(char *ptrsz_sz_tmp);
 
@@ -113,7 +116,7 @@ static BOOL delete_if_equel (char *ptr_string)
 }
 
 
-BOOL Add_String_To_List (char *ptr_string)
+void Add_String_To_List (char *ptr_string)
 /*--------------------------------------*/
 {
   int len, len_str, dl ;
@@ -121,7 +124,7 @@ BOOL Add_String_To_List (char *ptr_string)
 
   if (NULL == s_string_list.ptrsz_list && ptr_string [0] == '\0')
   {
-    return FALSE ;
+    return;
   }
   delete_if_equel (ptr_string) ;
   len = strlen (ptr_string) ;
@@ -154,7 +157,7 @@ BOOL Add_String_To_List (char *ptr_string)
   Put_Str_To_Clip(ptr_string);
 #endif
 
-  return TRUE ;
+  return;
 }
 
 
@@ -248,41 +251,45 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
                         int ypcz)
 /*---------------------------------*/
 {
-  int n, i_len ;
-  BOOL b_ret ;
+  BOOL b_ret = FALSE;
   char sz_tmp [MaxMultitextLen] ;  //MaxTextLen
-  char *ptrsz_tmp ;
   double X__, Y__;
 
-  if (NULL == s_string_list.ptrsz_list || s_string_list.string_no == 0)
-  {
-    return FALSE ;
-  }
-  if (FALSE == check_mem_list ())
-  {
-     return FALSE ;
-  }
-  set_list_string () ;
-  b_ret = FALSE ;
-  //mList_String.xpcz = xpcz / (8 * SKALA) ;
-  //mList_String.ypcz = 2 + ypcz / (8 * SKALA) ;
-    mList_String.xpcz = xpcz;
-    mList_String.ypcz = ypcz;
-    X__=X;
-    Y__=Y;
-    X=jednostkiX0_(xpcz);
-    Y=jednostkiY0_(ypcz);
-  if ((n = Simple_Menu_Proc (&mList_String) - 1) >= 0)
-  {
-    b_ret = TRUE ;
-    ptrsz_tmp = (*mList_String.pola)[n].txt ;
-    i_len = strlen (ptrsz_tmp) ;
-    strcpy (sz_tmp, &ptrsz_buf [i_poz]) ;
-    ptrsz_buf [i_poz] = '\0' ;
-    strncat (ptrsz_buf, ptrsz_tmp, i_buflen - i_poz) ;
-    strncat (ptrsz_buf, sz_tmp, i_buflen - i_poz - i_len) ;
-    ptrsz_buf [i_buflen - 1] = '\0' ;
-  }
+	if (NULL == s_string_list.ptrsz_list || s_string_list.string_no == 0)
+	{
+		return FALSE ;
+	}
+	if (FALSE == check_mem_list ())
+	{
+		 return FALSE ;
+	}
+	set_list_string () ;
+    //mList_String.xpcz = xpcz / (8 * SKALA) ;
+    //mList_String.ypcz = 2 + ypcz / (8 * SKALA) ;
+	mList_String.xpcz = xpcz;
+	mList_String.ypcz = ypcz;
+	X__=X;
+	Y__=Y;
+	X=jednostkiX0_(xpcz);
+	Y=jednostkiY0_(ypcz);
+
+	int menu_level=get_menu_level();
+	set_menu_level(menu_level+1);
+	menu_address[menu_level-1]=(char*)&mList_String;
+	int n = Simple_Menu_Proc (&mList_String) - 1;
+	menu_level=get_menu_level();  //just for test, if level was automatically decreased
+
+	if (n >= 0)
+	{
+		b_ret = TRUE ;
+		char *ptrsz_tmp = (*mList_String.pola)[n].txt ;
+		int i_len = (int)strlen (ptrsz_tmp) ;
+		strcpy (sz_tmp, &ptrsz_buf [i_poz]) ;
+		ptrsz_buf [i_poz] = '\0' ;
+		strncat (ptrsz_buf, ptrsz_tmp, i_buflen - i_poz) ;
+		strncat (ptrsz_buf, sz_tmp, i_buflen - i_poz - i_len) ;
+		ptrsz_buf [i_buflen - 1] = '\0' ;
+	}
     X=X__;
     Y=Y__;
   free_mem_list () ;  

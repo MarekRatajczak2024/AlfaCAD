@@ -274,11 +274,15 @@ static void zwvector(char  *adr,double dx,double dy)
             memmove(v, vc, sizeof(AVECTOR));
             break;
             case 5: //stretching angle and value of moment or rotation
+            case 10:
             vc=get_vector_c();
             memmove(v, vc, sizeof(AVECTOR));
             break;
             case 6: //stretching thermal bar size
+            case 11:
+            case 12:  //updadte therm r  in y(iso)
             case 7:
+            case 13:  //updadte therm r  in y(iso)
             vc=get_vector_c();
             memmove(v, vc, sizeof(AVECTOR));
             break;
@@ -2838,7 +2842,6 @@ void transformacja_blok2 (char  *adr,char  *adrk,double x,double y,double k1,dou
  oknoS(Xp,Yp,Xk,Yk);
  while (nag->obiekt!=Okoniec && adr<=adrk)
   {
-
      if (nag->atrybut==Ablok)
     {
       transformacja_obiekt ((void*)adr,x,y,k1,k2, xa, ya, ka1, ka2, trans, 0) ;

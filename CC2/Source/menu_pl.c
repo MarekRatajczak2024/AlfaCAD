@@ -43,6 +43,7 @@ char _EDIT_FILE_[]=u8"Edycja pliku";
 
 #define _NEW_WINDOW_ u8"Czy chcesz otworzyć nowe okno rysunku?"
 #define _NEW_WINDOW_T_ u8"Nowe okno"
+#define _NETWORK_PRINTER_ u8"Uruchomienie połączenia z drukarką sieciową..."
 
 int max_quote = 586;
 #define _QUOTE_ u8"quotespl.dat"
@@ -1597,6 +1598,7 @@ static POLE pmInfo[] = {
 TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Linia",u8"Linia 3D",u8"Tekst",u8"Łuk",u8"Okrąg",u8"Koło",u8"Wielokąt/Obszar",u8"Obszar 3D",u8"Punkt",u8"Spline",u8"Obraz",u8"Polilinia",u8"Ślad",u8"Kreskowanie",u8"Łuk Eliptyczny",u8"Elipsa",u8"Dysk Elliptyczny", u8"Obszar łukowy", u8"Wektor"};
+char* isometric_info=" (izometryczny)";
 
 #define __PLATE__ u8" (PŁYTA)"
 #define __HOLE__  u8" (OTWÓR)"
@@ -3465,7 +3467,7 @@ static POLE pmKartezjanskiGeodezyjny[] = {
          {u8"Izometryczny",'I',868,NULL}
 };
 
-static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,163,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 
 static POLE pmPointOrigin[3] = {
@@ -3551,21 +3553,29 @@ static POLE pmReactionMagnitude[] = {
 	   {u8"Rozproszone siły reakcji\0 \0",L'R',864,NULL},
 	  };
 
-static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,50,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
-       {u8"naprężenia w Stali/drewnie\0 \0",L'S',775,NULL},
-	   {u8"naprężenia w Betonie zbrojonym\0 \0",L'B',6,NULL},
+       {u8"naprężenia osiowe w Stali/drewnie\0 \0",L'S',901,NULL},
+	   {u8"naprężenia osiowe w Betonie zbrojonym\0 \0",L'B',902,NULL},
+       {u8"naprężenia Poprzeczne\0 \0",L'P',903,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 3,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,48,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+
+static POLE pmRescalingMode[] = {
+       {u8"wybór Automatyczny\0 \0",L'A',899,NULL},
+	   {u8"wybór Menu\0 \0",L'M',900,NULL},
+	  };
+
+static TMENU mRescalingMode = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,55,0,0,0,(POLE(*)[]) &pmRescalingMode,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"przeskalowanie Siły\0 \0",                   L'S',727,NULL},
@@ -3586,9 +3596,10 @@ static POLE pmMagnitude[] = {
        {u8"Dokładność\0 \0",                            L'D',184,NULL}, //&mPrecision},
        {u8"Kolory\0 \0",                                L'K',495,NULL}, //&mStaticColors},
        {u8"resetuj przeskalowanie\0 \0",                L'I',860,&mResetMagnitude},
+       {u8"Tryb przeskalowania wyników Auto/menu\0 \0", L'A',898,&mRescalingMode},
 };
 
-static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 19,0,0,10,30,7,TADD | ICONS| NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Format rysunku\0 A4\0    ",'F',96,&mFormat_r},

@@ -226,39 +226,39 @@ static void remove_mem_info (void * mem_ref)
 void report_mem_leak(void)
 {
 	unsigned short index;
-	MEM_LEAK * leak_info;
+	MEM_LEAK* leak_info;
 
-	FILE * fp_write = fopen (OUTPUT_FILE, "wt");
-	char info[1024];
+	FILE* fp_write = fopen(OUTPUT_FILE, "wt");
 
-	if(fp_write != NULL)
+	if (fp_write != NULL)
 	{
-		sprintf(info, "%s\n", "Memory Leak Summary");
-		fwrite(info, (strlen(info) + 1) , 1, fp_write);
-		sprintf(info, "%s\n", "-----------------------------------");	
-		fwrite(info, (strlen(info) + 1) , 1, fp_write);
-		index0=0;
-		for(leak_info = ptr_start; leak_info != NULL; leak_info = leak_info->next)
+		// fprintf writes ONLY the letters, leaving the dangerous 0x00 bytes behind!
+		fprintf(fp_write, "=== MEMORY LOG START ===\n");
+		fprintf(fp_write, "Memory Leak Summary\n");
+		fprintf(fp_write, "-----------------------------------\n");
+
+		index0 = 0;
+		for (leak_info = ptr_start; leak_info != NULL; leak_info = leak_info->next)
 		{
-            if (leak_info->flag==0)
-            {
-                sprintf(info, "address : %llu\n", leak_info->mem_info.address);
-                fwrite(info, (strlen(info) + 1), 1, fp_write);
-                sprintf(info, "size    : %d bytes\n", leak_info->mem_info.size);
-                fwrite(info, (strlen(info) + 1), 1, fp_write);
-                sprintf(info, "file    : %s\n", leak_info->mem_info.file_name);
-                fwrite(info, (strlen(info) + 1), 1, fp_write);
-                sprintf(info, "line    : %d\n", leak_info->mem_info.line);
-                fwrite(info, (strlen(info) + 1), 1, fp_write);
-                sprintf(info, "%s\n", "-----------------------------------");
-                fwrite(info, (strlen(info) + 1), 1, fp_write);
-            }
-            index0++;
+			if (leak_info->flag == 0)
+			{
+				fprintf(fp_write, "address : %llu\n", leak_info->mem_info.address);
+				fprintf(fp_write, "size    : %d bytes\n", leak_info->mem_info.size);
+				fprintf(fp_write, "file    : %s\n", leak_info->mem_info.file_name);
+				fprintf(fp_write, "line    : %d\n", leak_info->mem_info.line);
+				fprintf(fp_write, "-----------------------------------\n");
+			}
+			index0++;
 		}
-		sprintf(info, "counter: %d counter_t: %d counter_m: %d counter_f: %d counter_r: %d index0: %d\n", counter, counter_t,counter_m,counter_f,counter_r, index0);
-		fwrite(info, (strlen(info) + 1), 1, fp_write);
-        fclose(fp_write);
-	}	
+
+		fprintf(fp_write, "counter: %d counter_t: %d counter_m: %d counter_f: %d counter_r: %d index0: %d\n",
+			counter, counter_t, counter_m, counter_f, counter_r, index0);
+		fprintf(fp_write, "=== MEMORY LOG END ===\n");
+
+		fclose(fp_write);
+	}
 	clear_report();
 }
+
+
 #endif

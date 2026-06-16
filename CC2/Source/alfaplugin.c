@@ -718,12 +718,12 @@ int alfaplugins(void)
 }
 
 int alfaplugins_off(void)
-{
+{   int ret;
     pm_unload(pm);
     list_str_destroy(plugin_func_name_draw);
     list_str_destroy(plugin_func_name_edit);
     list_str_destroy(plugin_func_name_block);
     list_str_destroy(plugin_func_name_aux);
-    delete_all_client_bitmaps();
+    ret = delete_all_client_bitmaps();
     return 0;
 }

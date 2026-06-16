@@ -253,7 +253,7 @@ static bool pm_load_alfa_func(pm_manager_t *pm, pgen_t *gen)
 {
     palfa_func_t *p;
     palfa_func_t *p2;
-    p = calloc(2, sizeof(p));  //TUTAJ
+    p = calloc(2, sizeof(p));
     p->gen = gen;
 #ifdef LINUX
     p->param = dlsym(p->gen->handle, "alfa_func");

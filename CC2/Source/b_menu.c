@@ -250,7 +250,7 @@ int Simple_Menu_Proc(TMENU *menu);
 extern void return_menu_par (char *pole, char * par);
 extern void return_menu_par0 (char *pole, char * par);
 
-extern void get_global_coords (double *x0, double *y0);
+extern void get_global_coords (double *x0, double *y0, int cartflags);
 
 extern BOOL TTF_redraw;
 extern char* tab_typ_tekstu[];
@@ -330,6 +330,12 @@ extern void enable_F11(void);
 extern void Restore_Pointer(void);
 
 extern void set_sleep_state(BOOL state);
+extern void Add_String_To_List (char *ptr_string);
+
+extern char* objects[];
+extern char* isometric_info;
+int iObject=0;
+
 #ifdef ALLEGRO5
 extern void position_mouse(int x, int y);
 extern void position_mouse_xy(int x, int y);
@@ -1380,6 +1386,18 @@ extern char *icon_rotation_xy_rev_p;
 extern char *icon_vector_member_style_d_p;
 extern char *icon_rigid_springs_nosprings_d_p;
 
+extern char *icon_stress_steel_wood_p;
+extern char *icon_stress_RC_p;
+extern char *icon_shear_stress_steel_wood_p;
+extern char *icon_concrete_p;
+
+extern char *icon_R_section_p;
+extern char *icon_I_section_p;
+extern char *icon_T_section_p;
+extern char *icon_CT_section_p;
+extern char *icon_ST_section_p;
+extern char *icon_RT_section_p;
+
 extern char *icon_ULS_p;
 extern char *icon_SLS_p;
 extern char *icon_QPSLS_p;
@@ -1403,6 +1421,7 @@ extern char *icon_slab_geo_red_p;
 extern char *icon_slab_geo_black_p;
 extern char *icon_slab_fem_p;
 extern char *icon_shield_fem_p;
+extern char *icon_beam_grid_p;
 extern char *icon_slab_edge_rolled_p;
 extern char *icon_slab_edge_hinged_p;
 extern char *icon_slab_edge_free_p;
@@ -1418,6 +1437,10 @@ extern char *icon_solid_gtranslucent_p;
 extern char *icon_SI_p;
 extern char *icon_IMP_p;
 extern char *icon_factory_reset_p;
+
+extern char *icon_menu_auto_choice_p;
+extern char *icon_menu_choice_p;
+extern char *icon_autoplay_p;
 
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
@@ -3531,7 +3554,9 @@ static char *get_icons_p(int number)
         /*870*/   icon_fixed_roller_x_p,icon_fixed_roller_xu_p,icon_fixed_roller_y_p,icon_fixed_roller_yu_p,icon_pinned_roller_x_p,icon_pinned_roller_xu_p,icon_pinned_roller_y_p,icon_pinned_roller_yu_p,icon_rigid_rigid_springs_p,icon_rigid_rigid_nosprings_p,
         /*880*/   icon_force_z_p,icon_trapezium_z_p,icon_moment_x_p,icon_moment_x_rev_p,icon_moment_y_p,icon_moment_y_rev_p,icon_moment_xy_p,icon_moment_xy_rev_p,
         /*888*/   icon_displacement_z_p,icon_rotation_x_p,icon_rotation_x_rev_p,icon_rotation_y_p,icon_rotation_y_rev_p,icon_rotation_xy_p,icon_rotation_xy_rev_p,
-        /*895*/   icon_vector_member_style_d_p, icon_rigid_springs_nosprings_d_p,
+        /*895*/   icon_vector_member_style_d_p, icon_rigid_springs_nosprings_d_p, icon_beam_grid_p,
+        /*898*/   icon_menu_auto_choice_p, icon_autoplay_p, icon_menu_choice_p, icon_stress_steel_wood_p, icon_stress_RC_p, icon_shear_stress_steel_wood_p, icon_concrete_p,
+	    /*905*/   icon_R_section_p, icon_I_section_p, icon_T_section_p, icon_CT_section_p, icon_ST_section_p, icon_RT_section_p,
     };
    
 	if (number>1999)
@@ -9886,10 +9911,11 @@ void ch_edge (void)
     return;
 }
 
-int point_type[]={0, 1, 8, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int point_type[]={0, 1, 8, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 
 void ch_ptype (void) {
     int n;
+    char sk[64];
 
     frame_off(&mInfoAboutA);
 
@@ -9900,6 +9926,20 @@ void ch_ptype (void) {
     {
         rysuj_obiekt(object_info_ad, COPY_PUT, 0);
         ((T_Point *) object_info_ad)->typ = point_type[n-1];
+
+        //change of cartesian/isometry flag, depending on current coordinates system
+        strcpy(sk, objects[8]);
+        if (options1.uklad_izometryczny)
+        {
+            ((T_Point *) object_info_ad)->cartflags = 1;
+            strcat(sk, isometric_info);
+        }
+        else
+        {
+            ((T_Point *) object_info_ad)->cartflags = 0;
+        }
+        menu_par_new((*mInfoAbout.pola)[iObject].txt, sk) ;
+
         rysuj_obiekt(object_info_ad, COPY_PUT, 1);
         //menu update
         menu_par_new((*mInfoAboutA.pola)[menu_n].txt, typ_punktu_inf[((T_Point *)object_info_ad)->typ]);
@@ -9913,8 +9953,12 @@ void ch_ptype (void) {
 
 void ch_stype (void) {
     int n;
+    int style_org;
+    char sk[64];
 
     frame_off(&mInfoAboutA);
+
+    style_org = (((AVECTOR *)object_info_ad)->style);
 
     menu_level++;
     switch (((AVECTOR *)object_info_ad)->style)
@@ -10074,9 +10118,8 @@ void ch_stype (void) {
     {
         rysuj_obiekt(object_info_ad, COPY_PUT, 0);
 
-        if (!(((AVECTOR *)object_info_ad)->cartflags))
-                ((AVECTOR *) object_info_ad)->style = n-1;
-        else
+        //in isometry if style==0, there is a choice between foundflags
+        if ((((AVECTOR *) object_info_ad)->style == 0) && (((AVECTOR *) object_info_ad)->cartflags & 1))
         {
             switch (n)
             {
@@ -10090,12 +10133,37 @@ void ch_stype (void) {
                     break;
             }
         }
+        else
+        {
+            //style is changed as selected - in categories
+            ((AVECTOR *) object_info_ad)->style = n-1;
+        }
+
+        //changing cartesia/isometric flags for selected vector styles
+        if (((((AVECTOR *)object_info_ad)->style) == style_org) &&
+                (style_org==0) || //member
+                (style_org==4) || //force in XY
+                (style_org==7)) //displacement in XY
+        {
+            //change of cartesian/isometry flag, depending on current coordinates system
+            strcpy(sk, objects[18]);
+            if (options1.uklad_izometryczny)
+            {
+                ((AVECTOR *) object_info_ad)->cartflags = 1;
+                strcat(sk, isometric_info);
+            }
+            else
+            {
+                ((AVECTOR *) object_info_ad)->cartflags = 0;
+            }
+            menu_par_new((*mInfoAbout.pola)[iObject].txt, sk) ;
+        }
 
         rysuj_obiekt(object_info_ad, COPY_PUT, 1);
         //menu update
-        if (((AVECTOR *)ad)->style==0)
+        if (((AVECTOR *)object_info_ad)->style==0)
         {
-            if (((AVECTOR *)ad)->foundflags==0)
+            if (((AVECTOR *)object_info_ad)->foundflags==0)
                 menu_par_new((*mInfoAboutA.pola)[menu_n].txt, Vector_txt[0]);
             else
                 menu_par_new((*mInfoAboutA.pola)[menu_n].txt, Vector_txt[34]);
@@ -10567,9 +10635,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((LINIA *) object_info_ad)->x1 = (float) x1;
@@ -10600,9 +10668,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, ((AVECTOR *) object_info_ad)->cartflags) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, ((AVECTOR *) object_info_ad)->cartflags);
             switch (nr) {
                 case 0:
                     ((AVECTOR *) object_info_ad)->x1 = (float) x1;
@@ -10630,9 +10698,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((OKRAG *) object_info_ad)->x = (float) x1;
@@ -10656,9 +10724,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((ELLIPSE *) object_info_ad)->x = (float) x1;
@@ -10681,9 +10749,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((LUK *) object_info_ad)->x = (float) x1;
@@ -10706,9 +10774,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((SOLIDARC *) object_info_ad)->x = (float) x1;
@@ -10731,9 +10799,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((ELLIPTICALARC *) object_info_ad)->x = (float) x1;
@@ -10756,9 +10824,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, ((T_Point *) object_info_ad)->cartflags) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, ((T_Point *) object_info_ad)->cartflags);
             switch (nr) {
                 case 0:
                     ((T_Point *) object_info_ad)->x = (float) x1;
@@ -10781,9 +10849,9 @@ void ch_x_ (int nr)
                     return;
                     break;
             }
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((TEXT *) object_info_ad)->x = (float) x1;
@@ -10799,9 +10867,9 @@ void ch_x_ (int nr)
             x0 = ((WIELOKAT *) object_info_ad)->xy[nr*2];
             y0 = ((WIELOKAT *) object_info_ad)->xy[nr*2+1];
 
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
 
             ((WIELOKAT*) object_info_ad)->xy[nr*2] = (float) x1;
             ((WIELOKAT *) object_info_ad)->xy[nr*2+1] = (float) y1;
@@ -10814,9 +10882,9 @@ void ch_x_ (int nr)
             x0 = ((SPLINE *) object_info_ad)->xy[nr*2];
             y0 = ((SPLINE *) object_info_ad)->xy[nr*2+1];
 
-            y1 = milimetryobyl(x0, y0) ;
+            y1 = milimetryobyl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",x1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
 
             ((SPLINE*) object_info_ad)->xy[nr*2] = (float) x1;
             ((SPLINE *) object_info_ad)->xy[nr*2+1] = (float) y1;
@@ -10837,9 +10905,9 @@ void ch_x_ (int nr)
                         return;
                         break;
                 }
-                y1 = milimetryobyl(x0, y0) ;
+                y1 = milimetryobyl(x0, y0, 0) ;
                 sprintf(sk_info, "%-12.9f",x1);
-                get_global_coords (&x1, &y1);
+                get_global_coords (&x1, &y1, 0);
 
                 ((B_PCX *) object_info_ad)->x = (float) x1;
                 ((B_PCX *) object_info_ad)->y = (float) y1;
@@ -10902,9 +10970,9 @@ void ch_y_ (int nr)
                     return;
                 break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((LINIA *) object_info_ad)->x1 = (float) x1;
@@ -10933,9 +11001,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, ((AVECTOR *) object_info_ad)->cartflags);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, ((AVECTOR *) object_info_ad)->cartflags);
             switch (nr) {
                 case 0:
                     ((AVECTOR *) object_info_ad)->x1 = (float) x1;
@@ -10962,9 +11030,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((OKRAG *) object_info_ad)->x = (float) x1;
@@ -10987,9 +11055,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((ELLIPSE *) object_info_ad)->x = (float) x1;
@@ -11011,9 +11079,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((LUK *) object_info_ad)->x = (float) x1;
@@ -11035,9 +11103,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((SOLIDARC *) object_info_ad)->x = (float) x1;
@@ -11059,9 +11127,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((ELLIPTICALARC *) object_info_ad)->x = (float) x1;
@@ -11083,9 +11151,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, ((T_Point *) object_info_ad)->cartflags);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, ((T_Point *) object_info_ad)->cartflags);
             switch (nr) {
                 case 0:
                     ((T_Point *) object_info_ad)->x = (float) x1;
@@ -11107,9 +11175,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             switch (nr) {
                 case 0:
                     ((TEXT *) object_info_ad)->x = (float) x1;
@@ -11126,9 +11194,9 @@ void ch_y_ (int nr)
             x0 = ((WIELOKAT *) object_info_ad)->xy[nr*2];
             y0 = ((WIELOKAT *) object_info_ad)->xy[nr*2+1];
 
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             ((WIELOKAT *) object_info_ad)->xy[nr*2] = (float) x1;
             ((WIELOKAT *) object_info_ad)->xy[nr*2+1] = (float) y1;
 
@@ -11141,9 +11209,9 @@ void ch_y_ (int nr)
             x0 = ((SPLINE *) object_info_ad)->xy[nr*2];
             y0 = ((SPLINE *) object_info_ad)->xy[nr*2+1];
 
-            x1 = milimetryobxl(x0, y0);
+            x1 = milimetryobxl(x0, y0, 0);
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
             ((SPLINE *) object_info_ad)->xy[nr*2] = (float) x1;
             ((SPLINE *) object_info_ad)->xy[nr*2+1] = (float) y1;
 
@@ -11163,9 +11231,9 @@ void ch_y_ (int nr)
                     return;
                     break;
             }
-            x1 = milimetryobxl(x0, y0) ;
+            x1 = milimetryobxl(x0, y0, 0) ;
             sprintf(sk_info, "%-12.9f",y1);
-            get_global_coords (&x1, &y1);
+            get_global_coords (&x1, &y1, 0);
 
             ((B_PCX *) object_info_ad)->x = (float) x1;
             ((B_PCX *) object_info_ad)->y = (float) y1;
@@ -12703,6 +12771,11 @@ int  getwsp2(TMENU *menu, char *ad, int param_no[])
             menu_n=n-1;
 
             (*COMNDInfo[no_param])();
+        }
+        else
+        {
+            return_menu_par((*mInfoAboutA.pola)[n-1].txt, sk_info) ;
+            Add_String_To_List(sk_info);
         }
 
     }

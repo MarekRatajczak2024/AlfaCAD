@@ -48,11 +48,13 @@ TMENU mTyp_punktu= {29, 0,0, 12,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmTy
 BOOL Add_Point (double df_x, double df_y)
 /*---------------------------------------*/
 {
-  BOOL b_ret ;
+  BOOL b_ret = FALSE;
 
-  PointG.x = df_x ;
-  PointG.y = df_y ;
-  b_ret = FALSE ;
+  PointG.x = (float)df_x ;
+  PointG.y = (float)df_y ;
+  if (options1.uklad_izometryczny) PointG.cartflags=1;
+  else PointG.cartflags=0;
+
   if (NULL != dodaj_obiekt (NULL, (void*)&PointG))
   {
     b_ret = TRUE ;
@@ -441,6 +443,10 @@ void Point (void)
 {
   EVENT *ev;
   double X0, Y0;
+
+  //it's moved to Add_Point
+  //if (options1.uklad_izometryczny) PointG.cartflags = 1;
+  //else PointG.cartflags = 0;
 
   redcrP (0) ;
   while (1)

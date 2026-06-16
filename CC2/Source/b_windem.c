@@ -104,7 +104,7 @@ static void decod_fn (POLE *pmuser, POLE *pmuserno, int *mmax)
 	  if (ptr_alfa2!=NULL)
 		  {
 		      *ptr_alfa1 = '\0';
-			  sprintf(&s_prot_date.sz_user_name[0], dec_pwd);
+			  sprintf((char*)&s_prot_date.sz_user_name[0], "%s", dec_pwd);
 			  strcpy(&s_prot_date.sz_series[0], "01010101");
 			  sprintf(pmuser->txt, "%s%s", lic_for, &s_prot_date.sz_user_name[0]);
 			  sprintf(pmuserno->txt, "");

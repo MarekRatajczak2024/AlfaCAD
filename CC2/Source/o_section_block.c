@@ -11,6 +11,8 @@
 
 #include "o_section_block.h"
 
+#include "leak_detector_c.h"
+
 #ifdef LINUX
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
@@ -50,7 +52,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     //IH
     char *IHp[]= {"HD","HE","HE A","HE AA","HE B","HE C","HE M","HEA","HEB","HEM","HL","HLZ","IPE","IPE 750","IPE A","IPE AA","IPE O","IPE V","IPER","PEA","UB","UBP","UC",
                  "AW (Table 7)","H","HHD","HP","HP (Imperial)","HP (metric)","I W","I (Table 12)","I (Table 13)","I (Table 8)","M","W","W (imperial)","W (metric)","W (RSA)","W (Table 8)","WF(A-N) (Table 10)","WTM",
-                  "Advance UKB","Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB","IP","W (in)","W (mm)","I (BS)"};
+                  "Advance UKB","Advance UKBP","Advance UKC","UB (RSA)","UC (RSA)", "SLB","IP","W (in)","W (mm)","I (BS)","I-beam"};
 
     int IHp_n=sizeof(IHp)/sizeof(IHp[0]);
 
@@ -95,7 +97,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     int L2cf_n=sizeof(L2cf)/sizeof(L2cf[0]);
 
     //T
-    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)",/*"TB",*/"T (GB/T)"};
+    char *Tp[]= {"1/2 HEA","1/2 HEB","1/2 HEM","1/2 IPE","MT","WT","1/2 UB","1/2 UC","Advance UKT (UKB)","Advance UKT (UKC)",/*"TB",*/"T (GB/T)","T-beam"};
     int Tp_n=sizeof(Tp)/sizeof(Tp[0]);
     char *Tt[]= {"T","TB","TPH","ST","T (A-N) (Table 19)","T (Table 14)","T (Table 18)"};
     int Tt_n=sizeof(Tt)/sizeof(Tt[0]);
@@ -121,10 +123,14 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
                   "DuraGal RHS","DuraGal SHS","Galtube RHS","Galtube SHS","Tubeline RHS","Tubeline SHS"};
     int RTp_n=sizeof(RTp)/sizeof(RTp[0]);
 
+    //SHS-beam in concrete
+    char *RT[]= {"RHS-beam","SHS-beam"};
+    int RT_n=sizeof(RT)/sizeof(RT[0]);
+
     //CT
     char *CTp[]= {"Celsius 355 CHS","Celsius 355 CHS","Celsius CHS","CHC","CHS","DN","Hybox 355 CHS","Hybox CHS","MSHRund","ROR",
                   "NPS","NPS (Table 17)","NPS (Table 22)","OD (Table 16)","OD (Table 21)","Pipes Std.","Pipes x-Strong","Pipes xx-Strong","Round HSS","Round HSS (A1085)",
-                  "Pipe (ASTM A53)","Pipe STD","Pipe XS","Pipe XXS","Round HSS (ASTM A500)","Round HSS (CSA G40.20)","DuraGal CHS","Galtube CHS","Tubeline CHS"};
+                  "Pipe (ASTM A53)","Pipe STD","Pipe XS","Pipe XXS","Round HSS (ASTM A500)","Round HSS (CSA G40.20)","DuraGal CHS","Galtube CHS","Tubeline CHS","CHS-beam"};
     int CTp_n=sizeof(CTp)/sizeof(CTp[0]);
 
     //ET
@@ -174,8 +180,10 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     char *Zcfd="xy(0,-c/sqrt(2));lin(c/sqrt(2),c/sqrt(2));lin(bf-t-ri,0);fil(ri+t,1);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri-t*tan(22.5),0);lin((c-t*tan(22.5))/sqrt(2),(c-t*tan(22.5))/sqrt(2));fil(ri,0);lin(t/sqrt(2),-t/sqrt(2));lin(-c/sqrt(2),-c/sqrt(2));lin(-bf+t+ri,0);fil(ri+t,1);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri+t*tan(22.5),0);lin(-(c-t*tan(22.5))/sqrt(2),-(c-t*tan(22.5))/sqrt(2));fil(ri,0);lin(-t/sqrt(2),t/sqrt(2))"; //ZS
     char *Zlcfd="xy(0,-c);lin(0,c-ri-t);arc(ri+t,0,ri+t,pi/2.,pi,1);lin(bf-ri*2-t*2,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+ri*2+t*2);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-ri*2-t*2,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,c-ri-t);lin(t,0);lin(0,-c+ri+t);arc(-ri-t,0,ri+t,3./2.*pi,0,1);lin(-bf+ri*2+t*2,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-ri*2-t*2);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+ri*2+t*2,0);arc(0,-ri,ri,pi/2.,pi,0);lin(0,-c+ri+t);lin(-t,0)";
     char *Ztcfd="lin(bf-t-ri,0);arc(0,-ri-t,ri+t,0,pi/2.,1);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(bf-t-ri,0);lin(0,-t);lin(-bf+t+ri,0);arc(0,ri+t,ri+t,pi,3./2.*pi,1);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-bf+t+ri,0);lin(0,t)";   //ZU
-    //RT
+    //RTp
     char *RTpd="xy(0,-ri-t);lin(0,-h+2*t+2*ri);arc(ri+t,0,ri+t,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri+t,ri+t,3./2.*pi,0,0);lin(0,h-2*t-2*ri);arc(-ri-t,0,ri+t,0,pi/2.,0);lin(-b+2*t+2*ri,0);arc(0,-ri-t,ri+t,pi/2.,pi,0);xy(t,-ri-t);lin(0,-h+2*t+2*ri);arc(ri,0,ri,pi,3./2.*pi,0);lin(b-2*t-2*ri,0);arc(0,ri,ri,3./2.*pi,0,0);lin(0,h-2*t-2*ri);arc(-ri,0,ri,0,pi/2.,0);lin(-b+2*t+2*ri,0);arc(0,-ri,ri,pi/2.,pi,0)";
+    //RT
+    char *RTd="xy(-b/2.+t,-t);lin(b-2*t,0);lin(0,-h+2*t);lin(-b+2*t,0);lin(0,h-2*t);xy(-b/2.,0);lin(b,0);lin(0,-h);lin(-b,0);lin(0,h)";
     //CT
     char *CTpd="cir(h/2.);cir(h/2.-t)";
     //ET
@@ -188,7 +196,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     ////WOOD
     //IH
     char *RBar[]= {"Beams and Stringers","Boards","Dimension Lumber","Dimension Lumber and Decking","Post and Timber","Southern Pine Glulam","Western Species Glulam",
-                   "Glulam","Machine Stress-Rated Lumber","Sawn Lumber","Sawn Timbers"};
+                   "Glulam","Machine Stress-Rated Lumber","Sawn Lumber","Sawn Timbers", "R-beam"};
     int RBar_n=sizeof(RBar)/sizeof(RBar[0]);
     char *RBard="lin(b,0);lin(0,-h);lin(-b,0);lin(0,h)";
 
@@ -606,6 +614,22 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
                 pd0 = malloc(strlen(RTpd) + 1);
                 memmove(pd0, RTpd, strlen(RTpd) + 1);
                 xblk=b/2.;
+                yblk=0.;
+                found = TRUE;
+                break;
+            }
+        }
+    }
+    //RT
+    if (found==FALSE)
+    {
+        for (i = 0; i < RT_n; i++)
+        {
+            if (strcmp(series0, RT[i]) == 0)
+            {
+                pd0 = malloc(strlen(RTd) + 1);
+                memmove(pd0, RTd, strlen(RTd) + 1);
+                xblk=0.;
                 yblk=0.;
                 found = TRUE;
                 break;

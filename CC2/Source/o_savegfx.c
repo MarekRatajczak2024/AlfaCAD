@@ -220,6 +220,9 @@ static BOOL add_driver_data (FILE *stru)
 int get_master_data(DRIVER_STRUCT *drv_data)
 { BOOL ret;
   ret = Get_Private_Profile_Strings_GFX((T_Fstring)MASTER_DATA, get_driver_data);
+#ifndef NDEBUG
+	////drv.gfx_display_switch = 1;  //it doesn't help in debugging anyway
+#endif
   memcpy(drv_data, &drv, sizeof(DRIVER_STRUCT));
   return ret;
 }
@@ -227,6 +230,9 @@ int get_master_data(DRIVER_STRUCT *drv_data)
 int get_slave_data(DRIVER_STRUCT *drv_data)
 { BOOL ret;
   ret = Get_Private_Profile_Strings_GFX((T_Fstring)SLAVE_DATA, get_driver_data);
+#ifndef NDEBUG
+	////drv.gfx_display_switch = 1;  //it doesn't help in debugging anyway
+#endif
   memcpy(drv_data, &drv, sizeof(DRIVER_STRUCT));
   return ret;
 }

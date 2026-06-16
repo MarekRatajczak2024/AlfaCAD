@@ -376,7 +376,7 @@ void (*REDRAW_ADD_MENU)(void)=NULL;
 void (*MPINI)(int n)=NULL;
 unsigned long buf_mem_menu=68000L;
 int Current_Layer=0, No_Layers = 1, No_Layers_DXF = 0;
-char *bufor_makra_esc[] = { '\0', '\0', '\0' };
+char *bufor_makra_esc[] = {"\0","\0", "\0"};  //was {'\0','\0', '\0'}
 char *bufor_makra=NULL, *aktmakro=NULL, *mkbuf=NULL, *mbufmx = NULL;
 LAYER Layers[MAX_NUMBER_OF_LAYERS];
 LAYER Layers_DXF[MAX_NUMBER_OF_LAYERS_DXF];

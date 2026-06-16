@@ -35,9 +35,71 @@ POLE pmChangeProperties[] = {
 	{u8"Change",'C',43, NULL},
 	{u8"Amend splines", 'A',648, NULL},
     {u8"Vectors", 'V',770, NULL},
+    {u8"Properties", L'P',138, NULL},
 };
 
-TMENU mChangeProperties = { 3, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 18, 0, 0,0,(POLE(*)[])&pmChangeProperties, NULL, NULL };
+TMENU mChangeProperties = { 4, 0, 0, 22, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 18, 0, 0,0,(POLE(*)[])&pmChangeProperties, NULL, NULL };
+
+POLE pmSteelGradeUS[] = {
+	{u8"Grade 40",L'4',0,NULL},
+	{u8"Grade 60",L'6',0,NULL},
+	{u8"Grade 75",L'7',0,NULL},
+	{u8"Grade 80",L'8',0,NULL},
+	};
+
+TMENU mSteelGradeUS = { 4,0,0,10,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelGradeUS,NULL,NULL };
+
+POLE pmSteelGradeEU[] = {
+	{u8"B400B",L'1',0,NULL},
+	{u8"B500B",L'2',0,NULL},
+	{u8"B500C",L'3',0,NULL},
+	};
+
+TMENU mSteelGradeEU = { 3,0,0,10,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSteelGradeEU,NULL,NULL };
+
+POLE pmConcreteClassUS[] = {
+	{u8"3000 psi",L'3',0,&mSteelGradeUS},
+	{u8"4000 psi",L'4',0,&mSteelGradeUS},
+	{u8"5000 psi",L'5',0,&mSteelGradeUS},
+	{u8"6000 psi",L'6',0,&mSteelGradeUS},
+	{u8"8000 psi",L'8',0,&mSteelGradeUS},
+	};
+
+TMENU mConcreteClassUS = { 5,0,0,10,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteClassUS,NULL,NULL };
+
+POLE pmConcreteClassEU[] = {
+	{u8"C20/25",L'1',0,&mSteelGradeEU},
+	{u8"C25/30",L'2',0,&mSteelGradeEU},
+	{u8"C30/37",L'3',0,&mSteelGradeEU},
+	{u8"C35/45",L'4',0,&mSteelGradeEU},
+    {u8"C40/50",L'5',0,&mSteelGradeEU},
+	{u8"C45/55",L'6',0,&mSteelGradeEU},
+    {u8"C50/60",L'7',0,&mSteelGradeEU},
+	};
+
+TMENU mConcreteClassEU = { 7,0,0,10,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteClassEU,NULL,NULL };
+
+POLE pmConcreteUS[] = {
+	{u8"Rectangle",L'R',905,&mConcreteClassUS},
+	{u8"I-beam section",L'I',906,&mConcreteClassUS},
+    {u8"T-beam section",L'T',907,&mConcreteClassUS},
+    {u8"Circular hollow section",L'C',908,&mConcreteClassUS},
+    {u8"Square hollow section",L'S',909,&mConcreteClassUS},
+    {u8"Box (rectangular holow section)",L'B',910,&mConcreteClassUS},
+	};
+
+TMENU mConcreteUS = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
+
+POLE pmConcreteEU[] = {
+	{u8"Rectangle",L'R',905,&mConcreteClassEU},
+	{u8"I-beam section",L'I',906,&mConcreteClassEU},
+	{u8"T-beam section",L'T',907,&mConcreteClassEU},
+	{u8"Circular hollow section",L'C',908,&mConcreteClassEU},
+	{u8"Square hollow section",L'S',909,&mConcreteClassEU},
+	{u8"Box (rectangular hollow section)",L'B',910,&mConcreteClassEU},
+	};
+
+TMENU mConcreteEU = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
 
 POLE pmWoodMoistureUS[] = {
 {u8"Green",L'G',0,&mWoodSpeciesUS},
@@ -49,10 +111,11 @@ TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) 
 
 POLE pmMaterialUS[] = {
         {u8"Steel",'S',775, NULL}, //&mSteelUS
+        {u8"Reinforced concrete", 'R',904, NULL}, //ConcreteUS
         {u8"Timber", 'T',785, &mWoodMoistureUS}, //NULL &mTimberUS
 };
 
-TMENU mMaterialUS = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 6, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
+TMENU mMaterialUS = { 3, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 6, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
 
 POLE pmMaterialCA[] = {
         {u8"Steel",'S',775, NULL}, //&mSteelCA
@@ -61,24 +124,32 @@ POLE pmMaterialCA[] = {
 
 TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 8, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
 
-POLE pmRegion[] = {
-        {u8"US", 'U',772, &mMaterialUS},
-        {u8"EU", 'E',773, NULL}, //&mSteelEU
-        {u8"UK", 'B',774, NULL}, //&mSteelUK
-        {u8"CA", 'C',829, &mMaterialCA},
-        {u8"AU", 'A',830, NULL}, //&mSteelAU
-        {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
+POLE pmMaterialEU[] = {
+        {u8"Steel",'S',775, NULL}, //&mSteelCA
+        {u8"Reinforced concrete", 'R',904, NULL}, //ConcreteEU
 };
 
-TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 5/*4*/, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+TMENU mMaterialEU = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 0, 0, 0,0,(POLE(*)[])&pmMaterialEU, NULL, NULL };
+
+POLE pmRegion[] = {
+        {u8"US", 'U',772, &mMaterialUS},  //29
+        {u8"EU", 'E',773, &mMaterialEU},  //30
+        {u8"UK", 'B',774, NULL}, //&mSteelUK   //31
+        {u8"CA", 'C',829, &mMaterialCA},  //32
+        {u8"AU", 'A',830, NULL}, //&mSteelAU  //33
+        {u8"P.R.C", 'P',831, NULL}, //&mSteelCN  //34
+};
+
+TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmStatic[] = {
-        {u8"Frame and truss",L'F',733, NULL},
-        {u8"Plate",L'P',855, NULL},
-        {u8"Shield",L'S',865, NULL},
+        {u8"Frame and truss",L'F',733, NULL},  //25
+        {u8"Plate",L'P',855, NULL},  //26
+        {u8"Shield",L'S',865, NULL},  //27
+        {u8"Grid",L'G',897, NULL},  //28
 };
 
-TMENU mStatic = { 3, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
+TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
         {u8"Static and dynamic analysis",L'S',854, &mStatic},
@@ -87,7 +158,7 @@ POLE pmApplications[] = {
         {u8"Element cross-section selection",L'E',775, &mRegion},
 };
 
-TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 21, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
 
 POLE pmenug[] = {
 	{u8"Draw\0",'D',57,NULL},

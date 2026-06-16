@@ -13,6 +13,9 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
+#ifdef _WIN32
+#pragma comment(lib, "gdiplus.lib")
+#endif
 
 #define __ALFMAIN__
 #pragma warning(disable : 4996)
@@ -30,7 +33,9 @@
 #include<winalleg.h>
 #include <process.h>
 #include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
 #include <windowsx.h>
+#include "o_printerwarmer.h"
 #else
 #ifndef MACOS
 #include<X11/X.h>
@@ -231,6 +236,8 @@ void report_mem_leak_cpp_(void);
 void set_editbox_geometry_win(int x, int y);
 void set_editbox_geometry_line_win(int x, int y);
 
+void StartPrinterWarmer(void);
+
 //char *get_font_family_name(void);
 
 #ifndef LINUX
@@ -379,6 +386,9 @@ int dHeight = 60;
 #define CAPITALYOTSIGN 0x384
 #define CAPITALPAMPHYLIANDIGAMMASIGN 0x377
 
+
+#define WM_USER_FIRST_RENDER (WM_USER + 999)
+
 int ret_value=0;
 char ret_text[64001]; // [2048];
 BOOL first_time = TRUE;
@@ -396,7 +406,16 @@ HINSTANCE my_hInstance;
 
 static int on_header = 0;
 
-#ifndef LINU
+// Create global or static brushes for efficiency
+static HBRUSH hDarkBrushEdit = CreateSolidBrush(RGB(30, 30, 30)); // Background color
+
+#ifndef LINUX
+
+void StartPrinterWarmer(void)
+{
+	StartPrinterWarmerThread();
+}
+
 bool Is64BitOperatingSystem(void)
 {
 	BOOL isWow64 = FALSE;
@@ -831,8 +850,6 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			if (tab_ == 1)
 			{
-				
-
 				HWND parenthWnd = (HWND)GetParent(hWnd);
 				ret_value = -1;
 				for (i = 0; i < 8; i++) DeleteObject(hFont[i]);
@@ -861,8 +878,6 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		
 		else if ((single_==1) && (wParam == VK_RETURN))
 			{
-			
-
 
 				HWND parenthWnd = (HWND)GetParent(hWnd);
 
@@ -890,8 +905,6 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-
-
 
 void reloadEdit(HWND hWnd)
 {
@@ -921,8 +934,12 @@ void reloadEdit(HWND hWnd)
 
 #define GWL_HINSTANCE       (-6)
 
-	if (single_ == 0) dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE | ES_WANTRETURN | ES_MULTILINE /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL | ES_AUTOVSCROLL; // | WS_BORDER | WS_EX_TOPMOST ^ ES_UPPERCASE;
-	else dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE /* | ES_WANTRETURN*/ /* | ES_MULTILINE */ /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL; // /* | WS_BORDER*/ | WS_EX_TOPMOST ^ ES_UPPERCASE;
+	////on 11-06-2026
+	////if (single_ == 0) dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE | ES_WANTRETURN | ES_MULTILINE /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL | ES_AUTOVSCROLL; // | WS_BORDER | WS_EX_TOPMOST ^ ES_UPPERCASE;
+	////else dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE /* | ES_WANTRETURN*/ /* | ES_MULTILINE */ /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL; // /* | WS_BORDER*/ | WS_EX_TOPMOST ^ ES_UPPERCASE;
+	if (single_ == 0) {dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | alignement | ES_WANTRETURN | ES_MULTILINE | ES_AUTOHSCROLL | ES_AUTOVSCROLL;
+	} else {dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | alignement | ES_AUTOHSCROLL;
+	}
 
 																																																									      //5, 0
 	hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"Edit", L"", dwStyle, 10, 10, lpRect.right - lpRect.left - 30, lpRect.bottom - lpRect.top - 100, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
@@ -940,8 +957,6 @@ void reloadEdit(HWND hWnd)
 	GetWindowRect(hWnd, &lpRect);
 	
 	SetWindowPos(hwndEdit, 0, 5, 0, lpRect.right - lpRect.left - 30, lpRect.bottom - lpRect.top - EDIT_DY, SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
-
-
 
 }
 
@@ -972,7 +987,6 @@ int WINAPIV MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, int *
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	
 	int nMaxCount = 2048;
 	int i;
 
@@ -980,18 +994,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg)
 	{
-		
-	
-	case WM_CTLCOLOREDIT:
-		// control's window handle is lParam, not hWnd
-		if ((HWND)lParam == hwndEdit)
+	case WM_USER_FIRST_RENDER:
 		{
-			// HDC of control is wParam
-			if (new_hidden) SetTextColor((HDC)wParam, 0x999999);
-			else SetTextColor((HDC)wParam, 0x00000000);
-			// return new background brush
-			return (LRESULT)GetStockObject(WHITE_BRUSH);
+			// Simulate exactly what your hidden button click does to restore white color!
+			SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+			reloadEdit(hWnd);
+			SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+
+			InvalidateRect(hwndEdit, NULL, TRUE);
+			UpdateWindow(hwndEdit);
+			SetFocus(hwndEdit);
+			break;
 		}
+	case WM_CTLCOLOREDIT:
+			if ((HWND)lParam == hwndEdit)
+			{
+				HDC hdc = (HDC)wParam;
+
+				// Set text colors optimized for a dark background
+				if (new_hidden)
+					SetTextColor(hdc, RGB(100, 100, 100)); // Muted gray text
+				else
+					SetTextColor(hdc, RGB(255, 255, 255)); // Bright white text
+
+				// CRITICAL: Match the text background color to your brush color
+				SetBkColor(hdc, RGB(30, 30, 30));
+
+				// Return the dark brush to paint the rest of the control background
+				return (LRESULT)hDarkBrushEdit;
+			}
 		return CallWindowProc(oldEditProc, hWnd, msg, wParam, lParam);
 		break;
 	case WM_NCHITTEST:
@@ -1108,98 +1139,176 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			case ID_BUTTON_BOLD:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);  ////added W
 				if (new_bold == 0) new_bold = 1;
 				else new_bold = 0;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);  ////W
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);   ///W
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);  //W
 				break;
 			}
 
 			case ID_BUTTON_ITALIC:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				if (new_italics == 0) new_italics = 1;
 				else new_italics = 0;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
 
 			case ID_BUTTON_UNDERLINED:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				if (new_underline==0) new_underline=1;
 				else new_underline = 0;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
 			case ID_BUTTON_CENTER:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
-				
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				new_adjust = 2;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				
 				break;
 			}
 			case ID_BUTTON_MIDDLE_CENTER:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
-				
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				new_adjust = 3;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				
 				break;
 			}
 			case ID_BUTTON_LEFT:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				new_adjust = 0;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
 			case ID_BUTTON_RIGHT:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				new_adjust = 1;
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
 			case ID_BUTTON_HIDDEN:
 			{
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 				new_hidden = (!new_hidden);
+
+				// 1. FREEZE DRAWING
+				SendMessageW(hwndEdit, WM_SETREDRAW, FALSE, 0);
+
 				reloadEdit(hWnd);
+
+				// 2. UNFREEZE AND FORCE CLEAN REPAINT
+				SendMessageW(hwndEdit, WM_SETREDRAW, TRUE, 0);
+				InvalidateRect(hwndEdit, NULL, TRUE);
+				UpdateWindow(hwndEdit);
+
 				SetFocus(hwndEdit);
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
 			case ID_BUTTON_COPY_TEXT:
@@ -1209,13 +1318,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				int lenC = ComboBox_GetTextLength(hwndCombobox);
 				ComboBox_GetText(hwndCombobox, lpch, 512);
-				
 
 				int len = GetWindowTextLength(hwndEdit);
 				
 				SetFocus(hwndEdit);
 				/* Get the selection indexes */
-				SendMessage(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 
 				if (single_ == 1) //changing end of line characters
 				{
@@ -1243,12 +1351,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				}
 
 				
-				SendMessage(hwndEdit, EM_REPLACESEL, 0, (LPARAM)lpch);
+				SendMessageW(hwndEdit, EM_REPLACESEL, 0, (LPARAM)lpch);
 
 				firstChar = lastChar = firstChar + lenC;
 
 				// restore their cursor position or selection
-				SendMessage(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				delete(lpch);
 
 				break;
@@ -1309,7 +1417,7 @@ HWND CreateToolTip(int toolID, HWND hDlg, HINSTANCE hInstance, PTSTR pszText)
 	toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
 	toolInfo.uId = (UINT_PTR)hwndTool;
 	toolInfo.lpszText = pszText;
-	SendMessage(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+	SendMessageW(hwndTip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
 
 	return hwndTip;
 }
@@ -1362,10 +1470,14 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 
 	if (*single == 0) { dwStyle0 = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_EX_TOPMOST; 
 						uHeight_= uHeight;
-						BUT_DY = 89;
-						COMBO_DY = 99 + Height; 
-						EDIT_DY = 111 + Height;
-						dHeight = 60;
+						////BUT_DY = 89;
+						BUT_DY = 58;
+						////COMBO_DY = 99 + Height;
+						COMBO_DY = 68 + Height;
+						////EDIT_DY = 111 + Height;
+						EDIT_DY = 80 + Height;
+						////dHeight = 60;
+						dHeight = 10;
 						}
 	else              { dwStyle0 = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_EX_TOPMOST; 
 						uHeight_ = Height*2+107;
@@ -1387,6 +1499,7 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
 
 
+	/*
 	if (*single > 0)
 	{
 		LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
@@ -1395,8 +1508,22 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 		SetWindowLong(hWnd, GWL_STYLE, lStyle);
 		SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 	}
+	*/
+	///////
+	LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
 
+	// Enable resizing borders (thickframe)
+	lStyle |= WS_THICKFRAME;
 
+	// Strip out the title bar, caption header, and minimize/maximize/close switches
+	lStyle = lStyle & ~WS_CAPTION;
+	lStyle = lStyle & ~WS_SYSMENU; // Removes the legacy close/min/max hooks safely
+
+	SetWindowLong(hWnd, GWL_STYLE, lStyle);
+
+	// Force Windows to recalculate the frame bounds instantly without a white glitch
+	SetWindowPos(hWnd, NULL, 0, 0, 0, 0,  SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+    /////////////////
 	switch (new_adjust)
 	{
 	case 0: alignement = ES_LEFT;
@@ -1413,15 +1540,26 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 
 	LoadLibrary(TEXT("Msftedit.dll"));
 	
-	if (*single==0) dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE | ES_WANTRETURN | ES_MULTILINE /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL | ES_AUTOVSCROLL /* | WS_BORDER | WS_EX_TOPMOST*/;
-	           else dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE /* | ES_WANTRETURN*/  /* | ES_MULTILINE*/ /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL /* | WS_BORDER  | WS_EX_TOPMOST*/;
-																																																									     //  5, 0
-	hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"Edit", L"", dwStyle, 10, 10, uWidth - 20, uHeight_ - dHeight, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
-	    
+	////if (*single==0) dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE | ES_WANTRETURN | ES_MULTILINE /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL | ES_AUTOVSCROLL /* | WS_BORDER | WS_EX_TOPMOST*/;
+	////           else dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | alignement | EM_FMTLINES ^ ES_UPPERCASE /* | ES_WANTRETURN*/  /* | ES_MULTILINE*/ /* | ES_OEMCONVERT */ | ES_AUTOHSCROLL /* | WS_BORDER  | WS_EX_TOPMOST*/;
+
+	if (*single == 0) { dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | ES_LEFT | ES_WANTRETURN | ES_MULTILINE | ES_AUTOHSCROLL | ES_AUTOVSCROLL;
+	} else { dwStyle = WS_CHILD | WS_VISIBLE | WS_HSCROLL | ES_LEFT | ES_AUTOHSCROLL;}
+	////hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"Edit", L"", dwStyle, 10, 10, uWidth - 20, uHeight_ - dHeight, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
+
+    //on 11-06-2026
+	// Change L"Edit" to MSFTEDIT_CLASS (which is L"RICHEDIT50W")
+	////hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"RICHEDIT50W",L"", dwStyle, 10, 10, uWidth - 20, uHeight_ - dHeight, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
+	hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"RICHEDIT50W", L"", dwStyle, 10, 10, uWidth - 20, uHeight_ - dHeight, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
+	// 2. FORCE SCROLLBARS AND DISABLE WORD WRAP IMMEDIATELY
+	// (lParam = 1 disables word-wrap, letting text extend infinitely)
+	SendMessageW(hwndEdit, EM_SETTARGETDEVICE, NULL, 1);
+
+	// 3. SET BACKGROUND COLOR TO NEAR-BLACK IMMEDIATELY
+	SendMessageW(hwndEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)RGB(30, 30, 30));  //added W
 
 	HDC hdc = GetDC(hwndEdit);
 
-	
 	//italic underline
 
 	oldEditProc = (WNDPROC)SetWindowLongPtrW(hwndEdit, GWLP_WNDPROC, (LONG_PTR)subEditProc);
@@ -1448,7 +1586,6 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 
 	SendMessageW(hwndEdit, WM_SETFONT, WPARAM(hFont[font_choice]), TRUE);
 
-
 	SendMessageW(hwndEdit, WM_SETTEXT, 0, (LPARAM)(LPCWSTR)mytext);
 	SendMessageW(hwndEdit, EM_SETLIMITTEXT, (WPARAM)0xFA00, 0);
 	
@@ -1457,7 +1594,7 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	int index = GetWindowTextLength(hwndEdit);
 	SetFocus(hwndEdit);
 	/* Set the caret to the end of the text in the box */
-	SendMessage(hwndEdit, EM_SETSEL, (WPARAM)index, (LPARAM)index);
+	SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)index, (LPARAM)index);   ////added W
 	/*  in case of setting it in CallWindowProc()-> case WM_APPEND_EDIT:
 	    "Replace" the selection (the selection is actually targeting
 		nothing and just sits at the end of the text in the box)
@@ -1779,6 +1916,8 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	
 	SetFocus(hwndEdit);
 
+	//// This will fire immediately after the window finishes its hidden black-reset routine.
+	PostMessageW(hWnd, WM_USER_FIRST_RENDER, 0, 0);
 
 	MSG msg;
 
@@ -1793,7 +1932,7 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	return hWnd;
 }
 
-int set_window_icon(void)
+int set_window_icon___(void)
 {
 	HWND hwnd = win_get_window();
 
@@ -1805,9 +1944,28 @@ int set_window_icon(void)
 	HANDLE i16 = LoadImageW(NULL, L"alfa.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE | LR_SHARED);
 	if (i16)
 	{
-		SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)i16);
+		SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)i16);
 	}
 	return 0;
+}
+
+int set_window_icon(void)
+{
+#ifdef _WIN32
+	HWND hwnd = win_get_window();
+
+	// Pull the clean layers straight out of your resource binary payload
+	HANDLE i = LoadImageA(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALFA), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+	if (i) SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)i);
+
+	HANDLE i16 = LoadImageA(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ALFA), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+	if (i16) SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)i16);
+
+	return 0;
+#else
+	// Linux and macOS are already handled flawlessly by Allegro's engine rules!
+	return 1;
+#endif
 }
 
 void mazovia2windows(char *tekst)
@@ -2209,6 +2367,9 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
 
 	editor_on = TRUE;
 
+	BOOL useDarkMode = TRUE;
+	DwmSetWindowAttribute(0, 20, &useDarkMode, sizeof(useDarkMode));
+
 	retHWND = CreateTextBoxW(unicode, edit_params, lpRect.left, lpRect.top, lpRect.right- lpRect.left, lpRect.bottom- lpRect.top, 0, NULL, my_hInstance, nCmdShow, windowTitle, single, tab);
 
 	editor_on = FALSE;
@@ -2323,6 +2484,135 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 	}
 
 }
+
+//#include <windows.h>
+#include <objidl.h>    // Required dependency: Handles streaming operations
+#include <gdiplus.h>   // Required dependency: The core GDI+ system definitions
+//#include "res/resource.h"
+#include "..\..\source\res\resource.h"
+using namespace Gdiplus; // Crucial: This exposes 'Image' and 'Graphics' directly!
+
+
+// Define custom dark palette handles
+static HBRUSH hDarkBrush = NULL;
+
+INT_PTR CALLBACK DarkMsgBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// Pass structural texts via pointers using LPARAM on initialization
+	static const char** strings = NULL;
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		if (!hDarkBrush) {
+			hDarkBrush = CreateSolidBrush(RGB(32, 32, 32)); // Dark Slate Gray
+		}
+
+		strings = (const char**)lParam;
+		if (strings) {
+			// strings[0] is logoandquote -> Pushed into your multi-line content area
+			SetWindowTextA(GetDlgItem(hDlg, IDC_QUOTE_TEXT), strings[0]);
+
+			// strings[1] is Ainfo ("AlfaCAD Info") -> Pushed straight into the window title banner
+			SetWindowTextA(hDlg, strings[1]);
+		}
+		// Force modal window to stay on top
+		SetForegroundWindow(hDlg);
+		return (INT_PTR)TRUE;
+
+		// --- ADD THIS NEW CASE BLOCK HERE ---
+	case WM_DRAWITEM:
+	{
+		LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT)lParam;
+
+		// Check if the windows message belongs to our specific image control
+		if (lpDrawItem->CtlID == IDC_ALFA_IMAGE)
+		{
+			// Pull your sharp 64x64 transparent PNG via resource ID 135
+			HRSRC hRes = FindResourceA(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_ALFA), "PNG");
+			if (hRes) {
+				HGLOBAL hGlob = LoadResource(GetModuleHandle(NULL), hRes);
+				DWORD size = SizeofResource(GetModuleHandle(NULL), hRes);
+				void* pData = LockResource(hGlob);
+
+				IStream* pStream = SHCreateMemStream((BYTE*)pData, size);
+				if (pStream) {
+					Image img(pStream);
+					Graphics graphics(lpDrawItem->hDC);
+
+					// Paint the PNG directly. GDI+ automatically blends the transparent pixels!
+					graphics.DrawImage(&img, 0, 0, lpDrawItem->rcItem.right, lpDrawItem->rcItem.bottom);
+					pStream->Release();
+				}
+			}
+			return (INT_PTR)TRUE; // Tell Windows we handled the painting!
+		}
+	}
+	break;
+
+	case WM_CTLCOLORDLG:
+		// Paints the main window dialog canvas background dark
+			return (INT_PTR)hDarkBrush;
+
+	case WM_CTLCOLORSTATIC:
+	case WM_CTLCOLORBTN:
+		{
+			HDC hdcStatic = (HDC)wParam;
+			SetTextColor(hdcStatic, RGB(240, 240, 240)); // Crisp off-white text
+			SetBkColor(hdcStatic, RGB(32, 32, 32));     // Matching dark background
+			return (INT_PTR)hDarkBrush;
+		}
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+
+	case WM_DESTROY:
+		// Clean up GDI brush resources to keep your leak tracker happy!
+			if (hDarkBrush) {
+				DeleteObject(hDarkBrush);
+				hDarkBrush = NULL;
+			}
+		break;
+	}
+	return (INT_PTR)FALSE;
+}
+
+
+int Win_Initial_Message(char* logoandquote, char* Ainfo)
+{
+	// FIX: Changing this to static keeps the array alive in memory 
+	// while the Windows OS sets up the dialog frame
+	static const char* msgData[2];
+	msgData[0] = logoandquote;
+	msgData[1] = Ainfo;
+
+	// --- ADD THIS LINE: Boot the GDI+ Engine Engine ---
+	ULONG_PTR gdiplusToken = 0;
+	GdiplusStartupInput gdiplusStartupInput;
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+	// --------------------------------------------------
+
+	int ret = DialogBoxParamA(
+		GetModuleHandle(NULL),
+		MAKEINTRESOURCE(IDD_DARK_MSGBOX),
+		NULL,
+		DarkMsgBoxProc,
+		(LPARAM)msgData
+	);
+
+	if (ret == IDOK) {
+		return 1;
+	}
+	else {
+		return 2;
+	}
+}
+
 
 int testCall(int val)
 {
@@ -2491,6 +2781,27 @@ char *get_eTitle(void)
     return eTitle;
 }
 #endif
+
+/**
+ * Expands special shell characters (", \, $, `) by prepending a backslash.
+ * input: The raw text to be displayed in Kdialog.
+ * output: A buffer of at least (2 * 4096 + 1) bytes to hold the result.
+ */
+void expand_for_shell(const char *input, char *output) {
+    while (*input) {
+        switch (*input) {
+            case '"':
+            case '\\':
+            case '$':
+            case '`':
+                *output++ = '\\'; // Add escape character
+                break;
+        }
+        *output++ = *input++;
+    }
+    *output = '\0'; // Null-terminate
+}
+
 int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab) {
     char *my_text;
     int new_edit_params;
@@ -2498,6 +2809,17 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
     char *etype_text="TEXT";
     char *etype_info="INFO";
     char *etype;
+
+#ifdef LINUX
+#ifndef MACOS
+     char *mytext_exp;
+     char *mytext_bak;
+     mytext_exp=(char*)malloc(8193);
+     expand_for_shell(mytext, mytext_exp);
+     mytext_bak=mytext;
+     mytext=mytext_exp;
+#endif
+#endif
 
     int WspX_, WspY_;
 
@@ -2586,11 +2908,25 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
 
         new_edit_params = 1 + new_bold * 2 + new_italics * 4 + new_underline * 8 + new_adjust * 16 + new_hidden * 64;
 
+#ifdef LINUX
+#ifndef MACOS
+        mytext=mytext_bak;
+        free(mytext_exp);
+#endif
+#endif
         strcpy(mytext, my_text);
-
         return new_edit_params;
     }
-    else return 0;
+    else
+    {
+#ifdef LINUX
+#ifndef MACOS
+        mytext=mytext_bak;
+        free(mytext_exp);
+#endif
+#endif
+        return 0;
+    }
 
 }
 
@@ -2636,15 +2972,25 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
         sz = ftell(f);
         fseek(f, 0L, SEEK_SET);
 
-        mytext=(char*)malloc(sz*1.25);
+        mytext=(char*)malloc(sz*1.25); //or maybe *2.0
 
-        flength=fread(mytext, 1, sz, f);
+        flength=(int)fread(mytext, 1, sz, f);
         fclose(f);
     }
 
     mytext[flength]='\0';
 
-    for (int ii=0; ii<flength-1; ii++) if (mytext[ii]=='\"') mytext[ii]='\'';
+    //for (int ii=0; ii<flength-1; ii++) if (mytext[ii]=='\"') mytext[ii]='\'';
+#ifdef LINUX
+#ifndef MACOS
+    char *mytext_exp;
+    char *mytext_bak;
+    mytext_exp=(char*)malloc(flength*2);
+    expand_for_shell(mytext, mytext_exp);
+    mytext_bak=mytext;
+    mytext=mytext_exp;
+#endif
+#endif
 
     sprintf(Height,"%d", HeightI);
     sprintf(Width, "%d", WidthI);
@@ -2662,7 +3008,7 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 #ifdef ALFAMTEXT
 	my_text = alfa_editBox(eTitle, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);
 #else
-    my_text = tinyfd_editBox("Edit file", mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);
+    my_text = tinyfd_editBox(eTitle, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);
 #endif
 
 	set_sleep_state(FALSE);
@@ -2704,6 +3050,11 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
         if (f == NULL)
         {
             free(mytext);
+#ifdef LINUX
+#ifndef MACOS
+            free(mytext_bak);  //original version on mytext
+#endif
+#endif
             return 0;
         }
         else
@@ -2713,11 +3064,21 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
         }
 
         free(mytext);
+#ifdef LINUX
+#ifndef MACOS
+        free(mytext_bak);  //original version on mytext
+#endif
+#endif
         return new_edit_params;
     }
     else
     {
         free(mytext);
+#ifdef LINUX
+#ifndef MACOS
+        free(mytext_bak);  //original version on mytext
+#endif
+#endif
         return 0;
     }
 
@@ -2904,11 +3265,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
    CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
 
-#ifndef LINUX
+//#ifndef LINUX
    locale = _create_locale(LC_ALL, _LOCALE_);
-#else
+//#else
 
-#endif
+//#endif
 
 
    if (strstr(lpszCmdParam, "--NOCHDIR") != NULL)

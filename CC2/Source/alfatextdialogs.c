@@ -1,22 +1,22 @@
-/*         ______   ___    ___
- *        /\  _  \ /\_ \  /\_ \
- *        \ \ \L\ \\//\ \ \//\ \      __     __   _ __   ___
- *         \ \  __ \ \ \ \  \ \ \   /'__`\ /'_ `\/\`'__\/ __`\
- *          \ \ \/\ \ \_\ \_ \_\ \_/\  __//\ \L\ \ \ \//\ \L\ \
- *           \ \_\ \_\/\____\/\____\ \____\ \____ \ \_\\ \____/
- *            \/_/\/_/\/____/\/____/\/____/\/___L\ \/_/ \/___/
- *                                           /\____/
- *                                           \_/__/
- *
- *      Mouse input routines.
- *
- *      By Shawn Hargreaves.
- *
- *      Mark Wodrich added double-buffered drawing of the mouse pointer and
- *      the set_mouse_sprite_focus() function.
- *
- *      See readme.txt for copyright information.
- */
+/*   ______   ___       ___         ____     ______  ____
+*   /\  _  \ /\_ \    /'___\       /\  _`\  /\  _  \/\  _`\
+*   \ \ \L\ \\//\ \  /\ \__/   __  \ \ \/\_\\ \ \L\ \ \ \/\ \
+*    \ \  __ \ \ \ \ \ \ ,__\/'__`\ \ \ \/_/_\ \  __ \ \ \ \ \
+*     \ \ \/\ \ \_\ \_\ \ \_/\ \L\.\_\ \ \L\ \\ \ \/\ \ \ \_\ \
+*      \ \_\ \_\/\____\\ \_\\ \__/.\_\\ \____/ \ \_\ \_\ \____/
+*       \/_/\/_/\/____/ \/_/ \/__/\/_/ \/___/   \/_/\/_/\/___/
+*
+*   A CAD
+*
+*   By Marek Ratajczak 2024
+*
+*   See readme_alfacad.txt for copyright information.
+*
+*/
+//
+// Created by marek on 4/26/25.
+//
+#define _POSIX_C_SOURCE 200809L // Enables POSIX functions like popen
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +62,9 @@ typedef int BOOL;
 #define MAXPATH   260
 
 extern BOOL RETINA;
+
+extern char _EDIT_TEXT_;  // NOLINT
+extern char _EDIT_FILE_;  // NOLINT
 
 extern int getmaxx(void);
 extern int getmaxy(void);
@@ -140,6 +143,7 @@ static void wipefile(char const * aFilename)
     }
 }
 
+
 char * alfa_editBox(
         char const * aTitle ,
         char const * aMessage ,
@@ -153,13 +157,10 @@ char * alfa_editBox(
         int *single
 )
 {
-
 #define MAXPARAMSLEN 255
-    //static char pparams[MAXPARAMSLEN];
-    static char lBuff[MAX_TEXT_SIZE]="";   //MAX_TEXT_SIZE  MAX_PATH_OR_CMD
-    static char lBuff_ex[MAX_TEXT_SIZE]="";  //MAX_TEXT_SIZE
+    static char lBuff[MAX_TEXT_SIZE]="";
+    static char lBuff_ex[MAX_TEXT_SIZE]="";
     char * lDialogString = NULL;
-    char * lpDialogString;
     FILE * lIn=NULL , *lInt;
     int lResult ;
     size_t lTitleLen ;
@@ -172,19 +173,12 @@ char * alfa_editBox(
     int x0m, y0m, dxm, dym;
     int ret;
     int fontsize_r, fontwidth_r;
-
-    int WspX_, WspY_;
     int lang;
-
     char *lang_str[]={"EN","PL","UA","ES"};
 
     lTitleLen =  aTitle ? strlen(aTitle) : 0 ;
     lMessageLen =  aMessage ? strlen(aMessage) : 0 ;
-    //if ( !aTitle || strcmp(aTitle,"tinyfd_query") )
-    //{
-    //lDialogString = (char *) malloc( MAX_PATH_OR_CMD + lTitleLen + lMessageLen );
     lDialogString = (char *) malloc( MAXPARAMSLEN + lTitleLen + lMessageLen );
-    //}
 
 #ifdef MACOS
     fontfile_p=strrchr(fontfile,'/');
@@ -198,8 +192,7 @@ char * alfa_editBox(
     {
         if (*single == 1)
         {
-            if (!get_editbox_geometry_line_set())
-                set_geometry(1);
+            if (!get_editbox_geometry_line_set()) set_geometry(1);
             editbox_geometry = (char *) &editbox_geometry_line;
             get_editbox_size_origin_line(&w, &h, &x, &y);
         }
@@ -219,198 +212,204 @@ char * alfa_editBox(
 
     fontsize_r=(atoi(fontsize))/(RETINA+1);
     fontwidth_r=(atoi(fontwidth))/(RETINA+1);
-
-    ////sprintf(editbox_geometry_r,"%dx%d+%d+%d",w,h,x/(RETINA+1),y/(RETINA+1));
     lang=getlanguage();
 
-    sprintf(lBuff,"'%s' \"%s\" %d '%s' '%s' '%d' '%d' '%s' '%s' %d '%s' '%s' '%s' '%s'",aTitle, aMessage, 0, fontface, fontfile_p, fontsize_r, fontwidth_r, etype, params, *single, editbox_geometry /*editbox_geometry_r*/, default_path_TTF, default_path_OTF, lang_str[lang]);
-    //printf("%s\n",lBuff);
+    sprintf(lBuff,"'%s' \"%s\" %d '%s' '%s' '%d' '%d' '%s' '%s' %d '%s' '%s' '%s' '%s'",aTitle, aMessage, 0, fontface, fontfile_p, fontsize_r, fontwidth_r, etype, params, *single, editbox_geometry, default_path_TTF, default_path_OTF, lang_str[lang]);
+
+    printf("%s\n",lBuff);
 
     ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
     position_mouse_xy(x+w-x0m, y+h-y0m);
-
     set_forget_mouse(x+w-x0m, y+h-y0m);
 
-    //move_pointer(x+w, y+h);
-
-    /*
-    do {
-        get_mouse_mickeys(&WspX_, &WspY_);
-    } while ((WspX_!=0) || (WspY_!=0));
-     */
-    //sprintf(lDialogString,"szAnswer=$(python ../AlfaText-master/alfamtext.py %s >/tmp/tinyfdt.txt);if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi",pparams);
-    //sprintf(lDialogString,"python ../AlfaText-master/alfamtext.py %s",pparams);
-    //sprintf(lDialogString,"%s alfamtext.py %s",PYTHON,lBuff);
-
-    edit_text_flag=1;
 #ifndef MACOS
     enable_hardware_cursor();
     free_mouse();
 #endif
     show_os_cursor(MOUSE_CURSOR_ARROW);
-#ifndef MACOS
-    sprintf(lDialogString,"%s alfamtext.py %s",PYTHON,lBuff);
-    lIn = popen( lDialogString , "r" );
-#else
-    edit_text_flag=1;
-    //sprintf(lDialogString,"%s alfamtext.py %s",PYTHON,lBuff);
-    sprintf(lDialogString,"./alfamtext %s",lBuff); //TO DO WITHOUT PYTHON
-    strcat(lDialogString," > text.out");
-    DWORD retD=SystemSilentS(lDialogString);
-    edit_text_flag=0;
-    lIn=fopen("text.out", "r");
-#endif
-    //show_os_cursor(MOUSE_CURSOR_NONE);  //???????
-    //disable_hardware_cursor();  //????????
-    if ( ! lIn  )
+
+    lBuff_ex[0]='\0';
+
+
+/////////#define USEPYTHON     if not defined, binay version will be taken
+
+    // ==================================================================
+    // CROSS-PLATFORM ADAPTIVE RUNTIME ROUTING (The Master Logic Unification)
+    // ==================================================================
+    if (strstr(aTitle, &_EDIT_FILE_) != NULL)
     {
-        if ( fileExists("/tmp/tinyfd.txt") )
-        {
-            wipefile("/tmp/tinyfd.txt");
-            remove("/tmp/tinyfd.txt");
-        }
-        if ( fileExists("/tmp/tinyfd0.txt") )
-        {
-            wipefile("/tmp/tinyfd0.txt");
-            remove("/tmp/tinyfd0.txt");
-        }
-        free(lDialogString);
-        return NULL ;
+        // 1. HEAVY FILE PATH: Redirects status flag safely to /tmp/text.out or uses standard pipe tracking
+#ifndef MACOS
+        sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);
+        lIn = popen(lDialogString, "r");
+#else
+        edit_text_flag=1;
+#ifdef USEPYTHON
+        sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);    ///testing option with Python
+#else
+        sprintf(lDialogString, "./alfamtext %s", lBuff);   ////compiled
+#endif
+        lIn = popen(lDialogString, "r");
+#endif
+
+    }
+    else
+    {
+        // 2. FAST TEXT PATH: Streams drawing annotations entirely in RAM via popen pipes
+#ifndef MACOS
+        edit_text_flag=1;
+        sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);
+        lIn = popen(lDialogString, "r");
+#else
+        edit_text_flag=1;
+#ifdef USEPYTHON
+        sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);   ///testing option with Python
+#else
+        sprintf(lDialogString, "./alfamtext %s", lBuff);    ////compiled
+#endif
+        lIn = popen(lDialogString, "r");
+#endif
     }
 
+    if (!lIn)
+    {
+        free(lDialogString);
+        return NULL;
+    }
+
+    // Single-Pass status flag / data stream fetch
+    if (fgets(lBuff_ex, sizeof(lBuff_ex), lIn) != NULL) {
+        size_t len = strlen(lBuff_ex);
+        if (len > 0 && lBuff_ex[len - 1] == '\n') lBuff_ex[len - 1] = '\0';
+    }
+
+    // Hardware mouse state restoration blocks
 #ifndef MACOS
-    while ( fgets( lBuff_ex , sizeof( lBuff_ex ) , lIn ) != NULL ) {sleep(0); continue;}
-
-    ////position_mouse(getmaxx()/2, getmaxy()/2);
-    ////set_forget_mouse(getmaxx()/2, getmaxy()/2);
-
     lock_mouse();
     show_os_cursor(MOUSE_CURSOR_NONE);
     disable_hardware_cursor();
 #else
-    show_os_cursor(MOUSE_CURSOR_NONE);  //???????
-    fgets( lBuff_ex, sizeof( lBuff_ex), lIn);
+    show_os_cursor(MOUSE_CURSOR_NONE);
+    edit_text_flag=0;
 #endif
-    //printf(lBuff_ex);
-#ifndef MACOS
-    pclose( lIn );
-#else
-    fclose( lIn );
-#endif
+    // Close the runtime stream handles safely based on what was opened
 
+    pclose(lIn);
 
-    if (*single==0)
+    // ==================================================================
+    // DATA STRIP AND DECODING LAYER
+    // ==================================================================
+    if (strstr(aTitle, &_EDIT_FILE_) == NULL)
     {
+        // ------------------ STANDARD DRAWING TEXT TRACK ------------------
+        // Linux pipe path delivers text data right inside lBuff_ex
+        strcpy(lBuff, lBuff_ex + 1);
+        if (lBuff_ex[0] == '1') lResult = 1;
+        else lResult = 0;
+
+        // Unpack character sequences back into native raw line breaks (ASCII 10)
+        char *text_ptr = lBuff;
+        while ((text_ptr = strstr(text_ptr, "\\n")) != NULL) {
+            text_ptr[0] = 10;
+            memmove(text_ptr + 1, text_ptr + 2, strlen(text_ptr + 2) + 1);
+            text_ptr++;
+        }
+    }
+    else
+    {
+        // ------------------ BULK CONFIGURATION FILE TRACK ------------------
         if (lBuff_ex[0] == '1')
         {
             lResult = 1;
 
+            // RESTORED: Both Linux and macOS read bulk contents from /tmp/tinyfdt.txt!
             lInt = fopen("/tmp/tinyfdt.txt", "r");
-
             inTotal = 0;
             if (lInt != NULL)
             {
-                while ((chunk = fread(lBuff, 1, sizeof(lBuff), lInt)) != 0)
+                while ((chunk = fread(lBuff + inTotal, 1, sizeof(lBuff) - inTotal - 1, lInt)) != 0)
                 {
                     inTotal += chunk;
                 }
                 lBuff[inTotal] = '\0';
-                if (lBuff[inTotal - 1] == '\n') lBuff[inTotal - 1] = '\0';
+
+                if (inTotal > 0 && lBuff[inTotal - 1] == '\n') lBuff[inTotal - 1] = '\0';
                 fclose(lInt);
-            } else strcpy(lBuff, "");
-        } else
+            }
+            else
+            {
+                strcpy(lBuff, "");
+            }
+        }
+        else
         {
             strcpy(lBuff, "");
             lResult = 0;
         }
     }
-    else
-    {
-    strcpy(lBuff, lBuff_ex+1);
 
-    if (lBuff_ex[0] == '1') lResult = 1;
-    else lResult = 0;
-    }
-    //finding params and geometry
-    char *pos1D=strchr(lBuff, '\x1D');
-    if (pos1D!=NULL)
+    // Common Parameter & Geometry processing block
+    char *pos1D = strchr(lBuff, '\x1D');
+    if (pos1D != NULL)
     {
-        char *pos_p=pos1D+1;
-
-        char *pos2t=strstr(pos_p, ">>");
-        if (pos2t!=NULL)
+        char *pos_p = pos1D + 1;
+        char *pos2t = strstr(pos_p, ">>");
+        if (pos2t != NULL)
         {
-        *single=-1;
-        free(lDialogString);
-        return NULL ;
+            *single = -1;
+            free(lDialogString);
+            return NULL;
         }
-
-        if (pos_p[0]=='0')
+        if (pos_p[0] == '0')
         {
             free(lDialogString);
-            return NULL ;
+            return NULL;
         }
 
-        char *pos_g=strchr(pos_p, ',');
-        if (pos_g!=NULL)
+        char *pos_g = strchr(pos_p, ',');
+        if (pos_g != NULL)
         {
-            if ((strcmp(etype,"TEXT")==0) ||  (strcmp(etype,"INFO")==0))  //cut cursor position
+            if ((strcmp(etype, "TEXT") == 0) || (strcmp(etype, "INFO") == 0))
             {
-            if (*single==1)
+                if (*single == 1)
                 {
-                strcpy(editbox_geometry_line, pos_g + 1);
-                char *pos_c = strchr(editbox_geometry_line, '>');
-                if (pos_c!=NULL) *pos_c='\0';
+                    strcpy(editbox_geometry_line, pos_g + 1);
+                    char *pos_c = strchr(editbox_geometry_line, '>');
+                    if (pos_c != NULL) *pos_c = '\0';
                 }
-            else
+                else
                 {
                     strcpy(editbox_geometry_text, pos_g + 1);
                     char *pos_c = strchr(editbox_geometry_text, '>');
-                    if (pos_c!=NULL) *pos_c='\0';
+                    if (pos_c != NULL) *pos_c = '\0';
                 }
             }
             else
             {
                 strcpy(editbox_geometry_file, pos_g + 1);
                 char *pos_c = strchr(editbox_geometry_file, '>');
-                if (pos_c!=NULL) *pos_c='\0';
+                if (pos_c != NULL) *pos_c = '\0';
             }
-            *pos_g='\0';
+            *pos_g = '\0';
         }
-
-        strcpy((char*)params, pos1D+1);
-        *pos1D='\0';
+        strcpy((char*)params, pos1D + 1);
+        *pos1D = '\0';
     }
 
-    if ( lBuff[strlen( lBuff ) -1] == '\n' )
+    if (strlen(lBuff) > 0 && lBuff[strlen(lBuff) - 1] == '\n')
     {
-        lBuff[strlen( lBuff ) -1] = '\0' ;
+        lBuff[strlen(lBuff) - 1] = '\0';
     }
 
-    if ( fileExists("/tmp/tinyfdt.txt") )
-    {
-        wipefile("/tmp/tinyfdt.txt");
-        remove("/tmp/tinyfdt.txt");
-    }
+    // Wipe scratchpad resources cleanly
+    if (fileExists("/tmp/tinyfdt.txt")) remove("/tmp/tinyfdt.txt");
 
-    if ( fileExists("/tmp/tinyfd.txt") )
-    {
-        wipefile("/tmp/tinyfd.txt");
-        remove("/tmp/tinyfd.txt");
-    }
-    if ( fileExists("/tmp/tinyfd0.txt") )
-    {
-        wipefile("/tmp/tinyfd0.txt");
-        remove("/tmp/tinyfd0.txt");
-    }
-
-    if ( ! lResult )
+    if (!lResult)
     {
         free(lDialogString);
-        return NULL ;
+        return NULL;
     }
 
     free(lDialogString);
-    //printf( "lBuff: %s\n" , lBuff ) ;
     return lBuff;
 }

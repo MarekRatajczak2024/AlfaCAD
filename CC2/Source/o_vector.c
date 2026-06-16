@@ -71,8 +71,12 @@ extern int compute_ellipse_radii_for_plane(enum PlaneType plane,double ea_x, dou
 extern int compute_arc_radii_for_plane(enum PlaneType plane, double center_x, double center_y, double point_x, double point_y, double *r);
 extern double isometric_vector_length_f(float x1, float y1, float x2, float y2);
 extern double isometric_vector_length_f_in_plane(enum PlaneType plane, float x1, float y1, float x2, float y2);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+extern int get_thermal_flipped(AVECTOR *v);
+extern int trapezoid_base_isometric_x(float x1, float y1, float x2, float y2, float *base_x1, float *base_y1, float *base_x2, float *base_y2);
+extern int trapezoid_base_isometric_y(float x1, float y1, float x2, float y2,float *base_x1, float *base_y1, float *base_x2, float *base_y2);
 
-        extern int Pline_Slab (void);
+extern int Pline_Slab (void);
 
 static void redcr(char);
 static int last_vector_style=-1;
@@ -85,6 +89,10 @@ static BOOL add_vector (BOOL b_strwyj) ;
 
 TMENU mVector_cartesian={24,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector_cartesian,NULL,NULL} ;
 TMENU mVector_isometric={27,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmVector_isometric,NULL,NULL} ;
+int thermal_load_poz;
+int thermal_load_poz_cartesian=16;
+int thermal_load_poz_isometric=10;
+
 
 TMENU *mVector;
 
@@ -139,7 +147,9 @@ static int set_arc_stage=0;
 static char *format_float="%#9.4lf";
 static char *format_floatd="%#11.6lf";
 static char *format_float2="%#9.4lf;%#9.4lf";
+static char *format_float4="%#9.4lf;%#9.4lf;%#9.4lf;%#9.4lf";
 static char *format2_float2="%#9.4lf\0%#9.4lf;%#9.4lf";
+static char *format4_float4="%#9.4lf\0%#9.4lf;%#9.4lf\0%#9.4lf;%#9.4lf;%#9.4lf\0%#9.4lf;%#9.4lf;%#9.4lf;%#9.4lf";
 
 
 enum MENU_ID {IDM_UNDO = 0, IDM_RIGID_RIGID, IDM_RIGID_PIN, IDM_PIN_RIGID, IDM_PIN_PIN, IDM_FORCE, IDM_MOMENT, IDM_MOMENT_REV,
@@ -222,13 +232,68 @@ void set_magnitude(AVECTOR *V)
         case 3:
             eVa=&eVe;
             break;
-        case 4:
+        case 4:  //force
+            if (!options1.uklad_izometryczny)
+            {
+                V->magnitude1 = (float) (line2len(V) * force_magnitude);
+            }
+            else
+            {
+                // 1. Calculate screen displacement
+                double dx = (double)V->x2 - (double)V->x1;
+                double dy = (double)V->y2 - (double)V->y1;
+
+                // 2. Constants for isometric projection (30 degrees)
+                const double cos30 = 0.86602540378;
+                const double sin30 = 0.5;
+
+                // 3. Un-project screen displacement to world-space components (X, Y)
+                // These formulas reverse the (Xw-Yw) and (Xw+Yw) logic
+                double world_X = (dx / (2.0 * cos30)) + (dy / (2.0 * sin30));
+                double world_Y = (dy / (2.0 * sin30)) - (dx / (2.0 * cos30));
+
+                // 4. Calculate the "true" world length using Pythagoras on world components
+                double l_world = sqrt(world_X * world_X + world_Y * world_Y);
+
+                // 5. Convert length back to force magnitude
+                V->magnitude1 = (float)(l_world * force_magnitude);
+            }
+            eVa = NULL;
+            break;
         case 18:
         case 19:
             V->magnitude1=(float)(line2len(V)*force_magnitude);
             eVa=NULL;
             break;
-        case 5:
+        case 5: //displacement
+            if (!options1.uklad_izometryczny)
+            {
+                a=angle2len(V);
+                V->magnitude1=(float)(a*moment_magnitude);
+            }
+            else
+            {
+                // 1. Calculate screen displacement
+                double dx = (double)V->x2 - (double)V->x1;
+                double dy = (double)V->y2 - (double)V->y1;
+
+                // 2. Constants for isometric projection (30 degrees)
+                const double cos30 = 0.86602540378;
+                const double sin30 = 0.5;
+
+                // 3. Un-project screen displacement to world-space components (X, Y)
+                // These formulas reverse the (Xw-Yw) and (Xw+Yw) logic
+                double world_X = (dx / (2.0 * cos30)) + (dy / (2.0 * sin30));
+                double world_Y = (dy / (2.0 * sin30)) - (dx / (2.0 * cos30));
+
+                // 4. Calculate the "true" world length using Pythagoras on world components
+                double l_world = sqrt(world_X * world_X + world_Y * world_Y);
+
+                // 5. Convert length back to force magnitude
+                V->magnitude1 = (float)(l_world * force_magnitude);
+            }
+            eVa=NULL;
+            break;
         case 21:  //TO DO ISOMETRIC
         case 23:
         case 25:
@@ -739,8 +804,8 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
         lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
 
         parametry_lini(L, &PL);
-
-        if ((V->style)!=16) {
+        if ((V->style==5) || (V->style==5) || (V->style==8) || (V->style==9) || (V->style>20))
+        {
             if (set_arc_stage == 0) {
                 V->angle1 = V->angle2 = Pi_ * PL.kat / 180;
                 if (!options1.uklad_izometryczny) {
@@ -866,7 +931,7 @@ void outvectoror (LINIA *L, AVECTOR *V, int mode,int pl)
 
 
 void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
-{       LINIA L1, LL;
+{       LINIA L1, LL, Lp;
         double angle;
         double P_Orto_Dir;
         double L1000, L2000;
@@ -877,6 +942,7 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
         int n;
         double dl;
         int ret;
+        int flipped;
 
         if (L == NULL)
         {
@@ -927,16 +993,28 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         double dx_iso, dy_iso;
-                        double dx_cart = L->x2-L->x1;
-                        double dy_cart = L->y2-L->y1;
-                        ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                        n = (dy_iso>0) ? 1 : -1;
-                        //n *= (V->x1 < V->x2) ? 1 : -1;
-                        double vx_cart= V->x2-V->x1;
-                        double vy_cart= V->y2-V->y1;
-                        double vx_iso, vy_iso;
-                        ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                        n *= (vx_iso>0) ? 1 : -1;
+                        if (V->style==10) {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+                            flipped = (get_thermal_flipped(V));
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+                        else
+                        {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+
+                            ret = trapezoid_base_isometric_x(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+                            flipped=(Lp.x2<Lp.x1)? 1 : 0;  //// Lp is always 30 or 210 deg to Cartesian
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+
                         n *= (V->flags & 1) ? -1 : 1;
                         V->magnitude1 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                     }
@@ -970,16 +1048,28 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         double dx_iso, dy_iso;
-                        double dx_cart = L->x2-L->x1;
-                        double dy_cart = L->y2-L->y1;
-                        ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                        n = (dx_iso<0) ? 1 : -1;
-                        //n *= (V->y1 < V->y2) ? 1 : -1;
-                        double vx_cart= V->x2-V->x1;
-                        double vy_cart= V->y2-V->y1;
-                        double vx_iso, vy_iso;
-                        ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                        n *= (vy_iso>0) ? 1 : -1;
+                        if (V->style==11) {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dx_iso < 0) ? 1 : -1;
+                            flipped = (get_thermal_flipped(V));
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+                        else
+                        {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dx_iso < 0) ? 1 : -1;
+
+                            ret = trapezoid_base_isometric_y(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+                            flipped=(Lp.y2<Lp.y1)? 1 : 0;  ////projection is always at 150 or  330 (-30) deg in Cartesian
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+
                         n *= (V->flags & 1) ? -1 : 1;
                         V->magnitude1 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                     }
@@ -1018,22 +1108,23 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                         double proj1 = dx1 * koc1 + dy1 * kos1;
                         V->magnitude1 = (float)(proj1 * load_magnitude);
 
-                        // For magnitude2
-                        //double dx2 = Lt.x2 - L1.x2;
-                        //double dy2 = Lt.y2 - L1.y2;
-                        //double proj2 = dx2 * koc1 + dy2 * kos1;
-                        //ptrs_vector->magnitude2 = (float)(proj2 * load_magnitude);
                     }
                     break;
                 case 15:
-                    parametry_lini((LINIA*)V, &PL1);
-                    angle0=Pi_*(PL.kat/180);
-                    angle1=Pi_*(PL1.kat/180);
-                    angle2=Angle_Normal(angle0);
-                    if (angle2<angle1) angle2+=Pi2;
-                    angle=Angle_Normal(angle2-angle1);
-                    koc=cos(angle);
-                    dl=PL.dl*koc;
+                    if (V->cartflags & 1) //isometric
+                    {
+                        dl=L->x2-L->x1; //it's horizontal
+                    }
+                    else {
+                        parametry_lini((LINIA *) V, &PL1);
+                        angle0 = Pi_ * (PL.kat / 180);
+                        angle1 = Pi_ * (PL1.kat / 180);
+                        angle2 = Angle_Normal(angle0);
+                        if (angle2 < angle1) angle2 += Pi2;
+                        angle = Angle_Normal(angle2 - angle1);
+                        koc = cos(angle);
+                        dl = PL.dl * koc;
+                    }
 
                     V->magnitude1=(float)(dl*thermal_magnitude);
                     break;
@@ -1071,16 +1162,28 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         double dx_iso, dy_iso;
-                        double dx_cart = L->x2-L->x1;
-                        double dy_cart = L->y2-L->y1;
-                        ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                        n = (dy_iso>0) ? 1 : -1;
-                        //n *= (V->x1 < V->x2) ? 1 : -1;
-                        double vx_cart= V->x2-V->x1;
-                        double vy_cart= V->y2-V->y1;
-                        double vx_iso, vy_iso;
-                        ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                        n *= (vx_iso>0) ? 1 : -1;
+                        if (V->style==10) {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+                            flipped = (get_thermal_flipped(V));
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+                        else
+                        {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+
+                            ret = trapezoid_base_isometric_x(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+                            flipped=(Lp.x2<Lp.x1)? 1 : 0;  //// Lp is always 30 or 210 deg to Cartesian
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+
                         n *= (V->flags & 1) ? -1 : 1;
                         V->magnitude1 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                     }
@@ -1093,11 +1196,11 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                 case 17:
                     if (Check_if_Equal(LL.x1, LL.x2))
                     {
-                        LL.x2 += 0.001;
+                        LL.x2 += 0.001f;
                     }
                     n=(V->x1<V->x2) ? 1 : -1;
                     if (V->flags & 1) n*=-1;
-                    V->magnitude1=V->magnitude2=n*PL.dy*flood_magnitude;
+                    V->magnitude1=V->magnitude2=(float)(n*PL.dy*flood_magnitude);
                     break;
                 case 11:
                     if (Check_if_Equal(LL.y1, LL.y2))
@@ -1114,16 +1217,28 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                     else
                     {
                         double dx_iso, dy_iso;
-                        double dx_cart = L->x2-L->x1;
-                        double dy_cart = L->y2-L->y1;
-                        ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                        n = (dx_iso<0) ? 1 : -1;
-                        //n *= (V->y1 < V->y2) ? 1 : -1;
-                        double vx_cart= V->x2-V->x1;
-                        double vy_cart= V->y2-V->y1;
-                        double vx_iso, vy_iso;
-                        ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                        n *= (vy_iso>0) ? 1 : -1;
+                        if (V->style==11) {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dx_iso < 0) ? 1 : -1;
+                            flipped = (get_thermal_flipped(V));
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+                        else
+                        {
+                            double dx_cart = L->x2 - L->x1;
+                            double dy_cart = L->y2 - L->y1;
+                            ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                            n = (dx_iso < 0) ? 1 : -1;
+
+                            ret = trapezoid_base_isometric_y(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+                            flipped=(Lp.y2<Lp.y1)? 1 : 0;  ////projection is always at 150 or  330 (-30) deg in Cartesian
+                            ////for isometric vector in X axis
+                            if (flipped) n *= -1;
+                        }
+
                         n *= (V->flags & 1) ? -1 : 1;
                         V->magnitude1 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                     }
@@ -1162,22 +1277,23 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
                         double proj1 = dx1 * koc1 + dy1 * kos1;
                         V->magnitude1 = (float)(proj1 * load_magnitude);
 
-                        // For magnitude2
-                        //double dx2 = L->x2 - L->x1;
-                        //double dy2 = L->y2 - L->y1;
-                        //double proj2 = dx2 * koc1 + dy2 * kos1;
-                        //V->magnitude2 = (float)(proj2 * load_magnitude);
                     }
                     break;
                 case 15:
-                    parametry_lini((LINIA*)V, &PL1);
-                    angle0=Pi_*(PL.kat/180);
-                    angle1=Pi_*(PL1.kat/180);
-                    angle2=Angle_Normal(angle0);
-                    if (angle2<angle1) angle2+=Pi2;
-                    angle=Angle_Normal(angle2-angle1);
-                    koc=cos(angle);
-                    dl=PL.dl*koc;
+                    if (V->cartflags & 1) //isometric
+                    {
+                        dl=L->x2-L->x1; //it's horizontal
+                    }
+                    else {
+                        parametry_lini((LINIA *) V, &PL1);
+                        angle0 = Pi_ * (PL.kat / 180);
+                        angle1 = Pi_ * (PL1.kat / 180);
+                        angle2 = Angle_Normal(angle0);
+                        if (angle2 < angle1) angle2 += Pi2;
+                        angle = Angle_Normal(angle2 - angle1);
+                        koc = cos(angle);
+                        dl = PL.dl * koc;
+                    }
 
                     V->magnitude1=(float)(dl*thermal_magnitude);
                     break;
@@ -1206,8 +1322,131 @@ void outvectoror1 (LINIA *L, AVECTOR *V, int mode,int pl)
         }
 }
 
-void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
+void outvectoror10 (LINIA *L, AVECTOR *V, int mode,int pl)
 {       LINIA L1, LL;
+    double angle;
+    double P_Orto_Dir;
+    double L1000, L2000;
+    int grubosc;
+    PLINIA PL, PL1;
+    double angle0, angle1, angle2;
+    double koc, kos;
+    int n;
+    double dl;
+    int ret;
+
+    if (L == NULL)
+    {
+        Internal_Error (__LINE__,__FILE__);
+        return;
+    }
+    okno_r();
+    setwritemode(mode);
+    linestyle(L->typ);
+
+    if (L->kolor == 0)
+    {
+        setfillstyle_(SOLID_FILL, kolory.paper);
+        setcolor(kolory.paper);
+        set_mode_solid();
+    }
+    else
+    {
+        SetColorAC(L->kolor);
+        setfillstyle_(SOLID_FILL, GetColorAC(L->kolor));
+    }
+
+    if (orto)
+    {
+        L1.x1=LL.x1=L->x1;
+        L1.y1=LL.y1=L->y1;
+        L1.x2=LL.x2=L->x2;
+        L1.y2=LL.y2=L->y2;
+        Orto_Dir =  Set_Orto_Dir (L, Orto_Dir);
+        orto_l(&L1, &Orto_Dir);
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L1.x2),pikseleY0(L1.y2));
+        parametry_lini(&L1, &PL);
+        switch (V->style)
+        {
+            case 15:
+
+                parametry_lini((LINIA *) V, &PL1);
+                angle0 = Pi_ * (PL.kat / 180);
+                angle1 = Pi_ * (PL1.kat / 180);
+                angle2 = Angle_Normal(angle0);
+                if (angle2 < angle1) angle2 += Pi2;
+                angle = Angle_Normal(angle2 - angle1);
+                koc = cos(angle);
+                dl = PL.dl * koc;
+
+                int nk=(koc<0.)? -1 : 1;
+
+                if (V->cartflags & 1) //isometric
+                {
+                    dl = nk * isometric_vector_length_f(L->x1, L->y1, L->x2, L->y2);
+                }
+
+                V->angle1=(float)(dl*thermal_magnitude);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+        setlinestyle1(DOTTED_LINE,0,NORM_WIDTH);
+        lineC(pikseleX0(L1.x2),pikseleY0(L1.y2),pikseleX0(L->x2),pikseleY0(L->y2));
+    }
+    else
+    {
+        LL.x1=L->x1;
+        LL.y1=L->y1;
+        LL.x2=L->x2;
+        LL.y2=L->y2;
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        parametry_lini(L, &PL);
+        switch (V->style)
+        {
+            case 15:
+                parametry_lini((LINIA*)V, &PL1);
+                angle0=Pi_*(PL.kat/180);
+                angle1=Pi_*(PL1.kat/180);
+                angle2=Angle_Normal(angle0);
+                if (angle2<angle1) angle2+=Pi2;
+                angle=Angle_Normal(angle2-angle1);
+                koc=cos(angle);
+                dl=PL.dl*koc;
+
+                int nk=(koc<0.)? -1 : 1;
+
+                if (V->cartflags & 1) //isometric
+                {
+                    dl = nk * isometric_vector_length_f(L->x1, L->y1, L->x2, L->y2);
+                }
+
+                V->angle1=(float)(dl*thermal_magnitude);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+    }
+
+    okno_all();
+    switch (V->style)
+    {
+        case 15:
+            sprintf(eVa->st,format_float, V->angle1);
+            if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
+            break;
+        default:
+            break;
+    }
+}
+
+void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
+{       LINIA L1, LL, Lp;
     double angle;
     double P_Orto_Dir;
     double L1000, L2000;
@@ -1218,6 +1457,7 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
     double dl;
     double koc, kos;
     int ret;
+    int flipped;
 
     if (L == NULL)
     {
@@ -1269,16 +1509,30 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 else
                 {
                     double dx_iso, dy_iso;
-                    double dx_cart = L->x2-L->x1;
-                    double dy_cart = L->y2-L->y1;
-                    ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                    n = (dy_iso>0) ? 1 : -1;
-                    //n *= (V->x1 < V->x2) ? 1 : -1;
-                    double vx_cart= V->x2-V->x1;
-                    double vy_cart= V->y2-V->y1;
-                    double vx_iso, vy_iso;
-                    ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                    n *= (vx_iso>0) ? 1 : -1;
+                    if (V->style==10) {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dy_iso > 0) ? -1 : 1;   //returning to default for X and Y direction with the same sense as positive X or Y
+
+                        flipped = (get_thermal_flipped(V));
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+                    else
+                    {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+
+                        ret = trapezoid_base_isometric_x(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                        flipped=(Lp.x2<Lp.x1)? 1 : 0;  //// Lp is always 30 or 210 deg to Cartesian
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+
                     n *= (V->flags & 1) ? -1 : 1;
                     V->magnitude2 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                 }
@@ -1312,16 +1566,30 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 else
                 {
                     double dx_iso, dy_iso;
-                    double dx_cart = L->x2-L->x1;
-                    double dy_cart = L->y2-L->y1;
-                    ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                    n = (dx_iso<0) ? 1 : -1;
-                    //n *= (V->y1 < V->y2) ? 1 : -1;
-                    double vx_cart= V->x2-V->x1;
-                    double vy_cart= V->y2-V->y1;
-                    double vx_iso, vy_iso;
-                    ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                    n *= (vy_iso>0) ? 1 : -1;
+                    if (V->style==11) {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dx_iso < 0) ? 1 : -1;
+
+                        flipped = get_thermal_flipped(V);
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+                    else
+                    {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dx_iso < 0) ? 1 : -1;
+
+                        ret = trapezoid_base_isometric_y(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                        flipped=(Lp.y2<Lp.y1)? 1 : 0;
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+
                     n *= (V->flags & 1) ? -1 : 1;
                     V->magnitude2 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                 }
@@ -1354,12 +1622,6 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                     double koc1 = cos(arrow_angle);
                     double kos1 = sin(arrow_angle);
 
-                    // For magnitude1
-                    //double dx1 = L->x2 - L->x1;
-                    //double dy1 = L->y2 - L->y1;
-                    //double proj1 = dx1 * koc1 + dy1 * kos1;
-                    //V->magnitude1 = (float)(proj1 * load_magnitude);
-
                     // For magnitude2
                     double dx2 = L->x2 - L->x1;
                     double dy2 = L->y2 - L->y1;
@@ -1368,15 +1630,20 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 break;
             case 15:
-                parametry_lini((LINIA*)V, &PL1);
-                angle0=Pi_*(PL.kat/180);
-                angle1=Pi_*(PL1.kat/180);
-                angle2=Angle_Normal(angle0);
-                if (angle2<angle1) angle2+=Pi2;
-                angle=Angle_Normal(angle2-angle1);
-                koc=cos(angle);
-                dl=PL.dl*koc;
-
+                if (V->cartflags & 1) //isometric
+                {
+                    dl=L->x2-L->x1; //it's horizontal
+                }
+                else {
+                    parametry_lini((LINIA *) V, &PL1);
+                    angle0 = Pi_ * (PL.kat / 180);
+                    angle1 = Pi_ * (PL1.kat / 180);
+                    angle2 = Angle_Normal(angle0);
+                    if (angle2 < angle1) angle2 += Pi2;
+                    angle = Angle_Normal(angle2 - angle1);
+                    koc = cos(angle);
+                    dl = PL.dl * koc;
+                }
                 V->magnitude2=(float)(dl*thermal_magnitude);
                 break;
             default:
@@ -1413,16 +1680,30 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 else
                 {
                     double dx_iso, dy_iso;
-                    double dx_cart = L->x2-L->x1;
-                    double dy_cart = L->y2-L->y1;
-                    ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                    n = (dy_iso>0) ? 1 : -1;
-                    //n *= (V->x1 < V->x2) ? 1 : -1;
-                    double vx_cart= V->x2-V->x1;
-                    double vy_cart= V->y2-V->y1;
-                    double vx_iso, vy_iso;
-                    ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                    n *= (vx_iso>0) ? 1 : -1;
+                    if (V->style==10) {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dy_iso > 0) ? -1 : 1;   //returning to default for X and Y direction with the same sense as positive X or Y
+
+                        flipped = (get_thermal_flipped(V));
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+                    else
+                    {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dy_iso > 0) ? -1 : 1;  //returning to default for X and Y direction with the same sense as positive X or Y
+
+                        ret = trapezoid_base_isometric_x(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                        flipped=(Lp.x2<Lp.x1)? 1 : 0;  //// Lp is always 30 or 210 deg to Cartesian
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+
                     n *= (V->flags & 1) ? -1 : 1;
                     V->magnitude2 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                 }
@@ -1451,21 +1732,35 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 {
                     n=(V->y1>V->y2) ? 1 : -1;
                     if (V->flags & 1) n*=-1;
-                    V->magnitude2=n*PL.dx*load_magnitude;
+                    V->magnitude2=(float)(n*PL.dx*load_magnitude);
                 }
                 else
                 {
                     double dx_iso, dy_iso;
-                    double dx_cart = L->x2-L->x1;
-                    double dy_cart = L->y2-L->y1;
-                    ret=cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
-                    n = (dx_iso<0) ? 1 : -1;
-                    //n *= (V->y1 < V->y2) ? 1 : -1;
-                    double vx_cart= V->x2-V->x1;
-                    double vy_cart= V->y2-V->y1;
-                    double vx_iso, vy_iso;
-                    ret=cartesian_vector_to_isometric(vx_cart, vy_cart, &vx_iso, &vy_iso);
-                    n *= (vy_iso>0) ? 1 : -1;
+                    if (V->style==11) {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dx_iso < 0) ? 1 : -1;
+
+                        flipped = get_thermal_flipped(V);
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+                    else
+                    {
+                        double dx_cart = L->x2 - L->x1;
+                        double dy_cart = L->y2 - L->y1;
+                        ret = cartesian_vector_to_isometric(dx_cart, dy_cart, &dx_iso, &dy_iso);
+                        n = (dx_iso < 0) ? 1 : -1;
+
+                        ret = trapezoid_base_isometric_y(V->x1, V->y1, V->x2, V->y2, &Lp.x1, &Lp.y1, &Lp.x2, &Lp.y2);
+
+                        flipped=(Lp.y2<Lp.y1)? 1 : 0;
+                        ////for isometric vector in X axis
+                        if (flipped) n *= -1;
+                    }
+
                     n *= (V->flags & 1) ? -1 : 1;
                     V->magnitude2 = (float)(n*sqrt(dx_iso*dx_iso+dy_iso*dy_iso) * load_magnitude);
                 }
@@ -1498,12 +1793,6 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                     double koc1 = cos(arrow_angle);
                     double kos1 = sin(arrow_angle);
 
-                    // For magnitude1
-                    //double dx1 = L->x2 - L->x1;
-                    //double dy1 = L->y2 - L->y1;
-                    //double proj1 = dx1 * koc1 + dy1 * kos1;
-                    //V->magnitude1 = (float)(proj1 * load_magnitude);
-
                     // For magnitude2
                     double dx2 = L->x2 - L->x1;
                     double dy2 = L->y2 - L->y1;
@@ -1512,14 +1801,20 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
                 }
                 break;
             case 15:
-                parametry_lini((LINIA*)V, &PL1);
-                angle0=Pi_*(PL.kat/180);
-                angle1=Pi_*(PL1.kat/180);
-                angle2=Angle_Normal(angle0);
-                if (angle2<angle1) angle2+=Pi2;
-                angle=Angle_Normal(angle2-angle1);
-                koc=cos(angle);
-                dl=PL.dl*koc;
+                if (V->cartflags & 1) //isometric
+                {
+                    dl=L->x2-L->x1; //it's horizontal
+                }
+                else {
+                    parametry_lini((LINIA *) V, &PL1);
+                    angle0 = Pi_ * (PL.kat / 180);
+                    angle1 = Pi_ * (PL1.kat / 180);
+                    angle2 = Angle_Normal(angle0);
+                    if (angle2 < angle1) angle2 += Pi2;
+                    angle = Angle_Normal(angle2 - angle1);
+                    koc = cos(angle);
+                    dl = PL.dl * koc;
+                }
 
                 V->magnitude2=(float)(dl*thermal_magnitude);
                 break;
@@ -1541,6 +1836,129 @@ void outvectoror2 (LINIA *L, AVECTOR *V, int mode,int pl)
         case 14:
         case 15:
             sprintf(eVa->st,format_float, V->magnitude2);
+            if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
+            break;
+        default:
+            break;
+    }
+}
+
+void outvectoror11 (LINIA *L, AVECTOR *V, int mode,int pl)
+{       LINIA L1, LL;
+    double angle;
+    double P_Orto_Dir;
+    double L1000, L2000;
+    int grubosc;
+    PLINIA PL, PL1;
+    double angle0, angle1, angle2;
+    int n;
+    double dl;
+    double koc, kos;
+    int ret;
+
+    if (L == NULL)
+    {
+        Internal_Error (__LINE__,__FILE__);
+        return;
+    }
+    okno_r();
+    setwritemode(mode);
+    linestyle(L->typ);
+
+    if (L->kolor == 0)
+    {
+        setfillstyle_(SOLID_FILL, kolory.paper);
+        setcolor(kolory.paper);
+        set_mode_solid();
+    }
+    else
+    {
+        SetColorAC(L->kolor);
+        setfillstyle_(SOLID_FILL, GetColorAC(L->kolor));
+    }
+
+    if (orto)
+    {
+        L1.x1=LL.x1=L->x1;
+        L1.y1=LL.y1=L->y1;
+        L1.x2=LL.x2=L->x2;
+        L1.y2=LL.y2=L->y2;
+        Orto_Dir =  Set_Orto_Dir (L, Orto_Dir);
+        orto_l(&L1, &Orto_Dir);
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L1.x2),pikseleY0(L1.y2));
+        parametry_lini(&L1, &PL);
+        switch (V->style)
+        {
+            case 15:
+                parametry_lini((LINIA*)V, &PL1);
+                angle0=Pi_*(PL.kat/180);
+                angle1=Pi_*(PL1.kat/180);
+                angle2=Angle_Normal(angle0);
+                if (angle2<angle1) angle2+=Pi2;
+                angle=Angle_Normal(angle2-angle1);
+                koc=cos(angle);
+                dl=PL.dl*koc;
+
+                int nk = (koc < 0.)?  -1 : 1;
+
+                if (V->cartflags & 1) //isometric
+                {
+                    dl = nk * isometric_vector_length_f(L->x1, L->y1, L->x2, L->y2);
+                }
+
+                V->angle2=(float)(dl*thermal_magnitude);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+        setlinestyle1(DOTTED_LINE,0,NORM_WIDTH);
+        lineC(pikseleX0(L1.x2),pikseleY0(L1.y2),pikseleX0(L->x2),pikseleY0(L->y2));
+    }
+    else
+    {
+        LL.x1=L->x1;
+        LL.y1=L->y1;
+        LL.x2=L->x2;
+        LL.y2=L->y2;
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        parametry_lini(L, &PL);
+        switch (V->style)
+        {
+            case 15:
+                parametry_lini((LINIA*)V, &PL1);
+                angle0=Pi_*(PL.kat/180);
+                angle1=Pi_*(PL1.kat/180);
+                angle2=Angle_Normal(angle0);
+                if (angle2<angle1) angle2+=Pi2;
+                angle=Angle_Normal(angle2-angle1);
+                koc=cos(angle);
+                dl=PL.dl*koc;
+
+                int nk = (koc < 0.)?  -1 : 1;
+
+                if (V->cartflags & 1) //isometric
+                {
+                    dl = nk * isometric_vector_length_f(L->x1, L->y1, L->x2, L->y2);
+                }
+
+                V->angle2=(float)(dl*thermal_magnitude);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+    }
+
+    okno_all();
+    switch (V->style)
+    {
+        case 15:
+            sprintf(eVa->st,format_float, V->angle2);
             if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
             break;
         default:
@@ -1676,6 +2094,197 @@ void outvectoror3 (LINIA *L, AVECTOR *V, int mode,int pl)
 }
 
 
+void outvectoror3Z (LINIA *L, AVECTOR *V, int mode,int pl)
+{
+    LINIA L1, Lth, Lt, Lth1, Lt1;
+    double angle;
+    double P_Orto_Dir;
+    double L1000, L2000;
+    int grubosc;
+    PLINIA PL, PL1, PLth, PLth1;
+    double angle0, angle1, angle2;
+    int n;
+    double dl;
+    double koc, kos, koc1, kos1;
+    double perpendicular_iso_angle;
+
+    if (L == NULL)
+    {
+        Internal_Error (__LINE__,__FILE__);
+        return;
+    }
+    okno_r();
+    setwritemode(mode);
+    linestyle(L->typ);
+
+    if (L->kolor == 0)
+    {
+        setfillstyle_(SOLID_FILL, kolory.paper);
+        setcolor(kolory.paper);
+        set_mode_solid();
+    }
+    else
+    {
+        SetColorAC(L->kolor);
+        setfillstyle_(SOLID_FILL, GetColorAC(L->kolor));
+    }
+
+    if (orto)
+    {
+        L1.x1=L->x1;
+        L1.y1=L->y1;
+        L1.x2=L->x2;
+        L1.y2=L->y2;
+        Orto_Dir =  Set_Orto_Dir (L, Orto_Dir);
+        orto_l(&L1, &Orto_Dir);
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L1.x2),pikseleY0(L1.y2));
+        parametry_lini(&L1, &PL);
+
+        switch (V->style)
+        {
+            case 15:
+                dl=(L->y2-L->y1);
+
+                V->r=(float)fabs(dl);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+        setlinestyle1(DOTTED_LINE,0,NORM_WIDTH);
+        lineC(pikseleX0(L1.x2),pikseleY0(L1.y2),pikseleX0(L->x2),pikseleY0(L->y2));
+    }
+    else
+    {
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        parametry_lini(L, &PL);
+        switch (V->style)
+        {
+            case 15:
+                dl=(L->y2-L->y1);
+
+                V->r=(float)fabs(dl);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+    }
+
+    okno_all();
+    switch (V->style)
+    {
+        case 15:
+            sprintf(eVa->st,format_float, V->r);
+            if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
+            break;
+        default:
+            break;
+    }
+}
+
+void outvectoror3Y (LINIA *L, AVECTOR *V, int mode,int pl)
+{
+    LINIA L1, Lth, Lt, Lth1, Lt1;
+    double angle;
+    double P_Orto_Dir;
+    double L1000, L2000;
+    int grubosc;
+    PLINIA PL, PL1, PLth, PLth1;
+    double perpendicular_iso_angle;
+    double angle0, angle1, angle2;
+    int n;
+    double dl;
+    double koc, kos, koc1, kos1;
+    double dx_iso, dy_iso;
+    int ret;
+
+    if (L == NULL)
+    {
+        Internal_Error (__LINE__,__FILE__);
+        return;
+    }
+    okno_r();
+    setwritemode(mode);
+    linestyle(L->typ);
+
+    if (L->kolor == 0)
+    {
+        setfillstyle_(SOLID_FILL, kolory.paper);
+        setcolor(kolory.paper);
+        set_mode_solid();
+    }
+    else
+    {
+        SetColorAC(L->kolor);
+        setfillstyle_(SOLID_FILL, GetColorAC(L->kolor));
+    }
+
+    if (orto)
+    {
+        L1.x1=L->x1;
+        L1.y1=L->y1;
+        L1.x2=L->x2;
+        L1.y2=L->y2;
+        Orto_Dir =  Set_Orto_Dir (L, Orto_Dir);
+        orto_l(&L1, &Orto_Dir);
+
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L1.x2),pikseleY0(L1.y2));
+        parametry_lini(&L1, &PL);
+
+        switch (V->style)
+        {
+            case 15:
+                ret = cartesian_vector_to_isometric(L->x2-L->x1, L->y2-L->y1, &dx_iso, &dy_iso);
+
+                dl=sqrt(dx_iso*dx_iso+dy_iso*dy_iso);
+
+                V->r=(float)fabs(dl);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+        setlinestyle1(DOTTED_LINE,0,NORM_WIDTH);
+        lineC(pikseleX0(L1.x2),pikseleY0(L1.y2),pikseleX0(L->x2),pikseleY0(L->y2));
+    }
+    else
+    {
+        linestyle(64);
+        lineC(pikseleX0(L->x1),pikseleY0(L->y1),pikseleX0(L->x2),pikseleY0(L->y2));
+        parametry_lini(L, &PL);
+        switch (V->style)
+        {
+            case 15:
+                //ret = isometric_vector_to_cartesian(L->x2-L->x1, L->y2-L->y1, &dx_cart, &dy_cart);
+                ret = cartesian_vector_to_isometric(L->x2-L->x1, L->y2-L->y1, &dx_iso, &dy_iso);
+
+                dl=sqrt(dx_iso*dx_iso+dy_iso*dy_iso);
+
+                V->r=(float)fabs(dl);
+                break;
+            default:
+                break;
+        }
+        Draw_Vector(V, COPY_PUT, 1, 0);
+    }
+
+    okno_all();
+    switch (V->style)
+    {
+        case 15:
+            sprintf(eVa->st,format_float, V->r);
+            if (eVa) Out_Edited_Draw_Param (eVa, TRUE) ;
+            break;
+        default:
+            break;
+    }
+}
+
 void outvectoror4 (LINIA *L, AVECTOR *V, int mode,int pl)
 {
     LINIA L1, Lth;
@@ -1754,7 +2363,6 @@ void outvectoror4 (LINIA *L, AVECTOR *V, int mode,int pl)
             break;
     }
 }
-
 
 static void  cur_off (double x,double y)
 /*----------------------------------------*/
@@ -1896,7 +2504,7 @@ int vector_command_proc (int ev_nr)
 
   if (ev_nr>=mVector->max)
   {
-      if ((mVector->foff+mVector->poz)==16)
+      if ((mVector->foff+mVector->poz)==thermal_load_poz)
       {
           if ((mLoad_Char_Thermal.foff+mLoad_Char_Thermal.poz)>0)
               VectorG.load=mLoad_Char_Thermal.foff+mLoad_Char_Thermal.poz+9;
@@ -2522,6 +3130,8 @@ int Vf_n (BOOL b_graph_value)
 
     if (m > -3.4E38 && m < 3.4E38)
     {
+        l = m/force_magnitude;
+
         if ( orto == 1 || eVf.val_no == 1)
         {
             if (TRUE == b_graph_value)
@@ -2532,25 +3142,51 @@ int Vf_n (BOOL b_graph_value)
             }
             parametry_linior (&LiniaG, &PL) ;
             k = PL.kat ;
+
+            k = Grid_to_Rad (k) ;
+
+            Lx2 = LiniaG.x1 + l * cos (k) ;
+            Ly2 = LiniaG.y1 + l * sin (k) ;
         }
         else
         {
-            angle_l=get_angle_l();
-            if (angle_l!=0)
+            if (!options1.uklad_izometryczny)
             {
-                k = eVf.values [1] + angle_l;
-                if (k<0) k+=360;
+                angle_l = get_angle_l();
+                if (angle_l != 0) {
+                    k = eVf.values[1] + angle_l;
+                    if (k < 0) k += 360;
+                } else
+                    k = eVf.values[1];
+
+                k = Grid_to_Rad (k) ;
+
+                Lx2 = LiniaG.x1 + l * cos (k) ;
+                Ly2 = LiniaG.y1 + l * sin (k) ;
             }
             else
-                k = eVf.values [1] ;
-        }
-        l = m/force_magnitude;
-        k = Grid_to_Rad (k) ;
-        Lx2 = LiniaG.x1 + l * cos (k) ;
-        Ly2 = LiniaG.y1 + l * sin (k) ;
+            {
+                // Map the 0-90 Cartesian range to the 210-330 Isometric range
+                double rad_l = eVf.values[1] * (Pi / 180.0);
 
-        VectorG.x2=Lx2;
-        VectorG.y2=Ly2;
+                // 1. Get world-space unit components
+                double Xw = cos(rad_l);
+                double Yw = sin(rad_l);
+
+                // 2. Project these unit components to screen space (isometric tilt)
+                double cos30 = 0.866025;
+                double sin30 = 0.5;
+
+                double dx = (Xw - Yw) * cos30;
+                double dy = (Xw + Yw) * sin30;
+
+                Lx2 = LiniaG.x1 + l *dx ;
+                Ly2 = LiniaG.y1 + l * dy ;
+            }
+        }
+
+        VectorG.x2=(float)Lx2;
+        VectorG.y2=(float)Ly2;
 
         VectorG.magnitude1 = (float)fabs(m) ;
         strwyj = 1;
@@ -2578,16 +3214,46 @@ int Vm_n (BOOL b_graph_value)
     {
         if (m<0)
         {
-            if (VectorG.style==5)
-            {
-                VectorG.reserve1=5;
-                VectorG.style=6;
+            switch (VectorG.style) {
+                case 5:
+                    VectorG.reserve1 = 5;
+                    VectorG.style = 6;
+                    break;
+                case 6:
+                    VectorG.reserve1 = 6;
+                    VectorG.style = 5;
+                break;
+
+                case 21:
+                    VectorG.reserve1 = 21;
+                    VectorG.style = 22;
+                    break;
+                case 22:
+                    VectorG.reserve1 = 22;
+                    VectorG.style = 21;
+                    break;
+
+                case 23:
+                    VectorG.reserve1 = 23;
+                    VectorG.style = 24;
+                    break;
+                case 24:
+                    VectorG.reserve1 = 24;
+                    VectorG.style = 23;
+                    break;
+
+                case 25:
+                    VectorG.reserve1 = 25;
+                    VectorG.style = 26;
+                    break;
+                case 26:
+                    VectorG.reserve1 = 26;
+                    VectorG.style = 25;
+                    break;
+                default:
+                    break;
             }
-            else if (VectorG.style==6)
-            {
-                VectorG.reserve1=6;
-                VectorG.style=5;
-            }
+
         }
         VectorG.magnitude1 = (float)fabs(m) ;
         strwyj = 1;
@@ -2614,6 +3280,30 @@ int Vf1_n (BOOL b_graph_value)
     if (m > -3.4E38 && m < 3.4E38)
     {
         VectorG.magnitude1 = (float)m ;
+        strwyj = 1;
+        return 1 ;
+    }
+    else
+    {
+        ErrList (2) ;
+        return 0 ;
+    }
+}
+
+int Vf10_n (BOOL b_graph_value)
+/*--------------------------------*/
+{
+    double m;
+
+    b_graph_value = b_graph_value ;
+    if (eVf.val_no < 1)
+    {
+        return 0 ;
+    }
+    m = eVf.values [0] ;
+    if (m > -3.4E38 && m < 3.4E38)
+    {
+        VectorG.angle1 = (float)m ;
         strwyj = 1;
         return 1 ;
     }
@@ -2740,6 +3430,30 @@ int Vf2_n (BOOL b_graph_value)
     }
 }
 
+int Vf11_n (BOOL b_graph_value)
+/*--------------------------------*/
+{
+    double m;
+
+    b_graph_value = b_graph_value ;
+    if (eVf.val_no < 1)
+    {
+        return 0 ;
+    }
+    m = eVf.values [0] ;
+    if (m > -3.4E38 && m < 3.4E38)
+    {
+        VectorG.angle2 = (float)m ;
+        strwyj = 1;
+        return 1 ;
+    }
+    else
+    {
+        ErrList (2) ;
+        return 0 ;
+    }
+}
+
 int Vth1_n (BOOL b_graph_value)
 /*--------------------------------*/
 {
@@ -2779,15 +3493,45 @@ int Vr_n (BOOL b_graph_value)
     {
         if (m<0)
         {
-            if (VectorG.style==8)
-            {
-                VectorG.reserve1=8;
-                VectorG.style=9;
-            }
-            else if (VectorG.style==9)
-            {
-                VectorG.reserve1=9;
-                VectorG.style=8;
+            switch (VectorG.style) {
+                case 8:
+                    VectorG.reserve1 = 8;
+                    VectorG.style = 9;
+                    break;
+                case 9:
+                    VectorG.reserve1 = 9;
+                    VectorG.style = 8;
+                    break;
+
+                case 28:
+                    VectorG.reserve1 = 28;
+                    VectorG.style = 29;
+                    break;
+                case 29:
+                    VectorG.reserve1 = 29;
+                    VectorG.style = 28;
+                    break;
+
+                case 30:
+                    VectorG.reserve1 = 30;
+                    VectorG.style = 31;
+                    break;
+                case 31:
+                    VectorG.reserve1 = 31;
+                    VectorG.style = 30;
+                    break;
+
+                case 32:
+                    VectorG.reserve1 = 32;
+                    VectorG.style = 33;
+                    break;
+                case 33:
+                    VectorG.reserve1 = 33;
+                    VectorG.style = 32;
+                    break;
+                default:
+                    break;
+
             }
         }
         VectorG.magnitude1 = (float)fabs(m) ;
@@ -2912,7 +3656,7 @@ static int Vd_n__ (BOOL b_graph_value)
 static int Vt_n (BOOL b_graph_value)
 /*--------------------------------*/
 {
-    double m1, m2;
+    double m1, m2, m3, m4;
 
     b_graph_value = b_graph_value ;
     if (eVt.val_no < 1)
@@ -2935,6 +3679,45 @@ static int Vt_n (BOOL b_graph_value)
         if (m2 > -3.4E38 && m2 < 3.4E38)
         {
             VectorG.magnitude2 = (float)m2;
+            //CUR_OFF(X,Y);
+            //CUR_ON(X,Y);
+            //return 1;
+        } else
+        {
+            ErrList(2);
+            return 0;
+        }
+    }
+    else
+    {
+        VectorG.magnitude2 = (float)m1;
+        VectorG.angle1 = 0.f; //in isometric for axis Y
+        VectorG.angle2 = 0.f; //in isometric for axis Y
+    }
+    if (eVt.val_no > 2)
+    {
+        m3 = eVt.values [2] ;
+        if (m3 > -3.4E38 && m3 < 3.4E38)
+        {
+            VectorG.angle1 = (float)m3;
+            if (eVt.val_no==3) {
+                VectorG.angle2 = VectorG.angle1;
+                CUR_OFF(X, Y);
+                CUR_ON(X, Y);
+                return 1;
+            }
+        } else
+        {
+            ErrList(2);
+            return 0;
+        }
+    }
+    if (eVt.val_no > 3)
+    {
+        m4 = eVt.values [3] ;
+        if (m4 > -3.4E38 && m4 < 3.4E38)
+        {
+            VectorG.angle2 = (float)m4;
             CUR_OFF(X,Y);
             CUR_ON(X,Y);
             return 1;
@@ -2944,7 +3727,7 @@ static int Vt_n (BOOL b_graph_value)
             return 0;
         }
     }
-    else VectorG.magnitude2 = (float)m1;
+
     CUR_OFF(X,Y);
     CUR_ON(X,Y);
     return 1;
@@ -3063,9 +3846,9 @@ void ini_vector_estr(void)
     eVt.x=maxX/2 - (16*WIDTH) ;
     eVt.y= ESTR_Y;
     eVt.lmax=16;
-    eVt.val_no_max	= 2 ;
+    eVt.val_no_max	= 4; //2 ;  //in isometric there are tz1;tz2;ty1;ty2
     eVt.mode	= GV_VECTOR	;
-    eVt.format = format2_float2 ;  //g g f
+    eVt.format = format4_float4 ;; //format2_float2 ;  //g g f
     eVt.ESTRF=Vt_n;
     eVt.extend = 0;
 
@@ -3174,7 +3957,7 @@ static void redcr(char typ)
          case 3:
              np=dodajstr(&eL);
              npv=dodajstr(&eVe);
-             sprintf (eVe.st, "%#6d", VectorG.property_no);
+             sprintf (eVe.st, "%6d", VectorG.property_no);
              Out_Edited_Draw_Param ((ESTR *)&eVe, TRUE) ;
              break;
          case 4:  //force
@@ -3246,15 +4029,22 @@ static void redcr(char typ)
              Out_Edited_Draw_Param ((ESTR *)&eVt1, TRUE) ;
              break;
          case 15:  //thermal
-             VectorG.r=thermal_axis_size;
+             VectorG.r=(float)thermal_axis_size;
              np=dodajstr(&eL);
              npv=dodajstr(&eVt);
-             sprintf (eVt.st, format_float2, VectorG.magnitude1,VectorG.magnitude2);
+             if (VectorG.cartflags & 1) {
+                 sprintf(eVt.st, format_float4, VectorG.magnitude1, VectorG.magnitude2, VectorG.angle1, VectorG.angle2);
+                 eVt.lmax=32;
+             }
+             else {
+                 sprintf(eVt.st, format_float2, VectorG.magnitude1, VectorG.magnitude2);
+                 eVt.lmax=16;
+             }
              Out_Edited_Draw_Param ((ESTR *)&eVt, TRUE) ;
              break;
          case 16:  //node size
              VectorG.magnitude1 = (float)node_size;
-             VectorG.r=jednostkiOb(node_size);
+             VectorG.r=(float)jednostkiOb(node_size);
              npv=dodajstr(&eVn);
              sprintf (eVn.st, format_float, VectorG.magnitude1);
              Out_Edited_Draw_Param ((ESTR *)&eVn, TRUE) ;
@@ -3305,26 +4095,27 @@ static void poczatekV (double X0, double Y0)
 
   df__xbeg = X0 ;
   df__ybeg = Y0 ;
-  LiniaG.x1 = X0 ;
-  LiniaG.y1 = Y0 ;
-  LiniaG.x2 = X ;
-  LiniaG.y2 = Y ;
-  Orto_Dir = I_Orto_NoDir ;
+  LiniaG.x1 = (float)X0 ;
+  LiniaG.y1 = (float)Y0 ;
+  LiniaG.x2 = (float)X ;
+  LiniaG.y2 = (float)Y ;
 
-  orto_=orto;
+
+  ////Orto_Dir = I_Orto_NoDir ;  //// Why no ortho ?  WARNING - it has to be checked out
+  ////orto_=orto;  ////WARNING - it has to be checked out
 
     if ((last_vector_style!=VectorG.style) || (VectorG.style<10))
     {
-        VectorG.magnitude1 = 0.0;
-        VectorG.magnitude2 = 0.0;
+        VectorG.magnitude1 = 0.0f;
+        VectorG.magnitude2 = 0.0f;
     }
 
   redcr (0) ;
 
   if ((last_vector_style!=VectorG.style) || (VectorG.style<10))
   {
-      VectorG.magnitude1=0.0;
-      VectorG.magnitude2=0.0;
+      VectorG.magnitude1=0.0f;
+      VectorG.magnitude2=0.0f;
   }
 
   while (1)
@@ -3339,7 +4130,7 @@ static void poczatekV (double X0, double Y0)
     else if (ev->Number == -84)
     {
         if (npv>0) usunstr(npv);
-        orto=orto_;
+        ////orto=orto_;  ////WARNING - it has to be checked out
         return;
     }
     if (strwyj == 1)
@@ -3351,8 +4142,8 @@ static void poczatekV (double X0, double Y0)
             if (set_arc_stage==0)
             {
                 set_arc_stage = 1;
-                orto_=orto;
-                orto=0; //TEMPORARY
+                orto_=orto;  ////this makes sense to set up an angle
+                orto=0; //set temporary for angle setup
 
                 if ((VectorG.style==5) || (VectorG.style==6))
                 {
@@ -3379,7 +4170,7 @@ static void poczatekV (double X0, double Y0)
                 CUR_ON(X, Y);
 
                 if (npv>0) usunstr(npv);
-                orto=orto_;
+                orto=orto_;  ////this makes sense anter setting up the angle
                 return;
             }
             strwyj = 0 ;
@@ -3394,7 +4185,7 @@ static void poczatekV (double X0, double Y0)
             if (((VectorG.style > 3) && (VectorG.style < 10)) || (VectorG.style == 18) || (VectorG.style == 19) || (VectorG.style == 27))
             {
                 redcr(1);
-                orto=orto_;
+                ////orto=orto_;  ////WARNING - it has to be checked out
                 return;
             }
             continue;
@@ -3407,7 +4198,7 @@ static void poczatekV (double X0, double Y0)
 	 {
 	   redcr (1) ;
        last_vector_style=VectorG.style;
-       orto=orto_;
+       ////orto=orto_;  ////WARNING - it has to be checked out
 	   return ;
 	 }
 	 if (ev->Number == ENTER)
@@ -3419,7 +4210,7 @@ static void poczatekV (double X0, double Y0)
             if (set_arc_stage==0)
             {
                 set_arc_stage = 1;
-                orto_=orto;
+                orto_=orto;  //// this makes sense for setting up an angle
                 orto=0; //TEMPORARY
 
                 if ((VectorG.style==5) || (VectorG.style==6) || ((VectorG.style>20) && (VectorG.style<27)))
@@ -3446,7 +4237,7 @@ static void poczatekV (double X0, double Y0)
                 CUR_OFF(X, Y);
                 CUR_ON(X, Y);
                 if (npv>0) usunstr(npv);
-                orto=orto_;
+                orto=orto_;  //// after setting up the angle
                 return;
 
             }
@@ -3460,10 +4251,11 @@ static void poczatekV (double X0, double Y0)
              if (((VectorG.style > 3) && (VectorG.style < 10)) || ((VectorG.style>16) && (VectorG.style!=20)))  //including slab load and slab force but not load z
              {
                  redcr(1);
-                 orto=orto_;
+                 ////orto=orto_;  ////WARNING - it has to be checked out
                  return;
              }
-             if ((VectorG.style >= 10) && (VectorG.magnitude2!=VectorG.magnitude1))
+             //if distributed load so 10,11,12,13,14 and 20
+             if ((((VectorG.style >= 10) && (VectorG.style < 15)) || (VectorG.style==20)) && (VectorG.magnitude2!=VectorG.magnitude1))
              {
                  float mag1=VectorG.magnitude1;
                  VectorG.magnitude1=VectorG.magnitude2;
@@ -3484,7 +4276,7 @@ static void poczatekV (double X0, double Y0)
 	     {
 	       redcr (1) ;
            if (npv>0) usunstr(npv);
-           orto=orto_;
+           ////orto=orto_;  ////WARNING - it has to be checked out
 	       return ;
 	     }
 	 break ;
@@ -3492,7 +4284,7 @@ static void poczatekV (double X0, double Y0)
 	 break ;
     }
   }
-  orto=orto_;
+  ////orto=orto_;  ////WARNING - it has to be checked out
 }
 
 static void redcr0(char typ)
@@ -3558,6 +4350,7 @@ beginning:
     {
         VectorG.cartflags = 1;
         mVector=&mVector_isometric;
+        thermal_load_poz=thermal_load_poz_isometric;
 
         if ((VectorG.style==1) || (VectorG.style==2) || (VectorG.style==3) || (VectorG.style==5) || (VectorG.style==6) || (VectorG.style==8) || (VectorG.style==9) ||
            (VectorG.style==17) || (VectorG.style==18) || (VectorG.style>=V_SLAB_PLATE)) VectorG.style=0;
@@ -3566,6 +4359,7 @@ beginning:
     {
         VectorG.cartflags=0;
         mVector=&mVector_cartesian;
+        thermal_load_poz=thermal_load_poz_cartesian;
 
         if ((VectorG.style>18) && (VectorG.style<34)) VectorG.style=0;
     }

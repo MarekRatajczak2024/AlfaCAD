@@ -406,7 +406,7 @@ static char* komunikaty_kom[] =
 /*138*/u8"Ingrese altura de zona [mm] : ",
 /*139*/u8"Ingrese ancho de zona [mm] : ",
 /*140*/u8"Ingrese ancho de margen de zona [mm] : ",
-/*141*/u8"Ingrese el desplazamiento del marco de las zonas [mm]: ",
+/*141*/u8"Ingrese el desplazamiento del pórtico de las zonas [mm]: ",
 /*142*/u8"",
 /*143*/u8"",
 /*144*/u8"Ingrese la coordenada Z: ",
@@ -484,7 +484,7 @@ static char* komunikaty_kom[] =
 /*216*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción concentradas de apoyo resultantes: ",
 /*217*/u8"Ingrese el factor de reescalado para los momentos de reacción de soporte resultantes: ",
 /*218*/u8"Ingrese el factor de reescalado de profundidad de la sección: ",
-/*219*/u8"Ingrese el factor de reescalado para las tensiones resultantes (acero, madera): ",
+/*219*/u8"Ingrese el factor de reescalado para las tensiones axiales resultantes (acero, madera): ",
 /*220*/u8"Ingrese la precisión de la tensión: ",
 /*221*/u8"Ingrese el factor exagerado de la deformación de los modos de vibración modal: ",
 /*222*/u8"Ingrese el factor de reescalado para el porcentaje de refuerzo resultante: ",
@@ -492,6 +492,7 @@ static char* komunikaty_kom[] =
 /*224*/u8"Ingrese el factor de reescalado para las tensiones resultantes (hormigón armado): ",
 /*225*/u8"Ingrese el factor de cambio de escala para las fuerzas de reacción distribuidas de apoyo resultantes: ",
 /*226*/u8"Ingrese la precisión de las reacciones: ",
+/*227*/u8"Ingrese el factor de reescalado para las tensiones de corte resultantes: ",
 "",
 "",
 };
@@ -532,7 +533,7 @@ static char* komunikaty0[] =
 /*31*/u8"Ventana a punto",
 /*32*/u8"Seleccionar objetos para rotar",
 /*33*/u8"Rotación",
-/*34*/u8"Seleccionar por marco objetos para estirar",
+/*34*/u8"Seleccionar por pórtico objetos para estirar",
 /*35*/u8"Memoria insuficiente",
 /*36*/u8"Seleccionar objetos para guardar en archivo",
 /*37*/u8"Marcar punto de inserción (Inicio +90°, Fin -90°)",
@@ -665,12 +666,13 @@ static char* komunikaty0[] =
 /*164*/u8"",
 /*165*/u8"",
 /*166*/u8"",  //custom text
-/*167*/u8"Indique un diagrama de marco o armadura para análisis estático/dinámico",
+/*167*/u8"Indique un diagrama de pórtico o armadura para análisis estático/dinámico",
 /*168*/u8"Dimensionamiento (para comenzar a dimensionar un ángulo, toque cualquier línea or vector de elemento)",
-/*169*/u8"Indicar el elemento del marco o cercha",
+/*169*/u8"Indique el elemento del pórtico o cercha",
 /*170*/u8"Posicione la línea de sección en las coordenadas deseado del elemento. Haga clic para guardar los valores en el portapapeles",
 /*171*/u8"Indique un diagrama de losa para análisis estático (FEM)",
-/*172*/u8"Indique un diagrama de escudo para análisis estático (FEM)",
+/*172*/u8"Indique un diagrama de diafragma para análisis estático (FEM)",
+/*173*/u8"Indique un diagrama de emparrillado para análisis estático/dinámico",
 };
 
 static char* messages_str[] =
@@ -940,9 +942,26 @@ static char confirm[] = u8"Confirmar";
 #define _CANNOT_OPEN_ u8"No se pudo abrir "
 #define _CANNOT_READ_ u8"No se pudo leer "
 #define _DEFAULT_TAKEN_ u8"Se adoptaron parámetros estándar de madera"
+
+#define _in_ u8"en "
+#define _mm_ u8"mm"
+#define _inch_ u8"pulgada"
+
+#define _default_cover_mm_ u8", por defecto c=35) "
+#define _default_cover_in_ u8", por defecto c=1.5) "
+
+#define _R_SECTION_ u8"Ingrese h;b;c (altura; ancho; recubrimiento axial"
+#define _I_SECTION_ u8"Ingrese h;b;w;t;c (altura; ancho; espesor del alma; espesor del ala; recubrimiento axial"
+#define _T_SECTION_ u8"Ingrese h;b;w;t;c (altura; ancho; espesor del alma; espesor del ala; recubrimiento axial"
+#define _CT_SECTION_ u8"Ingrese d;t;c (diámetro exterior; espesor de pared; recubrimiento axial"
+#define _ST_SECTION_ u8"Ingrese b;t;c (ancho=altura; espesor de pared; recubrimiento axial"
+#define _RT_SECTION_ u8"Ingrese h;b;t;c (altura; ancho; espesor de pared; recubrimiento axial"
+
 #endif
 
 #ifdef __O_STATIC__
+
+#define STATIC_ANALYSIS u8"Estática"
 
 #define _SELECT_STATE_ "Estado límite (combinación)"
 #define _SELECT_STATE_C_ L'E'
@@ -957,7 +976,7 @@ POLE pmSelect_State[] = {
 static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
 */
 
-#define _PROCEED_STATIC_ u8"¿Proceder a un análisis estático del marco o cercha indicada?"
+#define _PROCEED_STATIC_ u8"¿Proceder a un análisis estático del pórtico o cercha indicada?"
 
 #define _incorrectly_defined_ u8"definido incorrectamente"
 #define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
@@ -972,13 +991,18 @@ static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,
 #define _unknown_standard_ u8"Estándar desconocido"
 #define _element_graph_data_failed_ u8"No se pudo crear el bloque de datos de las fuerzas resultantes para el elemento"
 #define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
+#define _vector_of_member_is_isometric_ u8"El vector de un elemento del sistema estático pertenece a la proyección isométrica"
+#define _vector_of_load_is_isometric_ u8"El vector de la carga pertenece a la proyección isométrica"
 
 #define _FRAME3DD_ u8"%FRAME:"
 #define _FRAME3DD_PL u8"%RAMA:"
 #define _FRAME3DD_UA u8"%КАРКАС:"
-#define _FRAME3DD_ES u8"%MARCO:"
+#define _FRAME3DD_ES u8"%PÓRTICO:"
 
-#define _FRAME_ID_NOT_FOUND_ u8"'%MARCO: ID' not found"
+#define _neither_ u8"ni"
+#define _or_ u8"ni"
+#define _FRAME_ID_NOT_FOUND_ u8"'%PÓRTICO: ID' not found"
+#define _NOT_DEFINED_ u8"no se especifica"
 
 #define _Yes_ "Sí"
 #define _No_ "No"
@@ -1060,17 +1084,17 @@ char *frame3dd[]={
  /*48*/ u8"finalización sin errores",
  /*49*/ u8"finalización sin errores",
  /*50*/ u8"finalización sin errores",
- /*51*/ u8"error de formato de datos de entrada en los datos del elemento del marco, número de elemento del marco fuera de rango",
- /*52*/ u8"error de formato de datos de entrada en los datos del elemento del marco, número de nodo fuera de rango",
- /*53*/ u8"error de formato de datos de entrada en los datos del elemento del marco, valor de sección negativo",
- /*54*/ u8"error de formato de datos de entrada en los datos del elemento del marco, el área de la sección transversal es 0 (cero)",
- /*55*/ u8"El error de formato de los datos de entrada en los datos del elemento del marco, el área de corte y el módulo de corte son 0 (cero)",
- /*56*/ u8"error de formato de datos de entrada en los datos del elemento del marco, el momento de inercia de torsión es 0 (cero)",
- /*57*/ u8"error de formato de datos de entrada en los datos del elemento del marco, el momento de inercia de flexión es 0 (cero)",
- /*58*/ u8"error de formato de datos de entrada en los datos del elemento del marco, el valor del módulo no es positivo",
- /*59*/ u8"error de formato de datos de entrada en los datos del elemento del marco, el valor de densidad de masa no es positivo",
- /*60*/ u8"Error de formato de datos de entrada en los datos del elemento del marco, el elemento del marco comienza y se detiene en el mismo nodo",
- /*61*/ u8"error de formato de datos de entrada en los datos del elemento de marco, el elemento de marco tiene una longitud de cero",
+ /*51*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, número de elemento del pórtico fuera de rango",
+ /*52*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, número de nodo fuera de rango",
+ /*53*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, valor de sección negativo",
+ /*54*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el área de la sección transversal es 0 (cero)",
+ /*55*/ u8"El error de formato de los datos de entrada en los datos del elemento del pórtico, el área de corte y el módulo de corte son 0 (cero)",
+ /*56*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el momento de inercia de torsión es 0 (cero)",
+ /*57*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el momento de inercia de flexión es 0 (cero)",
+ /*58*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el valor del módulo no es positivo",
+ /*59*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el valor de densidad de masa no es positivo",
+ /*60*/ u8"Error de formato de datos de entrada en los datos del elemento del pórtico, el elemento del pórtico comienza y se detiene en el mismo nodo",
+ /*61*/ u8"error de formato de datos de entrada en los datos del elemento de pórtico, el elemento de pórtico tiene una longitud de cero",
  /*62*/ u8"finalización sin errores",
  /*63*/ u8"finalización sin errores",
  /*64*/ u8"finalización sin errores",
@@ -1096,8 +1120,8 @@ char *frame3dd[]={
  /*84*/ u8"error de formato de datos de entrada en datos de reacción, estructura poco restringida",
  /*85*/ u8"error de formato de datos de entrada en datos de reacción, estructura totalmente restringida",
  /*86*/ u8"error de formato de datos de entrada en datos de inercia de nodo adicionales, número de nodo fuera de rango",
- /*87*/ u8"error de formato de datos de entrada en datos de masa de haz adicional, número de elemento de marco fuera de rango",
- /*88*/ u8"error de formato de datos de entrada en datos masivos, elemento de marco con masa no positiva",
+ /*87*/ u8"error de formato de datos de entrada en datos de masa de haz adicional, número de elemento de pórtico fuera de rango",
+ /*88*/ u8"error de formato de datos de entrada en datos masivos, elemento de pórtico con masa no positiva",
  /*89*/ u8"finalización sin errores",
  /*90*/ u8"error de formato de datos de entrada en datos de condensación de matriz, el número de nodos con grados de libertad condensados ​​es menor que el número total de nodos",
  /*91*/ u8"error de formato de datos de entrada en datos de condensación de matriz, número de nodo fuera de rango",
@@ -1140,8 +1164,8 @@ char *frame3dd[]={
  /*128*/ u8"finalización sin errores",
  /*129*/ u8"finalización sin errores",
  /*130*/ u8"finalización sin errores",
- /*131*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, el número de cargas uniformes es mayor que el número de elementos del marco",
- /*132*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, número de elemento de marco fuera de rango",
+ /*131*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, el número de cargas uniformes es mayor que el número de elementos del pórtico",
+ /*132*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, número de elemento de pórtico fuera de rango",
  /*133*/ u8"finalización sin errores",
  /*134*/ u8"finalización sin errores",
  /*135*/ u8"finalización sin errores",
@@ -1150,7 +1174,7 @@ char *frame3dd[]={
  /*138*/ u8"finalización sin errores",
  /*139*/ u8"finalización sin errores",
  /*140*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, demasiadas cargas distribuidas trapezoidalmente",
- /*141*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, número de elemento de marco fuera de rango",
+ /*141*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, número de elemento de pórtico fuera de rango",
  /*142*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x1 < 0",
  /*143*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x1 > x2",
  /*144*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x2 > L",
@@ -1159,8 +1183,8 @@ char *frame3dd[]={
  /*147*/ u8"finalización sin errores",
  /*148*/ u8"finalización sin errores",
  /*149*/ u8"finalización sin errores",
- /*150*/ u8"error de formato de datos de entrada en datos de carga interna concentrada, el número de cargas concentradas es mayor que el número de elementos del marco",
- /*151*/ u8"error de formato de datos de entrada en datos de carga concentrada interna, número de elemento de marco fuera de rango",
+ /*150*/ u8"error de formato de datos de entrada en datos de carga interna concentrada, el número de cargas concentradas es mayor que el número de elementos del pórtico",
+ /*151*/ u8"error de formato de datos de entrada en datos de carga concentrada interna, número de elemento de pórtico fuera de rango",
  /*152*/ u8"error de formato de datos de entrada en datos de carga concentrada interna, ubicación x menor que 0 o mayor que L",
  /*153*/ u8"finalización sin errores",
  /*154*/ u8"finalización sin errores",
@@ -1169,9 +1193,9 @@ char *frame3dd[]={
  /*157*/ u8"finalización sin errores",
  /*158*/ u8"finalización sin errores",
  /*159*/ u8"finalización sin errores",
- /*160*/ u8"error de formato de datos de entrada en los datos de carga térmica, número de cargas térmicas mayor que el número de elementos del marco",
- /*161*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de marco fuera de rango",
- /*162*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de marco fuera de rango",
+ /*160*/ u8"error de formato de datos de entrada en los datos de carga térmica, número de cargas térmicas mayor que el número de elementos del pórtico",
+ /*161*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de pórtico fuera de rango",
+ /*162*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de pórtico fuera de rango",
  /*163*/ u8"finalización sin errores",
  /*164*/ u8"finalización sin errores",
  /*165*/ u8"finalización sin errores",
@@ -1218,6 +1242,343 @@ char *frame3dd[]={
  /*206*/ u8"error al abrir un archivo de datos de salida guardando una matriz simétrica de 'dobles'",
  /*207*/ u8"error de prueba de equilibrio",
  /*208*/ u8"error al abrir el archivo de registro de errores .err",
+  /*209*/ u8"",
+ /*210*/ u8"",
+ /*211*/ u8"Error cuadrático medio (RMS) relativo de equilibrio: %e",
+ /*212*/ u8"La matriz de rigidez no es definida positiva",
+ /*213*/ u8"Compruebe que los seis grados de libertad estén restringidos",
+ /*214*/ u8"Si se incluye rigidez geométrica, reduzca las cargas",
+ };
+
+
+#define _ERROR_FREE_COMPLETION_ u8"finalización sin errores"
+
+#endif
+
+#ifdef __O_GRID__
+
+#define STATIC_ANALYSIS u8"Estática"
+
+static char* static_param[] =
+{
+    "limite visual de envolvente axial",
+    "limite visual de envolvente cortante",
+    "limite visual de momento",
+    "limite visual de deflexion",
+    "limite visual de flecha de reaccion",
+    "limite visual de glifo de momento",
+    "limite visual de tension axial",
+    "limite visual de tension tangencial",
+    "limite visual de tension rc",
+    "limite visual de modo de vibracion",
+    "limite visual de armadura",
+    "limite visual de cortante en placas",
+
+    "referencia de fuerza axial",
+    "referencia de fuerza cortante",
+    "referencia de momento flector",
+    "referencia de deflexion",
+    "referencia de fuerza de reaccion",
+    "referencia de momento de reaccion",
+    "referencia de tension axial",
+    "referencia de tension tangencial",
+    "referencia de tension en hormigon",
+    "referencia de modo de vibracion",
+    "referencia de cuantiade armadura",
+    "referencia de cortante en placas",
+
+};
+
+static int no_static_param = sizeof(static_param) / sizeof(static_param[0]);
+
+
+#define _SELECT_STATE_ "Estado límite (combinación)"
+#define _SELECT_STATE_C_ L'E'
+
+/*
+POLE pmSelect_State[] = {
+	{u8"estado límite Último (ELU)",L'U',0,NULL},
+    {u8"estado límite de Servicio (ELS)",L'S',0,NULL},
+    {u8"estado límite de servicio (Cuasipermanente)",L'C',0,NULL},
+};
+
+static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
+*/
+
+#define _PROCEED_GRID_ u8"¿Proceder a un análisis estático del emparrillado indicada?"
+
+#define _incorrectly_defined_ u8"definido incorrectamente"
+#define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
+#define _reaction_not_associated_ u8"reacción no asociada con ningún nodo conocido"
+#define _reaction_not_enough_in_Y_ u8"Estructura insuficientemente soportada en el eje Y. Agregar soporte faltante."
+#define _reaction_not_enough_in_X_ u8"Estructura insuficientemente soportada en el eje X. Agregar soporte faltante."
+#define _reaction_not_enough_in_X_Y_ u8"Estructura insuficientemente soportada en los ejes X e Y. Añadir soportes faltantes."
+#define _node_size_not_associated_ u8"tamaño de nodo no asociado con ningún nodo conocido"
+#define _force_not_associated_ u8"no asociado con ningún nodo conocido"
+#define _load_not_associated_ u8"no asociado con ningún elemento conocido"
+#define _thermal_load_inside_element_ u8"no en todo el elemento con coordenadas de nodos:"
+#define _unknown_standard_ u8"Estándar desconocido"
+#define _element_graph_data_failed_ u8"No se pudo crear el bloque de datos de las fuerzas resultantes para el elemento"
+#define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
+#define _soil_property_not_defined_ u8"La rigidez del suelo (módulo de la subrasante) no está definida en las propiedades de la viga de Winkler."
+#define _vector_of_member_not_isometric_ u8"El vector de un elemento del sistema estático no pertenece a la proyección isométrica"
+#define _vector_of_load_not_isometric_ u8"El vector de la carga no pertenece a la proyección isométrica"
+
+#define _GRID_ u8"%GRID:"
+#define _GRID_PL u8"%RUSZT:"
+#define _GRID_UA u8"%РОСТВЕРК:"
+#define _GRID_ES u8"%EMPARRILLADO:"
+
+#define _neither_ u8"ni"
+#define _or_ u8"ni"
+#define _GRID_ID_NOT_FOUND_ u8"'%GRID: ID' no se encuentra"
+#define _NOT_DEFINED_ u8"no se especifica"
+
+#define _Yes_ "Sí"
+#define _No_ "No"
+#define _YES_NO_ESC_ u8"SNsn\033"
+#define _YES_ 'S'
+#define _yes_ 's'
+#define _NO_ 'N'
+#define _no_ 'n'
+
+#define __FRAME3DD__ "Frame3dd"
+
+static char confirm[] = u8"Confirmar";
+#define _CANNOT_CREATE_DEFORMATION_BLOCK_ u8"No se pudo crear un bloque de forma deformada"
+#define _CANNOT_CREATE_FORCE_BLOCK_ u8"No se pudo crear un bloque de gráfico de fuerza"
+#define _CANNOT_CREATE_MOMENT_BLOCK_ u8"No se pudo crear un bloque de gráfico de momento"
+#define _CANNOT_CREATE_STRESS_BLOCK_ u8"No se pudo crear un bloque de gráfico de estrés"
+#define _CANNOT_CREATE_SHEAR_STRESS_BLOCK_ u8"No se pudo crear un bloque de gráfico de estrés cortante"
+#define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+#define _CANNOT_CREATE_RESULTS_PDF_FILE_ u8"No se pudo crear el archivo de resultados PDF"
+#define _CANNOT_OPEN_RESULTS_PDF_FILE_ u8"No se pudo abrir el archivo PDF de resultados"
+#define _INSTALL_PDF_VIEWER_ u8"Instalar el visor de PDF \"Okular\" o \"Evince\", por favor"
+
+#define _CANNOT_OPEN_DEFORMATION_DATA_FILE_ u8"No se pudo abrir el archivo de datos de deformación"
+#define _CANNOT_OPEN_RESULTS_DATA_FILE_ u8"No se pudo abrir el archivo de datos de resultados"
+#define _CANNOT_OPEN_DYNAMIC_RESULTS_DATA_FILE_ u8"No se pudo abrir el archivo de datos de resultados dinámicos"
+#define _CANNOT_CREATE_NODES_AND_ELEMENTS_BLOCK_ u8"No se pudo crear nodos y bloques de elementos"
+#define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"No se pudo crear el bloque de reacciones"
+#define _CANNOT_CREATE_NEW_LAYER_ u8"No se pudo crear una nueva capa. Ya se han creado muchas capas"
+#define _CANNOT_FIND_LAYER_ u8"No se pudo encontrar la capa deseada"
+
+static char *frame3dd[]={
+ /*0*/ u8"finalización sin errores",
+ /*1*/ u8"error desconocido",
+ /*2*/ u8"error con las opciones de la línea de comando (ver Sección 11, arriba)",
+ /*3*/ u8"error con la opción de línea de comando para la deformación por corte -s",
+ /*4*/ u8"error con la opción de línea de comando para rigidez geométrica -g",
+ /*5*/ u8"error con la opción de línea de comando para masa agrupada -l",
+ /*6*/ u8"error con la opción de línea de comando para el método de análisis modal -m",
+ /*7*/ u8"error con la opción de línea de comando para la tolerancia del análisis modal -t",
+ /*8*/ u8"error con la opción de línea de comando para análisis modal shift -f",
+ /*9*/ u8"error con la opción de línea de comando para velocidad panorámica -p",
+ /*10*/ u8"error con la opción de línea de comando para condensación de matriz -r",
+ /*11*/ u8"error al abrir el archivo de datos de entrada",
+ /*12*/ u8"error al abrir el archivo de datos de entrada limpio temporal para escribir",
+ /*13*/ u8"error al abrir el archivo de datos de entrada limpio temporal para lectura",
+ /*14*/ u8"error al abrir el archivo de datos de salida",
+ /*15*/ u8" error al crear la ruta para los archivos de datos de salida temporales",
+ /*16*/ u8" error al crear el nombre de la ruta del archivo de datos de salida temporal",
+ /*17*/ u8"error al abrir el archivo de datos de salida .CSV (hoja de cálculo)",
+ /*18*/ u8"error al abrir el archivo de datos de salida .M (matlab)",
+ /*19*/ u8"error al abrir el archivo de datos de salida de fuerza interior para escritura",
+ /*20*/ u8"error al abrir el archivo de datos de salida de fuerza interior para lectura",
+ /*21*/ u8"error al abrir el archivo de datos de salida de malla no deformada",
+ /*22*/ u8"error al abrir el archivo de datos de salida de malla deformada",
+ /*23*/ u8"error al abrir el archivo de script de trazado para escribir los primeros diagramas de casos de carga estática",
+ /*24*/ u8"error al abrir el archivo de script de trazado para agregar el segundo y superior resultado del caso de carga estática",
+ /*25*/ u8"error al abrir el archivo de script de trazado para agregar gráficos modales",
+ /*26*/ u8"error al abrir el archivo de script de trazado para agregar animaciones modales",
+ /*27*/ u8"error al abrir el archivo de datos de malla modal",
+ /*28*/ u8"error al abrir el archivo de datos de animación de malla modal",
+ /*29*/ u8"error al abrir el archivo de depuración masiva de datos, MassData.txt",
+ /*30*/ u8"la matriz del sistema de ajuste de curva cúbica para la deformación del elemento no es positiva definida",
+ /*31*/ u8"matriz de rigidez estática estructural definida no positiva",
+ /*32*/ u8"error en el análisis de valores propios. Inténtelo de nuevo con un número reducido o nulo de modos dinámicos",
+ /*33*/ u8"finalización sin errores",
+ /*34*/ u8"finalización sin errores",
+ /*35*/ u8"finalización sin errores",
+ /*36*/ u8"finalización sin errores",
+ /*37*/ u8"finalización sin errores",
+ /*38*/ u8"finalización sin errores",
+ /*39*/ u8"finalización sin errores",
+ /*40*/ u8"error en el archivo de datos de entrada",
+ /*41*/ u8"error de formato de datos de entrada en los datos del nodo, número de nodo fuera de rango",
+ /*42*/ u8"error de formato de datos de entrada en datos de nodo o elemento, nodo no conectado",
+ /*43*/ u8"finalización sin errores",
+ /*44*/ u8"finalización sin errores",
+ /*45*/ u8"finalización sin errores",
+ /*46*/ u8"finalización sin errores",
+ /*47*/ u8"finalización sin errores",
+ /*48*/ u8"finalización sin errores",
+ /*49*/ u8"finalización sin errores",
+ /*50*/ u8"finalización sin errores",
+ /*51*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, número de elemento del pórtico fuera de rango",
+ /*52*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, número de nodo fuera de rango",
+ /*53*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, valor de sección negativo",
+ /*54*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el área de la sección transversal es 0 (cero)",
+ /*55*/ u8"El error de formato de los datos de entrada en los datos del elemento del pórtico, el área de corte y el módulo de corte son 0 (cero)",
+ /*56*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el momento de inercia de torsión es 0 (cero)",
+ /*57*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el momento de inercia de flexión es 0 (cero)",
+ /*58*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el valor del módulo no es positivo",
+ /*59*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el valor de densidad de masa no es positivo",
+ /*60*/ u8"Error de formato de datos de entrada en los datos del elemento del pórtico, el elemento del pórtico comienza y se detiene en el mismo nodo",
+ /*61*/ u8"error de formato de datos de entrada en los datos del elemento de pórtico, el elemento de pórtico tiene una longitud de cero",
+ /*62*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el módulo de sección torsional es 0 (cero)",
+ /*63*/ u8"error de formato de datos de entrada en los datos del elemento del pórtico, el módulo de sección elástico es 0 (cero)",
+ /*64*/ u8"finalización sin errores",
+ /*65*/ u8"finalización sin errores",
+ /*66*/ u8"finalización sin errores",
+ /*67*/ u8"finalización sin errores",
+ /*68*/ u8"finalización sin errores",
+ /*69*/ u8"finalización sin errores",
+ /*70*/ u8"finalización sin errores",
+ /*71*/ u8"error de formato de datos de entrada con la variable 'shear' que especifica la deformación por corte",
+ /*72*/ u8"error de formato de datos de entrada con la variable 'geom' que especifica la rigidez geométrica",
+ /*73*/ u8"error de formato de datos de entrada con la variable 'exagg_static' que especifica una exageración de malla estática",
+ /*74*/ u8"error de formato de datos de entrada con la variable 'dx' que especifica la longitud del incremento del eje x de la fuerza interna",
+ /*75*/ u8"finalización sin errores",
+ /*76*/ u8"finalización sin errores",
+ /*77*/ u8"finalización sin errores",
+ /*78*/ u8"finalización sin errores",
+ /*79*/ u8"finalización sin errores",
+ /*80*/ u8"error de formato de datos de entrada en los datos de reacción, número de nodos con reacciones fuera de rango",
+ /*81*/ u8"error de formato de datos de entrada en los datos de reacción, número de nodo fuera de rango",
+ /*82*/ u8"error de formato de datos de entrada en los datos de reacción, los datos de reacción no son 1 (uno) o 0 (cero)",
+ /*83*/ u8"error de formato de datos de entrada en los datos de reacción, el nodo especificado no tiene reacciones",
+ /*84*/ u8"error de formato de datos de entrada en datos de reacción, estructura poco restringida",
+ /*85*/ u8"error de formato de datos de entrada en datos de reacción, estructura totalmente restringida",
+ /*86*/ u8"error de formato de datos de entrada en datos de inercia de nodo adicionales, número de nodo fuera de rango",
+ /*87*/ u8"error de formato de datos de entrada en datos de masa de haz adicional, número de elemento de pórtico fuera de rango",
+ /*88*/ u8"error de formato de datos de entrada en datos masivos, elemento de pórtico con masa no positiva",
+ /*89*/ u8"finalización sin errores",
+ /*90*/ u8"error de formato de datos de entrada en datos de condensación de matriz, el número de nodos con grados de libertad condensados ​​es menor que el número total de nodos",
+ /*91*/ u8"error de formato de datos de entrada en datos de condensación de matriz, número de nodo fuera de rango",
+ /*92*/ u8"error de formato de datos de entrada en datos de condensación de matriz, número de modo fuera de rango",
+ /*93*/ u8"finalización sin errores",
+ /*94*/ u8"error de formato de datos de entrada en datos de condensación de matriz, número de grados de libertad condensados ​​mayor que número de modos",
+ /*95*/ u8"finalización sin errores",
+ /*96*/ u8"finalización sin errores",
+ /*97*/ u8"finalización sin errores",
+ /*98*/ u8"finalización sin errores",
+ /*99*/ u8"finalización sin errores",
+ /*100*/ u8"error de formato de datos de entrada en los datos de carga",
+ /*101*/ u8"el número de casos de carga estática debe ser mayor que cero",
+ /*102*/ u8"el número de casos de carga estática debe ser inferior a 112",  //64 30
+ /*103*/ u8"finalización sin errores",
+ /*104*/ u8"finalización sin errores",
+ /*105*/ u8"finalización sin errores",
+ /*106*/ u8"finalización sin errores",
+ /*107*/ u8"finalización sin errores",
+ /*108*/ u8"finalización sin errores",
+ /*109*/ u8"finalización sin errores",
+ /*110*/ u8"finalización sin errores",
+ /*111*/ u8"finalización sin errores",
+ /*112*/ u8"finalización sin errores",
+ /*113*/ u8"finalización sin errores",
+ /*114*/ u8"finalización sin errores",
+ /*115*/ u8"finalización sin errores",
+ /*116*/ u8"finalización sin errores",
+ /*117*/ u8"finalización sin errores",
+ /*118*/ u8"finalización sin errores",
+ /*119*/ u8"finalización sin errores",
+ /*120*/ u8"finalización sin errores",
+ /*121*/ u8"error de formato de datos de entrada en datos de carga nodal, número de nodo fuera de rango",
+ /*122*/ u8"finalización sin errores",
+ /*123*/ u8"finalización sin errores",
+ /*124*/ u8"finalización sin errores",
+ /*125*/ u8"finalización sin errores",
+ /*126*/ u8"finalización sin errores",
+ /*127*/ u8"finalización sin errores",
+ /*128*/ u8"finalización sin errores",
+ /*129*/ u8"finalización sin errores",
+ /*130*/ u8"finalización sin errores",
+ /*131*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, el número de cargas uniformes es mayor que el número de elementos del pórtico",
+ /*132*/ u8"error de formato de datos de entrada en datos de carga distribuidos uniformemente, número de elemento de pórtico fuera de rango",
+ /*133*/ u8"finalización sin errores",
+ /*134*/ u8"finalización sin errores",
+ /*135*/ u8"finalización sin errores",
+ /*136*/ u8"finalización sin errores",
+ /*137*/ u8"finalización sin errores",
+ /*138*/ u8"finalización sin errores",
+ /*139*/ u8"finalización sin errores",
+ /*140*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, demasiadas cargas distribuidas trapezoidalmente",
+ /*141*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, número de elemento de pórtico fuera de rango",
+ /*142*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x1 < 0",
+ /*143*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x1 > x2",
+ /*144*/ u8"error de formato de datos de entrada en datos de carga distribuidos trapezoidalmente, x2 > L",
+ /*145*/ u8"finalización sin errores",
+ /*146*/ u8"finalización sin errores",
+ /*147*/ u8"finalización sin errores",
+ /*148*/ u8"finalización sin errores",
+ /*149*/ u8"finalización sin errores",
+ /*150*/ u8"error de formato de datos de entrada en datos de carga interna concentrada, el número de cargas concentradas es mayor que el número de elementos del pórtico",
+ /*151*/ u8"error de formato de datos de entrada en datos de carga concentrada interna, número de elemento de pórtico fuera de rango",
+ /*152*/ u8"error de formato de datos de entrada en datos de carga concentrada interna, ubicación x menor que 0 o mayor que L",
+ /*153*/ u8"finalización sin errores",
+ /*154*/ u8"finalización sin errores",
+ /*155*/ u8"finalización sin errores",
+ /*156*/ u8"finalización sin errores",
+ /*157*/ u8"finalización sin errores",
+ /*158*/ u8"finalización sin errores",
+ /*159*/ u8"finalización sin errores",
+ /*160*/ u8"error de formato de datos de entrada en los datos de carga térmica, número de cargas térmicas mayor que el número de elementos del pórtico",
+ /*161*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de pórtico fuera de rango",
+ /*162*/ u8"error de formato de datos de entrada en datos de carga térmica, número de elemento de pórtico fuera de rango",
+ /*163*/ u8"finalización sin errores",
+ /*164*/ u8"finalización sin errores",
+ /*165*/ u8"finalización sin errores",
+ /*166*/ u8"finalización sin errores",
+ /*167*/ u8"finalización sin errores",
+ /*168*/ u8"finalización sin errores",
+ /*169*/ u8"finalización sin errores",
+ /*170*/ u8"finalización sin errores",
+ /*171*/ u8"error de formato de datos de entrada en datos de desplazamiento prescritos, los desplazamientos prescritos pueden aplicarse sólo en coordenadas con reacciones",
+ /*172*/ u8"finalización sin errores",
+ /*173*/ u8"finalización sin errores",
+ /*174*/ u8"finalización sin errores",
+ /*175*/ u8"finalización sin errores",
+ /*176*/ u8"finalización sin errores",
+ /*177*/ u8"finalización sin errores",
+ /*178*/ u8"finalización sin errores",
+ /*179*/ u8"finalización sin errores",
+ /*180*/ u8"finalización sin errores",
+ /*181*/ u8"Advertencia: inestabilidad elástica (matriz de rigidez elástica + geométrica no definida positiva)",
+ /*182*/ u8"Advertencia: deformación grande (la deformación axial promedio en uno o más elementos es mayor que 0.001)",
+ /*183*/ u8"Advertencia: gran deformación e inestabilidad elástica",
+ /*184*/ u8"finalización sin errores",
+ /*185*/ u8"finalización sin errores",
+ /*186*/ u8"finalización sin errores",
+ /*187*/ u8"finalización sin errores",
+ /*188*/ u8"finalización sin errores",
+ /*189*/ u8"finalización sin errores",
+ /*190*/ u8"finalización sin errores",
+ /*191*/ u8"finalización sin errores",
+ /*192*/ u8"finalización sin errores",
+ /*193*/ u8"finalización sin errores",
+ /*194*/ u8"finalización sin errores",
+ /*195*/ u8"finalización sin errores",
+ /*196*/ u8"finalización sin errores",
+ /*197*/ u8"finalización sin errores",
+ /*198*/ u8"finalización sin errores",
+ /*199*/ u8"finalización sin errores",
+ /*200*/ u8"error de asignación de memoria",
+ /*201*/ u8"error al abrir un archivo de datos de salida al guardar un vector de 'flotantes'",
+ /*202*/ u8"error al abrir un archivo de datos de salida al guardar un vector de 'ints'",
+ /*203*/ u8"error al abrir un archivo de datos de salida guardando una matriz de 'flotantes'",
+ /*204*/ u8"error al abrir un archivo de datos de salida guardando una matriz de 'dobles'",
+ /*205*/ u8"error al abrir un archivo de datos de salida al guardar una matriz simétrica de 'flotantes'",
+ /*206*/ u8"error al abrir un archivo de datos de salida guardando una matriz simétrica de 'dobles'",
+ /*207*/ u8"error de prueba de equilibrio",
+ /*208*/ u8"error al abrir el archivo de registro de errores .err",
+ /*209*/ u8"",
+ /*210*/ u8"",
+ /*211*/ u8"Error cuadrático medio (RMS) relativo de equilibrio: %e",
+ /*212*/ u8"La matriz de rigidez no es definida positiva",
+ /*213*/ u8"Compruebe que los seis grados de libertad estén restringidos",
+ /*214*/ u8"Si se incluye rigidez geométrica, reduzca las cargas",
  };
 
 
@@ -1226,6 +1587,16 @@ char *frame3dd[]={
 #endif
 
 #ifdef __O_PLATE__
+
+#define STATIC_ANALYSIS u8"Estática"
+
+static char* static_plate_param[] =
+{
+    "limite visual de cortante en placas",
+    "referencia de cortante en placas",
+};
+
+static int no_static_plate_param = sizeof(static_plate_param) / sizeof(static_plate_param[0]);
 
 #define _PLATE_ u8"%PLATE:"
 #define _PLATE_PL u8"%PŁYTA:"
@@ -1236,6 +1607,8 @@ char *frame3dd[]={
 
 #define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
+#define _vector_of_member_is_isometric_ u8"El vector de un elemento del sistema estático pertenece a la proyección isométrica"
+#define _vector_of_load_is_isometric_ u8"El vector de la carga pertenece a la proyección isométrica"
 
 static char confirm[] = u8"Confirmar";
 
@@ -1287,23 +1660,35 @@ static char confirm[] = u8"Confirmar";
 #define _no_ 'n'
 
 #define _CANNOT_PROCEED_IN_32BIT_ u8"La losa parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
-#define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva"
+#define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva."
 #define _unknown_standard_ u8"Estándar desconocido"
 
 #endif
 
 #ifdef __O_SHIELD__
 
+#define STATIC_ANALYSIS u8"Estática"
+
+static char* static_shield_param[] =
+{
+    "limite visual de cortante en placas",
+    "referencia de cortante en placas",
+};
+
+static int no_static_shield_param = sizeof(static_shield_param) / sizeof(static_shield_param[0]);
+
+
 #define _SHIELD_ u8"%SHIELD:"
 #define _SHIELD_PL u8"%TARCZA:"
-#define _SHIELD_UA u8"%ЩИТ:"
-#define _SHIELD_ES u8"%ESCUDO:"
+#define _SHIELD_UA u8"%СТІНА-БАЛКА:"
+#define _SHIELD_ES u8"%DIAFRAGMA:"
 
 #define _property_not_defined_ u8"propiedad no definida o definida incorrectamente"
 
 #define _cannot_create_folder_ u8"No se pudo crear el directorio de archivos"
 #define _CANNOT_CREATE_RESULTS_FILE_ u8"No se pudo abrir el archivo de resultados"
-
+#define _vector_of_member_is_isometric_ u8"El vector de un elemento del sistema estático pertenece a la proyección isométrica"
+#define _vector_of_load_is_isometric_ u8"El vector de la carga pertenece a la proyección isométrica"
 static char confirm[] = u8"Confirmar";
 
 #define _gmsh_error_ u8"Error de gmsh"
@@ -1322,7 +1707,7 @@ static char confirm[] = u8"Confirmar";
 
 #define _PROCEED_SHIELD_FEM_ u8"¿Proceder a un análisis estático de losa?"
 
-#define _SHIELD_ID_NOT_FOUND_ u8"'%ESCUDO: ID' no encontrado"
+#define _SHIELD_ID_NOT_FOUND_ u8"'%DIAFRAGMA: ID' no encontrado"
 #define _PREPARING_DATA_ u8"Revisión de la estructura y preparación de datos"
 #define _BUILDING_MESH_ u8"Construyendo la malla"
 #define _BUILDING_GRID_ u8"Preparando la malla para el solucionador"
@@ -1331,7 +1716,7 @@ static char confirm[] = u8"Confirmar";
 #define _BUILDING_BLOCKS_ u8"Componentes para "
 
 #define _POLYLINE_IS_NOT_CLOSED_ u8"la polilínea no está cerrada"
-#define _THE_SHIELD_ u8"El Escudo"
+#define _THE_SHIELD_ u8"El Diafragma"
 #define _THE_HOLE_ u8"El agujero"
 #define _THE_WALL_ u8"La pared"
 #define _THE_ZONE_ u8"La zona"
@@ -1361,8 +1746,8 @@ static char confirm[] = u8"Confirmar";
 #define _NO_ 'N'
 #define _no_ 'n'
 
-#define _CANNOT_PROCEED_IN_32BIT_ u8"La losa parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
-#define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva"
+#define _CANNOT_PROCEED_IN_32BIT_ u8"La pantalla parece estar bien, pero el módulo de cálculo Elmer FEM no funciona en un sistema de 32 bits."
+#define _BUY_NEW_COMPUTER_  u8"Compra una computadora nueva."
 #define _unknown_standard_ u8"Estándar desconocido"
 
 #define _load_not_associated_ u8"no asociado con ningún borde"

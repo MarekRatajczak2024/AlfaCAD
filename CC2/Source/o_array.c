@@ -140,9 +140,7 @@ int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart,
  *
  * Returns: 0 on success, -1 if output pointers are NULL
  */
-int cartesian_vector_to_isometric(
-        double dx_cart, double dy_cart,
-        double *dx_iso, double *dy_iso)
+int cartesian_vector_to_isometric(double dx_cart, double dy_cart,double *dx_iso, double *dy_iso)
 {
     if (!dx_iso || !dy_iso) return -1;
 

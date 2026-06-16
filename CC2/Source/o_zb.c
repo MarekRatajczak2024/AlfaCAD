@@ -259,6 +259,7 @@ extern double d_magnitude;
 extern double r_magnitude;
 extern double rm_magnitude;
 extern double s_magnitude;
+extern double ss_magnitude;
 extern double src_magnitude;
 extern double q_magnitude;
 extern double p_magnitude;
@@ -270,6 +271,7 @@ extern double d_magnitude0;
 extern double r_magnitude0;
 extern double rm_magnitude0;
 extern double s_magnitude0;
+extern double ss_magnitude0;
 extern double src_magnitude0;
 extern double q_magnitude0;
 extern double p_magnitude0;
@@ -281,9 +283,12 @@ extern double d_magnitude_imp0;
 extern double r_magnitude_imp0;
 extern double rm_magnitude_imp0;
 extern double s_magnitude_imp0;
+extern double ss_magnitude_imp0;
 extern double src_magnitude_imp0;
 extern double q_magnitude_imp0;
 extern double p_magnitude_imp0;
+
+extern BOOL rescaling_menu_mode;
 
 BOOL SAVE_ALL_FONTS = FALSE;
 
@@ -1895,8 +1900,6 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
   l_kr=put_znacznik_aplikacji(0);
 
-
-  
   //if (proc_io(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
   if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
   TRANSLUCENCY=(int)null_var_short_int;
@@ -1913,6 +1916,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
   *pattern_library_no_var = pattern_library_no_var_int;
 
+  rescaling_menu_mode=0;  //initialization for older files
 
   if (opcja_warstw == 2) {
       if (proc_io(f, &prn_window.xp, sizeof(double)) != sizeof(double)) return FALSE;
@@ -1952,6 +1956,8 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
           if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
           if (Check_if_LE(magnitude, 0.0)) s_magnitude=units ? s_magnitude_imp0 : s_magnitude0; else s_magnitude=(double)magnitude;
 
+          ss_magnitude=s_magnitude;
+
           if (marker==1234567)
           {
               src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
@@ -1970,6 +1976,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
       {
           memmove(&static_stress_colors, &static_stress_colors0, sizeof(STATIC_STRESS_COLORS));
           s_magnitude=units ? s_magnitude_imp0 : s_magnitude0;
+          ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0;
           q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
           src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
           stress_precision=stress_precision0;
@@ -2029,7 +2036,14 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
               if (Check_if_LE(shear_magnitude, 0.0)) shear_magnitude=units ? shear_magnitude_imp0 : shear_magnitude0;
               if (proc_io(f, &r_precision, sizeof(double)) != sizeof(double)) return FALSE;
               if (Check_if_LE(r_precision, 0.0)) r_precision=r_precision0;
-              for (i = 0; i < 8; i++)  //10 in reserves
+
+              //one integers
+              if (proc_io(f, &rescaling_menu_mode, sizeof(int)) != sizeof(int)) return FALSE;
+              //one float
+              if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+              if (Check_if_LE(magnitude, 0.0)) ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0; else ss_magnitude=(double)magnitude;
+
+              for (i = 0; i < 7; i++)  //7 in reserves
               {
                   if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
               }
@@ -2210,6 +2224,7 @@ static BOOL read_write_param1_1 (int f, int (*proc_io) (int, void*, unsigned), B
   zn_b1=0;
   zn_b2=0;
 
+  rescaling_menu_mode=0;  //initialization for older files
 
   memset (sz_reserve, 0, RES_LEN) ;
   if (read_Xp_Yp==TRUE)
@@ -2543,8 +2558,12 @@ static BOOL write_param (int f, int *error_code1)
 
   if (write(f, &shear_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
   if (write(f, &r_precision, sizeof(double)) != sizeof(double)) return FALSE;
+
+  if (write(f, &rescaling_menu_mode, sizeof(int)) != sizeof(int)) return FALSE;
+  magnitude=(float)ss_magnitude;
+  if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
   null_var[0]=0.0;
-  for (i = 0; i < 8; i++)  //reserves
+  for (i = 0; i < 7; i++)  //reserves
     {
         if (write(f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE;
     }
@@ -3668,7 +3687,7 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 
     strcpy(script, strFunct);
     ptr_str=strstr(script, ".exe");
-    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
+    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "frame3ddnp.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
     || (strcmp(strFunct, "gmsh.exe")==0) || (strcmp(strFunct, "ElmerGrid.exe")==0) || (strcmp(strFunct, "ElmerSolver.exe")==0))
     {
         if (ptr_str != NULL) {

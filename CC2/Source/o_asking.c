@@ -14,7 +14,7 @@
 *
 */
 
-#define __ASKING__
+#define __ASKING__ // NOLINT
 #include<forwin.h>
 #ifndef LINUX
 #include<io.h>
@@ -41,26 +41,26 @@
 
 #define  XpBox1  145
 #define  YpBox1  100
-#define  XpBoxIcon  145 + 2 //10
-#define  YpBoxIcon  100 + 12 //10
+#define  XpBoxIcon  147
+#define  YpBoxIcon  112
 #define  Xp1  5
 #define  Yp1  5
-#define  DXBox1  250 //350
-#define  DXBox1as  296 //350
-#define  DYBox1  50 //70
-#define  DYBox2  54 //70
-#define  DXBut1  45 //50 //54 //75
+#define  DXBox1  250
+#define  DXBox1as  296
+#define  DYBox1  50
+#define  DYBox2  54
+#define  DXBut1  45
 #define  DYBut1  20
-#define  XpOK1  Xp1 + 160
-#define  YpOK1  Yp1 + 28
-#define  XpCANCEL1  Xp1 + DXBox1 - DXBut1 - 75
-#define  XpESCAPE1  Xp1 + DXBox1 + DXBox1 - DXBut1 - 75
-#define  YpCANCEL1  Yp1 + 28 //40
-#define  YpESCAPE1  Yp1 + 28 //40
+#define  XpOK1  (Xp1 + 160)
+#define  YpOK1  (Yp1 + 28)
+#define  XpCANCEL1  (Xp1 + DXBox1 - DXBut1 - 75)
+#define  XpESCAPE1  (Xp1 + DXBox1 + DXBox1 - DXBut1 - 75)
+#define  YpCANCEL1  (Yp1 + 28)
+#define  YpESCAPE1  (Yp1 + 28)
 
-#define  XpEUROCODE  Xp1 + 32
+#define  XpEUROCODE  (Xp1 + 32)
 
-#define DXShift 0 //20
+#define DXShift 0
 
 #define ID_OK             1
 #define ID_CANCEL         2
@@ -165,9 +165,9 @@ static IMAGE images_a [] =
  { Xp1+5, Yp1 + 5, 64, 64, 0, _AT_NOTICE_},  //YpOK1-4
 };
 
-#define _EUROCODE_ u8"EUROCODE"
-#define _ASCE_ u8"ASCE"
-#define _ICC_ u8"ICC"
+#define _EUROCODE_ u8"EUROCODE"  // NOLINT
+#define _ASCE_ u8"ASCE"  // NOLINT
+#define _ICC_ u8"ICC"  // NOLINT
 
 static IMAGE images_as [] =
 {
@@ -374,7 +374,7 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
   wsp_x = max(1.75 / 9.0 * (float)WIDTH, 1.75);
   wsp_y = max(2.5 / 19.0 * (float)HEIGHT, 2.5);  //15
 
-  DXBox1_ = (dt + 170) / wsp_x;
+  DXBox1_ = (int)((dt + 170) / wsp_x);
 
   if (DXBox1_ < DXBox1) DXBox1_ = DXBox1;
   
@@ -431,8 +431,8 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
   dx_win_ask = getmaxx();
   dy_win_ask = getmaxy();
 
-  asking_dlg.x = 1 + (dx_win_ask - asking_dlg.dx*wsp_x) / (2.0*wsp_x);
-  asking_dlg.y = 1 + (dy_win_ask - asking_dlg.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2;
+  asking_dlg.x = (int)(1 + (dx_win_ask - asking_dlg.dx*wsp_x) / (2.0*wsp_x));
+  asking_dlg.y = (int)(1 + (dy_win_ask - asking_dlg.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2.);
 
   asking_dlg.flags = 0x40;
 
@@ -453,21 +453,21 @@ int ask_question (int n_buttons, char *esc_string, char *ok_string, char *cont_s
   
   lab[0].ink=color_comment;
 
-  lab[0].x = DXBox2 - dt1 / 2 / wsp_x +DXShift;
+  lab[0].x = (int)(DXBox2 - dt1 / 2 / wsp_x +DXShift);
  
   lab[1].ink = color1_comment;
 
-  lab[1].x = DXBox2 - dt2 / 2 / wsp_x +DXShift;
+  lab[1].x = (int)(DXBox2 - dt2 / 2 / wsp_x +DXShift);
 
   Get_Default_Color_Dlg (&color_dlg);
 
   image_s=imagesize(125, 200, 675, 400);
 
-  x_win_ask = asking_dlg.x*wsp_x;
-  y_win_ask = 26 + asking_dlg.y*wsp_y;
+  x_win_ask = (int)(asking_dlg.x*wsp_x);
+  y_win_ask = (int)(26 + asking_dlg.y*wsp_y);
 
-  dx_win_ask = 10 + asking_dlg.dx*wsp_x;
-  dy_win_ask = 58 /*52*/ + asking_dlg.dy*wsp_y;
+  dx_win_ask = (int)(10 + asking_dlg.dx*wsp_x);
+  dy_win_ask = (int)(58 /*52*/ + asking_dlg.dy*wsp_y);
 
   images_a[0].iconno = image;
 
@@ -529,7 +529,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
     wsp_x = max(1.75 / 9.0 * (float)WIDTH, 1.75);
     wsp_y = max(2.5 / 19.0 * (float)HEIGHT, 2.5);  //15
 
-    DXBox1_ = (dt + 170) / wsp_x;
+    DXBox1_ = (int)((dt + 170) / wsp_x);
 
     if (DXBox1_ < DXBox1as) DXBox1_ = DXBox1as;
 
@@ -609,14 +609,14 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             images_as[7].y1=images_as[8].y1=images_as[6].y1-20;
 
 
-            combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
-            combobox_as [1].y=images_as[7].y1+HEIGHT/(wsp_y);
+            combobox_as [0].y=images_as[4].y1+(int)(HEIGHT/(2.*wsp_y));
+            combobox_as [1].y=images_as[7].y1+(int)(HEIGHT/(wsp_y));
 
 
             buttons[3].y=buttons[4].y=buttons[5].y=buttons[6].y=buttons[7].y=buttons[0].y-15;
-            buttons[3].x=images_as[1].x1+13/wsp_x;
-            buttons[4].x=images_as[2].x1+13/wsp_x;
-            buttons[5].x=images_as[3].x1+13/wsp_x;
+            buttons[3].x=images_as[1].x1+(int)(13/wsp_x);
+            buttons[4].x=images_as[2].x1+(int)(13/wsp_x);
+            buttons[5].x=images_as[3].x1+(int)(13/wsp_x);
             images_as[4].x1=images_as[7].x1=DXBox1_-25;
             //images_as[8].x1=DXBox1_+5;
             combobox_as [0].x=DXBox1_-42;
@@ -642,7 +642,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[8].check=!(*PINNABLE);
             */
 
-            buttons[9].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[9].x=buttons[1].x+DXBut1 + (int)(WIDTH/4.+88 + del + 15/wsp_x-del1);
             buttons[9].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 20);
             buttons[9].check=*theta_;
 
@@ -652,7 +652,7 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[10].check=*sigma_eq_;
             */
 
-            buttons[11].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[11].x=buttons[1].x+DXBut1 + (int)(WIDTH/4.+88 + del + 15/wsp_x-del1);
             buttons[11].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y + 4);
             buttons[11].check=*epsilon_;
 
@@ -697,14 +697,14 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             images_as[7].y1=images_as[8].y1=images_as[6].y1-20;
 
 
-            combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
-            combobox_as [1].y=images_as[7].y1+HEIGHT/(wsp_y);
+            combobox_as [0].y=images_as[4].y1+(int)(HEIGHT/(2*wsp_y));
+            combobox_as [1].y=images_as[7].y1+(int)(HEIGHT/(wsp_y));
 
 
             buttons[3].y=buttons[4].y=buttons[5].y=buttons[6].y=buttons[7].y=buttons[0].y-15;
-            buttons[3].x=images_as[1].x1+13/wsp_x;
-            buttons[4].x=images_as[2].x1+13/wsp_x;
-            buttons[5].x=images_as[3].x1+13/wsp_x;
+            buttons[3].x=images_as[1].x1+(int)(13/wsp_x);
+            buttons[4].x=images_as[2].x1+(int)(13/wsp_x);
+            buttons[5].x=images_as[3].x1+(int)(13/wsp_x);
             images_as[4].x1=images_as[7].x1=DXBox1_-25;
             //images_as[8].x1=DXBox1_+5;
             combobox_as [0].x=DXBox1_-42;
@@ -730,20 +730,21 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             buttons[8].check=!(*PINNABLE);
             */
 
-            buttons[9].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[9].x=buttons[1].x+DXBut1 + (int)(WIDTH/4.+88 + del + 15/wsp_x-del1);
             buttons[9].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 20);
             buttons[9].check=*theta_;
 
-            buttons[10].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[10].x=buttons[1].x+DXBut1 + (int)(WIDTH/4.+88 + del + 15/wsp_x-del1);
             buttons[10].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y - 8);
             buttons[10].check=*sigma_eq_;
 
-            buttons[11].x=buttons[1].x+DXBut1 + WIDTH/4+88 + del + 15/wsp_x-del1;
+            buttons[11].x=buttons[1].x+DXBut1 + (int)(WIDTH/4.+88 + del + 15/wsp_x-del1);
             buttons[11].y=buttons[0].y + (int)((float)(HEIGHT-18)/wsp_y + 4);
             buttons[11].check=*epsilon_;
 
             break;
-        case 9:
+        case 8:  //grid
+        case 9:  //frame
 
             ////TEMPORARY
             buttons[3].flags &= ~BUTTON_HIDDEN;
@@ -752,15 +753,24 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
 
             buttons[6].flags &= ~BUTTON_HIDDEN;
             buttons[7].flags &= ~BUTTON_HIDDEN;
-            buttons[8].flags &= ~BUTTON_HIDDEN;
+
+            if (n_buttons==8)
+            {
+                buttons[8].flags |= BUTTON_HIDDEN;
+                asking_dlg_static.SizeButtonT=8;
+                asking_dlg_static.SizeImageT=8;
+            }
+            else
+            {
+                buttons[8].flags &= ~BUTTON_HIDDEN;
+                asking_dlg_static.SizeButtonT=9;
+                asking_dlg_static.SizeImageT=9;
+            }
 
             buttons[9].flags |= BUTTON_HIDDEN;
             buttons[10].flags |= BUTTON_HIDDEN;
             buttons[11].flags |= BUTTON_HIDDEN;
             ///////////
-
-            asking_dlg_static.SizeButtonT=9;
-            asking_dlg_static.SizeImageT=9;
             asking_dlg_static.SizeComboBoxT=2;
 
             buttons[0].x = DXBox1_/2 - (DXBut1) + DXShift + Xp1 - 3;
@@ -777,14 +787,14 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             images_as[7].y1=images_as[8].y1=images_as[6].y1-20;
 
 
-            combobox_as [0].y=images_as[4].y1+HEIGHT/(2*wsp_y);
-            combobox_as [1].y=images_as[7].y1+HEIGHT/(wsp_y);
+            combobox_as [0].y=images_as[4].y1+(int)(HEIGHT/(2*wsp_y));
+            combobox_as [1].y=images_as[7].y1+(int)(HEIGHT/(wsp_y));
 
 
             buttons[3].y=buttons[4].y=buttons[5].y=buttons[6].y=buttons[7].y=buttons[0].y-15;
-            buttons[3].x=images_as[1].x1+13/wsp_x;
-            buttons[4].x=images_as[2].x1+13/wsp_x;
-            buttons[5].x=images_as[3].x1+13/wsp_x;
+            buttons[3].x=images_as[1].x1+(int)(13/wsp_x);
+            buttons[4].x=images_as[2].x1+(int)(13/wsp_x);
+            buttons[5].x=images_as[3].x1+(int)(13/wsp_x);
             images_as[4].x1=images_as[7].x1=DXBox1_-25;
             images_as[8].x1=DXBox1_+5;
             combobox_as [0].x=DXBox1_-42;
@@ -796,16 +806,18 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
             del1=WIDTH-9;
             if (del1>0) del1=0;
             images_as[5].x1=buttons[1].x+DXBut1 + WIDTH/4 + del; // - abs(WIDTH-12)/wsp_x;
-            buttons[6].x=images_as[5].x1+15/wsp_x;
+            buttons[6].x=images_as[5].x1+(int)(15/wsp_x);
             buttons[6].check=*geometric_stiffness;
 
             images_as[6].x1=buttons[1].x+DXBut1 + WIDTH/4+18 + del; // - abs(WIDTH-12)/wsp_x;
-            buttons[7].x=images_as[6].x1+15/wsp_x-del1;
+            buttons[7].x=images_as[6].x1+(int)(15/wsp_x-del1);
             buttons[7].check=*inertia;
 
-            buttons[8].x=images_as[8].x1+15/wsp_x-del1;
-            buttons[8].y=images_as[8].y1+40/wsp_y-del1;
-            buttons[8].check=!(*PINNABLE);
+            if (n_buttons==9) {
+                buttons[8].x = images_as[8].x1 + (int)(15 / wsp_x - del1);
+                buttons[8].y = images_as[8].y1 + (int)(40 / wsp_y - del1);
+                buttons[8].check = !(*PINNABLE);
+            }
 
             break;
         default:
@@ -816,8 +828,8 @@ int ask_question_static (int n_buttons, char *esc_string, char *ok_string, char 
     dx_win_ask = getmaxx();
     dy_win_ask = getmaxy();
 
-    asking_dlg_static.x = 1 + (dx_win_ask - asking_dlg_static.dx*wsp_x) / (2.0*wsp_x);
-    asking_dlg_static.y = 1 + (dy_win_ask - asking_dlg_static.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2;
+    asking_dlg_static.x = (int)(1 + (dx_win_ask - asking_dlg_static.dx*wsp_x) / (2.0*wsp_x));
+    asking_dlg_static.y = (int)(1 + (dy_win_ask - asking_dlg_static.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2.);
 
     asking_dlg_static.flags = 0x40;
 
@@ -926,7 +938,7 @@ int ask_question_in_dialog (int n_buttons, char *esc_string, char *ok_string, ch
     wsp_x = max(1.75 / 9.0 * (float)WIDTH, 1.75);
     wsp_y = max(2.5 / 19.0 * (float)HEIGHT, 2.5);  //15
 
-    DXBox1_ = (dt + 170) / wsp_x;
+    DXBox1_ = (int)((dt + 170) / wsp_x);
 
     if (DXBox1_ < DXBox1) DXBox1_ = DXBox1;
 
@@ -973,8 +985,8 @@ int ask_question_in_dialog (int n_buttons, char *esc_string, char *ok_string, ch
     dx_win_ask = getmaxx();
     dy_win_ask = getmaxy();
 
-    asking_dlg.x = 1 + (dx_win_ask - asking_dlg.dx*wsp_x) / (2.0*wsp_x);
-    asking_dlg.y = 1 + (dy_win_ask - asking_dlg.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2;
+    asking_dlg.x = (int)(1 + (dx_win_ask - asking_dlg.dx*wsp_x) / (2.0*wsp_x));
+    asking_dlg.y = (int)(1 + (dy_win_ask - asking_dlg.dy*wsp_y) / (2.0*wsp_y) - HEIGHT/2.);
 
     asking_dlg.flags = 0x40;
 
@@ -1005,25 +1017,25 @@ int ask_question_in_dialog (int n_buttons, char *esc_string, char *ok_string, ch
 
     lab[0].ink=color_comment;
 
-    lab[0].x = DXBox2 - (lab_n==2 ? dt1:dt0) / 2 / wsp_x +DXShift;
+    lab[0].x = (int)(DXBox2 - (lab_n==2 ? dt1:dt0) / 2 / wsp_x +DXShift);
 
     lab[1].ink = color1_comment;
 
-    lab[1].x = DXBox2 - (lab_n==2 ? dt2:dt1) / 2 / wsp_x +DXShift;
+    lab[1].x = (int)(DXBox2 - (lab_n==2 ? dt2:dt1) / 2 / wsp_x +DXShift);
 
     lab[2].ink = color1_comment;
 
-    lab[2].x = DXBox2 - dt2 / 2 / wsp_x +DXShift;
+    lab[2].x = (int)(DXBox2 - dt2 / 2 / wsp_x +DXShift);
 
     Get_Default_Color_Dlg (&color_dlg);
 
     image_s=imagesize(125, 200, 675, 400);
 
-    x_win_ask = asking_dlg.x*wsp_x;
-    y_win_ask = 26 + asking_dlg.y*wsp_y;
+    x_win_ask = (int)(asking_dlg.x*wsp_x);
+    y_win_ask = (int)(26 + asking_dlg.y*wsp_y);
 
-    dx_win_ask = 10 + asking_dlg.dx*wsp_x;
-    dy_win_ask = 58 /*52*/ + asking_dlg.dy*wsp_y;
+    dx_win_ask = (int)(10 + asking_dlg.dx*wsp_x);
+    dy_win_ask = (int)(58 /*52*/ + asking_dlg.dy*wsp_y);
 
     images_a[0].iconno = image;
 
@@ -1098,11 +1110,11 @@ int empty_dlg()
 	
 	image_s = imagesize(5, 5, 15, 15);
 
-	x_win_ask = empty_dlg.x*wsp_x;
-	y_win_ask = 26 + empty_dlg.y*wsp_y;
+	x_win_ask = (int)(empty_dlg.x*wsp_x);
+	y_win_ask = (int)(26 + empty_dlg.y*wsp_y);
 
-	dx_win_ask = 10 + empty_dlg.dx*wsp_x;
-	dy_win_ask = 54 /*52*/ + empty_dlg.dy*wsp_y;
+	dx_win_ask = (int)(10 + empty_dlg.dx*wsp_x);
+	dy_win_ask = (int)(54 /*52*/ + empty_dlg.dy*wsp_y);
 
 	Ret_Val = Dialog(&empty_dlg, &color_dlg, proc_dlg_empty, bMouse);
 

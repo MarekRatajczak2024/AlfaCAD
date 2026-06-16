@@ -1963,7 +1963,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 					Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
 
 				zn++;
-				if (*zn == '\40') zn++;
+				////if (*zn == '\40') zn++; //29-04-2026
 				continue;
 			}
 			else if (*zn == '\136') //^
@@ -1980,7 +1980,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 					Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
 
 				zn++;
-				if (*zn == '\40') zn++;
+				////if (*zn == '\40') zn++;  //29-04-2026
 				continue;
 			}
 			else
@@ -2192,7 +2192,7 @@ void outtextxy_w_(TEXT *t0, int mode)
                                             Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
 
                                         zn++;
-                                        if (*zn == '\40') zn++;
+                                        ////if (*zn == '\40') zn++;  //29-04-2026
                                         continue;
                                     }
                                     else if (*zn == '\136') //^
@@ -2209,7 +2209,7 @@ void outtextxy_w_(TEXT *t0, int mode)
                                             Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
 
                                         zn++;
-                                        if (*zn == '\40') zn++;
+                                        ////if (*zn == '\40') zn++;  //29-04-2026
                                         continue;
                                     }
                                     if (*zn=='\0')

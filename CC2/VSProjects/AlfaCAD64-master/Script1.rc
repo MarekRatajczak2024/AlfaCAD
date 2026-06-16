@@ -1,5 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
+#include <windows.h>
+#include <winres.h>
 #include "..\..\source\res\resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
@@ -26,7 +28,6 @@
 //
 
 IDD_ABOUTBOX DIALOGEX 22, 17, 230, 75
-//STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
 FONT 8, "System", 0, 0, 0x0
 BEGIN
@@ -36,6 +37,18 @@ BEGIN
     DEFPUSHBUTTON   "OK",1,195,6,30,11
 END
 
+// FIX 1: Place your custom dark message layout directly underneath the AboutBox
+IDD_DARK_MSGBOX DIALOGEX 0, 0, 320, 180
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Application Info"
+FONT 9, "Segoe UI"
+BEGIN
+    CONTROL         "", IDC_ALFA_IMAGE, "Static", SS_OWNERDRAW | WS_CHILD | WS_VISIBLE, 15, 15, 42, 42
+    LTEXT           "", IDC_LOGO_TEXT, 65, 15, 240, 40
+    LTEXT           "", IDC_QUOTE_TEXT, 65, 60, 240, 80
+    DEFPUSHBUTTON   "OK", IDOK, 205, 150, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 260, 150, 50, 14
+END
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -75,6 +88,10 @@ BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
     END
+    // FIX 2: Let the IDE resource manager map the design guide markers cleanly
+    IDD_DARK_MSGBOX, DIALOG
+    BEGIN
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -84,12 +101,8 @@ END
 // Icon
 //
 
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
 IDI_ALFA                ICON                    "..\\..\\source\\Bitmaps\\AlfaCAD64.ico"
-
 IDI_ALLEGRO             ICON                    "..\\..\\source\\Bitmaps\\alfacad.ico"
-
 IDI_ALFADIM             ICON                    "..\\..\\source\\Bitmaps\\alfadim.ico"
 
 
@@ -99,11 +112,8 @@ IDI_ALFADIM             ICON                    "..\\..\\source\\Bitmaps\\alfadi
 //
 
 IDB_LEFT                PNG                     "..\\..\\source\\Bitmaps\\text_align_baselineleft.png"
-
 IDB_CENTER              PNG                     "..\\..\\source\\Bitmaps\\text_align_baselinecenter.png"
-
 IDB_RIGHT               PNG                     "..\\..\\source\\Bitmaps\\text_align_baselineright.png"
-
 IDB_ALFA                PNG                     "..\\..\\source\\Bitmaps\\AlfaCAD64.png"
 
 
@@ -113,33 +123,19 @@ IDB_ALFA                PNG                     "..\\..\\source\\Bitmaps\\AlfaCA
 //
 
 IDB_BITMAP_LEFT         BITMAP                  "..\\..\\source\\Bitmaps\\text_align_baselineleft.bmp"
-
 IDB_BITMAP_CENTER       BITMAP                  "..\\..\\source\\Bitmaps\\text_align_baselinecenter.bmp"
-
 IDB_BITMAP_RIGHT        BITMAP                  "..\\..\\source\\Bitmaps\\text_align_baselineright.bmp"
-
 IDB_BMP_LEFT            BITMAP                  "..\\..\\source\\Bitmaps\\align-left.bmp"
-
 IDB_BMP_CENTER          BITMAP                  "..\\..\\source\\Bitmaps\\align-center.bmp"
-
 IDB_BMP_RIGHT           BITMAP                  "..\\..\\source\\Bitmaps\\align-right.bmp"
-
 IDB_BMP_UNDERLINED      BITMAP                  "..\\..\\source\\Bitmaps\\underlined.bmp"
-
 IDB_BMP_BOLD            BITMAP                  "..\\..\\source\\Bitmaps\\bold.bmp"
-
 IDB_BMP_ITALIC          BITMAP                  "..\\..\\source\\Bitmaps\\italic.bmp"
-
 IDB_BMP_ALT             BITMAP                  "..\\..\\source\\Bitmaps\\Alt.bmp"
-
 IDB_BITMAP4             BITMAP                  "..\\..\\source\\Bitmaps\\bitmap4.bmp"
-
 IDB_BITMAP_MIDDLE_CENTER BITMAP                 "..\\..\\source\\Bitmaps\\text_align_middlecenter.bmp"
-
 IDB_BITMAP_COPY_TEXT    BITMAP                  "..\\..\\source\\Bitmaps\\copy-text.bmp"
-
 IDB_BITMAP_HIDDEN       BITMAP                  "..\\..\\source\\Bitmaps\\hidden_text.bmp"
-
 IDB_BITMAP_ALFA         BITMAP                  "..\\..\\source\\Bitmaps\\AlfaCAD64.bmp"
 
 
@@ -156,15 +152,10 @@ END
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
-
-
 #ifndef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-
-
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

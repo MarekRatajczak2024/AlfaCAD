@@ -55,6 +55,8 @@
 #endif
 #endif
 
+#define BIGNOF 1e20
+
 typedef unsigned long DWORD;
 
 extern BOOL global_any_choice;
@@ -138,6 +140,21 @@ extern void utf8Upper(char* text);
 
 extern void *obiekt_wybrany_select (unsigned int Bobjects);
 extern int get_associated_blocks_adr(char *block_name, char *component_name, int limit_state, BLOK **adr);
+extern double cartesian_vector_length(double i_dx, double i_dy, double *pl_dx, double *pl_dy);
+extern double isometric_vector_length_f(float x1, float y1, float x2, float y2);
+extern int cartesian_vector_to_isometric_in_plane(enum PlaneType plane, double dx_cart, double dy_cart, double *dx_iso,double *dy_iso);
+extern int isometric_vector_to_cartesian(double dx_iso, double dy_iso, double *dx_cart, double *dy_cart);
+extern int get_thermal_flipped(AVECTOR *v);
+extern int cartesian_to_isometric(double cx, double cy, double *ix, double *iy);
+extern void DiscoverGlobalPeaks(const char* peaksFilePath, int ret_standard, UNIT_FACTORS *unit_factors_, double fy_base);
+extern BOOL get_static_param (T_Fstring key_name, T_Fstring ret_string);
+extern double calculate_Jx(double h, double b);
+extern double get_rc_alpha(double width, double height);
+//////
+extern void UpdateInputFileForPass2(const char* original_3dd, const char* output_3dd, const char* output_bak_3dd, int total_elements, const C_ElementStiffness* updated_elements_array);
+//extern void UpdateInputFileForPass2(const char* original_3dd, const char* output_3dd, const char* output_bak_3dd, int total_elements, const C_ElementStiffness* updated_elements_array);
+extern double GetConcreteFcr(ST_PROPERTY* prop, int ret_standard);
+/////
 
 extern int theta_, sigma_eq_, epsilon_;
 extern char *Vector_txt[];
@@ -163,6 +180,7 @@ extern double stress_precision;
 extern double displacement_precision;
 extern double rotation_precision;
 extern double load_precision;
+extern double mass_precision;
 
 extern double force_magnitude;
 extern double moment_magnitude;
@@ -170,6 +188,10 @@ extern double displacement_magnitude;
 extern double load_magnitude;
 extern double flood_magnitude;
 extern double shear_magnitude;
+
+
+BOOL rescaling_menu_mode=0;
+BOOL refresh_rescaling_menu_mode=1;
 
 BOOL PINNABLE=TRUE;
 
@@ -180,6 +202,7 @@ double d_magnitude=10.0;
 double r_magnitude=10.0; //reactions 10;
 double rm_magnitude=50.0; //reaction moment 0.001;
 double s_magnitude=5.0; //10;  //stress
+double ss_magnitude=5.0; //10;  //stress
 double src_magnitude=1.0; //stress in reinforced concrete
 double q_magnitude=250.0; //vibrations
 double sp_magnitude=1.0;
@@ -193,6 +216,7 @@ double d_magnitude0=10.0;
 double r_magnitude0=10.0; //10;
 double rm_magnitude0=50.0; //0.001;
 double s_magnitude0=5.0; //10;  //stress
+double ss_magnitude0=5.0; //10;  //stress
 double src_magnitude0=1.0; //stress in reinforced concrete
 double q_magnitude0=250.0; //vibrations
 double sp_magnitude0=1.0;
@@ -206,15 +230,18 @@ double d_magnitude_imp0=0.4;
 double r_magnitude_imp0=2.0;
 double rm_magnitude_imp0=450.0;
 double s_magnitude_imp0=0.75;  //stress
+double ss_magnitude_imp0=0.75;  //stress
 double src_magnitude_imp0=0.75; //stress in reinforced concrete
 double q_magnitude_imp0=250.0; //vibrations
 double sp_magnitude_imp0=0.75;
 double sm_magnitude_imp0=0.75;
 double p_magnitude_imp0=1.0; //reinforcing percentage
 
+extern double q_desire_footprint;
+
 double def_precision=0.01;
-PROP_PRECISIONS SI_precisions={0.1, 0.01, 0.01, 0.01, 0.1, 0.1, 0.001, 0.0001, 0.000000000000001};
-PROP_PRECISIONS IMP_precisions={0.01, 0.001, 0.001, 0.001, 0.01, 0.01, 0.001, 0.0001, 0.000000000000001};
+PROP_PRECISIONS SI_precisions={0.1, 0.01, 0.01, 0.01, 0.01, 0.1, 0.1, 0.001, 0.0001, 0.000000000000001};
+PROP_PRECISIONS IMP_precisions={0.01, 0.001, 0.001, 0.001, 0.001, 0.01, 0.01, 0.001, 0.0001, 0.000000000000001};
 PROP_PRECISIONS *prop_precisions=&SI_precisions;  //just to initialize
 
 
@@ -240,10 +267,11 @@ extern TMENU mVector;
 
 BOOL rout=TRUE; //FALSE;
 
-//void Static_analysis(void);
+BOOL FIXED_DYNAMIC_LAYER=TRUE;
 
 int st_layer_no=0;
 int st_property_no=0;
+int st_failed_property_no=0;
 int st_node_pre_no=0;
 int st_node_no=0;
 int st_reaction_no=0;
@@ -278,6 +306,7 @@ int stlc_displacement_no=0;
 int stlc_dynamic_no=0;
 
 int ST_PROPERTY_MAX=100;
+int ST_FAILED_PROPERTY_MAX=10;
 int ST_NODE_PRE_MAX=100;
 int ST_NODE_MAX=100;
 int ST_REACTION_MAX=100;
@@ -301,7 +330,7 @@ unsigned int st_layer[8];
 char st_title[MaxTextLen * 2];
 char title_id[MaxTextLen];
 char *ptr_id, *ptr_id_short;
-char par[14][MaxTextLen]={"","","","","","","","","","","","","",""};
+char par[18][MaxTextLen]={"","","","","","","","","","","","","","", "","","",""};
 ST_PROPERTY *st_property;
 ST_NODE_PRE *st_node_pre;
 ST_NODE *st_node;
@@ -316,6 +345,7 @@ ST_DISPLACEMENT *st_displacement;
 ST_LOAD *st_load;
 ST_LOAD_FACTORS *st_load_factors;
 BOOL *failed_elements=NULL;
+static ST_FAILED_PROPERTY *st_failed_property=NULL;
 
 ST_MASS_NODE *st_mass_node=NULL;
 ST_MASS_ELEMENT *st_mass_element=NULL;
@@ -325,6 +355,8 @@ int *combi_reactions_table;
 COMBI_ELEMENT *combi_element_uls;
 COMBI_ELEMENT *combi_element_sls;
 COMBI_ELEMENT *combi_element_qpsls;
+
+static int cartflags;
 
 int shear_deformation=0;
 int geometric_tiffness=0;
@@ -360,7 +392,7 @@ STATIC_COLORS static_colors={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_COLORS static_colors0={8, 1, 5, 3, 6, 2, 4, 156};
 STATIC_STRESS_COLORS static_stress_colors={9,13,11};
 STATIC_STRESS_COLORS static_stress_colors0={9,13,11};
-ST_PROPERTY prt_def={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0,0,0,0};
+ST_PROPERTY prt_def={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85,0,0,0,0,0,0,0};
 
 BOOL qpslsLC_Layer=FALSE;
 
@@ -443,9 +475,9 @@ ST_LOAD_FACTORS *load_factors;
  */
 
 UNIT_FACTORS *unit_factors;
-UNIT_FACTORS unit_factors_si={1.0, 0.001, 100.0,0.000001, 10000.0,0.000001, 0.000000001,1000.0,1e-12,1.0,1000.0,1000.0,1000000,1.0, 1000.0, 1000.0, 9.81, 0.001};
-UNIT_FACTORS unit_factors_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
-UNIT_FACTORS unit_factors_imp_out={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1000.0,1000.0, 1.0, 1000.0, 1.0, 1.0, 1.0};
+UNIT_FACTORS unit_factors_si={1.0, 0.001, 100.0,0.000001, 10000.0,0.000001, 0.000000001,1000.0,1e-12,1.0,1000.0,1000.0,1000000,1.0, 1000.0, 1000.0, 9.80665, 0.001, 1000000.0};
+UNIT_FACTORS unit_factors_imp={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0, 1.0, 1000.0, 1.0, 386.09 /*9806.6504*/, 1.0, 1.0};
+UNIT_FACTORS unit_factors_imp_out={1.0, 1.0, 1.0,1.0,1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1000.0,1000.0, 1.0, 1000.0, 1.0, 386.09 /*9806.6504*/, 1.0, 1.0};
 
 //double h_f; //depth of cross section in y axis                                   mm                  in
 //double hm_f; //depth of cross section in y axis                                  mm->m               in
@@ -852,6 +884,8 @@ static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BO
 {
     unsigned size_block = B3;
     BLOK s_blockd = Bdef;
+
+    PTR__GTMPBLOCK=NULL;
 #ifndef LINUX
     BLOK blokd = Bdef;
 #else
@@ -873,6 +907,8 @@ static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BO
     buf_block->n = size_block;
     buf_block->kod_obiektu = kod_obiektu;
     buf_block->dlugosc_opisu_obiektu = len_desc;
+
+    buf_block->blok=0;
 
     buf_block->flag = 1 | (hiding*2);  //this is new, for hiding block purpose flag: bit 1: ability to hide, bit 2: hidden
 
@@ -898,18 +934,18 @@ static char *dodaj_obiekt_(BLOK * adb,void  *ad)
 {
     BLOK *blok;
     char *ad1;
-    int n, n1;
+    //int n, n1;
 
     //return dodaj_obiekt(adb, ad);  //instead of adb ////
 
     blok=(BLOK*)dane;
-    n=blok->n;
+    //n=blok->n;
     //ad1=dodaj_obiekt(adb, ad);
     if (PTR__GTMPBLOCK!=NULL)
         ad1=dodaj_obiekt((BLOK*)PTR__GTMPBLOCK, ad);  //instead of adb
     else ad1=dodaj_obiekt(adb, ad);
     blok=(BLOK*)dane;
-    n1=blok->n;
+    //n1=blok->n;
     return ad1;
 }
 
@@ -917,18 +953,18 @@ char *dodaj_obiekt_reversed_(BLOK * adb,void  *ad)
 {
     BLOK *blok;
     char *ad1;
-    int n, n1;
+    //int n, n1;
 
     //return dodaj_obiekt(adb, ad);  //instead of adb ////
 
     blok=(BLOK*)dane;
-    n=blok->n;
+    //n=blok->n;
     //ad1=dodaj_obiekt(adb, ad);
     if (PTR__GTMPBLOCK!=NULL)
         ad1=dodaj_obiekt_reversed((BLOK*)PTR__GTMPBLOCK, ad);  //instead of adb
     else ad1=dodaj_obiekt_reversed(adb, ad);
     blok=(BLOK*)dane;
-    n1=blok->n;
+    //n1=blok->n;
     return ad1;
 }
 
@@ -971,8 +1007,19 @@ void add_property(void)
         st_property=realloc(st_property, ST_PROPERTY_MAX * sizeof(ST_PROPERTY));
     }
     memmove(&st_property[st_property_no], &prt_def, sizeof(ST_PROPERTY));
-    if (prop_precisions == &SI_precisions) st_property[st_property_no].c=35; //[mm]
+    if (UNITS==SI) st_property[st_property_no].c=35; //[mm]
     else st_property[st_property_no].c=1.5; //[in]
+}
+
+static void add_failed_property(void)
+{
+    st_failed_property_no++;
+    if (st_failed_property_no==ST_FAILED_PROPERTY_MAX) {
+        ST_FAILED_PROPERTY_MAX+=10;
+        st_failed_property=realloc(st_failed_property, ST_FAILED_PROPERTY_MAX * sizeof(ST_FAILED_PROPERTY));
+    }
+    st_failed_property[st_failed_property_no].n=-1;
+    sprintf(st_failed_property[st_failed_property_no].fail_reason,"");
 }
 
 void add_node_force_moment(void)
@@ -989,6 +1036,7 @@ void add_node_force_moment(void)
     st_node_force_moment[st_node_force_moment_no].mz=0;
     st_node_force_moment[st_node_force_moment_no].factor_record=-1;
     st_node_force_moment[st_node_force_moment_no].take_it=0;
+    st_node_force_moment[st_node_force_moment_no].style=-1;
 }
 
 void add_displacement(void)
@@ -1052,7 +1100,8 @@ void add_thermal_load(void)
 
     st_thermal_load[st_thermal_load_no].layer=-1;
     st_thermal_load[st_thermal_load_no].element=-1;
-    st_thermal_load[st_thermal_load_no].ydepth=0;
+    st_thermal_load[st_thermal_load_no].hdepth=0;
+    st_thermal_load[st_thermal_load_no].bdepth=0;
     st_thermal_load[st_thermal_load_no].deltatplus=0;
     st_thermal_load[st_thermal_load_no].deltatminus=0;
     st_thermal_load[st_thermal_load_no].factor_record=-1;
@@ -1076,15 +1125,8 @@ void add_uniform_load(void)
     st_thermal_load[st_thermal_load_no].take_it=0;
 }
 
-void add_trapezoid_load(void)
+static void reset_trapezoid_load(void)
 {
-    st_trapezoid_load_no++;
-    if (st_trapezoid_load_no==ST_TRAPEZOID_LOAD_MAX)
-    {
-        ST_TRAPEZOID_LOAD_MAX+=100;
-        st_trapezoid_load=realloc(st_trapezoid_load, ST_TRAPEZOID_LOAD_MAX * sizeof(ST_TRAPEZOID_LOAD));
-    }
-
     st_trapezoid_load[st_trapezoid_load_no].layer=-1;
     st_trapezoid_load[st_trapezoid_load_no].element=-1;
     st_trapezoid_load[st_trapezoid_load_no].qx1=0;
@@ -1097,6 +1139,29 @@ void add_trapezoid_load(void)
     st_trapezoid_load[st_trapezoid_load_no].dlxy2=0;
     st_trapezoid_load[st_trapezoid_load_no].factor_record=-1;
     st_trapezoid_load[st_trapezoid_load_no].take_it=0;
+}
+
+void add_trapezoid_load(void)
+{
+    //it can be verified if the range of load is too small to include in load set. The value below 1 mm seems to come from vector drawing tolerance
+    double min_range;
+    if (UNITS != SI) min_range=0.04; //equivalent of 1 mm
+    else min_range=1.0; //1 mm
+    if ((fabs(st_trapezoid_load[st_trapezoid_load_no].dlxx2-st_trapezoid_load[st_trapezoid_load_no].dlxx1)<min_range) &&
+        (fabs(st_trapezoid_load[st_trapezoid_load_no].dlxy2-st_trapezoid_load[st_trapezoid_load_no].dlxy1)<min_range))
+    {
+        reset_trapezoid_load();
+        return;  //next load will overwrite fault one
+    }
+
+    st_trapezoid_load_no++;
+    if (st_trapezoid_load_no==ST_TRAPEZOID_LOAD_MAX)
+    {
+        ST_TRAPEZOID_LOAD_MAX+=100;
+        st_trapezoid_load=realloc(st_trapezoid_load, ST_TRAPEZOID_LOAD_MAX * sizeof(ST_TRAPEZOID_LOAD));
+    }
+
+    reset_trapezoid_load();
 }
 
 void add_load(void)
@@ -1368,20 +1433,20 @@ void draw_reaction_xy(LINIA *L, ST_NODE *node, double Fxy, int axis)
         {
             Rtxt.justowanie=j_srodkowo;
         }
-        L1.x1 = node->x;
-        L1.y1 = node->y;
-        L1.x2 = L1.x1 - dx;
+        L1.x1 = (float)node->x;
+        L1.y1 = (float)node->y;
+        L1.x2 = (float)(L1.x1 - dx);
         L1.y2 = L1.y1;
 
         if (Rtxt.justowanie==j_srodkowo)
         {
-            Rtxt.x = (L1.x1 + L1.x2) / 2 - ra / 4;
-            Rtxt.y = (L1.y1 + L1.y2) / 2 + 0.5;
+            Rtxt.x = (float)((L1.x1 + L1.x2) / 2 - ra / 4);
+            Rtxt.y = (float)((L1.y1 + L1.y2) / 2 + 0.5);
         }
         else
         {
-            Rtxt.x = L1.x2 - copysign(1, Fxy);
-            Rtxt.y = L1.y2 - zmwym.wysokosc*0.5*0.5;
+            Rtxt.x = (float)(L1.x2 - copysign(1, Fxy));
+            Rtxt.y = (float)(L1.y2 - zmwym.wysokosc*0.5*0.5);
         }
 
         Rtxt.kat=0;
@@ -1400,20 +1465,20 @@ void draw_reaction_xy(LINIA *L, ST_NODE *node, double Fxy, int axis)
             Rtxt.justowanie=j_srodkowo;
         }
 
-        L1.x1 = node->x;
-        L1.y1 = node->y;
+        L1.x1 = (float)node->x;
+        L1.y1 = (float)node->y;
         L1.x2 = L1.x1;
-        L1.y2 = L1.y1 - dy;
+        L1.y2 = (float)(L1.y1 - dy);
 
         if (Rtxt.justowanie==j_srodkowo)
         {
-            Rtxt.x = (L1.x1 + L1.x2) / 2 - ra / 4;
-            Rtxt.y = (L1.y1 + L1.y2) / 2;
+            Rtxt.x = (float)((L1.x1 + L1.x2) / 2. - ra / 4.);
+            Rtxt.y = (float)((L1.y1 + L1.y2) / 2.);
         }
         else
         {
-            Rtxt.x = L1.x2 + zmwym.wysokosc*0.5*0.5;
-            Rtxt.y = L1.y2 - copysign(1, Fxy);
+            Rtxt.x = (float)(L1.x2 + zmwym.wysokosc*0.5*0.5);
+            Rtxt.y = (float)(L1.y2 - copysign(1, Fxy));
         }
 
         Rtxt.kat=Pi_/2;
@@ -1425,10 +1490,10 @@ void draw_reaction_xy(LINIA *L, ST_NODE *node, double Fxy, int axis)
     koc=cos(Pi*(kat1)/180);
     kos=sin(Pi*(kat1)/180);
 
-    L2.x1 = L1.x1 + ra * koc;
-    L2.y1 = L1.y1 + ra * kos;
-    L2.x2 = L1.x2 - ra * koc;
-    L2.y2 = L1.y2 - ra * kos;
+    L2.x1 = (float)(L1.x1 + ra * koc);
+    L2.y1 = (float)(L1.y1 + ra * kos);
+    L2.x2 = (float)(L1.x2 - ra * koc);
+    L2.y2 = (float)(L1.y2 - ra * kos);
 
     w.warstwa=L->warstwa;
     w.kolor=L->kolor;
@@ -1455,10 +1520,10 @@ void draw_reaction_xy(LINIA *L, ST_NODE *node, double Fxy, int axis)
 
     w.xy[2]=L1.x1;
     w.xy[3]=L1.y1;
-    w.xy[0]=L1.x1+Kp2s*koc1;
-    w.xy[1]=L1.y1+Kp2s*kos1;
-    w.xy[4]=L1.x1+Kp2s*koc2;
-    w.xy[5]=L1.y1+Kp2s*kos2;
+    w.xy[0]=(float)(L1.x1+Kp2s*koc1);
+    w.xy[1]=(float)(L1.y1+Kp2s*kos1);
+    w.xy[4]=(float)(L1.x1+Kp2s*koc2);
+    w.xy[5]=(float)(L1.y1+Kp2s*kos2);
 
     w.lp=6;
     w.n=32;
@@ -1470,8 +1535,8 @@ void draw_reaction_xy(LINIA *L, ST_NODE *node, double Fxy, int axis)
     Rtxt.warstwa=L->warstwa;
     Rtxt.kolor=L->kolor;
     Rtxt.czcionka=zmwym.czcionka;
-    Rtxt.wysokosc=zmwym.wysokosc*0.5;
-    Rtxt.width_factor=zmwym.width_factor;
+    Rtxt.wysokosc=(float)(zmwym.wysokosc*0.5);
+    Rtxt.width_factor=(float)zmwym.width_factor;
     Rtxt.bold=1;
     set_decimal_format(Rtxt.text, Fxy, r_precision);
     Rtxt.dl = strlen(Rtxt.text);
@@ -1490,12 +1555,12 @@ void moment2angle(SOLIDARC *sa, double m, double factor)
     if (m>0)
     {
         sa->kat1=0;
-        sa->kat2=Angle_Normal(del);
+        sa->kat2=(float)Angle_Normal(del);
     }
     else
     {
         sa->kat2=0;
-        sa->kat1=Angle_Normal(-del);
+        sa->kat1=(float)Angle_Normal(-del);
     }
     return;
 }
@@ -1518,32 +1583,35 @@ void draw_reaction_m(LINIA *L, ST_NODE *node, double Mzz)
 
     sa.warstwa=L->warstwa;
     sa.kolor=L->kolor;
-    sa.x=node->x;
-    sa.y=node->y;
-    sa.r=fix_r+ra*2;
+    sa.x=(float)node->x;
+    sa.y=(float)node->y;
+    if (Mzz>0)
+    sa.r=(float)(fix_r+ra*2.3);
+    else
+    sa.r=(float)(fix_r+ra*1.54);
 
     moment2angle(&sa, Mzz, rm_magnitude);
 
     if (sa.kat1==0) sa.kat2=max(sa.kat2, Pi_/16);  //8
     else if (sa.kat2==0) sa.kat1=min(sa.kat1, Pi2*0.9687);  // 0.9375
 
-    sa.width1=ra/4;
-    sa.width2=ra/4;
+    sa.width1=(float)(ra/4.);
+    sa.width2=(float)(ra/4.);
     sa.blok=1;
 
     ptr = dodaj_obiekt((BLOK *) dane, (void *) &sa);
 
     if (Mzz>0) {
         kats = sa.kat2 - Pi_ / 2;
-        xs = node->x + sa.r * cos(sa.kat2);
-        ys = node->y + sa.r * sin(sa.kat2);
+        xs = node->x + sa.r * cosf(sa.kat2);
+        ys = node->y + sa.r * sinf(sa.kat2);
         n = +1;
     }
     else
     {
         kats=sa.kat1+Pi_/2;
-        xs=node->x+sa.r*cos(sa.kat1);
-        ys=node->y+sa.r*sin(sa.kat1);
+        xs=node->x+sa.r*cosf(sa.kat1);
+        ys=node->y+sa.r*sinf(sa.kat1);
         n=-1;
     }
 
@@ -1562,12 +1630,12 @@ void draw_reaction_m(LINIA *L, ST_NODE *node, double Mzz)
 
     w.warstwa=L->warstwa;
     w.kolor=L->kolor;
-    w.xy[2]=xs;
-    w.xy[3]=ys;
-    w.xy[0]=xs+Kp2s*koc1;
-    w.xy[1]=ys+Kp2s*kos1;
-    w.xy[4]=xs+Kp2s*koc2;
-    w.xy[5]=ys+Kp2s*kos2;
+    w.xy[2]=(float)xs;
+    w.xy[3]=(float)ys;
+    w.xy[0]=(float)(xs+Kp2s*koc1);
+    w.xy[1]=(float)(ys+Kp2s*kos1);
+    w.xy[4]=(float)(xs+Kp2s*koc2);
+    w.xy[5]=(float)(ys+Kp2s*kos2);
     w.lp=6;
     w.n=32;
     w.empty_typ=0;
@@ -1578,15 +1646,15 @@ void draw_reaction_m(LINIA *L, ST_NODE *node, double Mzz)
     if (sa.kat2<sa.kat1) kat2=sa.kat2+Pi2;
     else kat2=sa.kat2;
     kats=Angle_Normal((sa.kat1+kat2)/2);
-    Rtxt.x=sa.x+(sa.r+0.5)*cos(kats);
-    Rtxt.y=sa.y+(sa.r+0.5)*sin(kats);
-    Rtxt.kat=Angle_Normal(kats-Pi_/2);
+    Rtxt.x=(float)(sa.x+(sa.r+0.5)*cos(kats));
+    Rtxt.y=(float)(sa.y+(sa.r+0.5)*sin(kats));
+    Rtxt.kat=(float)Angle_Normal(kats-Pi_/2);
     Rtxt.justowanie=j_srodkowo;
     Rtxt.warstwa=L->warstwa;
     Rtxt.kolor=L->kolor;
     Rtxt.czcionka=zmwym.czcionka;
-    Rtxt.wysokosc=zmwym.wysokosc*0.5;
-    Rtxt.width_factor=zmwym.width_factor;
+    Rtxt.wysokosc=(float)(zmwym.wysokosc*0.5);
+    Rtxt.width_factor=(float)zmwym.width_factor;
     Rtxt.bold=1;
     Rtxt.blok=1;
 
@@ -1663,45 +1731,45 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
             case 0:  //Dy
                 //D_min=(float)sqrt((fd[gi].Dx_min*fd[gi].Dx_min)+(fd[gi].Dy_min*fd[gi].Dy_min));
                 //D_max=(float)sqrt((fd[gi].Dx_max*fd[gi].Dx_max)+(fd[gi].Dy_max*fd[gi].Dy_max));
-                D_min=fd[gi].Dy_min;
-                D_max=fd[gi].Dy_max;
+                D_min=(float)fd[gi].Dy_min;
+                D_max=(float)fd[gi].Dy_max;
                 Vmin = D_min;
                 Vmax = D_max;
                 break;
             case 1:  //Dx
                 //D_min=(float)sqrt((fd[gi].Dx_min*fd[gi].Dx_min)+(fd[gi].Dy_min*fd[gi].Dy_min));
                 //D_max=(float)sqrt((fd[gi].Dx_max*fd[gi].Dx_max)+(fd[gi].Dy_max*fd[gi].Dy_max));
-                D_min=fd[gi].Dx_min;
-                D_max=fd[gi].Dx_max;
+                D_min=(float)fd[gi].Dx_min;
+                D_max=(float)fd[gi].Dx_max;
                 Vmin = D_min;
                 Vmax = D_max;
                 break;
             case 2:  //Nx
-                Vmin = fd[gi].Nx_min / unit_factors->F_f;
-                Vmax = fd[gi].Nx_max / unit_factors->F_f;
+                Vmin = (float)(fd[gi].Nx_min / unit_factors->F_f);
+                Vmax = (float)(fd[gi].Nx_max / unit_factors->F_f);
                 break;
             case 3:  //Vy
-                Vmin = fd[gi].Vy_min / unit_factors->F_f;
-                Vmax = fd[gi].Vy_max / unit_factors->F_f;
+                Vmin = (float)(fd[gi].Vy_min / unit_factors->F_f);
+                Vmax = (float)(fd[gi].Vy_max / unit_factors->F_f);
                 break;
             case 4:  //Mz
-                Vmin = fd[gi].Mz_min / unit_factors->M_f;
-                Vmax = fd[gi].Mz_max / unit_factors->M_f;
+                Vmin = (float)(fd[gi].Mz_min / unit_factors->M_f);
+                Vmax = (float)(fd[gi].Mz_max / unit_factors->M_f);
                 break;
             case 5:  //S
-                Vmin = fd[gi].Sm_min; // / unit_factors->S_f;
-                Vmax = fd[gi].Sp_max; // / unit_factors->S_f;
+                Vmin = (float)fd[gi].Sm_min; // / unit_factors->S_f;
+                Vmax = (float)fd[gi].Sp_max; // / unit_factors->S_f;
                 break;
             case 6:  //Ss
                 Asy=extra_value;
                 if (!Check_if_Equal(Asy, 0)) {
-                    Vmin = ((fd[gi].Vy_min / unit_factors->F_f) / Asy) / unit_factors->S_f;
-                    Vmax = ((fd[gi].Vy_max / unit_factors->F_f) / Asy) / unit_factors->S_f;
+                    Vmin = (float)(((fd[gi].Vy_min / unit_factors->F_f) / Asy) / unit_factors->S_f);
+                    Vmax = (float)(((fd[gi].Vy_max / unit_factors->F_f) / Asy) / unit_factors->S_f);
                 }
                 break;
             case 7:  //Ss for RC
-                    Vmin = fd[gi].Ss;
-                    Vmax = fd[gi].Ss;
+                    Vmin = (float)fd[gi].Ss;
+                    Vmax = (float)fd[gi].Ss;
                 break;
         }
         Xx=(float)jednostkiOb(fd[gi].x / units_factor);  //in mm on drawings
@@ -1719,6 +1787,7 @@ BOOL draw_line_graph_data(int rep_element_no, int i, int nx, LINIA *Ldsp, LINIA 
     //}
 
     GL->n=20+sizeof(GRAPH_DATA)+(nx*(3*sizeof(float)));
+    GL->blok=1;
 
     if (dodaj_obiekt_reversed_((BLOK *) dane, (void *) graph_buffer) == NULL) {
         free(graph_buffer);
@@ -1785,6 +1854,7 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     memmove(p_section_data, &section_data, sizeof(SECTION_DATA));
 
     EL->n=sizeof(LINIA)-sizeof(NAGLOWEK)+sizeof(GRAPH_DATA)+sizeof(SECTION_DATA);  //20+ ....
+    EL->blok=1;
 
     if (dodaj_obiekt_reversed((BLOK *) dane, (void *) element_buffer) == NULL) {
         free(element_buffer);
@@ -1794,14 +1864,6 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     free(element_buffer);
     return TRUE;
 }
-
-/*
-int qsort_by_number(unsigned char *e1, unsigned char *e2)
-{ int delta;
-    delta=(*e1) - (*e2);
-    return delta;
-}
-*/
 
 int qsort_by_number(const void *e1, const void *e2)
 { int delta;
@@ -1850,7 +1912,7 @@ int factor_record(unsigned char load, unsigned char variant)
             }
         }
     }
-    return -1;
+    return -load;
 }
 
 void consolidate_loads(ST_UNIFORM_LOAD *st_uniform_load_, int st_uniform_load__no, ST_UNIFORM_LOAD *st_uniform_load__cons, int *st_uniform_load__no_cons, unsigned int layer[8])
@@ -2937,8 +2999,8 @@ int calculate_p_sigma(int state, int ret_standard, ST_PROPERTY *property, double
 
             if (property->fyk > 0.) {
                 fyk = property->fyk;
-                if (property->fyd > 0.) fcd = property->fyd;  //ksi
-                else fcd = property->fyk / 1.15;
+                if (property->fyd > 0.) fyd = property->fyd;  //ksi
+                else fyd = property->fyk / 1.15;
             } else {
                 if (property->fyd > 0.) {
                     fyd = property->fyd;  //ksi
@@ -3064,6 +3126,57 @@ int calculate_p_sigma(int state, int ret_standard, ST_PROPERTY *property, double
     return 1;
 }
 
+int get_invert_old(int el_no ) {
+    if (Check_if_Equal(st_node[st_element[el_no].node1].x, st_node[st_element[el_no].node2].x)) {
+        if (st_node[st_element[el_no].node1].y < st_node[st_element[el_no].node2].y) return 1;
+        else return -1;
+    } else {
+        if (st_node[st_element[el_no].node1].x < st_node[st_element[el_no].node2].x) return 1;
+        else return -1;
+    }
+}
+
+static short get_invert(int el_no ) {
+    AVECTOR v=Vdef;
+    int ret;
+
+    v.x1 = (float)st_node[st_element[el_no].node1].x ;
+    v.y1 = (float)st_node[st_element[el_no].node1].y ;
+    v.x2 = (float)st_node[st_element[el_no].node2].x ;
+    v.y2 = (float)st_node[st_element[el_no].node2].y ;
+    ret = get_thermal_flipped(&v);
+    if (ret==0) return 1;
+    else return -1;
+}
+
+BOOL  CheckIfNodeForce(AVECTOR *v)
+{
+    for (int i=0; i<st_node_force_moment_no; i++)
+    {
+        if ((Check_if_Equal(st_node[st_node_force_moment[i].node].x, v->x1) && Check_if_Equal(st_node[st_node_force_moment[i].node].y, v->y1)) &&
+            (st_node_force_moment[i].style ==v->style))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static int get_property_parameters(ST_ELEMENT *elem, ST_PROPERTY *property)
+{   int j;
+
+    for (j = 0; j < st_property_no; j++) {
+        if (abs(elem->property_no) == st_property[j].n)
+            break;
+    }
+
+    if (j == st_property_no) return 0;
+
+    memmove(property, &st_property[j], sizeof(ST_PROPERTY));
+
+    return 1;
+}
+
 void Static_analysis(void) {
     int ret, ret_standard;
     int key1;
@@ -3078,12 +3191,12 @@ void Static_analysis(void) {
     double koc, kos;
     double df_node_size = 5;  //mm
     double df_node_radius = 1;
-    char *ptr, *ptrs, *ptrsy, *ptr1, *ptr_max, *ptr_min, *ptr_row;
+    char *ptr, *ptrs, *ptrsy, *ptr1, *ptr_max, *ptr_min, *ptr_row, *ptr_rms_error, *ptr_stiffness_matrix;
     double Ax, Asy, Asz, Iy, Iz, E, G, r, d, h;
     int property_no;
     char prop[MAXEXT];
     char report[MaxMultitextLen] = "";
-    char report_row[MaxTextLen];
+    char report_row[MaxTextLen*2];
 #ifdef LINUX
     char rn[3] = "\n";
 #else
@@ -3091,7 +3204,7 @@ void Static_analysis(void) {
 #endif
     double q1x, q1y, q2x, q2y, fx, fy, dx, dy, dlx1, dlx2;
     double partial_length;
-    double n1, nm;
+    double n1m, nm;
     FILE *f;
     char params[MAXPATH];
     DWORD runcode;
@@ -3117,12 +3230,15 @@ void Static_analysis(void) {
     int rep_element_no = 0;
     double Xpos, Ypos;
     int WspX_, WspY_;
+    BOOL firs_rms_error=TRUE;
 
     BOOL no_hinged_hinged=FALSE;
+    int slslc_start_file_no=0, slslc_end_file_no=0;
 
     Semaphore = FALSE;
 
     st_property_no = 0;
+    st_failed_property_no = 0;
     st_node_pre_no = 0;
     st_node_no = 0;
     st_reaction_no = 0;
@@ -3138,6 +3254,9 @@ void Static_analysis(void) {
 
     Rn = 0; //initialization of node radius;
 
+    ST_PROPERTY_MAX=100;
+    ST_FAILED_PROPERTY_MAX=10;
+    ST_NODE_PRE_MAX=100;
     ST_NODE_MAX = 100;
     ST_REACTION_MAX = 100;
     ST_ELEMENT_MAX = 100;
@@ -3179,6 +3298,7 @@ void Static_analysis(void) {
     }
 
     st_property = (ST_PROPERTY *) malloc(ST_PROPERTY_MAX * sizeof(ST_PROPERTY));
+    st_failed_property = (ST_FAILED_PROPERTY *) malloc(ST_FAILED_PROPERTY_MAX * sizeof(ST_FAILED_PROPERTY));
     st_node_pre = (ST_NODE_PRE *) malloc(ST_NODE_PRE_MAX * sizeof(ST_NODE_PRE));
     st_node = (ST_NODE *) malloc(ST_NODE_MAX * sizeof(ST_NODE));
     st_reaction = (ST_REACTION *) malloc(ST_REACTION_MAX * sizeof(ST_REACTION));
@@ -3191,6 +3311,9 @@ void Static_analysis(void) {
     st_displacement = (ST_DISPLACEMENT *) malloc(ST_DISPLACEMENT_MAX * sizeof(ST_DISPLACEMENT));
     st_load = (ST_LOAD *) malloc(ST_LOAD_MAX * sizeof(ST_LOAD));
     st_load_factors = (ST_LOAD_FACTORS *) malloc(ST_LOAD_FACTORS_MAX * sizeof(ST_LOAD_FACTORS));
+
+    st_failed_property[st_failed_property_no].n=-1;
+    sprintf(st_failed_property[st_failed_property_no].fail_reason,"");
 
     st_node[st_node_no].radius = Rn;
     st_node[st_node_no].restraint = 0;
@@ -3343,7 +3466,7 @@ void Static_analysis(void) {
                 }
 
                 memmove(&st_property[st_property_no], &prt_def, sizeof(ST_PROPERTY));
-                if (prop_precisions == &SI_precisions) st_property[st_property_no].c=35; //[mm]
+                if (UNITS==SI) st_property[st_property_no].c=35; //[mm]
                 else st_property[st_property_no].c=1.5; //[in]
                 //st_property[st_property_no].ok = 0;
 
@@ -3478,7 +3601,13 @@ void Static_analysis(void) {
                 if (ptr != NULL) st_property[st_property_no].RC_flag = 1; //TEMPORARY: assumption that it's rectangular cross section
 
                 ptr = strstr(t->text, "h=");
-                if (ptr == NULL) break;
+                if (ptr == NULL)
+                {
+                    st_failed_property[st_failed_property_no].n=st_property[st_property_no].n;
+                    sprintf(st_failed_property[st_failed_property_no].fail_reason,"h %s", _NOT_DEFINED_);
+                    add_failed_property();
+                    break;
+                }
                 st_property[st_property_no].h = atof(ptr + 2) * unit_factors->h_f;  //for RC in mm or in, same as steel and wood
 
                 st_property[st_property_no].b = st_property[st_property_no].h;
@@ -3487,17 +3616,25 @@ void Static_analysis(void) {
                 if (ptr != NULL)
                 {
                     st_property[st_property_no].b = atof(ptr + 2) * unit_factors->h_f;  //for RC in mm or in, same as steel and wood
-                    if (st_property[st_property_no].RC_flag == 1) //it's RC and b is set
-                    {
-                        st_property[st_property_no].A = st_property[st_property_no].h * st_property[st_property_no].b; //Cross-sectional area in mm^2
-                        st_property[st_property_no].Asy = st_property[st_property_no].A; //Shear area in the local y-axis
-                        st_property[st_property_no].Asz = st_property[st_property_no].A; //Shear area in the local z-axis
-                        st_property[st_property_no].Iy =  st_property[st_property_no].h * pow(st_property[st_property_no].b, 3) / 12; //Moment of inertia for bending about the local y axis in mm^4  or in^4:  h*b^3/12
-                        st_property[st_property_no].Iz =  pow(st_property[st_property_no].h,3) * st_property[st_property_no].b / 12; //Moment of inertia for bending about the local z axis in mm^4  or in^4:  h^3*b/12
-                        st_property[st_property_no].Wy =  st_property[st_property_no].h * pow(st_property[st_property_no].b, 2) * unit_factors->Wmm_f / 6; //Elastic section modulus about y-axis in m^3  or in^3:  h*b^2/6
-                        st_property[st_property_no].Wz =  pow(st_property[st_property_no].h,2) * st_property[st_property_no].b * unit_factors->Wmm_f / 6; //Elastic section modulus about z-axis  in m^3 or in^3:  h^2*b/6
-                        st_property[st_property_no].Jx =  ((st_property[st_property_no].h * st_property[st_property_no].b)/12)*(pow(st_property[st_property_no].h, 2)+ pow(st_property[st_property_no].b, 2)); //Torsional moment of inertia  h*b/12*(h^2+b^2)
-                    }
+                    st_property[st_property_no].A = st_property[st_property_no].h * st_property[st_property_no].b; //Cross-sectional area in mm^2
+                    st_property[st_property_no].Asy = st_property[st_property_no].A; //Shear area in the local y-axis
+                    st_property[st_property_no].Asz = st_property[st_property_no].A; //Shear area in the local z-axis
+                    //in upright profile Iy is h^3  so is bigger than Iz if h>b
+                    st_property[st_property_no].Iy =  pow(st_property[st_property_no].h,3) * st_property[st_property_no].b / 12; //Moment of inertia for bending about the local z axis in mm^4  or in^4:  h^3*b/12
+                    st_property[st_property_no].Iz =  st_property[st_property_no].h * pow(st_property[st_property_no].b, 3) / 12; //Moment of inertia for bending about the local y axis in mm^4  or in^4:  h*b^3/12
+                    //in upright profile Wy is h^2  so is bigger than Wz if h> b
+                    st_property[st_property_no].Wy =  pow(st_property[st_property_no].h,2) * st_property[st_property_no].b * unit_factors->Wmm_f / 6; //Elastic section modulus about z-axis  in m^3 or in^3:  h^2*b/6
+                    st_property[st_property_no].Wz =  st_property[st_property_no].h * pow(st_property[st_property_no].b, 2) * unit_factors->Wmm_f / 6; //Elastic section modulus about y-axis in m^3  or in^3:  h*b^2/6
+                    // st_property[st_property_no].Jx =  ((st_property[st_property_no].h * st_property[st_property_no].b)/12)*(pow(st_property[st_property_no].h, 2)+ pow(st_property[st_property_no].b, 2)); //Torsional moment of inertia  h*b/12*(h^2+b^2)
+                    st_property[st_property_no].Jx = calculate_Jx(st_property[st_property_no].h, st_property[st_property_no].b);
+
+                    //kappa = A/Apl =1.5 so  Apl=A/kappa = A/1.5
+                    st_property[st_property_no].Aply=st_property[st_property_no].Aplz=st_property[st_property_no].A/1.5;
+                    double alpha=get_rc_alpha(st_property[st_property_no].b, st_property[st_property_no].h);
+                    double min_dim = min(st_property[st_property_no].b, st_property[st_property_no].h) * unit_factors->hm_f;  //to m or in
+                    double max_dim = max(st_property[st_property_no].b, st_property[st_property_no].h) * unit_factors->hm_f;  //to m or in
+
+                    st_property[st_property_no].Wt = alpha * (min_dim*min_dim) * max_dim;
                 }
 
                 ptr = strstr(t->text, "A=");
@@ -3546,7 +3683,23 @@ void Static_analysis(void) {
                     st_property[st_property_no].Wz = atof(ptr + 3) * unit_factors->Wm_f;
                 }
 
-                st_property[st_property_no].Jx = 1.0;
+                ptr = strstr(t->text, "Wt=");
+                if (ptr != NULL) {
+                    st_property[st_property_no].Wt = atof(ptr + 3) * unit_factors->Wm_f;
+                }
+
+                ptr = strstr(t->text, "ks=");
+                if (ptr != NULL) {
+                    st_property[st_property_no].ks = atof(ptr + 3) / unit_factors->ks;  //kN/m^3 or kip/in^3 to N/m^3 or lbf/in^3
+                }
+
+                ptr = strstr(t->text, "ds=");
+                if (ptr != NULL) {
+
+                    st_property[st_property_no].ds = atof(ptr + 3) * unit_factors->d_f;
+                }
+
+                st_property[st_property_no].Jx = 1.0;  //if not defined
 
                 ptr = strstr(t->text, "Jx=");
                 if (ptr != NULL) {
@@ -3606,7 +3759,17 @@ void Static_analysis(void) {
                 if (ptr != NULL) {
                     st_property[st_property_no].fyd = atof(ptr + 4); // * unit_factors->E_f;
                 }
-                else if (st_property[st_property_no].RC_flag == 1) break;
+
+                if (st_property[st_property_no].RC_flag == 1)
+                {
+                    if ((st_property[st_property_no].fyk==0.0) && (st_property[st_property_no].fyd==0.0))
+                    {
+                        st_failed_property[st_failed_property_no].n=st_property[st_property_no].n;
+                        sprintf(st_failed_property[st_failed_property_no].fail_reason,"%s fyd %s fyk %s", _neither_, _or_, _NOT_DEFINED_);
+                        add_failed_property();
+                        break;
+                    }
+                }
 
                 ptr = strstr(t->text, "fck=");  //no default, in Mpa or kpsi
                 if (ptr != NULL) {
@@ -3639,10 +3802,15 @@ void Static_analysis(void) {
                 st_property[st_property_no].ok = 1;
 
                 if ((st_property[st_property_no].r == 90) || (st_property[st_property_no].r == -90) ||
-                    (st_property[st_property_no].r == 270) || (st_property[st_property_no].r == -270)) {
+                    (st_property[st_property_no].r == 270) || (st_property[st_property_no].r == -270))
+                {
                     double Asy_ = st_property[st_property_no].Asy;
                     st_property[st_property_no].Asy = st_property[st_property_no].Asz;
                     st_property[st_property_no].Asz = Asy_;
+
+                    double Aply_ = st_property[st_property_no].Aply;
+                    st_property[st_property_no].Aply = st_property[st_property_no].Aplz;
+                    st_property[st_property_no].Aplz = Aply_;
 
                     double Iy_ = st_property[st_property_no].Iy;
                     st_property[st_property_no].Iy = st_property[st_property_no].Iz;
@@ -3656,8 +3824,9 @@ void Static_analysis(void) {
                     st_property[st_property_no].Wy = st_property[st_property_no].Wz;
                     st_property[st_property_no].Wz = wy_;
 
-                    st_property[st_property_no].r = 0;
                 }
+
+                st_property[st_property_no].r = 0;  //always set back to 0
 
                 if (st_property[st_property_no].Wy == 0) {
                     st_property[st_property_no].Wy =
@@ -3681,7 +3850,7 @@ void Static_analysis(void) {
 
     if (strlen(ptr_id_short)==0)
     {
-        sprintf(report_row, "%s", _FRAME_ID_NOT_FOUND_);
+        sprintf(report_row, "%s%s", _FRAME_ID_NOT_FOUND_, rn);
         strcat(report, report_row);
     }
     /////////////////
@@ -3709,7 +3878,30 @@ void Static_analysis(void) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             v = (AVECTOR *) nag;
 
-            if (v->style < 4) {
+            if (v->style < 4)
+            {
+                if (v->cartflags & 1)
+                {
+                    double ex1, ey1, ex2, ey2;
+                    if (options1.uklad_izometryczny)
+                    {
+                        cartesian_to_isometric(milimetryobx(v->x1), milimetryoby(v->y1), &ex1, &ey1);
+                        cartesian_to_isometric(milimetryobx(v->x2), milimetryoby(v->y2), &ex2, &ey2);
+                    }
+                    else
+                    {
+                        ex1=milimetryobx(v->x1);
+                        ey1=milimetryoby(v->y1);
+                        ex2=milimetryobx(v->x2);
+                        ey2=milimetryoby(v->y2);
+                    }
+                    sprintf(report_row, "<%f;%f> <%f;%f> %s%s", ex1, ey1, ex2, ey2, _vector_of_member_is_isometric_, rn);
+                    strcat(report, report_row);
+                    //goto error;  //let's check others
+                    obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
+                    continue;
+                }
+
                 parametry_lini((LINIA *) v, &PL);
                 kos = sin(PL.kat * Pi / 180);
                 koc = cos(PL.kat * Pi / 180);
@@ -3777,6 +3969,8 @@ void Static_analysis(void) {
                         st_element[st_element_no].kos=kos;
                         st_element[st_element_no].koc=koc;
 
+                        st_element[st_element_no].invert = get_invert(st_element_no);
+
                         add_element();
 
                         //Part B
@@ -3821,6 +4015,8 @@ void Static_analysis(void) {
 
                         st_element[st_element_no].kos=kos;
                         st_element[st_element_no].koc=koc;
+
+                        st_element[st_element_no].invert = get_invert(st_element_no);
 
                         add_element();
 
@@ -3908,6 +4104,8 @@ void Static_analysis(void) {
                         st_element[st_element_no].kos=kos;
                         st_element[st_element_no].koc=koc;
 
+                        st_element[st_element_no].invert = get_invert(st_element_no);
+
                         add_element();
                     }
                 }
@@ -3968,6 +4166,8 @@ void Static_analysis(void) {
 
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
+
+                            st_element[st_element_no].invert = get_invert(st_element_no);
 
                             add_element();
                             break;
@@ -4037,6 +4237,8 @@ void Static_analysis(void) {
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
 
+                            st_element[st_element_no].invert = get_invert(st_element_no);
+
                             add_element();
 
                             st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
@@ -4057,6 +4259,8 @@ void Static_analysis(void) {
 
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
+
+                            st_element[st_element_no].invert = get_invert(st_element_no);
 
                             add_element();
 
@@ -4110,6 +4314,8 @@ void Static_analysis(void) {
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
 
+                            st_element[st_element_no].invert = get_invert(st_element_no);
+
                             add_element();
 
                             st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
@@ -4149,6 +4355,8 @@ void Static_analysis(void) {
 
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
+
+                            st_element[st_element_no].invert = get_invert(st_element_no);
 
                             add_element();
 
@@ -4202,6 +4410,8 @@ void Static_analysis(void) {
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
 
+                            st_element[st_element_no].invert = get_invert(st_element_no);
+
                             add_element();
                             //hinged middle
                             st_element[st_element_no].node2r = -1;
@@ -4248,6 +4458,8 @@ void Static_analysis(void) {
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
 
+                            st_element[st_element_no].invert = get_invert(st_element_no);
+
                             add_element();
                             //hinged second side
                             st_element[st_element_no].node1 = st_element[st_element_no - 1].node2;
@@ -4268,6 +4480,8 @@ void Static_analysis(void) {
 
                             st_element[st_element_no].kos=kos;
                             st_element[st_element_no].koc=koc;
+
+                            st_element[st_element_no].invert = get_invert(st_element_no);
 
                             add_element();
 
@@ -4617,8 +4831,21 @@ void Static_analysis(void) {
     f = fopen(params, "wt");
 
     ////09-08-2025
+    char footpr[16];
+    if (rescaling_menu_mode==0) {
+        // AUTO MODE: Pass the target drawing footprint expanded to object scale
+        if (UNITS==SI)
+            sprintf(footpr, "%f", q_desire_footprint * SkalaF);
+        else sprintf(footpr, "%f", q_desire_footprint / 25.4 * SkalaF);
+    } else {
+        // MANUAL MODE: Pass the user's hardcoded menu scale as a NEGATIVE value
+        // If the user types "250.0" in the menu, this sends "-250.0"
+        sprintf(footpr, "%f", -1.f);
+    }
     strcat(st_title, " @UNITS=");
     strcat(st_title,UNITS);
+    strcat(st_title, " @FOOTPRINT=");
+    strcat(st_title,footpr);
     fprintf(f, "%s\n", st_title);
     fprintf(f, "\n# node data ...\n");
     fprintf(f, "%d\t\t # number of nodes\n", st_node_no);
@@ -4648,9 +4875,9 @@ void Static_analysis(void) {
 
     fprintf(f, "\n# frame element data ...\n");
     fprintf(f, "%d\t\t # number of frame elements\n", st_element_no);
-    fprintf(f, "#e n1 n2 Ax    Asy     Asz     Jxx     Iyy     Izz     E     G    roll  density n1y n1z n2y n2z\n");
-    fprintf(f, "#. .  .  in^2  in^2    in^2    in^4    in^4    in^4    ksi   ksi  deg  kip/in^3/g . . . .\n");
-    fprintf(f, "#. .  .  mm^2   mm^2    mm^2    mm^4   mm^4    mm^4    MPa   MPa  deg  tonne/mm^3 . . . . \n\n");
+    fprintf(f, "#e n1 n2 Ax    Asy     Asz     Jxx     Iyy     Izz     Wt     Wy       Wz     E     G    roll  density n1y n1z n2y n2z\n");
+    fprintf(f, "#. .  .  in^2  in^2    in^2    in^4    in^4    in^4   in^3    in^3    in^3    ksi   ksi  deg  kip/in^3/g . . . .\n");
+    fprintf(f, "#. .  .  mm^2  mm^2    mm^2    mm^4    mm^4    mm^4   mm^3    mm^3    mm^3    MPa   MPa  deg  tonne/mm^3 . . . . \n\n");
     for (i = 0; i < st_element_no; i++) {
         //searching for property
         hinged = 0;
@@ -4670,35 +4897,45 @@ void Static_analysis(void) {
         set_decimal_format(par[1], st_property[j].Asy, prop_precisions->A_precision);
         set_decimal_format(par[2], st_property[j].Asz, prop_precisions->A_precision);
         if (hinged == 1) {
-            set_decimal_format(par[3], 1.0, prop_precisions->J_precision);
+            set_decimal_format(par[3], st_property[j].Jx * 0.0001, prop_precisions->J_precision);
             set_decimal_format(par[4], st_property[j].Iz * 0.0001, prop_precisions->I_precision);
             set_decimal_format(par[5], st_property[j].Iy * 0.0001, prop_precisions->I_precision);
-            set_decimal_format(par[6], st_property[j].E * 0.01, prop_precisions->E_precision);
+
+            set_decimal_format(par[6], st_property[j].Wt * 0.0001, prop_precisions->W_precision);
+            set_decimal_format(par[7], st_property[j].Wy * 0.0001, prop_precisions->W_precision);
+            set_decimal_format(par[8], st_property[j].Wz * 0.0001, prop_precisions->W_precision);
+
+            set_decimal_format(par[9], st_property[j].E * 0.01, prop_precisions->E_precision);
         } else {
-            set_decimal_format(par[3], 1.0, prop_precisions->J_precision);
+            set_decimal_format(par[3], st_property[j].Jx, prop_precisions->J_precision);
             set_decimal_format(par[4], st_property[j].Iz, prop_precisions->I_precision);
             set_decimal_format(par[5], st_property[j].Iy, prop_precisions->I_precision);
-            set_decimal_format(par[6], st_property[j].E, prop_precisions->E_precision);
+
+            set_decimal_format(par[6], st_property[j].Wt / unit_factors->Wmm_f, prop_precisions->W_precision);
+            set_decimal_format(par[7], st_property[j].Wy / unit_factors->Wmm_f, prop_precisions->W_precision);
+            set_decimal_format(par[8], st_property[j].Wz / unit_factors->Wmm_f, prop_precisions->W_precision);
+
+            set_decimal_format(par[9], st_property[j].E, prop_precisions->E_precision);
         }
-        set_decimal_format(par[7], st_property[j].G, prop_precisions->G_precision);
-        set_decimal_format(par[8], st_property[j].r, prop_precisions->p_precision);
-        sprintf(par[9], "%g", st_property[j].d);
+        set_decimal_format(par[10], st_property[j].G, prop_precisions->G_precision);
+        set_decimal_format(par[11], st_property[j].r, prop_precisions->p_precision);
+        sprintf(par[12], "%g", st_property[j].d);
 
         if (PINNABLE) {
-            sprintf(par[10], " 1");
-            sprintf(par[11], " %d", st_element[i].n1z);
-            sprintf(par[12], " 1");
-            sprintf(par[13], " %d", st_element[i].n2z);
+            sprintf(par[13], " 1");
+            sprintf(par[14], " %d", st_element[i].n1z);
+            sprintf(par[15], " 1");
+            sprintf(par[16], " %d", st_element[i].n2z);
         }
         else {
-            sprintf(par[10], "");
-            sprintf(par[11], "");
-            sprintf(par[12], "");
             sprintf(par[13], "");
+            sprintf(par[14], "");
+            sprintf(par[15], "");
+            sprintf(par[16], "");
         }
 
-        fprintf(f, "%d %d %d %s %s %s %s %s %s %s %s %s %s%s%s%s%s\n", i + 1, st_element[i].node1 + 1, st_element[i].node2 + 1,
-                par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9],par[10],par[11],par[12],par[13]);
+        fprintf(f, "%d %d %d %s %s %s %s %s %s %s %s %s %s %s %s %s%s%s%s%s\n", i + 1, st_element[i].node1 + 1, st_element[i].node2 + 1,
+                par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9],par[10],par[11],par[12],par[13],par[14],par[15],par[16]);
     }
 
     fprintf(f, "\n%d\t\t# 1: include shear deformation\n", shear_deformation);
@@ -4721,7 +4958,71 @@ void Static_analysis(void) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             v = (AVECTOR *) nag;
 
-            if (TestBit(st_layer, v->warstwa)) {
+            if (TestBit(st_layer, v->warstwa))
+            {
+                //first scan
+                if ((v->style>3) && (v->cartflags & 1))  //load in isometric
+                {
+                    switch (v->style)
+                    {
+                        double ex1, ey1, ex2, ey2;
+                        case 4:  //F
+                        case 5:  //M
+                        case 6:  //-M
+                        case 7:  //PD
+                        case 8:  //PR
+                        case 9:  //-PR
+                        case 17: //QP
+                        case 19: //FZ
+                        case 21: //MXZ
+                        case 22: //-MXZ
+                        case 23: //MYZ
+                        case 24: //-MYZ
+                        case 25: //MXY
+                        case 26: //-MXY
+                        case 27: //PDZ
+                        case 28: //RXZ
+                        case 29: //-RXZ
+                        case 30: //RYZ
+                        case 31: //-RYZ
+                        case 32: //RXY
+                        case 33: //-RXY
+                            //pointwise load
+                            if (options1.uklad_izometryczny) {
+                                cartesian_to_isometric(milimetryobx(v->x1), milimetryoby(v->y1), &ex1, &ey1);
+                            } else {
+                                ex1 = milimetryobx(v->x1);
+                                ey1 = milimetryoby(v->y1);
+                            }
+                            sprintf(report_row, "<%f;%f> %s%s", ex1, ey1, _vector_of_load_is_isometric_, rn);
+                            break;
+                        case 10:
+                        case 11:
+                        case 12:
+                        case 13:
+                        case 14:
+                        case 18:
+                        case 20:
+                            //distributed load
+                            if (options1.uklad_izometryczny) {
+                                cartesian_to_isometric(milimetryobx(v->x1), milimetryoby(v->y1), &ex1, &ey1);
+                                cartesian_to_isometric(milimetryobx(v->x2), milimetryoby(v->y2), &ex2, &ey2);
+                            } else {
+                                ex1 = milimetryobx(v->x1);
+                                ey1 = milimetryoby(v->y1);
+                                ex2 = milimetryobx(v->x2);
+                                ey2 = milimetryoby(v->y2);
+                            }
+                            sprintf(report_row, "<%f;%f> <%f;%f> %s%s", ex1, ey1, ex2, ey2, _vector_of_load_is_isometric_, rn);
+                            break;
+                    }
+                    strcat(report, report_row);
+                    //goto error;  //let's check others
+
+                    obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
+                    continue;
+                }
+
                 switch (v->style) {
                     case 4:
                     case 5:
@@ -4766,6 +5067,7 @@ void Static_analysis(void) {
                                             st_node_force_moment[st_node_force_moment_no].factor_record = -(v->load == 0
                                                                                                             ? 2
                                                                                                             : v->load);  //if no load spec, is assumed to be LL, so load=2
+                                        st_node_force_moment[st_node_force_moment_no].style=v->style;
                                         add_node_force_moment();
                                         break;
                                     case 5:  //moment +
@@ -4777,6 +5079,7 @@ void Static_analysis(void) {
                                             st_node_force_moment[st_node_force_moment_no].factor_record = -(v->load == 0
                                                                                                             ? 2
                                                                                                             : v->load);  //if no load spec, is assumed to be LL, so load=2
+                                        st_node_force_moment[st_node_force_moment_no].style=v->style;
                                         add_node_force_moment();
                                         break;
                                     case 6:  //moment -
@@ -4788,6 +5091,7 @@ void Static_analysis(void) {
                                             st_node_force_moment[st_node_force_moment_no].factor_record = -(v->load == 0
                                                                                                             ? 2
                                                                                                             : v->load);  //if no load spec, is assumed to be LL, so load=2
+                                        st_node_force_moment[st_node_force_moment_no].style=v->style;
                                         add_node_force_moment();
                                         break;
                                     case 7:  //displacement
@@ -4816,14 +5120,27 @@ void Static_analysis(void) {
                         }
 
                 }
+
                 if ((i == st_node_no) && ((v->style == 7) || (v->style == 8) || (v->style == 9))) {
                     sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1), Vector_txt[v->style], _force_not_associated_,rn);
                     strcat(report, report_row);
                 }
+
             }
         }
         obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
     }
+
+    //showing early report about members and loads (isometry)
+    if (strlen(report) > 0) {
+        int edit_params = 0;
+        int tab;
+        int single = 0;
+        ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
+        report[0]='\0';
+
+        goto error;
+    };
 
     //internal concentrated loads - element force
 
@@ -4833,6 +5150,11 @@ void Static_analysis(void) {
             v = (AVECTOR *) nag;
 
             if (TestBit(st_layer, v->warstwa)) {
+
+                if (CheckIfNodeForce(v)) {
+                    obiekt_tok(NULL, ADK, (char **) &nag, Ovector);
+                    continue;
+                }
 
                 for (j = 0; j < st_node_no; j++)  //node1
                 {
@@ -4861,7 +5183,7 @@ void Static_analysis(void) {
                                                           st_node[st_element[i].node2].x,
                                                           st_node[st_element[i].node2].y, 0.0001)) {
 
-                                parametry_lini((LINIA*)v, &PL);
+                                parametry_lini((LINIA *) v, &PL);
                                 kos = sin(Angle_Normal(PL.kat * Pi / 180.));
                                 koc = cos(Angle_Normal(PL.kat * Pi / 180.));
 
@@ -4873,14 +5195,14 @@ void Static_analysis(void) {
 
                                 //changing for element local coordinates
 
-                                double kos_e=st_element[st_element_force[st_element_force_no].element].kos;
-                                double koc_e=st_element[st_element_force[st_element_force_no].element].koc;
+                                double kos_e = st_element[st_element_force[st_element_force_no].element].kos;
+                                double koc_e = st_element[st_element_force[st_element_force_no].element].koc;
 
                                 double Fx = st_element_force[st_element_force_no].fx;
                                 double Fy = st_element_force[st_element_force_no].fy;
 
-                                st_element_force[st_element_force_no].fx = Fx*koc_e + Fy*kos_e;
-                                st_element_force[st_element_force_no].fy = -Fx*kos_e + Fy*koc_e;
+                                st_element_force[st_element_force_no].fx = Fx * koc_e + Fy * kos_e;
+                                st_element_force[st_element_force_no].fy = -Fx * kos_e + Fy * koc_e;
 
                                 st_element_force[st_element_force_no].dlx = sqrt(
                                         ((v->x1 - st_node[st_element[i].node1].x) *  //node1r node2r
@@ -4898,7 +5220,7 @@ void Static_analysis(void) {
                             }
                         }
                         if (i == st_element_no) {
-                            sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1),Vector_txt[v->style], _load_not_associated_,rn);
+                            sprintf(report_row, "<%f;%f> [%s] %s%s", milimetryobx(v->x1), milimetryoby(v->y1), Vector_txt[v->style], _load_not_associated_, rn);
                             strcat(report, report_row);
                         }
                     } else if (v->style == 5) //moment +
@@ -4986,6 +5308,7 @@ void Static_analysis(void) {
                     case 12:
                     case 13:
                     case 14:
+                        /*
                         parametry_lini((LINIA*)v, &PL);
                         partial_length = PL.dl;
 
@@ -5054,6 +5377,92 @@ void Static_analysis(void) {
                                 add_load();
                                 break;
                             }
+                            */
+                        parametry_lini((LINIA*)v, &PL);
+                        partial_length = PL.dl;
+
+                        for (i = 0; i < st_element_no; i++)
+                        {
+                            // Pre-load element node coordinates for cleaner logic
+                            L.x1 = (float)st_node[st_element[i].node1].x;
+                            L.y1 = (float)st_node[st_element[i].node1].y;
+                            L.x2 = (float)st_node[st_element[i].node2].x;
+                            L.y2 = (float)st_node[st_element[i].node2].y;
+                            parametry_lini(&L, &PL1);
+
+                            // ---- 1. LOAD MATCHES ENTIRE ELEMENT EXACTLY (SAME DIRECTION) ----
+                            if (Check_if_Equal(v->x1, L.x1) && Check_if_Equal(v->y1, L.y1) &&
+                                Check_if_Equal(v->x2, L.x2) && Check_if_Equal(v->y2, L.y2)) {
+                                st_load[st_load_no].element = i;
+                                st_load[st_load_no].reversed = 0;
+                                st_load[st_load_no].spread = 1;
+                                st_load[st_load_no].partial = 0;
+                                st_load[st_load_no].uniform = Check_if_Equal(v->magnitude1, v->magnitude2) ? 1 : 0;
+
+                                st_load[st_load_no].magnitude1 = v->magnitude1 * nm;
+                                st_load[st_load_no].magnitude2 = v->magnitude2 * nm;
+
+                                // Frame3DD explicitly needs the local spans tracked
+                                st_load[st_load_no].distance1 = 0.0;
+                                st_load[st_load_no].distance2 = PL1.dl * m0999;
+
+                                st_load[st_load_no].factor_record = v_factor_record;
+                                add_load();
+                                break;
+                            }
+                            // ---- 2. LOAD MATCHES ENTIRE ELEMENT EXACTLY (REVERSED DIRECTION) ----
+                            else if (Check_if_Equal(v->x1, L.x2) && Check_if_Equal(v->y1, L.y2) &&
+                                     Check_if_Equal(v->x2, L.x1) && Check_if_Equal(v->y2, L.y1)) {
+                                st_load[st_load_no].element = i;
+                                st_load[st_load_no].reversed = 1;
+                                st_load[st_load_no].spread = 1;
+                                st_load[st_load_no].partial = 0;
+                                st_load[st_load_no].uniform = Check_if_Equal(v->magnitude1, v->magnitude2) ? 1 : 0;
+
+                                // Node 1 matches v2 (Load End) and Node 2 matches v1 (Load Start)
+                                st_load[st_load_no].magnitude1 = v->magnitude2 * nm;
+                                st_load[st_load_no].magnitude2 = v->magnitude1 * nm;
+
+                                st_load[st_load_no].distance1 = 0.0;
+                                st_load[st_load_no].distance2 = PL1.dl * m0999;
+
+                                st_load[st_load_no].factor_record = v_factor_record;
+                                add_load();
+                                break;
+                            }
+                            // ---- 3. TRAPEZOID OR UNIFORM LOAD ENTIRELY INSIDE ELEMENT ----
+                            else if (CheckIsPointOnLineSegment(v->x1, v->y1, L.x1, L.y1, L.x2, L.y2, 0.0001) &&
+                                     CheckIsPointOnLineSegment(v->x2, v->y2, L.x1, L.y1, L.x2, L.y2, 0.0001)) {
+                                st_load[st_load_no].element = i;
+                                st_load[st_load_no].partial = 0;
+                                st_load[st_load_no].spread = 0;
+                                st_load[st_load_no].uniform = Check_if_Equal(v->magnitude1, v->magnitude2) ? 1 : 0;
+
+                                if (Check_if_Equal2(PL.kat, PL1.kat)) st_load[st_load_no].reversed = 0;
+                                else st_load[st_load_no].reversed = 1;
+
+                                // Calculate actual Cartesian layout offsets relative to Node 1
+                                double dist_node1_to_v1 = cartesian_vector_length(v->x1 - L.x1, v->y1 - L.y1, NULL, NULL);
+                                double dist_node1_to_v2 = cartesian_vector_length(v->x2 - L.x1, v->y2 - L.y1, NULL, NULL);
+
+                                if (st_load[st_load_no].reversed == 0) {
+                                    st_load[st_load_no].magnitude1 = v->magnitude1 * nm;
+                                    st_load[st_load_no].magnitude2 = v->magnitude2 * nm;
+                                    st_load[st_load_no].distance1 = dist_node1_to_v1;
+                                    st_load[st_load_no].distance2 = dist_node1_to_v2 * m0999;
+                                } else {
+                                    st_load[st_load_no].magnitude1 = v->magnitude2 * nm; // v2 sits closer to Node 1
+                                    st_load[st_load_no].magnitude2 = v->magnitude1 * nm; // v1 sits closer to Node 2
+                                    st_load[st_load_no].distance1 = dist_node1_to_v2;
+                                    st_load[st_load_no].distance2 = dist_node1_to_v1 * m0999;
+                                }
+
+                                st_load[st_load_no].factor_record = v_factor_record;
+                                add_load();
+                                break;
+                            }
+
+                            /*
                                 //load spread over entire element
                             else if ((CheckIsPointOnLineSegment(st_node[st_element[i].node1].x,
                                                                 st_node[st_element[i].node1].y,
@@ -5100,6 +5509,42 @@ void Static_analysis(void) {
                                 if (Check_if_LE2(partial_length, 0.0)) break;
 
                             }
+                             */
+                                // ---- 4. LOAD SPREAD OVER ENTIRE ELEMENT ----
+                            else if (CheckIsPointOnLineSegment(st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, v->x1, v->y1, v->x2, v->y2, 0.0001) &&
+                                     CheckIsPointOnLineSegment(st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, v->x1, v->y1, v->x2, v->y2, 0.0001)) {
+                                st_load[st_load_no].element = i;
+                                st_load[st_load_no].spread = 1;
+                                st_load[st_load_no].partial = 1;
+                                parametry_lini((LINIA*)v, &PL);
+                                L.x1 = (float)st_node[st_element[i].node1].x;
+                                L.y1 = (float)st_node[st_element[i].node1].y;
+                                L.x2 = (float)st_node[st_element[i].node2].x;
+                                L.y2 = (float)st_node[st_element[i].node2].y;
+                                parametry_lini(&L, &PL1);
+
+                                if (Check_if_Equal2(PL.kat, PL1.kat)) st_load[st_load_no].reversed = 0;
+                                else st_load[st_load_no].reversed = 1;
+                                st_load[st_load_no].uniform = Check_if_Equal(v->magnitude1, v->magnitude2) ? 1 : 0;
+
+                                double dmag = (v->magnitude2 - v->magnitude1) / PL.dl;
+                                double dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
+                                double dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
+
+                                // Interpolation handles node assignments cleanly for both direction variants
+                                st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                st_load[st_load_no].magnitude2 = (v->magnitude1 + dmag * dl2) * nm;
+
+                                st_load[st_load_no].distance1 = 0.0;
+                                st_load[st_load_no].distance2 = PL1.dl * m0999;
+
+                                st_load[st_load_no].factor_record = v_factor_record;
+                                add_load();
+
+                                partial_length -= PL1.dl;
+                                if (Check_if_LE2(partial_length, 0.0)) break;
+                            }
+                            /*
                                 //load spread over first node of the element and end of load inside element
                             else if ((CheckIsPointOnLineSegment(st_node[st_element[i].node1].x,
                                                                 st_node[st_element[i].node1].y,
@@ -5161,6 +5606,62 @@ void Static_analysis(void) {
                                     }
                                 }
                             }
+                             */
+                                // ---- 5. LOAD SPREADS OVER NODE 1, ENDS INSIDE ELEMENT ----
+                            else if (CheckIsPointOnLineSegment(st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, v->x1, v->y1, v->x2, v->y2, 0.0001) &&
+                                     (CheckIsPointOnLineSegment(v->x1, v->y1, st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, 0.0001) ||
+                                      CheckIsPointOnLineSegment(v->x2, v->y2, st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, 0.0001))) {
+                                parametry_lini((LINIA*)v, &PL);
+                                L.x1 = (float)st_node[st_element[i].node1].x;
+                                L.y1 = (float)st_node[st_element[i].node1].y;
+                                L.x2 = (float)st_node[st_element[i].node2].x;
+                                L.y2 = (float)st_node[st_element[i].node2].y;
+                                parametry_lini(&L, &PL1);
+
+                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180.0);
+                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180.0);
+                                double kat2_ = Angle_Normal(Pi_ * (PL1.kat + 180.0) / 180.0);
+                                if (TRUE == Check_if_Equal(kat2_, Pi2)) kat2_ = 0.0;
+
+                                if ((Check_if_Equal2(kat1, kat2)) || (Check_if_Equal2(kat1, kat2_))) {
+                                    st_load[st_load_no].element = i;
+                                    st_load[st_load_no].spread = 0;
+                                    st_load[st_load_no].partial = 1;
+                                    st_load[st_load_no].uniform = 0;
+
+                                    if (Check_if_Equal2(kat1, kat2)) st_load[st_load_no].reversed = 0;
+                                    else st_load[st_load_no].reversed = 1;
+
+                                    double dmag = (v->magnitude2 - v->magnitude1) / PL.dl;
+                                    double dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
+                                    double dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
+
+                                    if (st_load[st_load_no].reversed == 0) {
+                                        // Same direction: load starts before Node 1 and ends inside the element at v2
+                                        st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                        st_load[st_load_no].magnitude2 = v->magnitude2 * nm;
+
+                                        st_load[st_load_no].distance1 = 0.0;
+                                        st_load[st_load_no].distance2 = sqrt((v->x2 - L.x1) * (v->x2 - L.x1) + (v->y2 - L.y1) * (v->y2 - L.y1)) * m0999;
+                                    } else {
+                                        // Reversed: load runs backwards, passing Node 2, covering Node 1, ending at v2
+                                        st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                        st_load[st_load_no].magnitude2 = v->magnitude1 * nm; // Reached the load start at Node 2
+
+                                        double dist_node1_to_v1 = sqrt((v->x1 - L.x1) * (v->x1 - L.x1) + (v->y1 - L.y1) * (v->y1 - L.y1));
+                                        st_load[st_load_no].distance1 = PL1.dl - dist_node1_to_v1;
+                                        st_load[st_load_no].distance2 = PL1.dl * m0999;
+                                    }
+
+                                    if (!Check_if_Equal(st_load[st_load_no].distance2, st_load[st_load_no].distance1)) {
+                                        partial_length -= (st_load[st_load_no].distance2 - st_load[st_load_no].distance1);
+                                        st_load[st_load_no].factor_record = v_factor_record;
+                                        add_load();
+                                        if (Check_if_LE2(partial_length, 0.0)) break;
+                                    }
+                                }
+                            }
+                            /*
                                 //load spread over second node of the element and beginning of load inside element
                             else if ((CheckIsPointOnLineSegment(st_node[st_element[i].node2].x,
                                                                 st_node[st_element[i].node2].y,
@@ -5235,12 +5736,70 @@ void Static_analysis(void) {
                                 }
                             }
                         }
+                         */
+                                // ---- 6. LOAD SPREAD OVER NODE 2, BEGINS INSIDE ELEMENT ----
+                            else if (CheckIsPointOnLineSegment(st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, v->x1, v->y1, v->x2, v->y2, 0.0001) &&
+                                     (CheckIsPointOnLineSegment(v->x1, v->y1, st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, 0.0001) ||
+                                      CheckIsPointOnLineSegment(v->x2, v->y2, st_node[st_element[i].node1].x, st_node[st_element[i].node1].y, st_node[st_element[i].node2].x, st_node[st_element[i].node2].y, 0.0001))) {
+                                parametry_lini((LINIA*)v, &PL);
+                                L.x1 = (float)st_node[st_element[i].node1].x;
+                                L.y1 = (float)st_node[st_element[i].node1].y;
+                                L.x2 = (float)st_node[st_element[i].node2].x;
+                                L.y2 = (float)st_node[st_element[i].node2].y;
+                                parametry_lini(&L, &PL1);
+
+                                double kat1 = Angle_Normal(Pi_ * PL.kat / 180.0);
+                                double kat2 = Angle_Normal(Pi_ * PL1.kat / 180.0);
+                                double kat2_ = Angle_Normal(Pi_ * (PL1.kat + 180.0) / 180.0);
+                                if (TRUE == Check_if_Equal(kat2_, Pi2)) kat2_ = 0.0;
+
+                                if ((Check_if_Equal2(kat1, kat2)) || (Check_if_Equal2(kat1, kat2_))) {
+                                    st_load[st_load_no].element = i;
+                                    st_load[st_load_no].spread = 0;
+                                    st_load[st_load_no].partial = 1;
+                                    st_load[st_load_no].uniform = 0;
+
+                                    if (Check_if_Equal2(kat1, kat2)) st_load[st_load_no].reversed = 0;
+                                    else st_load[st_load_no].reversed = 1;
+
+                                    double dmag = (v->magnitude2 - v->magnitude1) / PL.dl;
+                                    double dl1 = sqrt((L.x1 - v->x1) * (L.x1 - v->x1) + (L.y1 - v->y1) * (L.y1 - v->y1));
+                                    double dl2 = sqrt((L.x2 - v->x1) * (L.x2 - v->x1) + (L.y2 - v->y1) * (L.y2 - v->y1));
+
+                                    if (st_load[st_load_no].reversed == 0) {
+                                        // Same direction: Load starts inside beam at v1 and runs past Node 2
+                                        st_load[st_load_no].magnitude1 = v->magnitude1 * nm; // Starts exactly at v1
+                                        st_load[st_load_no].magnitude2 = (v->magnitude1 + dmag * dl2) * nm;
+
+                                        st_load[st_load_no].distance1 = dl1;
+                                        st_load[st_load_no].distance2 = PL1.dl * m0999;
+                                    } else {
+                                        // Reversed: Load runs backward. It covers Node 1, ending inside the beam at v2
+                                        st_load[st_load_no].magnitude1 = (v->magnitude1 + dmag * dl1) * nm;
+                                        st_load[st_load_no].magnitude2 = v->magnitude2 * nm; // Terminating exactly at v2
+
+                                        double dist_node1_to_v2 = sqrt((v->x2 - L.x1) * (v->x2 - L.x1) + (v->y2 - L.y1) * (v->y2 - L.y1));
+                                        st_load[st_load_no].distance1 = 0.0; // Node 1 is fully under the load
+                                        st_load[st_load_no].distance2 = dist_node1_to_v2 * m0999;
+                                    }
+
+                                    if (!Check_if_Equal(st_load[st_load_no].distance2, st_load[st_load_no].distance1)) {
+                                        partial_length -= (st_load[st_load_no].distance2 - st_load[st_load_no].distance1);
+                                        st_load[st_load_no].factor_record = v_factor_record;
+                                        add_load();
+                                        if (Check_if_LE2(partial_length, 0.0)) break;
+                                    }
+                                }
+                            }
+                        }
+
+
 
                         if (st_load_no > 0) {
                             for (int ii = 0; ii < st_load_no; ii++) {
                                 if ((st_load[ii].uniform == 1) && (st_load[ii].spread == 1)) {
-                                    if (st_load[ii].reversed == 0) n1 = 1;
-                                    else n1 = -1;
+                                    if (st_load[ii].reversed == 0) n1m = 1;
+                                    else n1m = -1;
 
                                     st_uniform_load[st_uniform_load_no].element = st_load[ii].element;
                                     st_uniform_load[st_uniform_load_no].layer = v->warstwa;
@@ -5251,82 +5810,42 @@ void Static_analysis(void) {
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
-                                            //st_uniform_load[st_uniform_load_no].element = element;
-                                            if (st_load[ii].reversed == 0) {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * st_load[ii].magnitude1 * kos;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1 * koc;
-                                            } else {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * st_load[ii].magnitude1 * kos;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1 * koc;
-                                            }
+                                            st_uniform_load[st_uniform_load_no].qx = n1m * st_load[ii].magnitude1 * kos;
+                                            st_uniform_load[st_uniform_load_no].qy = n1m * -st_load[ii].magnitude1 * koc;
+
                                             break;
-                                        case 11:
+                                        case 11: //Y load
                                             parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
-                                            //st_uniform_load[st_uniform_load_no].element = element;
-                                            if (st_load[ii].reversed == 0) {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * st_load[ii].magnitude1 * koc;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1 * kos;
-                                            } else {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * st_load[ii].magnitude1 * koc;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1 * kos;
-                                            }
-                                            break;
-                                        case 12:
+                                            st_uniform_load[st_uniform_load_no].qx = n1m * st_load[ii].magnitude1 * koc;
+                                            st_uniform_load[st_uniform_load_no].qy = n1m * -st_load[ii].magnitude1 * kos;
 
-                                            if (st_load[ii].reversed == 0) {
-                                                st_uniform_load[st_uniform_load_no].qx = 0;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1;
-                                            } else {
-                                                st_uniform_load[st_uniform_load_no].qx = 0;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -st_load[ii].magnitude1;
-                                            }
                                             break;
-                                        case 13:
+                                        case 12: //X load
+
+                                            st_uniform_load[st_uniform_load_no].qx = 0;
+                                            st_uniform_load[st_uniform_load_no].qy = n1m * -st_load[ii].magnitude1;
+
+                                            break;
+                                        case 13: //V load
                                             parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal((PL.kat) * Pi / 180));
                                             koc = cos(Angle_Normal((PL.kat) * Pi / 180));
 
-                                            if (st_load[ii].reversed == 0) {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * -(st_load[ii].magnitude1 * koc) * kos;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -(st_load[ii].magnitude1 * koc) * koc;
-                                            } else {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * -(st_load[ii].magnitude1 * koc) * kos;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -(st_load[ii].magnitude1 * koc) * koc;
-                                            }
+                                            st_uniform_load[st_uniform_load_no].qx = n1m * -(st_load[ii].magnitude1 * koc) * kos;
+                                            st_uniform_load[st_uniform_load_no].qy = n1m * -(st_load[ii].magnitude1 * koc) * koc;
+
                                             break;
-                                        case 14:
+                                        case 14:  //H load
                                             parametry_lini((LINIA*)v, &PL);
                                             kos = sin(Angle_Normal(PL.kat * Pi / 180));
                                             koc = cos(Angle_Normal(PL.kat * Pi / 180));
 
-                                            if (st_load[ii].reversed == 0) {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * (st_load[ii].magnitude1 * kos) * koc;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * -(st_load[ii].magnitude1 * kos) * kos;
-                                            } else {
-                                                st_uniform_load[st_uniform_load_no].qx =
-                                                        n1 * -(st_load[ii].magnitude1 * kos) * koc;
-                                                st_uniform_load[st_uniform_load_no].qy =
-                                                        n1 * (st_load[ii].magnitude1 * kos) * kos;
-                                            }
+                                            st_uniform_load[st_uniform_load_no].qx = n1m * (st_load[ii].magnitude1 * kos) * koc;
+                                            st_uniform_load[st_uniform_load_no].qy = n1m * -(st_load[ii].magnitude1 * kos) * kos;
+
                                             break;
                                     }
                                     st_uniform_load[st_uniform_load_no].factor_record = st_load[ii].factor_record;
@@ -5399,7 +5918,7 @@ void Static_analysis(void) {
                                                 st_trapezoid_load[st_trapezoid_load_no].qx1 = 0;
                                                 st_trapezoid_load[st_trapezoid_load_no].qy1 = st_load[ii].magnitude2;
                                                 st_trapezoid_load[st_trapezoid_load_no].qx2 = 0;
-                                                st_trapezoid_load[st_trapezoid_load_no].qy2 = st_load[ii].magnitude2;
+                                                st_trapezoid_load[st_trapezoid_load_no].qy2 = st_load[ii].magnitude1;
                                             }
                                             break;
                                         case 13:
@@ -5539,7 +6058,8 @@ void Static_analysis(void) {
             if (TestBit(st_layer, v->warstwa)) {
                 st_thermal_load[st_thermal_load_no].layer = v->warstwa;
                 st_thermal_load[st_thermal_load_no].element = -1;
-                st_thermal_load[st_thermal_load_no].ydepth = 0;
+                st_thermal_load[st_thermal_load_no].hdepth = 0;
+                st_thermal_load[st_thermal_load_no].bdepth = 0;
                 st_thermal_load[st_thermal_load_no].deltatplus = 0;
                 st_thermal_load[st_thermal_load_no].deltatminus = 0;
                 if (v->variant > 0)
@@ -5670,11 +6190,13 @@ void Static_analysis(void) {
                             kos = sin(Angle_Normal(PL.kat * Pi / 180.));
                             koc = cos(Angle_Normal(PL.kat * Pi / 180.));
 
-                            st_thermal_load[st_thermal_load_no].ydepth = 0.0; //!!!!!!!!!!  h can be zero just in case of symmetrical thermal load
+                            st_thermal_load[st_thermal_load_no].hdepth = 0.0; //!!!!!!!!!!  h can be zero just in case of symmetrical thermal load
+                            st_thermal_load[st_thermal_load_no].bdepth = 0.0;
 
                             for (j = 0; j < st_property_no; j++) {
                                 if (abs(st_element[i].property_no) == st_property[j].n) {
-                                    st_thermal_load[st_thermal_load_no].ydepth = st_property[j].h;
+                                    st_thermal_load[st_thermal_load_no].hdepth = st_property[j].h;
+                                    st_thermal_load[st_thermal_load_no].bdepth = st_property[j].b;
                                     if (the_only_one == TRUE) break;
                                     else continue;
                                 }
@@ -6048,7 +6570,7 @@ void Static_analysis(void) {
     for (i = 0; i < st_trapezoid_load_no; i++) {
         if (TestBit(st_layer, st_trapezoid_load[i].layer)) stl_trapezoid_load_no++;
     }
-    fprintf(f, "\n%d\t\t# number of trapezoidal loads\n", stl_trapezoid_load_no);
+    fprintf(f, "\n%d\t\t# number of trapezoidal loads (local)\n", stl_trapezoid_load_no);
     fprintf(f, "#       start    stop     start    stop\n");
     fprintf(f, "#.elmnt loc'n    loc'n    load     load\n");
     fprintf(f, "# .      in       in      kip/in   kip/in\n");
@@ -6124,8 +6646,8 @@ void Static_analysis(void) {
             }
 
             sprintf(par[0], "%e", st_property[j].a);
-            set_decimal_format(par[1], st_thermal_load[i].ydepth, prop_precisions->dim_precision);
-            set_decimal_format(par[2], st_thermal_load[i].ydepth, prop_precisions->dim_precision);  //same as y axis
+            set_decimal_format(par[1], st_thermal_load[i].hdepth, prop_precisions->dim_precision);
+            set_decimal_format(par[2], st_thermal_load[i].bdepth, prop_precisions->dim_precision);  //same as y axis
             set_decimal_format(par[3], st_thermal_load[i].deltatplus, t_precision);
             set_decimal_format(par[4], st_thermal_load[i].deltatminus, t_precision);
             set_decimal_format(par[5], 0.0, t_precision);
@@ -6248,7 +6770,7 @@ void Static_analysis(void) {
     for (i = 0; i < st_trapezoid_load_no; i++) {
         if (TestBit(st_layer, st_trapezoid_load[i].layer)) stl_trapezoid_load_no++;
     }
-    fprintf(f, "\n%d\t\t# number of trapezoidal loads\n", stl_trapezoid_load_no);
+    fprintf(f, "\n%d\t\t# number of trapezoidal loads (local)\n", stl_trapezoid_load_no);
     fprintf(f, "#       start    stop     start    stop\n");
     fprintf(f, "#.elmnt loc'n    loc'n    load     load\n");
     fprintf(f, "# .      in       in      kip/in   kip/in\n");
@@ -6334,8 +6856,8 @@ void Static_analysis(void) {
             }
 
             sprintf(par[0], "%e", st_property[j].a);
-            set_decimal_format(par[1], st_thermal_load[i].ydepth, prop_precisions->dim_precision);
-            set_decimal_format(par[2], st_thermal_load[i].ydepth, prop_precisions->dim_precision);  //same as y axis
+            set_decimal_format(par[1], st_thermal_load[i].hdepth, prop_precisions->dim_precision);
+            set_decimal_format(par[2], st_thermal_load[i].bdepth, prop_precisions->dim_precision);  //same as y axis
             set_decimal_format(par[3], st_thermal_load[i].deltatplus * gamma_l, t_precision);
             set_decimal_format(par[4], st_thermal_load[i].deltatminus * gamma_l, t_precision);
             set_decimal_format(par[5], 0.0, t_precision);
@@ -6565,7 +7087,7 @@ void Static_analysis(void) {
                     } else st_trapezoid_load[i].take_it = 0;
                 }
             }
-            fprintf(f, "\n%d\t\t# number of trapezoidal loads\n", stl_trapezoid_load_no);
+            fprintf(f, "\n%d\t\t# number of trapezoidal loads (local)\n", stl_trapezoid_load_no);
             fprintf(f, "#       start    stop     start    stop\n");
             fprintf(f, "#.elmnt loc'n    loc'n    load     load\n");
             fprintf(f, "# .      in       in      kip/in   kip/in\n");
@@ -6737,8 +7259,8 @@ void Static_analysis(void) {
                     }
 
                     sprintf(par[0], "%e", st_property[j].a);
-                    set_decimal_format(par[1], st_thermal_load[i].ydepth, prop_precisions->dim_precision);
-                    set_decimal_format(par[2], st_thermal_load[i].ydepth, prop_precisions->dim_precision);  //same as y axis
+                    set_decimal_format(par[1], st_thermal_load[i].hdepth, prop_precisions->dim_precision);
+                    set_decimal_format(par[2], st_thermal_load[i].bdepth, prop_precisions->dim_precision);  //same as y axis
                     set_decimal_format(par[3], st_thermal_load[i].deltatplus * gamma_l, t_precision);
                     set_decimal_format(par[4], st_thermal_load[i].deltatminus * gamma_l, t_precision);
                     set_decimal_format(par[5], 0.0, t_precision);
@@ -6784,8 +7306,9 @@ void Static_analysis(void) {
     }
     //// ULS COMBINATIONS ENDS
     //// SLS COMBINATIONS BEGIN
+    slslc_start_file_no=case_number;
     for (int ci = 0; ci < SLSLC_NO; ci++) {
-        if (SLSLC[ci].flag == 1) {
+      if (SLSLC[ci].flag == 1) {
             int load;
             int flag;
             ST_LOAD_FACTORS *combi_load_factor;
@@ -6973,7 +7496,7 @@ void Static_analysis(void) {
                     } else st_trapezoid_load[i].take_it = 0;
                 }
             }
-            fprintf(f, "\n%d\t\t# number of trapezoidal loads\n", stl_trapezoid_load_no);
+            fprintf(f, "\n%d\t\t# number of trapezoidal loads (local)\n", stl_trapezoid_load_no);
             fprintf(f, "#       start    stop     start    stop\n");
             fprintf(f, "#.elmnt loc'n    loc'n    load     load\n");
             fprintf(f, "# .      in       in      kip/in   kip/in\n");
@@ -7145,8 +7668,8 @@ void Static_analysis(void) {
                     }
 
                     sprintf(par[0], "%e", st_property[j].a);
-                    set_decimal_format(par[1], st_thermal_load[i].ydepth, prop_precisions->dim_precision);
-                    set_decimal_format(par[2], st_thermal_load[i].ydepth, prop_precisions->dim_precision);  //same as y axis
+                    set_decimal_format(par[1], st_thermal_load[i].hdepth, prop_precisions->dim_precision);
+                    set_decimal_format(par[2], st_thermal_load[i].bdepth, prop_precisions->dim_precision);  //same as y axis
                     set_decimal_format(par[3], st_thermal_load[i].deltatplus * gamma_l, t_precision);
                     set_decimal_format(par[4], st_thermal_load[i].deltatminus * gamma_l, t_precision);
                     set_decimal_format(par[5], 0.0, t_precision);
@@ -7192,6 +7715,7 @@ void Static_analysis(void) {
         }
     }
 
+    slslc_end_file_no=case_number;
     //// SLS COMBINATIONS ENDS
     //// QPSLS COMBINATIONS BEGIN
     for (int ci = 0; ci < QPSLSLC_NO; ci++) {
@@ -7380,7 +7904,7 @@ void Static_analysis(void) {
                     } else st_trapezoid_load[i].take_it = 0;
                 }
             }
-            fprintf(f, "\n%d\t\t# number of trapezoidal loads\n", stl_trapezoid_load_no);
+            fprintf(f, "\n%d\t\t# number of trapezoidal loads (local)\n", stl_trapezoid_load_no);
             fprintf(f, "#       start    stop     start    stop\n");
             fprintf(f, "#.elmnt loc'n    loc'n    load     load\n");
             fprintf(f, "# .      in       in      kip/in   kip/in\n");
@@ -7552,8 +8076,8 @@ void Static_analysis(void) {
                     }
 
                     sprintf(par[0], "%e", st_property[j].a);
-                    set_decimal_format(par[1], st_thermal_load[i].ydepth, prop_precisions->dim_precision);
-                    set_decimal_format(par[2], st_thermal_load[i].ydepth,
+                    set_decimal_format(par[1], st_thermal_load[i].hdepth, prop_precisions->dim_precision);
+                    set_decimal_format(par[2], st_thermal_load[i].bdepth,
                                        prop_precisions->dim_precision);  //same as y axis
                     set_decimal_format(par[3], st_thermal_load[i].deltatplus * gamma_l, t_precision);
                     set_decimal_format(par[4], st_thermal_load[i].deltatminus * gamma_l, t_precision);
@@ -7613,7 +8137,7 @@ void Static_analysis(void) {
     int m_node;
     int m_element;
     int m_node1, m_node2;
-    double m_length;
+    double m_length, m_length_x, m_length_y;
     double m_mass;
     double m_qx, m_qy;
     int mi;
@@ -7648,7 +8172,8 @@ void Static_analysis(void) {
                     } else {
                         st_mass_node[st_mass_nodes_no].node = m_node;
                         st_mass_node[st_mass_nodes_no].mass = m_mass;
-                        add_mass_node();
+                        if (m_mass>=mass_precision)   //not less than 0.001 t = 1 kg
+                            add_mass_node();
                     }
                 }
             }
@@ -7667,7 +8192,7 @@ void Static_analysis(void) {
 
                 m_qx = st_uniform_load[i].qx;
                 m_qy = st_uniform_load[i].qy;
-                m_mass = sqrt((m_qx * m_qx) + (m_qy * m_qy)) * m_length / unit_factors->Ma_f;  //in t or kip
+                m_mass = sqrt((m_qx * m_qx) + (m_qy * m_qy)) * m_length / unit_factors->Ma_f;  //in tonne or slinch
 
                 //searching for existing element
                 for (mi = 0; mi < st_mass_elements_no; mi++) {
@@ -7679,7 +8204,8 @@ void Static_analysis(void) {
                 } else {
                     st_mass_element[st_mass_elements_no].element = m_element;  //enumerated from 0
                     st_mass_element[st_mass_elements_no].mass = m_mass;
-                    add_mass_element();
+                    if (m_mass>=mass_precision)   //not less than 0.001 t = 1 kg
+                         add_mass_element();
                 }
             }
         }
@@ -7689,13 +8215,21 @@ void Static_analysis(void) {
                 m_element = st_trapezoid_load[i].element;
                 m_node1 = st_element[m_element].node1;
                 m_node2 = st_element[m_element].node2;
-                m_length = st_trapezoid_load[i].dlxx2 - st_trapezoid_load[i].dlxx1;
+                m_length_x = st_trapezoid_load[i].dlxx2 - st_trapezoid_load[i].dlxx1;
+                m_length_x = milimetryob(m_length_x) / m_units_factor;
+                m_length_y = st_trapezoid_load[i].dlxy2 - st_trapezoid_load[i].dlxy1;
+                m_length_y = milimetryob(m_length_y) / m_units_factor;
 
                 m_length = milimetryob(m_length) / m_units_factor;
 
                 m_qx = (st_trapezoid_load[i].qx1 + st_trapezoid_load[i].qx2) / 2;
                 m_qy = (st_trapezoid_load[i].qy1 + st_trapezoid_load[i].qy2) / 2;
-                m_mass = sqrt((m_qx * m_qx) + (m_qy * m_qy)) * m_length / unit_factors->Ma_f;  //in t or kip
+
+                double m_mass_x = m_qx * m_length_x;
+                double m_mass_y = m_qy * m_length_y;
+
+                m_mass = sqrt(m_mass_x * m_mass_x + m_mass_y * m_mass_y) / unit_factors->Ma_f;  //in tonne or slinch
+
                 //searching for existing element
                 for (mi = 0; mi < st_mass_elements_no; mi++) {
                     if (st_mass_element[mi].element == m_element)
@@ -7706,7 +8240,8 @@ void Static_analysis(void) {
                 } else {
                     st_mass_element[st_mass_elements_no].element = m_element;  //enumerated from 0
                     st_mass_element[st_mass_elements_no].mass = m_mass;
-                    add_mass_element();
+                    if (m_mass>=mass_precision)   //not less than 0.001 t = 1 kg
+                       add_mass_element();
                 }
             }
         }
@@ -7715,7 +8250,7 @@ void Static_analysis(void) {
             if (load == 1) {
                 m_element = st_element_force[i].element;
                 m_mass = sqrt((st_element_force[i].fx * st_element_force[i].fx) +
-                              (st_element_force[i].fy * st_element_force[i].fy)) / unit_factors->Ma_f; //in t or kip
+                              (st_element_force[i].fy * st_element_force[i].fy)) / unit_factors->Ma_f; //in tonne or slinch
                 //searching for existing element
                 for (mi = 0; mi < st_mass_elements_no; mi++) {
                     if (st_mass_element[mi].element == m_element)
@@ -7726,7 +8261,8 @@ void Static_analysis(void) {
                 } else {
                     st_mass_element[st_mass_elements_no].element = m_element;  //enumerated from 0
                     st_mass_element[st_mass_elements_no].mass = m_mass;
-                    add_mass_element();
+                    if (m_mass>=mass_precision)   //not less than 0.001 t = 1 kg
+                        add_mass_element();
                 }
             }
         }
@@ -7734,19 +8270,19 @@ void Static_analysis(void) {
 
     fprintf(f, "\n%d         # number of nodes with extra mass or inertia\n", st_mass_nodes_no);
     fprintf(f, "#.n      Mass   Ixx      Iyy      Izz\n");
-    fprintf(f, "#        ton    ton.mm^2 ton.mm^2 ton.mm^2\n");
-    fprintf(f, "#        kip    kip.in^2 kip.in^2 kip.in^2\n");
+    fprintf(f, "#        tonne  tonne.mm^2 tonne.mm^2 tonne.mm^2\n");
+    fprintf(f, "#        slinch lbf.s^2.in   lbf.s^2.in   lbf.s^2.in\n");
     for (i = 0; i < st_mass_nodes_no; i++) {
-        set_decimal_format(par[0], st_mass_node[i].mass, force_precision);
+        set_decimal_format(par[0], st_mass_node[i].mass, mass_precision);
         fprintf(f, "%d     %s     0        0        0\n", st_mass_node[i].node + 1, par[0]);
     }
 
     fprintf(f, "\n%d       # number of frame elements with extra mass\n", st_mass_elements_no);
     fprintf(f, "#.e  M   Mass\n");
-    fprintf(f, "#        ton\n");
-    fprintf(f, "#        kip\n");
+    fprintf(f, "#        tonne\n");
+    fprintf(f, "#        slinch\n");
     for (i = 0; i < st_mass_elements_no; i++) {
-        set_decimal_format(par[0], st_mass_element[i].mass, force_precision);
+        set_decimal_format(par[0], st_mass_element[i].mass, mass_precision);
         fprintf(f, "%d     %s\n", st_mass_element[i].element + 1, par[0]);
     }
 
@@ -7794,7 +8330,10 @@ void Static_analysis(void) {
         ret = EditText(report, edit_params, mynCmdShow, &single, &tab);
         report[0]='\0';
         no_error = FALSE;
-    } else {
+        goto error;
+    }
+
+    // Run Pass 1 via your standard Frame3DD invoker
         show_mouse(screen);
         set_cursor_busy();
         //_free_mouse();
@@ -7818,10 +8357,177 @@ void Static_analysis(void) {
 
         //show_mouse(NULL);
         set_cursor_pointer();
-      
 
-        if (runcode_short > 0) {
+        if ((runcode_short > 0) && ((runcode_short < 181) || (runcode_short > 199)) &&
+            (strcmp(frame3dd[runcode_short], _ERROR_FREE_COMPLETION_) != 0))
+        {
             ret = ask_question(1, "", "OK", "", __FRAME3DD__, 12, frame3dd[runcode_short], 11, 1, 0);
+            no_error = FALSE;
+            goto error;
+        }
+
+        ///////////////////
+                int elements_count = st_element_no;
+
+        if ((slslc_start_file_no > 0) && (slslc_end_file_no > 0) && (slslc_end_file_no > slslc_start_file_no))
+        {
+            // Allocate plain old C arrays on the heap
+            C_ElementStiffness *new_stiffnesses = (C_ElementStiffness *) malloc((elements_count + 1) * sizeof(C_ElementStiffness));
+
+            double *pkSigmaT = (double*) malloc(st_element_no * sizeof(double));
+            double *pkSigmaC = (double*) malloc(st_element_no * sizeof(double));
+            for (int iel = 0; iel < st_element_no; iel++)
+            {
+                pkSigmaT[iel] = -BIGNOF;
+                pkSigmaC[iel] =  BIGNOF;
+            }
+
+            char extfilename[256];
+            char extrow[256];
+            char *ptr_case_load;
+            char *ptr_element;
+            int case_no = 0, elmnt_no = 0;
+            sprintf(extfilename, "%salfacad.ext", _STATIC_);
+            FILE *fext = fopen(extfilename, "rt");
+            if (fext != NULL)
+            {
+                // Skip the first scaling magnitude line at the very top
+                if (fgets(extrow, MaxTextLen, fext) != NULL) { /* line skipped */ }
+
+                while (fgets(extrow, MaxTextLen, fext)) {
+                    ptr_case_load = strstr(extrow, "# L O A D  C A S E");
+                    ptr_element = strstr(extrow, "# Elmnt");
+                    if (ptr_case_load)
+                    {
+                        ret = sscanf(ptr_case_load + 19, "%d", &case_no);
+                    }
+                    else if (ptr_element)
+                    {
+                        ret = sscanf(ptr_element + 8, "%d", &elmnt_no);
+                        elmnt_no--;
+
+                        if (elmnt_no >= 0 && elmnt_no < st_element_no) {
+                            double sigmaT, sigmaC;
+                            if (fgets(extrow, MaxTextLen, fext) != NULL) {
+                                ret = sscanf(extrow, "%lf %lf", &sigmaT, &sigmaC);
+                                if ((case_no >= slslc_start_file_no) && (case_no <= slslc_end_file_no))
+                                {
+                                    if (sigmaT > pkSigmaT[elmnt_no]) pkSigmaT[elmnt_no] = sigmaT;
+                                    if (sigmaC < pkSigmaC[elmnt_no]) pkSigmaC[elmnt_no] = sigmaC;
+                                }
+                            }
+                        }
+                    }
+                } // FIX 1 & 2: Added missing closing brace for while loop, shifting fclose outside safely!
+                fclose(fext);
+            }
+
+            int eleme_changed = 0;
+            // 4. Pure C loop to check stresses and dynamically compute cracked metrics
+            for (int ie = 0; ie < elements_count; ie++)
+            {
+                // Calculate stress at absolute peak
+                ST_PROPERTY property;
+                int prop_ret = get_property_parameters(&st_element[ie], &property);
+
+                // FIX 3: Pull baseline uncracked physical cross-section parameters first
+                // This ensures non-concrete or un-evaluated bars retain valid defaults!
+                new_stiffnesses[ie].Ax  = property.A;
+                new_stiffnesses[ie].Asy = property.Asy;
+                new_stiffnesses[ie].Asz = property.Asz;
+                new_stiffnesses[ie].Jx  = property.Jx;
+                new_stiffnesses[ie].Iy  = property.Iy;
+                new_stiffnesses[ie].Iz  = property.Iz;
+
+                if ((!prop_ret) || (property.RC_flag == 0)) continue;  // Not found or non-concrete
+                if (pkSigmaT[ie] < -0.9 * BIGNOF) continue;            // Un-evaluated element skip
+
+                double sigma_T = pkSigmaT[ie];
+                double sigma_C = pkSigmaC[ie];
+                double fcr = GetConcreteFcr(&property, ret_standard);
+
+                // 1. Calculate the central membrane (axial) stress component
+                double sigma_axial = (sigma_T + sigma_C) / 2.0;
+
+                // 2. Calculate the extreme fiber bending stress component
+                double sigma_bending = (sigma_T - sigma_C) / 2.0;
+
+                // 3. Directly calculate an accurate cross-sectional eccentricity index
+                double eccentricity_ratio = (sigma_bending / (fabs(sigma_axial) + 0.00001));
+
+                if (sigma_T > fcr) {
+                    if (sigma_axial < -0.5 && eccentricity_ratio < 1.5) {
+                        // High compression squeezing the whole block, low eccentricity = COLUMN
+                        new_stiffnesses[ie].Iy = 0.70 * property.Iy;
+                        new_stiffnesses[ie].Iz = 0.70 * property.Iz;
+                        eleme_changed++;
+                    } else {
+                        // Tension dominates or eccentricity has drifted outside the core = CRACKED BEAM
+                        new_stiffnesses[ie].Iy = 0.35 * property.Iy;
+                        new_stiffnesses[ie].Iz = 0.35 * property.Iz;
+                        eleme_changed++;
+                    }
+                }
+            }
+
+            free(pkSigmaT);
+            free(pkSigmaC);
+
+            if (eleme_changed > 0)
+            {
+                for (i = 0; i < combinations_number; i++) {
+                    sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
+                    if (my_file_exists(params)) unlink(params);
+                }
+
+                char par1[32], par2[32], par3[32];
+                sprintf(par1, "%salfacad.3dd", _STATIC_);
+                sprintf(par2, "%salfacad_temp.3dd", _STATIC_);
+                sprintf(par3, "%salfacad_bak.3dd", _STATIC_);
+                // Call C++ function to inject the new stiffnesses into the input file
+                UpdateInputFileForPass2(par1, par2, par3, elements_count, new_stiffnesses);
+
+                if (new_stiffnesses != NULL)
+                {
+                    free(new_stiffnesses);
+                    new_stiffnesses = NULL;
+                }
+
+                // Run Pass 2: Overwrite existing resultant frames with redistributed properties
+                show_mouse(screen);
+                set_cursor_busy();
+
+                sprintf(params, "-i %s%s -o %s%s > %s%s", _STATIC_, "alfacad.3dd", _STATIC_, "alfacad.out", _STATIC_, "frame3dd.ret");   //-s Off
+                runcode = RunSilent("frame3dd.exe", params);
+
+                printf("\nframe3ddnp runcode:%lu\n", runcode);
+
+#ifdef LINUX
+                runcode_short = runcode >> 8;
+#else
+                runcode_short = runcode;
+#endif
+
+                if ((runcode_short > 208) && (runcode_short < 1500)) runcode_short = 1;
+                if ((runcode_short < 0) || (runcode_short > 1500)) runcode_short = 0;
+
+                printf("\nframe3ddnp runcode_short:%d\n", runcode_short);
+                set_cursor_pointer();
+
+                if ((runcode_short > 0) && ((runcode_short < 181) || (runcode_short > 199)) &&
+                    (strcmp(frame3dd[runcode_short], _ERROR_FREE_COMPLETION_) != 0)) {
+                    ret = ask_question(1, "", "OK", "", __FRAME3DD__, 12, frame3dd[runcode_short], 11, 1, 0);
+                    no_error = FALSE;
+                    goto error;
+                }
+            }
+            else
+            {   if (new_stiffnesses != NULL)
+                {
+                    free(new_stiffnesses);
+                    new_stiffnesses = NULL;
+                }
+            }
         }
 
         ////CREATING RESULT BLOCKS
@@ -7834,8 +8540,12 @@ void Static_analysis(void) {
             unit_factors = &unit_factors_imp_out;
         }
 
-        if ((runcode_short == 0) || ((runcode_short > 180) && (runcode_short < 200)) ||
-            (strcmp(frame3dd[runcode_short], _ERROR_FREE_COMPLETION_) == 0)) {
+         if ((runcode_short > 0) && ((runcode_short < 181) || (runcode_short > 199)) &&
+                    (strcmp(frame3dd[runcode_short], _ERROR_FREE_COMPLETION_) != 0))
+         {
+            no_error = FALSE;
+            goto error;
+        }
 
             double x0 = get_localx();
             double y0 = get_localy();
@@ -7853,6 +8563,51 @@ void Static_analysis(void) {
 
             Ldsp.blok = 1;
             Ldsp.kolor = static_colors.deformation_color;
+
+            //start from assigning magnitudes if applicable, we bottow it from o_grid.c
+
+            if (rescaling_menu_mode==0)  //is going auto
+            {
+                if (refresh_rescaling_menu_mode==1)
+                {
+                    BOOL retval = Get_Private_Profile_Strings ((T_Fstring)STATIC_ANALYSIS, get_static_param);
+                    refresh_rescaling_menu_mode=0;
+                }
+
+                double fyd_min = 1e9;
+                BOOL active_material_found = FALSE;
+
+                // Outer Loop: Iterate through every element actively used in the structural frame
+                for (int ie = 0; ie < st_element_no; ie++)
+                {
+                    int target_prop_id = st_element[ie].property_no;
+
+                    // Inner Loop: Scan the global properties array to find the matching entry
+                    for (int ip = 0; ip < st_property_no; ip++)
+                    {
+                        if (st_property[ip].n == target_prop_id)
+                        {
+                            // Found the active material! Check if it has a lower fyd
+                            if (st_property[ip].fyd < fyd_min && st_property[ip].fyd > 0.0001)
+                            {
+                                fyd_min = st_property[ip].fyd;
+                                active_material_found = TRUE;
+                            }
+                            // Match found, break the inner loop immediately to jump to the next element
+                            break;
+                        }
+                    }
+                }
+
+                // Fallback protection in case the model is completely blank
+                if (!active_material_found)
+                {
+                    fyd_min = (ret_standard == 1) ? 435.0 : 60.0;
+                }
+
+                sprintf(params, "%salfacad.ext", _STATIC_);
+                DiscoverGlobalPeaks(params, ret_standard, unit_factors, fyd_min);
+            }
 
             //Geometry
             //opening file just to confirm
@@ -7919,22 +8674,22 @@ void Static_analysis(void) {
             }
 
             for (i = 0; i < st_node_no; i++) {
-                L.x1 = L.x2 = st_node[i].x;
-                L.y1 = L.y2 = st_node[i].y;
+                L.x1 = L.x2 = (float)st_node[i].x;
+                L.y1 = L.y2 = (float)st_node[i].y;
                 draw_geo_label(&L, i + 1, TRUE, FALSE, st_node[i].real);
             }
             for (i = 0; i < st_element_no; i++) {
 
                 if ((st_element[i].node1r > -1) && (st_element[i].node2r > -1)) {
-                    L.x1 = st_node[st_element[i].node1r].x;
-                    L.y1 = st_node[st_element[i].node1r].y;
-                    L.x2 = st_node[st_element[i].node2r].x;
-                    L.y2 = st_node[st_element[i].node2r].y;
+                    L.x1 = (float)st_node[st_element[i].node1r].x;
+                    L.y1 = (float)st_node[st_element[i].node1r].y;
+                    L.x2 = (float)st_node[st_element[i].node2r].x;
+                    L.y2 = (float)st_node[st_element[i].node2r].y;
 
-                    Lr.x1 = st_node[st_element[i].node1].x;
-                    Lr.y1 = st_node[st_element[i].node1].y;
-                    Lr.x2 = st_node[st_element[i].node2].x;
-                    Lr.y2 = st_node[st_element[i].node2].y;
+                    Lr.x1 = (float)st_node[st_element[i].node1].x;
+                    Lr.y1 = (float)st_node[st_element[i].node1].y;
+                    Lr.x2 = (float)st_node[st_element[i].node2].x;
+                    Lr.y2 = (float)st_node[st_element[i].node2].y;
 
                     ldf=(float)sqrt((L.x1-Lr.x1)*(L.x1-Lr.x1)+(L.y1-Lr.y1)*(L.y1-Lr.y1));
                     ldb=(float)sqrt((L.x2-Lr.x2)*(L.x2-Lr.x2)+(L.y2-Lr.y2)*(L.y2-Lr.y2));
@@ -7944,10 +8699,10 @@ void Static_analysis(void) {
 
                     draw_geo_label(&L, i + 1, FALSE, TRUE, 1);
                 } else {
-                    L.x1 = st_node[st_element[i].node1].x;
-                    L.y1 = st_node[st_element[i].node1].y;
-                    L.x2 = st_node[st_element[i].node2].x;
-                    L.y2 = st_node[st_element[i].node2].y;
+                    L.x1 = (float)st_node[st_element[i].node1].x;
+                    L.y1 = (float)st_node[st_element[i].node1].y;
+                    L.x2 = (float)st_node[st_element[i].node2].x;
+                    L.y2 = (float)st_node[st_element[i].node2].y;
 
                     ldf=0;
                     ldb=0;
@@ -8005,6 +8760,51 @@ void Static_analysis(void) {
                 ptr = strstr(report_row, "L O A D   C A S E");
                 ptr_max = strstr(report_row, "R E A C T I O N S");
                 ptr_min = strstr(report_row, "  Node        Fx");
+                ptr_rms_error = strstr(report_row,"R M S    R E L A T I V E    E Q U I L I B R I U M    E R R O R:");
+                ptr_stiffness_matrix = strstr(report_row,"* The Stiffness Matrix is not positive-definite *");
+                if ((ptr_rms_error) && (firs_rms_error))
+                {
+                    double rms_error;
+                    char *ptr_rms = strchr(ptr_rms_error,':');
+                    if (ptr_rms!=NULL) {
+                        rms_error = atof(ptr_rms + 1);
+
+                        sprintf(report_row, frame3dd[211], rms_error);
+
+                        if (rms_error >= 0.05) //The model is invalid. Stop processing entirely and force the designer to fix the restraints
+                        {
+                            fclose(f);
+                            ret = ask_question(1, "", (char *) confirm, "",
+                                               report_row, 12, "", 11, 1, 62);
+                            no_error = FALSE;
+                            goto error;
+                        } else if (rms_error > 0.01)  //The model solved, but something is wrong with the stiffness balance (e.g., poor geometry or badly proportioned frame elements)
+                        {
+                            ret = ask_question(2, _No_, (char *) confirm, "",
+                                               report_row, 12, "", 11, 1, 61);
+
+                            //1 ok; 0 - rezygnuj; 2 - Powrot
+                            if (ret != 1) {
+                                fclose(f);
+                                no_error = FALSE;
+                                goto error;
+                            }
+
+                            firs_rms_error = FALSE;
+                        }
+                    }
+
+                    //The solution is healthy
+                }
+                if (ptr_stiffness_matrix)
+                {
+                    fclose(f);
+                    ret = ask_question(1, "", (char *) confirm, "",
+                                       frame3dd[212], 12, frame3dd[213], 11, 1, 62);
+
+                    no_error = FALSE;
+                    goto error;
+                }
                 if (ptr) {
                     //selecting layer
                     ret = sscanf(ptr + 18, "%d", &layer);
@@ -8367,10 +9167,10 @@ void Static_analysis(void) {
             double S, Sp, Sm, Ss;  // sigma, sigma plus, sigma minus
             double NxM, VyM, VzM, TxM, MyM, MzM, DxM, DyM, DzM, RxM, SpM, SmM, SsM; // sigma plus max, sigma minus max
             double Nxm, Vym, Vzm, Txm, Mym, Mzm, Dxm, Dym, Dzm, Rxm, Spm, Smm, Ssm; // sigma plus min, sigma minus min
-            double Dxy, Dxy0, Nx0, Vy0, Mz0, Dxy01, Nx01, Vy01, Mz01, Sp0, Sm0, Ss0, Sp01, Sm01, Ss01, Ax, Wy;
+            double Dxy, Dxy0, Nx0, Vy0, Mz0, Dxy01, Nx01, Vy01, Mz01, Sp0, Sm0, Ss0, Sp01, Sm01, Ss01, /*Ax,*/ Wy;
             double x11, y11, x11_, y11_;
             LINIA Le = Ldef;
-            PLINIA PL1;
+            //PLINIA PL1;
             int n1, n2;
             BOOL ignore_element = FALSE;
             double kos1, koc1;
@@ -8539,10 +9339,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -8708,8 +9508,7 @@ void Static_analysis(void) {
                                 if (copysign(1.0, DyM_) == copysign(1.0, Dym_)) DyM_ = 0.0;
                             }
 
-                            if (combi_total_numbers[i].first ==
-                                1)  //creating min max values data for element and initializing values
+                            if (combi_total_numbers[i].first == 1)  //creating min max values data for element and initializing values
                             {
                                 combi_element[rep_element_no - 1].Nxm = Nxm;
                                 combi_element[rep_element_no - 1].Vym = Vym;
@@ -8734,16 +9533,12 @@ void Static_analysis(void) {
                                 combi_element[rep_element_no - 1].Nxm = min(combi_element[rep_element_no - 1].Nxm, Nxm);
                                 combi_element[rep_element_no - 1].Vym = min(combi_element[rep_element_no - 1].Vym, Vym);
                                 combi_element[rep_element_no - 1].Mzm = min(combi_element[rep_element_no - 1].Mzm, Mzm);
-                                combi_element[rep_element_no - 1].Dxm = min(combi_element[rep_element_no - 1].Dxm,
-                                                                            Dxm_);
-                                combi_element[rep_element_no - 1].Dym = min(combi_element[rep_element_no - 1].Dym,
-                                                                            Dym_);
+                                combi_element[rep_element_no - 1].Dxm = min(combi_element[rep_element_no - 1].Dxm, Dxm_);
+                                combi_element[rep_element_no - 1].Dym = min(combi_element[rep_element_no - 1].Dym, Dym_);
 
                                 //correction
-                                combi_element[rep_element_no - 1].DxM = max(combi_element[rep_element_no - 1].DxM,
-                                                                            DxM_);
-                                combi_element[rep_element_no - 1].DyM = max(combi_element[rep_element_no - 1].DyM,
-                                                                            DyM_);
+                                combi_element[rep_element_no - 1].DxM = max(combi_element[rep_element_no - 1].DxM,DxM_);
+                                combi_element[rep_element_no - 1].DyM = max(combi_element[rep_element_no - 1].DyM,DyM_);
 
                                 Nxm /= unit_factors->F_f;
                                 Vym /= unit_factors->F_f;
@@ -8760,16 +9555,12 @@ void Static_analysis(void) {
                                 combi_element[rep_element_no - 1].Nxm = min(combi_element[rep_element_no - 1].Nxm, Nxm);
                                 combi_element[rep_element_no - 1].Vym = min(combi_element[rep_element_no - 1].Vym, Vym);
                                 combi_element[rep_element_no - 1].Mzm = min(combi_element[rep_element_no - 1].Mzm, Mzm);
-                                combi_element[rep_element_no - 1].Dxm = min(combi_element[rep_element_no - 1].Dxm,
-                                                                            Dxm_);
-                                combi_element[rep_element_no - 1].Dym = min(combi_element[rep_element_no - 1].Dym,
-                                                                            Dym_);
+                                combi_element[rep_element_no - 1].Dxm = min(combi_element[rep_element_no - 1].Dxm, Dxm_);
+                                combi_element[rep_element_no - 1].Dym = min(combi_element[rep_element_no - 1].Dym, Dym_);
 
                                 //correction
-                                combi_element[rep_element_no - 1].DxM = max(combi_element[rep_element_no - 1].DxM,
-                                                                            DxM_);
-                                combi_element[rep_element_no - 1].DyM = max(combi_element[rep_element_no - 1].DyM,
-                                                                            DyM_);
+                                combi_element[rep_element_no - 1].DxM = max(combi_element[rep_element_no - 1].DxM, DxM_);
+                                combi_element[rep_element_no - 1].DyM = max(combi_element[rep_element_no - 1].DyM, DyM_);
 
                                 Nxm /= unit_factors->F_f;
                                 Vym /= unit_factors->F_f;
@@ -8829,8 +9620,7 @@ void Static_analysis(void) {
                                     else if (combi_total_numbers[i].combi == 3) combi_element = combi_element_sls;
                                     else combi_element = combi_element_qpsls;
 
-                                    if (combi_total_numbers[i].first ==
-                                        1)  //creating min max values data for element and initializing values
+                                    if (combi_total_numbers[i].first == 1)  //creating min max values data for element and initializing values
                                     {
                                         COMBI_FORCES *fd = combi_element[rep_element_no - 1].fd;
                                         fd[inx].x = dr[inx].x;
@@ -9062,11 +9852,11 @@ void Static_analysis(void) {
 
                                     if (new_line) {
 
-                                        Ldsp.x1 = xdsp;
-                                        Ldsp.y1 = ydsp;
+                                        Ldsp.x1 = (float)xdsp;
+                                        Ldsp.y1 = (float)ydsp;
                                         new_line = FALSE;
-                                        Ldsp_.x1 = xdsp1;
-                                        Ldsp_.y1 = ydsp1;
+                                        Ldsp_.x1 = (float)xdsp1;
+                                        Ldsp_.y1 = (float)ydsp1;
                                         Ldsp_.x2 = Ldsp.x1;
                                         Ldsp_.y2 = Ldsp.y1;
                                         Ldsp_.blok = 1;
@@ -9088,12 +9878,12 @@ void Static_analysis(void) {
                                         }
                                     } else {
 
-                                        Ldsp.x2 = xdsp;
-                                        Ldsp.y2 = ydsp;
+                                        Ldsp.x2 = (float)xdsp;
+                                        Ldsp.y2 = (float)ydsp;
                                         Ldsp.blok = 1;
 
-                                        Ldsp_.x1 = xdsp1;
-                                        Ldsp_.y1 = ydsp1;
+                                        Ldsp_.x1 = (float)xdsp1;
+                                        Ldsp_.y1 = (float)ydsp1;
                                         Ldsp_.x2 = Ldsp.x2;
                                         Ldsp_.y2 = Ldsp.y2;
                                         Ldsp_.blok = 1;
@@ -9149,11 +9939,11 @@ void Static_analysis(void) {
 
                                         if (new_line1) {
 
-                                            Ldsp1.x1 = xdsp;
-                                            Ldsp1.y1 = ydsp;
+                                            Ldsp1.x1 = (float)xdsp;
+                                            Ldsp1.y1 = (float)ydsp;
                                             new_line1 = FALSE;
-                                            Ldsp_.x1 = xdsp1;
-                                            Ldsp_.y1 = ydsp1;
+                                            Ldsp_.x1 = (float)xdsp1;
+                                            Ldsp_.y1 = (float)ydsp1;
                                             Ldsp_.x2 = Ldsp1.x1;
                                             Ldsp_.y2 = Ldsp1.y1;
                                             Ldsp_.blok = 1;
@@ -9175,12 +9965,12 @@ void Static_analysis(void) {
                                             }
                                         } else {
 
-                                            Ldsp1.x2 = xdsp;
-                                            Ldsp1.y2 = ydsp;
+                                            Ldsp1.x2 = (float)xdsp;
+                                            Ldsp1.y2 = (float)ydsp;
                                             Ldsp1.blok = 1;
 
-                                            Ldsp_.x1 = xdsp1;
-                                            Ldsp_.y1 = ydsp1;
+                                            Ldsp_.x1 = (float)xdsp1;
+                                            Ldsp_.y1 = (float)ydsp1;
                                             Ldsp_.x2 = Ldsp1.x2;
                                             Ldsp_.y2 = Ldsp1.y2;
                                             Ldsp_.blok = 1;
@@ -9385,10 +10175,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -9499,11 +10289,11 @@ void Static_analysis(void) {
 
                                         if (new_line) {
 
-                                            Ldsp.x1 = xdsp;
-                                            Ldsp.y1 = ydsp;
+                                            Ldsp.x1 = (float)xdsp;
+                                            Ldsp.y1 = (float)ydsp;
                                             new_line = FALSE;
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
@@ -9523,12 +10313,12 @@ void Static_analysis(void) {
                                             }
                                         } else {
 
-                                            Ldsp.x2 = xdsp;
-                                            Ldsp.y2 = ydsp;
+                                            Ldsp.x2 = (float)xdsp;
+                                            Ldsp.y2 = (float)ydsp;
                                             Ldsp.blok = 1;
 
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
@@ -9583,11 +10373,11 @@ void Static_analysis(void) {
 
                                             if (new_line1) {
 
-                                                Ldsp1.x1 = xdsp;
-                                                Ldsp1.y1 = ydsp;
+                                                Ldsp1.x1 = (float)xdsp;
+                                                Ldsp1.y1 = (float)ydsp;
                                                 new_line1 = FALSE;
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
@@ -9607,12 +10397,12 @@ void Static_analysis(void) {
                                                 }
                                             } else {
 
-                                                Ldsp1.x2 = xdsp;
-                                                Ldsp1.y2 = ydsp;
+                                                Ldsp1.x2 = (float)xdsp;
+                                                Ldsp1.y2 = (float)ydsp;
                                                 Ldsp1.blok = 1;
 
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
@@ -9680,7 +10470,7 @@ void Static_analysis(void) {
                 il = combi_total_numbers[i].case_no;
                 if (combi_total_numbers[i].combi == 0) {
                     strcpy(SLS_ULS, "sls");
-                    strcpy(SLS_ULS_BAK, "case");
+                    strcpy(SLS_ULS_BAK, "sls");
                     strcpy(SLS_ULS_BLK, "sls");
                 }
                 else if (combi_total_numbers[i].combi == 1) {
@@ -9714,7 +10504,7 @@ void Static_analysis(void) {
                 }
 
                 sprintf(desired_layer_bak, "%s_%s_%s_%d", ptr_id, "cutting_forces", SLS_ULS_BAK, combination_no);
-                sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "cutting_forces", SLS_ULS, combination_no);
+                sprintf(desired_layer, "%s_%s_%s_%d", ptr_id, "shear_forces", SLS_ULS, combination_no);
                 sprintf(block_name, "%s$V_%s_%d_%d", ptr_id_short, SLS_ULS_BLK, combination_no,
                         combi_total_numbers[i].combination);
 
@@ -9803,10 +10593,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -9938,12 +10728,12 @@ void Static_analysis(void) {
 
                                         if (new_line) {
 
-                                            Ldsp.x1 = xdsp;
-                                            Ldsp.y1 = ydsp;
+                                            Ldsp.x1 = (float)xdsp;
+                                            Ldsp.y1 = (float)ydsp;
                                             Ldsp.blok = 1;
                                             new_line = FALSE;
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
@@ -9965,12 +10755,12 @@ void Static_analysis(void) {
                                             }
                                         } else {
 
-                                            Ldsp.x2 = xdsp;
-                                            Ldsp.y2 = ydsp;
+                                            Ldsp.x2 = (float)xdsp;
+                                            Ldsp.y2 = (float)ydsp;
                                             Ldsp.blok = 1;
 
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
@@ -10026,12 +10816,12 @@ void Static_analysis(void) {
 
                                             if (new_line1) {
 
-                                                Ldsp1.x1 = xdsp;
-                                                Ldsp1.y1 = ydsp;
+                                                Ldsp1.x1 = (float)xdsp;
+                                                Ldsp1.y1 = (float)ydsp;
                                                 Ldsp1.blok = 1;
                                                 new_line1 = FALSE;
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
@@ -10053,12 +10843,12 @@ void Static_analysis(void) {
                                                 }
                                             } else {
 
-                                                Ldsp1.x2 = xdsp;
-                                                Ldsp1.y2 = ydsp;
+                                                Ldsp1.x2 = (float)xdsp;
+                                                Ldsp1.y2 = (float)ydsp;
                                                 Ldsp1.blok = 1;
 
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
@@ -10254,10 +11044,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -10382,12 +11172,12 @@ void Static_analysis(void) {
                                         Rotate_Point(kos1, koc1, x11, y11, x11 + Mz / m_magnitude, y11, &xdsp, &ydsp);
 
                                         if (new_line) {
-                                            Ldsp.x1 = xdsp;
-                                            Ldsp.y1 = ydsp;
+                                            Ldsp.x1 = (float)xdsp;
+                                            Ldsp.y1 = (float)ydsp;
                                             Ldsp.blok = 1;
                                             new_line = FALSE;
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x1;
                                             Ldsp_.y2 = Ldsp.y1;
                                             Ldsp_.blok = 1;
@@ -10401,12 +11191,12 @@ void Static_analysis(void) {
                                                 Mz0 = Mz;
                                             }
                                         } else {
-                                            Ldsp.x2 = xdsp;
-                                            Ldsp.y2 = ydsp;
+                                            Ldsp.x2 = (float)xdsp;
+                                            Ldsp.y2 = (float)ydsp;
                                             Ldsp.blok = 1;
 
-                                            Ldsp_.x1 = x11;
-                                            Ldsp_.y1 = y11;
+                                            Ldsp_.x1 = (float)x11;
+                                            Ldsp_.y1 = (float)y11;
                                             Ldsp_.x2 = Ldsp.x2;
                                             Ldsp_.y2 = Ldsp.y2;
                                             Ldsp_.blok = 1;
@@ -10447,12 +11237,12 @@ void Static_analysis(void) {
 
 
                                             if (new_line1) {
-                                                Ldsp1.x1 = xdsp;
-                                                Ldsp1.y1 = ydsp;
+                                                Ldsp1.x1 = (float)xdsp;
+                                                Ldsp1.y1 = (float)ydsp;
                                                 Ldsp1.blok = 1;
                                                 new_line1 = FALSE;
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x1;
                                                 Ldsp_.y2 = Ldsp1.y1;
                                                 Ldsp_.blok = 1;
@@ -10466,12 +11256,12 @@ void Static_analysis(void) {
                                                     Mz01 = Mz;
                                                 }
                                             } else {
-                                                Ldsp1.x2 = xdsp;
-                                                Ldsp1.y2 = ydsp;
+                                                Ldsp1.x2 = (float)xdsp;
+                                                Ldsp1.y2 = (float)ydsp;
                                                 Ldsp1.blok = 1;
 
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp1.x2;
                                                 Ldsp_.y2 = Ldsp1.y2;
                                                 Ldsp_.blok = 1;
@@ -10684,10 +11474,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -10695,7 +11485,7 @@ void Static_analysis(void) {
                         kos1 = sin(Angle_Normal((PL.kat - 90) * Pi / 180));
                         koc1 = cos(Angle_Normal((PL.kat - 90) * Pi / 180));
 
-                        int property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
+                        property_no = abs(st_element[rep_element_no - 1].property_no);  ////negative is for virtual element
                         //search for properties
                         for (ip = 0; ip < st_property_no; ip++)
                         {
@@ -10762,8 +11552,8 @@ void Static_analysis(void) {
                                 if ((strlen(report_row) > 0) && (strchr(report_row, '#') == NULL)) {
                                     if (sscanf(report_row, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &dr[inxi].x,
                                                &dr[inxi].Nx, &dr[inxi].Vy, &dr[inxi].Vz, &dr[inxi].Tx, &dr[inxi].My,
-                                               &dr[inxi].Mz, &dr[inxi].Dx, &dr[inxi].Dy, &dr[inxi].Dz, &dr[inxi].Rx) ==
-                                        11) {
+                                               &dr[inxi].Mz, &dr[inxi].Dx, &dr[inxi].Dy, &dr[inxi].Dz, &dr[inxi].Rx) == 11)
+                                    {
                                         Nx = dr[inxi].Nx / unit_factors->F_f;
                                         Mz = dr[inxi].Mz / unit_factors->M_f;
 
@@ -10888,7 +11678,6 @@ void Static_analysis(void) {
                                         Sm_min = fd[inx].Sm_min;
                                         Sm_max = fd[inx].Sm_max;
 
-
                                         if (copysign(1.0, Sp_min) == copysign(1.0, Sp_max)) {
                                             if (fabs(Sp_min) <= fabs(Sp_max)) Sp_min = 0;   ////or  <
                                             else Sp_max = 0;
@@ -10922,11 +11711,6 @@ void Static_analysis(void) {
                                                 Sm = dr[inx].Sm;
                                             }
 
-                                            //if (rep_element_no==15)
-                                            //{
-                                            //    int aaa=0;
-                                            //}
-
                                             ignore_Sm=FALSE;
                                             if (Check_if_Equal3(Sp, Sm))
                                                 //Sm=0;  //TEMPORARY
@@ -10951,12 +11735,12 @@ void Static_analysis(void) {
                                                          &ydsp1);
 
                                             if (new_line) {
-                                                Ldsp.x1 = xdsp;
-                                                Ldsp.y1 = ydsp;
+                                                Ldsp.x1 = (float)xdsp;
+                                                Ldsp.y1 = (float)ydsp;
                                                 Ldsp.blok = 1;
                                                 new_line = FALSE;
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp.x1;
                                                 Ldsp_.y2 = Ldsp.y1;
                                                 Ldsp_.blok = 1;
@@ -10982,11 +11766,11 @@ void Static_analysis(void) {
                                                     Sp0 = Sp;
                                                 }
 
-                                                Ldsp1.x1 = xdsp1;
-                                                Ldsp1.y1 = ydsp1;
+                                                Ldsp1.x1 = (float)xdsp1;
+                                                Ldsp1.y1 = (float)ydsp1;
                                                 Ldsp1.blok = 1;
-                                                Ldsp1_.x1 = x11;
-                                                Ldsp1_.y1 = y11;
+                                                Ldsp1_.x1 = (float)x11;
+                                                Ldsp1_.y1 = (float)y11;
                                                 Ldsp1_.x2 = Ldsp1.x1;
                                                 Ldsp1_.y2 = Ldsp1.y1;
                                                 Ldsp1_.blok = 1;
@@ -11005,12 +11789,12 @@ void Static_analysis(void) {
                                                 }
 
                                             } else {
-                                                Ldsp.x2 = xdsp;
-                                                Ldsp.y2 = ydsp;
+                                                Ldsp.x2 = (float)xdsp;
+                                                Ldsp.y2 = (float)ydsp;
                                                 Ldsp.blok = 1;
 
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp.x2;
                                                 Ldsp_.y2 = Ldsp.y2;
                                                 Ldsp_.blok = 1;
@@ -11047,12 +11831,12 @@ void Static_analysis(void) {
                                                     goto error;
                                                 }
 
-                                                Ldsp1.x2 = xdsp1;
-                                                Ldsp1.y2 = ydsp1;
+                                                Ldsp1.x2 = (float)xdsp1;
+                                                Ldsp1.y2 = (float)ydsp1;
                                                 Ldsp1.blok = 1;
 
-                                                Ldsp1_.x1 = x11;
-                                                Ldsp1_.y1 = y11;
+                                                Ldsp1_.x1 = (float)x11;
+                                                Ldsp1_.y1 = (float)y11;
                                                 Ldsp1_.x2 = Ldsp1.x2;
                                                 Ldsp1_.y2 = Ldsp1.y2;
                                                 Ldsp1_.blok = 1;
@@ -11124,12 +11908,12 @@ void Static_analysis(void) {
                                                              &ydsp1);
 
                                                 if (new_line1) {
-                                                    Ldsp01.x1 = xdsp;
-                                                    Ldsp01.y1 = ydsp;
+                                                    Ldsp01.x1 = (float)xdsp;
+                                                    Ldsp01.y1 = (float)ydsp;
                                                     Ldsp01.blok = 1;
                                                     new_line1 = FALSE;
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp01.x1;
                                                     Ldsp_.y2 = Ldsp01.y1;
                                                     Ldsp_.blok = 1;
@@ -11155,11 +11939,11 @@ void Static_analysis(void) {
                                                         Sp0 = Sp;
                                                     }
 
-                                                    Ldsp11.x1 = xdsp1;
-                                                    Ldsp11.y1 = ydsp1;
+                                                    Ldsp11.x1 = (float)xdsp1;
+                                                    Ldsp11.y1 = (float)ydsp1;
                                                     Ldsp11.blok = 1;
-                                                    Ldsp1_.x1 = x11;
-                                                    Ldsp1_.y1 = y11;
+                                                    Ldsp1_.x1 = (float)x11;
+                                                    Ldsp1_.y1 = (float)y11;
                                                     Ldsp1_.x2 = Ldsp11.x1;
                                                     Ldsp1_.y2 = Ldsp11.y1;
                                                     Ldsp1_.blok = 1;
@@ -11178,12 +11962,12 @@ void Static_analysis(void) {
                                                     }
 
                                                 } else {
-                                                    Ldsp01.x2 = xdsp;
-                                                    Ldsp01.y2 = ydsp;
+                                                    Ldsp01.x2 = (float)xdsp;
+                                                    Ldsp01.y2 = (float)ydsp;
                                                     Ldsp01.blok = 1;
 
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp01.x2;
                                                     Ldsp_.y2 = Ldsp01.y2;
                                                     Ldsp_.blok = 1;
@@ -11221,12 +12005,12 @@ void Static_analysis(void) {
                                                         goto error;
                                                     }
 
-                                                    Ldsp11.x2 = xdsp1;
-                                                    Ldsp11.y2 = ydsp1;
+                                                    Ldsp11.x2 = (float)xdsp1;
+                                                    Ldsp11.y2 = (float)ydsp1;
                                                     Ldsp11.blok = 1;
 
-                                                    Ldsp1_.x1 = x11;
-                                                    Ldsp1_.y1 = y11;
+                                                    Ldsp1_.x1 = (float)x11;
+                                                    Ldsp1_.y1 = (float)y11;
                                                     Ldsp1_.x2 = Ldsp11.x2;
                                                     Ldsp1_.y2 = Ldsp11.y2;
                                                     Ldsp1_.blok = 1;
@@ -11482,12 +12266,12 @@ void Static_analysis(void) {
                                                              &ydsp1);
 
                                                 if (new_line) {
-                                                    Ldsp.x1 = xdsp;
-                                                    Ldsp.y1 = ydsp;
+                                                    Ldsp.x1 = (float)xdsp;
+                                                    Ldsp.y1 = (float)ydsp;
                                                     Ldsp.blok = 1;
                                                     new_line = FALSE;
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp.x1;
                                                     Ldsp_.y2 = Ldsp.y1;
                                                     Ldsp_.blok = 1;
@@ -11513,11 +12297,11 @@ void Static_analysis(void) {
                                                         Sp0 = Sp;
                                                     }
 
-                                                    Ldsp1.x1 = xdsp1;
-                                                    Ldsp1.y1 = ydsp1;
+                                                    Ldsp1.x1 = (float)xdsp1;
+                                                    Ldsp1.y1 = (float)ydsp1;
                                                     Ldsp1.blok = 1;
-                                                    Ldsp1_.x1 = x11;
-                                                    Ldsp1_.y1 = y11;
+                                                    Ldsp1_.x1 = (float)x11;
+                                                    Ldsp1_.y1 = (float)y11;
                                                     Ldsp1_.x2 = Ldsp1.x1;
                                                     Ldsp1_.y2 = Ldsp1.y1;
                                                     Ldsp1_.blok = 1;
@@ -11536,12 +12320,12 @@ void Static_analysis(void) {
                                                     }
 
                                                 } else {
-                                                    Ldsp.x2 = xdsp;
-                                                    Ldsp.y2 = ydsp;
+                                                    Ldsp.x2 = (float)xdsp;
+                                                    Ldsp.y2 = (float)ydsp;
                                                     Ldsp.blok = 1;
 
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp.x2;
                                                     Ldsp_.y2 = Ldsp.y2;
                                                     Ldsp_.blok = 1;
@@ -11578,12 +12362,12 @@ void Static_analysis(void) {
                                                         goto error;
                                                     }
 
-                                                    Ldsp1.x2 = xdsp1;
-                                                    Ldsp1.y2 = ydsp1;
+                                                    Ldsp1.x2 = (float)xdsp1;
+                                                    Ldsp1.y2 = (float)ydsp1;
                                                     Ldsp1.blok = 1;
 
-                                                    Ldsp1_.x1 = x11;
-                                                    Ldsp1_.y1 = y11;
+                                                    Ldsp1_.x1 = (float)x11;
+                                                    Ldsp1_.y1 = (float)y11;
                                                     Ldsp1_.x2 = Ldsp1.x2;
                                                     Ldsp1_.y2 = Ldsp1.y2;
                                                     Ldsp1_.blok = 1;
@@ -11738,12 +12522,12 @@ void Static_analysis(void) {
                                                                  &ydsp1);
 
                                                     if (new_line1) {
-                                                        Ldsp01.x1 = xdsp;
-                                                        Ldsp01.y1 = ydsp;
+                                                        Ldsp01.x1 = (float)xdsp;
+                                                        Ldsp01.y1 = (float)ydsp;
                                                         Ldsp01.blok = 1;
                                                         new_line1 = FALSE;
-                                                        Ldsp_.x1 = x11;
-                                                        Ldsp_.y1 = y11;
+                                                        Ldsp_.x1 = (float)x11;
+                                                        Ldsp_.y1 = (float)y11;
                                                         Ldsp_.x2 = Ldsp01.x1;
                                                         Ldsp_.y2 = Ldsp01.y1;
                                                         Ldsp_.blok = 1;
@@ -11769,11 +12553,11 @@ void Static_analysis(void) {
                                                             Sp0 = Sp;
                                                         }
 
-                                                        Ldsp11.x1 = xdsp1;
-                                                        Ldsp11.y1 = ydsp1;
+                                                        Ldsp11.x1 = (float)xdsp1;
+                                                        Ldsp11.y1 = (float)ydsp1;
                                                         Ldsp11.blok = 1;
-                                                        Ldsp1_.x1 = x11;
-                                                        Ldsp1_.y1 = y11;
+                                                        Ldsp1_.x1 = (float)x11;
+                                                        Ldsp1_.y1 = (float)y11;
                                                         Ldsp1_.x2 = Ldsp11.x1;
                                                         Ldsp1_.y2 = Ldsp11.y1;
                                                         Ldsp1_.blok = 1;
@@ -11792,12 +12576,12 @@ void Static_analysis(void) {
                                                         }
 
                                                     } else {
-                                                        Ldsp01.x2 = xdsp;
-                                                        Ldsp01.y2 = ydsp;
+                                                        Ldsp01.x2 = (float)xdsp;
+                                                        Ldsp01.y2 = (float)ydsp;
                                                         Ldsp01.blok = 1;
 
-                                                        Ldsp_.x1 = x11;
-                                                        Ldsp_.y1 = y11;
+                                                        Ldsp_.x1 = (float)x11;
+                                                        Ldsp_.y1 = (float)y11;
                                                         Ldsp_.x2 = Ldsp01.x2;
                                                         Ldsp_.y2 = Ldsp01.y2;
                                                         Ldsp_.blok = 1;
@@ -11835,12 +12619,12 @@ void Static_analysis(void) {
                                                             goto error;
                                                         }
 
-                                                        Ldsp11.x2 = xdsp1;
-                                                        Ldsp11.y2 = ydsp1;
+                                                        Ldsp11.x2 = (float)xdsp1;
+                                                        Ldsp11.y2 = (float)ydsp1;
                                                         Ldsp11.blok = 1;
 
-                                                        Ldsp1_.x1 = x11;
-                                                        Ldsp1_.y1 = y11;
+                                                        Ldsp1_.x1 = (float)x11;
+                                                        Ldsp1_.y1 = (float)y11;
                                                         Ldsp1_.x2 = Ldsp11.x2;
                                                         Ldsp1_.y2 = Ldsp11.y2;
                                                         Ldsp1_.blok = 1;
@@ -12066,10 +12850,10 @@ void Static_analysis(void) {
 
                         n1 = st_element[rep_element_no - 1].node1;
                         n2 = st_element[rep_element_no - 1].node2;
-                        Le.x1 = st_node[n1].x;
-                        Le.y1 = st_node[n1].y;
-                        Le.x2 = st_node[n2].x;
-                        Le.y2 = st_node[n2].y;
+                        Le.x1 = (float)st_node[n1].x;
+                        Le.y1 = (float)st_node[n1].y;
+                        Le.x2 = (float)st_node[n2].x;
+                        Le.y2 = (float)st_node[n2].y;
                         parametry_lini(&Le, &PL);
                         kos = sin(PL.kat * Pi / 180);
                         koc = cos(PL.kat * Pi / 180);
@@ -12218,16 +13002,16 @@ void Static_analysis(void) {
                                             x11 = Le.x1 + jednostkiOb(x) * koc;
                                             y11 = Le.y1 + jednostkiOb(x) * kos;
 
-                                            Rotate_Point(kos1, koc1, x11, y11, x11 + fabs(Ss / s_magnitude), y11, &xdsp,
+                                            Rotate_Point(kos1, koc1, x11, y11, x11 + fabs(Ss / ss_magnitude), y11, &xdsp,
                                                          &ydsp);
 
                                             if (new_line) {
-                                                Ldsp.x1 = xdsp;
-                                                Ldsp.y1 = ydsp;
+                                                Ldsp.x1 = (float)xdsp;
+                                                Ldsp.y1 = (float)ydsp;
                                                 Ldsp.blok = 1;
                                                 new_line = FALSE;
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp.x1;
                                                 Ldsp_.y2 = Ldsp.y1;
                                                 Ldsp_.blok = 1;
@@ -12244,12 +13028,12 @@ void Static_analysis(void) {
                                                 }
 
                                             } else {
-                                                Ldsp.x2 = xdsp;
-                                                Ldsp.y2 = ydsp;
+                                                Ldsp.x2 = (float)xdsp;
+                                                Ldsp.y2 = (float)ydsp;
                                                 Ldsp.blok = 1;
 
-                                                Ldsp_.x1 = x11;
-                                                Ldsp_.y1 = y11;
+                                                Ldsp_.x1 = (float)x11;
+                                                Ldsp_.y1 = (float)y11;
                                                 Ldsp_.x2 = Ldsp.x2;
                                                 Ldsp_.y2 = Ldsp.y2;
                                                 Ldsp_.blok = 1;
@@ -12315,14 +13099,13 @@ void Static_analysis(void) {
                                                 int rho_ret = calculate_p_tau(combi_total_numbers[i].combi, ret_standard, &st_property[ip], Vy, &pAss);
 
                                                 char p_suffix[4]="";
-                                                double p_shear_precision;
+                                                double p_shear_precision = stress_precision;;
 
                                                 fd[inx].Ss=pAss;
 
                                                 strcpy(p_suffix,"%");
 
                                                 sp_magnitude=p_magnitude;  //could be 10 times more than for main reinforcing
-                                                p_shear_precision = stress_precision;
 
                                                 x = dr[inx].x;
 
@@ -12335,12 +13118,12 @@ void Static_analysis(void) {
                                                              &ydsp);
 
                                                 if (new_line) {
-                                                    Ldsp.x1 = xdsp;
-                                                    Ldsp.y1 = ydsp;
+                                                    Ldsp.x1 = (float)xdsp;
+                                                    Ldsp.y1 = (float)ydsp;
                                                     Ldsp.blok = 1;
                                                     new_line = FALSE;
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp.x1;
                                                     Ldsp_.y2 = Ldsp.y1;
                                                     Ldsp_.blok = 1;
@@ -12357,12 +13140,12 @@ void Static_analysis(void) {
                                                     }
 
                                                 } else {
-                                                    Ldsp.x2 = xdsp;
-                                                    Ldsp.y2 = ydsp;
+                                                    Ldsp.x2 = (float)xdsp;
+                                                    Ldsp.y2 = (float)ydsp;
                                                     Ldsp.blok = 1;
 
-                                                    Ldsp_.x1 = x11;
-                                                    Ldsp_.y1 = y11;
+                                                    Ldsp_.x1 = (float)x11;
+                                                    Ldsp_.y1 = (float)y11;
                                                     Ldsp_.x2 = Ldsp.x2;
                                                     Ldsp_.y2 = Ldsp.y2;
                                                     Ldsp_.blok = 1;
@@ -12423,11 +13206,40 @@ void Static_analysis(void) {
                 fclose(f);
             }
             //////////  DYNAMIC
+            ////even if dynamic was not analyzed, we scan for a layer
 
+            sprintf(desired_layer, "%s_%s", ptr_id, "dynamic");
+
+            for (ii = 0; ii < No_Layers; ii++) {
+                if (strcmp(Layers[ii].name, desired_layer) == 0)
+                    break;
+            }
+            if (ii < No_Layers) {
+                desired_layer_no = ii;
+                delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
+            } else {
+                if ((st_dynamic_no > 0) || (FIXED_DYNAMIC_LAYER)) //it is created only when dynamic was done , or  FIXED_DYNAMIC_LAYER==TRUE
+                {
+                    if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
+                        ret = ask_question(1, "", (char *) confirm, "",
+                                           (char *) _CANNOT_CREATE_NEW_LAYER_, 12, "", 11,
+                                           1, 62);
+                        no_error = FALSE;
+                        goto error;
+                    }
+
+                    No_Layers++;
+                    desired_layer_no = No_Layers - 1;
+                    Layers[No_Layers - 1].on = 1;
+                    Layers[No_Layers - 1].edit = 1;
+                    Layers[No_Layers - 1].point = 1;
+                    strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
+                    Layers[No_Layers - 1].color = Sdsp.kolor;
+                }
+            }
 
             if (st_dynamic_no > 0)
             {
-
                 float curviness = 0.75;
 
                 Sdsp.npts = 5;
@@ -12444,34 +13256,6 @@ void Static_analysis(void) {
                 Sdsp.kolor = static_colors.dynamic_color;
                 Sdsp.typ = 64;
                 Sdsp.blok = ElemBlok;
-
-                sprintf(desired_layer, "%s_%s", ptr_id, "dynamic");
-
-                for (ii = 0; ii < No_Layers; ii++) {
-                    if (strcmp(Layers[ii].name, desired_layer) == 0)
-                        break;
-                }
-                if (ii < No_Layers) {
-                    desired_layer_no = ii;
-                    delete_all_from_layer_atrybut(desired_layer_no, ANieOkreslony);
-                } else {
-                    if (No_Layers == MAX_NUMBER_OF_LAYERS - 1) {
-                        ret = ask_question(1, "", (char *) confirm, "",
-                                           (char *) _CANNOT_CREATE_NEW_LAYER_, 12, "", 11,
-                                           1, 62);
-                        no_error=FALSE;
-                        goto error;
-                    }
-
-                    No_Layers++;
-                    desired_layer_no = No_Layers - 1;
-                    Layers[No_Layers - 1].on = 1;
-                    Layers[No_Layers - 1].edit = 1;
-                    Layers[No_Layers - 1].point = 1;
-                    strncpy(Layers[No_Layers - 1].name, desired_layer, 64);
-                    Layers[No_Layers - 1].color = Sdsp.kolor;
-
-                }
 
                 Sdsp.warstwa = desired_layer_no;
 
@@ -12565,11 +13349,6 @@ void Static_analysis(void) {
                             index = 0;
                         } else if (frame == 1)  //space for curviness
                         {
-
-                            if (index != 22) {
-                                int a = 0;
-                            }
-
                             Sdsp.xy[index++] = curviness;
                             Sdsp.xy[index++] = 0;  //reserve
                         }
@@ -12579,10 +13358,6 @@ void Static_analysis(void) {
                             //adding control points;
                             xdsp /= units_factor;
                             ydsp /= units_factor;
-
-                            if (index > 574) {
-                                int a = 0;
-                            }
 
                             Sdsp.xy[index++] = jednostkiOb(xdsp) + x0;
                             Sdsp.xy[index++] = jednostkiOb(ydsp) + y0;
@@ -12600,15 +13375,13 @@ void Static_analysis(void) {
                 fclose(f);
             }
             /////////
-        }
-        else no_error=FALSE;
 
-    }
-
+#ifdef NDEBUG
     for (i = 0; i < combinations_number; i++) {
         sprintf(params, "%salfacad.if%02d", _STATIC_, i + 1);
         if (my_file_exists(params)) unlink(params);
     }
+#endif
 
     error:
 
@@ -12635,7 +13408,15 @@ void Static_analysis(void) {
 
     free(st_node);
 
-    if (failed_elements!=NULL) free(failed_elements);
+    if (failed_elements!=NULL) {
+        free(failed_elements);
+        failed_elements=NULL;
+    }
+
+    if (st_failed_property!=NULL) {
+        free(st_failed_property);
+        st_failed_property=NULL;
+    }
 
     lock_mouse();
 
@@ -13101,14 +13882,14 @@ int select_forces(int no, double dx, GRAPH_VALUES* fvalues, float *force_min, fl
 
     if (Check_if_Equal(dx, 0.0))
     {
-        *force_min=fvalues->vmin;
-        *force_max=fvalues->vmax;
+        if (force_min) *force_min=fvalues->vmin;
+        if (force_max) *force_max=fvalues->vmax;
     }
 
     else if (Check_if_Equal(dx, (fvalues+no-1)->x))
     {
-        *force_min=(fvalues+no-1)->vmin;
-        *force_max=(fvalues+no-1)->vmax;
+        if (force_min) *force_min=(fvalues+no-1)->vmin;
+        if (force_max) *force_max=(fvalues+no-1)->vmax;
     }
     else
     {
@@ -13120,12 +13901,12 @@ int select_forces(int no, double dx, GRAPH_VALUES* fvalues, float *force_min, fl
         f1=(fvalues+i-1)->vmin;
         f2=(fvalues+i)->vmin;
         f=f1+(f2-f1)*df;
-        *force_min=(float)f;
+        if (force_min) *force_min=(float)f;
 
         f1=(fvalues+i-1)->vmax;
         f2=(fvalues+i)->vmax;
         f=f1+(f2-f1)*df;
-        *force_max=(float)f;
+        if (force_max) *force_max=(float)f;
     }
 
     return 0;
@@ -13135,6 +13916,9 @@ int get_force_at_x(double dx_, double l, float rdf, float rdb, SECTION_GRAPH_DAT
 {   double dx=dx_;
 
     GRAPH_VALUES *Dy=NULL, *Dx=NULL, *Nx=NULL, *Vy=NULL, *Mz=NULL, *S=NULL, *Ss=NULL;
+    //extensions for GRID
+    GRAPH_VALUES *Dz=NULL, *Rx=NULL, *Vz=NULL, *My=NULL, *Tx=NULL, *rm=NULL, *rM=NULL;
+
     int ret;
 
     if (section_data->Dy_data!=NULL) Dy=(GRAPH_VALUES*)section_data->Dy_data;
@@ -13144,6 +13928,14 @@ int get_force_at_x(double dx_, double l, float rdf, float rdb, SECTION_GRAPH_DAT
     if (section_data->Mz_data!=NULL) Mz=(GRAPH_VALUES*)section_data->Mz_data;
     if (section_data->S_data!=NULL) S=(GRAPH_VALUES*)section_data->S_data;
     if (section_data->Ss_data!=NULL) Ss=(GRAPH_VALUES*)section_data->Ss_data;
+    //extensions for GRID
+    if (section_data->Dz_data!=NULL) Dz=(GRAPH_VALUES*)section_data->Dz_data;
+    if (section_data->Rx_data!=NULL) Rx=(GRAPH_VALUES*)section_data->Rx_data;
+    if (section_data->Vz_data!=NULL) Vz=(GRAPH_VALUES*)section_data->Vz_data;
+    if (section_data->My_data!=NULL) My=(GRAPH_VALUES*)section_data->My_data;
+    if (section_data->Tx_data!=NULL) Tx=(GRAPH_VALUES*)section_data->Tx_data;
+    if (section_data->rm_data!=NULL) rm=(GRAPH_VALUES*)section_data->rm_data;
+    if (section_data->rM_data!=NULL) rM=(GRAPH_VALUES*)section_data->rM_data;
 
     if (Dy!=NULL) ret = select_forces(section_data->Dy_no, dx, Dy, &forces->Dy_min, &forces->Dy_max);
     if (Dx!=NULL) ret = select_forces(section_data->Dx_no, dx, Dx, &forces->Dx_min, &forces->Dx_max);
@@ -13154,6 +13946,14 @@ int get_force_at_x(double dx_, double l, float rdf, float rdb, SECTION_GRAPH_DAT
     if (dx>(l-rdb)) dx=l-rdb;
     if (S!=NULL) ret = select_forces(section_data->S_no, dx, S, &forces->S_min, &forces->S_max);
     if (Ss!=NULL) ret = select_forces(section_data->Ss_no, dx, Ss, &forces->Ss_min, &forces->Ss_max);
+    //extensions for GRID
+    if (Dz!=NULL) ret = select_forces(section_data->Dz_no, dx, Dz, &forces->Dz_min, &forces->Dz_max);
+    if (Rx!=NULL) ret = select_forces(section_data->Rx_no, dx, Rx, &forces->Rx_min, &forces->Rx_max);
+    if (Vz!=NULL) ret = select_forces(section_data->Vz_no, dx, Vz, &forces->Vz_min, &forces->Vz_max);
+    if (My!=NULL) ret = select_forces(section_data->My_no, dx, My, &forces->My_min, &forces->My_max);
+    if (Tx!=NULL) ret = select_forces(section_data->Tx_no, dx, Tx, &forces->Tx_min, &forces->Tx_max);
+    if (rm!=NULL) ret = select_forces(section_data->rm_no, dx, rm, &forces->r_min, NULL);
+    if (rM!=NULL) ret = select_forces(section_data->rM_no, dx, rM, NULL, &forces->r_max);
 
     return 1;
 }
@@ -13301,14 +14101,40 @@ void show_forces_buffer_variant(double show_x, double show_y, int width, int hei
     destroy_bitmap(tip_screen);
 }
 
-static void  get_section(double l1, double l, int *width_, int *height_, char *force_text)
-/*-----------------------------------------------------------------------------------*/
+//#include <stddef.h>
+//#include <string.h>
+
+size_t my_strlcat(char *dst, const char *src, size_t size) {
+    size_t dst_len = strnlen(dst, size);
+    size_t src_len = strlen(src);
+
+    // If the destination isn't null-terminated within the limit, return theoretical size
+    if (dst_len == size) {
+        return size + src_len;
+    }
+
+    // Calculate how much space is left for copying (including space for '\0')
+    size_t available = size - dst_len - 1;
+    size_t to_copy = (src_len < available) ? src_len : available;
+
+    if (to_copy > 0) {
+        memcpy(dst + dst_len, src, to_copy);
+    }
+
+    dst[dst_len + to_copy] = '\0'; // Always null-terminate safely
+
+    return dst_len + src_len;
+}
+
+
+static void  get_section(double l1, double l, int *width_, int *height_, char *force_text, int limit)
+/*-------------------------------------------------------------------------------------------------*/
 {
     int ret;
     char f_text[MaxTextLen];
     SECTION_GRAPH_DATA *section_graph_data[2];
     GRAPH_DATA *graph_data[2];
-    SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int width, width_m = 0, height_m = 0;
     float rdf[2], rdb[2];
     double l01;
@@ -13355,110 +14181,196 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
         }
     }
     //showing data on screen
-    sprintf(force_text,"x=%.4f%s",milimetryob(l01), lend);
+    snprintf(force_text,limit, "x=%.4f%s",milimetryob(l01), lend);
     width=TTF_text_len(force_text);
     if (width>width_m) width_m=width;
     height_m+=HEIGHT;
 
-    sprintf(f_text, "%s%s", (*mSelect_State.pola)[limit_state].txt, lend);  //state
-    strcat(force_text, f_text);
+    snprintf(f_text, MaxTextLen,"%s%s", (*mSelect_State.pola)[limit_state].txt, lend);  //state
+    my_strlcat(force_text, f_text, limit);
     width=TTF_text_len(f_text);
     if (width>width_m) width_m=width;
 
     height_m+=HEIGHT;
 
+    //extensions for GRID
+    if (!Check_if_Equal(section_forces.Dz_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Dz min=%.4f%s", section_forces.Dz_min, lend);  //Dz min
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Dz_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Dz max=%.4f%s", section_forces.Dz_max, lend);  //Dy max
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    ////
     if (!Check_if_Equal(section_forces.Dy_min, 0.0))
     {
-        sprintf(f_text, "Dy min=%.4f%s", section_forces.Dy_min, lend);  //Dy min
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Dy min=%.4f%s", section_forces.Dy_min, lend);  //Dy min
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Dy_max, 0.0))
     {
-        sprintf(f_text, "Dy max=%.4f%s", section_forces.Dy_max, lend);  //Dy max
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Dy max=%.4f%s", section_forces.Dy_max, lend);  //Dy max
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Dx_min, 0.0))
     {
-        sprintf(f_text, "Dx min=%.4f%s", section_forces.Dx_min, lend);  //Dx min
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Dx min=%.4f%s", section_forces.Dx_min, lend);  //Dx min
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Dx_max, 0.0))
     {
-        sprintf(f_text, "Dx max=%.4f%s", section_forces.Dx_max, lend);  //Dx max
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Dx max=%.4f%s", section_forces.Dx_max, lend);  //Dx max
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
-
+    //extensions for GRID
+    if (!Check_if_Equal(section_forces.Rx_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Rx min=%.4f%s", section_forces.Rx_min, lend);  //Rx min
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Rx_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Rx max=%.4f%s", section_forces.Rx_max, lend);  //Rx max
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    ////
     if (!Check_if_Equal(section_forces.Nx_min, 0.0))
     {
-        sprintf(f_text, "Nx min=%.4f%s", section_forces.Nx_min, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Nx min=%.4f%s", section_forces.Nx_min, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Nx_max, 0.0))
     {
-        sprintf(f_text, "Nx max=%.4f%s", section_forces.Nx_max, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Nx max=%.4f%s", section_forces.Nx_max, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
-
+    //extensions for GRID
+    if (!Check_if_Equal(section_forces.Vz_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Vz min=%.4f%s", section_forces.Vz_min, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Vz_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Vz max=%.4f%s", section_forces.Vz_max, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    ////
     if (!Check_if_Equal(section_forces.Vy_min, 0.0))
     {
-        sprintf(f_text, "Vy min=%.4f%s", section_forces.Vy_min, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Vy min=%.4f%s", section_forces.Vy_min, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Vy_max, 0.0))
     {
-        sprintf(f_text, "Vy max=%.4f%s", section_forces.Vy_max, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Vy max=%.4f%s", section_forces.Vy_max, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
-
+    //extensions for GRID
+    if (!Check_if_Equal(section_forces.My_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"My min=%.4f%s", section_forces.My_min, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.My_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"My max=%.4f%s", section_forces.My_max, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    ////
     if (!Check_if_Equal(section_forces.Mz_min, 0.0))
     {
-        sprintf(f_text, "Mz min=%.4f%s", section_forces.Mz_min, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Mz min=%.4f%s", section_forces.Mz_min, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
     if (!Check_if_Equal(section_forces.Mz_max, 0.0))
     {
-        sprintf(f_text, "Mz max=%.4f%s", section_forces.Mz_max, lend);
-        strcat(force_text, f_text);
+        snprintf(f_text, MaxTextLen,"Mz max=%.4f%s", section_forces.Mz_max, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
-
+    //extensions for GRID
+    if (!Check_if_Equal(section_forces.Tx_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Tx min=%.4f%s", section_forces.Tx_min, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    if (!Check_if_Equal(section_forces.Tx_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"Tx max=%.4f%s", section_forces.Tx_max, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+    ////
     if (!Check_if_Equal(section_forces.S_min, 0.0))
     {
         if ((element_RC_flag) && (section_forces.S_min>0))
         {
-            sprintf(f_text, u8"ρσ=%.2f%%%s", section_forces.S_min, lend);
+            snprintf(f_text, MaxTextLen,u8"ρσ=%.2f%%%s", section_forces.S_min, lend);
         }
-        else sprintf(f_text, u8"σ min=%.4f%s", section_forces.S_min, lend);
-        strcat(force_text, f_text);
+        else snprintf(f_text, MaxTextLen,u8"σ min=%.4f%s", section_forces.S_min, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
@@ -13467,22 +14379,21 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
     {
         if ((element_RC_flag) && (section_forces.S_max>0))
         {
-            sprintf(f_text, u8"ρσ=%.2f%%%s", section_forces.S_max, lend);
+            snprintf(f_text, MaxTextLen,u8"ρσ=%.2f%%%s", section_forces.S_max, lend);
         }
-        else sprintf(f_text, u8"σ max=%.4f%s", section_forces.S_max, lend);
-        strcat(force_text, f_text);
+        else snprintf(f_text, MaxTextLen,u8"σ max=%.4f%s", section_forces.S_max, lend);
+        my_strlcat(force_text, f_text, limit);
         width=TTF_text_len(f_text);
         if (width>width_m) width_m=width;
         height_m+=HEIGHT;
     }
 
-
     if (element_RC_flag)
      {
          if (!Check_if_Equal(section_forces.Ss_max, 0.0))
          {
-             sprintf(f_text, u8"ρτ=%.2f%%%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
-             strcat(force_text, f_text);
+             snprintf(f_text, MaxTextLen,u8"ρτ=%.2f%%%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
+             my_strlcat(force_text, f_text, limit);
              width = TTF_text_len(f_text);
              if (width > width_m) width_m = width;
              height_m += HEIGHT;
@@ -13494,7 +14405,7 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
         if (!Check_if_Equal(section_forces.Ss_min, 0.0))
         {
             sprintf(f_text, u8"τ min=%.4f%s", section_forces.Ss_min, lend);
-            strcat(force_text, f_text);
+            my_strlcat(force_text, f_text, limit);
             width=TTF_text_len(f_text);
             if (width>width_m) width_m=width;
             height_m+=HEIGHT;
@@ -13502,12 +14413,41 @@ static void  get_section(double l1, double l, int *width_, int *height_, char *f
          */
         if ((!Check_if_Equal(section_forces.Ss_max, 0.0)) || (!Check_if_Equal(section_forces.Ss_min, 0.0)))
         {
-            sprintf(f_text, u8"τ max=%.4f%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
-            strcat(force_text, f_text);
+            snprintf(f_text, MaxTextLen,u8"τ max=%.4f%s", max(fabs(section_forces.Ss_min), fabs(section_forces.Ss_max)), lend);
+            my_strlcat(force_text, f_text, limit);
             width = TTF_text_len(f_text);
             if (width > width_m) width_m = width;
             height_m += HEIGHT;
         }
+    }
+
+    //reactions correction
+    if ((!Check_if_Equal(section_forces.r_min, 0.0)) && (!Check_if_Equal(section_forces.r_max, 0.0)))
+    {
+        if (section_forces.r_max < section_forces.r_min)
+        {
+            float buffer = section_forces.r_min;
+            section_forces.r_min = section_forces.r_max;
+            section_forces.r_max = buffer;
+        }
+    }
+
+    if (!Check_if_Equal(section_forces.r_max, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"r max=%.4f%s", section_forces.r_max, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
+    }
+
+    if (!Check_if_Equal(section_forces.r_min, 0.0))
+    {
+        snprintf(f_text, MaxTextLen,"r min=%.4f%s", section_forces.r_min, lend);
+        my_strlcat(force_text, f_text, limit);
+        width=TTF_text_len(f_text);
+        if (width>width_m) width_m=width;
+        height_m+=HEIGHT;
     }
 
     //printf(force_text);
@@ -13522,7 +14462,7 @@ float area(POINTF *p1, POINTF *p2, POINTF *p3) {
 }
 
 // Function to check if a point is inside the triangle
-int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma) {
+int isInside_old(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma) {
     // Calculate area of triangle ABC
     float totalArea = area(A, B, C);
 
@@ -13541,6 +14481,31 @@ int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *
     // Check if the sum of sub-triangle areas equals the total area (with a small tolerance for float comparison)
     return (fabsf(totalArea - (area1 + area2 + area3)) < 0.0001f); // Use a small epsilon for float comparison
 }
+
+// Function to check if a point is inside the triangle using true barycentric validation
+int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *beta, double *gamma) {
+    // 1. Calculate the signed total area (Determinant) to preserve orientation
+    float det = (B->y - C->y) * (A->x - C->x) + (C->x - B->x) * (A->y - C->y);
+
+    // Prevent division by zero for degenerate straight-line triangles
+    if (fabsf(det) < 0.000001f) return 0;
+
+    // 2. Compute true signed barycentric coordinates directly
+    *alpha = ((B->y - C->y) * (P->x - C->x) + (C->x - B->x) * (P->y - C->y)) / det;
+    *beta  = ((C->y - A->y) * (P->x - C->x) + (A->x - C->x) * (P->y - C->y)) / det;
+    *gamma = 1.0 - *alpha - *beta;
+
+    // 3. Apply a small negative epsilon boundary cushion
+    // This allows points sitting exactly on edges or vertices to register as valid hits
+    double EPSILON = -0.0001;
+
+    if (*alpha >= EPSILON && *beta >= EPSILON && *gamma >= EPSILON) {
+        return 1; // Point is cleanly inside or on the boundary
+    }
+
+    return 0; // Point is completely outside
+}
+
 
 static void  cur_point_on(double x,double y)
 {   NAGLOWEK *nag;
@@ -13600,6 +14565,20 @@ static void  cur_point_on(double x,double y)
                     p1=(POINTF*)&w->xy[0];
                     p2=(POINTF*)&w->xy[2];
                     p3=(POINTF*)&w->xy[4];
+
+                    /*  //just for tests
+                    if (Check_if_Equal2(p.x ,675.842041) &&
+                        Check_if_Equal2(p.y,386.587616) &&
+                        Check_if_Equal(w->xy[0],685.009766) &&
+                        Check_if_Equal(w->xy[1],393.455017) &&
+                        Check_if_Equal(w->xy[2],674.919373) &&
+                        Check_if_Equal(w->xy[3],382.863892) &&
+                        Check_if_Equal(w->xy[4],670.40094) &&
+                        Check_if_Equal(w->xy[5],395.639313))
+                    {
+                            int didnt_find=1;
+                    }
+                     */
                     if (isInside(p1, p2, p3, &p, &alpha, &beta, &gamma))
                     {
                         //showing data on screen
@@ -13712,14 +14691,14 @@ static void  cur_section_on(double x,double y)
 {
     LINIA CSL = Ldef;
     LINIA eL = Ldef;
-    char force_text[MaxTextLen];
+    char force_text[MaxTextLen*2];
     double cslength;
     double x1, x2, y1, y2;
     double xx, yy;
     int ret;
-    double l, l1, l2;
+    double l, l1, l2, l_cart, l_ratio;
     //char force_text[MaxTextLen];
-    char f_text[MaxTextLen];
+    char f_text[MaxTextLen*2];
     SECTION_GRAPH_DATA *section_graph_data;
     GRAPH_DATA *graph_data;
     SECTION_FORCES section_forces, section_forces0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -13784,7 +14763,15 @@ static void  cur_section_on(double x,double y)
     outlineor(&CSL, COPY_PUT, 1);
     orto=orto_;
 
-    get_section(l1, l, &width_m, &height_m, (char *) &force_text);
+    if (cartflags & 1)
+        l_cart=cartesian_vector_length(eL.x2-eL.x1, eL.y2-eL.y1, NULL, NULL);
+    else l_cart=l;
+
+    l_ratio=l_cart/l;
+    l1*=l_ratio;
+    l*=l_ratio;
+
+    get_section(l1, l, &width_m, &height_m, (char *) &force_text, sizeof(force_text));
 
     show_forces(x,y,width_m,height_m,force_text);
     last_l=l;
@@ -13798,7 +14785,7 @@ int Save_Forces(void)
     char force_text[MaxTextLen];
     int width_m = 0, height_m = 0;
 
-    get_section(last_l1, last_l, &width_m, &height_m, (char *) &force_text);
+    get_section(last_l1, last_l, &width_m, &height_m, (char *) &force_text, sizeof(force_text));
     Put_Str_To_Clip(force_text);
 
     return 0;
@@ -14097,8 +15084,8 @@ int get_plate_graph_data(BLOK *ptrs_block, PLATE_GRAPH_DATA *plate_graph_data_ba
 
 void Cross_section_forces(void)
 {
-    void* ad;
-    unsigned typ;
+    void* ad, *ad1, *ad2;
+    unsigned typ, typ1, typ2;
     EVENT* ev;
     double X0, Y0;
     AVECTOR* V;
@@ -14115,7 +15102,7 @@ void Cross_section_forces(void)
     GRAPH_DATA *graph_data;
     float dlf, dlb;
     ALL_SECTION_GRAPH_DATA all_section_graph_data[2];
-    SECTION_GRAPH_DATA *section_data[2], section_data0[2]={{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL},{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL}};
+    SECTION_GRAPH_DATA *section_data[2], section_data0[2]={{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL},{0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL,0,NULL}};
     SECTION_DATA *section_params[2];
     WIELOKAT *wpl;
     BLOK *ptrs_block ;
@@ -14152,6 +15139,8 @@ void Cross_section_forces(void)
             {
                 redcr_ele(1);
                 typ = Bvector | BwwielokatGradient;
+                typ1 = Bvector;
+                typ2 = BwwielokatGradient;
 
                 //zeroing
                 all_section_graph_data[0].element_line=NULL;
@@ -14181,7 +15170,13 @@ void Cross_section_forces(void)
                 global_any_choice=TRUE;
 
                 //if ((ad = obiekt_wybrany(&typ)) != NULL)
-                if ((ad = obiekt_wybrany_select(typ)) != NULL)
+                ad1 = obiekt_wybrany_select(typ1);
+                ad2 = obiekt_wybrany_select(typ2);
+                if (ad1!=NULL) ad=ad1;
+                else if (ad2!=NULL) ad=ad2;
+                else ad=NULL;
+
+                if (ad != NULL)
                 {
                     switch (((NAGLOWEK*)ad)->obiekt)
                     {
@@ -14345,7 +15340,8 @@ void Cross_section_forces(void)
                                         {
                                             if (TRUE == Check_Attribute(nag->atrybut, ANieOkreslony)) {
                                                 L = (LINIA *) nag;
-                                                if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA)) {
+                                                if ((L->n + sizeof(NAGLOWEK)) != sizeof(LINIA))
+                                                {
                                                     if ((((Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
                                                          Check_if_Equal(L->x2, ex2) && Check_if_Equal(L->y2, ey2)) ||
                                                         (Check_if_Equal(L->x1, ex1) && Check_if_Equal(L->y1, ey1) &&
@@ -14425,6 +15421,55 @@ void Cross_section_forces(void)
                                                                             (char *) L + sizeof(LINIA) +
                                                                             sizeof(GRAPH_DATA);
                                                                     break;
+                                                                case 7: //Ss for RC  - actually not in use
+                                                                    section_data[mpair - 1]->Ss_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Ss_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                    //extensions for GRID
+                                                                case 8:  //Dz
+                                                                    section_data[mpair - 1]->Dz_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Dz_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                break;
+                                                                case 9:  //Rx
+                                                                    section_data[mpair - 1]->Rx_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Rx_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 10:  //Vz
+                                                                    section_data[mpair - 1]->Vz_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Vz_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 11:  //My
+                                                                    section_data[mpair - 1]->My_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->My_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 12:  //Tx
+                                                                    section_data[mpair - 1]->Tx_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->Tx_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 13:  //r min
+                                                                    section_data[mpair - 1]->rm_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->rm_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
+                                                                case 14:  //r max
+                                                                    section_data[mpair - 1]->rM_no = graph_data->nx;
+                                                                    section_data[mpair - 1]->rM_data =
+                                                                            (char *) L + sizeof(LINIA) +
+                                                                            sizeof(GRAPH_DATA);
+                                                                    break;
                                                             }
                                                         }
                                                     }
@@ -14434,6 +15479,9 @@ void Cross_section_forces(void)
                                         }
                                         mpair--;
                                     }
+
+                                    //remember it's isometric or cartesian system
+                                    cartflags=V->cartflags;
                                     set_global_hidden_blocks_visibility(FALSE);
                                     break;
                                 }
@@ -14462,6 +15510,8 @@ void Cross_section_forces(void)
                                                     ptr=strchr(block_name,'$');
                                                     if (ptr!=NULL)
                                                     {
+                                                        cartflags=0;  //for consistency
+
                                                         *ptr='\0';
                                                         ret = get_plate_graph_data(ptrs_block, &plate_graph_data_base);
                                                         

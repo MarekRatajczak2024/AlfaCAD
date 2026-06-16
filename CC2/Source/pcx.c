@@ -22,6 +22,8 @@
 
 #include <allegro.h>
 
+#include "leak_detector_c.h"
+
 
 /*
   Here's the header file I use for PCX files.  I've tried to comment it

@@ -43,6 +43,7 @@ char _EDIT_FILE_[]=u8"Edit file";
 
 #define _NEW_WINDOW_ u8"Do you want to open new drawing window?"
 #define _NEW_WINDOW_T_ u8"New window"
+#define _NETWORK_PRINTER_ u8"Connecting to your network printer..."
 
 int max_quote = 21675;
 #define _QUOTE_ u8"quotes.dat"
@@ -1604,6 +1605,7 @@ static POLE pmInfo[] = {
 TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Line",u8"Line 3D",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Polygon/Solid",u8"Solid 3D",u8"Point",u8"Spline",u8"Image",u8"Polyline",u8"Trace",u8"Hatch",u8"Elliptical Arc",u8"Ellipse", u8"Elliptical Disc", u8"Solid Arc", u8"Vector"};
+char* isometric_info=" (isometric)";
 
 #define __PLATE__ u8" (PLATE)"
 #define __HOLE__  u8" (HOLE)"
@@ -2649,7 +2651,7 @@ TMENU mHTranslucency = { 20,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0, 512,0,0,0,(POLE(*
 
 #define PATTERN_NAMES_MAXNO 255
 
-static PPOLE pm__list_hatch[PATTERN_NAMES_MAXNO];
+static PPOLE pm__list_hatch[PATTERN_NAMES_MAXNO]={"",' ',0, NULL};
 
 static POLE pm__list_hatch_predef[] = {
 		{u8"֎SOLID\0",'S',0,&mHTranslucency},
@@ -3479,7 +3481,7 @@ static POLE pmKartezjanskiGeodezyjny[] = {
          {u8"Isometric",'I',868,NULL},
 };
 	 
-static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0,163 ,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 static POLE pmPointOrigin[3] = {
 		 {u8"Point origin\0 ",'P',106,NULL},
@@ -3566,21 +3568,29 @@ static POLE pmReactionMagnitude[] = {
 	   {u8"Distributed reaction forces rescaling\0 \0",L'D',864,NULL},
 	  };
 
-static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 50,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 static POLE pmStressMagnitude[] = {
-       {u8"stress in Steel/timber\0 \0",L'S',775,NULL},
-	   {u8"stress in reinforced Concrete\0 \0",L'C',6,NULL},
+       {u8"axial stress in Steel/timber\0 \0",L'S',901,NULL},
+	   {u8"axial stress in reinforced Concrete\0 \0",L'C',902,NULL},
+       {u8"Transverse stress\0 \0",L'T',903,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 3,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 48 ,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+
+static POLE pmRescalingMode[] = {
+       {u8"Auto choice\0 \0",L'A',899,NULL},
+	   {u8"Menu choice\0 \0",L'M',900,NULL},
+	  };
+
+static TMENU mRescalingMode = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0, 55,0,0,0,(POLE(*)[]) &pmRescalingMode,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"Force rescaling\0 \0",                       L'F',727,NULL},
@@ -3601,9 +3611,10 @@ static POLE pmMagnitude[] = {
        {u8"Precision\0 \0",                             L'P',184,NULL},  //&mPrecision},
        {u8"Colors\0 \0",                                L'C',495,NULL}, //&mStaticColors},
        {u8"reset rescaling\0 \0",                       L'I',860,&mResetMagnitude},
+       {u8"Auto/menu resultant rescaling mode\0 \0",    L'A',898,&mRescalingMode},
 };
 
-static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 19,0,0,10,30,7,TADD | ICONS | NOWCLOSE ,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Format\0 A4\0     ",'F',96,&mFormat_r},

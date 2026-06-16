@@ -52,6 +52,7 @@ typedef struct
     int inverted; //0 regular, 1 inverted
     int restraint;  //0 or 5 free, 6 simple support, 7 fixed, 4 roll
     int k;
+    float dl;  //practical to estimate shear_magnitude
     char *adr;
 } SH_EDGE;
 

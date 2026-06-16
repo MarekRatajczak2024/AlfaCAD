@@ -43,6 +43,7 @@ char _EDIT_FILE_[]=u8"Edición de archivo";
 
 #define _NEW_WINDOW_ u8"¿Quieres abrir una nueva ventana de dibujo?"
 #define _NEW_WINDOW_T_ u8"Nueva ventana"
+#define _NETWORK_PRINTER_ u8"Conectando con tu impresora de red..."
 
 int max_quote = 541;
 #define _QUOTE_ u8"quoteses.dat"
@@ -1593,6 +1594,7 @@ static POLE pmInfo[] = {
 TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Línea", u8"Línea 3D", u8"Texto", u8"Arco", u8"Círculo", u8"Disco", u8"Polígono/Sólido", u8"Sólido 3D", u8"Punto", u8"Spline", u8"Imagen",u8"Polilínea",u8"Rastro",u8"Sombreado", u8"Arco elíptico",u8"Elipse", u8"Disco elíptico", u8"Arco sólido", u8"Vector"};
+char* isometric_info=" (isométrico)";
 
 #define __PLATE__ u8" (PLACA)"
 #define __HOLE__  u8" (AGUJERO)"
@@ -1861,10 +1863,10 @@ static POLE pmVector_cartesian[] = {
           {u8"carga Térmica\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"tamaño del nodo (radio)\0\0",L'0',786,NULL},
 
-          {u8"la Losa o escudo\0\0",L'L',846,NULL},
-          {u8"Espacio en placa o escudo\0\0",L'E',844,NULL},
+          {u8"la Losa o diafragma\0\0",L'L',846,NULL},
+          {u8"Espacio en placa o diafragma\0\0",L'E',844,NULL},
           {u8"La pared debajo de la losa\0\0",L'W',843,NULL},
-          {u8"Zona de losa o escudo\0\0",L'Z',842,NULL},
+          {u8"Zona de losa o diafragma\0\0",L'Z',842,NULL},
           {u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
           {u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
 
@@ -1908,10 +1910,10 @@ static POLE pmVector_isometric[] = {
           {u8"carga Térmica\0\0",L'T',752,&mLoad_Char_Thermal},
           {u8"tamaño del nodo (radio)\0\0",L'0',786,NULL},
 
-          ////{u8"la Losa o escudo\0\0",L'L',846,NULL},
-          ////{u8"Espacio en placa o escudo\0\0",L'E',844,NULL},
+          ////{u8"la Losa o diafragma\0\0",L'L',846,NULL},
+          ////{u8"Espacio en placa o diafragma\0\0",L'E',844,NULL},
           ////{u8"La pared debajo de la losa\0\0",L'W',843,NULL},
-          ////{u8"Zona de losa o escudo\0\0",L'Z',842,NULL},
+          ////{u8"Zona de losa o diafragma\0\0",L'Z',842,NULL},
           ////{u8"carga superficial de la losa\0\0",L'Q',845,&mLoad_Char},
           ////{u8"carga concentrada de la losa\0\0",L'S',856,&mLoad_Char},
 
@@ -3465,7 +3467,7 @@ static POLE pmKartezjanskiGeodezyjny[] = {
          {u8"Isométricas",'I',868,NULL}
 };
 	 
-static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0, 162 /*109*/,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
+static TMENU mKartezjanskiGeodezyjny = { 3,0,0,12,24,8,ICONS,CMNU,CMBR,CMTX,0, 163,0,0,0,(POLE(*)[]) &pmKartezjanskiGeodezyjny,NULL,NULL };
 
 static POLE pmPointOrigin[3] = {
 		 {u8"Punto de origen\0 ",'P',106,NULL},
@@ -3550,22 +3552,30 @@ static POLE pmReactionMagnitude[] = {
 	   {u8"fuerzas de reacción Distribuidas\0 \0",L'D',864,NULL},
 	  };
 
-static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,49,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
+static TMENU mReactionMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,50,0,0,0,(POLE(*)[]) &pmReactionMagnitude,NULL,NULL };
 
 
 static POLE pmStressMagnitude[] = {
-       {u8"tensión en Acero/madera\0 \0",L'A',775,NULL},
-	   {u8"tensión en el Hormigón armado\0 \0",L'H',6,NULL},
+       {u8"tensión en Acero/madera\0 \0",L'A',901,NULL},
+	   {u8"tensión en el Hormigón armado\0 \0",L'H',902,NULL},
+       {u8"tensión transversal\0 \0",L'T',903,NULL},
 	  };
 
-static TMENU mStressMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
+static TMENU mStressMagnitude = { 3,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,45,0,0,0,(POLE(*)[]) &pmStressMagnitude,NULL,NULL };
 
 static POLE pmResetMagnitude[] = {
        {u8"SI\0 \0",L'S',858,NULL},
 	   {u8"Imperial\0 \0",L'I',859,NULL},
 	  };
 
-static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,47,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+static TMENU mResetMagnitude = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,48,0,0,0,(POLE(*)[]) &pmResetMagnitude,NULL,NULL };
+
+static POLE pmRescalingMode[] = {
+       {u8"selección Automática\0 \0",L'A',899,NULL},
+	   {u8"selección de Menú\0 \0",L'M',900,NULL},
+	  };
+
+static TMENU mRescalingMode = { 2,0,0,10,30,7,TADD | ICONS,CMNU,CMBR,CMTX,0,55,0,0,0,(POLE(*)[]) &pmRescalingMode,NULL,NULL };
 
 static POLE pmMagnitude[] = {
        {u8"reescalado de Forzar\0 \0",              L'F',727,NULL},
@@ -3586,9 +3596,10 @@ static POLE pmMagnitude[] = {
        {u8"Precisión\0 \0",                         L'P',184,NULL}, //&mPrecision},
        {u8"Coloros de Graficas\0 \0",               L'G',495,NULL}, //&mStaticColors},
        {u8"restablecer reescalado\0 \0",            L'I',860,&mResetMagnitude},
+       {u8"modo de reescalado resultante Automático/menú\0 \0",L'A',898,&mRescalingMode},
        };
 
-static TMENU mMagnitude = { 18,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
+static TMENU mMagnitude = { 19,0,0,10,30,7,TADD | ICONS | NOWCLOSE,CMNU,CMBR,CMTX,0,111,0,0,0,(POLE(*)[]) &pmMagnitude,NULL,NULL };
 
 static POLE pmParametry[] = {
 	 {u8"Formato\0 A4\0     ",'F',96,&mFormat_r},
@@ -3620,7 +3631,7 @@ static char config_sectors[11][32] =
 	"Grosor de línea de zona",
 	"Color del quadro",
 	"Color de la zona",
-	"El offset del marco",
+	"El offset del pórtico",
 	"Altura de la zona",
 	"Ancho de zona",
 	"Ancho de margen",

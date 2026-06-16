@@ -180,6 +180,7 @@ extern char *get_eTitle(void);
 static int last_mouse_b = 0;
 static int cur_mouse_b = 0;
 static BOOL global_resized=FALSE;
+static bool is_minimized = FALSE;
 static int attr_x=0,attr_y=0;
 static BOOL is_hidden=FALSE;
 
@@ -507,6 +508,8 @@ extern void get_window_position(int *x, int *y);
 extern void set_window_position(int x, int y);
 #ifdef MACOS
 extern void set_osx_window_position(pid_t pid, int x, int y, BOOL relative);
+extern void set_osx_window_minimized(pid_t pid, bool minimize);
+extern bool is_osx_window_minimized_check(pid_t pid);
 extern pid_t al_getpid(void);
 extern bool isRetinaOSXDisplay(void);
 #endif
@@ -3293,7 +3296,12 @@ void Check_ConfigureNotify(void)
     if (edit_text_flag==1)  //text editor is open and no skip_taskbar
     {
 
+#ifdef ALFAMTEXT
+    	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
+    	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
         sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#endif
         char *args[] = {
                 "wmctrl",
                 (char*)"-r",
@@ -3325,8 +3333,12 @@ if (ConfigureNotifySemaphore) {
         printf("origin %d %d\n",attr.x-attr_x,attr.y-attr_y);
 
         get_editbox_size_origin(&e_w, &e_h, &e_x, &e_y);
-
+#ifdef ALFAMTEXT
+    	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
+    	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
         sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#endif
         sprintf(params2, "0,%d,%d,-1,-1", attr.x-attr_x, attr.y-attr_y);
         char *args[] = {
                 "wmctrl",
@@ -3351,7 +3363,12 @@ if (ConfigureNotifySemaphore) {
             // state is set
             if (is_hidden == FALSE)
             {
+#ifdef ALFAMTEXT
+            	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
                 sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#endif
                 sprintf(params2, "0,0,%d,-1,-1", hidden_dy);
                 char *args[] = {
                         "wmctrl",
@@ -3366,7 +3383,12 @@ if (ConfigureNotifySemaphore) {
             }
             else
             {
+#ifdef ALFAMTEXT
+            	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
                 sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#endif
                 sprintf(params2, "0,0,%d,-1,-1", -hidden_dy);
                 char *args[] = {
                         "wmctrl",
@@ -3426,6 +3448,7 @@ if (ConfigureNotifySemaphore) {
 	int e_w, e_h, e_x, e_y;
 	pid_t e_pid;
 
+	/*
 	if (edit_text_flag==1)
 	{
 		get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
@@ -3454,6 +3477,66 @@ if (ConfigureNotifySemaphore) {
 				attr_y=attr.y;
 			}
 	}
+	*/
+
+	if (edit_text_flag == 1)
+	{
+		get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
+		attr_x = attr.x;
+		attr_y = attr.y;
+
+		// Check initial state via PID query
+		pid_t own_pid = getpid(); // Assuming you check AlfaCAD's own minimized state
+		is_minimized = is_osx_window_minimized_check(own_pid);
+		edit_text_flag = 2;
+	}
+	else if (edit_text_flag == 2) // text editor is open
+	{
+		e_pid = get_e_pid();
+		if (e_pid == 0) return;
+
+		// 1. Query the true visual display state via the new utility function
+		pid_t own_pid = getpid();
+		bool currently_minimized = is_osx_window_minimized_check(own_pid);
+
+		// 2. Handle State Switches
+		if (!is_minimized && currently_minimized)
+		{
+			printf("AlfaCAD window went to Dock! Minimizing text editor child...\n");
+			set_osx_window_minimized(e_pid, true);
+			is_minimized = true;
+		}
+		else if (is_minimized && !currently_minimized)
+		{
+			printf("AlfaCAD window restored! Restoring text editor child...\n");
+			set_osx_window_minimized(e_pid, false);
+			is_minimized = false;
+
+			// Immediately grab fresh post-restore layout baselines
+			get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
+			attr_x = attr.x;
+			attr_y = attr.y;
+		}
+
+		// 3. Handle Normal Window Coordinates Slidings (Only if visible)
+		if (!is_minimized)
+		{
+			get_window_origin_and_size(&attr.x, &attr.y, &attr.w, &attr.h);
+			if ((attr.x != attr_x) || (attr.y != attr_y))
+			{
+				printf("origin move delta: %d %d\n", attr.x - attr_x, attr.y - attr_y);
+				get_editbox_size_origin(&e_w, &e_h, &e_x, &e_y);
+
+				set_osx_window_position(e_pid, (attr.x - attr_x) / (RETINA + 1), (attr.y - attr_y) / (RETINA + 1), TRUE);
+				//version with Apple script
+				////ret=send_AppleScript(e_pid, (attr.x-attr_x)/(RETINA+1), (attr.y-attr_y)/(RETINA+1), TRUE);
+
+				attr_x = attr.x;
+				attr_y = attr.y;
+			}
+		}
+	}
+
 
 #endif
 #else
@@ -3480,7 +3563,7 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
         {
             if (get_editor_on())
             {
-                SendMessage(get_editor_hWnd(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
+                SendMessageW(get_editor_hWnd(), WM_SYSCOMMAND, SC_MINIMIZE, 0);   //W
                 ret = TRUE;
             }
         }
@@ -3511,7 +3594,7 @@ if ((GFX_WIN == 1)  && (get_editor_on()))
         {
             if (get_editor_on())
             {
-                SendMessage(wnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+                SendMessageW(wnd, WM_SYSCOMMAND, SC_MINIMIZE, 0);   //W
                 ret = TRUE;
             }
         }
@@ -6195,7 +6278,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     runcode = (int)SystemSilent((char*)"curl", params);
 #endif
 #ifndef LINUX
-                                    runcode = RunSilent("curl", params);
+                                    runcode = RunSilent((char*)"curl", params);
 #endif
                                 }
 
@@ -6475,9 +6558,10 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             runcode = (int)SystemSilent((char*)"curl", params);
 #endif
 #ifndef LINUX
-                            runcode = RunSilent("curl", params);
+                            runcode = RunSilent((char*)"curl", params);
 #endif
                             //upgrading
+/*
 #ifdef LINUX
 #ifndef MACOS
                             sprintf(params, "-o upgds/%s", row_file_name_upgds);
@@ -6532,10 +6616,51 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
 #endif
 #endif
+*/
+////newer version
+#ifdef LINUX
+                        	char *cwd = getcwd(NULL, 0);
+                        	if (cwd != NULL)
+                        	{
+                        		// 1. Wipe out any old temporary data and create a clean update directory with standard permissions
+                        		(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
+                        		runcode = mkdir("/tmp/ALFACAD3XXx", 0755);
+
+                        		if (runcode == 0)
+                        		{
+                        			// 2. Extract cleanly away from your active runtime data segment
+                        			snprintf(params, sizeof(params), "-o upgds/%s -d /tmp/ALFACAD3XXx", row_file_name_upgds);
+                        			runcode = (int)SystemSilent((char*)"unzip", params);
+
+                        			if (runcode == 0)
+                        			{
+#ifdef MACOS
+                        				// 3. THE XPROTECT FIX: Deep sign the update inside /tmp BEFORE swapping it.
+                        				char sign_cmd[MAXPATH * 2];
+                        				snprintf(sign_cmd, sizeof(sign_cmd), "codesign --force --deep --sign - /tmp/ALFACAD3XXx/%s", ad_name);
+                        				(void)SystemSilentS(sign_cmd);
+
+                        				// 4. ATOMIC BUNDLE UPGRADE (Mac specific with --delete to purge old files)
+                        				snprintf(params, sizeof(params), "rsync -av --delete /tmp/ALFACAD3XXx/ \"%s/\"", cwd);
+#else
+                        				// 5. FLAT FILE UPGRADE (Linux specific)
+                        				snprintf(params, sizeof(params), "rsync -av /tmp/ALFACAD3XXx/ \"%s/\"", cwd);
+#endif
+                        				runcode = (int)SystemSilentS(params);
+                        			}
+
+                        			// 6. Housekeeping: Vaporize the temporary folder from the disk
+                        			(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
+                        		}
+                        		free(cwd);
+                        	}
+#endif
+
 #ifndef LINUX
                             //sprintf(params, "-xf upgds/%s > abc.log", row_file_name_upgds);
                             //RunSilent("tar", params);
                             //sprintf(params, "tar -xf upgds/% s > abc.log", row_file_name_upgds);
+                        	/*
                             FILE* gotar;
                             gotar=fopen("gotar.bat", "wt");
                             fprintf(gotar, "@echo off\n");
@@ -6552,6 +6677,69 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             sprintf(params, "gotar.bat %s", row_file_name_upgds);
                             _execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, *(argv_), *(argv_+1), *(argv_+2), nullptr);
                             quick_exit(0);
+                            */
+
+                        	/*FILE* gotar;
+							gotar = fopen("gotar.bat", "wt");
+							if (gotar != NULL)
+							{
+								fprintf(gotar, "@echo off\n");
+								fprintf(gotar, "echo %%1\n");
+								fprintf(gotar, "echo %%2\n");
+								fprintf(gotar, "echo %%3\n");
+								fprintf(gotar, "echo %%4\n");
+								fprintf(gotar, "echo %%5\n");
+
+								fprintf(gotar, ":loop\n");
+								fprintf(gotar, "del \"%%2\" 2>nul\n");
+								fprintf(gotar, "if exist \"%%2\" (\n");
+								fprintf(gotar, "    timeout /t 1 /nobreak >nul\n");
+								fprintf(gotar, "    goto loop\n");
+								fprintf(gotar, ")\n");
+
+								fprintf(gotar, "tar -xf upgds\\%%1\n");
+								fprintf(gotar, "start %%2 %%4 %%5\n");
+								fprintf(gotar, "del \"%%~f0\" & exit\n");
+								fclose(gotar);
+							}
+
+							sprintf(params, "gotar.bat %s", row_file_name_upgds);
+							_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, *(argv_), *(argv_+1), *(argv_+2), nullptr);
+							quick_exit(0);
+							*/   //it's the same as below'
+
+                        	FILE* gotar;
+                        	gotar = fopen("gotar.bat", "wt");
+                        	if (gotar != NULL)
+                        	{
+                        		fprintf(gotar, "@echo off\n");
+                        		fprintf(gotar, "echo %%1\n");
+                        		fprintf(gotar, "echo %%2\n");
+                        		fprintf(gotar, "echo %%3\n");
+                        		fprintf(gotar, "echo %%4\n");
+                        		fprintf(gotar, "echo %%5\n");
+
+                        		// The Active-Wait Execution Loop
+                        		fprintf(gotar, ":loop\n");
+                        		fprintf(gotar, "del \"%%2\" 2>nul\n"); // Escape quotes with \ and double the %%
+                        		fprintf(gotar, "if exist \"%%2\" (\n"); // Fixed syntax error at end of string
+                        		fprintf(gotar, "    timeout /t 1 /nobreak >nul\n");
+                        		fprintf(gotar, "    goto loop\n");
+                        		fprintf(gotar, ")\n");
+
+                        		// Unpacking and Relaunching (Notice the double backslash \\ for Windows path separators)
+                        		fprintf(gotar, "tar -xf upgds\\%%1\n");
+                        		fprintf(gotar, "start %%2 %%4 %%5\n");
+
+                        		// The Self-Destruct Line (Quotes escaped with \ so C doesn't terminate the literal)
+                        		fprintf(gotar, "del \"%%~f0\" & exit\n");
+                        		fclose(gotar);
+                        	}
+
+                        	sprintf(params, "gotar.bat %s", row_file_name_upgds);
+                        	_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, *(argv_), *(argv_+1), *(argv_+2), nullptr);
+                        	quick_exit(0);
+
 #endif
 
 #ifdef LINUX
@@ -6565,6 +6753,22 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #endif
                             if (bmp_add != NULL) destroy_bitmap(bmp_add);
                             destroy_bitmap(second_screen);
+
+                        	free(cloud_user);
+                        	free(cloud_user0);
+                        	free(cloud_password);
+                        	free(cloud_password0);
+                        	free(cloud_share_url);
+                        	free(cloud_share0_url);
+                        	free(cloud_ads);
+                        	free(cloud_ads0);
+                        	free(cloud_ads_url);
+                        	free(cloud_ads0_url);
+                        	free(cloud_upgrade);
+                        	free(cloud_upgrade0);
+                        	free(cloud_upgrade_url);
+                        	free(cloud_upgrade0_url);
+
                             return 255;  //restart
                         }
                     } //(go_download_upgds)
@@ -6574,27 +6778,26 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                     //bitmap not needed anymore
                     destroy_bitmap((BITMAP *) icon_upgrademark_pmem);
                     destroy_bitmap((BITMAP *) icon_noupgrademark_pmem);
-
-                    free(cloud_user);
-                    free(cloud_user0);
-                    free(cloud_password);
-                    free(cloud_password0);
-                    free(cloud_share_url);
-                    free(cloud_share0_url);
-                    free(cloud_ads);
-                    free(cloud_ads0);
-                    free(cloud_ads_url);
-                    free(cloud_ads0_url);
-                    free(cloud_upgrade);
-                    free(cloud_upgrade0);
-                    free(cloud_upgrade_url);
-                    free(cloud_upgrade0_url);
-
                   
                 } //(!fade_out) && (tools_ok) ........  //stage 3
             }  //cloud connection
 
+            free(cloud_user);
+            free(cloud_user0);
+            free(cloud_password);
+            free(cloud_password0);
+            free(cloud_share_url);
+            free(cloud_share0_url);
+            free(cloud_ads);
+            free(cloud_ads0);
+            free(cloud_ads_url);
+            free(cloud_ads0_url);
+            free(cloud_upgrade);
+            free(cloud_upgrade0);
+            free(cloud_upgrade_url);
+            free(cloud_upgrade0_url);
         }  //fade_out
+     
     } //bmp
     if (bmp_add != NULL) destroy_bitmap(bmp_add);
     destroy_bitmap(second_screen);
