@@ -30,6 +30,7 @@ char *Section_Units_System;
 
 extern char *units_system_si;
 extern double SkalaF;
+extern void set_calc_ltype(int typ);
 
 int create_profile_block(char *units_system, char *series0, char *manufacturer0, char *type0, double h, double b, double tw, double tf, double r1, double r2, double sf, double bt, double bb, double bf, double t, double ha, double ba, double ab, double c, double c1, double r3, double ri, double sw)
 {  int i;
@@ -47,7 +48,7 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
    double xblk=0.0, yblk=0.0;
    double r2l;
 
-    ////STEEL
+    ////STEEL, CONCRETE
 
     //IH
     char *IHp[]= {"HD","HE","HE A","HE AA","HE B","HE C","HE M","HEA","HEB","HEM","HL","HLZ","IPE","IPE 750","IPE A","IPE AA","IPE O","IPE V","IPER","PEA","UB","UBP","UC",
@@ -145,6 +146,14 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     char *VJp[]= {"VJ", "VJG"};
     int VJp_n=sizeof(VJp)/sizeof(VJp[0]);
 
+    //plate
+    char *plate_section[]= {"plate-section"};
+    int plate_section_n=sizeof(plate_section)/sizeof(plate_section[0]);
+
+    //shield
+    char *shield_section[]= {"shield-section"};
+    int shield_section_n=sizeof(shield_section)/sizeof(shield_section[0]);
+
     //IH
     char *IHpd="lin(b,0);lin(0,-tf+r2);arc(-r2,0,r2,3./2.*pi,0,1);lin(-b/2.+r2+tw/2.+r1,0);arc(0,-r1,r1,pi/2.0,pi,0);lin(0,-h+2.*tf+2.*r1);arc(r1,0,r1,pi,3./2.*pi,0);lin(b/2.-tw/2.-r1-r2,0);arc(0,-r2,r2,0,pi/2.,1);lin(0,-tf+r2);lin(-b,0);lin(0,tf-r2);arc(r2,0,r2,pi/2.,pi,1);lin(b/2.-r2-tw/2.-r1,0);arc(0,r1,r1,3./2.*pi,0,0);lin(0,h-2.*tf-2.*r1);arc(-r1,0,r1,0, pi/2.,0);lin(-b/2.+tw/2.+r1+r2,0);arc(0,r2,r2,pi,3./2.*pi,1);lin(0,tf-r2)";
     char *IHwpd="lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf);xy(b/2.-tw/2.,-tf);lin(0,-h+tf*2);xy(b/2.+tw/2.,-tf);lin(0,-h+tf*2);xy(0,-h+tf);lin(b,0);lin(0,-tf);lin(-b,0);lin(0,tf)";  //welded
@@ -192,6 +201,10 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
     char *SETpd="elpa(b/2.,h,0,0,pi);xy(-b/2.,0);lin(b,0);xy(0,0);elpa(b/2.-t,h-t,0,atanr(t/(b/2.-t)),pi-atanr(t/(b/2.-t)));xy(-b/2.+t,t);lin(b-2*t,0)";
     //VJ
     char *VJpd="lin(b,0);lin(0,-tf);lin(-b/2.+tw/2.,0);lin(0,-h+2.*tf);lin(b/2.-tw/2.,0);lin(0,-tf);lin(-b,0);lin(0,tf);lin(b/2.-tw/2.,0);lin(0,h-2.*tf);lin(-b/2.+tw/2.,0);lin(0,tf)";
+
+    char *plate_sectiond="xy(-b/2.,h/2.);lin(b,0);xy(-b/2.,-h/2.);lin(b,0);lint(32);xy(-b/2.,h/2.+ha);lin(0,-h/2.-ha+2.*ba);lin(ab,-ba);lin(-2.*ab,-2.*ba);lin(ab,-ba);lin(0,-h/2.-ha+2.*ba);xy(b/2.,h/2.+ha);lin(0,-h/2.-ha+2.*ba);lin(ab,-ba);lin(-2.*ab,-2.*ba);lin(ab,-ba);lin(0,-h/2.-ha+2.*ba)";
+
+    char *shield_sectiond="xy(-b/2.,h/2.);lin(0,-h);xy(b/2.,h/2.);lin(0,-h);lint(32);xy(-b/2.-ha,h/2.);lin(b/2.+ha-2.*ba,0);lin(ba,ab);lin(2.*ba,-2.*ab);lin(ba,ab);lin(b/2.+ha-2.*ba,0);xy(-b/2.-ha,-h/2.);lin(b/2.+ha-2.*ba,0);lin(ba,ab);lin(2.*ba,-2.*ab);lin(ba,ab);lin(b/2.+ha-2.*ba,0)";
 
     ////WOOD
     //IH
@@ -700,6 +713,41 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
             }
         }
     }
+
+    //plate
+    if (found==FALSE)
+    {
+        for (i = 0; i < plate_section_n; i++)
+        {
+            if (strcmp(series0, plate_section[i]) == 0)
+            {
+                pd0 = malloc(strlen(plate_sectiond) + 1);
+                memmove(pd0, plate_sectiond, strlen(plate_sectiond) + 1);
+                xblk=0.;
+                yblk=0.;
+                found = TRUE;
+                break;
+            }
+        }
+    }
+
+    //shield
+    if (found==FALSE)
+    {
+        for (i = 0; i < shield_section_n; i++)
+        {
+            if (strcmp(series0, shield_section[i]) == 0)
+            {
+                pd0 = malloc(strlen(shield_sectiond) + 1);
+                memmove(pd0, shield_sectiond, strlen(shield_sectiond) + 1);
+                xblk=0.;
+                yblk=0.;
+                found = TRUE;
+                break;
+            }
+        }
+    }
+
     //RBar
     if (found==FALSE)
     {
@@ -731,6 +779,11 @@ int create_profile_block(char *units_system, char *series0, char *manufacturer0,
    LG.kolor=AG.kolor=CG.kolor=EG.kolor=EAG.kolor=LiniaG.kolor;
    LG.warstwa=AG.warstwa=CG.warstwa=EG.warstwa=EAG.warstwa=LiniaG.warstwa;
    LG.blok=AG.blok=CG.blok=EG.blok=EAG.blok=ElemBlok;
+
+    //initial line type of cross section
+    int lt_ini=(SkalaF < 50.)? 96 : 64;
+    LG.typ=AG.typ=CG.typ=EG.typ=EAG.typ=lt_ini;  //thick or thin
+    set_calc_ltype(lt_ini);
 
    pde=strchr(pd, ';');
    while (pde!=NULL)

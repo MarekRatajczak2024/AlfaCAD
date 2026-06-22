@@ -80,6 +80,10 @@ extern BOOL SetDefaultPrinter_(char* printer_name);
 extern int GetPrintPageWidth(void);
 extern int GetPrintPageHeight(void);
 
+extern void lock_mouse(void);
+extern void _free_mouse(void);
+extern void dialog_cursor(int on);
+
 typedef unsigned long DWORD;
 
 DWORD SystemSilent(char* strFunct, char* strstrParams);
@@ -2798,10 +2802,12 @@ okno_dial:
   Ret_Val = Dialog(&printer_dlg, &color_dlg, proc_dlg_prn_ini_date, bMouse);
   Save_Update_flex(1, &curr_h, &curr_v);
 
-
   my_scare_mouse();
 
-  ////lock_mouse();
+	//my_sleep(10);
+ //my_unscare_mouse();
+	//my_sleep(10);
+ //// lock_mouse();  ////19-06-2026
 
   if (Ret_Val == Dlg_Ret_Val_Zapis_Cfg)
     {

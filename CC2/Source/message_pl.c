@@ -955,6 +955,8 @@ static char confirm[] = u8"Potwierdź";
 #define _CT_SECTION_ u8"Wprowadź d;t;c (średnica zewnętrzna; grubość ścianki; otulenie osiowe"
 #define _ST_SECTION_ u8"Wprowadź b;t;c (szerokość=wysokość; grubość ścianki; otulenie osiowe"
 #define _RT_SECTION_ u8"Wprowadź h;b;t;c (wysokość; szerokość; grubość ścianki; otulenie osiowe"
+#define _PLATE_SECTION_ u8"Wprowadź h;c (wysokość; otulenie osiowe"
+#define _SHIELD_SECTION_ u8"Wprowadź t;c (grubość; otulenie osiowe"
 
 #endif
 

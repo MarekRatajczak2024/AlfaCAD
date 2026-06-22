@@ -14506,12 +14506,41 @@ int isInside(POINTF *A, POINTF *B, POINTF *C, POINTF *P, double *alpha, double *
     return 0; // Point is completely outside
 }
 
+int isInside4(POINTF *A, POINTF *B, POINTF *C, POINTF *D, POINTF *P, double *alpha, double *beta, double *gamma, double *delta)
+{
+    // Initialize all weights to zero
+    *alpha = 0.0;
+    *beta  = 0.0;
+    *gamma = 0.0;
+    *delta = 0.0;
+
+    // Check Triangle 1: ABC (formed by vertices A, B, C)
+    if (isInside(A, B, C, P, alpha, beta, gamma)) {
+        // Point is in ABC. delta weight remains 0.0
+        return 1;
+    }
+
+    // Check Triangle 2: ACD (formed by vertices A, C, D)
+    // We pass temporary variables to get the weights relative to A, C, and D
+    double t_alpha, t_gamma, t_delta;
+    if (isInside(A, C, D, P, &t_alpha, &t_gamma, &t_delta)) {
+        // Map the weights back to the main quadrilateral variables
+        *alpha = t_alpha;
+        *beta  = 0.0; // Point is in ACD. beta weight remains 0.0
+        *gamma = t_gamma;
+        *delta = t_delta;
+        return 1;
+    }
+
+    return 0; // Point is completely outside the quadrilateral
+}
+
 
 static void  cur_point_on(double x,double y)
 {   NAGLOWEK *nag;
     WIELOKAT *w;
     char *adp, *adk;
-    POINTF *p1, *p2, *p3, p;
+    POINTF *p1, *p2, *p3, *p4, p;
     char force_text[MaxTextLen];
     char force_text1[MaxTextLen];
     int width, height;
@@ -14523,7 +14552,7 @@ static void  cur_point_on(double x,double y)
     char *fe_data_ex_ptr, *fe_data_ex1_ptr, *fe_data_ex2_ptr, *fe_data_ex3_ptr, *fe_data_ex4_ptr;
     char *gradient_ptr;
     char *translucency_ptr;
-    double alpha, beta, gamma;
+    double alpha, beta, gamma, delta;
     double c_value;
     long x0, y0;
 
@@ -14560,120 +14589,211 @@ static void  cur_point_on(double x,double y)
                 w=(WIELOKAT*)nag;
                 if (w->gradient==1)
                 {
-                    //check if point lays inside triangle
-                    p.x=(float)x; p.y=(float)y;
-                    p1=(POINTF*)&w->xy[0];
-                    p2=(POINTF*)&w->xy[2];
-                    p3=(POINTF*)&w->xy[4];
-
-                    /*  //just for tests
-                    if (Check_if_Equal2(p.x ,675.842041) &&
-                        Check_if_Equal2(p.y,386.587616) &&
-                        Check_if_Equal(w->xy[0],685.009766) &&
-                        Check_if_Equal(w->xy[1],393.455017) &&
-                        Check_if_Equal(w->xy[2],674.919373) &&
-                        Check_if_Equal(w->xy[3],382.863892) &&
-                        Check_if_Equal(w->xy[4],670.40094) &&
-                        Check_if_Equal(w->xy[5],395.639313))
+                    if (w->lp==6)
                     {
-                            int didnt_find=1;
-                    }
-                     */
-                    if (isInside(p1, p2, p3, &p, &alpha, &beta, &gamma))
-                    {
-                        //showing data on screen
-                        translucency_ptr = (char*)w->xy;
-                        translucency_ptr += (w->lp * sizeof(float));
+                        //check if point lays inside triangle
+                        p.x=(float)x; p.y=(float)y;
+                        p1=(POINTF*)&w->xy[0];
+                        p2=(POINTF*)&w->xy[2];
+                        p3=(POINTF*)&w->xy[4];
 
-                        gradient_ptr=translucency_ptr+sizeof(unsigned char);
-                        fe_data_ptr=gradient_ptr+sizeof(GRADIENT3);
-
-
-                        if (((FE_DATA3*)fe_data_ptr)->el_number>0)
+                        if (isInside(p1, p2, p3, &p, &alpha, &beta, &gamma))
                         {
-                            // Calculate and return the weighted average value
-                            c_value = ((alpha * ((FE_DATA3 *) fe_data_ptr)->f1) + (beta * ((FE_DATA3 *) fe_data_ptr)->f2) + (gamma * ((FE_DATA3 *) fe_data_ptr)->f3)) * plate_graph_data->factor;
-                            sprintf(force_text1, "%s=%.4f", VALUE_NAME, c_value);
-                            width = max(width, TTF_text_len(force_text1));
-                            strcat(force_text,"\n");
-                            strcat(force_text,force_text1);
-                            height += HEIGHT;
-                            if (((FE_DATA3*)fe_data_ptr)->flag==1)  //extended data
+                            //showing data on screen
+                            translucency_ptr = (char*)w->xy;
+                            translucency_ptr += (w->lp * sizeof(float));
+
+                            gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                            fe_data_ptr=gradient_ptr+sizeof(GRADIENT3);
+
+
+                            if (((FE_DATA3*)fe_data_ptr)->el_number>0)
                             {
-                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME1, c_value);
+                                // Calculate and return the weighted average value
+                                c_value = ((alpha * ((FE_DATA3 *) fe_data_ptr)->f1) + (beta * ((FE_DATA3 *) fe_data_ptr)->f2) + (gamma * ((FE_DATA3 *) fe_data_ptr)->f3)) * plate_graph_data->factor;
+                                sprintf(force_text1, "%s=%.4f", VALUE_NAME, c_value);
                                 width = max(width, TTF_text_len(force_text1));
                                 strcat(force_text,"\n");
                                 strcat(force_text,force_text1);
                                 height += HEIGHT;
+                                if (((FE_DATA3*)fe_data_ptr)->flag==1)  //extended data
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME1, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+                                }
+                                else if (((FE_DATA3*)fe_data_ptr)->flag==2)  //extended twice
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+                                }
+                                else if (((FE_DATA3*)fe_data_ptr)->flag==3)  //extended triple and now even five times
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex2_ptr=fe_data_ex1_ptr+sizeof(FE_DATA3_EX);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f3));  //angle
+                                    sprintf(force_text1, "%s=%.4f%s", VALUE_NAME4, c_value, DEGREE);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex3_ptr=fe_data_ex2_ptr+sizeof(FE_DATA3_EX);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME5, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex4_ptr=fe_data_ex3_ptr+sizeof(FE_DATA3_EX);
+                                    c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f3)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME6, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                }
+
+                                show_forces(x, y, width, height, force_text);
                             }
-                            else if (((FE_DATA3*)fe_data_ptr)->flag==2)  //extended twice
+                        }
+                    }
+                    else if (w->lp==8)
+                    {
+                        //check if point lays inside triangle
+                        p.x=(float)x; p.y=(float)y;
+                        p1=(POINTF*)&w->xy[0];
+                        p2=(POINTF*)&w->xy[2];
+                        p3=(POINTF*)&w->xy[4];
+                        p4=(POINTF*)&w->xy[6];  
+
+                        if (isInside4(p1, p2, p3, p4, &p, &alpha, &beta, &gamma, &delta))
+                        {
+                            //showing data on screen
+                            translucency_ptr = (char*)w->xy;
+                            translucency_ptr += (w->lp * sizeof(float));
+
+                            gradient_ptr=translucency_ptr+sizeof(unsigned char);
+                            fe_data_ptr=gradient_ptr+sizeof(GRADIENT4);
+
+
+                            if (((FE_DATA4*)fe_data_ptr)->el_number>=0)  //element 0 is color bar
                             {
-                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                // Calculate and return the weighted average value
+                                c_value = ((alpha * ((FE_DATA4 *) fe_data_ptr)->f1) + (beta * ((FE_DATA4 *) fe_data_ptr)->f2) + (gamma * ((FE_DATA4 *) fe_data_ptr)->f3) + (delta * ((FE_DATA4 *) fe_data_ptr)->f4)) * plate_graph_data->factor;
+                                sprintf(force_text1, "%s=%.4f", VALUE_NAME, c_value);
                                 width = max(width, TTF_text_len(force_text1));
                                 strcat(force_text,"\n");
                                 strcat(force_text,force_text1);
                                 height += HEIGHT;
+                                if (((FE_DATA4*)fe_data_ptr)->flag==1)  //extended data
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA4);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME1, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+                                }
+                                else if (((FE_DATA4*)fe_data_ptr)->flag==2)  //extended twice
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA4);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
 
-                                fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
+                                    fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA4_EX);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+                                }
+                                else if (((FE_DATA4*)fe_data_ptr)->flag==3)  //extended triple and now even five times
+                                {
+                                    fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA4);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA4_EX);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex1_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex2_ptr=fe_data_ex1_ptr+sizeof(FE_DATA4_EX);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex2_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex2_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex2_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex2_ptr)->f4));  //angle
+                                    sprintf(force_text1, "%s=%.4f%s", VALUE_NAME4, c_value, DEGREE);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex3_ptr=fe_data_ex2_ptr+sizeof(FE_DATA4_EX);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex3_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex3_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex3_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex3_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME5, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                    fe_data_ex4_ptr=fe_data_ex3_ptr+sizeof(FE_DATA4_EX);
+                                    c_value = ((alpha * ((FE_DATA4_EX *) fe_data_ex4_ptr)->f1) + (beta * ((FE_DATA4_EX *) fe_data_ex4_ptr)->f2) + (gamma * ((FE_DATA4_EX *) fe_data_ex4_ptr)->f3) + (delta * ((FE_DATA4_EX *) fe_data_ex4_ptr)->f4)) * 100;  //%
+                                    sprintf(force_text1, "%s=%.4f%%", VALUE_NAME6, c_value);
+                                    width = max(width, TTF_text_len(force_text1));
+                                    strcat(force_text,"\n");
+                                    strcat(force_text,force_text1);
+                                    height += HEIGHT;
+
+                                }
+
+                                show_forces(x, y, width, height, force_text);
                             }
-                            else if (((FE_DATA3*)fe_data_ptr)->flag==3)  //extended triple and now even five times
-                            {
-                                fe_data_ex_ptr=fe_data_ptr+sizeof(FE_DATA3);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME2, c_value);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
-
-                                fe_data_ex1_ptr=fe_data_ex_ptr+sizeof(FE_DATA3_EX);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex1_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME3, c_value);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
-
-                                fe_data_ex2_ptr=fe_data_ex1_ptr+sizeof(FE_DATA3_EX);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex2_ptr)->f3));  //angle
-                                sprintf(force_text1, "%s=%.4f%s", VALUE_NAME4, c_value, DEGREE);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
-
-                                fe_data_ex3_ptr=fe_data_ex2_ptr+sizeof(FE_DATA3_EX);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex3_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME5, c_value);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
-
-                                fe_data_ex4_ptr=fe_data_ex3_ptr+sizeof(FE_DATA3_EX);
-                                c_value = ((alpha * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f1) + (beta * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f2) + (gamma * ((FE_DATA3_EX *) fe_data_ex4_ptr)->f3)) * 100;  //%
-                                sprintf(force_text1, "%s=%.4f%%", VALUE_NAME6, c_value);
-                                width = max(width, TTF_text_len(force_text1));
-                                strcat(force_text,"\n");
-                                strcat(force_text,force_text1);
-                                height += HEIGHT;
-
-                            }
-                            //sprintf(force_text1, "el: %d", ((FE_DATA*)fe_data_ptr)->el_number);
-                            //strcat(force_text,"\n");
-                            //strcat(force_text,force_text1);
-                            //height += HEIGHT;
-                            show_forces(x, y, width, height, force_text);
                         }
                     }
                 }

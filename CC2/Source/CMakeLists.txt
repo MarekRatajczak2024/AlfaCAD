@@ -269,6 +269,10 @@ elseif (CMAKE_BUILD_TYPE STREQUAL "Debug_ES")
 #add_compile_options("$<$<CONFIG:Debug>:-Og>")
 endif()
 
+#to eliminate use of Python in compiled image scripts and alfamtext
+add_compile_definitions("NOPYTHON")
+#add_compile_definitions("ALFAMTEXT")
+
 ################################################################################
 # Source groups
 ################################################################################
@@ -516,6 +520,10 @@ set(Source_Files
     "../../../allegro5-4.4.3/addons/jpgalleg/src/error.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/init.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/io.c"
+
+    "../../../CC2/Source/icon_alfacad.h"
+    "../../../CC2/Source/alfatextdialogs.c"
+    "../../../CC2/Source/alfatextdialogs.h"
 )
 source_group("Source Files" FILES ${Source_Files})
 

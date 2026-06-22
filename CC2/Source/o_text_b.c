@@ -1607,7 +1607,6 @@ int Tekst_factory(char *prefix, BOOL repeat)
 	edit_functions = TRUE;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 	strcpy(TextG.text, prefix);
-	TextG.multiline = 1;  //there will be always 2 rows
 
 	redcr(0);
 	//Cur_offd(X, Y);

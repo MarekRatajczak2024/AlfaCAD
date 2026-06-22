@@ -61,6 +61,8 @@ typedef int BOOL;
 
 #define MAXPATH   260
 
+extern int Client_number;
+
 extern BOOL RETINA;
 
 extern char _EDIT_TEXT_;  // NOLINT
@@ -214,12 +216,16 @@ char * alfa_editBox(
     fontwidth_r=(atoi(fontwidth))/(RETINA+1);
     lang=getlanguage();
 
-    sprintf(lBuff,"'%s' \"%s\" %d '%s' '%s' '%d' '%d' '%s' '%s' %d '%s' '%s' '%s' '%s'",aTitle, aMessage, 0, fontface, fontfile_p, fontsize_r, fontwidth_r, etype, params, *single, editbox_geometry, default_path_TTF, default_path_OTF, lang_str[lang]);
+    sprintf(lBuff,"'%s' \"%s\" %d '%s' '%s' '%d' '%d' '%s' '%s' %d '%s' '%s' '%s' '%s' %d",aTitle, aMessage, 0, fontface, fontfile_p, fontsize_r, fontwidth_r, etype, params, *single, editbox_geometry, default_path_TTF, default_path_OTF, lang_str[lang], Client_number);
 
     printf("%s\n",lBuff);
 
     ret=get_window_origin_and_size(&x0m, &y0m, &dxm, &dym);
+#ifdef ALLEGRO5
     position_mouse_xy(x+w-x0m, y+h-y0m);
+#else
+    position_mouse(x+w-x0m, y+h-y0m);
+#endif
     set_forget_mouse(x+w-x0m, y+h-y0m);
 
 #ifndef MACOS
@@ -230,9 +236,6 @@ char * alfa_editBox(
 
     lBuff_ex[0]='\0';
 
-
-/////////#define USEPYTHON     if not defined, binay version will be taken
-
     // ==================================================================
     // CROSS-PLATFORM ADAPTIVE RUNTIME ROUTING (The Master Logic Unification)
     // ==================================================================
@@ -240,11 +243,16 @@ char * alfa_editBox(
     {
         // 1. HEAVY FILE PATH: Redirects status flag safely to /tmp/text.out or uses standard pipe tracking
 #ifndef MACOS
+        edit_text_flag=1;
+#ifndef NOPYTHON
         sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);
+#else
+        sprintf(lDialogString, "GDK_BACKEND=x11 ./alfamtext %s", lBuff);   ////compiled
+#endif
         lIn = popen(lDialogString, "r");
 #else
         edit_text_flag=1;
-#ifdef USEPYTHON
+#ifndef NOPYTHON
         sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);    ///testing option with Python
 #else
         sprintf(lDialogString, "./alfamtext %s", lBuff);   ////compiled
@@ -258,11 +266,15 @@ char * alfa_editBox(
         // 2. FAST TEXT PATH: Streams drawing annotations entirely in RAM via popen pipes
 #ifndef MACOS
         edit_text_flag=1;
+#ifndef NOPYTHON
         sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);
+#else
+        sprintf(lDialogString, "GDK_BACKEND=x11 ./alfamtext %s", lBuff);   ////compiled
+#endif
         lIn = popen(lDialogString, "r");
 #else
         edit_text_flag=1;
-#ifdef USEPYTHON
+#ifndef NOPYTHON
         sprintf(lDialogString, "%s alfamtext.py %s", PYTHON, lBuff);   ///testing option with Python
 #else
         sprintf(lDialogString, "./alfamtext %s", lBuff);    ////compiled

@@ -91,20 +91,24 @@ POLE pmConcreteUS[] = {
 	{u8"Circular hueco", L'C', 908, &mConcreteClassUS},
 	{u8"Sección cuadrada", L'S', 909, &mConcreteClassUS},
 	{u8"Perfil de caja", L'P', 910, &mConcreteClassUS},
+    {u8"losa",L'=',911,&mConcreteClassUS},
+    {u8"diafragma",L'H',912,&mConcreteClassUS},
 };
 
-TMENU mConcreteUS = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
+TMENU mConcreteUS = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
 
 POLE pmConcreteEU[] = {
 	{u8"Rectángulo", L'R', 905, &mConcreteClassEU},
 	{u8"Doble T (I)", L'D', 906, &mConcreteClassEU},
-	{u8"Perfil en T", L'T', 907, &mConcreteClassEU},
+	{u8"perfil en T", L'T', 907, &mConcreteClassEU},
 	{u8"Circular hueco", L'C', 908, &mConcreteClassEU},
 	{u8"Sección cuadrada", L'S', 909, &mConcreteClassEU},
 	{u8"Perfil de caja", L'P', 910, &mConcreteClassEU},
+    {u8"losa",L'=',911,&mConcreteClassEU},
+    {u8"diafragma",L'H',912,&mConcreteClassEU},
 };
 
-TMENU mConcreteEU = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
+TMENU mConcreteEU = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
 
 TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 

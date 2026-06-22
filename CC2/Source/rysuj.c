@@ -2352,6 +2352,11 @@ extern char *icon_CT_section_p;
 extern char *icon_ST_section_p;
 extern char *icon_RT_section_p;
 
+extern BITMAP *icon_plate_section;
+extern BITMAP *icon_shield_section;
+extern char *icon_plate_section_p;
+extern char *icon_shield_section_p;
+
 extern BITMAP *icon_hourglass_mem;
 extern BITMAP *icon_hourglassx1_5_mem;
 extern BITMAP *icon_hourglassx2_mem;
@@ -3393,6 +3398,8 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_CT_section, "CT_section", &icon_CT_section_p },
         {&icon_ST_section, "ST_section", &icon_ST_section_p },
         {&icon_RT_section, "RT_section", &icon_RT_section_p },
+        {&icon_plate_section, "plate_section", &icon_plate_section_p },
+        {&icon_shield_section, "shield_section", &icon_shield_section_p },
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);

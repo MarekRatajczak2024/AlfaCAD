@@ -822,7 +822,9 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 				fclose(fp);
 				//converting to png
 				sprintf(params, "%s %s", image_file_pcx, image_file);
+
 				runcode = RunSilent((char*)"image2png.exe", params);
+
 				if (runcode > 0)
 				{
 					return ErrorWeWy;

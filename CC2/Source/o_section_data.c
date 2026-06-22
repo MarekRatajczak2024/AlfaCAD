@@ -1151,6 +1151,121 @@ char *get_concrete_section(int property_no, char *material, char *region, SECTIO
         set_decimal_format(par[1], t, prop_precisions->dim_precision);
         sprintf(profile,"RHS %sx%s", par[0], par[1]);
         break;
+    case 6:  //plate
+        {
+            retval_no=2;
+            sprintf(prompt,"%s%s%s%s:",(char*)_PLATE_SECTION_,default_cover,(char*)_in_,dim);
+            if (!get_string_str (sk, "", MaxTextLen, 0, prompt)) return NULL;
+            if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
+            {
+                return NULL;
+            }
+            d = buf_ret [0] ;
+            if ( d <= 0 )
+            {
+                ErrList (30);
+                return NULL;
+            }
+            h = d;
+            if (retval_no>1)
+            {
+                d = buf_ret [1] ;
+                if ( d <= 0 )
+                {
+                    ErrList (30);
+                    return NULL;
+                }
+                else ccover = buf_ret [1] ;
+            }
+            strcpy(block_section,"plate-section");
+            set_decimal_format(par[0], h, prop_precisions->dim_precision);
+            sprintf(profile,"plate %s", par[0]);
+
+            double DRAWING_PLATE_B=25.;  //25 mm on drawing
+            double LINE_UP=5.; //section line 5 mm up
+            double LINE_Z_SIDE=5.; //section zig-zac side
+            double LINE_Z_DOWN=1.; //section zig-zac down
+
+            //fixed width for block, what is DRAWING_PLATE_B
+            b=DRAWING_PLATE_B*SkalaF;  //expresed in mm
+            //lineup
+            ha=LINE_UP*SkalaF;
+            ab=LINE_Z_SIDE*SkalaF;
+            ba=LINE_Z_DOWN*SkalaF;
+            if (units_system == units_system_imp)
+            {
+                b/=25.4;  //expressed in inch
+                ha/=25.4;
+                ab/=25.4;
+                ba/=25.4;
+            }
+
+            // --- PLATE LAYOUT (Vertical Break Line) ---
+            // Controlled by height 'h'
+            if ((4.0 * ba) > (0.4 * h)) {
+                ba = (0.4 * h) / 4.0;
+                ab = ba * 5.0; // Keeps the 5:1 aspect ratio of your design
+            }
+        }
+        break;
+    case 7:  //shield
+        {
+            retval_no=2;
+            sprintf(prompt,"%s%s%s%s:",(char*)_SHIELD_SECTION_,default_cover,(char*)_in_,dim);
+            if (!get_string_str (sk, "", MaxTextLen, 0, prompt)) return NULL;
+            if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
+            {
+                return NULL;
+            }
+            d = buf_ret [0] ;
+            if ( d <= 0 )
+            {
+                ErrList (30);
+                return NULL;
+            }
+            b = d;
+            if (retval_no>1)
+            {
+                d = buf_ret [1] ;
+                if ( d <= 0 )
+                {
+                    ErrList (30);
+                    return NULL;
+                }
+                else ccover = buf_ret [1] ;
+            }
+            strcpy(block_section,"shield-section");
+            set_decimal_format(par[0], b, prop_precisions->dim_precision);
+            sprintf(profile,"shield %s", par[0]);
+
+            double DRAWING_SHIELD_H=25.;  //25 mm on drawing
+            double LINE_UP=5.; //section line 5 mm up
+            double LINE_Z_SIDE=5.; //section zig-zac side
+            double LINE_Z_DOWN=1.; //section zig-zac down
+
+            //fixed width for block, what is DRAWING_SHIELD_H
+            h=DRAWING_SHIELD_H*SkalaF;  //expresed in mm
+            //lineup
+            ha=LINE_UP*SkalaF;
+            ab=LINE_Z_SIDE*SkalaF;
+            ba=LINE_Z_DOWN*SkalaF;
+            if (units_system == units_system_imp)
+            {
+                h/=25.4;  //expressed in inch
+                ha/=25.4;
+                ab/=25.4;
+                ba/=25.4;
+            }
+
+            // --- SHIELD LAYOUT (Horizontal Break Line) ---
+            // Controlled by width 'b'
+            if ((4.0 * ba) > (0.4 * b)) {
+                ba = (0.4 * b) / 4.0;
+                ab = ba * 5.0; // Keeps the 5:1 aspect ratio of your design
+            }
+
+        }
+        break;
     default:
         return NULL;
         break;
@@ -1297,6 +1412,12 @@ char *get_concrete_section(int property_no, char *material, char *region, SECTIO
             Wz = Iz / (a_box / 2.);
             Wt = Jx / t_box;
         }
+        break;
+    case 6: // plate
+        //nothing to calculate
+        break;
+    case 7: // shield
+        //nothing to calculate
         break;
     default:
         return NULL;
@@ -1503,8 +1624,23 @@ char *get_concrete_section(int property_no, char *material, char *region, SECTIO
     // =========================================================================
     // Ready for the final token aggregation / sprintf(section_data, ...) line!
     // =========================================================================
-    sprintf(section_data, "#%d RC h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\\n E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
-
+    switch (section_no)
+    {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        sprintf(section_data, "#%d RC h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\\n E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
+        break;
+    case 6:
+        sprintf(section_data, "#%d RC h=%s E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
+        break;
+    case 7:
+        sprintf(section_data, "#%d RC t=%s E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[1], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
+        break;
+    }
     section_par->h=h;
     section_par->b=b;
     section_par->w=w;

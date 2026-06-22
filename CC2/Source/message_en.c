@@ -956,6 +956,8 @@ static char confirm[] = u8"Confirm";
 #define _CT_SECTION_ u8"Enter d;t;c (outer diameter; wall thickness; axial cover"
 #define _ST_SECTION_ u8"Enter b;t;c (width=height; wall thickness; axial cover"
 #define _RT_SECTION_ u8"Enter h;b;t;c (height; width; wall thickness; axial cover"
+#define _PLATE_SECTION_ u8"Enter h;c (height; axial cover"
+#define _SHIELD_SECTION_ u8"Enter t;c (thickness; axial cover"
 
 #endif
 

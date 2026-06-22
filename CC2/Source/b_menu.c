@@ -1397,6 +1397,8 @@ extern char *icon_T_section_p;
 extern char *icon_CT_section_p;
 extern char *icon_ST_section_p;
 extern char *icon_RT_section_p;
+extern char *icon_plate_section_p;
+extern char *icon_shield_section_p;
 
 extern char *icon_ULS_p;
 extern char *icon_SLS_p;
@@ -3556,7 +3558,7 @@ static char *get_icons_p(int number)
         /*888*/   icon_displacement_z_p,icon_rotation_x_p,icon_rotation_x_rev_p,icon_rotation_y_p,icon_rotation_y_rev_p,icon_rotation_xy_p,icon_rotation_xy_rev_p,
         /*895*/   icon_vector_member_style_d_p, icon_rigid_springs_nosprings_d_p, icon_beam_grid_p,
         /*898*/   icon_menu_auto_choice_p, icon_autoplay_p, icon_menu_choice_p, icon_stress_steel_wood_p, icon_stress_RC_p, icon_shear_stress_steel_wood_p, icon_concrete_p,
-	    /*905*/   icon_R_section_p, icon_I_section_p, icon_T_section_p, icon_CT_section_p, icon_ST_section_p, icon_RT_section_p,
+	    /*905*/   icon_R_section_p, icon_I_section_p, icon_T_section_p, icon_CT_section_p, icon_ST_section_p, icon_RT_section_p, icon_plate_section_p, icon_shield_section_p,
     };
    
 	if (number>1999)

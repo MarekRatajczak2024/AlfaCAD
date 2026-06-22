@@ -11360,7 +11360,9 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 						sprintf(image_file_name_png, "%s%s%s%s", drive, dir, file, ext_1);
 
 						sprintf(params, "%s %s", image_file_name, image_file_name_png);
+
 						runcode = RunSilent((char*)"image2png.exe", params);  //can be also image2jpg.exe
+
 						if (runcode > 0)
 						{
 							break;

@@ -85,10 +85,12 @@ POLE pmConcreteUS[] = {
     {u8"T-beam section",L'T',907,&mConcreteClassUS},
     {u8"Circular hollow section",L'C',908,&mConcreteClassUS},
     {u8"Square hollow section",L'S',909,&mConcreteClassUS},
-    {u8"Box (rectangular holow section)",L'B',910,&mConcreteClassUS},
+    {u8"Box (rectangular hollow section)",L'B',910,&mConcreteClassUS},
+    {u8"plate",L'=',911,&mConcreteClassUS},
+    {u8"shield",L'H',912,&mConcreteClassUS},
 	};
 
-TMENU mConcreteUS = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
+TMENU mConcreteUS = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
 
 POLE pmConcreteEU[] = {
 	{u8"Rectangle",L'R',905,&mConcreteClassEU},
@@ -97,9 +99,11 @@ POLE pmConcreteEU[] = {
 	{u8"Circular hollow section",L'C',908,&mConcreteClassEU},
 	{u8"Square hollow section",L'S',909,&mConcreteClassEU},
 	{u8"Box (rectangular hollow section)",L'B',910,&mConcreteClassEU},
+    {u8"plate",L'=',911,&mConcreteClassEU},
+    {u8"shield",L'H',912,&mConcreteClassEU},
 	};
 
-TMENU mConcreteEU = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
+TMENU mConcreteEU = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
 
 POLE pmWoodMoistureUS[] = {
 {u8"Green",L'G',0,&mWoodSpeciesUS},

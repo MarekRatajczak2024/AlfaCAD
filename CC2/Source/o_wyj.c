@@ -2466,6 +2466,11 @@ char *icon_CT_section_p;
 char *icon_ST_section_p;
 char *icon_RT_section_p;
 
+BITMAP *icon_plate_section;
+BITMAP *icon_shield_section;
+char *icon_plate_section_p;
+char *icon_shield_section_p;
+
 BITMAP *icon_hourglass;
 char *icon_hourglass_p;
 BITMAP *icon_hourglass_mem;
@@ -3150,6 +3155,9 @@ return_to_dialog:
     restore_second_screen();
 	original_color_print=ptrs_ini_date->color_print;
 
+   my_unscare_mouse(); //19-06-2026
+   lock_mouse();
+
 #ifndef LINUX
 	if ((ptrs_ini_date->prn_type==PRN_WINDOWS) && (ret_prn_param != 2))
 	{
@@ -3449,6 +3457,8 @@ void DrawToPrn(void)
   kasuj_nr_pola();
   k=DrawToPrn0(0,1);
   set_trans_blender(0, 0, 0, TRANSLUCENCY); //just for a case
+
+  my_unscare_mouse();  //19-06/2026
 
   lock_mouse();
 

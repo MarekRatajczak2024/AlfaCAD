@@ -92,9 +92,11 @@ POLE pmConcreteUS[] = {
 	{u8"Циліндрична труба", L'Ц', 908, &mConcreteClassUS},
 	{u8"Квадратна труба", L'К', 909, &mConcreteClassUS},
 	{u8"Балка коробчаста", L'Б', 910, &mConcreteClassUS},
+    {u8"плита", L'=', 911, &mConcreteClassUS},
+    {u8"стіна-балка", L'Н', 912, &mConcreteClassUS},
 };
 
-TMENU mConcreteUS = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
+TMENU mConcreteUS = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
 
 POLE pmConcreteEU[] = {
 	{u8"Прямокутник", L'П', 905, &mConcreteClassEU},
@@ -103,9 +105,11 @@ POLE pmConcreteEU[] = {
 	{u8"Циліндрична труба", L'Ц', 908, &mConcreteClassEU},
 	{u8"Квадратна труба", L'К', 909, &mConcreteClassEU},
 	{u8"Балка коробчаста", L'Б', 910, &mConcreteClassEU},
+    {u8"плита", L'=', 911, &mConcreteClassEU},
+    {u8"стіна-балка", L'Н', 912, &mConcreteClassEU},
 };
 
-TMENU mConcreteEU = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
+TMENU mConcreteEU = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
 
 TMENU mWoodMoistureCA = { 2,0,0,7,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 

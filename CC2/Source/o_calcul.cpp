@@ -47,7 +47,10 @@ extern char* Section_Units_System;
 extern char* units_system_si;
 extern char* units_system_imp;
 static double xg = 0, yg = 0;
+static int ltype0 = 96;
+static int ltype = 96;
 
+void set_calc_ltype(int typ);
 
 }
 
@@ -285,6 +288,8 @@ static double do_LIN (double e [])
       factor=1./SkalaF;
     else factor=25.4/SkalaF;
 
+    LG.typ=ltype;
+
     LG.x1=(float)xg;
     LG.y1=(float)yg;
     x1=xg;
@@ -311,6 +316,8 @@ static double do_VEC (double e [])
     if (strcmp(Section_Units_System, units_system_si)==0)
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
+
+    LG.typ=ltype;
 
     x0=xg;
     y0=yg;
@@ -362,6 +369,8 @@ static double do_VEC2 (double e [])
     if (strcmp(Section_Units_System, units_system_si)==0)
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
+
+    LG.typ=ltype;
 
     x0=xg;
     y0=yg;
@@ -451,6 +460,8 @@ static double do_ARC (double e [])
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
 
+    AG.typ=ltype;
+
     x0=xg+e[0]*factor;
     y0=yg+e[1]*factor;
     r=e[2]*factor;
@@ -496,6 +507,8 @@ static double do_CIR (double e [])
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
 
+    CG.typ=ltype;
+
     x0=xg;
     y0=yg;
     r=e[0]*factor;
@@ -520,6 +533,8 @@ static double do_ELP (double e [])
     if (strcmp(Section_Units_System, units_system_si)==0)
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
+
+    EG.typ=ltype;
 
     x0=xg;
     y0=yg;
@@ -548,6 +563,8 @@ static double do_ELPA (double e [])
     if (strcmp(Section_Units_System, units_system_si)==0)
         factor=1./SkalaF;
     else factor=25.4/SkalaF;
+
+    EAG.typ=ltype;
 
     x0=xg;
     y0=yg;
@@ -596,7 +613,18 @@ static double do_FIL (double e [])
    return 0;
 }
 
+static double do_lint (double e [])
+/*--------------------------------*/
+{
+    ltype=(int)lround(e[0]);
+    OG=NULL;
+    return ltype;
+}
 
+void set_calc_ltype(int typ)
+{
+    ltype=typ;
+}
 
 static BOOL insert_function (void)
 /*------------------------------*/
@@ -632,7 +660,8 @@ static BOOL insert_function (void)
   insertfunction ("fil", 2, do_FIL)==FALSE ||
   insertfunction ("cir", 1, do_CIR)==FALSE ||
   insertfunction ("elp", 3, do_ELP)==FALSE ||
-  insertfunction ("elpa", 5, do_ELPA)==FALSE)
+  insertfunction ("elpa", 5, do_ELPA)==FALSE ||
+  insertfunction ("lint", 1, do_lint)==FALSE)
   {
     b_ret = FALSE ;
   }
@@ -1041,7 +1070,7 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
   double ret_expr;
   name * n ;
   int i,iii;
-  char *pow_, *min_, *min2_, *min3_, *min4_, *min5_, *max_, *max2_, *max3_, *max4_, *max5_, *xy_, *LIN_, *ARC_, *VEC_, *VEC2_, *FIL_, *CIR_, *ELP_, *ELPA_;
+  char *pow_, *min_, *min2_, *min3_, *min4_, *min5_, *max_, *max2_, *max3_, *max4_, *max5_, *xy_, *LIN_, *ARC_, *VEC_, *VEC2_, *FIL_, *CIR_, *ELP_, *ELPA_, *LINT_;
 
   //tutaj mozna sprawdzic czy wszystkie znaki zawieraja cyfry, kropke i przecinek
   //jezeli tak, i jezeli wystapil przecinek, mozna go zamienic na kropke
@@ -1065,10 +1094,13 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
   CIR_=strstr(buf,"cir(");
   ELP_=strstr(buf,"elp(");
   ELPA_=strstr(buf,"elpa(");
+  LINT_=strstr(buf,"lint(");
+
+  ////ltype=ltype0;  //reset of line thickness
 
   if ((pow_==NULL) && (min_==NULL) && (min2_==NULL) && (min3_==NULL) && (min4_==NULL) && (min5_==NULL) &&
 	  (max_==NULL) && (max2_==NULL) && (max3_==NULL) && (max4_==NULL) && (max5_==NULL) && (xy_==NULL) && (LIN_==NULL) && (ARC_==NULL)
-      && (VEC_==NULL) && (VEC2_==NULL) && (FIL_==NULL) && (CIR_==NULL) && (ELP_==NULL) && (ELPA_==NULL))
+      && (VEC_==NULL) && (VEC2_==NULL) && (FIL_==NULL) && (CIR_==NULL) && (ELP_==NULL) && (ELPA_==NULL) && (LINT_==NULL))
   {
 	  if (strchr(buf, ',')!=NULL)
 	  {

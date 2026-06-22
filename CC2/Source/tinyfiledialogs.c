@@ -4790,7 +4790,7 @@ int tinyfd_messageBox(
         {
             if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return 1;}
 
-            strcpy( lDialogString , "./kdialog4alfa" ) ;
+            strcpy( lDialogString , "QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
             if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
             {
                 strcat(lDialogString, " --attach=$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"); /* contribution: Paul Rouget */
@@ -4958,7 +4958,7 @@ int tinyfd_messageBox(
                 }
       }
 
-      else if (tfd_yadPresent())
+      else if (tfd_yadPresent() && (1==2))
       {
          if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return 1; }
          strcpy(lDialogString, "szAnswer=$(./yad4alfa --");
@@ -6396,7 +6396,7 @@ char * tinyfd_editBox(
         lDialogString = (char *) malloc( MAX_PATH_OR_CMD + lTitleLen + lMessageLen );
     }
 
-    if ( osascriptPresent( ))
+    if ( osascriptPresent( ) && (1==2))
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return (char *)1;}
         strcpy( lDialogString , "osascript ");
@@ -6433,7 +6433,7 @@ char * tinyfd_editBox(
     else if ( tfd_kdialogPresent())
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
-        strcpy( lDialogString , "szAnswer=$(./kdialog4alfa" ) ;
+        strcpy( lDialogString , "szAnswer=$(QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
 
         if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
         {
@@ -6510,7 +6510,7 @@ char * tinyfd_editBox(
             strcat( lDialogString ," 2 >/tmp/tinyfdt.txt");    ///);if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
         strcat( lDialogString ,");if [ $? = 0 ];then echo \"1$szAnswer\";else echo \"0$szAnswer\";fi");
     }
-    else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() ))
+    else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() ) && (1==2))
     {
         if ( tfd_zenityPresent() )
         {
@@ -6572,7 +6572,7 @@ char * tinyfd_editBox(
         strcat( lDialogString ,
                 ");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
     }
-    else if (tfd_yadPresent()) //  && (1==2))
+    else if (tfd_yadPresent() && (1==2))
     {
         if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return (char*)1; }
         strcpy(lDialogString, "szAnswer=$(./yad4alfa --text-info --editable");
@@ -7191,7 +7191,7 @@ char * tinyfd_inputBox(
                 lDialogString = (char *) malloc( MAX_PATH_OR_CMD + lTitleLen + lMessageLen );
         }
 
-        if ( osascriptPresent( ))
+        if ( osascriptPresent( ) && (1==2))
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return (char *)1;}
                 strcpy( lDialogString , "osascript ");
@@ -7228,7 +7228,7 @@ char * tinyfd_inputBox(
         else if ( tfd_kdialogPresent() )
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
-                strcpy( lDialogString , "szAnswer=$(./kdialog4alfa" ) ;
+                strcpy( lDialogString , "szAnswer=$(QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
 
 				if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
                 {
@@ -7264,7 +7264,7 @@ char * tinyfd_inputBox(
                 strcat( lDialogString ,
                         ");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
         }
-        else if ( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() )
+        else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() ) && (1==2))
         {
                 if ( tfd_zenityPresent() )
                 {
@@ -7322,7 +7322,7 @@ char * tinyfd_inputBox(
                 strcat( lDialogString ,
                                 ");if [ $? = 0 ];then echo 1$szAnswer;else echo 0$szAnswer;fi");
         }
-        else if (tfd_yadPresent())
+        else if (tfd_yadPresent() && (1==2))
         {
            if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return (char*)1; }
            strcpy(lDialogString, "szAnswer=$(./yad4alfa --entry");
@@ -7802,7 +7802,7 @@ char * tinyfd_saveFileDialog(
 			if (tfd_quoteDetected(aFilterPatterns[i])) return tinyfd_saveFileDialog("INVALID FILTER_PATTERN WITH QUOTES", aDefaultPathAndFile, 0, NULL, NULL);
 		}
 
-        if ( osascriptPresent( ))
+        if ( osascriptPresent( ) && (1==2))
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return (char *)1;}
                 strcpy( lDialogString , "osascript ");
@@ -7833,11 +7833,11 @@ char * tinyfd_saveFileDialog(
                 strcat(lDialogString, "-e 'end try'") ;
                 if ( ! osx9orBetter() ) strcat( lDialogString, " -e 'end tell'") ;
         }
-        else if ( tfd_kdialogPresent()) //  & (1==2))
+        else if ( tfd_kdialogPresent())
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
 
-                strcpy( lDialogString , "./kdialog4alfa" ) ;
+                strcpy( lDialogString , "QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
 				if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
                 {
                         strcat(lDialogString, " --attach=$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"); /* contribution: Paul Rouget */
@@ -7884,7 +7884,7 @@ char * tinyfd_saveFileDialog(
                         strcat(lDialogString, "\"") ;
                 }
         }
-        else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() )) // & (1==2))
+        else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() )  && (1==2))
         {
                 if ( tfd_zenityPresent() )
                 {
@@ -7945,7 +7945,7 @@ char * tinyfd_saveFileDialog(
                 }
                 if (tinyfd_silent) strcat( lDialogString , " 2>/dev/null ");
         }
-        else if (tfd_yadPresent()) // & (1==2))
+        else if (tfd_yadPresent() && (1==2))
         {
            if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return (char*)1; }
            strcpy(lDialogString, "./yad4alfa --file-selection --save --confirm-overwrite");
@@ -8312,14 +8312,14 @@ char * tinyfd_openFileDialog(
 			lBuff[0]='\0';
 		}
 
-        if ( osascriptPresent( ))
+        if ( osascriptPresent( ) && (1==2))
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return (char *)1;}
                 strcpy( lDialogString , "osascript ");
                 if ( ! osx9orBetter() ) strcat( lDialogString , " -e 'tell application \"System Events\"' -e 'Activate'");
                 strcat( lDialogString , " -e 'try' -e '" );
-    if ( ! aAllowMultipleSelects )
-    {
+            if ( ! aAllowMultipleSelects )
+            {
 
 
                         strcat( lDialogString , "POSIX path of ( " );
@@ -8381,7 +8381,7 @@ char * tinyfd_openFileDialog(
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
                 lWasKdialog = 1 ;
 
-                strcpy( lDialogString , "./kdialog4alfa" ) ;
+                strcpy( lDialogString , "QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
 				if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
                 {
                         strcat(lDialogString, " --attach=$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"); /* contribution: Paul Rouget */
@@ -8432,7 +8432,7 @@ char * tinyfd_openFileDialog(
                         strcat(lDialogString, "\"") ;
                 }
         }
-        else if ( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent() )
+        else if (( tfd_zenityPresent() || tfd_matedialogPresent() || tfd_shellementaryPresent() || tfd_qarmaPresent()) && (1==2) )
         {
                 if ( tfd_zenityPresent() )
                 {
@@ -8497,7 +8497,7 @@ char * tinyfd_openFileDialog(
                 }
                 if (tinyfd_silent) strcat( lDialogString , " 2>/dev/null ");
         }
-        else if (tfd_yadPresent())
+        else if (tfd_yadPresent() && (1==2))
         {
            if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return (char*)1; }
            strcpy(lDialogString, "./yad4alfa --file-selection");
@@ -8908,7 +8908,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
         lBuff[0]='\0';
     }
 
-    if ( osascriptPresent( ))
+    if ( osascriptPresent( ) && (1==2))
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"applescript");return (char *)1;}
         strcpy( lDialogString , "osascript ");
@@ -8972,7 +8972,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
         strcat(lDialogString, "-e 'end try'") ;
         if ( ! osx9orBetter() ) strcat( lDialogString, " -e 'end tell'") ;
     }
-    else if ( tfd_kdialogPresent()) // && (strcmp(XDG_CURRENT_DESKTOP, "KDE")==0))
+    else if ( tfd_kdialogPresent())
     {
         /*
         if (strcmp(aFilterPatterns[0], "Font Files")==0)
@@ -8999,7 +8999,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
 
         if (aTitle && !strcmp(aTitle, "tinyfd_query")) {strcpy(tinyfd_response, "./kdialog4alfa");return (char *) 1;}
         lWasKdialog = 1;
-        strcpy(lDialogString, "./kdialog4alfa");
+        strcpy(lDialogString, "QT_QPA_PLATFORM=xcb ./kdialog4alfa");
 
         if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
         {
@@ -9124,7 +9124,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
         }
         if (tinyfd_silent) strcat( lDialogString , " 2>/dev/null ");
     }
-    else if (tfd_yadPresent()) // && (1==2))
+    else if (tfd_yadPresent() && (1==2))
     {
         if (aTitle && !strcmp(aTitle, "tinyfd_query")) { strcpy(tinyfd_response, "./yad4alfa"); return (char*)1; }
         strcpy(lDialogString, "./yad4alfa --on-top --file --save --geometry 800x600");  //--savegetopenfilename"
@@ -9161,7 +9161,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
         }
         if (tinyfd_silent) strcat(lDialogString, " 2>/dev/null ");
     }
-    else if ( tkinter3Present( ) && (1==2))
+    else if ( !xdialogPresent() && tkinter3Present( ) && (1==1) )
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"python3-tkinter");return (char *)1;}
         strcpy( lDialogString , gPython3Name ) ;
@@ -9220,7 +9220,7 @@ char * tinyfd_FileNameDialog(   //TO CHECK
 \n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+'|'\
 \n\tprint(lFilesString[:-1])\n\"" ) ;
     }
-    else if ( tkinter2Present( ) && (1==2))
+    else if ( !xdialogPresent() && tkinter2Present( ) && (1==1) )
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"python2-tkinter");return (char *)1;}
         strcpy( lDialogString , "export PYTHONIOENCODING=utf-8;" ) ;
@@ -9291,7 +9291,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
 \n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+'|'\
 \n\tprint lFilesString[:-1]\n\"" ) ;
     }
-    else if (( xdialogPresent() || dialogName() ) && (1==2))
+    else if ( (xdialogPresent() || dialogName()) && (1==1) )
     {
         if ( xdialogPresent( ) )
         {
@@ -9366,7 +9366,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
             }
         }
     }
-    else if (1==2)
+    else if (1==1)
     {
         if (aTitle&&!strcmp(aTitle,"tinyfd_query")){return tinyfd_inputBox(aTitle,NULL,NULL);}
         strcpy(lBuff, "Open file from ");
@@ -9444,6 +9444,20 @@ frontmost of process \\\"Python\\\" to true' ''');");
     return lBuff ;
 }
 
+#include <dlfcn.h>
+
+/* Returns 1 if Qt5 is installed on the system, otherwise returns 0 */
+static int tfd_isQt5Available(void)
+{
+    // Try to open the core Qt5 Widgets library file using the dynamic linker
+    void* handle = dlopen("libQt5Widgets.so.5", RTLD_LAZY);
+    if (handle) {
+        dlclose(handle); // Library is present, close the handle safely
+        return 1;
+    }
+    return 0; // Library is missing
+}
+
 
 char * tinyfd_selectFolderDialog(
         char const * aTitle , /* "" */
@@ -9484,10 +9498,10 @@ char * tinyfd_selectFolderDialog(
                 strcat(lDialogString, "-e 'end try'") ;
                 if ( ! osx9orBetter() ) strcat( lDialogString, " -e 'end tell'") ;
         }
-        else if ((1==2) && tfd_kdialogDirPresent())  //we don't like, because it's Qt5
+        else if (tfd_isQt5Available() && tfd_kdialogDirPresent())  //we don't like, because it's Qt5
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialogDir4alfa");return (char *)1;}
-                strcpy( lDialogString , "./kdialogDir4alfa" ) ;
+                strcpy( lDialogString , "QT_QPA_PLATFORM=xcb ./kdialogDir4alfa" ) ;
 				if ( (tfd_kdialogDirPresent() == 2) && tfd_xpropPresent() )
                 {
                         strcat(lDialogString, " --attach=$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"); /* contribution: Paul Rouget */
@@ -9516,10 +9530,10 @@ char * tinyfd_selectFolderDialog(
                         strcat(lDialogString, "\"") ;
                 }
         }
-        else if ((1==1) && tfd_kdialogPresent())
+        else if (tfd_kdialogPresent())
         {
             if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"./kdialog4alfa");return (char *)1;}
-            strcpy( lDialogString , "./kdialog4alfa" ) ;
+            strcpy( lDialogString , "QT_QPA_PLATFORM=xcb ./kdialog4alfa" ) ;
             if ( (tfd_kdialogPresent() == 2) && tfd_xpropPresent() )
             {
                 strcat(lDialogString, " --attach=$(xprop -root 32x '\t$0' _NET_ACTIVE_WINDOW | cut -f 2)"); /* contribution: Paul Rouget */
@@ -9612,7 +9626,7 @@ char * tinyfd_selectFolderDialog(
            }
            if (tinyfd_silent) strcat(lDialogString, " 2>/dev/null ");
       }
-      else if ( !xdialogPresent() && tkinter3Present( )  && (1==2))
+      else if ( !xdialogPresent() && tkinter3Present( )  && (1==1))
 		{
 			if (aTitle&&!strcmp(aTitle,"tinyfd_query")){strcpy(tinyfd_response,"python3-tkinter");return (char *)1;}
 			strcpy( lDialogString , gPython3Name ) ;
@@ -9739,7 +9753,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
                         }
                 }
         }
-        else if (1==2)
+        else if (1==1)
         {
                 if (aTitle&&!strcmp(aTitle,"tinyfd_query")){return tinyfd_inputBox(aTitle,NULL,NULL);}
 				strcpy(lBuff, "Select folder from ");

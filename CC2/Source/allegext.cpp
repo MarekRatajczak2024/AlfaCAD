@@ -323,6 +323,8 @@ extern void my_sleep(int sleepMs);
 
     extern void show__if_DEMO_RECORDING(int newicon);
     extern char _EDIT_TEXT_[];
+    extern char _EDIT_FILE_[];
+    extern char *global_eTitle;
     extern void get_editbox_size_origin(int *w, int *h, int *x, int *y);
     extern void get_editbox_size_origin_line(int *w, int *h, int *x, int *y);
 
@@ -3300,7 +3302,8 @@ void Check_ConfigureNotify(void)
     	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
     	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
 #else
-        sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+        ////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+    	sprintf(params1, "%s — KDialog4alfa", global_eTitle);
 #endif
         char *args[] = {
                 "wmctrl",
@@ -3337,7 +3340,8 @@ if (ConfigureNotifySemaphore) {
     	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
     	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
 #else
-        sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+        ////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+        sprintf(params1, "%s — KDialog4alfa", global_eTitle);
 #endif
         sprintf(params2, "0,%d,%d,-1,-1", attr.x-attr_x, attr.y-attr_y);
         char *args[] = {
@@ -3367,7 +3371,8 @@ if (ConfigureNotifySemaphore) {
             	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
             	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
 #else
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+                ////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "%s — KDialog4alfa", global_eTitle);
 #endif
                 sprintf(params2, "0,0,%d,-1,-1", hidden_dy);
                 char *args[] = {
@@ -3387,7 +3392,8 @@ if (ConfigureNotifySemaphore) {
             	////sprintf(params1, "%s(%d)", _EDIT_TEXT_, Client_number);
             	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
 #else
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+                ////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "%s — KDialog4alfa", global_eTitle);
 #endif
                 sprintf(params2, "0,0,%d,-1,-1", -hidden_dy);
                 char *args[] = {
@@ -3407,7 +3413,12 @@ if (ConfigureNotifySemaphore) {
         { // state is set
             if (is_hidden==FALSE)
             {
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#ifdef ALFAMTEXT
+            	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
+            	////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "%s — KDialog4alfa", global_eTitle);
+#endif
                 sprintf(params2, "0,0,%d,-1,-1", hidden_dy);
                 char *args[] = {
                         "wmctrl",
@@ -3425,7 +3436,12 @@ if (ConfigureNotifySemaphore) {
         {
             if (is_hidden==TRUE)
             {
-                sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+#ifdef ALFAMTEXT
+            	sprintf(params1, "AlfaCAD Editor(%d)",Client_number);
+#else
+            	////sprintf(params1, "%s(%d) — KDialog4alfa", _EDIT_TEXT_, Client_number);
+            	sprintf(params1, "%s — KDialog4alfa", global_eTitle);
+#endif
                 sprintf(params2, "0,0,%d,-1,-1", -hidden_dy);
                 char *args[] = {
                         "wmctrl",
@@ -5448,7 +5464,7 @@ void Al_Load_PCX_fade(char *pcx_name, int x, int y, int d_x, int d_y)
 
 char *lang_sufix[]={"","PL","UA","ES"};
 
-#define DAYS_DELAY  1 //2
+#define DAYS_DELAY  1
 #define CHECK_DELAY  7
 
 static BOOL get_cloud(T_Fstring key_name, T_Fstring ret_string)
@@ -6617,44 +6633,51 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #endif
 #endif
 */
-////newer version
+////newest version
 #ifdef LINUX
                         	char *cwd = getcwd(NULL, 0);
                         	if (cwd != NULL)
                         	{
-                        		// 1. Wipe out any old temporary data and create a clean update directory with standard permissions
+#ifdef MACOS
+                        		// --- macOS PATH: Staging + rsync to comply with Gatekeeper ---
                         		(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
                         		runcode = mkdir("/tmp/ALFACAD3XXx", 0755);
 
                         		if (runcode == 0)
                         		{
-                        			// 2. Extract cleanly away from your active runtime data segment
                         			snprintf(params, sizeof(params), "-o upgds/%s -d /tmp/ALFACAD3XXx", row_file_name_upgds);
                         			runcode = (int)SystemSilent((char*)"unzip", params);
 
                         			if (runcode == 0)
                         			{
-#ifdef MACOS
-                        				// 3. THE XPROTECT FIX: Deep sign the update inside /tmp BEFORE swapping it.
+                        				// Deep sign the binaries inside /tmp to satisfy macOS security policy
                         				char sign_cmd[MAXPATH * 2];
                         				snprintf(sign_cmd, sizeof(sign_cmd), "codesign --force --deep --sign - /tmp/ALFACAD3XXx/%s", ad_name);
                         				(void)SystemSilentS(sign_cmd);
 
-                        				// 4. ATOMIC BUNDLE UPGRADE (Mac specific with --delete to purge old files)
-                        				snprintf(params, sizeof(params), "rsync -av --delete /tmp/ALFACAD3XXx/ \"%s/\"", cwd);
-#else
-                        				// 5. FLAT FILE UPGRADE (Linux specific)
+                        				// Safe merge using rsync without the destructive --delete flag
                         				snprintf(params, sizeof(params), "rsync -av /tmp/ALFACAD3XXx/ \"%s/\"", cwd);
-#endif
                         				runcode = (int)SystemSilentS(params);
                         			}
-
-                        			// 6. Housekeeping: Vaporize the temporary folder from the disk
                         			(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
                         		}
+#else
+                        		// --- LINUX PATH: Reverted to your highly reliable direct unzip ---
+                        		snprintf(params, sizeof(params), "-o upgds/%s", row_file_name_upgds);
+                        		runcode = (int)SystemSilent((char*)"unzip", params);
+
+                        		if (runcode == 0)
+                        		{
+                        			// Restore execution privileges to the main application binary
+                        			snprintf(params, sizeof(params), "+x %s", ad_name);
+                        			runcode = (int)SystemSilent((char*)"chmod", params);
+                        		}
+#endif
+
                         		free(cwd);
                         	}
 #endif
+
 
 #ifndef LINUX
                             //sprintf(params, "-xf upgds/%s > abc.log", row_file_name_upgds);

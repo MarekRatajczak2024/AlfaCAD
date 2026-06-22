@@ -75,9 +75,9 @@
 
 #include "menu.h"
 
-#ifdef ALLEGRO5
+//#ifdef ALLEGRO5
 #include "alfatextdialogs.h"
-#endif
+//#endif
 
 #include "leak_detector_cpp.hpp"
 
@@ -120,6 +120,7 @@ char *get_eTitle(void);
 extern "C" {
 #endif
 
+char *global_eTitle;
 
 extern void set_forget_mouse(int exp_x, int exp_y);
 extern int Client_number;
@@ -2867,6 +2868,8 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
     dialog_cursor(1);
 #endif
 
+	global_eTitle=eTitle;
+
 #ifdef ALFAMTEXT
     my_text = alfa_editBox(eTitle/*"Edit text"*/, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, etype, (char*)&New_Edit_Params, single);
 #else
@@ -3004,6 +3007,8 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 	_free_mouse();
 	dialog_cursor(1);
 #endif
+
+	global_eTitle=eTitle;
 
 #ifdef ALFAMTEXT
 	my_text = alfa_editBox(eTitle, mytext, 0, (char *) &font_family_name, (char *) &font_file, (char*)&Height, (char *)&Width, "FILE", (char*)&New_Edit_Params, &single);

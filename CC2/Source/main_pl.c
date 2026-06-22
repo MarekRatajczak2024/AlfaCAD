@@ -86,9 +86,11 @@ POLE pmConcreteUS[] = {
 	{u8"Okrągły profil drążony", L'O', 908, &mConcreteClassUS},
 	{u8"Kwadratowy profil drążony", L'K', 909, &mConcreteClassUS},
 	{u8"Skrzynkowy profil drążony", L'S', 910, &mConcreteClassUS},
+    {u8"płyta",L'=',911,&mConcreteClassUS},
+    {u8"tarcza",L'H',912,&mConcreteClassUS},
 };
 
-TMENU mConcreteUS = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
+TMENU mConcreteUS = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteUS,NULL,NULL };
 
 POLE pmConcreteEU[] = {
 	{u8"Prostokąt", L'P', 905, &mConcreteClassEU},
@@ -97,9 +99,11 @@ POLE pmConcreteEU[] = {
 	{u8"Okrągły profil drążony", L'O', 908, &mConcreteClassEU},
 	{u8"Kwadratowy profil drążony", L'K', 909, &mConcreteClassEU},
 	{u8"Skrzynkowy profil drążony", L'S', 910, &mConcreteClassEU},
+    {u8"płyta",L'=',911,&mConcreteClassEU},
+    {u8"tarcza",L'H',912,&mConcreteClassEU},
 };
 
-TMENU mConcreteEU = { 6,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
+TMENU mConcreteEU = { 8,0,0,32,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmConcreteEU,NULL,NULL };
 
 POLE pmWoodMoistureUS[] = {
         {u8"Zielone",L'Z',0,&mWoodSpeciesUS},

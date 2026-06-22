@@ -3696,15 +3696,31 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
         sprintf(command, "./%s %s", script, strstrParams);
     }
     else
+    {
 #ifndef MACOS
-    	{
-        if (ptr_str != NULL) {
-            *ptr_str = '\0';
-            strcat(script, ".py");
-        }
-        sprintf(command, "%s %s %s", PYTHON, script, strstrParams);
+#ifndef NOPYTHON
+    	if (ptr_str != NULL) {
+    		*ptr_str = '\0';
+    		strcat(script, ".py");
+    	}
+    	sprintf(command, "%s %s %s", PYTHON, script, strstrParams);
 #else
-	{
+    	if ((!strstr(script,"image2")) && (!strstr(script,"jpg2")))
+    	{
+    		if (ptr_str != NULL) {
+    			*ptr_str = '\0';
+    		}
+    		sprintf(command, "./%s %s", script, strstrParams);  //compiled
+    	}
+    	else
+    	{
+    		if (ptr_str != NULL) {
+    			*ptr_str = '\0';
+    		}
+    		sprintf(command, "./alfa_images %s %s", script, strstrParams);  //compiled
+    	}
+#endif
+#else
     	if (ptr_str != NULL) {
     		*ptr_str = '\0';
     	}
@@ -3740,7 +3756,6 @@ DWORD SystemSilentS(char* strstrParams)
 
     return ret;  //TO CHECK
 }
-
 
 void timeout_handler(int signum) {
     // This handler will be called in the parent process if the alarm goes off.
@@ -3791,7 +3806,10 @@ BOOL test_python(void)
     FILE *pp;
     BOOL python=0;
 	char commnd[MAXFILE]="";
-    //checking python
+    //checking python if necessary
+#ifdef NOPYTHON
+	return 1;
+#endif
 	sprintf(commnd,"%s --version", PYTHON);
     //pp = popen("python --version", "r");
 	pp = popen(commnd, "r");
@@ -3820,7 +3838,10 @@ BOOL test_pillow(void)
     FILE *pp;
     BOOL pillow=0;
 	char commnd[MAXFILE]="";
-    //checking pillow
+    //checking pillow if necessary
+#ifdef NOPYTHON
+	return 1;
+#endif
 	sprintf(commnd,"%s -m pip show pillow", PYTHON);
     //pp = popen("python -m pip show pillow", "r");
 	pp = popen(commnd, "r");
@@ -3850,7 +3871,10 @@ BOOL test_wxpython(void)
     BOOL pillow=0;
     //checking pillow
 	char commnd[MAXFILE]="";
-	//checking wxpython
+	//checking wxpython if necessary
+#ifdef NOPYTHON
+	return 1;
+#endif
 	sprintf(commnd,"%s -m pip show wxpython", PYTHON);
     //pp = popen("python -m pip show wxpython", "r");
 	pp = popen(commnd, "r");
@@ -3881,7 +3905,10 @@ BOOL test_pyobjc(void)
 	BOOL pyobjc=0;
 	//checking pyobjc
 	char commnd[MAXFILE]="";
-	//checking wxpython
+	//checking wxpython if necessary
+#ifdef NOPYTHON
+	return 1;
+#endif
 	sprintf(commnd,"%s -m pip show pyobjc", PYTHON);
 	pp = popen(commnd, "r");
 	if (pp != NULL)
@@ -4635,7 +4662,9 @@ int Convert_Image_to_ALX(char *fn) {
         komunikat0(148);
 
         sprintf(params, "\"%s\" temp.bmp 72", fn);
+
         runcode = RunSilent("image2image.exe", params);
+
         if (runcode > 0) {
             sprintf(error_str, "%s%d", zb_err_message, runcode);
             ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
@@ -4692,7 +4721,7 @@ int Convert_Image_to_ALX(char *fn) {
 
 		flags = fnsplit(fn, drive, dir, file, ext);
 
-        sprintf(params, "-x %f -k %f -t %d -a %d -O %f -u %d -b alx -f %s temp.pbm", alx_scale, alx_blacklevel, alx_turdsize, alx_alphamax, alx_curve_tolerance, alx_quantize, file);
+        sprintf(params, "-x %f -k %f -t %d -a %d -O %f -u %d -b alx -f \"%s\" temp.pbm", alx_scale, alx_blacklevel, alx_turdsize, alx_alphamax, alx_curve_tolerance, alx_quantize, file);
         runcode = RunSilent("potrace.exe", params);
     }
     else {
