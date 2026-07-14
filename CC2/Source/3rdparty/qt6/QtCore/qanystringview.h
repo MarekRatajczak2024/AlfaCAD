@@ -4,6 +4,9 @@
 #ifndef QANYSTRINGVIEW_H
 #define QANYSTRINGVIEW_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsfinae-incomplete"
+
 #include <QtCore/qcompare.h>
 #include <QtCore/qcontainerfwd.h>
 #include <QtCore/qlatin1stringview.h>
@@ -368,5 +371,7 @@ template <typename QStringLike, std::enable_if_t<std::disjunction_v<
 { return QAnyStringView(s.begin(), s.size()); }
 
 QT_END_NAMESPACE
+
+#pragma GCC diagnostic pop
 
 #endif /* QANYSTRINGVIEW_H */

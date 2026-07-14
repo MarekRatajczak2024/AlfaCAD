@@ -22,6 +22,8 @@
 #define w5 5.0
 #define w3 3.0
 
+#define MaxTextLen  254  //512
+
 extern int colors2(int old_color);
 extern void return_menu_par0 (char *pole, char * par);
 extern void setfillstyle_(int pattern, int color);
@@ -178,7 +180,7 @@ void WymInterF(int k)
 #include "menu.h"
 
 /*--------------------------------------------*/
-#include "bibwym1b.c"
+#include "bibwym1b.inl"
 /*    zmienne   */
 /*--------------------------------------------*/
 
@@ -257,19 +259,19 @@ static void usun(void)
 //static void  (*COMNDmw[])(void);
 
 /*--------------------------------------------*/
-#include "bibwym2b.c"
+#include "bibwym2b.inl"
 /*  angles  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
-#include "bibwym3.c"
+#include "bibwym3.inl"
 /*  arrowhead  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
-#include "bibwym4.c"
+#include "bibwym4.inl"
 /*  cursor - l,r,t,b, mouse  */
 /*--------------------------------------------*/
 /*--------------------------------------------*/
-#include "bibwym5.c"
+#include "bibwym5.inl"
 /*  point  */
 /*--------------------------------------------*/
 

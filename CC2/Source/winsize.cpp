@@ -27,7 +27,7 @@
 #ifndef LINUX
 #include <WinUser.h>
 #include <windowsx.h>
-#include "..\..\source\res\resource.h"
+#include "res/resource.h"
 #else
 typedef wchar_t TCHAR;
 #define _T(x) L ##x

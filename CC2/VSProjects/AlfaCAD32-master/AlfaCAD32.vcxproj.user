@@ -21,7 +21,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>--NOCHDIR</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--NOCHDIR "C:\Users\Marek\ALFACAD\Drawings\Samples\grid_2_Winkler_beams_IMP_ACI.alf" "C:\Users\Marek\ALFACAD\Drawings\Samples\grid_2_Winkler_beams_IMP.alf" "C:\Users\Marek\ALFACAD\Drawings\Samples\grid_2_Winkler_beams_SI_ACI.alf" "C:\Users\Marek\ALFACAD\Drawings\Samples\grid_2_Winkler_beams_SI.alf" "C:\Users\Marek\ALFACAD\Drawings\Samples\grid_2_suspended_beams_IMP_ACI.alf"</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>../../../ALFACAD</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>

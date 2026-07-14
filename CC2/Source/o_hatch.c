@@ -215,8 +215,8 @@ static BOOL get_hatch_param (T_Fstring key_name, T_Fstring ret_string)
            (strcmp(ptrs__hatch_def_param[i_namesno].sz_name, u8"БІЗОЛЯЦІЯ") == 0))
        {
 #ifdef MACOS
-           strcpy(&insulation_hatch_name[0], ptrs__hatch_def_param[i_namesno].sz_name);
-           strcat(&insulation_hatch_name[0], ".axx");
+           strcpy((char*)&insulation_hatch_name[0], ptrs__hatch_def_param[i_namesno].sz_name);
+           strcat((char*)&insulation_hatch_name[0], ".axx");
 #else
            strcpy(insulation_hatch_name[0], ptrs__hatch_def_param[i_namesno].sz_name);
            strcat(insulation_hatch_name[0], ".axx");
@@ -231,8 +231,8 @@ static BOOL get_hatch_param (T_Fstring key_name, T_Fstring ret_string)
            (strcmp(ptrs__hatch_def_param[i_namesno].sz_name, u8"ІЗОЛЯЦІЯ_X") == 0))
        {
 #ifdef MACOS
-           strcpy(&insulation_hatch_name[1], ptrs__hatch_def_param[i_namesno].sz_name);
-           strcat(&insulation_hatch_name[1], ".axx");
+           strcpy((char*)&insulation_hatch_name[1], ptrs__hatch_def_param[i_namesno].sz_name);
+           strcat((char*)&insulation_hatch_name[1], ".axx");
 #else
            strcpy(insulation_hatch_name[1], ptrs__hatch_def_param[i_namesno].sz_name);
            strcat(insulation_hatch_name[1], ".axx");
@@ -742,15 +742,15 @@ static BOOL free_mem_hatch_pattern (int i_type)
   long_long l_free, l_off ;
 
   b_ret = FALSE ;
-  //ptrs__hatch_line_def = NULL ;
-  if (pm__list_hatch != NULL)
-  {
+
+  //if (pm__list_hatch != NULL)
+  //{
      if (ptrs__hatch_line_def!=NULL)
      {
          free(ptrs__hatch_line_def);
          ptrs__hatch_line_def=NULL;
      }
-  }
+  //}
 
   free_mem_hatch_def_param();
 

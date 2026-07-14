@@ -15,8 +15,6 @@
 */
 
 #define __MESSAGE__
-#pragma warning(disable : 4996)
-#define _CRT_SECURE_NO_WARNINGS
 
 #include<forwin.h>
 #define ALLEGWIN
@@ -151,7 +149,7 @@ void InfoListStr0(char *st)
 	//moveto(1,1);
     moveto(1,2);
 	setcolor(kolory.ink);
-	sprintf(buf, st);
+	sprintf(buf, "%s", st);
 	outtext_r(buf);
 	setviewport(viewinfo.left, viewinfo.top, viewinfo.right, viewinfo.bottom, 1);
 }
@@ -581,12 +579,12 @@ void komunikat0_str (int n, char *st)
   setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
 }
 
-void  Internal_Error (int line, char * file)
-/*-----------------------------------------*/
+void  Internal_Error (int line, const char * file)
+/*----------------------------------------------*/
 {
   char message [128] ;
 
-  sprintf (message, u8"System message %s, %d", file, line);
+  sprintf (message, "System message %s, %d", file, line);
   ErrListStr (message);
 }
 

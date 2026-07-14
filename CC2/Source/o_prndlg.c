@@ -604,7 +604,7 @@ static BUTTON buttons_p [] =
   },
 };
 
-const IMAGE images_pr [] =
+static IMAGE images_pr [] =
 {
  {  XpRotation + DXIL+ 15, YpRotation + 1 * DYLab - 12, 48, 48, 18,image_pr_tips0},
  {  XpRotation + DXIL + 70 , YpRotation + 1 * DYLab - 12, 48, 48, 19,image_pr_tips1},
@@ -797,14 +797,14 @@ TDIALOG printer_dlg=
 {
 	2, 1, WIDTH_WORLD - 275,HEIGHT_WORLD-58,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
 	wydruk_na_drukarce/*"Wydruk na drukarce"*/,
-	4, &line_d_l,
+	4, (DARK_LIGHT_LINE(*)[])&line_d_l,
 	0, NULL,
-	7 , &gr_box,
-	20, &edit_p,
-	28, &images_pr,
-	28 , &buttons_p,
+	7 , (GROUP_BOX(*)[])&gr_box,
+	20, (INPUTLINE(*)[])&edit_p,
+	28, (IMAGE(*)[])&images_pr,
+	28 , (BUTTON(*)[])&buttons_p,
 	0, NULL,
-	3,&combobox,
+	3,(COMBOBOX(*)[])&combobox,
     0,NULL, //Sliders
 	NULL,
 	NULL,

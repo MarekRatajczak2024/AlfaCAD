@@ -65,7 +65,7 @@ static double atan2_my  (double y, double x)
 {
   if (y == 0 && x == 0)
   {
-   Internal_Error (__LINE__,__FILE__) ;
+   Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;
    return 0 ;
   }
   return atan2 (y, x) ;
@@ -287,7 +287,7 @@ static double check_seg (double df_angle,
   get_object_node_coord (ptrs_nodes_ob, i_node_no, &df_x2, &df_y2) ;
   if (df_x1 == df_x2 && df_y1 == df_y2)
   {
-    Internal_Error (__LINE__,__FILE__) ;
+    Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;
     return Pi2 ;
   }
   nag = (NAGLOWEK*)(dane + ptrs_nodes_ob->off_object) ;
@@ -311,7 +311,7 @@ static double check_seg (double df_angle,
       Get_Tangent_Ob (nag, df_x1, df_y1, &df_x2, &df_y2, b_right_dir) ;
       break ;
     default :
-      Internal_Error (__LINE__,__FILE__) ;
+      Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;
       return Pi2 ;
       break ;
   }
@@ -1285,7 +1285,7 @@ find_corner (int 	     i_vertex_no,
   }
   if (i_find < 2)
   {
-    Internal_Error (__LINE__,__FILE__);
+    Internal_Error (__LINE__,const_cast<char*>(__FILE__));
     return FALSE ;
   }
   return TRUE ;

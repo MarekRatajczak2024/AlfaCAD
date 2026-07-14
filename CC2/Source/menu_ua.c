@@ -612,7 +612,7 @@ POLE pmOpcje[] = {
 #define _PAGE_INTERRUPT_ u8"Немає блоку '*PAGE'. Друк припинено"
 #define _CONVERSION_TERMINATION_ u8"ЗАЧЕКАЙТЕ!!! Перетворення файлу. Припинення -> Esc..."
 #define _ERROR_DXF_ u8"Помилка у файлі DXF або припинення "
-#define _LINE_NO_ u8" -> лінія %#ld"
+#define _LINE_NO_ u8" -> лінія %ld"
 
 #define _TO_MANY_WIN_ u8"Забагато відкритих вікон"
 #define _CLOSE_WINDOW_ u8"Ви хочете закрити вікно ?"
@@ -832,7 +832,7 @@ POLE pmKolorT_[] = {
 
 TMENU mKolorAC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,72,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 
-#define _OTHER_NO_ u8"֍[М] інше>>> %#ld"
+#define _OTHER_NO_ u8"֍[М] інше>>> %d"
 
 static POLE pmKrok_k[9] = {
 	 {u8"[А]\0  2.5  *",L'А',0,NULL},
@@ -3259,9 +3259,9 @@ POLE pmHelp[] = {
 
 #define _ENDPOINT_ L'К'
 #define _ENDPOINT_SC_ 18
-#define _NEAREST_ L'Б'
+#define _NEAREST_ L'Н'
 #define _NEAREST_SC_ 72
-#define _MIDDLE_ L'С'
+#define _MIDDLE_ L'М'
 #define _MIDDLE_SC_ 3
 #define _INTERSECTION_ L'П'
 #define _INTERSECTION_SC_ 7
@@ -3271,7 +3271,7 @@ POLE pmHelp[] = {
 #define _PERPENDICULAR_SC_ 20
 #define _TANGENTIAL_ L'Д'
 #define _TANGENTIAL_SC_ 12
-#define _ADJACENT_ L'Н'
+#define _ADJACENT_ L'С'
 #define _ADJACENT_SC_ 25
 #define _POINT_ L'Т'
 #define _POINT_SC_ 14
@@ -3289,9 +3289,6 @@ static POLE pmMakro[] = {
 	{u8"Виконання",L'В',93,NULL},
 	{u8"Написати",L'Н',94,NULL},
 	{u8"Прочитати",L'П',95,NULL} };
-
-#define _DRAW__ L'н';
-#define _TEXT__ L'т';
 
 #endif
 
@@ -3530,8 +3527,8 @@ static POLE pmStaticColors[] = {
        {u8"֎Моменти\0пурпуровий\0",                 L'М',760,&mKolorSTATIC},
        {u8"֎Деформації\0жовті\0",                   L'Д',761,&mKolorSTATIC},
        {u8"֎реакції Підтримки\0ціан\0",             L'П',763,&mKolorSTATIC},
-       {u8"֎розтягуючі Напруги\0темно-червоний\0",  L'Н',801,&mKolorSTATIC},
-       {u8"֎сТискаючі напруги\0темно-синій\0",      L'Т',802,&mKolorSTATIC},
+       {u8"֎розтяг σ\0темно-червоний\0",            L'Н',801,&mKolorSTATIC},
+       {u8"֎сТиск σ\0темно-синій\0",                L'Т',802,&mKolorSTATIC},
        {u8"֎напруги зсУву\0темно-зелений\0",        L'У',803,&mKolorSTATIC},
        {u8"֎Вібрації\0інше\0",                      L'В',814,&mKolorSTATIC},
 	  };

@@ -16,8 +16,10 @@
 
 #include <stdio.h>
 
-#include <allegro.h>
 #include <forwin.h>
+
+#include <allegro.h>
+////#include <forwin.h>
 #include "bib_e.h"
 #include "o_dialog.h"
 
@@ -215,7 +217,7 @@ int d_myslider_proc(int msg, void *d_, int c)
     slpos = slratio * d->d2;
     slp = fixtoi(slpos);
 
-    if (mb=gui_mouse_b()==2)
+    if ((mb=gui_mouse_b())==2)
     {
         msg=22;
     }
@@ -387,7 +389,7 @@ int d_myslider_proc(int msg, void *d_, int c)
             /* track the mouse until it is released */
             mp = slp;
 
-            while (mb=gui_mouse_b()) {
+            while ((mb=gui_mouse_b())) {
 
                 if (mb==2) return retval;
                 msx = gui_mouse_x();

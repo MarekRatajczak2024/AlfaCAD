@@ -1,9 +1,9 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdint.h>
 
 #include "htable.h"
-
 
 struct htable_bucket {
     void *key;
@@ -164,23 +164,28 @@ htable_t *htable_create(htable_hash hfunc, htable_keq keq, htable_cbs *cbs)
     ht->buckets     = calloc(BUCKET_START, sizeof(*ht->buckets));
 
     ht->seed = (unsigned int)time(NULL);
-    ht->seed ^= ((unsigned int)htable_create << 16) | (unsigned int)ht;
-    ht->seed ^= (unsigned int)&ht->seed;
+    ////ht->seed ^= ((unsigned int)htable_create << 16) | (unsigned int)ht;
+    ////ht->seed ^= (unsigned int)&ht->seed;
+    ///// Using uintptr_t to safely capture the full 64-bit address before casting the mixed result
+    ht->seed ^= (unsigned int)(((uintptr_t)htable_create << 16) | (uintptr_t)ht); // Fixed row 167
+    ht->seed ^= (unsigned int)(uintptr_t)&ht->seed; // Fixed row 168
+
 
     return ht;
 }
 
 
-void htable_destroy(htable_t *ht)
+void htable_destroy(htable_t* ht)
 {
-    htable_bucket_t *next;
-    htable_bucket_t *cur;
-    size_t           i;
+    htable_bucket_t* next;
+    htable_bucket_t* cur;
+    size_t i;
 
     if (ht == NULL)
         return;
 
-    for (i=0; i<ht->num_buckets; i++) {
+    for (i = 0; i < ht->num_buckets; i++)
+    {
         if (ht->buckets[i].key == NULL)
             continue;
         ht->cbs.key_free(ht->buckets[i].key);

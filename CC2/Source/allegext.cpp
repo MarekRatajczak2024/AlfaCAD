@@ -36,6 +36,19 @@
 #define IC_CLOUD_UPGRADE "UPGRADE"
 #define IC_CLOUD_UPGRADE_URL "UPGRADE_URL"
 
+
+#ifdef UKRAINIAN
+#define MY_BUNDLE_ID "net.AlfaCADUA"
+#elif defined(SPANISH)
+#define MY_BUNDLE_ID "net.AlfaCADES"
+#elif defined(ENGLISH)
+#define MY_BUNDLE_ID "net.AlfaCAD"
+#else
+#define MY_BUNDLE_ID "net.AlfaCADPL"
+#endif
+
+#include"forwin.h"
+
 #include "allegext.h"
 #include <allegro.h>
 #ifdef MACOS
@@ -76,7 +89,7 @@
 #include <time.h>
 #endif
 #include <math.h>
-#include"forwin.h"
+////#include"forwin.h"
 
 #ifdef LINUX
 #ifdef ALLEGRO5
@@ -126,7 +139,11 @@ timeval tvtimestamp1;
 #include "o_libfun.h"
 #include "o_inicnf.h"
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 #include "menu.h"
+//#pragma GCC diagnostic pop
 
 #include "alfalogosak.h"
 
@@ -138,8 +155,12 @@ timeval tvtimestamp1;
 #define long_long long
 #endif
 
+#ifndef TRUE
 #define TRUE  1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 
 #ifdef LINUX
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
@@ -286,6 +307,8 @@ extern "C" {
 #include "xdndfile.h"
 //extern BITMAP *parent_screen;
 Window get_allegro_window(void);
+
+void trim_trailing_new_row(char *str);
 
 static AWIdnd dnd;
 
@@ -445,8 +468,6 @@ extern void my_sleep(int sleepMs);
 
 	extern DRIVER_STRUCT drv_cur;
 
-	extern void makro_wine(void);
-
 	extern void restore_focus(void);
 
 	extern void remove_keyimages(BOOL silent);
@@ -501,6 +522,8 @@ extern DWORD RunSilent(char* strFunct, char* strstrParams);
 extern int Expand_flex(void);
 extern int Get_Mouse_Wheel(void);
 
+extern BOOL Semaphore;
+
 extern char** argv_;
 
 #ifdef ALLEGRO5
@@ -517,6 +540,8 @@ extern bool isRetinaOSXDisplay(void);
 #endif
 #endif
 extern void set_sleep_state(BOOL state);
+
+extern void free_cursors(void);
 
 #ifdef LINUX
 extern void _xwin_set_hints(int w, int h);
@@ -535,6 +560,7 @@ extern void all_render_screen(void);
 extern void set_semaphore(bool sem);
 extern void set_timer_speed(int speed);
 extern void al_resize_screen(int w, int h);
+
 #endif
 #endif
 
@@ -629,9 +655,9 @@ static BITMAP *NONCLIPPED_SCREEN;
 
 BITMAP *screenplay;
 
-static BITMAP *parent_screen=NULL;
+static BITMAP *parent_screen=nullptr;
 
-static BITMAP *parent_second=NULL;
+static BITMAP *parent_second=nullptr;
 
 static int dist_just=1;
 static int n_h_increase=0;
@@ -654,7 +680,9 @@ int GTRANSLUCENCY = 255;
 static HDC win_dc;
 #endif
 
+#ifndef BYTES_PER_PIXEL
 #define BYTES_PER_PIXEL(bpp)  (((int)(bpp) + 7) / 8)
+#endif
 
 void Copy_screen(void);
 
@@ -849,8 +877,8 @@ int32_t timestampToStructtm ( timestamp_t timestamp, struct tm* dateStruct)
 }
 
 /* ----------------------------------------------------------------------------- */
-char *eng_months[]= {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-char *eng_day[]= {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
+const char *eng_months[]= {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+const char *eng_day[]= {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 
 int int_month(char *row_month)
 {
@@ -868,12 +896,12 @@ int32_t sprintf_timestampAsYYYYMMDDHHMMSS ( char* buf, long *date, timestamp_t t
     int day = 0;
     int hour = 0;
     int minute = 0;
-    int second = 0;
+	int second = 0;
     struct tm timeStruct;
     int weekday = 0;
 
-    if (timestamp==NULL) {
-        return sprintf(buf, "NULL_TIMESTAMP");
+    if (timestamp==0) {
+        return sprintf(buf, (char*)"NULL_TIMESTAMP");
     }
 
     memset (&timeStruct, 0, sizeof (struct tm));
@@ -888,6 +916,7 @@ int32_t sprintf_timestampAsYYYYMMDDHHMMSS ( char* buf, long *date, timestamp_t t
     weekday = timeStruct.tm_wday;
 
     *date=year*10000+month*100+day;
+	////*date=year*365+month*31+day;   //it's alternative, will overlap number of real days anyway, but must be consistent with upgrade date
     return sprintf(buf, "%s, %02d %s %04d %02d:%02d:%02d", eng_day[weekday], day, eng_months[month], year, hour, minute, second);
 }
 
@@ -942,6 +971,61 @@ void setviewport(int left, int top, int right, int bottom, int clip)
     int x_right;
     int y_bottom;
 
+
+    //if (top<0)
+    //{
+    //    int abs=0;
+    //    return;
+    //}
+
+	// 1. Strict Boundary Protections against invalid or out-of-bounds metrics
+	if (top < 0 || left < 0 || right < left || bottom < top)
+	{
+		return;
+	}
+
+#ifndef ALLEGRO5
+	// Ensure screen is valid AND check if the OS layer has locked it
+	if (screen != nullptr && (((BITMAP*)screen)->id & BMP_ID_LOCKED))
+	{
+		return; // Safely skip this viewport cycle; the OS thread is busy
+	}
+#endif
+
+    if (parent_screen != nullptr) {destroy_bitmap(parent_screen);
+        parent_screen = nullptr;
+    }
+#ifndef ALLEGRO5
+    screen = NONCLIPPED_SCREEN;
+#endif
+    parent_screen = create_sub_bitmap((BITMAP*)screen, left, top, right-left+1, bottom-top+1);
+#ifndef ALLEGRO5
+    screen = parent_screen;
+#else
+    set_clip_rect(screen,left, top, right-left, bottom);  //bottom-top
+#endif
+    screenplay = parent_screen;
+
+    if (left<right) { x_left=left; x_right=right;}
+    else { x_left=right; x_right=left;}
+    if (top<bottom) { y_top=top; y_bottom=bottom;}
+    else { y_top=bottom; y_bottom=top;}
+
+    viewport_x=x_left;
+    viewport_y=y_top;
+    viewport_xk=x_right;
+    viewport_yk=y_bottom;
+
+	set_clip_rect(screenplay,0, 0, right-left, bottom-top);
+}
+
+void setviewport_older(int left, int top, int right, int bottom, int clip)
+{
+    int x_left;
+    int y_top;
+    int x_right;
+    int y_bottom;
+
     if (top<0)
     {
         int abs=0;
@@ -975,27 +1059,28 @@ void setviewport(int left, int top, int right, int bottom, int clip)
     return;
 }
 
-void     setviewport_second(BITMAP *second_screen,int left, int top, int right, int bottom, int clip)
+void setviewport_second(BITMAP *second_screen,int left, int top, int right, int bottom, int clip)
 {
-  int x_left;
-  int y_top;
-  int x_right;
-  int y_bottom;
+	int x_left;
+	int y_top;
+	int x_right;
+	int y_bottom;
 
 
-  if (left<right) { x_left=left; x_right=right;}
-    else { x_left=right; x_right=left;}
-  if (top<bottom) { y_top=top; y_bottom=bottom;}
-    else { y_top=bottom; y_bottom=top;}
+	if (left<right) { x_left=left; x_right=right;}
+	else { x_left=right; x_right=left;}
+	if (top<bottom) { y_top=top; y_bottom=bottom;}
+	else { y_top=bottom; y_bottom=top;}
 
-  viewport_x=x_left;
-  viewport_y=y_top;
-  viewport_xk=x_right;
-  viewport_yk=y_bottom;
-  screenplay = second_screen;
-  set_clip_rect(second_screen,0, 0, right-left, bottom-top);
-  return;
+	viewport_x=x_left;
+	viewport_y=y_top;
+	viewport_xk=x_right;
+	viewport_yk=y_bottom;
+	screenplay = second_screen;
+	set_clip_rect(second_screen,0, 0, right-left, bottom-top);
+	return;
 }
+
 
 
 unsigned imagesize(int left, int top, int right, int bottom)
@@ -1921,20 +2006,27 @@ void GrMouseGetEvent1(int flags,GrMouseEvent *event)
     }
 }
 
-void     outtextxy(int x, int y0, const char *textstring)
+/*
+void outtextxy(int x, int y0, const char *textstring)
 { int y;
 
   text_mode(-1);
   //z uwagi na roznice w wyswietlaniu tekstu w Allegro, nalezy podniesc tekst o ich wysokosc
 
-  if (cur_text_just_vert!=0) { y=y0/*+text_height(font3)*/+dist_just;}
+  if (cur_text_just_vert!=0) { y=y0+dist_just;}
     else y=y0-text_height(font3)+dist_just;
-  if (cur_text_just_horiz==0) textout(screen, font3, textstring, x/*-viewport_x*/, y/*-viewport_y*/, cur_color);
-    else if (cur_text_just_horiz==1) textout_centre(screen, font3, textstring, x/*-viewport_x*/, y/*-viewport_y*/, cur_color);
-      else if (cur_text_just_horiz==2) textout_right(screen, font3, textstring, x/*-viewport_x*/, y/*-viewport_y*/, cur_color);
-        else textout(screen, font3, textstring, x/*-viewport_x*/, y/*-viewport_y*/, cur_color);
+  if (cur_text_just_horiz==0) textout(screen, font3, textstring, x, y, cur_color);
+    else if (cur_text_just_horiz==1) textout_centre(screen, font3, textstring, x, y, cur_color);
+      else if (cur_text_just_horiz==2) textout_right(screen, font3, textstring, x, y, cur_color);
+        else textout(screen, font3, textstring, x, y, cur_color);
 
   moveto(x + textwidth(textstring), y0);
+}
+*/
+
+void outtextxy(int x, int y0, const char *textstring)
+{
+	;
 }
 
 void     settextsettings(int font_number, int direction, int charsize, int horiz, int vert)
@@ -2009,11 +2101,11 @@ void set_special_background(char *file_pcx)
 	char ext[MAXEXT];
 
 	flags = fnsplit(file_pcx, drive, dir, file, ext);
-	if (strcmp(strupr(ext), ".PCX") == NULL) background_pcx = load_pcx(file_pcx, pal);
-	else if (strcmp(strupr(ext), ".PNG") == NULL) background_pcx = load_png(file_pcx, pal);
-	   else if ((strcmp(strupr(ext), ".JPG") == NULL) || (strcmp(strupr(ext), ".JPEG") == NULL)) background_pcx = load_jpg(file_pcx, pal);
+	if (strcmp(strupr(ext), ".PCX") == 0) background_pcx = load_pcx(file_pcx, pal);
+	else if (strcmp(strupr(ext), ".PNG") == 0) background_pcx = load_png(file_pcx, pal);
+	   else if ((strcmp(strupr(ext), ".JPG") == 0) || (strcmp(strupr(ext), ".JPEG") == 0)) background_pcx = load_jpg(file_pcx, pal);
 
-	if (background_pcx == NULL)
+	if (background_pcx == nullptr)
 	{
 		set_default_background();
 		set_background_menu((char*)"greygres");
@@ -2039,7 +2131,7 @@ typedef enum
 static BOOL add_desktop(FILE *stru)
 /*-------------------------------*/
 {
-	T_Fstring key_name;
+	const char *key_name;
 	T_Fstring comment;
 	int i;
     int WHEEL_STYLE;
@@ -2429,14 +2521,14 @@ void destroy_sprite_bmp(int nr)
 
 
 
-void     GrFilledPolygon(int numpts,int minx,int miny,int maxx,int maxy, int *points,GrColor c, int nr)
+void GrFilledPolygon(int numpts,int minx,int miny,int maxx,int maxy, int *points,GrColor c, int nr)
 {
-	int i;
-     
-     polygon(screenplay, numpts, points, c);
+     polygon(screenplay, numpts, points, (int)c);
 	 return;
 
-    
+    /*
+	int i;
+
     if ((points[0] == points[2]) && (points[1] == points[3]))
     {
 		points[2] = points[0] + 1;  ///?????
@@ -2453,20 +2545,18 @@ void     GrFilledPolygon(int numpts,int minx,int miny,int maxx,int maxy, int *po
 	sprite_bmp_x[nr]=points[0]-minx;
 	sprite_bmp_y[nr]=points[1]-miny;
 
-
 	polygon(sprite_bmp[nr], numpts, points, 0xFFFFFF);  //0xFFFFFF //255  
 
-
 	draw_character(screenplay, sprite_bmp[nr], points[0]-sprite_bmp_x[nr], points[1]-sprite_bmp_y[nr], c);
-
-    return;
+    */
 }
 
 
-void GrFilledPolygon1(const int *points, int dx, int dy, GrColor c, fixed angle)
-{  int x0, y0;
-   x0=points[0];
-   y0=points[1];
+void GrFilledPolygon1(const int *points, int dx, int dy, GrColor cc, fixed angle)
+{
+   int c=(int)cc;
+   int x0=points[0];
+   int y0=points[1];
 
    
    if ((dx_old!=dx) || (dy_old!=dy))
@@ -2484,7 +2574,6 @@ void GrFilledPolygon1(const int *points, int dx, int dy, GrColor c, fixed angle)
 	dy_old=dy;
 	c_old=c;
 
-    return;
 }
 
 
@@ -3714,14 +3803,14 @@ void trim_trailing_new_row(char *str) {
 #define ALLEGRO5DND
 void Check_XNextEvent(void) {
 
-    char *fptr, *iptr, *bptr, *eptr;;
+    char *fptr, *iptr, *bptr, *eptr;
     int ret;
 	int len;
 	int n;
 
 #ifdef LINUX
 //#ifndef MACOS
-    if (xdnd_buf.mflag==1)  //there is something new
+    if (xdnd_buf.mflag==1)  //there is new drawing(s) to load
     {
         CURL *curl = curl_easy_init();
         if (xdnd_buf.iflag==0)  //ready to read
@@ -3756,20 +3845,14 @@ void Check_XNextEvent(void) {
 
                 fptr=iptr+2;
                 iptr=strchr(fptr, '\r');
-
-            	//n++;
             }
             xdnd_buf.iflag=0;
         }
         xdnd_buf.mflag=0;
 
         curl_easy_cleanup(curl);
-
-    	////simulate_keypress(27);  //to push
     }
 
-//#else
-//#endif
 #else
 	if ((xdnd_buf!=NULL) && (xdnd_buf->mflag == 1))  //there is something new
 	{
@@ -5760,13 +5843,13 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
         }
     }
 
-    drawing_mode(DRAW_MODE_SOLID, NULL, 0, 0);
+    drawing_mode(DRAW_MODE_SOLID, (BITMAP*)nullptr, 0, 0);
 
-    if (fade_in) {
+    //if (fade_in) {
         png_mem = 622 * 465 * 4 + 100;
         bmp1 = load_memory_png(alfalogosak, png_mem, (RGB *)&pal);
-    }
-    else bmp1 = load_png(png_name1, pal);
+    //}
+    //else bmp1 = load_png(png_name, pal);
 
     if (bmp1 == NULL) return 0;
 
@@ -5897,9 +5980,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
             strcpy(cloud_password0,"engineer4engineers");
 
             cloud_share_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_share_url,"\"https://nextcloud.vurplex.com\"");
+            strcpy(cloud_share_url,"\"https://nextcloud.alfacad.net\"");
             cloud_share0_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_share0_url,"https://nextcloud.vurplex.com");
+            strcpy(cloud_share0_url,"https://nextcloud.alfacad.net");
 
             cloud_ads=(char*)malloc(MAXPATH);
             strcpy(cloud_ads,"\"ads\"");
@@ -5907,9 +5990,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
             strcpy(cloud_ads0,"ads");
 
             cloud_ads_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_ads_url,"\"https://nextcloud.vurplex.com/remote.php/webdav/ads\"");
+            strcpy(cloud_ads_url,"\"https://nextcloud.alfacad.net/remote.php/dav/files/alfacad/ads\"");
             cloud_ads0_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_ads0_url,"https://nextcloud.vurplex.com/remote.php/webdav/ads");
+            strcpy(cloud_ads0_url,"https://nextcloud.alfacad.net/remote.php/dav/files/alfacad/ads");
 
             cloud_upgrade=(char*)malloc(MAXPATH);
             strcpy(cloud_upgrade,"\"upgds\"");
@@ -5917,9 +6000,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
             strcpy(cloud_upgrade0,"upgds");
 
             cloud_upgrade_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_upgrade_url,"\"https://nextcloud.vurplex.com/remote.php/webdav/upgds\"");
+            strcpy(cloud_upgrade_url,"\"https://nextcloud.alfacad.net/remote.php/dav/files/alfacad/upgds\"");
             cloud_upgrade0_url=(char*)malloc(MAXPATH);
-            strcpy(cloud_upgrade0_url,"https://nextcloud.vurplex.com/remote.php/webdav/upgds");
+            strcpy(cloud_upgrade0_url,"https://nextcloud.alfacad.net/remote.php/dav/files/alfacad/upgds");
 
             //getting credentials
             Get_Private_Profile_Strings_Cloud((T_Fstring)IC_CLOUD, get_cloud);
@@ -5950,7 +6033,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                 ts = sprintf_timestampAsYYYYMMDDHHMMSS((char *) &time_str, &date_num_current, current_time);
                 printf("%s  %ld\n", time_str, date_num_current);
 
-                if (date_num_current > last_upgd_date_num + (long) CHECK_DELAY) time_to_update = TRUE;
+                if (date_num_current >= last_upgd_date_num + (long) CHECK_DELAY) time_to_update = TRUE;
 
                 if ((!fade_out) && (time_to_update))  //stage 2
                 {
@@ -6026,7 +6109,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         tools_ok = FALSE;
                         snprintf(tools_to_install, sizeof(tools_to_install), "%s %s %s %s", ((curl == 0) ? "curl" : ""),
                                 ((unzip == 0) ? "unzip" : ""), ((sed == 0) ? "sed" : ""), _TOOLS_TO_INSTALL_);
-                        ret = ask_question(1, (char *) _No_, (char *) _Yes_, "Upgrade", tools_to_install, 12,
+                        ret = ask_question(1, (char *) _No_, (char *) _Yes_, (char*)"Upgrade", tools_to_install, 12,
                                            (char *) _INSTALL_TOOLS_, 11, 1, 203);
                     }
 #endif
@@ -6243,9 +6326,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     ptr = strchr(ptr, '\t');
                                 }
 #endif
-                                ret = sscanf(list_row, "%s %s %d %s %d %s %s %d %s ", &row_file, &row_weekday,
+                                ret = sscanf(list_row, "%s %s %d %s %d %s %s %d %s ", row_file, row_weekday,
                                              &row_day,
-                                             &row_month, &row_year, &row_time, &row_zone, &row_size, &row_type);
+                                             row_month, &row_year, row_time, row_zone, &row_size, row_type);
 
                                 if ((strcmp(row_file, "filelist.txt") == 0) || (ret < 9)) continue;
 
@@ -6498,9 +6581,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     ptr = strchr(ptr, '\t');
                                 }
 #endif
-                                ret = sscanf(list_row, "%s %s %d %s %d %s %s %d %s ", &row_file_upgds, &row_weekday,
+                                ret = sscanf(list_row, "%s %s %d %s %d %s %s %d %s ", row_file_upgds, row_weekday,
                                              &row_day,
-                                             &row_month, &row_year, &row_time, &row_zone, &row_size, &row_type);
+                                             row_month, &row_year, row_time, row_zone, &row_size, row_type);
 
                                 if ((strcmp(row_file_upgds, "upgdslist.txt") == 0) || (ret < 9)) continue;
                                 //checking if file exists
@@ -6514,13 +6597,14 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                 {
                                     //checking time
                                     long upgd_date_num = row_year * 10000 + int_month(row_month) * 100 + row_day;
+                                	////long upgd_date_num = row_year * 365 + int_month(row_month) * 31 + row_day;  //it's alternative, with biggest number of days in year, biggest number of days in month, so will always overlap current number of days anyway
                                     //sprintf(buf, "%s, %02d %s %04d %02d:%02d:%02d", eng_day[weekday], day, eng_months[month], year, hour, minute, second);
                                     printf("%s    %s, %02d %s %04d %s\n", time_str, row_weekday, row_day, row_month,
                                            row_year, row_time);
                                     printf("%ld   %ld\n", date_num, upgd_date_num);
 
                                     //if (date_num < (upgd_date_num + DAYS_DELAY)) go_download_upgds = TRUE;  //if zip time (upgd_date_num) is at least 1 day after date of modifying (date_num)
-                                    if ((upgd_date_num - date_num) > DAYS_DELAY)
+                                    if ((upgd_date_num - date_num) >= DAYS_DELAY)  //next day is still good day
                                         go_download_upgds = TRUE;  //if zip time (upgd_date_num) is at least 1 day after date of modifying (date_num)
 
                                     break;  //anyway
@@ -6535,7 +6619,8 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         fprintf(lupgdf, "%ld\n", date_num_current);
                         fclose(lupgdf);
                     }  //my_file_exists("upgdslist.out")
-                    ////////////////////////////////////////
+                    ///////////////////////////////////////
+
                     if (go_download_upgds) {
                         int key;
                         BITMAP *screen_ = screen;
@@ -6638,7 +6723,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         	char *cwd = getcwd(NULL, 0);
                         	if (cwd != NULL)
                         	{
+                        		/*
 #ifdef MACOS
+
                         		// --- macOS PATH: Staging + rsync to comply with Gatekeeper ---
                         		(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
                         		runcode = mkdir("/tmp/ALFACAD3XXx", 0755);
@@ -6661,7 +6748,59 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         			}
                         			(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
                         		}
+
+
 #else
+*/
+#ifdef MACOS
+                        		// 1. Setup clean staging directory
+                        		(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
+                        		runcode = mkdir("/tmp/ALFACAD3XXx", 0755);
+
+                        		if (runcode == 0)
+                        		{
+                        			// 2. Unzip everything to staging
+                        			snprintf(params, sizeof(params), "-o upgds/%s -d /tmp/ALFACAD3XXx", row_file_name_upgds);
+                        			runcode = (int)SystemSilent((char*)"unzip", params);
+
+                        			if (runcode == 0)
+                        			{
+                        				char sign_cmd[MAXPATH * 3];
+
+                        				// 3. Clear all download/quarantine flags on staged elements
+                        				snprintf(sign_cmd, sizeof(sign_cmd), "xattr -cr /tmp/ALFACAD3XXx");
+                        				(void)SystemSilentS(sign_cmd);
+
+                        				// 4. Code-sign every single nested binary tool inside staging automatically
+                        				snprintf(sign_cmd, sizeof(sign_cmd),
+											 "find /tmp/ALFACAD3XXx -type f -perm +111 -exec codesign --force --deep --sign - "
+													"--requirement \"identifier '%s'\" {} \\; 2>/dev/null", MY_BUNDLE_ID);
+                        				(void)SystemSilentS(sign_cmd);
+                        				
+                        				// 5. Clean merge: Truncate destination slash to prevent folder nesting
+                        				snprintf(params, sizeof(params), "rsync -av --exclude='__MACOSX' /tmp/ALFACAD3XXx/ \"%s\"", cwd);
+                        				runcode = (int)SystemSilentS(params);
+
+                        				if (runcode == 0)
+                        				{
+                        					// 5.1 Apply execution privileges to the newly updated bundle structures
+                        					snprintf(params, sizeof(params), "-R +x \"%s/%s.app\"", cwd, ad_name);
+                        					(void)SystemSilent((char*)"chmod", params);
+
+                        					// 5.2 Purge the user-level TCC profile immediately before the reboot sequence
+                        					// This strips the stale entry out while the app finishes its return cleanup loops
+                        					char reset_cmd[MAXPATH * 2];
+                        					snprintf(reset_cmd, sizeof(reset_cmd), "sudo -u \"$USER\" tccutil reset Accessibility \"%s\" 2>/dev/null", MY_BUNDLE_ID);
+                        					(void)SystemSilentS(reset_cmd);
+                        				}
+                        			}
+
+                        			// 6. Housekeeping cleanup
+                        			(void)SystemSilentS((char*)"rm -rf /tmp/ALFACAD3XXx");
+                        		}
+
+#else
+
                         		// --- LINUX PATH: Reverted to your highly reliable direct unzip ---
                         		snprintf(params, sizeof(params), "-o upgds/%s", row_file_name_upgds);
                         		runcode = (int)SystemSilent((char*)"unzip", params);
@@ -6765,34 +6904,27 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 
 #endif
 
-#ifdef LINUX
-                            sprintf(params, "+x %s", ad_name);
-                            runcode = (int)SystemSilent((char*)"chmod", params);
-#endif
-#ifndef LINUX
-                            /////////////////////////////  TO DO ON WINDOWS
-                           ;
-                           //// RunSilent("chmod", params);
-#endif
                             if (bmp_add != NULL) destroy_bitmap(bmp_add);
                             destroy_bitmap(second_screen);
 
-                        	free(cloud_user);
-                        	free(cloud_user0);
-                        	free(cloud_password);
-                        	free(cloud_password0);
-                        	free(cloud_share_url);
-                        	free(cloud_share0_url);
-                        	free(cloud_ads);
-                        	free(cloud_ads0);
-                        	free(cloud_ads_url);
-                        	free(cloud_ads0_url);
-                        	free(cloud_upgrade);
-                        	free(cloud_upgrade0);
-                        	free(cloud_upgrade_url);
-                        	free(cloud_upgrade0_url);
+                            free(cloud_user);
+                            free(cloud_user0);
+                            free(cloud_password);
+                            free(cloud_password0);
+                            free(cloud_share_url);
+                            free(cloud_share0_url);
+                            free(cloud_ads);
+                            free(cloud_ads0);
+                            free(cloud_ads_url);
+                            free(cloud_ads0_url);
+                            free(cloud_upgrade);
+                            free(cloud_upgrade0);
+                            free(cloud_upgrade_url);
+                            free(cloud_upgrade0_url);
 
-                            return 255;  //restart
+                        	free_cursors();
+
+                            return 255; //restart
                         }
                     } //(go_download_upgds)
 
@@ -8307,5 +8439,8 @@ void Set_XWindow_header_height(void) {
 #ifdef __cplusplus
 }
 #endif
+
+
+#pragma GCC diagnostic pop
 
 #undef __ALLEGROEXT__

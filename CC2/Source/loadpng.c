@@ -26,6 +26,8 @@
 
 #include "leak_detector_c.h"
 
+extern BITMAP *fixup_loaded_bitmap(BITMAP *bmp, PALETTE pal, int bpp);
+
 double _png_screen_gamma = -1.0;
 int _png_compression_level = Z_BEST_COMPRESSION;
 
@@ -220,7 +222,8 @@ static BITMAP *really_load_png(png_structp png_ptr, png_infop info_ptr, RGB *pal
 
     /* Let Allegro convert the image into the desired colour depth. */
     if (dest_bpp != bpp)
-	bmp = _fixup_loaded_bitmap(bmp, pal, dest_bpp);
+	//bmp = _fixup_loaded_bitmap(bmp, pal, dest_bpp);
+	bmp = fixup_loaded_bitmap(bmp, pal, dest_bpp);
 
     /* Read rest of file, and get additional chunks in info_ptr. */
     png_read_end(png_ptr, info_ptr);

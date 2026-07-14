@@ -16,10 +16,10 @@
 
 #define __O_DXF_IN__
 #include"forwin.h"
-#include<stdlib.h>
-#include<math.h>
-#include<string.h>
-#include<stdio.h>
+#include<cstdlib>
+#include<cmath>
+#include<cstring>
+#include<cstdio>
 #ifndef LINUX
 #include<io.h>
 #endif
@@ -256,7 +256,7 @@ int nr_linii;
 int zamkniecie;
 double start_x, start_y, start_width;
 double wypuklosc, wypuklosc0;
-double znacznik_wierzcholka;
+int znacznik_wierzcholka;
 BOOL drugi_wezel, trzeci_wezel, first_arc, fit_curve, myspline, planarspline, linearspline;
 double width_p_standard,width_k_standard;
 int numer_polilinii;
@@ -345,6 +345,13 @@ static double move_x, move_y, move_z;
 int surface_type;
 
 static double FormatYY, DELXX, DELYY;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wwrite-strings"
+#pragma ide diagnostic ignored "CppStringLiteralToCharPointerConversion"
 
 #define acad_line_nr 26
 static
@@ -710,23 +717,23 @@ static BOOL get_lines_width_dxf (T_Fstring key_name, T_Fstring ret_string)
   switch (i)
   {
     case IDthinest_width:
-      if ( sscanf ( ret_string, "%f", &line_width.thinest ) < 1 ) goto aa;
+      if ( sscanf ( ret_string, "%lf", &line_width.thinest ) < 1 ) goto aa;
       if ( line_width.thinest <= 0 ) goto aa;
     break;
     case IDthin_width:
-      if ( sscanf ( ret_string, "%f", &line_width.thin ) < 1 ) goto aa;
+      if ( sscanf ( ret_string, "%lf", &line_width.thin ) < 1 ) goto aa;
       if ( line_width.thin <= 0 ) goto aa;
     break;
     case IDnor_width:
-      if ( sscanf ( ret_string, "%f", &line_width.normal ) < 1 ) goto aa;
+      if ( sscanf ( ret_string, "%lf", &line_width.normal ) < 1 ) goto aa;
       if ( line_width.normal <= 0 ) goto aa;
     break;
     case IDthick_width:
-      if ( sscanf ( ret_string, "%f", &line_width.thick ) < 1 ) goto aa;
+      if ( sscanf ( ret_string, "%lf", &line_width.thick ) < 1 ) goto aa;
       if ( line_width.thick <= 0 ) goto aa;
     break;
     case IDthickest_width:
-      if ( sscanf ( ret_string, "%f", &line_width.thickest ) < 1 ) goto aa;
+      if ( sscanf ( ret_string, "%lf", &line_width.thickest ) < 1 ) goto aa;
       if ( line_width.thickest <= 0 ) goto aa;
     break;
     default:
@@ -774,7 +781,7 @@ static int inc_nr_linii (void)
 
   int nn;
   int ret;
-  char str[32], str1[32];
+  char str[64], str1[64];
 
   nr_linii+=1;
   nn=(nr_linii/1000)*1000;
@@ -794,7 +801,7 @@ static int inc_nr_linii (void)
 	  bar(x, y, maxX, y + ED_INF_HEIGHT - 2);
 	  setcolor(kolory.ink);
 	  moveto(x + 5, y + 1);
-	  sprintf(buf, "%#ld", nr_linii);
+	  snprintf(buf, sizeof(buf), "%d", nr_linii);
 	  buf[18] = '\0';
 	  outtext_r(buf);
 #endif
@@ -808,11 +815,11 @@ static int inc_nr_linii (void)
 			  my_getch();
 		  }
 		  
-		  sprintf(str, _SYSTEM_MESSAGE_);
-		  sprintf(str1, _INTERRAPTED_);
+		  snprintf(str, sizeof(str), _SYSTEM_MESSAGE_);
+		  snprintf(str1, sizeof(str1), _INTERRAPTED_);
 
 		  InfoList(0);
-		  ret = ask_question(1, "", "OK", "", str, 12, str1, 11, 1, 0);
+		  ret = ask_question(1, (char*)"", (char*)"OK", (char*)"", str, 12, str1, 11, 1, 0);
 
 		  return 0;
 
@@ -1674,7 +1681,7 @@ void latin2utf8(char * tekst)  //DOS Latin II
 
 	for (i = 0; i < dl_tekst; i++)
 	{
-		if ((unsigned char)tekst[i] < 127) strncat(ubuf, &tekst[i], 1);
+		if ((unsigned char)tekst[i] < 127) strncat(ubuf, &tekst[i], sizeof(ubuf) - strlen(ubuf) - 1);
 		else
 		{
 			switch (tekst[i])
@@ -1729,15 +1736,15 @@ void latin2utf8(char * tekst)  //DOS Latin II
 
 			if ((int_code > 1920) || (bytes_n > 2))
 			{
-				strncat(ubuf, " ", 1);
+				strncat(ubuf, " ", sizeof(ubuf) - strlen(ubuf) - 1);
 			}
 			else
 			{
 
 				lo = utf8c[0];
 				hi = utf8c[1];
-				strncat(ubuf, &lo, 1);
-				strncat(ubuf, &hi, 1);
+				strncat(ubuf, &lo, sizeof(ubuf) - strlen(ubuf) - 1);
+				strncat(ubuf, &hi, sizeof(ubuf) - strlen(ubuf) - 1);
 			}
 		}
 	}
@@ -1760,7 +1767,7 @@ void ISOlatin2utf8(char * tekst)
 	if (dl_tekst == 0) return;
 	for (i = 0; i < dl_tekst; i++)
 	{
-		if ((unsigned char)tekst[i]<127) strncat(ubuf, &tekst[i], 1);
+		if ((unsigned char)tekst[i]<127) strncat(ubuf, &tekst[i], sizeof(ubuf) - strlen(ubuf) - 1);
 		else
 		{
 			switch (tekst[i])
@@ -1814,58 +1821,92 @@ void ISOlatin2utf8(char * tekst)
 
 			if ((int_code > 1920) || (bytes_n > 2))
 			{
-				strncat(ubuf, " ", 1);
+				strncat(ubuf, " ", sizeof(ubuf) - strlen(ubuf) - 1);
 			}
 			else
 			{
 
 				lo = utf8c[0];
 				hi = utf8c[1];
-				strncat(ubuf, &lo, 1);
-				strncat(ubuf, &hi, 1);
+				strncat(ubuf, &lo, sizeof(ubuf) - strlen(ubuf) - 1);
+				strncat(ubuf, &hi, sizeof(ubuf) - strlen(ubuf) - 1);
 			}
 
 		}
 	}
 	strcpy(tekst, ubuf);
 }
-
-int read_var1(FILE *f,int kod, void * ZMIENNA)
+/*
+int read_var1_old(FILE *f, int kod, void * ZMIENNA)
 {
   char buf[MAXLINE], *p;
   char dxf_code[MAXLINE];
    
-  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
-   if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+	if (!inc_nr_linii()) return 0;
+	if ( myfgets(dxf_code , MAXLINE , f ) == nullptr ) return 0;
+	if (!inc_nr_linii()) return 0;
+    if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
-if (((kod>=0) && (kod<10)) ||
-    ((kod>=999) && (kod<1010))) /*string*/
- {
-  strcpy((char *)ZMIENNA, buf);
-  return 1;
- }
- else if (((kod>=10) && (kod<60)) ||
-          ((kod>=140) && (kod<148)) ||
-          ((kod>=210) && (kod<40)) ||
-          ((kod>=1010) && (kod<1060))) /*double*/
-  {
-    p=buf;
-    if ( sscanf ( p , "%lf", ZMIENNA)  < 1 ) return 0;
-  }    
-  else if (((kod>=60) && (kod<80)) ||
-          ((kod>=170) && (kod<176)) ||
-          ((kod>=1060) && (kod<1080))) /*int*/
-  {
-    p=buf;
-    if ( sscanf ( p , "%d", ZMIENNA)  < 1 ) return 0;
-  }                
+    if (((kod>=0) && (kod<10)) || ((kod>=999) && (kod<1010))) //string
+	 {
+	  strcpy((char *)ZMIENNA, buf);
+	  return 1;
+	 }
+	 else if (((kod>=10) && (kod<60)) || ((kod>=140) && (kod<148)) || ((kod>=210) && (kod<40)) || ((kod>=1010) && (kod<1060))) //double
+	  {
+	    p=buf;
+	    if ( sscanf ( p , "%lf", static_cast<double*>(ZMIENNA))  < 1 ) return 0;
+	  }
+	  else if (((kod>=60) && (kod<80)) || ((kod>=170) && (kod<176)) || ((kod>=1060) && (kod<1080))) //int
+	  {
+	    p=buf;
+	    if ( sscanf ( p , "%d", static_cast<int*>(ZMIENNA))  < 1 ) return 0;
+	  }
  return 1; 
 }
+*/
+int read_var1(FILE *f, int kod, void *ZMIENNA)
+{
+	char buf[MAXLINE];
+	char dxf_code[MAXLINE];
 
+	if (!inc_nr_linii()) return 0;
+	if (myfgets(dxf_code, MAXLINE, f) == nullptr) return 0;
+	if (!inc_nr_linii()) return 0;
+	if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
-int read_var2(FILE *f,int kod1, void *ZMIENNA1, int kod2, void  *ZMIENNA2)
+	// --- 1. String DXF Codes ---
+	if (((kod >= 0) && (kod < 10)) || ((kod >= 999) && (kod < 1010)))
+	{
+		// Use snprintf to guarantee we never overflow the destination buffer
+		// Note: If you know the explicit target limit, replace MAXLINE here with it.
+		snprintf(static_cast<char*>(ZMIENNA), MAXLINE, "%s", buf);
+		return 1;
+	}
+
+	// --- 2. Double (Floating Point) DXF Codes ---
+	// FIXED: Changed (kod < 40) to (kod < 240) to catch native DXF 3D vectors correctly
+	else if (((kod >= 10) && (kod < 60)) || ((kod >= 140) && (kod < 148)) ||
+			 ((kod >= 210) && (kod < 240)) || ((kod >= 1010) && (kod < 1060)))
+	{
+		// Safely extract double pointer from void* container
+		double *p_double = static_cast<double*>(ZMIENNA);
+		if (sscanf(buf, "%lf", p_double) < 1) return 0;
+	}
+
+	// --- 3. Integer DXF Codes ---
+	else if (((kod >= 60) && (kod < 80)) || ((kod >= 170) && (kod < 176)) ||
+			 ((kod >= 1060) && (kod < 1080)))
+	{
+		// Safely extract int pointer from void* container
+		int *p_int = static_cast<int*>(ZMIENNA);
+		if (sscanf(buf, "%d", p_int) < 1) return 0;
+	}
+
+	return 1;
+}
+/*
+int read_var2_old(FILE *f,int kod1, void *ZMIENNA1, int kod2, void  *ZMIENNA2)
 {
   char buf[MAXLINE], *p;
   char dxf_code[MAXLINE];
@@ -1876,7 +1917,7 @@ int read_var2(FILE *f,int kod1, void *ZMIENNA1, int kod2, void  *ZMIENNA2)
  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
     
 if (((kod1>=0) && (kod1<10)) ||
-    ((kod1>=999) && (kod1<1010))) /*string*/
+    ((kod1>=999) && (kod1<1010))) //string
  {
   strcpy((char *)ZMIENNA1, buf);
   return 1;
@@ -1884,26 +1925,26 @@ if (((kod1>=0) && (kod1<10)) ||
  else if (((kod1>=10) && (kod1<60)) ||
           ((kod1>=140) && (kod1<148)) ||
           ((kod1>=210) && (kod1<40)) ||
-          ((kod1>=1010) && (kod1<1060))) /*double*/
+          ((kod1>=1010) && (kod1<1060))) //double
   {
     p=buf;
     if ( sscanf ( p , "%lf", ZMIENNA1)  < 1 ) return 0;
   }    
   else if (((kod1>=60) && (kod1<80)) ||
           ((kod1>=170) && (kod1<176)) ||
-          ((kod1>=1060) && (kod1<1080))) /*int*/
+          ((kod1>=1060) && (kod1<1080))) //int
   {
     p=buf;
     if ( sscanf ( p , "%d", ZMIENNA1)  < 1 ) return 0;
   }                
- /*2*/ 
+ //2
 if (!inc_nr_linii()) return 0;
   if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
   if (!inc_nr_linii()) return 0;
  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
     
 if (((kod2>=0) && (kod2<10)) ||
-    ((kod2>=999) && (kod2<1010))) /*string*/
+    ((kod2>=999) && (kod2<1010))) //string
  {
   strcpy((char *)ZMIENNA2, buf);
   return 1;
@@ -1911,14 +1952,14 @@ if (((kod2>=0) && (kod2<10)) ||
  else if (((kod2>=10) && (kod2<60)) ||
           ((kod2>=140) && (kod2<148)) ||
           ((kod2>=210) && (kod2<40)) ||
-          ((kod2>=1010) && (kod2<1060))) /*double*/
+          ((kod2>=1010) && (kod2<1060))) //double
   {
     p=buf;
     if ( sscanf ( p , "%lf", ZMIENNA2)  < 1 ) return 0;
   }    
   else if (((kod2>=60) && (kod2<80)) ||
           ((kod2>=170) && (kod2<176)) ||
-          ((kod2>=1060) && (kod2<1080))) /*int*/
+          ((kod2>=1060) && (kod2<1080))) //int
   {
     p=buf;
     if ( sscanf ( p , "%d", ZMIENNA2)  < 1 ) return 0;
@@ -1927,7 +1968,78 @@ if (((kod2>=0) && (kod2<10)) ||
  return 1; 
 }
 
-int read_var3(FILE *f,int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2, int kod3, void *ZMIENNA3)
+*/
+
+int read_var2(FILE *f, int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2)
+{
+    char buf[MAXLINE];
+    char dxf_code[MAXLINE];
+
+    // ==========================================
+    // PARSE BLOCK 1 (kod1 / ZMIENNA1)
+    // ==========================================
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(dxf_code, MAXLINE, f) == nullptr) return 0;
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
+
+    // --- 1. String ---
+    if (((kod1 >= 0) && (kod1 < 10)) || ((kod1 >= 999) && (kod1 < 1010)))
+    {
+        snprintf(static_cast<char*>(ZMIENNA1), MAXLINE, "%s", buf);
+        return 1;
+    }
+    // --- 2. Double ---
+    // FIXED: Changed (kod1 < 40) to (kod1 < 240) to process DXF 3D vectors correctly
+    else if (((kod1 >= 10) && (kod1 < 60)) || ((kod1 >= 140) && (kod1 < 148)) ||
+             ((kod1 >= 210) && (kod1 < 240)) || ((kod1 >= 1010) && (kod1 < 1060)))
+    {
+        double *p_double1 = static_cast<double*>(ZMIENNA1);
+        if (sscanf(buf, "%lf", p_double1) < 1) return 0;
+    }
+    // --- 3. Integer ---
+    else if (((kod1 >= 60) && (kod1 < 80)) || ((kod1 >= 170) && (kod1 < 176)) ||
+             ((kod1 >= 1060) && (kod1 < 1080)))
+    {
+        int *p_int1 = static_cast<int*>(ZMIENNA1);
+        if (sscanf(buf, "%d", p_int1) < 1) return 0;
+    }
+
+    // ==========================================
+    // PARSE BLOCK 2 (kod2 / ZMIENNA2)
+    // ==========================================
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(dxf_code, MAXLINE, f) == nullptr) return 0;
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
+
+    // --- 1. String ---
+    if (((kod2 >= 0) && (kod2 < 10)) || ((kod2 >= 999) && (kod2 < 1010)))
+    {
+        snprintf(static_cast<char*>(ZMIENNA2), MAXLINE, "%s", buf);
+        return 1;
+    }
+    // --- 2. Double ---
+    // FIXED: Changed (kod2 < 40) to (kod2 < 240) to process DXF 3D vectors correctly
+    else if (((kod2 >= 10) && (kod2 < 60)) || ((kod2 >= 140) && (kod2 < 148)) ||
+             ((kod2 >= 210) && (kod2 < 240)) || ((kod2 >= 1010) && (kod2 < 1060)))
+    {
+        double *p_double2 = static_cast<double*>(ZMIENNA2);
+        if (sscanf(buf, "%lf", p_double2) < 1) return 0;
+    }
+    // --- 3. Integer ---
+    else if (((kod2 >= 60) && (kod2 < 80)) || ((kod2 >= 170) && (kod2 < 176)) ||
+             ((kod2 >= 1060) && (kod2 < 1080)))
+    {
+        int *p_int2 = static_cast<int*>(ZMIENNA2);
+        if (sscanf(buf, "%d", p_int2) < 1) return 0;
+    }
+
+    return 1;
+}
+
+/*
+int read_var3_old(FILE *f,int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2, int kod3, void *ZMIENNA3)
 { 
   char buf[MAXLINE], *p;
   char dxf_code[MAXLINE];
@@ -1938,7 +2050,7 @@ int read_var3(FILE *f,int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2, int ko
  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
     
 if (((kod1>=0) && (kod1<10)) ||
-    ((kod1>=999) && (kod1<1010))) /*string*/
+    ((kod1>=999) && (kod1<1010))) //string
  {
   strcpy((char *)ZMIENNA1, buf);
   return 1;
@@ -1946,26 +2058,26 @@ if (((kod1>=0) && (kod1<10)) ||
  else if (((kod1>=10) && (kod1<60)) ||
           ((kod1>=140) && (kod1<148)) ||
           ((kod1>=210) && (kod1<40)) ||
-          ((kod1>=1010) && (kod1<1060))) /*double*/
+          ((kod1>=1010) && (kod1<1060))) //double
   {
     p=buf;
     if ( sscanf ( p , "%lf", ZMIENNA1)  < 1 ) return 0;
   }    
   else if (((kod1>=60) && (kod1<80)) ||
           ((kod1>=170) && (kod1<176)) ||
-          ((kod1>=1060) && (kod1<1080))) /*int*/
+          ((kod1>=1060) && (kod1<1080))) //int
   {
     p=buf;
     if ( sscanf ( p , "%d", ZMIENNA1)  < 1 ) return 0;
   }                
- /*2*/ 
+ //2
 if (!inc_nr_linii()) return 0;
   if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
   if (!inc_nr_linii()) return 0;
  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
     
 if (((kod2>=0) && (kod2<10)) ||
-    ((kod2>=999) && (kod2<1010))) /*string*/
+    ((kod2>=999) && (kod2<1010))) //string
  {
   strcpy((char *)ZMIENNA2, buf);
   return 1;
@@ -1973,21 +2085,95 @@ if (((kod2>=0) && (kod2<10)) ||
  else if (((kod2>=10) && (kod2<60)) ||
           ((kod2>=140) && (kod2<148)) ||
           ((kod2>=210) && (kod2<40)) ||
-          ((kod2>=1010) && (kod2<1060))) /*double*/
+          ((kod2>=1010) && (kod2<1060))) //double
   {
     p=buf;
     if ( sscanf ( p , "%lf", ZMIENNA2)  < 1 ) return 0;
   }    
   else if (((kod2>=60) && (kod2<80)) ||
           ((kod2>=170) && (kod2<176)) ||
-          ((kod2>=1060) && (kod2<1080))) /*int*/
+          ((kod2>=1060) && (kod2<1080))) //int
   {
     p=buf;
     if ( sscanf ( p , "%d", ZMIENNA2)  < 1 ) return 0;
   }    
- /*3*/
- /*na razie zrezygnowano*/
+ //3
+ //na razie zrezygnowano
  return 1; 
+}
+*/
+
+int read_var3(FILE *f, int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2, int kod3, void *ZMIENNA3)
+{
+    char buf[MAXLINE];
+    char dxf_code[MAXLINE];
+
+    // Avoid unused parameter warnings for the bypassed third variable block
+    (void)kod3;
+    (void)ZMIENNA3;
+
+    // ==========================================
+    // PARSE BLOCK 1 (kod1 / ZMIENNA1)
+    // ==========================================
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(dxf_code, MAXLINE, f) == nullptr) return 0;
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
+
+    // --- 1. String ---
+    if (((kod1 >= 0) && (kod1 < 10)) || ((kod1 >= 999) && (kod1 < 1010)))
+    {
+        snprintf(static_cast<char*>(ZMIENNA1), MAXLINE, "%s", buf);
+        return 1;
+    }
+    // --- 2. Double ---
+    // FIXED: Changed (kod1 < 40) to (kod1 < 240) to process DXF 3D vectors correctly
+    else if (((kod1 >= 10) && (kod1 < 60)) || ((kod1 >= 140) && (kod1 < 148)) ||
+             ((kod1 >= 210) && (kod1 < 240)) || ((kod1 >= 1010) && (kod1 < 1060)))
+    {
+        double *p_double1 = static_cast<double*>(ZMIENNA1);
+        if (sscanf(buf, "%lf", p_double1) < 1) return 0;
+    }
+    // --- 3. Integer ---
+    else if (((kod1 >= 60) && (kod1 < 80)) || ((kod1 >= 170) && (kod1 < 176)) ||
+             ((kod1 >= 1060) && (kod1 < 1080)))
+    {
+        int *p_int1 = static_cast<int*>(ZMIENNA1);
+        if (sscanf(buf, "%d", p_int1) < 1) return 0;
+    }
+
+    // ==========================================
+    // PARSE BLOCK 2 (kod2 / ZMIENNA2)
+    // ==========================================
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(dxf_code, MAXLINE, f) == nullptr) return 0;
+    if (!inc_nr_linii()) return 0;
+    if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
+
+    // --- 1. String ---
+    if (((kod2 >= 0) && (kod2 < 10)) || ((kod2 >= 999) && (kod2 < 1010)))
+    {
+        snprintf(static_cast<char*>(ZMIENNA2), MAXLINE, "%s", buf);
+        return 1;
+    }
+    // --- 2. Double ---
+    // FIXED: Changed (kod2 < 40) to (kod2 < 240) to process DXF 3D vectors correctly
+    else if (((kod2 >= 10) && (kod2 < 60)) || ((kod2 >= 140) && (kod2 < 148)) ||
+             ((kod2 >= 210) && (kod2 < 240)) || ((kod2 >= 1010) && (kod2 < 1060)))
+    {
+        double *p_double2 = static_cast<double*>(ZMIENNA2);
+        if (sscanf(buf, "%lf", p_double2) < 1) return 0;
+    }
+    // --- 3. Integer ---
+    else if (((kod2 >= 60) && (kod2 < 80)) || ((kod2 >= 170) && (kod2 < 176)) ||
+             ((kod2 >= 1060) && (kod2 < 1080)))
+    {
+        int *p_int2 = static_cast<int*>(ZMIENNA2);
+        if (sscanf(buf, "%d", p_int2) < 1) return 0;
+    }
+
+    // Block 3 is currently bypassed/resigned from
+    return 1;
 }
 
 /*prymitywy nalezy czytac az do wystapienia kodu "0"*/
@@ -4731,7 +4917,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     type_defined=TRUE;
     break;
   case 38:  /*elevation - double*/
-    if ( sscanf ( p1 , "%lf", &e_elevation)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%lf", &e_elevation)  < 1 ) return 0;  // NOLINT(cert-err34-c)
     break;
   case 62:  /*color number - int*/
     if ( sscanf ( p1 , "%d", &ep_color)  < 1 ) return 0;
@@ -4739,10 +4925,10 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     color_defined=TRUE;
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -4924,10 +5110,10 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     ep_color=GetColorALF(ep_color, ep_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -5269,10 +5455,10 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -5610,10 +5796,10 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -5846,10 +6032,10 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -6029,10 +6215,10 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -6115,7 +6301,8 @@ BOOL read_leader(FILE *f,int to_block, BOOL block)
     BOOL ret123;
     char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
     int arrow_flag, path_type, creation_flag, direction_flag, hookline_flag;
-    double horizontal_direction_x, horizontal_direction_y, horizontal_direction_z, insert_offset_x, insert_offset_y, insert_offset_z, annotation_offset_x, annotation_offset_y, annotation_offset_z, vertices_in_leader=0;
+    double horizontal_direction_x, horizontal_direction_y, horizontal_direction_z, insert_offset_x, insert_offset_y, insert_offset_z, annotation_offset_x, annotation_offset_y, annotation_offset_z;
+	int vertices_in_leader=0;
     char hard_reference[MAXLINE];
     POINTD *vertices;
     int vertex_no_max=10;
@@ -6214,10 +6401,10 @@ BOOL read_leader(FILE *f,int to_block, BOOL block)
                 e_color=GetColorALF(e_color, e_layer);
                 break;
             case 67:  /*model (0) /paper (1) space - int*/
-                if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) goto error_l;
+                if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) goto error_l;
                 break;
             case 60:  /*novisibility*/
-                if (sscanf(p1, "%d", &ep_novisibility) < 1) goto error_l;
+                if (sscanf(p1, "%hhu", &ep_novisibility) < 1) goto error_l;
                 break;
             case 370: /*line width*/
                 if ( sscanf ( p1 , "%lf", &ep_width)  < 1 ) goto error_l;
@@ -6642,10 +6829,10 @@ BOOL read_multileader(FILE *f,int to_block, BOOL block)
                 ep_color=GetColorALF(ep_color, ep_layer);
                 break;
             case 67:  /*model (0) /paper (1) space - int*/
-                if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) goto error_l;
+                if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) goto error_l;
                 break;
             case 60:  /*novisibility*/
-                if (sscanf(p1, "%d", &ep_novisibility) < 1) goto error_l;
+                if (sscanf(p1, "%hhu", &ep_novisibility) < 1) goto error_l;
                 break;
             case 370: /*line width*/
                 if ( sscanf ( p1 , "%lf", &ep_width)  < 1 ) goto error_l;
@@ -6770,8 +6957,8 @@ BOOL read_shape(FILE *f,int to_block, BOOL block)
 
 int datahex(char* string, char *data_buffer, int data_index) {
 
-    if(string == NULL)
-        return NULL;
+    if(string == nullptr)
+        return 0;
 
     size_t slength = strlen(string);
     if((slength % 2) != 0) // must be even
@@ -6781,34 +6968,34 @@ int datahex(char* string, char *data_buffer, int data_index) {
 
     size_t index = 0;
     while (index < slength) {
-        char c = string[index];
+        char ch = string[index];
         int value = 0;
-        if(c >= '0' && c <= '9')
-            value = (c - '0');
-        else if (c >= 'A' && c <= 'F')
-            value = (10 + (c - 'A'));
-        else if (c >= 'a' && c <= 'f')
-            value = (10 + (c - 'a'));
+        if(ch >= '0' && ch <= '9')
+            value = (ch - '0');
+        else if (ch >= 'A' && ch <= 'F')
+            value = (10 + (ch - 'A'));
+        else if (ch >= 'a' && ch <= 'f')
+            value = (10 + (ch - 'a'));
         else {
             return 0;
         }
 
-        data_buffer[data_index+(index/2)] += value << (((index + 1) % 2) * 4);
+        data_buffer[data_index+(index/2)] += (value << (((index + 1) % 2) * 4));
 
         index++;
     }
 
-    return data_index+dlength;
+    return data_index+static_cast<int>(dlength);
 }
 
 typedef unsigned char ByteData;
 
-ByteData HexChar (char c)
+ByteData HexChar (char ch)
 {
-    if ('0' <= c && c <= '9') return (ByteData)(c - '0');
-    if ('A' <= c && c <= 'F') return (ByteData)(c - 'A' + 10);
-    if ('a' <= c && c <= 'f') return (ByteData)(c - 'a' + 10);
-    return (ByteData)(-1);
+    if ('0' <= ch && ch <= '9') return static_cast<ByteData>(ch - '0');
+    if ('A' <= ch && ch <= 'F') return static_cast<ByteData>(ch - 'A' + 10);
+    if ('a' <= ch && ch <= 'f') return static_cast<ByteData>(ch - 'a' + 10);
+    return static_cast<ByteData>(-1);
 }
 
 ssize_t HexToBin (const char* s, ByteData * buff, ssize_t length)
@@ -6898,10 +7085,10 @@ BOOL read_ole2frame(FILE *f,int to_block, BOOL block)
                 if ( sscanf ( p1 , "%lf", &BRy)  < 1 ) return 0;
                 break;
             case 71:
-                if ( sscanf ( p1 , "%ld", &ole_object_type)  < 1 ) return 0;
+                if ( sscanf ( p1 , "%d", &ole_object_type)  < 1 ) return 0;
                 break;
             case 72:
-                if ( sscanf ( p1 , "%ld", &ole_object_space)  < 1 ) return 0;
+                if ( sscanf ( p1 , "%d", &ole_object_space)  < 1 ) return 0;
                 break;
             case 90:
                 if ( sscanf ( p1 , "%d", &binary_length)  < 1 ) return 0;
@@ -7187,10 +7374,10 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -7573,20 +7760,20 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 						lo = utf8char & 0X00FF;
 						hi = (utf8char & 0XFF00) >> 8;
 
-						strncat(buf11, &lo, 1);
-						strncat(buf11, &hi, 1);
+						strncat(buf11, &lo, sizeof(buf11) - strlen(buf11) - 1);
+						strncat(buf11, &hi, sizeof(buf11) - strlen(buf11) - 1);
 
 						No_Unicode = FALSE;
 					}
 					else if (buf1_1[i] == 'P')   //nowy wiersz
 					{
-						strncat(buf11, "\r\n", 2);  //"\n\r"
+						strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);  //"\n\r"
 						t.multiline = 1;
 						i++;
 					}
 					else //dopisanie do bufora
 					{
-						strncat(buf11, &buf1_1[i], 1);
+						strncat(buf11, &buf1_1[i], sizeof(buf11) - strlen(buf11) - 1);
 						i++;
 					}
 				}
@@ -7598,7 +7785,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					}
 					else
 					{
-						strncat(buf11, &buf1_1[i], 1);
+						strncat(buf11, &buf1_1[i], sizeof(buf11) - strlen(buf11) - 1);
 					}
 					i++;
 				}
@@ -7617,16 +7804,16 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 
                 if ((((e_vj!=0) || (e_hj!=0))) && (e_ax_exists))
                 {
-                    t.x = e_ax1;
-                    t.y = e_ay1;
+                    t.x = (float)e_ax1;
+                    t.y = (float)e_ay1;
                 }
                 else {
-                    t.x = e_x1;
-                    t.y = e_y1;
+                    t.x = (float)e_x1;
+                    t.y = (float)e_y1;
                 }
-				t.wysokosc = e_h1;
-				t.kat = e_k1;
-				t.width_factor = e_wspx;
+				t.wysokosc = (float)e_h1;
+				t.kat = (float)e_k1;
+				t.width_factor = (float)e_wspx;
 				if ((USERI1 == 211) && (e_wspx0 > 0.0)) t.width_factor /= e_wspx0;
 				t.kolor = e_color;
 				t.warstwa = e_layer;
@@ -7640,9 +7827,9 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 				t.justowanie = j_do_lewej;
 				t.ukryty = 0;
 				t.dl = strlen(t.text);
-				t.obiektt1 = obiektt1;
-				t.obiektt2 = obiektt2;
-				t.obiektt3 = obiektt3;
+				t.obiektt1 = (unsigned)obiektt1;
+				t.obiektt2 = (unsigned)obiektt2;
+				t.obiektt3 = (unsigned)obiektt3;
 				t.przec = ep_space;
 				if (e_obk1 > 0) t.italics = 1;
 
@@ -7660,13 +7847,13 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					case 0: //baseline
 						break;
 					case 1: //bottom
-						t.y += del_yt/4.0;
+						t.y += (float)del_yt/4.0f;
 						break;
 					case 2: //middle
-						t.y -= (del_yt / 2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					case 3: //top
-						t.y -= (del_yt);
+						t.y -= (float)del_yt;
 						break;
 					}
 					t.justowanie = j_do_lewej;
@@ -7679,14 +7866,14 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 						break;
 					case 1: //bottom
 						t.justowanie = j_srodkowo;
-						t.y += del_yt / 4.0;
+						t.y += (float)del_yt / 4.0f;
 						break;
 					case 2: //middle
 						t.justowanie = j_centralnie;
 						break;
 					case 3: //top
 						t.justowanie = j_centralnie;
-						t.y -= (del_yt/2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					}
 					break;
@@ -7696,13 +7883,13 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					case 0: //baseline
 						break;
 					case 1: //bottom
-						t.y += del_yt / 4.0;
+						t.y += (float)del_yt / 4.0f;
 						break;
 					case 2: //middle
-						t.y -= (del_yt / 2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					case 3: //top
-						t.y -= (del_yt);
+						t.y -= (float)del_yt;
 						break;
 					}
 					t.justowanie = j_do_prawej;
@@ -7713,13 +7900,13 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					case 0: //baseline
 						break;
 					case 1: //bottom
-						t.y += del_yt / 4.0;
+						t.y += (float)del_yt / 4.0f;
 						break;
 					case 2: //middle
-						t.y -= (del_yt / 2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					case 3: //top
-						t.y -= (del_yt);
+						t.y -= (float)del_yt;
 						break;
 					}
 					t.justowanie = j_do_lewej;
@@ -7732,14 +7919,14 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 						break;
 					case 1: //bottom
 						t.justowanie = j_srodkowo;
-						t.y += del_yt / 4.0;
+						t.y += (float)del_yt / 4.0f;
 						break;
 					case 2: //middle
 						t.justowanie = j_centralnie;
 						break;
 					case 3: //top
 						t.justowanie = j_centralnie;
-						t.y -= (del_yt / 2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					}
 					break;
@@ -7749,13 +7936,13 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					case 0: //baseline
 						break;
 					case 1: //bottom
-						t.y += del_yt / 4.0;
+						t.y += (float)del_yt / 4.0f;
 						break;
 					case 2: //middle
-						t.y -= (del_yt / 2.0);
+						t.y -= (float)del_yt / 2.0f;
 						break;
 					case 3: //top
-						t.y -= (del_yt);
+						t.y -= (float)del_yt;
 						break;
 					}
 					t.justowanie = j_do_lewej;
@@ -7801,10 +7988,10 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 			e_color = GetColorALF(e_color, e_layer);
 			break;
 		case 67:  /*model (0) /paper (1) space - int*/
-			if (sscanf(p1, "%d", &ep_space) < 1) return 0;
+			if (sscanf(p1, "%hhu", &ep_space) < 1) return 0;
 			break;
 		case 60:  /*novisibility*/
-			if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+			if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 			break;
 		case 210:  /*extrusion direction X - double*/
 			if (sscanf(p1, "%lf", &e_extrusion_x) < 1) return 0;
@@ -8280,21 +8467,21 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 		  lo = utf8char & 0X00FF;
 		  hi = (utf8char & 0XFF00) >> 8;
 		  
-		  strncat(buf11, &lo, 1);
-		  strncat(buf11, &hi, 1);
+		  strncat(buf11, &lo, sizeof(buf11) - strlen(buf11) - 1);
+		  strncat(buf11, &hi, sizeof(buf11) - strlen(buf11) - 1);
 
 		  No_Unicode = FALSE;
 
 		  }
           else if (buf10[i]=='P')   //new line
           {
-           strncat(buf11, "\r\n", 2);  //"\n\r"
+           strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);  //"\n\r"
 		   t.multiline = 1;
            i++;
           }
           else //adding to the buffer
            {
-            strncat(buf11,&buf10[i],1);
+            strncat(buf11,&buf10[i],sizeof(buf11) - strlen(buf11) - 1);
             i++;
            }
        }
@@ -8306,7 +8493,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 		   }
 		    else
 			{
-                strncat(buf11,&buf10[i],1);
+                strncat(buf11,&buf10[i],sizeof(buf11) - strlen(buf11) - 1);
 			}
            i++;
         }
@@ -8324,7 +8511,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 
     e_k1=e_k;
 
-    t.kat = e_k1;
+    t.kat = (float)e_k1;
     t.wysokosc = e_h1;
     t.width_factor=e_wspx*e_wspx0;
     t.czcionka=e_font;
@@ -8544,10 +8731,10 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -8772,10 +8959,10 @@ BOOL read_trace(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -8976,10 +9163,10 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -9235,10 +9422,10 @@ BOOL read_3dface(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -9453,10 +9640,10 @@ BOOL read_arc(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -9704,10 +9891,10 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -9867,10 +10054,10 @@ BOOL read_circle(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -10010,10 +10197,10 @@ BOOL read_point(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -10157,10 +10344,10 @@ BOOL read_line(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 210:  /*extrusion direction X - double*/
     if ( sscanf ( p1 , "%lf", &e_extrusion_x)  < 1 ) return 0;
@@ -10353,10 +10540,10 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
     e_color=GetColorALF(e_color, e_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 40:
     if ( sscanf ( p1 , "%lf", &e_scale_factor)  < 1 ) return 0;
@@ -10570,10 +10757,10 @@ BOOL read_lwpolyline(FILE *f,int to_block, BOOL block)
                 ep_color=GetColorALF(ep_color, ep_layer);
                 break;
             case 67:  /*model (0) /paper (1) space - int*/
-                if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+                if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
                 break;
             case 60:  /*novisibility*/
-                if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+                if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
                 break;
             case 90: /*lwpolyline liczba wierzcholkow*/
                 if ( sscanf (p1 , "%d", &e_lpoints) < 1 ) return 0;
@@ -10773,10 +10960,10 @@ BOOL read_lwpolyline___old(FILE *f,int to_block, BOOL block)
     ep_color=GetColorALF(ep_color, ep_layer);
     break;
   case 67:  /*model (0) /paper (1) space - int*/
-    if ( sscanf ( p1 , "%d", &ep_space)  < 1 ) return 0;
+    if ( sscanf ( p1 , "%hhu", &ep_space)  < 1 ) return 0;
     break;
   case 60:  /*novisibility*/
-	  if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+	  if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 	  break;
   case 90: /*lwpolyline liczba wierzcholkow*/
     if ( sscanf (p1 , "%d", &e_lpoints) < 1 ) return 0;
@@ -10994,10 +11181,10 @@ BOOL read_spline(FILE *f, int to_block, BOOL block)
 			ep_color = GetColorALF(ep_color, ep_layer);
 			break;
 		case 67:  /*model (0) /paper (1) space - int*/
-			if (sscanf(p1, "%d", &ep_space) < 1) return 0;
+			if (sscanf(p1, "%hhu", &ep_space) < 1) return 0;
 			break;
 		case 60:  /*novisibility*/
-			if (sscanf(p1, "%d", &ep_novisibility) < 1) return 0;
+			if (sscanf(p1, "%hhu", &ep_novisibility) < 1) return 0;
 			break;
 		case 90: /*lwpolyline liczba wierzcholkow*/
 			if (sscanf(p1, "%d", &e_lpoints) < 1) return 0;
@@ -11483,7 +11670,7 @@ BOOL read_entities_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
   while (endsec==FALSE)
   {
 #ifndef NDEBUG
-      printf(dxf_entitie);printf("\n");//delay(400);
+      printf("%s",dxf_entitie);printf("\n");//delay(400);
 #endif
 
       /*tu nalezy sprawdzic czy dxf_entitie_code ==0*/
@@ -13641,7 +13828,7 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
   else if (strcmp (dxf_section, "ENTITIES") == 0)
      {
          if (!glb_silent) komunikat0_str(23,dxf_section);/*delay(50);*/
-       if (!read_entities_dxf(f, NULL, 0, TRUE)) return nr_linii;
+       if (!read_entities_dxf(f, FALSE, 0, TRUE)) return nr_linii;
        entities_ok = TRUE;
        goto next_section;
      }   
@@ -14048,5 +14235,9 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 
 	return nr_linii;
 }
+
+
+#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 
 #undef __O_DXF_IN__

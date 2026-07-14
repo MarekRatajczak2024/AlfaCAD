@@ -213,14 +213,14 @@ Dlg_Ret_Val;
 #define DYLab  	23
 #define DYBut0 	40
 #define DXBut0 	90
-#define DYBut1 	20  //40
+////#define DYBut1 	20  //40
 //#define DYBut2 	20  //40
-#define DXBut1 	45  //90
+////#define DXBut1 	45  //90
 #define DXIL 	8 //6  //0
 #define DYIL 	3
 #define DYL     2
-#define COLOR_NULL  -1
-#define LINE_NULL  -2
+#define COLOR_NULL  (-1)
+#define LINE_NULL  (-2)
 #define WIDTH_WORLD 630
 #define HEIGHT_WORLD  300 //325  bez 2 gornych linii na komunikacje
 #define DYListBox	14 /*(ED_INF_HEIGHT + 2)*/

@@ -760,7 +760,7 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
             si = sin(ea->angle);
             co = cos(ea->angle);
 
-            Rotate_Point(si, co, 0, 0, delxx, delyy, &delx, &dely);
+            ////Rotate_Point(si, co, 0, 0, delxx, delyy, &delx, &dely);  this is not necessary
 
             ea->x+=dx*lambda;
             ea->y+=dy*lambda;
@@ -5101,8 +5101,10 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
                         (Check_if_Equal(w1->xy[3], xy[3])) &&
                         (Check_if_Equal(w1->xy[0], xy[0])) &&
                         (Check_if_Equal(w1->xy[1], xy[1])))
+                    {
                         if (!sa->reversed) begin_line=0;
                         else end_line=0;
+                    }
                 }
                 else if (nag1->obiekt==Osolidarc)
                 {
@@ -5114,15 +5116,17 @@ void rysuj_obiekt_(char *ad, int mode,int kolor)
                         (Check_if_Equal(xy1[5], xy[3])) &&
                         (Check_if_Equal(xy1[6], xy[0])) &&
                         (Check_if_Equal(xy1[7], xy[1])))
+                    {
                         if (!sa->reversed) begin_line=0;
                         else end_line=0;
+                    }
 
                 }
 
-                last_trace_point[0].x=xy[0];
-                last_trace_point[0].y=xy[1];
-                last_trace_point[1].x=xy[2];
-                last_trace_point[1].y=xy[3];
+                last_trace_point[0].x=(float)xy[0];
+                last_trace_point[0].y=(float)xy[1];
+                last_trace_point[1].x=(float)xy[2];
+                last_trace_point[1].y=(float)xy[3];
             }
 
             rysuj_solidarc_((SOLIDARC *)ad,mode,kolor, FALSE, TRUE, begin_line, end_line);
@@ -5306,8 +5310,10 @@ void rysuj_obiekt_b_w_sa_(char *ad, int mode,int kolor, char *ad0)
                         (Check_if_Equal(w1->xy[3], xy[3])) &&
                         (Check_if_Equal(w1->xy[0], xy[0])) &&
                         (Check_if_Equal(w1->xy[1], xy[1])))
+                    {
                         if (!sa->reversed) begin_line=0;
                         else end_line=0;
+                    }
                 }
                 else if (nag1->obiekt==Osolidarc)
                 {
@@ -5319,8 +5325,10 @@ void rysuj_obiekt_b_w_sa_(char *ad, int mode,int kolor, char *ad0)
                         (Check_if_Equal(xy1[5], xy[3])) &&
                         (Check_if_Equal(xy1[6], xy[0])) &&
                         (Check_if_Equal(xy1[7], xy[1])))
+                    {
                         if (!sa->reversed) begin_line=0;
                         else end_line=0;
+                    }
                 }
 
                 last_trace_point[0].x=xy[0];

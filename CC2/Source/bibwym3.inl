@@ -371,7 +371,7 @@ static int wyznacz_tekst(BOOL draw)
   normalize_txt(&T);
 
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
-  else if(WymInter)
+  if(WymInter)
   {
 
       //breaking dim line
@@ -519,7 +519,7 @@ static int wyznacz_tekst_clock(void)
   T.width = 0;
   T.height = 0;
   if (dodaj_obiekt((BLOK*)dane,(void*)&T)==NULL) return 0;
-  else if(WymInter)
+  if(WymInter)
   {
       rysuj_obiekt((char*)&T, COPY_PUT, 1);
   }
@@ -558,7 +558,7 @@ static int s0(void)
      L.x2=(float)(w.x0+K1_5*cos(Pi*(kat.kat+45.)/180.));
      L.y2=(float)(w.y0+K1_5*sin(Pi*(kat.kat+45.)/180.));
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
-     else if(WymInter) outline(&L,COPY_PUT,0);
+     if(WymInter) outline(&L,COPY_PUT,0);
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
      L.x1=(float)w.x0;
@@ -574,7 +574,7 @@ static int s0(void)
      Ls1.x2=(float)(w.x2+K1_5*cos(Pi*(kat.kat+45.)/180.));
      Ls1.y2=(float)(w.y2+K1_5*sin(Pi*(kat.kat+45.)/180.));
      if((ad=(void *)dodaj_obiekt((BLOK*)dane,(void*)&Ls1))==NULL) return 0;
-     else if(WymInter) outline(&Ls1,COPY_PUT,0);
+     if(WymInter) outline(&Ls1,COPY_PUT,0);
      MovAd=((char *)ad)-dane;
      n1=w.x2>w.x0 ? 1 : -1;
      n2=w.y2>w.y0 ? 1 : -1;
@@ -635,7 +635,7 @@ static int s0(void)
        St.n = 8 + St.lp * sizeof (float) ;
 
      if(dodaj_obiekt((BLOK*)dane,(void*)&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
      Lsw=0;
    }
@@ -666,7 +666,7 @@ static int s1(void)
      L.y2=(float)(w.y0+Kp2*sin(Pi*(kat.kat+ukat)/180.));
      L.typ = 64 /*5*/;
      if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
      {
          rysuj_obiekt((char*)&L, COPY_PUT, 1);
      }
@@ -689,7 +689,7 @@ static int s1(void)
   L.y2=(float)(w.y2+Kp2*sin(Pi*(kat.kat+ukat)/180.));
   L.typ = 64 /*5*/;
   if(dodaj_obiekt((BLOK*)dane,(void*)&L)==NULL) return 0;
-  else if(WymInter)
+  if(WymInter)
   {
       rysuj_obiekt((char*)&L, COPY_PUT, 1);
   }
@@ -733,7 +733,7 @@ static int s2(void)
   Ko.y=(float)w.y2;
   Ko.r=(float)K0_5;
   if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
-  else if(WymInter)
+  if(WymInter)
        rysuj_obiekt ((char *)&Ko, COPY_PUT, 1) ;
   n1=w.x2>w.x0 ? 1 : -1;
   n2=w.y2>w.y0 ? 1 : -1;
@@ -776,7 +776,7 @@ static int s_l(BOOL draw)
      Ko.y=(float)w.y0;
      Ko.r=(float)K0_5;
      if(dodaj_obiekt((BLOK*)dane,&Ko)==NULL) return 0;
-     else if(WymInter) {
+     if(WymInter) {
          if (draw) rysuj_obiekt((char *) &Ko, COPY_PUT, 1);
      }
   return 1;
@@ -816,7 +816,7 @@ static int s_ll(void)
      St.n = 8  + St.lp * sizeof (float) ;
 
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
 
 
@@ -839,7 +839,7 @@ static int s_ll(void)
      St.n = 8  + St.lp * sizeof (float) ;
 
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
 
   return 1;
@@ -878,7 +878,7 @@ static int s_ll_clock(void)
        // izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
 
   kat1=Llw.kat1+(Pi*0.5);
@@ -898,7 +898,7 @@ static int s_ll_clock(void)
       //  izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
 
   return 1;
@@ -928,9 +928,10 @@ static int s_o(void)
     if (options1.uklad_izometryczny)
     {
         //izometrize_solid(XY_PLANE, &St);
+        ;
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
      St.xy[2]=(float)w.x0;
      St.xy[3]=(float)w.y0;
@@ -945,7 +946,7 @@ static int s_o(void)
         //izometrize_solid(XY_PLANE, &St);
     }
      if(dodaj_obiekt((BLOK*)dane,&St)==NULL) return 0;
-     else if(WymInter)
+     if(WymInter)
        rysuj_obiekt ((char *)&St, COPY_PUT, 1) ;
   return 1;
 }
@@ -957,7 +958,7 @@ static int outs(BOOL draw)
   double x1p, y1p, x1k, y1k, x2p, y2p, x2k, y2k;
   PLINIA PL;
   LINIA l;
-  double r1, r2;
+  double r1=0., r2=0.;
 
   //counting the angle
   l.x1 = (float)w.x0;
@@ -1012,7 +1013,7 @@ static int outs(BOOL draw)
       {
           if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
               if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
-              else if (WymInter)
+              if (WymInter)
               {
                   //outline(&Lw, COPY_PUT, 0);
                   if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
@@ -1098,11 +1099,13 @@ static int outs(BOOL draw)
     }
 
     if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
+    {
         if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
-        else if (WymInter)
+        if (WymInter)
         {
             if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
         }
+    }
 
   if (wym_okregu == 0)
   {
@@ -1117,7 +1120,7 @@ static int outs(BOOL draw)
       {
           if (Lw.x1 != Lw.x2 || Lw.y1 != Lw.y2)
               if (dodaj_obiekt((BLOK *) dane, &Lw) == NULL) return 0;
-              else if (WymInter)
+              if (WymInter)
               {
                   if (draw) rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
               }
@@ -1236,7 +1239,7 @@ static int outss(void)
   Lw.obiektt3 = O3WymRoz;
   if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
    if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
-   else if(WymInter)
+   if(WymInter)
    {
        rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
    }
@@ -1248,7 +1251,7 @@ static int outss(void)
   Lw.y2=(float)y2k;
   if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
    if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
-   else if(WymInter)
+   if(WymInter)
    {
        rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
    }
@@ -1285,7 +1288,7 @@ static int outss_clock(void)
 
   if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
    if(dodaj_obiekt((BLOK*)dane,&Llw)==NULL) return 0;
-    else if(WymInter) rysuj_obiekt ((char *)&Llw, COPY_PUT, 1) ;
+    if(WymInter) rysuj_obiekt ((char *)&Llw, COPY_PUT, 1) ;
 
   r1=wl.r-zmwym.linia_ob;
   x1p=Llw.x+r1*cos(Llw.kat1);

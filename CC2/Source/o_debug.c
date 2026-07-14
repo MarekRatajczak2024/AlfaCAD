@@ -160,7 +160,7 @@ BOOL Check_Object (NAGLOWEK *adr_nag, BOOL b_correct)
 	if ((L->n + sizeof(NAGLOWEK)) !=  sizeof (LINIA) )
 	{
         //check if not extended data for Graph
-        unsigned char *flags;
+       char *flags;
        flags=(char*)L + sizeof (LINIA);
         if ((*flags==71) || (*flags==45)) break;  //it's extended data
 	  ErrList (40);
@@ -588,7 +588,7 @@ static void report_tok_param (FILE *stru)
        tokoff = l_tokoff ;
        break ;
   }
-  sprintf (buf, "last token\n offset = %ld\n", tokoff) ;
+  sprintf (buf, "last token\n offset = %lld\n", tokoff) ;
   fputs (buf , stru) ;
   if (tokoff != -1)
     report_obiect_param (stru, (NAGLOWEK *)(dane + tokoff)) ;
@@ -613,7 +613,7 @@ static void report_obiect_param (FILE *stru, NAGLOWEK *nag)
 
   ptrh_temp = (char *)nag ;
 
-  sprintf (buf, "\n offset = %ld\n", ptrh_temp - dane) ;
+  snprintf (buf,  sizeof(buf), "\n offset = %td\n", ptrh_temp - dane) ;
   fputs (buf , stru) ;
 
   sprintf (buf, " attribute = %u,  obiect= %u,  obiectt1 = %u,  obiectt2 = %u,\n  obiectt3 = %u,  view = %u,  temp = %u,  block  = %u, size = %u\n",

@@ -29,6 +29,7 @@
 #include "qtools_p.h"
 #include <qalloc.h>
 #include <QtCore/qarraydata.h>
+
 #include <qmath.h>
 
 typedef struct
@@ -56,9 +57,7 @@ POINTF map_point(float Px, float Py);
 }
 #endif
 
-
-
-qsizetype qCalculateBlockSize(qsizetype elementCount, qsizetype elementSize, qsizetype headerSize) noexcept
+qsizetype custom_qCalculateBlockSize(qsizetype elementCount, qsizetype elementSize, qsizetype headerSize) noexcept
 {
     Q_ASSERT(elementSize);
 
@@ -72,7 +71,7 @@ qsizetype qCalculateBlockSize(qsizetype elementCount, qsizetype elementSize, qsi
     return qsizetype(bytes);
 }
 
-size_t QtPrivate::expectedAllocSize(size_t allocSize, size_t alignment) noexcept
+size_t custom_expectedAllocSize(size_t allocSize, size_t alignment) noexcept
 {
     Q_ASSERT(qPopulationCount(alignment) == 1);
 ////#if QT_CONFIG(jemalloc)  //by MAREK
@@ -84,13 +83,13 @@ size_t QtPrivate::expectedAllocSize(size_t allocSize, size_t alignment) noexcept
 }
 
 CalculateGrowingBlockSizeResult
-qCalculateGrowingBlockSize(qsizetype elementCount, qsizetype elementSize, qsizetype headerSize) noexcept
+custom_qCalculateGrowingBlockSize(qsizetype elementCount, qsizetype elementSize, qsizetype headerSize) noexcept
 {
     CalculateGrowingBlockSizeResult result = {
             qsizetype(-1), qsizetype(-1)
     };
 
-    qsizetype bytes = qCalculateBlockSize(elementCount, elementSize, headerSize);
+    qsizetype bytes = custom_qCalculateBlockSize(elementCount, elementSize, headerSize);
     if (bytes < 0)
         return result;
 
@@ -103,7 +102,7 @@ qCalculateGrowingBlockSize(qsizetype elementCount, qsizetype elementSize, qsizet
     } else {
         bytes = qsizetype(morebytes);
     }
-    size_t fittedBytes = QtPrivate::expectedAllocSize(bytes, alignof(std::max_align_t));
+    size_t fittedBytes = custom_expectedAllocSize(bytes, alignof(std::max_align_t));
     if (fittedBytes != 0)
         bytes = fittedBytes;
 
@@ -112,6 +111,11 @@ qCalculateGrowingBlockSize(qsizetype elementCount, qsizetype elementSize, qsizet
     return result;
 }
 
+// Place this right above your extracted Qt function bodies:
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-dllimport"
+#endif
 
 using QtPrivate::AlignedQArrayData;
 
@@ -145,9 +149,9 @@ calculateBlockSize(qsizetype capacity, qsizetype objectSize, qsizetype headerSiz
     // allocSize = objectSize * capacity + headerSize, but checked for overflow
     // plus padded to grow in size
     if (option == QArrayData::Grow) {
-        return qCalculateGrowingBlockSize(capacity, objectSize, headerSize);
+        return custom_qCalculateGrowingBlockSize(capacity, objectSize, headerSize);
     } else {
-        return { qCalculateBlockSize(capacity, objectSize, headerSize), capacity };
+        return { custom_qCalculateBlockSize(capacity, objectSize, headerSize), capacity };
     }
 }
 
@@ -191,6 +195,9 @@ allocateHelper(qsizetype objectSize, qsizetype alignment, qsizetype capacity,
 // Generic size and alignment allocation function
 void *QArrayData::allocate(QArrayData **dptr, qsizetype objectSize, qsizetype alignment,
                            qsizetype capacity, AllocationOption option) noexcept
+//void *custom_allocate(QArrayData **dptr, qsizetype objectSize, qsizetype alignment,
+//                      qsizetype capacity, QArrayData::AllocationOption option) noexcept
+
 {
     Q_ASSERT(dptr);
     // Alignment is a power of two
@@ -360,6 +367,7 @@ QPolygon QPolygon::translated(int dx, int dy) const
     return copy;
 }
 
+
 void QPolygon::translate(int dx, int dy)
 {
     if (dx == 0 && dy == 0)
@@ -373,6 +381,11 @@ void QPolygon::translate(int dx, int dy)
         ++p;
     }
 }
+
+// Place this at the absolute bottom of o_transform.cpp:
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define Q_NEAR_CLIP (sizeof(qreal) == sizeof(double) ? 0.000001 : 0.0001)
 

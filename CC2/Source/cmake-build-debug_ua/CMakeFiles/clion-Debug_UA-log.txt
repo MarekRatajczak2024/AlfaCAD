@@ -1,5 +1,5 @@
 cmake -DCMAKE_BUILD_TYPE=Debug_UA -DCMAKE_MAKE_PROGRAM=/opt/clion/bin/ninja/linux/x64/ninja -G Ninja -S /home/marek/CC2/Source -B /home/marek/CC2/Source/cmake-build-debug_ua
 x64 architecture in use
 -- Configuring done (0.0s)
--- Generating done (0.0s)
+-- Generating done (0.1s)
 -- Build files have been written to: /home/marek/CC2/Source/cmake-build-debug_ua

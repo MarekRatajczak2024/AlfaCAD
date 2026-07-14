@@ -1868,8 +1868,7 @@ BOOL Get_End_Trace(void* ptr_pl,
         *df_y_pl_end = (ptrs_solid_bl->xy[ptrs_solid_bl->lp - 1] + ptrs_solid_bl->xy[ptrs_solid_bl->lp -3 ])/2;
         get_solid_trace_axis(&df_x_beg, &df_y_beg, df_x_pl_end, df_y_pl_end);
 
-
-        memmove(&s_trace_solid, &ptrs_solid_bl, sizeof(ptrs_solid_bl));
+        memmove(&s_trace_solid, &ptrs_solid_bl, sizeof(WIELOKAT));
 
         point1.x = df_x_beg;
         point1.y = df_y_beg;
@@ -1883,10 +1882,10 @@ BOOL Get_End_Trace(void* ptr_pl,
     {
         ptrs_solidarc_bl=(SOLIDARC *)ptr_last;
 
-        x1l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat1);
-        y1l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat1);
-        x2l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cos(ptrs_solidarc_bl->kat2);
-        y2l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sin(ptrs_solidarc_bl->kat2);
+        x1l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cosf(ptrs_solidarc_bl->kat1);
+        y1l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sinf(ptrs_solidarc_bl->kat1);
+        x2l = ptrs_solidarc_bl->x + ptrs_solidarc_bl->r * cosf(ptrs_solidarc_bl->kat2);
+        y2l = ptrs_solidarc_bl->y + ptrs_solidarc_bl->r * sinf(ptrs_solidarc_bl->kat2);
 
         if (ptrs_solidarc_bl->reversed)
         {
@@ -3211,6 +3210,7 @@ switch (side)
             return s_trace.width1;
         break;
     }
+    return s_trace.width;  //for consistency
 }
 
 double get_trace_axis(int side) {
@@ -3222,6 +3222,7 @@ double get_trace_axis(int side) {
             return s_trace.axis1;
             break;
     }
+    return s_trace.axis; //for consistency
 }
 
 void update_trace_width(void)

@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <set>
@@ -110,7 +109,7 @@ public:
             iconv_t cd4;
             cd4 = iconv_open("UTF-8", "ISO8859-2");
 
-            int size4 = iconv(cd4, (char**)segment[0], (size_t*)segment.length(), (char **)converted.c_str(), (size_t*)&size);
+            ////int size4 = iconv(cd4, (char**)segment[0], (size_t*)segment.length(), (char **)converted.c_str(), (size_t*)&size);  //it seems to be not necessary
             iconv_close(cd4);
 #endif
             ret.append(converted);

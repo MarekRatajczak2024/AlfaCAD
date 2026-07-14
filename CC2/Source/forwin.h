@@ -37,14 +37,27 @@
 #define DIRECTORY 0x08
 #define DRIVE	  0x10 
 
-
+#ifndef M_PI
 #define M_PI	3.14159265358979323846
+#endif
+#ifndef M_PI_2
 #define M_PI_2	1.57079632679489661923
+#endif
+#ifndef M_PI_4
 #define M_PI_4	0.78539816339744830962
+#endif
+#ifndef M_1_PI
 #define M_1_PI	0.31830988618379067154
+#endif
+#ifndef M_2_PI
 #define M_2_PI	0.63661977236758134308
+#endif
+#ifndef PI
 #define PI	M_PI
-#define PI2	M_PI_2 
+#endif
+#ifndef PI2
+#define PI2	M_PI_2
+#endif
 
 #define MAXDOUBLE   1.79769313486231570e+308 
 #ifndef MAXLONG

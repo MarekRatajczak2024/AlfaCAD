@@ -34,6 +34,8 @@
 #include <process.h>
 #include <dwmapi.h>
 #pragma comment(lib, "dwmapi.lib")
+#include <uxtheme.h>
+#pragma comment(lib, "uxtheme.lib")
 #include <windowsx.h>
 #include "o_printerwarmer.h"
 #else
@@ -49,14 +51,12 @@
 #pragma comment (lib, "Dwmapi")
 
 #ifdef LINUX
-#include "res/resource.h"
-
 #include "tinyfiledialogs.h"
 #include "clip.h"
 #include <iostream>
 #include <string>
 #else
-#include "..\..\source\res\resource.h"
+#include "res/resource.h"
 #endif
 #include "ttf.h"
 #include <locale.h>
@@ -105,6 +105,8 @@ bool next_time=0;
 
 #define EXT__INI "INI"
 
+#define MAX_NUMBER_OF_WINDOWS 32  //also copied in bib_e.h
+
 typedef std::string String;
 typedef std::wstring WString;
 extern String WStringToString(const WString& widestr);
@@ -151,7 +153,7 @@ extern void set_demo_scale(float demo_scale_);
 
 extern int code_page;
 extern int dxf_encoding;
-extern int Rysuj_main(int child, char file_name[255], int nCmdShow, char *application, char *arguments);
+extern int Rysuj_main(int child, char *file_name, char *file_multiname, int nCmdShow, char *application, char *arguments);
 #ifdef OSTYPE_MACOS
 extern int rysuj_main(int argc, char *argv[]);
 #endif
@@ -185,6 +187,8 @@ extern char *File_Ext(char *fn, char *fext);
 extern BOOL known3b(int letter);
 
 extern void set_sleep_state(BOOL state);
+
+extern void trim_trailing_new_row(char *str);
 
 #ifndef LINUX
 __declspec(dllexport) int testCall(int val);
@@ -309,6 +313,7 @@ WNDPROC oldComboboxProc;
 #define ID_BUTTON_ITALIC 106
 #define ID_BUTTON_ALT 107
 #define ID_BUTTON_HIDDEN 112
+#define ID_COMBOBOX 1001
 
 int BUT_DY = 89;
 int COMBO_DY = 120;
@@ -408,7 +413,8 @@ HINSTANCE my_hInstance;
 static int on_header = 0;
 
 // Create global or static brushes for efficiency
-static HBRUSH hDarkBrushEdit = CreateSolidBrush(RGB(30, 30, 30)); // Background color
+static HBRUSH hDarkBrushEdit = CreateSolidBrush(RGB(20, 22, 24)); // (30, 30, 30) Background color
+static HBRUSH hDarkBrushAround = CreateSolidBrush(RGB(32, 35, 38));
 
 #ifndef LINUX
 
@@ -945,6 +951,9 @@ void reloadEdit(HWND hWnd)
 																																																									      //5, 0
 	hwndEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"Edit", L"", dwStyle, 10, 10, lpRect.right - lpRect.left - 30, lpRect.bottom - lpRect.top - 100, hWnd, (HMENU)ID_EDITCHILD, (HINSTANCE)(long long)GetWindowLongW(hWnd, GWL_HINSTANCE), NULL);
 
+    SetWindowTheme(hwndEdit, L"DarkMode_Explorer", NULL);
+    ////SetWindowTheme(hwndEdit, L"Explorer", NULL);
+    ////SetWindowTheme(hwndEdit, L"", L"");
 
 	oldEditProc = (WNDPROC)SetWindowLongPtrW(hwndEdit, GWLP_WNDPROC, (LONG_PTR)subEditProc);
 
@@ -995,6 +1004,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg)
 	{
+	case WM_CREATE:
+        {
+            // 1. Force the Window Frame / Title bar to turn dark immediately upon creation
+            BOOL useDarkMode = TRUE;
+            DwmSetWindowAttribute(hWnd, 20, &useDarkMode, sizeof(useDarkMode));
+
+            // 2. Clear out visual styling styles for your controls here too if needed
+            // (e.g., if hwndEdit and hwndCombobox are already created here)
+             SetWindowTheme(hwndEdit, L"DarkMode_Explorer", NULL);
+             SetWindowTheme(hwndCombobox, L"DarkMode_Explorer", NULL);
+        }
+        break;
 	case WM_USER_FIRST_RENDER:
 		{
 			// Simulate exactly what your hidden button click does to restore white color!
@@ -1008,9 +1029,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 	case WM_CTLCOLOREDIT:
+	      {
+			HWND hwndTarget = (HWND)lParam;
+			HDC hdc = (HDC)wParam;
 			if ((HWND)lParam == hwndEdit)
 			{
-				HDC hdc = (HDC)wParam;
 
 				// Set text colors optimized for a dark background
 				if (new_hidden)
@@ -1019,13 +1042,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					SetTextColor(hdc, RGB(255, 255, 255)); // Bright white text
 
 				// CRITICAL: Match the text background color to your brush color
-				SetBkColor(hdc, RGB(30, 30, 30));
+				SetBkColor(hdc, RGB(20, 22, 24));  //(30, 30, 30)
 
 				// Return the dark brush to paint the rest of the control background
 				return (LRESULT)hDarkBrushEdit;
 			}
+			// 2. Check if this is the ComboBox's internal Edit control
+			COMBOBOXINFO cbi = { sizeof(COMBOBOXINFO) };
+			if (SendMessageW(hwndCombobox, CB_GETCOMBOBOXINFO, 0, (LPARAM)&cbi))
+			{
+				if (hwndTarget == cbi.hwndItem)
+				{
+					SetTextColor(hdc, RGB(255, 255, 255)); // Bright white text
+					SetBkColor(hdc, RGB(20, 22, 24));
+					return (LRESULT)hDarkBrushEdit;
+				}
+			}
 		return CallWindowProc(oldEditProc, hWnd, msg, wParam, lParam);
+		}
 		break;
+
+	case WM_CTLCOLORLISTBOX:
+    {
+        COMBOBOXINFO cbi = { sizeof(COMBOBOXINFO) };
+        SendMessage(hwndCombobox, CB_GETCOMBOBOXINFO, 0, (LPARAM)&cbi);
+
+        // Check if the message is for our ComboBox's internal Dropdown List
+        if ((HWND)lParam == cbi.hwndList)
+        {
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, RGB(255, 255, 255)); // Bright white text
+            SetBkColor(hdc, RGB(20, 22, 24));
+            return (LRESULT)hDarkBrushEdit;
+        }
+        break;
+    }
+
 	case WM_NCHITTEST:
 	{
 		if (single_==1)
@@ -1312,6 +1364,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
 				break;
 			}
+            /*
 			case ID_BUTTON_COPY_TEXT:
 			{
 				//TO DO
@@ -1323,7 +1376,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				int len = GetWindowTextLength(hwndEdit);
 				
 				SetFocus(hwndEdit);
-				/* Get the selection indexes */
+				// Get the selection indexes
 				SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
 
 				if (single_ == 1) //changing end of line characters
@@ -1362,10 +1415,65 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				break;
 			}
-		}
+			*/
+			case ID_BUTTON_COPY_TEXT:
+		    {
+		        // Keep this as a narrow char array exactly as you have it
+		        char* lpch = new char[512];
+		        std::memset(lpch, 0, 512);
 
-	default:
+		        int lenC = ComboBox_GetTextLength(hwndCombobox);
+		        ComboBox_GetText(hwndCombobox, lpch, 512);
+
+		        int len = GetWindowTextLength(hwndEdit);
+
+		        SetFocus(hwndEdit);
+		        // Get the selection indexes
+		        SendMessageW(hwndEdit, EM_GETSEL, (WPARAM)&firstChar, (LPARAM)&lastChar);
+
+		        if (single_ == 1) //changing end of line characters
+		        {
+		            char* ptr = strstr(lpch, "\r\n");
+		            while (ptr != NULL)
+		            {
+		                *ptr = '\\';
+		                ptr++;
+		                *ptr = 'n';
+		                ptr++;
+		                ptr = strstr(ptr, "\r\n");
+		            }
+		        }
+		        else
+		        {
+		            char* ptr = strstr(lpch, "\\n");
+		            while (ptr != NULL)
+		            {
+		                *ptr = '\r';
+		                ptr++;
+		                *ptr = '\n';
+		                ptr++;
+		                ptr = strstr(ptr, "\\n");
+		            }
+		        }
+
+		        // CRITICAL FIX: Use SendMessageA (ANSI) here so Windows
+		        // processes your narrow 'char*' string correctly instead of as Chinese.
+		        SendMessageA(hwndEdit, EM_REPLACESEL, 0, (LPARAM)lpch);
+
+		        firstChar = lastChar = firstChar + lenC;
+
+		        // Keep this as SendMessageW since it passes simple numeric pointers
+		        SendMessageW(hwndEdit, EM_SETSEL, (WPARAM)firstChar, (LPARAM)lastChar);
+
+		        // Use array brackets for safe memory cleanup
+		        delete[] lpch;
+
+		        break;
+		    }
+		}
+		default:
 		return DefWindowProcW(hWnd, msg, wParam, lParam);
+		break;
 	}
 
 	return ret_value;
@@ -1447,7 +1555,7 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	wcex.cbClsExtra = 0;
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.cbWndExtra = 0;
-	COLORREF myColor = 0xffcfc4; // (196, 207, 255);
+	COLORREF myColor = 0x262320; //dark grey (32, 35, 38)// light blue  0xffcfc4 (196, 207, 255);
 	wcex.hbrBackground = CreateSolidBrush(myColor);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ALFA));
@@ -1557,7 +1665,7 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 	SendMessageW(hwndEdit, EM_SETTARGETDEVICE, NULL, 1);
 
 	// 3. SET BACKGROUND COLOR TO NEAR-BLACK IMMEDIATELY
-	SendMessageW(hwndEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)RGB(30, 30, 30));  //added W
+	SendMessageW(hwndEdit, EM_SETBKGNDCOLOR, 0, (LPARAM)RGB(20, 22, 24));  //added W   (30, 30, 30)
 
 	HDC hdc = GetDC(hwndEdit);
 
@@ -1614,6 +1722,36 @@ HWND CreateTextBoxW(CStringW mytext /*char *mytext*/, int edit_params, CONST INT
 		NULL,       // No menu.
 		(HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
 		NULL);      // Pointer not needed.
+
+	/*
+		hwndCombobox = CreateWindowExW(0, L"COMBOBOX", NULL,
+    WS_TABSTOP | WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS,
+    0, 0, 40, 38, hWnd, NULL,
+    (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+    */
+
+/*
+    // Cleaner approach without the extra panel:
+    hwndCombobox = CreateWindowExW(0, L"COMBOBOX", NULL,
+    WS_TABSTOP | WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS,
+    0, 0, 40, 38,
+    hWnd, // Use the main window directly!
+    (HMENU)ID_COMBOBOX,
+    (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+  */
+
+    SetWindowTheme(hwndCombobox, L"DarkMode_Explorer", NULL);
+
+    // Explicitly apply dark theme to the internal sub-controls of the combobox
+	COMBOBOXINFO cbi = { sizeof(COMBOBOXINFO) };
+	if (SendMessageW(hwndCombobox, CB_GETCOMBOBOXINFO, 0, (LPARAM)&cbi))
+	{
+	    // Theme the dropdown listbox
+	    SetWindowTheme(cbi.hwndList, L"DarkMode_Explorer", NULL);
+
+	    // Force a visual redraw of the parent box to refresh the arrow button
+	    InvalidateRect(hwndCombobox, NULL, TRUE);
+	}
 
 	oldComboboxProc = (WNDPROC)SetWindowLongPtrW(hwndCombobox, GWLP_WNDPROC, (LONG_PTR)subComboboxProc);
 
@@ -2368,8 +2506,8 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
 
 	editor_on = TRUE;
 
-	BOOL useDarkMode = TRUE;
-	DwmSetWindowAttribute(0, 20, &useDarkMode, sizeof(useDarkMode));
+	//BOOL useDarkMode = TRUE;
+	//DwmSetWindowAttribute(0, 20, &useDarkMode, sizeof(useDarkMode));
 
 	retHWND = CreateTextBoxW(unicode, edit_params, lpRect.left, lpRect.top, lpRect.right- lpRect.left, lpRect.bottom- lpRect.top, 0, NULL, my_hInstance, nCmdShow, windowTitle, single, tab);
 
@@ -2489,8 +2627,10 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 //#include <windows.h>
 #include <objidl.h>    // Required dependency: Handles streaming operations
 #include <gdiplus.h>   // Required dependency: The core GDI+ system definitions
-//#include "res/resource.h"
-#include "..\..\source\res\resource.h"
+
+#ifndef LINUX
+#include "res/resource.h"
+#endif
 using namespace Gdiplus; // Crucial: This exposes 'Image' and 'Graphics' directly!
 
 
@@ -2807,8 +2947,8 @@ int EditText(char *mytext, int edit_params, int nCmdShow, int *single, int *tab)
     char *my_text;
     int new_edit_params;
 
-    char *etype_text="TEXT";
-    char *etype_info="INFO";
+    char *etype_text=(char*)"TEXT";
+    char *etype_info=(char*)"INFO";
     char *etype;
 
 #ifdef LINUX
@@ -3249,14 +3389,17 @@ void report_mem_leak_cpp_(void)
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdParam, int nCmdShow)
 { int ret;
+	/*
 #ifdef BIT64
   static char szAppName[] = "AlfaCAD4Win64";
 #else
   static char szAppName[] = "AlfaCAD4Win";
 #endif
-  
+*/
+
    int child=0;
-   char file_name[255];
+   char file_name[255]="";
+   char file_multiname[255*MAX_NUMBER_OF_WINDOWS]="";
    char    szAppPath[MAX_PATH] = "";
    CString strAppName;
 
@@ -3269,14 +3412,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 
    CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-
-//#ifndef LINUX
    locale = _create_locale(LC_ALL, _LOCALE_);
-//#else
 
-//#endif
-
-
+	/*
    if (strstr(lpszCmdParam, "--NOCHDIR") != NULL)
    {
 	   NOCHDIR = TRUE;
@@ -3287,7 +3425,49 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
    if (lpszCmdParam[strlen(lpszCmdParam) - 1] == '"') lpszCmdParam[strlen(lpszCmdParam) - 1] = '\0';
    if (lpszCmdParam[0] == '"') strcpy(file_name, lpszCmdParam + 1);
    else strcpy(file_name, lpszCmdParam);
+   */
+	// INSERT THIS NEW BLOCK:
+	child = 0; // Reset child counter as before
 
+	int argc = 0;
+	LPWSTR* argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+	if (argvW != NULL)
+	{
+		for (int i = 1; i < argc; i++)
+		{
+			char szArg[MAX_PATH] = "";
+			WideCharToMultiByte(CP_ACP, 0, argvW[i], -1, szArg, sizeof(szArg), NULL, NULL);
+
+			if (strcmp(szArg, "--NOCHDIR") == 0)
+			{
+				NOCHDIR = TRUE;
+			}
+			else
+			{
+				if ((strlen(file_multiname) + strlen(szArg)) < (255 * MAX_NUMBER_OF_WINDOWS - 2))
+				{
+					char* file_name_ptr = szArg;
+
+					char* bptr = strstr(file_name_ptr, "file://");
+					if (bptr != NULL) file_name_ptr += 7;
+
+					DWORD dwSize = strlen(file_name_ptr) + 1;
+					UrlUnescapeA(file_name_ptr, NULL, &dwSize, URL_UNESCAPE_INPLACE);
+
+					trim_trailing_new_row(file_name_ptr);
+
+					strcat(file_multiname, file_name_ptr);
+					if (strlen(file_name) == 0)
+					{
+						strcpy(file_name, file_name_ptr);
+					}
+					strcat(file_multiname, "\r\n");
+				}
+			}
+		}
+		LocalFree(argvW);
+	}
 
   ::GetModuleFileName(0, (LPSTR)szAppPath, MAX_PATH);
 
@@ -3296,7 +3476,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
   strAppName = strAppName.Left(strAppName.ReverseFind('\\'));
 
 #ifndef _DEBUG
-  //zmina katalogu
+  //changing folder
   if (NOCHDIR == FALSE)
   {
 	  int ret1 = _chdir(strAppName);
@@ -3307,7 +3487,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
 
   LoadLibrary("comctl32.dll");
     
-  ret=Rysuj_main(child, file_name, nCmdShow, szAppPath, lpszCmdParam);
+  ret=Rysuj_main(child, file_name, file_multiname, nCmdShow, szAppPath, lpszCmdParam);
 
   CoUninitialize();
 

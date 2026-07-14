@@ -225,7 +225,7 @@ BOOL Get_Private_Profile_Strings_Hatch(T_Fstring lpApplicationName, BOOL(*f)(T_F
 	char* ptr;
 
 
-	stru_ini = fopen ( PATTERNS_INI, "rt" ) ;
+	stru_ini = fopen ( PATTERNS_INI_, "rt" ) ;
 	if (stru_ini == NULL)
 	{
 		return FALSE;

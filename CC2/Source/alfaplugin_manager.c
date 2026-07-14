@@ -42,6 +42,10 @@
 #define BOOL int
 #endif
 
+#ifdef _MSC_VER
+#define strdup _strdup
+#endif
+
 extern char** strarray;
 
 extern int My_GetFiles(char *szDir, int *n_list, char *pattern, char *pattern1, char* pattern2, char* pattern3, BOOL blocks);
@@ -285,7 +289,7 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
     cpm_type         typef;
     cpm_part         partf;
     cpm_api_version  api_ver;
-    bool             ret;
+    bool             ret=false;
 
     gen = calloc(1, sizeof(*gen));
 
@@ -399,8 +403,9 @@ static void pm_load_gen(pm_manager_t *pm, void *handle, char *plug_ptr)
         free(gen);
 
 #ifdef LINUX
-        usleep(10000);
-#else Sleep(10);
+    usleep(10000);
+#else
+    Sleep(10);
 #endif
 }
 

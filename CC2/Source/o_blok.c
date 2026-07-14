@@ -439,7 +439,7 @@ int get_selection(void)
     return selection;
 }
 
-int set_selection(int new_selection)
+void set_selection(int new_selection)
 {
     selection=new_selection;
 }
@@ -479,12 +479,14 @@ static int entire_polyline(void)
 {
     entire_poly=TRUE;
     menu_par_new((*menup.pola)[6].txt, _entire_polyline_);
+	return 1;
 }
 
 static int single_object(void)
 {
     entire_poly=FALSE;
     menu_par_new((*menup.pola)[6].txt, _single_object_);
+	return 1;
 }
 
 BOOL get_entire_poly(void)
@@ -3338,7 +3340,7 @@ int dziWez_t_pattern(void* ad)	 /*get trace pattern if filled with image*/
             TracePattern = 0;
             TraceTranslucent = sa->translucent;
 
-            if (w->translucent == 1) TraceTranslucency=sa->translucency;
+            if (sa->translucent == 1) TraceTranslucency=sa->translucency;
             else TraceTranslucency = 255;
 
             transluc = (TraceTranslucency / d_trans) - 1;
@@ -3578,7 +3580,7 @@ int dziWez_h_pattern(void* ad)	 /*get trace pattern if filled with image*/
         {
             SolidHatchPattern = 0;
             SolidHatch = 1;
-            SolidHatchTranslucent = w->translucent;
+            SolidHatchTranslucent = sa->translucent;
 
             if (sa->translucent == 1) SolidHatchTranslucency=sa->translucency;
             else SolidHatchTranslucency = 255;
@@ -4704,14 +4706,14 @@ static void	redcr_ex_ap(char typ)
 
 int Explode_dlg(BOOL frozen)
 {
-	char frozen_str[12];
+	char frozen_str[24];
 	int ret;
-	char explode_str[64];
+	char explode_str[72];
 
-	if (frozen) strcpy(frozen_str, _FROZEN_);
+	if (frozen) strcpy(frozen_str, (const char*)_FROZEN_);
 	else strcpy(frozen_str, "");
-	sprintf(explode_str, _EXPLODE_BLOCKS_, frozen_str);
-	ret = ask_question(2, _No_, _Yes_, "", explode_str, 12, "", 11, 1, 0);
+	sprintf(explode_str, (const char*)_EXPLODE_BLOCKS_, frozen_str);
+	ret = ask_question(2, (char*)_No_, (char*)_Yes_, "", explode_str, 12, "", 11, 1, 0);
 	//1 ok; 0 - rezygnuj; 2 - Powrot
 	return ret;	
 }
@@ -6541,6 +6543,8 @@ int edit_load_character(AVECTOR *v)
 
         }
     }
+
+	return 1;
 }
 
 int dzic(void *ad)
@@ -6926,6 +6930,7 @@ int blokq(int (*DZI)(void *), int (*ODZI)(void *))
     blok(DZI,ODZI,Redraw_Block,(const int (**)(void))COMNDmb);
     redcrq(1);
 
+	return 1;
 }
 
 void find_adpq_adkq(int atrybut)
@@ -6943,8 +6948,8 @@ void find_adpq_adkq(int atrybut)
         if (TRUE == Check_Attribute (ad->atrybut, atrybut))
         {
            if (ADPQ==NULL) ADPQ=(char*)ad;
-           adn=ad+sizeof(NAGLOWEK)+ad->n - 1;
-           if (adn> ADKQ)  ADKQ=(char*)adn;
+           adn=(NAGLOWEK*)((char*)ad+sizeof(NAGLOWEK)+ad->n - 1);
+           if ((char*)adn > ADKQ)  ADKQ=(char*)adn;
         }
         obiekt_tok(NULL,adk,(char **) &ad,ONieOkreslony);
     }

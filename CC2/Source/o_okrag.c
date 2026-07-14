@@ -754,7 +754,7 @@ static void circle_TTR_LL_proc (t_circle_TTR *ptrs__circle_TTR)
 		 /*----------------------*/
 		 if (OkragG.r) {
              rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
-             if (dodaj_obiekt(NULL, &OkragG) == NULL);
+             if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
          }
 
 		 OkragG.obiekt = Ookrag;
@@ -844,7 +844,7 @@ static void circle_TTR_OO_proc (t_circle_TTR *ptrs__circle_TTR)  //ptrs__circle_
             /*----------------------*/
             if (OkragG.r) {
                 rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
-                if (dodaj_obiekt(NULL, &OkragG) == NULL);
+                if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
             }
 
             OkragG.obiekt = Ookrag;
@@ -947,7 +947,7 @@ static void circle_TTR_OL_proc (t_circle_TTR *ptrs__circle_TTR)  //ptrs__circle_
             /*----------------------*/
             if (OkragG.r) {
                 rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
-                if (dodaj_obiekt(NULL, &OkragG) == NULL);
+                if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
             }
 
             OkragG.obiekt = Ookrag;
@@ -994,14 +994,12 @@ static  void *check_if_sel_ob (unsigned u_ob_type, double df_x, double df_y)
   void *ptr_object ;
   unsigned u_tmp ;
 
-  df_x = df_x ;
-  df_y = df_y ;
   u_tmp = u_ob_type ;
   if (NULL == (ptr_object = select_w(&u_tmp, NULL)))
   {
     return NULL ;
   }
-  if (!u_ob_type & u_tmp)
+  if (!(u_ob_type & u_tmp))
   {
     ptr_object = NULL ;
   }
@@ -1014,9 +1012,7 @@ static void circle_TTR (double df_x, double df_y)
 {
   EVENT *ev;
   void *ptr_ob ;
-  unsigned u_ob_type;
-
-  u_ob_type = Blinia | Bokrag  | Okolo | Bluk ;
+  unsigned u_ob_type = Blinia | Bokrag  | Bkolo | Bluk ;
   if (NULL == (ptr_ob = check_if_sel_ob (u_ob_type, df_x, df_y)))
   {
 aa:
@@ -1683,7 +1679,7 @@ static void circle_2point (double X0, double Y0)
       /*----------------------*/
       if(OkragG.r) {
           rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
-          if (dodaj_obiekt(NULL, &OkragG) == NULL);
+          if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
       }
 
       OkragG.obiekt = Ookrag;
@@ -1766,7 +1762,7 @@ static void circle_3point (double X0, double Y0)
       /*----------------------*/
       if(OkragG.r) {
           rysuj_obiekt((char *)&OkragG, COPY_PUT, 1);
-          if (dodaj_obiekt(NULL, &OkragG) == NULL);
+          if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
       }
 
       OkragG.obiekt = Ookrag;
@@ -1844,7 +1840,7 @@ void circle_cen_rad_dia (double X0, double Y0)
 	/*----------------------*/
 	if(OkragG.r) {
         rysuj_obiekt((char *) &OkragG, COPY_PUT, 1);
-        if (dodaj_obiekt(NULL, &OkragG) == NULL);
+        if (dodaj_obiekt(NULL, &OkragG) == NULL) return;
     }
 
 	OkragG.obiekt = Ookrag;
@@ -1991,7 +1987,7 @@ void Okrag(void)
 /*----------------*/
 {
   b_okrag = TRUE;
-  ptrsz__circle_type = CIRCLE ;
+  ptrsz__circle_type = (char*)CIRCLE ;
   Okrag_Kolo();
 }
 
@@ -1999,7 +1995,7 @@ void Kolo(void)
 /*----------------*/
 {
   b_okrag = FALSE;
-  ptrsz__circle_type = CIRCLE_FILL ;
+  ptrsz__circle_type = (char*)CIRCLE_FILL ;
   Okrag_Kolo();
 }
 

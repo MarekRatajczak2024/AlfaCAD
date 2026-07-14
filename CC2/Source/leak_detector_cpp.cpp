@@ -225,18 +225,18 @@ void report_mem_leak_cpp(void)
 
 	FILE* fp_write = fopen(OUTPUT_FILE, "wt");
 
-	if (fp_write != NULL)
+	if (fp_write != nullptr)
 	{
 		fprintf(fp_write, "=== MEMORY LOG START ===\n");
 		fprintf(fp_write, "Memory Leak Summary\n");
 		fprintf(fp_write, "-----------------------------------\n");
 
 		index0 = 0;
-		for (leak_info = ptr_start; leak_info != NULL; leak_info = leak_info->next)
+		for (leak_info = ptr_start; leak_info != nullptr; leak_info = leak_info->next)
 		{
 			if (leak_info->flag == 0)
 			{
-				fprintf(fp_write, "address : %llu\n", leak_info->mem_info.address);
+				fprintf(fp_write, "address : %llu\n", (unsigned long long)leak_info->mem_info.address);
 				fprintf(fp_write, "size    : %d bytes\n", leak_info->mem_info.size);
 				fprintf(fp_write, "file    : %s\n", leak_info->mem_info.file_name);
 				fprintf(fp_write, "line    : %d\n", leak_info->mem_info.line);

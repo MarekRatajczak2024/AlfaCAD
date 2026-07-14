@@ -1602,11 +1602,11 @@ int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*, void*
     x0=*x;
     y0=*y;
     
-#define Npts (90*3)  //for much more precission
+#define Npts3 (90*3)  //for much more precission
     if (s->npts < 5)
     {
-        calc_bspline(s->lp, s->npts, s->xy, Npts, out_x, out_y);
-        for (i = 0; i < Npts - 1; i++)
+        calc_bspline(s->lp, s->npts, s->xy, Npts3, out_x, out_y);
+        for (i = 0; i < Npts3 - 1; i++)
         {
             L.x1 = out_x[i];
             L.y1 = out_y[i];
@@ -1644,8 +1644,8 @@ int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*, void*
             bnodes_2_tangent_org = bnodes[2].tangent;
             bnodes[2].tangent = bnodes_2_tangent;
             get_control_points_reversed(bnodes[2], bnodes[1], tmp_spline.xy);
-            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts, out_x, out_y);
-            for (i = 0; i < Npts - 1; i++)
+            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts3, out_x, out_y);
+            for (i = 0; i < Npts3 - 1; i++)
             {
                 L.x1 = out_x[i];
                 L.y1 = out_y[i];
@@ -1670,8 +1670,8 @@ int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*, void*
         for (j = 2; j < node_count - 2; j++)  //1 - extra_node
         {
             get_control_points(bnodes[j], bnodes[j + 1], tmp_spline.xy);
-            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts, out_x, out_y);
-            for (i = 0; i < Npts - 1; i++)
+            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts3, out_x, out_y);
+            for (i = 0; i < Npts3 - 1; i++)
             {
                 L.x1 = out_x[i];
                 L.y1 = out_y[i];
@@ -1695,8 +1695,8 @@ int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*, void*
         if ((node_count > 3) && (s->closed == 0))
         {
             get_control_points_end(bnodes[node_count - 2], bnodes[node_count - 1], tmp_spline.xy);
-            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts, out_x, out_y);
-            for (i = 0; i < Npts - 1; i++)
+            calc_bspline(tmp_spline.lp, tmp_spline.npts, tmp_spline.xy, Npts3, out_x, out_y);
+            for (i = 0; i < Npts3 - 1; i++)
             {
                 L.x1 = out_x[i];
                 L.y1 = out_y[i];
@@ -3215,36 +3215,35 @@ int przeciecieLW_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return wielokat_przec (x, y, adr, adr1, przeciecieLL_) ;
-    else return wielokat_przec (x, y, adr1, adr, przeciecieLL_) ;
+    return wielokat_przec (x, y, adr1, adr, przeciecieLL_) ;
 }
 
 int przeciecieLW_r(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return przeciecieLW_(x, y, adr, adr1);
-    else return przeciecieLW_(x, y, adr1, adr);
+    return przeciecieLW_(x, y, adr1, adr);
 }
 
 int przeciecieLSA_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
         return solidarc_przec (x, y, adr, adr1, przeciecieLL_, przeciecieLl_) ;
-    else return solidarc_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
+    return solidarc_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
 }
 
 int przeciecieLV_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr1)->obiekt==Olinia)
         return vector_przec (x, y, adr, adr1, przeciecieLL_, przeciecieLl_) ;
-    else
-        return vector_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
+    return vector_przec (x, y, adr1, adr, przeciecieLL_, przeciecieLl_) ;
 }
 
 int przeciecieLSA_r(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
         return przeciecieLSA_(x, y, adr, adr1);
-    else return przeciecieLSA_(x, y, adr1, adr);
+    return przeciecieLSA_(x, y, adr1, adr);
 }
 
 int przeciecieLS_(double *x, double *y, void *adr, void *adr1)
@@ -3258,42 +3257,42 @@ int przeciecielW_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return wielokat_przec (x, y, adr, adr1, przeciecieLl_) ;
-  else return wielokat_przec (x, y, adr1, adr, przeciecieLl_) ;
+    return wielokat_przec (x, y, adr1, adr, przeciecieLl_) ;
 }
 
 int przeciecielW_r(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return przeciecielW_(x, y, adr, adr1);
-    else return przeciecielW_(x, y, adr1, adr);
+    return przeciecielW_(x, y, adr1, adr);
 }
 
 int przeciecieSAW_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return solidarc_przec (x, y, adr1, adr, przeciecieLW_, przeciecielW_r);
-    else return solidarc_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
+    return solidarc_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
 }
 
 int przeciecieVW_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Owwielokat)
         return vector_przec (x, y, adr1, adr, przeciecieLW_, przeciecielW_r);
-    else return vector_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
+    return vector_przec (x, y, adr, adr1, przeciecieLW_, przeciecielW_r);
 }
 
 int przeciecielSA_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
         return solidarc_przec (x, y, adr, adr1, przeciecieLl_, przecieciell_) ;
-    else solidarc_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
+    return solidarc_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
 }
 
 int przeciecielV_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr1)->obiekt==Oluk)
         return vector_przec (x, y, adr, adr1, przeciecieLl_, przecieciell_) ;
-    else return vector_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
+    return vector_przec (x, y, adr1, adr, przeciecieLl_, przecieciell_) ;
 }
 
 int przeciecielV_r(double *x, double *y, void *adr, void *adr1)
@@ -3307,7 +3306,7 @@ int przeciecielSA_r(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Osolidarc)
         return przeciecielSA_(x, y, adr, adr1);
-    else return przeciecielSA_(x, y, adr1, adr);
+    return przeciecielSA_(x, y, adr1, adr);
 }
 
 int przeciecieSASA_(double *x, double *y, void *adr, void *adr1)
@@ -3324,63 +3323,63 @@ int przeciecielS_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ospline)
         return spline_przec(x, y, adr, adr1, przeciecieLl_);
-	else return spline_przec(x, y, adr1, adr, przeciecieLl_);
+	return spline_przec(x, y, adr1, adr, przeciecieLl_);
 }
 
 int przeciecielS_r(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ospline)
         return przeciecielS_(x, y, adr, adr1);
-    else return przeciecielS_(x, y, adr1, adr);
+    return przeciecielS_(x, y, adr1, adr);
 }
 
 int przeciecieSAS_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ospline)
         return solidarc_przec(x, y, adr1, adr, przeciecieLS_, przeciecielS_r);
-    else return solidarc_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
+    return solidarc_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
 }
 
 int przeciecieVS_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ospline)
         return vector_przec(x, y, adr1, adr, przeciecieLS_, przeciecielS_r);
-    else return vector_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
+    return vector_przec(x, y, adr, adr1, przeciecieLS_, przeciecielS_r);
 }
 
 int przeciecieWO_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ookrag)
         return wielokat_przec (x, y, adr1, adr, przeciecieLO_) ;
-    else return wielokat_przec (x, y, adr, adr1, przeciecieLO_) ;
+    return wielokat_przec (x, y, adr, adr1, przeciecieLO_) ;
 }
 
 int przeciecieSAO_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ookrag)
         return solidarc_przec (x, y, adr1, adr, przeciecieLO_, przeciecielO_r) ;
-    else return solidarc_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
+    return solidarc_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
 }
 
 int przeciecieVO_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ookrag)
         return vector_przec (x, y, adr1, adr, przeciecieLO_, przeciecielO_r) ;
-    else return vector_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
+    return vector_przec (x, y, adr, adr1, przeciecieLO_, przeciecielO_r) ;
 }
 
 int przeciecieSO_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Ookrag)
         return spline_przec(x, y, adr1, adr, przeciecieLO_);
-	else return spline_przec(x, y, adr, adr1, przeciecieLO_);
+	return spline_przec(x, y, adr, adr1, przeciecieLO_);
 }
 
 int przeciecieSE_(double *x, double *y, void *adr, void *adr1)
 {
     if (((NAGLOWEK*)adr)->obiekt==Oellipse)
         return spline_przec(x, y, adr1, adr, przeciecieLE_);
-    else return spline_przec(x, y, adr, adr1, przeciecieLE_);
+    return spline_przec(x, y, adr, adr1, przeciecieLE_);
 }
 
 int przeciecieEE_(double *x, double *y, void *adr, void *adr1)

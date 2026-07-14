@@ -638,7 +638,7 @@ static int get_maxy_point (void *ptr_w_)
 
   maxyno = 1 ;
 
-  if ((NAGLOWEK*)ptr_w_==Owwielokat)
+  if (((NAGLOWEK*)ptr_w_)->obiekt==Owwielokat)
   {
       ptr_w=(WIELOKAT*)ptr_w_;
       for (i = 1; i < ptr_w->lp; i += 2)
@@ -650,7 +650,7 @@ static int get_maxy_point (void *ptr_w_)
       }
       return maxyno ;
   }
-  else if ((NAGLOWEK*)ptr_w_==Ospline)
+  else if (((NAGLOWEK*)ptr_w_)->obiekt==Ospline)
   {
       ptr_s=(SPLINE*)ptr_w_;
       for (i = 1; i < ptr_s->lp; i += 2)

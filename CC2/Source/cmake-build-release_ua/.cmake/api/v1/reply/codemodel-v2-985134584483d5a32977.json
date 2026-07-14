@@ -7,7 +7,7 @@
 			[
 				{
 					"build" : ".",
-					"jsonFile" : "directory-.-Release-fd6451d79dc282e2f566.json",
+					"jsonFile" : "directory-.-Release_UA-fd6451d79dc282e2f566.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16.0"
@@ -20,7 +20,7 @@
 					]
 				}
 			],
-			"name" : "Release",
+			"name" : "Release_UA",
 			"projects" : 
 			[
 				{
@@ -39,9 +39,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "AlfaCAD::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCAD-Release-ee6a47d4e6695445e7c8.json",
-					"name" : "AlfaCAD",
+					"id" : "AlfaCADUA::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-AlfaCADUA-Release_UA-504bd795b5bd944ee4b8.json",
+					"name" : "AlfaCADUA",
 					"projectIndex" : 0
 				}
 			]
@@ -50,7 +50,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-release",
+		"build" : "/home/marek/CC2/Source/cmake-build-release_ua",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

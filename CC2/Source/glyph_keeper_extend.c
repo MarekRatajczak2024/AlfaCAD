@@ -25,6 +25,7 @@
 #include FT_OUTLINE_H
 #include FT_GLYPH_H
 
+#include <glyph.h>
 #include <glyph_structs.h>
 
 #include "leak_detector_c.h"
@@ -38,7 +39,7 @@ extern bool startcontour;
 int moveTo(FT_Vector* to, void* fp){return 0;}
 int lineTo(FT_Vector* to, void* fp) {return 0;}
 int conicTo(FT_Vector* control, FT_Vector* to, void* fp) {return 0;};
-int cubicTo(FT_Vector* /*control1*/, FT_Vector* /*control2*/, FT_Vector* to, void* fp) {return 0;};
+int cubicTo(FT_Vector* control1, FT_Vector* control2, FT_Vector* to, void* fp) {return 0;};
 
 static const FT_Outline_Funcs funcs
         = {

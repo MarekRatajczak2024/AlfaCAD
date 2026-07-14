@@ -143,7 +143,7 @@ extern void set_spline_tension_force(int typ);
 extern void remove_short_notice(void);
 extern void set_plugin_func_in_COMNDm(int poz, void *plugin_f);
 extern int get_selection(void);
-extern int set_selection(int new_selection);
+extern void set_selection(int new_selection);
 
 extern BOOL Check_if_Equal (double x, double y);
 extern double Atan2 (double, double) ;

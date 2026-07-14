@@ -15,8 +15,6 @@
 */
 
 #define __B_MENU__
-#define _CRT_SECURE_NO_WARNINGS
-#pragma warning(disable : 4996)
 #include<forwin.h>
 #include<stdlib.h>
 #ifndef LINUX
@@ -1749,7 +1747,7 @@ static int menu_len (char *ptrsz_len, int i_menu_len)
 {
   int max_len;
 
-  max_len = lenutf8to(ptrsz_len, i_menu_len);
+  max_len = lenutf8to((const unsigned char *)ptrsz_len, i_menu_len);
 
   return max_len;
 }
@@ -1789,7 +1787,7 @@ void Test_PMenu (PTMENU *menu)
 
     menu->maxw=menu->maxw0; //inicjacja
 
-    if (menu == &menug)
+    if ((TMENU*)menu == &menug)
     {
         //checking how many drawings are opened
         i_drawings = 0;
@@ -3671,7 +3669,7 @@ void pdraww(PTMENU  *menu)
     BITMAP *menu_screen;
     int kolor1;
 
-    if (menu == &mBlok_Imp)
+    if ((TMENU*)menu == &mBlok_Imp)
         menu->flags |= (ICONS | TADD);
 
     paper=kolory.paperm;
@@ -3954,7 +3952,7 @@ void pdraww(PTMENU  *menu)
                 bytes_n = ucs2_to_utf8(ptrsz_tcod, (uint8_t*)utf8c);
                 if ((ptrsz_tcod < 1920) && (bytes_n < 3))
                 {
-                    strncpy(sz_temp, utf8c, 2);
+                    strncpy(sz_temp, (const char *)utf8c, 2);
                     sz_temp[2] = '\0';
                 }
                 else
@@ -4226,7 +4224,7 @@ void draww(TMENU  *menu)
 #ifdef UKRAINIAN
      if (strlen(ptrsz_temp)>POLE_TXT_MAX)
      {
-       printf("ALARM strlen>POLE_TXT_MAX:  %d\n", strlen(ptrsz_temp));
+       printf("ALARM strlen>POLE_TXT_MAX:  %d\n", (int)strlen(ptrsz_temp));
      }
 #endif
 
@@ -4456,7 +4454,7 @@ void draww(TMENU  *menu)
 			 bytes_n = ucs2_to_utf8(ptrsz_tcod, (uint8_t*)utf8c);
 			 if ((ptrsz_tcod < 1920) && (bytes_n < 3))
 			 {
-				 strncpy(sz_temp, utf8c, 2);
+				 strncpy(sz_temp, (const char *)utf8c, 2);
 				 sz_temp[2] = '\0';
 			 }
 			 else
@@ -4641,9 +4639,9 @@ void drawp(TMENU *menu)
 	   baronoff(menu);
 	   frame_on(menu);
 
-	   x1=(menu->xpcz-1)*WIDTH /*8*/ * SKALA +GR+1;
-	   y1=(menu->ypcz-1)*vfv(32) +GR+1+YP; y1+=menu->poz*vfv(32);
-       y2=y1+vfv(32);
+	   x01=(menu->xpcz-1)*WIDTH /*8*/ * SKALA +GR+1;
+	   y01=(menu->ypcz-1)*vfv(32) +GR+1+YP; y1+=menu->poz*vfv(32);
+       y02=y01+vfv(32);
 	   c= vfv(32);
 	   a = vfv(64);
 	   b=vfv(32);
@@ -4710,7 +4708,7 @@ void drawp(TMENU *menu)
 		   }
 		   else if (kolor_m == 0) setcolor(15);
 		   else setcolor(0);
-		 
+
 	   }
        else if (ptr1!=NULL)
        {
@@ -4741,9 +4739,13 @@ void drawp(TMENU *menu)
 	   baronoff(menu);
 	   frame_on(menu);
 
-	   x1 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
-	   y1 = (menu->ypcz - 1)*HEIGHT * SKALA + GR + 1 + YP; y1 += menu->poz*HEIGHT * SKALA;
-       y2= y1 + HEIGHT * SKALA;
+	   x01 = (menu->xpcz - 1)*WIDTH /*8*/ * SKALA + GR + 1;
+	   y01 = (menu->ypcz - 1)*HEIGHT * SKALA + GR + 1 + YP;
+       y01 += menu->poz*HEIGHT * SKALA;
+
+       x02=x01+menu->max*menu->xdl*WIDTH * SKALA +2*(GR+1);  //theoretically
+
+       y02= y01 + HEIGHT * SKALA;
 	   a = (menu->xdl) * WIDTH * SKALA;
 	   b = BAR_G * SKALA;
 	   b2 = HEIGHT * SKALA / 3;
@@ -6706,7 +6708,7 @@ static void redcr(char typ)
 	SERV [23] = noop;
 	SERV [12] = noop;
 	
-
+/*
 	SW0[0]=SERV[71]; SERV[71]= (void *)cbegin;
 	SW0[1]=SERV[72]; SERV[72]= (typokn?(void*)cprev:noop);
 	SW0[2]=SERV[73]; SERV[73]= (void*)cpgprev;
@@ -6715,13 +6717,30 @@ static void redcr(char typ)
 	SW0[5]=SERV[79]; SERV[79]= (void*)cend;
 	SW0[6]=SERV[80]; SERV[80]= (typokn?(void*)cnext:noop);
 	SW0[7]=SERV[81]; SERV[81]= (void*)cpgnext;
-	SW0[8]=SERV[82]; SERV[82]=/*noop;*/ (void*)kls;
+	SW0[8]=SERV[82]; SERV[82]= (void*)kls;
     SW01=SERV[84];
 
 	SERV[172] = (typokn ? (void*)cprev_min : noop);
 	SERV[175] = (typokn ? noop : (void*)cprev_min);
 	SERV[177] = (typokn ? noop : (void*)cnext_min);
 	SERV[180] = (typokn ? (void*)cnext_min : noop);
+*/
+     SW0[0]=SERV[71]; SERV[71]= (int (*)(void))cbegin;
+     SW0[1]=SERV[72]; SERV[72]= (typokn ? (int (*)(void))cprev : noop);
+     SW0[2]=SERV[73]; SERV[73]= (int (*)(void))cpgprev;
+     SW0[3]=SERV[75]; SERV[75]= (typokn ? noop : (int (*)(void))cprev);
+     SW0[4]=SERV[77]; SERV[77]= (typokn ? noop : (int (*)(void))cnext);
+     SW0[5]=SERV[79]; SERV[79]= (int (*)(void))cend;
+     SW0[6]=SERV[80]; SERV[80]= (typokn ? (int (*)(void))cnext : noop);
+     SW0[7]=SERV[81]; SERV[81]= (int (*)(void))cpgnext;
+     SW0[8]=SERV[82]; SERV[82]= (int (*)(void))kls; /* noop; */
+     SW01=SERV[84];
+
+     SERV[172] = (typokn ? (int (*)(void))cprev_min : noop);
+     SERV[175] = (typokn ? noop : (int (*)(void))cprev_min);
+     SERV[177] = (typokn ? noop : (int (*)(void))cnext_min);
+     SERV[180] = (typokn ? (int (*)(void))cnext_min : noop);
+
 
          for (n1 = 0; n1 < SVMAX-84 ; n1++)
          {
@@ -6750,8 +6769,13 @@ static void redcr(char typ)
          SERV [63] = noop;
          SERV [64] = noop;
 
+     /*
 		 SERV[135] = (void*)cnext_min_count;
 		 SERV[134] = (void*)cprev_min_count;
+		 */
+     SERV[135] = (int (*)(void))cnext_min_count;
+     SERV[134] = (int (*)(void))cprev_min_count;
+
 		 mouse_dz = 1;
 
      SERV[84]=SW01;
@@ -6766,6 +6790,7 @@ static void redcr(char typ)
    {
      typokn=(typ=='\0');
 	 skokm = (typokn ? SKOKM_VER : SKOKM_HOR);
+     /*
 	 SERV[72]=(typokn? (void*)cprev:noop);
 	 SERV[75]=(typokn?noop: (void*)cprev);
 	 SERV[77]=(typokn?noop: (void*)cnext);
@@ -6778,6 +6803,20 @@ static void redcr(char typ)
 
 	 SERV[135] = (void*)cnext_min_count;
 	 SERV[134] = (void*)cprev_min_count;
+	 */
+     SERV[72] = (typokn ? (int (*)(void))cprev : noop);
+     SERV[75] = (typokn ? noop : (int (*)(void))cprev);
+     SERV[77] = (typokn ? noop : (int (*)(void))cnext);
+     SERV[80] = (typokn ? (int (*)(void))cnext : noop);
+
+     SERV[172] = (typokn ? (int (*)(void))cprev_min : noop);
+     SERV[175] = (typokn ? noop : (int (*)(void))cprev_min);
+     SERV[177] = (typokn ? noop : (int (*)(void))cnext_min);
+     SERV[180] = (typokn ? (int (*)(void))cnext_min : noop);
+
+     SERV[135] = (int (*)(void))cnext_min_count;
+     SERV[134] = (int (*)(void))cprev_min_count;
+
 	 mouse_dz = 1;
 
 	 KLS = kls ;
@@ -6893,7 +6932,7 @@ int ucatch(int zn)
 		{
 			b1 = (zn & 0xFF); //extract first byte
 			b2 = ((zn >> 8) & 0xFF); //extract second byte
-			*mkbuf++ = 255;
+			*mkbuf++ = '\377'; //255;
 			
 			*mkbuf++ = b2;
 			*mkbuf++ = b1;
@@ -7020,6 +7059,7 @@ void set_mickey_hand(BITMAP *icon_mickey_s, BITMAP* icon_mickey)
 	{
 		clear_to_color(mickey_hand_s, bitmap_mask_color(mickey_hand_s));
 		rotate_scaled_sprite(mickey_hand_s, icon_mickey_s, 0, 0, ftofix(0.0), ftofix(1.0));
+	    //blit(icon_mickey_s, mickey_hand_s, 0, 0, 0, 0, icon_mickey_s->w, icon_mickey_s->h);
 	}
 
 	//mickey_hand = create_bitmap_ex(32, vfv(96), vfv(96));
@@ -7028,6 +7068,7 @@ void set_mickey_hand(BITMAP *icon_mickey_s, BITMAP* icon_mickey)
 	{
 		clear_to_color(mickey_hand, bitmap_mask_color(mickey_hand));
 		rotate_scaled_sprite(mickey_hand, icon_mickey, 0, 0, ftofix(0.0), ftofix(1.0));
+	    //blit(icon_mickey, mickey_hand, 0, 0, 0, 0, icon_mickey->w, icon_mickey->h);
 	}
 }
 
@@ -7037,22 +7078,31 @@ void draw_mickey_hand(double x, double y)
 
     set_alpha_blender();
 
+    /*
 	if (BIGCURSOR==2)
 	{
-		x_h = pikseleX(x) - 57;
-		y_h = pikseleY(y) - 1;
+		x_h = (int)pikseleX(x) - 57;
+		y_h = (int)pikseleY(y) - 1;
 		draw_trans_sprite(screen, mickey_hand, x_h, y_h);
 	}
     else if (BIGCURSOR==1)
     {
-        x_h = pikseleX(x) - 57;
-        y_h = pikseleY(y) - 1;
+        x_h = (int)pikseleX(x) - 57;
+        y_h = (int)pikseleY(y) - 1;
+        draw_trans_sprite(screen, mickey_hand, x_h, y_h);
+    }
+    */
+
+    if (BIGCURSOR>0)
+    {
+        x_h = (int)pikseleX(x) - 57;
+        y_h = (int)pikseleY(y) - 1;
         draw_trans_sprite(screen, mickey_hand, x_h, y_h);
     }
 	else
 	{
-		x_h = pikseleX(x) - 38;
-		y_h = pikseleY(y);
+		x_h = (int)pikseleX(x) - 38;
+		y_h = (int)pikseleY(y);
 		draw_trans_sprite(screen, mickey_hand_s, x_h, y_h);
 	}
 
@@ -7958,9 +8008,9 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		   last_mouse_z = mouse_z;
 		   
 		   KeyFun = (int(*)(TMENU *))SERV[134];
-		   if (KeyFun == (void*)SkalaZ_Minus) sclchg = KeyFun((void*)d_mouse_z);  //MODIFIED!!!
+		   if (KeyFun == (void*)SkalaZ_Minus) sclchg = KeyFun((void*)(intptr_t)d_mouse_z);  //MODIFIED!!!
 		   else if (KeyFun == (void*)cprev_min_count) sclchg = cprev_min_count(menu, d_mouse_z*z_step);
-           else KeyFun(menu);
+		   else KeyFun(menu);
 
 	   }
 	   else if (d_mouse_z < -mouse_dz)
@@ -7973,7 +8023,7 @@ int inkeys(TMENU *menu, BOOL search_ok)
 		   last_mouse_z = mouse_z;
 		   
 		   KeyFun = (int(*)(TMENU *))SERV[135];
-		   if (KeyFun == (void*)SkalaZ_Plus) sclchg = KeyFun((void*)-d_mouse_z);  //MODIFIED!!!
+		   if (KeyFun == (void*)SkalaZ_Plus) sclchg = KeyFun((void*)(intptr_t)-d_mouse_z);  //MODIFIED!!!
 		   else if (KeyFun == (void*)cnext_min_count) sclchg = cnext_min_count(menu, -d_mouse_z*z_step);
            else KeyFun(menu);
 	   }
@@ -9216,7 +9266,7 @@ void ch_layer (void)
 
     for (int i = 0; i < No_Layers ; i++)
     {
-        sprintf (sk, u8"%#ld", i + 1) ;
+        sprintf (sk, u8"%d", i + 1) ;
         strcat(sk,u8" '");
         strcat(sk,Layers[i].name);
         strcat(sk,u8"'");
@@ -9274,7 +9324,7 @@ void ch_layer (void)
                 break;
         }
 
-        sprintf (sk, u8"%#ld", ((LINIA *)object_info_ad)->warstwa + 1  ) ;
+        sprintf (sk, u8"%d", ((LINIA *)object_info_ad)->warstwa + 1  ) ;
         strcat(sk,u8" '");
         strcat(sk,Layers[((LINIA *)object_info_ad)->warstwa].name);
         strcat(sk,u8"'");
@@ -9302,7 +9352,7 @@ void ch_layer (void)
     return;
 }
 
-#define YP  4
+#//define YP  4
 #define XP  6
 #define MDY 4
 #define GR 4
@@ -9554,7 +9604,7 @@ void ch_color (void)
             size=mInfoAboutA.maxw?mInfoAboutA.maxw:mInfoAboutA.max;
 
             x1=(mInfoAboutA.xpcz-1) * WIDTH * SKALA + XP;
-            y1=(mInfoAboutA.ypcz-1)*vfv(32) + YP;
+            y1=(mInfoAboutA.ypcz-1)*vfv(32) + YP + 2;
 
             ytt = /*y1 + GR*/ - 2 * SKALA + MDY + (2 * vfv(32));
             yt=(int) ytt;
@@ -9578,7 +9628,7 @@ void ch_color (void)
             bytes_n = ucs2_to_utf8(ptrsz_tcod, (uint8_t*)utf8c);
             if ((ptrsz_tcod < 1920) && (bytes_n < 3))
             {
-                strncpy(sz_temp, utf8c, 2);
+                strncpy(sz_temp, (const char *)utf8c, 2);
                 sz_temp[2] = '\0';
             }
             else

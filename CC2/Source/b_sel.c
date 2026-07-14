@@ -435,7 +435,7 @@ int punkt_w_tekscie(TEXT  *ad0, double X1, double Y1)
 		if ((strlen(ad0->text) == 0) && (ad0->typ > 2))
 		{
 			memmove(&ad1, ad0, sizeof(TEXT_NAG));
-			ad1.text[0] = 255;
+			ad1.text[0] = '\377'; //255;
 			ad1.text[1] = '\0';
 			ad = &ad1;
 		}
@@ -3237,7 +3237,7 @@ int tekst_wybrany_exe(TEXT *ad0, BOOL to_printer)
   if ((strlen(ad0->text) == 0) && (ad0->typ>2))
       {
       memmove(&ad1,ad0,sizeof(TEXT_NAG));
-      ad1.text[0]=255;
+      ad1.text[0]='\377'; //255;
       ad1.text[1]='\0';
       ad=&ad1;
       }
@@ -3276,7 +3276,7 @@ int tekst_wybrany_exe(TEXT *ad0, BOOL to_printer)
 
   zn = (unsigned char *)ad->text;
 
-  addl = Get_Text_Len(ad, zn, 1.0, 0, NULL, NULL, NULL, NULL);
+  addl = Get_Text_Len(ad, (char*)zn, 1.0, 0, NULL, NULL, NULL, NULL);
 
   WysokoscT = ad->wysokosc;
 
@@ -3310,7 +3310,7 @@ int tekst_wybrany_exe(TEXT *ad0, BOOL to_printer)
 
   out_break = FALSE;
 
-  while ((zn != '\0') && (!out_break))
+  while ((*zn != '\0') && (!out_break))
   {
 	  x1 = jednostkiN(x01 - t_line_width);
 	  y1 = jednostkiN(y01 - t_line_width);
@@ -3327,10 +3327,10 @@ int tekst_wybrany_exe(TEXT *ad0, BOOL to_printer)
 	  if (prostokat_odcinek(x1, y1, x4, y4)) return 1;
 
 	  //next line if exists
-	  ptr_zn = strchr(zn, '\n');
+	  ptr_zn = strchr((char*)zn, '\n');
 	  if (ptr_zn != NULL)
 	  {
-		  zn = ptr_zn + 1;
+		  zn = (unsigned char *)(ptr_zn + 1);
 		  addl = Get_Text_Len(ad, (char*)zn, 1.0, 0, NULL, NULL, NULL, NULL);
 
 
@@ -3362,6 +3362,8 @@ int tekst_wybrany_exe(TEXT *ad0, BOOL to_printer)
 			  y01 = yt1;
 
 			  break;
+		  default:
+		      break;
 		  }
 		  ///////////////////
 	  }
@@ -3404,7 +3406,7 @@ int tekst_wybrany000(TEXT *ad0)
 		if ((strlen(ad0->text) == 0) && (ad0->typ > 2))
 		{
 			memmove(&ad1, ad0, sizeof(TEXT_NAG));
-			ad1.text[0] = 255;
+			ad1.text[0] = '\377'; //255;
 			ad1.text[1] = '\0';
 			ad = &ad1;
 		}
@@ -3415,7 +3417,7 @@ int tekst_wybrany000(TEXT *ad0)
 
 	zn = (unsigned char *)ad->text;
 
-	addl = Get_Text_Len(ad, zn, 1.0, 0, NULL, NULL, NULL, NULL);
+	addl = Get_Text_Len(ad, (char*)zn, 1.0, 0, NULL, NULL, NULL, NULL);
 
 	WysokoscT = ad->wysokosc;
 
@@ -3452,7 +3454,7 @@ int tekst_wybrany000(TEXT *ad0)
 
 	out_break = FALSE;
 
-	while ((zn != '\0') && (!out_break))
+	while ((*zn != '\0') && (!out_break))
 	{
 		x1 = jednostkiN(x01/*ad->x*/);
 		y1 = jednostkiN(y01/*ad->y*/);
@@ -3469,10 +3471,10 @@ int tekst_wybrany000(TEXT *ad0)
 		if (prostokat_odcinek(x1, y1, x4, y4)) return 1;
 
 		//next line if exists
-		ptr_zn = strchr(zn, '\n');
+		ptr_zn = strchr((char*)zn, '\n');
 		if (ptr_zn != NULL)
 		{
-			zn = ptr_zn + 1;
+			zn = (unsigned char*)(ptr_zn + 1);
 			addl = Get_Text_Len(ad, (char*)zn, 1.0, 0, NULL, NULL, NULL, NULL);
 
 			x001 += WysokoscT * ((float)(ad->spacing) / 10.0 + 1.0)*adsin; //SPACING
@@ -5003,7 +5005,7 @@ int Pcx_in_Rectangle (B_PCX *pcx, int dwc)
 	  return ((prostokat_odcinek(jednostkiN(xx_[0]), jednostkiN(yy_[0]), jednostkiN(xx_[1]), jednostkiN(yy_[1]))) ||
 		  (prostokat_odcinek(jednostkiN(xx_[1]), jednostkiN(yy_[1]), jednostkiN(xx_[2]), jednostkiN(yy_[2]))) ||
 		  (prostokat_odcinek(jednostkiN(xx_[2]), jednostkiN(yy_[2]), jednostkiN(xx_[3]), jednostkiN(yy_[3]))) ||
-		  (prostokat_odcinek(jednostkiN(xx_[3]), jednostkiN(yy_[3]), jednostkiN(xx_[4]), jednostkiN(yy_[4]))));
+		  (prostokat_odcinek(jednostkiN(xx_[3]), jednostkiN(yy_[3]), jednostkiN(xx_[0]), jednostkiN(yy_[0]))));
      }	  
 }
 
@@ -5049,35 +5051,35 @@ static int test_ellipse_sel (ELLIPSE *ad)
     double df_x, df_y;
     WIELOKAT w=S4def;
 
-    df_si = sin (ad->angle) ;
-    df_co = cos (ad->angle) ;
+    df_si = sinf (ad->angle) ;
+    df_co = cosf (ad->angle) ;
 
     df_x = ad->x + ad->rx ;
     df_y = ad->y + ad->ry ;
     Rotate_Point (df_si, df_co, ad->x, ad->y, df_x, df_y, &df_x, &df_y) ;
-    w.xy[0]=df_x; w.xy[1]=df_y;
+    w.xy[0]=(float)df_x; w.xy[1]=(float)df_y;
 
     df_x = ad->x + ad->rx ;
     df_y = ad->y - ad->ry ;
     Rotate_Point (df_si, df_co, ad->x, ad->y, df_x, df_y, &df_x, &df_y) ;
-    w.xy[2]=df_x; w.xy[3]=df_y;
+    w.xy[2]=(float)df_x; w.xy[3]=(float)df_y;
 
     df_x = ad->x - ad->rx ;
     df_y = ad->y - ad->ry ;
     Rotate_Point (df_si, df_co, ad->x, ad->y, df_x, df_y, &df_x, &df_y) ;
-    w.xy[4]=df_x; w.xy[5]=df_y;
+    w.xy[4]=(float)df_x; w.xy[5]=(float)df_y;
 
     df_x = ad->x - ad->rx ;
     df_y = ad->y + ad->ry ;
     Rotate_Point (df_si, df_co, ad->x, ad->y, df_x, df_y, &df_x, &df_y) ;
-    w.xy[6]=df_x; w.xy[7]=df_y;
+    w.xy[6]=(float)df_x; w.xy[7]=(float)df_y;
 
     if (ad->obiekt==Ofilledellipse)
     {
-        if (ad->widoczny=Point_in_Solid(&w, X, Y)) return 1;
+        if (ad->widoczny==Point_in_Solid(&w, X, Y)) return 1;
     }
 
-    if (ad->widoczny=wielokat_wybrany(&w)) return 1;
+    if (ad->widoczny==wielokat_wybrany(&w)) return 1;
 
     return 0;
 

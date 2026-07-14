@@ -981,7 +981,7 @@ int create_plate(BLOK *b, int style, int number, int body_no, int *first, int *l
     {
         if (el_no>0) return 1;
     }
-    else return 0;
+    return 0;
 }
 
 static char *add_block(double x, double y, char kod_obiektu, char *blok_type, BOOL hiding)
@@ -11635,7 +11635,7 @@ void Plate_analysis(void) {
             Rzmin_back = 0.0;
             Rzmax_back = 0.0;
 #ifndef NDEBUG
-            printf("\nALTERNATIVE\n", SLS_ULS);
+            printf("\nALTERNATIVE\n");
             printf("\nState %s\n", SLS_ULS);
 #endif
 
@@ -11777,7 +11777,7 @@ void Plate_analysis(void) {
             last_node = 0;
             Rzmin = 0.0;
 #ifndef NDEBUG
-            printf("\nALTERNATIVE\n", SLS_ULS);
+            printf("\nALTERNATIVE\n");
             printf("\nState %s\n", SLS_ULS);
             printf("\nMIN\n");
 #endif

@@ -21,6 +21,7 @@
 #include <time.h>
 #include <string.h>
 #include "forwin.h"
+#include "forlinux.h"
 #include "hpdf.h"
 #include "hpdf_utils.h"
 #include "hpdf_pdfa.h"
@@ -72,7 +73,7 @@ extern char *hpdf_error_detail[];
 extern size_t utf8_num_bytes(char * s);
 extern int fnsplit (const char *path, char *drive, char *dir, char *name, char *ext);
 extern int my_file_exists(char *name);
-extern char* strupr(char* s);
+////extern char* strupr(char* s);
 extern char *winfont;
 extern char *otffont;
 extern int findfile_recursive(char *folder,const char *filename, char *fullpath);

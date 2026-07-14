@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "AlfaCADUA"
+			"path" : "AlfaCADPL"
 		}
 	],
 	"backtrace" : 1,
@@ -12,6 +12,7 @@
 		[
 			"add_executable",
 			"target_link_libraries",
+			"target_compile_options",
 			"target_compile_definitions",
 			"add_compile_definitions",
 			"target_include_directories"
@@ -28,37 +29,37 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 544,
+				"line" : 554,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 13686,
+				"line" : 1626,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 1369,
+				"line" : 1586,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 262,
-				"parent" : 0
-			},
-			{
-				"command" : 3,
-				"file" : 0,
-				"line" : 263,
+				"line" : 1379,
 				"parent" : 0
 			},
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 849,
+				"line" : 275,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 859,
 				"parent" : 0
 			}
 		]
@@ -74,49 +75,53 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -std=c++17 -fdiagnostics-color=always"
+					"fragment" : "-g -std=c++17 -fdiagnostics-color=always"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-g"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "ALF_MAIN"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "BIT64"
 				},
 				{
 					"backtrace" : 4,
-					"define" : "ENGLISH"
-				},
-				{
-					"backtrace" : 3,
 					"define" : "LINUX"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 5,
+					"define" : "NOPYTHON"
+				},
+				{
+					"backtrace" : 4,
 					"define" : "QT_NO_DEBUG"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "QT_NO_EXCEPTIONS"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "QT_NO_VERSION_TAGGING"
 				},
 				{
-					"backtrace" : 5,
-					"define" : "UKRAINIAN"
-				},
-				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "_MBCS"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "alfpro"
 				}
 			],
@@ -328,49 +333,53 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-O0 -g -std=c17 -fdiagnostics-color=always"
+					"fragment" : "-g -std=c17 -fdiagnostics-color=always"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-O0"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "-g"
 				}
 			],
 			"defines" : 
 			[
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "ALF_MAIN"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "BIT64"
 				},
 				{
 					"backtrace" : 4,
-					"define" : "ENGLISH"
-				},
-				{
-					"backtrace" : 3,
 					"define" : "LINUX"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 5,
+					"define" : "NOPYTHON"
+				},
+				{
+					"backtrace" : 4,
 					"define" : "QT_NO_DEBUG"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "QT_NO_EXCEPTIONS"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "QT_NO_VERSION_TAGGING"
 				},
 				{
-					"backtrace" : 5,
-					"define" : "UKRAINIAN"
-				},
-				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "_MBCS"
 				},
 				{
-					"backtrace" : 3,
+					"backtrace" : 4,
 					"define" : "alfpro"
 				}
 			],
@@ -733,17 +742,18 @@
 				219,
 				220,
 				221,
-				222
+				222,
+				224
 			]
 		}
 	],
-	"id" : "AlfaCADUA::@6890427a1f51a3e7e1df",
+	"id" : "AlfaCADPL::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-O0 -g",
+				"fragment" : "-g",
 				"role" : "flags"
 			},
 			{
@@ -900,8 +910,8 @@
 			"fragment" : "/home/marek/CC2/Source/../../zlib/libz.a"
 		}
 	],
-	"name" : "AlfaCADUA",
-	"nameOnDisk" : "AlfaCADUA",
+	"name" : "AlfaCADPL",
+	"nameOnDisk" : "AlfaCADPL",
 	"paths" : 
 	{
 		"build" : ".",
@@ -1126,7 +1136,8 @@
 				219,
 				220,
 				221,
-				222
+				222,
+				224
 			]
 		},
 		{
@@ -1141,7 +1152,9 @@
 				206,
 				210,
 				213,
-				216
+				216,
+				223,
+				225
 			]
 		}
 	],
@@ -2475,6 +2488,22 @@
 			"compileGroupIndex" : 1,
 			"path" : "/home/marek/allegro5-4.4.3/addons/jpgalleg/src/io.c",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "icon_alfacad.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 1,
+			"path" : "alfatextdialogs.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "alfatextdialogs.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"

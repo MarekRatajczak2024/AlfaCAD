@@ -163,7 +163,7 @@ typedef
 
 static PLUK pl;
 
-static const void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed);
+static void near pSER(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed);
 static void redcr(char ) ;
 int PLine_Arc_Command_Proc (int ev_nr, BLOK *blk_adr) ;
 static BOOL set_arc_continue_param (void) ;
@@ -179,7 +179,9 @@ static TMENU mPLukmSlab={17, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COM
 
 static TMENU mPLukmObrys={14, 0, 0, 30, 56, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmPLukmObrys,NULL,NULL};
 
+#ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
 
 //typedef enum { XY_PLANE, XZ_PLANE, YZ_PLANE} PlaneType;
 
@@ -1020,10 +1022,10 @@ static int type_arc (int ev_nr)
 
 /*-----------------------------------------------------------------------*/
 
-static const void near (*poczatekl[8])(double , double );
-static const void near (*parl[8])(PLUK *pl,LUK *l,double x, double y, double ws, BOOL b_edit, BOOL *reversed);
+static void near (*poczatekl[8])(double , double );
+static void near (*parl[8])(PLUK *pl,LUK *l,double x, double y, double ws, BOOL b_edit, BOOL *reversed);
 
-static const void near out_parametry_luku1(int ns)
+static void near out_parametry_luku1(int ns)
 {
   double xx, xxx;
   double angle_l;
@@ -1547,7 +1549,7 @@ static int el_r (BOOL b_graph_value)
 }
 
 
-static const void near SER(double X0, double Y0)  /*poczatek koniec promien*/
+static void near SER(double X0, double Y0)  /*poczatek koniec promien*/
 {
   int np;
 
@@ -1571,7 +1573,7 @@ static const void near SER(double X0, double Y0)  /*poczatek koniec promien*/
   usunstr(np);
 }
 
-static const void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
+static void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
 {
     int np;
 
@@ -1596,7 +1598,7 @@ static const void near tSER(double X0, double Y0)  /*poczatek koniec promien*/
 }
 /*---------------*/
 
-static const void near pSER(PLUK *pl_,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSER(PLUK *pl_,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 {
   double x0,y0,x,y,xr,yr,xe,ye,xs,ys,r,dl;
   double a1,a2,si,co;
@@ -1659,7 +1661,7 @@ static int el_a(BOOL b_graph_value)
 }
 
 
-static const void near SEA(double X0, double Y0)  /*poczatek koniec kat*/
+static void near SEA(double X0, double Y0)  /*poczatek koniec kat*/
 {
   int np;
 
@@ -1681,7 +1683,7 @@ static const void near SEA(double X0, double Y0)  /*poczatek koniec kat*/
   usunstr(np);
 }
 
-static const void near tSEA(double X0, double Y0)  /*poczatek koniec kat*/
+static void near tSEA(double X0, double Y0)  /*poczatek koniec kat*/
 {
     int np;
 
@@ -1704,7 +1706,7 @@ static const void near tSEA(double X0, double Y0)  /*poczatek koniec kat*/
 }
 /*---------------*/
 
-static const void near pSEA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSEA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 { double x0,y0,xr,yr,xe,ye,xs,ys,dl,t;
   double a1,a2,si,co;
   double dkat;
@@ -1873,7 +1875,7 @@ static int el_d(BOOL b_graph_value)
   return 1;
 }
 
-static const void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
+static void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
 {
   int np;
   BOOL reversed=Get_reversed();
@@ -1905,7 +1907,7 @@ static const void near SED(double X0, double Y0)  /*poczatek koniec kierunek*/
   usunstr(np);
 }
 
-static const void near tSED(double X0, double Y0)  /*poczatek koniec kierunek*/
+static void near tSED(double X0, double Y0)  /*poczatek koniec kierunek*/
 {
     int np;
 
@@ -1928,7 +1930,7 @@ static const void near tSED(double X0, double Y0)  /*poczatek koniec kierunek*/
 }
 /*---------------*/
 
-static const void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 {
   double x0,y0,x,y,xr,yr,xe,ye,xs,ys,dl ;
   double a1,a2,si,co;
@@ -2053,7 +2055,7 @@ static const void near pSED(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b
 
 /*-----------------------------------------------------------------------*/
 
-static const void near P3(double X0, double Y0)  /*trzy punkty*/
+static void near P3(double X0, double Y0)  /*trzy punkty*/
 {
 
   pl.x2 = X0; pl.y2 = Y0;
@@ -2068,22 +2070,22 @@ static const void near P3(double X0, double Y0)  /*trzy punkty*/
 }
 /*---------------*/
 
-static const void near tP3(double X0, double Y0)  /*trzy punkty*/
+static void near tP3(double X0, double Y0)  /*three points*/
 {
 
     pl.x2 = X0; pl.y2 = Y0;
     out_krz(pl.x2,pl.y2);
     if(fabs(pl.x2-pl.xs)<OZero && fabs(pl.y2-pl.ys)<OZero) return;
-    L.x1=pl.xs;
-    L.y1=pl.ys;
-    L.x2=pl.xs;
-    L.y2=pl.ys;
+    L.x1=(float)pl.xs;
+    L.y1=(float)pl.ys;
+    L.x2=(float)pl.xs;
+    L.y2=(float)pl.ys;
     kom(ns_arc,'-',r6,1);
     tGetwsp1();
 }
 /*---------------*/
 
-static const void near pP3(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pP3(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 { double x0,y0,x,y,xe,ye,xs,ys,dl,si,co,xp,yp,ss;
   double a1,a2;
 
@@ -2208,7 +2210,7 @@ int get_arc_points(LUK *l, double *xy, int n0, BOOL reversed, BOOL printer) {
 
 /*-----------------------------------------------------------------------*/
 
-static const void near SCE(double X0, double Y0)  /* poczatek srodek koniec */
+static void near SCE(double X0, double Y0)  /* poczatek srodek koniec */
 {
 
   LukG.x=X0; LukG.y=Y0;
@@ -2224,7 +2226,7 @@ static const void near SCE(double X0, double Y0)  /* poczatek srodek koniec */
   Getwsp1();
 }
 
-static const void near tSCE(double X0, double Y0)  /* poczatek srodek koniec */
+static void near tSCE(double X0, double Y0)  /* poczatek srodek koniec */
 {
 
     LukG.x=X0; LukG.y=Y0;
@@ -2241,7 +2243,7 @@ static const void near tSCE(double X0, double Y0)  /* poczatek srodek koniec */
 }
 /*---------------*/
 
-static const void near pSCE(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSCE(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 { double xe,ye,xs,ys,dl;
   double a1,a2,si,co;
 
@@ -2293,7 +2295,7 @@ static int el_ac(BOOL b_graph_value)
   return 1;
 }
 
-static const void near SCA(double X0, double Y0)  /*poczatek srodek kat*/
+static void near SCA(double X0, double Y0)  /*poczatek srodek kat*/
 {
   int np;
 
@@ -2317,7 +2319,7 @@ static const void near SCA(double X0, double Y0)  /*poczatek srodek kat*/
   usunstr(np);
 }
 
-static const void near tSCA(double X0, double Y0)  /*poczatek srodek kat*/
+static void near tSCA(double X0, double Y0)  /*poczatek srodek kat*/
 {
     int np;
 
@@ -2342,7 +2344,7 @@ static const void near tSCA(double X0, double Y0)  /*poczatek srodek kat*/
 }
 /*---------------*/
 
-static const void near pSCA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSCA(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 { double xs, ys;
   double a1,a2;
   double dkat;
@@ -2482,7 +2484,7 @@ static int el_ra(BOOL b_graph_value)
     }
 }
 
-static const void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
+static void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
 {
   int np;
 
@@ -2506,7 +2508,7 @@ static const void near SCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
   usunstr(np);
 }
 
-static const void near tSCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
+static void near tSCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*/
 {
     int np;
 
@@ -2531,7 +2533,7 @@ static const void near tSCL(double X0, double Y0)  /*poczatek srodek dl cieciwy*
 }
 /*---------------*/
 
-static const void near pSCL(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
+static void near pSCL(PLUK *pl,LUK *l,double X, double Y,double ws, BOOL b_edit, BOOL *reversed)
 { double xe,ye,xs,ys,dl0;
   double a1,a2,si,co;
   L.x2=X; L.y2=Y;
@@ -2748,7 +2750,7 @@ static void near tCon_arc (double X0, double Y0)
     //usunstr(np);
 }
 
-static const void near Con (double X0, double Y0)
+static void near Con (double X0, double Y0)
 /*-----------------------------------------*/
 {
   if (TRUE == b__pline)
@@ -2761,7 +2763,7 @@ static const void near Con (double X0, double Y0)
   }
 }
 
-static const void near tCon (double X0, double Y0)
+static void near tCon (double X0, double Y0)
 /*----------------------------------------------*/
 {
     if (TRUE == b__pline)
@@ -2778,7 +2780,7 @@ static const void near tCon (double X0, double Y0)
 /*---------------*/
 
 
-static const void near pCon (PLUK *pl,LUK *l,double par1, double par2, double ws, BOOL b_edit, BOOL *reversed)
+static void near pCon (PLUK *pl,LUK *l,double par1, double par2, double ws, BOOL b_edit, BOOL *reversed)
 /*---------------------------------------------------------------------------------------------------*/
 {
     double r, a;
@@ -2848,13 +2850,13 @@ static const void near pCon (PLUK *pl,LUK *l,double par1, double par2, double ws
 
 /*-----------------------------------------------------------------------*/
 
-static const void near (*poczatekl[8])(double, double)=
+static void near (*poczatekl[8])(double, double)=
 	      {P3,SCE,SCA,SCL,SER,SEA,SED,Con};
 
-static const void near (*poczatekt[8])(double, double)=
+static void near (*poczatekt[8])(double, double)=
         {tP3,tSCE,tSCA,tSCL,tSER,tSEA,tSED,tCon};
 
-static const void near (*parl[8])(PLUK *pl,LUK *l,double x, double y,double ws, BOOL b_edit, BOOL *reversed)=
+static void near (*parl[8])(PLUK *pl,LUK *l,double x, double y,double ws, BOOL b_edit, BOOL *reversed)=
 	      {pP3,pSCE,pSCA,pSCL,pSER,pSEA,pSED,pCon};
 
 /*-----------------------------------------------------------------------*/
@@ -2906,7 +2908,7 @@ static void get_param_end_ob (void   *ptr_object,
   ptrs_arc = (LUK*)ptr_object ;
   *df_xend = X ; 	/*dla koniecL_, koniecl_ */
   *df_yend = Y ;
-  if ((((NAGLOWEK*)ptr_object)->obiekt == Olinia))
+  if (((NAGLOWEK*)ptr_object)->obiekt == Olinia)
   {
     koniecL_ (df_xend, df_yend, ptr_object) ;
     x1 = ptrs_line->x1 ;
@@ -2915,8 +2917,8 @@ static void get_param_end_ob (void   *ptr_object,
   else
   {
     koniecl_ (df_xend, df_yend, ptr_object) ;
-    x1 = ptrs_arc->x + ptrs_arc->r * cos (ptrs_arc->kat1) ;
-    y1 = ptrs_arc->y + ptrs_arc->r * sin (ptrs_arc->kat1) ;
+    x1 = ptrs_arc->x + ptrs_arc->r * cosf (ptrs_arc->kat1) ;
+    y1 = ptrs_arc->y + ptrs_arc->r * sinf (ptrs_arc->kat1) ;
   }
   *b_first_end = FALSE ;
   if (TRUE == Check_if_Equal (x1, *df_xend) &&

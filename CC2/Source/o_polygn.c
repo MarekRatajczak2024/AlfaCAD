@@ -572,7 +572,7 @@ void Polygon1 (void)
   {
     menupini (&mPolygon, _POLYGON_, _POLYGON_C_, 17) ;
     if (-1 != (np = dodajstr(&eO)) &&
-	(EOF != sprintf (eO.st, "%#6d", s_polygon.n)) )
+	(EOF != sprintf (eO.st, "%6d", s_polygon.n)) )
     {
       Out_Edited_Draw_Param ((ESTR *)&eO, TRUE) ;
     }

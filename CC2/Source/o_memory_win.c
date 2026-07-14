@@ -45,6 +45,7 @@ typedef struct _MEMORYSTATUS1 {
 	SIZE_T dwAvailVirtual;
 } MEMORYSTATUS1, *LPMEMORYSTATUS1;
 
+/*
 unsigned long_long Get_Free_Physical_Memory(void)
 { MEMORYSTATUS1 stat;
   double dwTotalPhys;
@@ -56,6 +57,23 @@ unsigned long_long Get_Free_Physical_Memory(void)
   //intTotalPhys=(unsigned long)stat.dwAvailVirtual;
   intTotalPhys = (unsigned long_long)stat.dwAvailPhys;
   return intTotalPhys;
+}
+*/
+
+unsigned long long Get_Free_Physical_Memory(void)
+{
+	MEMORYSTATUSEX stat;
+	unsigned long long intTotalPhys = 0;
+
+	// This initialization tells the API exactly which structure layout size to write into
+	stat.dwLength = sizeof(MEMORYSTATUSEX);
+
+	// This block is completely safe on 32-bit and 64-bit architectures
+	if (GlobalMemoryStatusEx(&stat)) {
+		intTotalPhys = (unsigned long long)stat.ullAvailPhys;
+	}
+
+	return intTotalPhys;
 }
 
 unsigned long_long Get_Free_Virtual_Memory(void)

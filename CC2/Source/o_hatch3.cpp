@@ -303,7 +303,7 @@ static double atan2_my  (double y, double x)
 {
   if (fabs(y) < 1.0E-10 && fabs (x) < 1.0E-10)
   {
-   Internal_Error (__LINE__,(char*)__FILE__) ;
+   Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;
    return 0 ;
   }
   return atan2 (y, x) ;
@@ -1419,7 +1419,7 @@ hatch_ver_reg__ (T_PTR_Hatch_Param 	ptrs_hatch_param,
 	if (interrupted()) return FALSE;
   }
 
-  Internal_Error (__LINE__,(char*)__FILE__) ;
+  Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;
 
   return FALSE ;  //TO REMOVE ALREADY GENERATED PART OF HATCH
   //return TRUE ;  //TO CORRECT
@@ -1480,7 +1480,7 @@ hatch_ver_reg (T_PTR_Hatch_Param 	ptrs_hatch_param,
         if (interrupted()) return FALSE;
     }
 
-    //Internal_Error (__LINE__,__FILE__) ;  //WARNING, TEMPORARY ALLOWED
+    //Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;  //WARNING, TEMPORARY ALLOWED
     //return FALSE ;  // -//-
     return TRUE ;
 }
@@ -2574,7 +2574,7 @@ hatch_ver_stalg (T_PTR_Hatch_Param 	ptrs_hatch_param,
 	if (interrupted()) return FALSE;
   }
 
-  //Internal_Error (__LINE__,__FILE__) ;   //WARNING, TEMPORARY ALLOWED
+  //Internal_Error (__LINE__,const_cast<char*>(__FILE__)) ;   //WARNING, TEMPORARY ALLOWED
   //return FALSE ;   //TO REMOVE ALREADY GENERATED PART OF HATCH  //  -//-
   return TRUE ;  //TO CORRECT
 
@@ -3450,7 +3450,7 @@ BOOL Make_Hatch (T_PTR_Hatch_Param ptrs_hatch_param0,
         pole_hatch_add = j;
         if (i__trapsno != 0) {
             if (!glb_silent) {
-                Internal_Error(__LINE__, (char*)__FILE__);
+                Internal_Error(__LINE__, const_cast<char*>(__FILE__));
                 key = Get_Legal_Key((char*)"\033\015");
                 komunikat(0);
             }

@@ -210,24 +210,24 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
     switch (plug_function) {
         case REDRAW:
             redraw();
-            return (int*)1;
+            return (void *)(intptr_t)1;
             break;
         case GETLANGUAGE:
-            return (int*)getlanguage();
+            return (void *)(intptr_t)getlanguage();
             break;
         case GETWSP1:
-            return (int*)getwsp1(param1);
+            return (void *)(intptr_t)getwsp1(param1);
             break;
         case NOTICE:
-            komunikat((int)param1);
+            komunikat((int)(intptr_t)param1);
             return 0;
             break;
         case NOTICE_STR:
-            komunikat_str((char*)param1);
+            komunikat_str(param1);
             return 0;
             break;
         case NOTICE0:
-            komunikat0((int)param1);
+            komunikat0((int)(intptr_t)param1);
             return 0;
             break;
         case NOTICE0_STR:
@@ -236,7 +236,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case NOTICE_STR_SHORT:
-            komunikat_str_short((char*)param1, TRUE, FALSE);
+            komunikat_str_short(param1, TRUE, FALSE);
             return 0;
             break;
         case GET_LINE_G:
@@ -251,7 +251,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case PLINEW:
-            PlineW1 ((char*)param1);
+            PlineW1 (param1);
             return 0;
             break;
         case SET_PLINE_PARAM:
@@ -262,16 +262,16 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return dane;
             break;
         case GET_DATA_SIZE:
-            return (void*)dane_size;
+            return (void*)(uintptr_t)dane_size;
             break;
         case ADD_BLOCK:
-            return (BOOL*)add_block_();
+            return (void *)(intptr_t)add_block_();
             break;
         case ADD_TRACE:
-            return (BOOL*)add_trace_();
+            return (void *)(intptr_t)add_trace_();
             break;
         case GET_START_PLINE:
-            return (BOOL*)get_start_pline_(param1, param2);
+            return (void *)(intptr_t)get_start_pline_(param1, param2);
             break;
         case ERASE_PLINE:
             erase_pline_();
@@ -285,7 +285,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p2=*p2_;
             //return (int*)Pline_Line(p1, p2, (BLOK**)dane);
             ret_i=Pline_Line(p1, p2, (BLOK**)&dane, 0);
-            return (int*)ret_i;
+            return (void *)(intptr_t)ret_i;
         }
         break;
         case PLINE_ARC:
@@ -296,11 +296,11 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             p2=*p2_;
             //return (int*)Pline_Arc((double)p1, (double)p2, dane);
             ret_i=Pline_Arc(p1, p2, (BLOK**)&dane, 0);
-            return (int*)ret_i;
+            return (void *)(intptr_t)ret_i;
         }
         break;
         case DIMENSIONING_POLYLINE:
-            Wymiarowanie_polilinii1((char*)param1, (int)param2);
+            Wymiarowanie_polilinii1(param1, (int)(intptr_t)param2);
             return 0;
             break;
         case GROUP_BLOCK_WITH_TYPE:
@@ -323,20 +323,20 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return &Current_Layer;
             break;
         case CHECK_IF_EQUAL:
-            return (BOOL *)Check_if_Equal(*(double*)param1, *(double*)param2);
+            return (void *)(intptr_t)Check_if_Equal(*(double*)param1, *(double*)param2);
             break;
         case ADD_OBJECT:
             return dodaj_obiekt(param1, param2);
             break;
         case DRAW_OBJECT:
-            rysuj_obiekt((char*)param1, (int)param2, (int)param3);
+            rysuj_obiekt(param1, (int)(intptr_t)param2, (int)(intptr_t)param3);
             return 0;
             break;
         case DRAW_BLOCK:
-            blokzap((char*)param1, (char*)param2, (int)param3, COPY_PUT, 1);
+            blokzap(param1, param2, (int)(intptr_t)param3, COPY_PUT, 1);
             return 0;
         case FILLET_LINE_TO_LINE:
-            return (char*)fillet_line_to_line(*(double *) param1, (LINIA *) param2, (LINIA *) param3, FALSE);
+            return fillet_line_to_line(*(double *) param1, param2, param3, FALSE);
             break;
         case GETMENUP:
             getmenupini ((TMENU**)&((MENUPSTRUCT *)param1)->menu, (char*)&((MENUPSTRUCT *)param1)->st, (unsigned short*)&((MENUPSTRUCT *)param1)->cod, (int*)&((MENUPSTRUCT *)param1)->iconno);
@@ -347,26 +347,26 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case LOAD_CLIENT_BITMAP:
-            return (int*)load_client_bitmap(param1);
+            return (void *)(intptr_t)load_client_bitmap(param1);
             break;
         case DELETE_CLIENT_BITMAP:
-            return (int*)delete_client_bitmap(*(int*)param1);
+            return (void *)(intptr_t)delete_client_bitmap(*(int*)param1);
             break;
         case INVOKE_CUSTOM_COMND:
-            return (int*)invoke_custom_comnd((void*)param1);
+            return (void *)(intptr_t)invoke_custom_comnd(param1);
             break;
         case REJECT_CUSTOM_COMND:
-            return (int*)reject_custom_comnd();
+            return (void *)(intptr_t)reject_custom_comnd();
             break;
         case GET_STRING_STR:
-            return (int*)get_string_str ((char*)param1, (char*)param2, MaxTextLen, 0, (char*)param3);
+            return (void *)(intptr_t)get_string_str (param1, param2, MaxTextLen, 0, param3);
             break;
         case DF_TO_STRING:
-            DF_to_String ((char *)param1, (char *)param2, *(double *)param3, 16);
+            DF_to_String (param1, param2, *(double *)param3, 16);
             return 0;
             break;
         case CALCULATOR:
-            return (int*)calculator ((char *)param1, (int *)param2, (double*) param3);
+            return (void *)(intptr_t)calculator (param1, param2, param3);
             break;
         case REMOVE_SHORT_NOTICE:
             remove_short_notice();
@@ -375,7 +375,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             unsigned int typ;
             typ=*(unsigned int*)param1;
             typ=typ<<8;
-            return Get_Object(typ, (char *) param2);
+            return Get_Object(typ, param2);
         }
             break;
         case SELECT_SINGLE_OBJECT: {
@@ -383,7 +383,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             int sel_akt; 
             char *ret;
             typ=*(unsigned int*)param1;
-            strcpy(global_kom, (char *) param2);
+            strcpy(global_kom, param2);
             sel_akt=sel.akt;
             sel.akt=1;
             ret=select_n(&typ, NULL, 255);
@@ -392,18 +392,18 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
         }
             break;
         case FIRSTBLOCK:
-            return FIRSTB((char*)param1);
+            return FIRSTB(param1);
             break;
         case SET_PTR__GTMPBLOCK:
-            Set_PTR__GTMPBLOCK((char*)param1);
+            Set_PTR__GTMPBLOCK(param1);
             return 0;
             break;
         case SET_PTR__GTMPFIRST:
-            Set_PTR__GTMPFIRST((char*)param1);
+            Set_PTR__GTMPFIRST(param1);
             return 0;
             break;
         case SET_PTR__GTMPLAST:
-            Set_PTR__GTMPLAST((char*)param1);
+            Set_PTR__GTMPLAST(param1);
             return 0;
             break;
         case GET_PTR__GTMPBLOCK:
@@ -416,10 +416,10 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return Get_PTR__GTMPLAST();
             break;
         case MENU_PAR_NEW:
-            menu_par_new((char*)param1, (char*)param2);
+            menu_par_new(param1, param2);
             return 0;
         case UTF8LEN:
-            return (int*) utf8len((char*)param1);
+            return (void *)(intptr_t)utf8len(param1);
             break;
         case ADD_EDIT_DOUBLE_STR:
             {
@@ -434,10 +434,10 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
                 if (-1 != (npCustom = dodajstr(&eCustom)) && (EOF != sprintf(eCustom.st, "%10.8lg", *(double *) param2)))
                 {
                     eCustom.val_no = 1;
-                Out_Edited_Draw_Param ((ESTR *)&eCustom, TRUE) ;
-                return (int*)npCustom;
+                Out_Edited_Draw_Param (&eCustom, TRUE) ;
+                return (void *)(intptr_t)npCustom;
                 }
-                else return (int*)-1;
+                else return (void *)(intptr_t)-1;
             }
             break;
         case ADD_EDIT_DOUBLE_DOUBLE_STR:
@@ -456,11 +456,11 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
                     Out_Edited_Draw_Param ((ESTR *)&eCustom, TRUE) ;
                     return &npCustom;
                 }
-                else return (int*)-1;
+                else return (void *)(intptr_t)-1;
             }
             break;
         case OUT_EDIT_STR:
-             Out_Edited_Draw_Param ((ESTR *)&eCustom, TRUE) ;
+             Out_Edited_Draw_Param (&eCustom, TRUE) ;
              return 0;
              break;
         case UPDATE_EDIT_STR: {
@@ -474,7 +474,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
                     eCustom.values[1] = *(double *) param2;
                     sprintf(eCustom.st, "%#12.9lg;%#8.3lf", *(double *) param1, *(double *) param2);
                 }
-                Out_Edited_Draw_Param((ESTR *) &eCustom, TRUE);
+                Out_Edited_Draw_Param(&eCustom, TRUE);
             }
             return 0;
         }
@@ -484,20 +484,20 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case ADD_EDIT_VAL_NO:
-            return (int*)eCustom.val_no;
+            return (void *)(intptr_t)eCustom.val_no;
             break;
         case ADD_EDIT_DOUBLE_VALUES:
             {
-                p1=eCustom.values[(int) param1];
+                p1=eCustom.values[(int)(intptr_t)param1];
                 return &p1;
             }
             break;
         case ERRLIST:
-            ErrList ((int)param1);
+            ErrList ((int)(intptr_t)param1);
             return 0;
             break;
         case ERRLISTSTR:
-            ErrListStr ((char*)param1);
+            ErrListStr (param1);
             return 0;
             break;
         case MM2UNITS:
@@ -507,10 +507,10 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return &p2;
             break;
         case CORRECT_OBJECT:
-            return (char*)korekta_obiekt((char*)param1, (char*)param2);
+            return (char*)korekta_obiekt(param1, param2);
             break;
         case DRAWBLOCK:
-            blokzap((char *)param1, (char*)param1 + ((NAGLOWEK *)param1)->n, Anormalny, COPY_PUT, (int)param2) ;
+            blokzap(param1, (char*)param1 + ((NAGLOWEK *)param1)->n, Anormalny, COPY_PUT, (int)(intptr_t)param2) ;
             return 0;
             break;
         case FLIPSCREEN:
@@ -529,7 +529,7 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case LINEPARAMETERS:
-            parametry_lini ((LINIA *)param1, (PLINIA *)param2) ;
+            parametry_lini (param1, param2) ;
             return 0;
             break;
         case SET_LCSANGLE:
@@ -559,38 +559,38 @@ void *plugin_functions(int plug_function, void *param1, void *param2, void *para
             return 0;
             break;
         case RESET_ATTRIBUTES:
-            zmien_atrybut((char*)param1,(char*)param2,Ablok,Anormalny);
+            zmien_atrybut(param1,param2,Ablok,Anormalny);
             return 0;
             break;
         case BLOKZAP0:
-            blokzap((char*)param1,(char*)param2, *(int*)param3, COPY_PUT, 0);
+            blokzap(param1,param2, *(int*)param3, COPY_PUT, 0);
             return 0;
             break;
         case BLOKZAP1:
-            blokzap((char*)param1,(char*)param2, *(int*)param3, COPY_PUT, 1);
+            blokzap(param1,param2, *(int*)param3, COPY_PUT, 1);
             return 0;
             break;
         case GET_POSXY:
-            get_posXY((double *)param1, (double *)param2);
+            get_posXY(param1, param2);
             return 0;
             break;
         case ADREM_BLOK1:
-            adrem_blok1 ((BLOK *)param1, *(int*)param2);
+            adrem_blok1 (param1, *(int*)param2);
             return 0;
             break;
         case PLACE_BLOCK:
             //return (int*)move_block_or_forget((char*)param1,(char*)param2);
-            Place_Import_Block(5, (char *)param1);
+            Place_Import_Block(5, param1);
             return 0;
             break;
         case DELETE_BLOCK:
-            zmien_atrybut((char*)param1,(char*)param2,Ablok,Ausuniety);
-            usun_blok((char*)param1,(char*)param2);
+            zmien_atrybut(param1,param2,Ablok,Ausuniety);
+            usun_blok(param1,param2);
             return 0;
             break;
         case LUK_W_IN_BLOCK:
             WymInterF(1);
-            return luk_w_in_block((char*)param1, *(int*)param2);
+            return luk_w_in_block(param1, *(int*)param2);
             //return 0;
             break;
         case GET_DIM_ROUND_TEXT:
@@ -650,7 +650,7 @@ int alfaplugins(void)
 
     printf("Alfa Plugins (%zu):\n", len);
     for (i=0; i<len; i++) {
-        name = list_str_get(plugs_parts->plugs, i);
+        name = (char*)list_str_get(plugs_parts->plugs, i);
         icon=plugs_parts->icons[i];
         printf("PLUGIN: %s   %s\n", name, part_name[plugs_parts->parts[i]]);
         switch (plugs_parts->parts[i])

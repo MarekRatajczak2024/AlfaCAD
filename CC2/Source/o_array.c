@@ -582,7 +582,7 @@ void  set_items_no (void)
   }
   s_array_polar.items_no = (int)buf_ret [0] ;
   ret = snprintf(sk, 10, "%d",s_array_polar.items_no);
-  sprintf (e_items_no.st, "%#6d", s_array_polar.items_no) ;
+  sprintf (e_items_no.st, "%6d", s_array_polar.items_no) ;
   Out_Edited_Draw_Param ((ESTR *)&e_items_no, TRUE) ;
   menu_par_new ((*mArray_polar.pola)[0].txt, sk) ;
   menu_par_new((*mArray_polar_rot.pola)[0].txt, sk);
@@ -808,7 +808,7 @@ static void redcrAPP (int type, BOOL b_rot)
       e_items_no.val_no_max = 1 ;
       if (-1 != (np_items_no = dodajstr(&e_items_no)))
       {
-          sprintf (e_items_no.st, "%#6d", s_array_polar.items_no) ;
+          sprintf (e_items_no.st, "%6d", s_array_polar.items_no) ;
       }
 
       CUR_ON (X, Y) ;

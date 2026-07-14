@@ -553,9 +553,9 @@ int Get_Key (void)
    return ret;
 }
 
-
-int Get_Legal_Key (char *legal)
-/*-----------------------------*/
+/*
+int Get_Legal_Key_older (char *legal)
+//-----------------------------------
 {
     int retval;
     int length;
@@ -578,7 +578,7 @@ int Get_Legal_Key (char *legal)
     }
     wc_legal_ptr=(char*)wc_legal_32;
 #else
-    wc_legal_ptr=wc_legal;
+    wc_legal_ptr=(char*)wc_legal;
 #endif
 
     while (1)
@@ -591,6 +591,50 @@ int Get_Legal_Key (char *legal)
     }
     return retval;
 }
+*/
+
+int Get_Legal_Key (char *legal)
+{
+	int retval;
+	int length;
+
+	// Change this to wchar_t* so it natively matches wcschr
+	wchar_t *wc_legal_ptr;
+	int i;
+
+#ifndef LINUX
+	wchar_t wc_legal[64];
+#else
+	unsigned short wc_legal[64];
+	wchar_t wc_legal_32[64];
+#endif
+
+	length = utf82unicode((unsigned char*)legal, (unsigned char*)wc_legal);
+
+#ifdef LINUX
+	for (i=0; i<6; i++)
+	{
+		wc_legal_32[i] = (wchar_t)wc_legal[i];
+	}
+	// No warning: wchar_t_32 matches wchar_t*
+	wc_legal_ptr = wc_legal_32;
+#else
+	// No warning: wc_legal matches wchar_t* natively on Windows
+	wc_legal_ptr = wc_legal;
+#endif
+
+	while (1)
+	{
+		retval = Get_Key ();
+		// No casting needed here anymore!
+		if (wcschr (wc_legal_ptr, retval) != NULL)
+		{
+			break;
+		}
+	}
+	return retval;
+}
+
 
 
 int getkey(void)
@@ -1983,7 +2027,8 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
   int len, wlen, max_len, m_len;
   int inkk, paperk;
   int text_len_pxl;
-  int width_w, width_pxl, width_pxl_a;
+  int width_w;
+  int width_pxl, width_pxl_a;
   int fpos=0, pos1=-1, pos2=-1;
 
   if (width == 0)
@@ -1997,6 +2042,7 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
   text_len_pxl = TTF_text_len(s);
   width_pxl = width * ttf_width_w; // width_w;
   width_pxl_a = (int)(width) * ttf_width_w;
+	width_w = (int)ttf_width_w;
 
   wlen = utf8len(s);
   if (text_len_pxl > 0)  width = (int)(((float)width_pxl / ((float)text_len_pxl / wlen)) /*+ 0.5*/);
@@ -2027,7 +2073,6 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
 
   outtext_r_e (x/*+DXIL*/, y, m_len, width_pxl_a, s, FALSE, FALSE, fpos, pos1, pos2, 2);  //2 is y_4_
 
-
   if (b_add == TRUE) put_add_char (x, y, 0, len, width, width, width_w, wlen, width_pxl, width_pxl, 0, 4, 4);
   if (paper != COLOR_DEF)
   {
@@ -2039,10 +2084,9 @@ void outetextxy (int x, int y, int maxlength, int width, char *s,
   }
 }
 
-
-void outetextxy_s(int x, int y, int maxlength, int width, char *s,
-	int ink, int paper)
-	/*-----------------------------------------------------------------*/
+/*
+void outetextxy_s(int x, int y, int maxlength, int width, char *s, int ink, int paper)
+//------------------------------------------------------------------------------------
 {
 	BOOL b_add;
 	int len;
@@ -2050,9 +2094,6 @@ void outetextxy_s(int x, int y, int maxlength, int width, char *s,
     int fpos=0, pos1=-1, pos2=-1;
 
     int width_pxl_a = (int)(width) * ttf_width_w;
-
-	if (s < 255)
-		return;
 
 	b_add = FALSE;
 
@@ -2096,3 +2137,4 @@ void outetextxy_s(int x, int y, int maxlength, int width, char *s,
 		kolory.inkk = inkk;
 	}
 }
+*/

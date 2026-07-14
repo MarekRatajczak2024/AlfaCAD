@@ -33,6 +33,8 @@
 #include "o_osnap.h"
 #include "alffont.h"
 
+#define BLSIZE 5000000
+
 extern float pikseleX0f(float jednostki);
 extern float pikseleY0f(float jednostki);
 
@@ -63,7 +65,7 @@ long_long l_tokoff ;
 
 #define MAXBLOCK 655360000L ;
 
-#define LMAX  4294967295 // for 32bit  // 65535L for 16 bit
+#define LMAX  4294967295 // for 32bit
 
 char *get_dane0(void)
 {
@@ -85,66 +87,9 @@ char *get_dane0all(void)
     return dane0all;
 }
 
-void movmem_(void* src, void* dest, long nbyte)  //??? long  or long_long
+void movmem_(void* src, void* dest, long nbyte)
 {
-
-    ////if (nbyte>100000000)  //TEMPORARY, just for tests
-    ////    return;
 	memmove(dest, src, nbyte);
-}
-
-void movmem____(void *src,void * dest,long nbyte)
-{
- long l = LMAX  ;
- long i,k,k1;
- char  *buf1,  *buf2;
- int a;
-
- if (src == NULL || dest == NULL)
- {
-   Internal_Error (__LINE__,__FILE__);
-   return;
- }
-
- 
- if (nbyte<0)
- {
-     a=0;
-	 return;
- }
- if (nbyte>9999999)
- {
-    a=0;
- }
- if (nbyte>1000000)
- {
-     int possible_error=1;
- }
- 
- k=nbyte / l;
- k1=nbyte - k * l;
- buf1=src;
- buf2=dest;
-
- if ( buf1 < buf2 )
-  {
-    buf1 += nbyte; buf2 += nbyte;
-    for(i=0;i<k;i++)
-    {
-      buf1 -= l; buf2 -= l;
-      memmove((void*)buf2,(void*)buf1,(unsigned)l);
-    }
-   buf1 -= k1; buf2 -= k1;
-   memmove((void*)buf2,(void*)buf1,(unsigned)k1);
-  }
- else
-  {
-    for(i=0;i<k;i++)
-     { memmove((void*)buf2,(void*)buf1,(unsigned)l);
-       buf1+=l; buf2+=l;
-     }
-    memmove((void*)buf2,(void*)buf1,(unsigned)k1);
-  }
 }
 
 static BOOL test_global_ptr (char  *ptrh_test,
@@ -584,7 +529,7 @@ char* Add_Block_Object_Ex(BLOK** ptrptr_adb, void* ad, long l_move)
 	if (!SetBufferDaneSize(ll)) { ErrList(18); return NULL; }
 
 	BOOL shift_ad;
-	if ((ad >= dane) && (ad <= (dane + dane_size))) shift_ad = TRUE;
+	if (((char*)ad >= dane) && ((char*)ad <= (dane + dane_size))) shift_ad = TRUE;
 	else shift_ad = FALSE;
 
     del_dane0=dane0-dane00;
@@ -653,7 +598,7 @@ char *Add_Block_Object_Insert (BLOK ** ptrptr_adb, void  *ad, long l_move)
   if(!SetBufferDaneSize(ll)) { ErrList(18); return NULL;}
 
   BOOL shift_ad;
-  if ((ad >= dane) && (ad <= (dane + dane_size))) shift_ad = TRUE;
+  if (((char*)ad >= dane) && ((char*)ad <= (dane + dane_size))) shift_ad = TRUE;
   else shift_ad = FALSE;
 
     del_dane0=dane0-dane00;
@@ -1554,11 +1499,11 @@ return NULL;
   if (n > 0 && !SetBufferDaneSize(ll)) { ErrList(18); return NULL; }
 
   BOOL shift_ad;
-  if ((ad >= dane) && (ad <= (dane + dane_size))) shift_ad = TRUE;
+  if (((char*)ad >= dane) && ((char*)ad <= (dane + dane_size))) shift_ad = TRUE;
   else shift_ad = FALSE;
 
   BOOL shift_obiekt;
-  if ((obiekt >= dane) && (obiekt <= (dane + dane_size))) shift_obiekt = TRUE;
+  if (((char*)obiekt >= dane) && ((char*)obiekt <= (dane + dane_size))) shift_obiekt = TRUE;
   else shift_obiekt = FALSE;
 
   del_dane0=dane0-dane00;
@@ -1605,7 +1550,7 @@ void *korekta_obiekt(void *ad, void *obiekt)
 }
 
 
-unsigned char  *Change_Block_Descript(BLOK *ptr_block, void *ptr_description, int len_descr)
+char  *Change_Block_Descript(BLOK *ptr_block, void *ptr_description, int len_descr)
 	/*------------------------------------------------------------------------------------*/
 {
 #ifndef LINUX
@@ -2487,7 +2432,7 @@ void usun_blok (char  *adr, char  *adrk)
        deleted=TRUE;
        add_n=0;
        dist_temp= (long_long) (adr + nag->n + sizeof(NAGLOWEK));
-       while ((dist_temp<=adrk) && (deleted==TRUE))
+       while ((dist_temp<=(long_long)adrk) && (deleted==TRUE))
        {
         nag1=(NAGLOWEK*)dist_temp; 
         if (nag1->obiekt==Okoniec) deleted=FALSE;
@@ -2496,8 +2441,8 @@ void usun_blok (char  *adr, char  *adrk)
             if ((nag1->atrybut == Ausuniety || nag1->atrybut == Abad)
              && TRUE == Check_Next_Object ((void*)nag1)) 
 	    {
-	     add_n+=(nag1->n+sizeof(NAGLOWEK));
-	     dist_temp+=nag1->n+sizeof(NAGLOWEK);
+	     add_n+=(long_long)(nag1->n+sizeof(NAGLOWEK));
+	     dist_temp+=(long_long)(nag1->n+sizeof(NAGLOWEK));
             }
              else deleted=FALSE;
            }  
@@ -2507,8 +2452,8 @@ void usun_blok (char  *adr, char  *adrk)
          nag->n+=add_n;
         }  
        /********/
-       dist=adr-dane;
-       dist1=(adrk-dane) - ( nag->n + sizeof(NAGLOWEK) ) ;
+       dist=(long_long)(adr-dane);
+       dist1=(long_long)((adrk-dane) - ( nag->n + sizeof(NAGLOWEK))) ;
        Usun_Object ((char *)adr,   /*badanie nag->blok dla rysunkow blednych wersji*/
 	  ((nag->atrybut == Ausuniety && nag->blok == NoElemBlok) ? TRUE : FALSE));
        adr=dane+dist;
@@ -2553,8 +2498,7 @@ void usun_blok1 (char  *adr, char  *adrk)
   }
   nag=(NAGLOWEK*)adr;
   b_info = TRUE ;
-  
-#define BLSIZE 5000
+
   if (adrk - adr < BLSIZE)
   {
     b_info = FALSE ;
@@ -2597,7 +2541,7 @@ void usun_blok1 (char  *adr, char  *adrk)
        deleted=TRUE;
        add_n=0;
        dist_temp= (long_long) (adr + nag->n + sizeof(NAGLOWEK));
-       while ((dist_temp<=adrk) && (deleted==TRUE))
+       while ((dist_temp<=(long_long)adrk) && (deleted==TRUE))
        {
         nag1=(NAGLOWEK*)dist_temp; 
         if (nag1->obiekt==Okoniec) deleted=FALSE;
@@ -2622,8 +2566,8 @@ void usun_blok1 (char  *adr, char  *adrk)
        }
         else
          {
-	       add_n+=(nag1->n+sizeof(NAGLOWEK));
-	       dist_temp+=nag1->n+sizeof(NAGLOWEK);
+	       add_n+=(long_long)(nag1->n+sizeof(NAGLOWEK));
+	       dist_temp+=(long_long)(nag1->n+sizeof(NAGLOWEK));
          }
             }
              else deleted=FALSE;
@@ -2635,7 +2579,7 @@ void usun_blok1 (char  *adr, char  *adrk)
         }  
        /********/
        dist=adr-dane;
-       dist1=(adrk-dane) - ( nag->n + sizeof(NAGLOWEK) ) ;
+       dist1=(long_long)(adrk-dane) - ( nag->n + sizeof(NAGLOWEK) ) ;
        Usun_Object ((char *)adr,   /*badanie nag->blok dla rysunkow blednych wersji*/
 	  ((nag->atrybut == Ausuniety && nag->blok == NoElemBlok) ? TRUE : FALSE));
        adr=dane+dist;

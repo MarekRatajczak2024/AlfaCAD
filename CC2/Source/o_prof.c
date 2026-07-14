@@ -584,8 +584,11 @@ char *fillet_line_to_line(double df_r, LINIA* L1, LINIA* L2, BOOL inverted)
 
             if(NULL == (lps__arc_prof = (LUK*)Add_Block_Object_Ex (&adb, (void *)&l, l_move)))
                 return NULL ;
+
+            return (char*)lps__arc_prof ;
             
     }
+   return NULL;
 }
 
 static char* fillet_line_circle (double df_r,
@@ -1051,66 +1054,68 @@ void profilowanie(void)
 aa:{ komunikat0(11);
   Out_Edited_Draw_Param ((ESTR *)&eL, TRUE) ;
      while(1)
-      { ev=Get_Event_Point(NULL, &X0, &Y0);
-	if ( ev->What == evKeyDown  && ev->Number== 0 )
-    {
-        if (Error) ClearErr();
-        redcr(1);
-        return;
-    }
-	if ( ev->What == evKeyDown  && ev->Number== ENTER &&
-	   PierwszyObiektWskazany(X0, Y0))
-    {
-        CUR_OFF(X0, Y0);
-        CUR_ON(X0, Y0);
-        break;
-    }
-	if( ev->What==evCommandP)
-	   if (ev->Number==0)
-	   {
-		   simulate_keypress(TAB);
-	   }
-	   else (*COMNDProf[ev->Number])();
-      }
+     {
+       ev=Get_Event_Point(NULL, &X0, &Y0);
+       if ( ev->What == evKeyDown  && ev->Number== 0 )
+       {
+         if (Error) ClearErr();
+         redcr(1);
+         return;
+       }
+       if ( ev->What == evKeyDown  && ev->Number== ENTER &&
+          PierwszyObiektWskazany(X0, Y0))
+       {
+         CUR_OFF(X0, Y0);
+         CUR_ON(X0, Y0);
+         break;
+       }
+       if( ev->What==evCommandP)
+       {
+         if (ev->Number==0)
+         {
+           simulate_keypress(TAB);
+         }
+         else (*COMNDProf[ev->Number])();
+       }
+     }
      komunikat0(12);
      Out_Edited_Draw_Param ((ESTR *)&eL, TRUE) ;
      while(1)
       { ev = Get_Event_Point(NULL, &X0, &Y0) ;
-	if ( ev->What == evKeyDown  && ev->Number== 0 )
-    {
-        rysuj_obiekt(ptr__objest1, COPY_PUT, 1);
-        CUR_OFF(X, Y);
-        CUR_ON(X, Y);
-        goto aa;
-    }
-	if ( ev->What == evKeyDown  &&
-	     ev->Number== ENTER &&
-         DrugiObiektWskazany (X0, Y0) )
-    {
-        if (fillet_proc ())
-        {
-            CUR_OFF(X0, Y0);
-            CUR_ON(X0, Y0);
-          break ;
+	      if ( ev->What == evKeyDown  && ev->Number== 0 )
+          {
+              rysuj_obiekt(ptr__objest1, COPY_PUT, 1);
+              CUR_OFF(X, Y);
+              CUR_ON(X, Y);
+              goto aa;
+          }
+	      if ( ev->What == evKeyDown  &&
+	           ev->Number== ENTER &&
+               DrugiObiektWskazany (X0, Y0) )
+          {
+              if (fillet_proc ())
+              {
+                  CUR_OFF(X0, Y0);
+                  CUR_ON(X0, Y0);
+                break ;
+              }
+              else
+              {
+                  rysuj_obiekt(ptr__objest1, COPY_PUT, 1);
+                  if (ptr__objest2) rysuj_obiekt(ptr__objest2, COPY_PUT, 1);
+                  CUR_OFF(X0, Y0);
+                  CUR_ON(X0, Y0);
+                  break;
+              }
         }
-        else
-        {
-            rysuj_obiekt(ptr__objest1, COPY_PUT, 1);
-            if (ptr__objest2) rysuj_obiekt(ptr__objest2, COPY_PUT, 1);
-            CUR_OFF(X0, Y0);
-            CUR_ON(X0, Y0);
-            break;
-        }
-    }
-	if(ev->What == evCommandP)
-	{
-		if (ev->Number == 0)
-		{
-			simulate_keypress(TAB);
-		}
-		else ErrList (52);
-	  continue;
-	}
+	      if(ev->What == evCommandP)
+	      {
+	        if (ev->Number == 0)
+	        {
+	          simulate_keypress(TAB);
+	        }
+	        else ErrList (52);
+	      }
       }
    }
 }
@@ -1513,43 +1518,46 @@ aa: komunikat0 (44);
           break;
       }
       if( ev->What==evCommandP)
-	  if (ev->Number == 0)
-	  {
-		  simulate_keypress(TAB);
-	  }
-	  else (*COMNDCh[ev->Number])();
+      {
+        if (ev->Number == 0)
+        {
+          simulate_keypress(TAB);
+        }
+        else (*COMNDCh[ev->Number])();
+      }
     }
     komunikat0(45);
     Out_Edited_Draw_Param ((ESTR *)&eL, TRUE) ;
-    while(1) {
-        ev = Get_Event_Point(NULL, &X0, &Y0);
-        if (ev->What == evKeyDown && ev->Number == 0) {
-            rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
-            CUR_OFF(X, Y);
-            CUR_ON(X, Y);
-            goto aa;
-        }
-        if (ev->What == evKeyDown && ev->Number == ENTER &&
-            second_line())
-        {
-            CUR_OFF(X0, Y0);
-            CUR_ON(X0, Y0);
-            break;
-        }
-        else
-        {
-            rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
-            if (ptrs__line2) rysuj_obiekt((char*)ptrs__line2, COPY_PUT, 1);
-            break;
-        }
+    while(1)
+    {
+      ev = Get_Event_Point(NULL, &X0, &Y0);
+      if (ev->What == evKeyDown && ev->Number == 0) {
+        rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
+        CUR_OFF(X, Y);
+        CUR_ON(X, Y);
+        goto aa;
+      }
+      if (ev->What == evKeyDown && ev->Number == ENTER &&
+          second_line())
+      {
+        CUR_OFF(X0, Y0);
+        CUR_ON(X0, Y0);
+        break;
+      }
+      else
+      {
+        rysuj_obiekt((char*)ptrs__line1, COPY_PUT, 1);
+        if (ptrs__line2) rysuj_obiekt((char*)ptrs__line2, COPY_PUT, 1);
+        break;
+      }
       if( ev->What==evCommandP)
       {
-		  if (ev->Number == 0)
-		  {
-			  simulate_keypress(TAB);
-		  }
-	     else ErrList (52);
-	continue;
+        if (ev->Number == 0)
+        {
+          simulate_keypress(TAB);
+        }
+        else ErrList (52);
+        continue;
       }
     }
   }

@@ -49,11 +49,8 @@
 
 #include "leak_detector_c.h"
 
-#ifdef LINUX
+#ifndef LINUX
 #include "res/resource.h"
-
-#else
-#include "..\..\source\res\resource.h"
 #endif
 
 #ifdef MIDI_ON
@@ -88,6 +85,10 @@
 #include "alfatextdialogs.h"
 #endif
 
+#ifdef LINUX
+#include <curl/curl.h>
+#endif
+
 #include "leak_detector_c.h"
 
 #define GLYPH_TARGET GLYPH_TARGET_ALLEGRO
@@ -95,6 +96,8 @@
 #define TTF_SIZE_BUFFER FALSE
 
 BOOL go_reset_if_resized=FALSE;
+
+static int load_semaphore=1;
 
 int RETINA=0;
 
@@ -133,7 +136,6 @@ BOOL ttf_refresh = FALSE;
 int TTF_bold_factor = 140;
 double TTF_width_factor = 1.25;
 double TTF_height_factor = 1.4;
-
 
 extern  BITMAP *screenplay;
 extern unsigned int getRGB(double m, double max_m);
@@ -332,6 +334,9 @@ extern void set_fv(float fv_);
 extern void reini_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
 extern void reini_edit_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one);
 
+extern void trim_trailing_new_row(char *str);
+extern void set_background_pcx_file(void);
+
 extern void TimberUS(void);
 extern void TimberCA(void);
 extern void ConcreteUS(void);
@@ -345,6 +350,8 @@ extern void SteelUS(void);
 
 #ifndef LINUX
 extern void init_file_dropped_fill_buf(void);
+// 1. Tell the compiler 'struct shmseg' exists globally
+struct shmseg;
 extern int GetShmpPtr_1(struct shmseg **shmp_);
 extern void set_editbox_geometry_win(int x, int y);
 extern void set_editbox_geometry_line_win(int x, int y);
@@ -364,6 +371,7 @@ extern void set_scrsave_time (void);
 extern int	getdisk(void);
 
 extern void reset_cursor(void);
+extern BOOL hibernate;
 /////////////
 
 
@@ -3443,7 +3451,7 @@ static DRIVER_STRUCT drv_slave={1,800,600,8,2,287,0,1.0};
 extern "C" {
 #endif
 
-    int Rysuj_main(int child, char file_name[255], int nCmdShow, char* application, char* arg_params);
+    int Rysuj_main(int child, char *file_name, char *file_multiname, int nCmdShow, char* application, char* arg_params);
 
 #ifdef __cplusplus
 }
@@ -3485,8 +3493,8 @@ typedef  f * TA;
 extern void makro_esc(void);
 
 #define BUF_SIZE 1024
-#define SHM_KEY 0x414C4641 //0x1234
-#define FILENO 16
+#define SHM_KEY 0x414C4643 //0x1234
+#define FILENO 32
 
 #ifndef LINUX
 int setenv(const char *name, const char *value, int overwrite)
@@ -3535,6 +3543,43 @@ struct shmseg *shmp;
 //static
 struct shmseg shmp_private;
 
+
+#ifdef LINUX
+//#include <stdio.h>
+//#include <sys/shm.h>
+
+static void cleanup_shared_memory_factory(int shmid_, struct shmseg *shmp_) {
+    struct shmid_ds shm_info;
+
+    // 1. Ask the kernel for the live status of this memory segment
+    if (shmctl(shmid, IPC_STAT, &shm_info) == 0) {
+
+        // 2. Check if the number of attached processes is exactly 1 (just you!)
+        if (shm_info.shm_nattch <= 1) {
+            printf("Last instance detected. Programmatically freeing shared memory...\n");
+
+            // 3. Destroy the segment from the OS entirely
+            shmctl(shmid, IPC_RMID, NULL);
+        } else {
+            printf("Other instances are still active (%ld attached). Leaving memory intact.\n",
+                   (long)shm_info.shm_nattch);
+        }
+    }
+
+    // 4. Detach your own local pointer safely
+    if (shmp != NULL) {
+        shmdt(shmp);
+    }
+}
+
+void cleanup_shared_memory(void)
+{
+    cleanup_shared_memory_factory(shmid, shmp);
+}
+
+
+#endif
+
 static int tier=0;
 
 void set_tier(int tier_)
@@ -3568,14 +3613,13 @@ void Sleep(int miliseconds) {
 int Test_App_Shm(int doit, char *file_name)
 {
 
-#ifdef LINUX
+#ifdef LINUX  //using share memory
     int ret_shm;
     int numtimes;
     struct shmbuf *bufptr;
     int spaceavailable;
     struct shmid_ds shmid_buf;
     int i, ii, ret;
-
 
     if (doit==1) {
 
@@ -3603,25 +3647,74 @@ int Test_App_Shm(int doit, char *file_name)
         {
             if ((file_name!=NULL) && (strlen(file_name)>0))  //new window inside existing instance
             {
+                BOOL to_go=TRUE;
+
                 Client_number=bufptr->client_number;
+
                 ii=0;
                 while ((shmp->complete!=1) && (ii<10)) {Sleep(15); ii++;}
                 shmp->complete = 0;
-                //searching for free slot
-                i=0;
-                while (i<FILENO)
-                {
-                    if (bufptr->flag[i]==0) break;
-                    i++;
-                }
-                if (i<FILENO)  //still one of slots is free
-                {
-                    memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
-                    strcpy(bufptr->file_name[i], file_name);
-                    bufptr->flag[i] = 1;
-                    bufptr->mflag = 1;
-                    shmp->complete = 1;
 
+                //searching for free slot
+                char *file_name_ptr = file_name;
+                char *file_name_end;
+
+                // Use a while loop to safely handle strings with only 1 file or no delimiters
+                while (file_name_ptr != NULL && *file_name_ptr != '\0')
+                {
+                    char *next_file_ptr = NULL;
+                    file_name_end = strchr(file_name_ptr, '\r');
+
+                    if (file_name_end != NULL)
+                    {
+                        // 1. Peek ahead BEFORE modifying the string
+                        if (*(file_name_end + 1) == '\n') {
+                            next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                        } else {
+                            next_file_ptr = file_name_end + 1; // Skip only \r
+                        }
+
+                        // 2. Now safely truncate the current file name
+                        *file_name_end = '\0';
+                    }
+                    else
+                    {
+                        // This is the last (or only) file name in the string
+                        next_file_ptr = NULL;
+                    }
+
+                    // 3. Reset slot index back to 0 for every file name processed
+                    int i = 0;
+                    while (i < FILENO)
+                    {
+                        if (bufptr->flag[i] == 0) break;
+                        i++;
+                    }
+
+                    if (i < FILENO) // Free slot found
+                    {
+                        memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                        // Use strncpy to prevent buffer overflows if a file name is too long
+                        strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                        bufptr->flag[i] = 1;
+                    }
+                    else
+                    {
+                        // Handle error: No free slots left in bufptr!
+                        to_go=FALSE;
+                        break;
+                    }
+
+                    // 4. Advance the pointer to the next file name
+                    file_name_ptr = next_file_ptr;
+                }
+
+                bufptr->mflag = 1;
+                shmp->complete = 1;
+
+                //deciding to go or to stay
+                if (to_go==TRUE)
+                {
 #ifndef MACOS
                     quick_exit(1);  //1 for exit after initiating new file in existing instance
 #else
@@ -3630,11 +3723,12 @@ int Test_App_Shm(int doit, char *file_name)
                 }
                 else //leaving new instance
                 {
+                    shmp->complete = 0;
+
                     Client_number=bufptr->client_number;
                     Client_number++;
                     XWindow_Name(Client_number);
                     bufptr->client_number=Client_number;
-                    shmp->complete = 1;
 
                     //private
                     shmp_private.complete=0;
@@ -3643,19 +3737,73 @@ int Test_App_Shm(int doit, char *file_name)
                     memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
                     memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
                     shmp_private.buf.mflag=0;
+
+                    //pumming rest of files files
+
+                    // Use a while loop to safely handle strings with only 1 file or no delimiters
+                    while (file_name_ptr != NULL && *file_name_ptr != '\0')
+                    {
+                        char *next_file_ptr = NULL;
+                        file_name_end = strchr(file_name_ptr, '\r');
+
+                        if (file_name_end != NULL)
+                        {
+                            // 1. Peek ahead BEFORE modifying the string
+                            if (*(file_name_end + 1) == '\n') {
+                                next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                            } else {
+                                next_file_ptr = file_name_end + 1; // Skip only \r
+                            }
+
+                            // 2. Now safely truncate the current file name
+                            *file_name_end = '\0';
+                        }
+                        else
+                        {
+                            // This is the last (or only) file name in the string
+                            next_file_ptr = NULL;
+                        }
+
+                        // 3. Reset slot index back to 0 for every file name processed
+                        int i = 0;
+                        while (i < FILENO)
+                        {
+                            if (bufptr->flag[i] == 0) break;
+                            i++;
+                        }
+
+                        if (i < FILENO) // Free slot found
+                        {
+                            memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                            // Use strncpy to prevent buffer overflows if a file name is too long
+                            strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                            bufptr->flag[i] = 1;
+                        }
+                        else
+                        {
+                            // Handle error: No free slots left in bufptr!
+                            break;
+                        }
+
+                        // 4. Advance the pointer to the next file name
+                        file_name_ptr = next_file_ptr;
+                    }
+
+                    bufptr->mflag = 1;
+                    shmp->complete = 1;
+
                     shmp_private.complete=1;
                 }
             }
-            else //leaving new instance
+            else //leaving new instance with empty slots
             {
                 ii=0;
-                while ((shmp->complete!=1) && (ii<10)) {sleep(15); ii++;}
+                while ((shmp->complete!=1) && (ii<10)) {Sleep(15); ii++;}
                 shmp->complete = 0;
                 Client_number=bufptr->client_number;
                 Client_number++;
                 XWindow_Name(Client_number);
                 bufptr->client_number=Client_number;
-                shmp->complete = 1;
 
                 //private
                 shmp_private.complete=0;
@@ -3664,11 +3812,14 @@ int Test_App_Shm(int doit, char *file_name)
                 memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
                 memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
                 shmp_private.buf.mflag=0;
+
+                shmp->complete = 1;
                 shmp_private.complete=1;
             }
         }
-        else
+        else  //lone instance, skipping first file
         {
+
             Client_number = Number_of_clients;
             XWindow_Name(Client_number);
             shmp->complete = 0;
@@ -3677,7 +3828,7 @@ int Test_App_Shm(int doit, char *file_name)
             memset(bufptr->flag, 0, sizeof(bufptr->flag));
             memset(bufptr->file_name, 0, sizeof(bufptr->file_name));
             bufptr->mflag=0;
-            shmp->complete = 1;
+            ////shmp->complete = 1;
 
             //private
             shmp_private.complete=0;
@@ -3686,6 +3837,87 @@ int Test_App_Shm(int doit, char *file_name)
             memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
             memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
             shmp_private.buf.mflag=0;
+
+            char *file_name_ptr = file_name;
+            char *file_name_end;
+
+            CURL *curl = curl_easy_init();
+
+            //skipping first file
+            if (file_name_ptr != NULL && *file_name_ptr != '\0')
+            {
+                file_name_end = strchr(file_name_ptr, '\r');
+                if (file_name_end != NULL)
+                {
+                    // 1. Peek ahead BEFORE modifying the string
+                    if (*(file_name_end + 1) == '\n') {
+                        file_name_ptr = file_name_end + 2; // Skip both \r and \n
+                    } else {
+                        file_name_ptr = file_name_end + 1; // Skip only \r
+                    }
+                }
+                else
+                {
+                    file_name_ptr = NULL;
+                }
+            }
+
+            // Use a while loop to safely handle strings with only 1 file or no delimiters
+            if (file_name_ptr != NULL && *file_name_ptr != '\0')
+            {
+                while (file_name_ptr != NULL && *file_name_ptr != '\0')
+                {
+                    char *next_file_ptr = NULL;
+                    file_name_end = strchr(file_name_ptr, '\r');
+
+                    if (file_name_end != NULL)
+                    {
+                        // 1. Peek ahead BEFORE modifying the string
+                        if (*(file_name_end + 1) == '\n') {
+                            next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                        } else {
+                            next_file_ptr = file_name_end + 1; // Skip only \r
+                        }
+
+                        // 2. Now safely truncate the current file name
+                        *file_name_end = '\0';
+                    }
+                    else
+                    {
+                        // This is the last (or only) file name in the string
+                        next_file_ptr = NULL;
+                    }
+
+                    // 3. Reset slot index back to 0 for every file name processed
+                    int i = 0;
+                    while (i < FILENO)
+                    {
+                        if (bufptr->flag[i] == 0) break;
+                        i++;
+                    }
+
+                    if (i < FILENO) // Free slot found
+                    {
+                        memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                        // Use strncpy to prevent buffer overflows if a file name is too long
+                        strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                        bufptr->flag[i] = 1;
+                    }
+                    else
+                    {
+                        // Handle error: No free slots left in bufptr!
+                        break;
+                    }
+
+                    // 4. Advance the pointer to the next file name
+                    file_name_ptr = next_file_ptr;
+                }
+
+                bufptr->mflag = 1;   //????
+                shmp_private.buf.mflag=1;
+            }
+
+            shmp->complete = 1;
             shmp_private.complete=1;
         }
     }
@@ -3698,26 +3930,67 @@ int Test_App_Shm(int doit, char *file_name)
             ii=0;
             while ((shmp_private.complete!=1) && (ii<10)) {sleep(15); ii++;}
             shmp_private.complete = 0;
+
             //searching for free slot
-            i=0;
-            while (i<FILENO)
+            char *file_name_ptr = file_name;
+            char *file_name_end;
+
+            // Use a while loop to safely handle strings with only 1 file or no delimiters
+            if (file_name_ptr != NULL && *file_name_ptr != '\0')
             {
-                if (bufptr->flag[i]==0) break;
-                i++;
-            }
-            if (i<FILENO)  //still one of slots is free
-            {
-                memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
-                strcpy(bufptr->file_name[i], file_name);
-                bufptr->flag[i] = 1;
+                while (file_name_ptr != NULL && *file_name_ptr != '\0')
+                {
+                    char *next_file_ptr = NULL;
+                    file_name_end = strchr(file_name_ptr, '\r');
+
+                    if (file_name_end != NULL)
+                    {
+                        // 1. Peek ahead BEFORE modifying the string
+                        if (*(file_name_end + 1) == '\n') {
+                            next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                        } else {
+                            next_file_ptr = file_name_end + 1; // Skip only \r
+                        }
+
+                        // 2. Now safely truncate the current file name
+                        *file_name_end = '\0';
+                    }
+                    else
+                    {
+                        // This is the last (or only) file name in the string
+                        next_file_ptr = NULL;
+                    }
+
+                    // 3. Reset slot index back to 0 for every file name processed
+                    int i = 0;
+                    while (i < FILENO)
+                    {
+                        if (bufptr->flag[i] == 0) break;
+                        i++;
+                    }
+
+                    if (i < FILENO) // Free slot found
+                    {
+                        memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                        // Use strncpy to prevent buffer overflows if a file name is too long
+                        strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                        bufptr->flag[i] = 1;
+                    }
+                    else
+                    {
+                        // Handle error: No free slots left in bufptr!
+                        return 0;
+                        break;
+                    }
+
+                    // 4. Advance the pointer to the next file name
+                    file_name_ptr = next_file_ptr;
+                }
                 bufptr->mflag = 1;
-                shmp_private.complete = 1;
+                shmp_private.buf.mflag=1;
             }
-            else
-            {
-                shmp_private.complete = 1;
-                return 0;
-            }
+            shmp->complete = 1;
+            shmp_private.complete = 1;
         }
     }
    else //just checking
@@ -3728,13 +4001,10 @@ int Test_App_Shm(int doit, char *file_name)
 
     return 1;
 #else
+    ////in Windows using buffers in ddl
 int ret_shm;
-//int shmid;
 int numtimes;
-//struct shmseg *shmp;
 struct shmbuf* bufptr;
-//int spaceavailable;
-//struct shmid_ds shmid_buf;
 int i, ii, ret;
 
 if (doit == 1) {
@@ -3746,43 +4016,84 @@ if (doit == 1) {
         return 0;
 
     bufptr = &shmp->buf;
-    //shmp->complete = 0;
 
     if (Number_of_clients > 1) //another instance exists
     {
         if ((file_name != NULL) && (strlen(file_name) > 0))  //new window inside existing instance
         {
-            ////Client_number = bufptr->client_number;
+            BOOL to_go=TRUE;
+
+            ////Client_number = bufptr->client_number;  //??????  in Windows Client_numer already set
+
             ii = 0;
             while ((shmp->complete != 1) && (ii < 10)) { _sleep(15); ii++; }
             shmp->complete = 0;
-            //memcpy(&Client_number, bufptr->client_number, sizeof(Client_number));
+
             //searching for free slot
-            i = 0;
-            while (i < FILENO)
+            char *file_name_ptr = file_name;
+            char *file_name_end;
+
+            // Use a while loop to safely handle strings with only 1 file or no delimiters
+            while (file_name_ptr != NULL && *file_name_ptr != '\0')
             {
-                if (bufptr->flag[i] == 0) break;
-                i++;
+                char *next_file_ptr = NULL;
+                file_name_end = strchr(file_name_ptr, '\r');
+
+                if (file_name_end != NULL)
+                {
+                    // 1. Peek ahead BEFORE modifying the string
+                    if (*(file_name_end + 1) == '\n') {
+                        next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                    } else {
+                        next_file_ptr = file_name_end + 1; // Skip only \r
+                    }
+
+                    // 2. Now safely truncate the current file name
+                    *file_name_end = '\0';
+                }
+                else
+                {
+                    // This is the last (or only) file name in the string
+                    next_file_ptr = NULL;
+                }
+
+                // 3. Reset slot index back to 0 for every file name processed
+                int i = 0;
+                while (i < FILENO)
+                {
+                    if (bufptr->flag[i] == 0) break;
+                    i++;
+                }
+
+                if (i < FILENO) // Free slot found
+                {
+                    memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                    // Use strncpy to prevent buffer overflows if a file name is too long
+                    strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                    bufptr->flag[i] = 1;
+                }
+                else
+                {
+                    // Handle error: No free slots left in bufptr!
+                    to_go=FALSE;
+                    break;
+                }
+
+                // 4. Advance the pointer to the next file name
+                file_name_ptr = next_file_ptr;
             }
-            if (i < FILENO)  //still one of slots is free
+
+            bufptr->mflag = 1;
+            shmp->complete = 1;
+
+            //deciding to go or to stay
+            if (to_go==TRUE)
             {
-                strcpy(bufptr->file_name[i], file_name);
-                bufptr->flag[i] = 1;
-                bufptr->mflag = 1;
-                shmp->complete = 1;
-#ifndef MACOS
-                quick_exit(1);  //1 for exit after initiating newe file in existing instance
-#else
-                exit(1);
-#endif
+                quick_exit(1);  //1 for exit after initiating new file in existing instance
             }
             else //leaving new instance
             {
-                ////Client_number = bufptr->client_number;
-                ////Client_number++;
-                ////XWindow_Name(Client_number);
                 bufptr->client_number = Client_number;
-                shmp->complete = 1;
 
                 //private
                 shmp_private.complete = 0;
@@ -3791,21 +4102,71 @@ if (doit == 1) {
                 memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
                 memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
                 shmp_private.buf.mflag = 0;
+
+                //pumming rest of files files
+
+                // Use a while loop to safely handle strings with only 1 file or no delimiters
+                while (file_name_ptr != NULL && *file_name_ptr != '\0')
+                {
+                    char *next_file_ptr = NULL;
+                    file_name_end = strchr(file_name_ptr, '\r');
+
+                    if (file_name_end != NULL)
+                    {
+                        // 1. Peek ahead BEFORE modifying the string
+                        if (*(file_name_end + 1) == '\n') {
+                            next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                        } else {
+                            next_file_ptr = file_name_end + 1; // Skip only \r
+                        }
+
+                        // 2. Now safely truncate the current file name
+                        *file_name_end = '\0';
+                    }
+                    else
+                    {
+                        // This is the last (or only) file name in the string
+                        next_file_ptr = NULL;
+                    }
+
+                    // 3. Reset slot index back to 0 for every file name processed
+                    int i = 0;
+                    while (i < FILENO)
+                    {
+                        if (bufptr->flag[i] == 0) break;
+                        i++;
+                    }
+
+                    if (i < FILENO) // Free slot found
+                    {
+                        memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                        // Use strncpy to prevent buffer overflows if a file name is too long
+                        strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                        bufptr->flag[i] = 1;
+                    }
+                    else
+                    {
+                        // Handle error: No free slots left in bufptr!
+                        break;
+                    }
+
+                    // 4. Advance the pointer to the next file name
+                    file_name_ptr = next_file_ptr;
+                }
+
+                bufptr->mflag = 1;
+                shmp->complete = 1;
+
                 shmp_private.complete = 1;
             }
         }
-        else //leaving new instance
+        else //leaving new instance with empty slots
         {
             ii = 0;
             while ((shmp->complete != 1) && (ii < 10)) { _sleep(15); ii++; }
             shmp->complete = 0;
-            //memcpy(&Client_number, bufptr, sizeof(Client_number));
-            ////Client_number = bufptr->client_number;
-            ////Client_number++;
-            ////XWindow_Name(Client_number);
-            //memcpy(bufptr, &Client_number, sizeof(Client_number));
+
             bufptr->client_number = Client_number;
-            shmp->complete = 1;
 
             //private
             shmp_private.complete = 0;
@@ -3814,15 +4175,14 @@ if (doit == 1) {
             memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
             memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
             shmp_private.buf.mflag = 0;
+
+            shmp->complete = 1;
             shmp_private.complete = 1;
         }
     }
-    else
+    else  //lone instance, skipping first file
     {
-        ////Client_number = Number_of_clients;
-        ////XWindow_Name(Client_number);
         shmp->complete = 0;
-        //memcpy( bufptr->client_number, &Client_number, sizeof(Client_number));
         bufptr->client_number = Client_number;
         //zeroing
         memset(bufptr->flag, 0, sizeof(bufptr->flag));
@@ -3837,7 +4197,82 @@ if (doit == 1) {
         memset(shmp_private.buf.flag, 0, sizeof(shmp_private.buf.flag));
         memset(shmp_private.buf.file_name, 0, sizeof(shmp_private.buf.file_name));
         shmp_private.buf.mflag = 0;
-        shmp_private.complete = 1;
+
+        char *file_name_ptr = file_name;
+        char *file_name_end;
+
+        //skipping first file
+        if (file_name_ptr != NULL && *file_name_ptr != '\0')
+        {
+            file_name_end = strchr(file_name_ptr, '\r');
+            if (file_name_end != NULL)
+            {
+                // 1. Peek ahead BEFORE modifying the string
+                if (*(file_name_end + 1) == '\n') {
+                    file_name_ptr = file_name_end + 2; // Skip both \r and \n
+                } else {
+                    file_name_ptr = file_name_end + 1; // Skip only \r
+                }
+            }
+            else file_name_ptr = NULL;
+        }
+
+        // Use a while loop to safely handle strings with only 1 file or no delimiters
+        if (file_name_ptr != NULL && *file_name_ptr != '\0')
+        {
+            while (file_name_ptr != NULL && *file_name_ptr != '\0')
+            {
+                char *next_file_ptr = NULL;
+                file_name_end = strchr(file_name_ptr, '\r');
+
+                if (file_name_end != NULL)
+                {
+                    // 1. Peek ahead BEFORE modifying the string
+                    if (*(file_name_end + 1) == '\n') {
+                        next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                    } else {
+                        next_file_ptr = file_name_end + 1; // Skip only \r
+                    }
+
+                    // 2. Now safely truncate the current file name
+                    *file_name_end = '\0';
+                }
+                else
+                {
+                    // This is the last (or only) file name in the string
+                    next_file_ptr = NULL;
+                }
+
+                // 3. Reset slot index back to 0 for every file name processed
+                int i = 0;
+                while (i < FILENO)
+                {
+                    if (bufptr->flag[i] == 0) break;
+                    i++;
+                }
+
+                if (i < FILENO) // Free slot found
+                {
+                    memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                    // Use strncpy to prevent buffer overflows if a file name is too long
+                    strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                    bufptr->flag[i] = 1;
+                }
+                else
+                {
+                    // Handle error: No free slots left in bufptr!
+                    break;
+                }
+
+                // 4. Advance the pointer to the next file name
+                file_name_ptr = next_file_ptr;
+            }
+            bufptr->mflag = 1;   //????
+            shmp_private.buf.mflag=1;
+        }
+
+        shmp->complete = 1;
+        shmp_private.complete=1;
     }
 }
 else if (doit == 2) //just adding file in private
@@ -3849,26 +4284,66 @@ else if (doit == 2) //just adding file in private
         ii = 0;
         while ((shmp_private.complete != 1) && (ii < 10)) { _sleep(15); ii++; }
         shmp_private.complete = 0;
-        //memcpy(&Client_number, bufptr->client_number, sizeof(Client_number));
         //searching for free slot
-        i = 0;
-        while (i < FILENO)
+        char *file_name_ptr = file_name;
+        char *file_name_end;
+
+        // Use a while loop to safely handle strings with only 1 file or no delimiters
+        if (file_name_ptr != NULL && *file_name_ptr != '\0')
         {
-            if (bufptr->flag[i] == 0) break;
-            i++;
-        }
-        if (i < FILENO)  //still one of slots is free
-        {
-            strcpy(bufptr->file_name[i], file_name);
-            bufptr->flag[i] = 1;
+            while (file_name_ptr != NULL && *file_name_ptr != '\0')
+            {
+                char *next_file_ptr = NULL;
+                file_name_end = strchr(file_name_ptr, '\r');
+
+                if (file_name_end != NULL)
+                {
+                    // 1. Peek ahead BEFORE modifying the string
+                    if (*(file_name_end + 1) == '\n') {
+                        next_file_ptr = file_name_end + 2; // Skip both \r and \n
+                    } else {
+                        next_file_ptr = file_name_end + 1; // Skip only \r
+                    }
+
+                    // 2. Now safely truncate the current file name
+                    *file_name_end = '\0';
+                }
+                else
+                {
+                    // This is the last (or only) file name in the string
+                    next_file_ptr = NULL;
+                }
+
+                // 3. Reset slot index back to 0 for every file name processed
+                int i = 0;
+                while (i < FILENO)
+                {
+                    if (bufptr->flag[i] == 0) break;
+                    i++;
+                }
+
+                if (i < FILENO) // Free slot found
+                {
+                    memset(bufptr->file_name[i], 0, sizeof(bufptr->file_name[i]));
+                    // Use strncpy to prevent buffer overflows if a file name is too long
+                    strncpy(bufptr->file_name[i], file_name_ptr, sizeof(bufptr->file_name[i]) - 1);
+                    bufptr->flag[i] = 1;
+                }
+                else
+                {
+                    // Handle error: No free slots left in bufptr!
+                    break;
+                }
+
+                // 4. Advance the pointer to the next file name
+                file_name_ptr = next_file_ptr;
+            }
             bufptr->mflag = 1;
-            shmp_private.complete = 1;
+            shmp_private.buf.mflag=1;
         }
-        else
-        {
-            shmp_private.complete = 1;
-            return 0;
-        }
+
+        shmp->complete = 1;
+        shmp_private.complete = 1;
     }
 }
 else //just checking
@@ -5462,7 +5937,7 @@ void Destroy_Bitmaps_pre(void)
 
 
 #ifndef LINUX
-int Rysuj_main(int child, char file_name[255], int nCmdShow, char *application, char *arg_params)
+int Rysuj_main(int child, char *file_name, char *file_multiname, int nCmdShow, char *application, char *arg_params)
 {
 #else
 #ifndef MACOS
@@ -5473,6 +5948,7 @@ int _al_mangled_main(int argc, char *argv[])
 {
     int child=0;
     char file_name[255]="";
+    char file_multiname[255*MAX_NUMBER_OF_WINDOWS]="";
     int nCmdShow=0;
 
     XDG_CURRENT_DESKTOP = getenv("XDG_CURRENT_DESKTOP");
@@ -5544,6 +6020,7 @@ int _al_mangled_main(int argc, char *argv[])
     }
     argv_[argc] = NULL;
     argc_=argc;
+
 #else
  
  char* ptr0;
@@ -5635,6 +6112,16 @@ int _al_mangled_main(int argc, char *argv[])
    Set_XWindow_header_height();
 #endif
 
+/*
+    FILE *argf;
+    char buff[64];
+    argf=fopen("argf", "wt");
+    for (int argi=0; argi<argc; argi++) {
+        sprintf(buff, "%s\n", argv[argi]);
+        fwrite(buff, strlen(buff), 1, argf);
+    }
+    fclose(argf);
+*/
 
 #ifdef LINUX
 #define _ELMER_ "/Elmer"
@@ -5680,26 +6167,43 @@ start_disk = disk;
 
 strcpy(argv0,"");
 
- srand((unsigned int)time(0));
+ ////srand((unsigned int)time(0));   //get_random_quote_index is used instead
 
 #ifdef LINUX
     for (i=1; i<argc; i++) {
         if (strcmp(argv[i], "--NOCHDIR")!=0)
         {
-            strcpy(file_name, argv[i]);
-            break;
+            //strcpy(file_name, argv[i]);
+            if ((strlen(file_multiname) + strlen(argv[i])) < (255*MAX_NUMBER_OF_WINDOWS - 2))
+            {
+                //translating file name
+                char *file_name_ptr = argv[i];
+                char *bptr=strstr(file_name_ptr, "file://");
+                if (bptr!=NULL) file_name_ptr+=7;
+                char *decoded = curl_unescape(file_name_ptr, 0);
+                trim_trailing_new_row(decoded);
+
+                strcat(file_multiname, decoded);
+                if (strlen(file_name)==0)
+                    strcpy(file_name, decoded);  //first file to load directly
+                strcat(file_multiname,"\r\n");
+
+                curl_free(decoded);
+            }
         }
     }
 
+#else  //in Windows
+
 #endif
 
-Test_App(1, file_name);  //reading Client_number
+Test_App(1, file_multiname);  //reading Client_number
 
 number_of_clients = Number_of_clients;
 if (number_of_clients > 1) child = 1;
 
 #ifndef ALF_MAIN2
-if (child == 0) Initial_Message(file_name);
+if (child == 0) Initial_Message(file_multiname);
 else if ((child == 1) || (child == 3)) Child_Message(0);
 else if ((child == 2) || (child == 4)) Child_Message(1);
 #endif
@@ -5755,6 +6259,8 @@ allegro_init();
   }
 
  if (my_file_exists("blk00000.alx")) schowek=unlink("blk00000.alx");
+
+  set_background_pcx_file();
 
   Ini_Sys_Param () ;	/*ustawia bufor makra, typ myszy i tryb SVGA z pliku alfacad.ini*/
 
@@ -5849,10 +6355,11 @@ else //master
   mysetrgbdefaults();
   check_tables();
 
+  ////set_background_pcx_file(); is done earlier
+
   set_default_background();
   if (strlen(background_pcx_file)>0)  
 	   set_special_background(background_pcx_file);
-  
 
   f_ini = fopen ( font_file_name , "rt" ) ;
    if ( f_ini == NULL )
@@ -5867,7 +6374,7 @@ else //master
 #ifdef LINUX
        fprintf(f_ini,"%d,%d,%d,%d,%d\n",MP_SIZE,ED_INF_HEIGHT,BAR_G,HEIGHT,WIDTH);
 #else
-      fprintf(f_ini,"%ld,%ld,%ld,%ld,%ld\n",MP_SIZE,ED_INF_HEIGHT,BAR_G,HEIGHT,WIDTH);
+      fprintf(f_ini,"%d,%d,%d,%d,%d\n",MP_SIZE,ED_INF_HEIGHT,BAR_G,HEIGHT,WIDTH);
 #endif
       fclose(f_ini);
     }
@@ -5896,7 +6403,7 @@ else //master
 #ifdef LINUX
                if (sscanf(p, "%d,%d,%d,%d,%d", &MP_SIZE, &ED_INF_HEIGHT, &BAR_G, &HEIGHT, &WIDTH) < 5)
 #else
-			   if (sscanf(p, "%ld,%ld,%ld,%ld,%ld", &MP_SIZE, &ED_INF_HEIGHT, &BAR_G, &HEIGHT, &WIDTH) < 5)
+			   if (sscanf(p, "%d,%d,%d,%d,%d", &MP_SIZE, &ED_INF_HEIGHT, &BAR_G, &HEIGHT, &WIDTH) < 5)
 #endif
 			   {
 				   MP_SIZE = BAR_G = HEIGHT = 19*(RETINA+1);
@@ -5929,22 +6436,72 @@ else //master
     Set_Mem_Bitmaps(new_tier);
     Load_Bitmaps_pre(HEIGHT);
 
+    ini_cursors();
+
+    Set_Mem_Cursors(new_tier);  ////added on 27-06-2026  cursor should be selected before possible upgrade window appear
+
 if (child==0)
 {
+
     ret=alfacad_logo();
 
-    if (ret==255)
+        if (ret == 255)
     {
         GoRestart();
         allegro_exit();
+
 #ifdef LINUX
+    #ifndef MACOS
+        // ==========================================
+        // 1. TRUE LINUX RESTART PATH
+        // ==========================================
         execv(argv_[0], argv_);
-#else
-        _execv(argp__, argv_);
-        return 1;
-#endif
+
+        // Fallback cleanup if execv completely fails
         DoneArgs();
         return 1;
+    #else
+        // ==========================================
+        // 2. UNIFIED macOS RESTART PATH (Handles Bundle & Raw Binary)
+        // ==========================================
+        // Dynamically compute allocation space to prevent buffer overflows
+        size_t total_len = 512;
+        for (int i_ = 0; i_ < argc_; i_++) {
+            total_len += strlen(argv_[i_]) + 3; // Accounts for space + wrap quotes
+        }
+
+        char *command = malloc(total_len);
+        if (command != NULL) {
+            // "sleep 0.4" completely ensures old shared memory handles (shm_nattch) disconnect
+            // "--args" forwards all runtime configurations straight to the new instance
+            snprintf(command, total_len, "sleep 0.4; open -n \"%s\" --args", argv_[0]);
+
+            // Append all command parameters securely
+            for (int i = 1; i < argc_; i++) {
+                size_t current_len = strlen(command);
+                snprintf(command + current_len, total_len - current_len, " \"%s\"", argv_[i]);
+            }
+
+            // Bind the background processing string anchor
+            size_t final_len = strlen(command);
+            snprintf(command + final_len, total_len - final_len, " &");
+
+            // Execute the system handover
+            system(command);
+            free(command);
+        }
+
+        // Execute deep memory collection to avoid leak markers
+        DoneArgs();
+        return 0;
+    #endif
+#else
+        // ==========================================
+        // 3. WINDOWS / ALTERNATE DEPLOYMENT FALLBACK
+        // ==========================================
+        _execv(argp__, (const char *const *)argv_);
+        return 1;
+#endif
     }
 
   Alf_window_number=0;
@@ -5993,7 +6550,7 @@ if (child==0)
   
   ini_e();
 
-  Set_Mem_Cursors(new_tier);
+  Set_Mem_Cursors(new_tier);  //27-06-2026  //in case something was changed
 
   //set_dialog_cursor(alfa_mouse_pointer);
 
@@ -6243,43 +6800,64 @@ if (child==0)
 
   while(1)
    {
-       CUR_OFF(X,Y);
+       //// WARNING 01-07-2026
+       ////CUR_OFF(X,Y);
        reset_cursor(); //this is just for a case if cursor is not reset after some function
-       CUR_ON(X,Y);
+       ////CUR_ON(X,Y);
 
        if (go_reset_if_resized==TRUE) reset_if_resized();
 
+       go_back:
        //checking file buffer
       bufptr = &shmp_private.buf;
       if (bufptr->mflag==1) {
-#ifdef MACOS
-          set_semaphore(1);
-#endif
-          Load_New_Files(bufptr);
-          my_sleep(100);
-#ifdef MACOS
-          set_semaphore(0);
-#endif
-#ifndef LINUX
-          continue;
-#endif
-      }
-      else {
-          bufptr = &shmp->buf;
-          if (bufptr->mflag == 1) {
+          sleep_state = FALSE;
+          hibernate = FALSE;
 #ifdef MACOS
               set_semaphore(1);
 #endif
-              Load_New_Files(bufptr);
-              my_sleep(100);
+              if (load_semaphore==1)
+              {
+                  load_semaphore=0;
+                  Load_New_Files(bufptr);
+                  my_sleep(100);
+                  load_semaphore=1;
+              }
 #ifdef MACOS
               set_semaphore(0);
 #endif
 #ifndef LINUX
-              continue;
+
+#endif
+      }
+      else {
+          bufptr = &shmp->buf;
+          if (bufptr->mflag == 1)
+          {
+              sleep_state = FALSE;
+              hibernate = FALSE;
+#ifdef MACOS
+                  set_semaphore(1);
+#endif
+              if (load_semaphore==1)
+              {
+                  load_semaphore=0;
+                  Load_New_Files(bufptr);
+                  my_sleep(100);
+                  load_semaphore=1;
+              }
+#ifdef MACOS
+                  set_semaphore(0);
+#endif
+#ifndef LINUX
+
 #endif
           }
       }
+
+#ifdef MACOS
+      set_semaphore(1);
+#endif
 
 	  if (sleep_state == TRUE) 
 		  my_sleep(1);

@@ -850,7 +850,7 @@ double Double_to_Float (double x)
   return retval;
 }
 
-static double const  long_max = LONG_MAX / 10 ;
+static double const  long_max = (double)LONG_MAX / 10.0 ;
 
 long Double_to_Long (double x)
 /*-----------------------------*/
@@ -1235,8 +1235,8 @@ BOOL Auto_Backup_Proc (void)
     Cur_offd(X, Y);
     komunikat0 (49);
 	disk = getdisk();  
-    Current_Directory (disk + 1, cur_path) ;  
-    strncat(cur_path,SSlash,1);
+    Current_Directory (disk + 1, cur_path) ;
+    strncat(cur_path, SSlash, sizeof(cur_path) - strlen(cur_path) - 1);
 
     flags = fnsplit (cur_path, drive, dir, name, ext);
     flags = flags ;  

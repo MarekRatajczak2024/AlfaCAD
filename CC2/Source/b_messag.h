@@ -17,7 +17,7 @@ extern void komunikat_str(char *st);
 extern void komunikat_str_len(char *st);
 extern void komunikat0(int n);
 extern void komunikat0_str (int n, char *st);
-extern void  Internal_Error (int line, char * file);
+extern void  Internal_Error (int line, const char * file);
 extern void layer_info (void);
 
 #ifdef __cplusplus

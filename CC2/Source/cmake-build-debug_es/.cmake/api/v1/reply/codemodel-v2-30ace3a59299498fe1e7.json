@@ -39,9 +39,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "AlfaCADUA::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCADUA-Debug-c594201b0e403ba975aa.json",
-					"name" : "AlfaCADUA",
+					"id" : "AlfaCADES::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-AlfaCADES-Debug-f70074a25916c3cce5bf.json",
+					"name" : "AlfaCADES",
 					"projectIndex" : 0
 				}
 			]
@@ -50,7 +50,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-debug_ua",
+		"build" : "/home/marek/CC2/Source/cmake-build-debug_es",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

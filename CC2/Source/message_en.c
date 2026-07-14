@@ -14,10 +14,11 @@
 *
 */
 
+
 #ifdef __MESSAGE__
 
 static char* komunikaty[] =
-/*0*/{ u8"",
+/*0*/{u8"",
 /*1*/u8"Data OK",
 /*2*/u8"Wait ...",
 /*3*/u8"Interrupt --> Esc ",

@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern int Rysuj_main(int child, char file_name[255]);
+extern int Rysuj_main(int child, char *file_name, char file_multiname);
 int first_window_main=0;
 
 #ifdef __cplusplus
@@ -123,7 +123,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	win_set_window(a_hWnd);
 	strcpy(file_name,"");
 
-	ret=Rysuj_main(child, file_name);
+	ret=Rysuj_main(child, file_name, file_multiname);
 	
 	END_OF_MAIN()
 

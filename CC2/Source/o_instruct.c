@@ -313,6 +313,8 @@ int show_instruction (void)
 
   Get_Default_Color_Dlg (&color_dlg);
 
+  Set_Check_Button(&instruct_dlg, ID_STAY, !desktop_instruction);
+
   stay_check0 = stay_check = Get_Check_Button(&instruct_dlg, ID_STAY);
 
   Save_Update_flex(0, &curr_h, &curr_v);

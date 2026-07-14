@@ -19,6 +19,7 @@
 #define ALLEGWIN
 #include <allegext.h>
 #include<stdlib.h>
+#include <stdint.h> /* Required standard C header */
 #ifndef LINUX
 #include<io.h>
 #include<dos.h>
@@ -1576,7 +1577,7 @@ static void draw_listbox(LISTBOX  * listbox)
 			if (listbox->wartosc > 16)
 			{
 				sprintf(sk1, " %d", listbox->wartosc);
-				strncat(sk, sk1, strlen(sk1));
+				strncat(sk, sk1, sizeof(sk) - strlen(sk) - 1);
 				kolor_m = GetColorAC1(listbox->wartosc);
 			}
 			   else kolor_m = 15;
@@ -1968,7 +1969,7 @@ static int open_listbox(LISTBOX  * listbox)
        {
          return 0 ;
       }
-       listbox->back =(void *)(i_image_no + 1) ;
+       listbox->back =(void *)(intptr_t)(i_image_no + 1) ;
      }
      else
      {
@@ -2011,7 +2012,7 @@ static void  close_listbox(LISTBOX  * listbox)
     y1 = jed_to_piks_y(listbox->y)+pocz_y;
     if(listbox->flags & FLB_BACK_MEM)
     {
-      i_image_no =(int)listbox->back - 1 ;
+      i_image_no =(int)(intptr_t)listbox->back - 1 ;
       Put_Image_Tmp(i_image_no, x1, y1 - 2) ;
     }
     else
@@ -2528,7 +2529,7 @@ static int kolorXL1(int no_layer, int x, int y, int i_color0)
 
   sk1 [0] = '\0' ;
   i_color=i_color0;
-  sprintf(sk1,"%#ld",i_color);
+  sprintf(sk1,"%d",i_color);
   if(!get_string1(sk1, "", 3, 4, 81,x,y)) return i_color;
   komunikat(0);
   if(FALSE == calculator(sk1, &retval_no, buf_ret)  || retval_no < 0 || retval_no > 255)
@@ -2885,8 +2886,8 @@ void Draw_ComboBox(COMBOBOX *ComboBox)
 	  if (ptr1!=NULL)
       {
         strcpy(sk,ptr_temp+2);
-        sprintf(sk1," %#ld",ComboBox->listbox->wartosc);
-        strncat(sk,sk1,strlen(sk1));
+        sprintf(sk1," %d",ComboBox->listbox->wartosc);
+        strncat(sk,sk1,sizeof(sk) - strlen(sk) - 1);
         kolor_m=GetColorAC1(ComboBox->listbox->wartosc);
         setfillstyle_(SOLID_FILL,kolor_m);
         bar(x1+1, y1+1 - 2, x2-1, y2-1 + 2);
@@ -4109,7 +4110,6 @@ static void draw_images(IMAGE *Images,int SizeImageT, PTMENU *tipsmenu)
    
    for(i=0;i<SizeImageT;i++)
    {
-
       if (Images[i].iconno>0) {
 
           bmp = (BITMAP *) get_icon(Images[i].iconno);
@@ -4162,11 +4162,24 @@ static void draw_images(IMAGE *Images,int SizeImageT, PTMENU *tipsmenu)
 
 		  //strncpy((*(tipsmenu->pola))[i].txt, Images[i].txt, POLE_TXT_MAX-1);
 	  	  //(*(tipsmenu->pola))[i].txt[POLE_TXT_MAX-1]='\0';
+
+	  	  int icon_w=Images[i].x2, icon_h=Images[i].y2;
+
+	  	  if (Images[i].iconno>=0)
+	  	  {
+		  	  BITMAP *bitmap_ptr=(BITMAP*)get_icon(Images[i].iconno);
+	  	  	  if (bitmap_ptr!=NULL)
+	  	  		{
+	  	  			icon_w=bitmap_ptr->w;
+	  	  			icon_h=bitmap_ptr->h;
+	  	  		}
+	  	  }
+
           (*(tipsmenu->pola))[i].txt=Images[i].txt;
 		  fortips_map.x1[i] = x01;
 		  fortips_map.y1[i] = y01;
-		  fortips_map.x2[i] = x01 + Images[i].x2;
-		  fortips_map.y2[i] = y01 + Images[i].y2;
+		  fortips_map.x2[i] = x01 + icon_w;   //Images[i].x2;
+		  fortips_map.y2[i] = y01 + icon_h;   //Images[i].y2;
 	  }
 
    }
@@ -4753,8 +4766,11 @@ static void init(char typ, TDIALOG *Dlg, PTMENU *tipsmenu)
 
              if (slider[i].flags & 0xF0) continue;
 
-             if (slider[i].dp!=NULL) destroy_bitmap((BITMAP*)slider[i].dp);
-             if (slider[i].dp=NULL);
+             if (slider[i].dp!=NULL)
+             {
+	             destroy_bitmap((BITMAP*)slider[i].dp);
+             	 slider[i].dp=NULL;
+             }
          }
       case 2 :
 

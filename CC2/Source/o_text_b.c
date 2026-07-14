@@ -137,11 +137,11 @@ PTMENU mCzcionka={1,MaxMenuWinFont/*0*/,MaxMenuWinFont,FONTNAMELEN + 1,74,10,FIX
 
 TMENU mTekstm={14,0,0,23,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,&pmTekstm,NULL,NULL};
 
-int get_dialog_string(char *tekst, char *legal, int maxlength, int width0, int kom, int *tab)
+int get_dialog_string(char *tekst, int single, char *legal, int maxlength, int width0, int kom, int *tab)
 {
     int edit_params;
     int ret;
-    int single=1;
+    //int single=1;
 
     edit_params = TextG.bold * 2 + TextG.italics * 4 + TextG.underline * 8 + TextG.justowanie * 16 + TextG.ukryty * 64;
     preview_blocked = TRUE;
@@ -586,7 +586,7 @@ void  interwal(void)
   char *bp;
   int new_interwal;
 
-  sprintf(sk, "%ld", tekst_interwal) ;
+  sprintf(sk, "%d", tekst_interwal) ;
   if (!get_string (sk, "", MaxTextLen, 0, 45)) return ;
   new_interwal=strtol(sk, &bp, 10);
   if (*bp=='\0')
@@ -1142,7 +1142,7 @@ static void set_menu_string (void)
   }
   menu_par_new ((*mTekstm.pola)[11].txt, sk) ;
 
-  sprintf(sk, "%ld", tekst_interwal) ;
+  sprintf(sk, "%d", tekst_interwal) ;
   menu_par_new ((*mTekstm.pola)[12].txt,sk);
 
   strcpy(sk,(*mCzcionka.pola)[TextG.czcionka].txt);
@@ -1159,8 +1159,8 @@ static int pisz(BOOL repeat)
 	int len;
 	BOOL bad_char;
 	int i;
-	int sufiks1;
-	int sufiks2;
+	int sufiks1=0;
+	int sufiks2=0;
 	char *bp;
     int ret;
 	int tab = 0;
@@ -1184,7 +1184,7 @@ static int pisz(BOOL repeat)
             strcpy(&TextG.text[0], "");
             komunikat0(1);
             if (text_edit_dialog == FALSE) ret = get_string(&TextG.text[0], "", MaxTextLen * 2, 0, 13);
-            else ret = get_dialog_string(&TextG.text[0], "", MaxTextLen * 2, 0, 13, &tab);
+            else ret = get_dialog_string(&TextG.text[0], !TextG.multiline, "", MaxTextLen * 2, 0, 13, &tab);
             if (!ret) return 0;
 
             ptr_n = strstr(TextG.text, "\\n");
@@ -1195,6 +1195,8 @@ static int pisz(BOOL repeat)
                 ptr_n = strstr(ptr_n, "\\n");
                 TextG.multiline = 1;
             }
+        	//the very lasy check, because it can happen in alfamtext
+        	if (strchr(TextG.text, '\n')) TextG.multiline = 1;
 
             komunikat0(121);
         } else {
@@ -1206,7 +1208,7 @@ static int pisz(BOOL repeat)
             i = 0;
             bad_char = TRUE;
             while ((i < len) && (bad_char == TRUE)) {
-                sufiks1 = strtol(ptr_tekst, &bp, 10);
+                sufiks1 = (int)strtol(ptr_tekst, &bp, 10);
                 if (*bp == '\0') {
                     sufiks2 = sufiks1;
                     bad_char = FALSE;
@@ -1219,13 +1221,13 @@ static int pisz(BOOL repeat)
                 *ptr_tekst = '\0';
                 strcpy(TextG.text, tekst);
                 sufiks2 += tekst_interwal;
-                sprintf(TextG.text, "%s%ld", tekst, sufiks2);
+                sprintf(TextG.text, "%s%d", tekst, sufiks2);
             } else {
                 strcpy(TextG.text, "");
                 komunikat0(0);
 
                 if (text_edit_dialog == FALSE) ret = get_string(&TextG.text[0], "", MaxTextLen * 2, 0, 13);
-                else ret = get_dialog_string(&TextG.text[0], "", MaxTextLen * 2, 0, 13, &tab);
+                else ret = get_dialog_string(&TextG.text[0], !TextG.multiline, "", MaxTextLen * 2, 0, 13, &tab);
                 if (!ret) return 0;
 
                 ptr_n = strstr(TextG.text, "\\n");
@@ -1236,6 +1238,8 @@ static int pisz(BOOL repeat)
                     ptr_n = strstr(ptr_n, "\\n");
                     TextG.multiline = 1;
                 }
+            	//the very lasy check, because it can happen in alfamtext
+            	if (strchr(TextG.text, '\n')) TextG.multiline = 1;
 
                 komunikat0(Komunikat_R0);
             }
@@ -1267,8 +1271,8 @@ static int multipisz(void)
 	int len;
 	BOOL bad_char;
 	int i;
-	int sufiks1;
-	int sufiks2;
+	int sufiks1=0;
+	int sufiks2=0;
 	char *bp;
 	int ret;
 	int edit_params;
@@ -1340,7 +1344,7 @@ static int multipisz(void)
 			*ptr_tekst = '\0';
 			strcpy(TextG.text, tekst);
 			sufiks2 += tekst_interwal;
-			sprintf(TextG.text, "%s%ld", tekst, sufiks2);
+			sprintf(TextG.text, "%s%d", tekst, sufiks2);
 		}
 		else
 		{
@@ -1557,7 +1561,7 @@ re_edit:
 						if (ev->Number == ENTER)
 						{
 							Cur_offd(X, Y);
-							if ((PTRS__Text_Style[TextG.czcionka]->type == 2))
+							if (PTRS__Text_Style[TextG.czcionka]->type == 2)
 							{
 								;
 							}
@@ -1570,7 +1574,7 @@ re_edit:
 
 							Cur_ond(X, Y);
 						}
-						if ((ev->Number == 69) || (ev->Number == 101))
+						if (ev->Number == 69 || ev->Number == 101)
 						{
 							Cur_offd(X, Y);
 							goto re_edit;
@@ -1615,8 +1619,20 @@ re_edit:
 
 	re_EDIT = FALSE;
 
+	ptr_n = strstr(TextG.text, "\\n");
+	while ((ptr_n != NULL) && (*ptr_n != 0))
+	{
+		*(ptr_n) = '\r';
+		*(ptr_n + 1) = '\n';
+		ptr_n += 2;
+		ptr_n = strstr(ptr_n, "\\n");
+		TextG.multiline = 1;
+	}
+	//the very lasy check, because it can happen in alfamtext
+	if (strchr(TextG.text, '\n')) TextG.multiline = 1;
+
     if (text_edit_dialog==FALSE) ret=get_string(&TextG.text[0], "", MaxTextLen*2, 0, 13);
-    else ret=get_dialog_string(&TextG.text[0], "", MaxTextLen*2, 0, 13, &tab);
+    else ret=get_dialog_string(&TextG.text[0], !TextG.multiline, "", MaxTextLen*2, 0, 13, &tab);
 
 	ptr_n = strstr(TextG.text, "\\n");
 	while ((ptr_n != NULL) && (*ptr_n != 0))
@@ -1627,7 +1643,6 @@ re_edit:
 		ptr_n = strstr(ptr_n, "\\n");
 		TextG.multiline = 1;
 	}
-
 	//the very lasy check, because it can happen in alfamtext
 	if (strchr(TextG.text, '\n')) TextG.multiline = 1;
 
@@ -1678,7 +1693,7 @@ re_edit:
 						{
 							//Cur_offd(X, Y);
                             CUR_OFF(X, Y);
-							if ((PTRS__Text_Style[TextG.czcionka]->type == 2))
+							if (PTRS__Text_Style[TextG.czcionka]->type == 2)
 							{
 								;
 							}
@@ -1691,7 +1706,7 @@ re_edit:
 							//Cur_ond(X, Y);
                             CUR_ON(X, Y);
 						}
-						if ((ev->Number == _EDIT_) || (ev->Number == _edit_))
+						if (ev->Number == _EDIT_ || ev->Number == _edit_)
 						{
 							//Cur_offd(X, Y);
                             CUR_OFF(X, Y);
@@ -1853,6 +1868,8 @@ static int change_text (BOOL b_graph_value)
 	  ptr_n = strstr(ptr_n, "\\n");
 	  Tp.multiline = 1;
   }
+  //the very lasy check, because it can happen in alfamtext
+  if (strchr(Tp.text, '\n')) Tp.multiline = 1;
 
   if ( (t = korekta_obiekt((void *)ADP1, (void *)&Tp)) == NULL) return 0;
   Set_Second_Screen();
@@ -2053,6 +2070,8 @@ static void redcrET(char typ, TEXT  *t, int opcja_bak, unsigned char multiline)
 		  ptr_n = strstr(ptr_n, "\\n");
 		  TextG.multiline = 1;
 	  }
+  	 //the very lasy check, because it can happen in alfamtext
+  	 if (strchr(TextG.text, '\n')) TextG.multiline = 1;
 
       if (strwyj == 0)
       {
@@ -2682,8 +2701,10 @@ void  Edit_Text(void  *ad)
        {
 	     (*COMNDmt[ev->Number])();
 		 if (ev->Number == 0)
+		 {
 			 if (multiline) simulate_ukeypress(_EDIT_, _EDIT_SC_);
 			 else simulate_keypress(9);
+		 }
        }
    }
   } 
@@ -2862,8 +2883,10 @@ void  edit_text_f3(void  *ad)
        {
 	    (*COMNDmt[ev->Number])();
 		if (ev->Number == 0)
+		{
 			if (multiline) simulate_keypress('E');
 			else simulate_keypress(9);
+		}
        }
       }
   krok_s = krok_s0;

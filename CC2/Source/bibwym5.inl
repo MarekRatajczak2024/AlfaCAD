@@ -1,3 +1,5 @@
+#pragma once
+#line 1 "bibwym5.inl"
 /*   ______   ___       ___         ____     ______  ____
 *   /\  _  \ /\_ \    /'___\       /\  _`\  /\  _  \/\  _`\
 *   \ \ \L\ \\//\ \  /\ \__/   __  \ \ \/\_\\ \ \L\ \ \ \/\ \
@@ -188,12 +190,14 @@ static double Xkat,Ykat;
         Lr.x2 = w.x2 - n1 * K1_5 * fabs(kos1);
         Lr.y2 = w.y2 + n2 * K1_5 * fabs(koc1);
     }
-  if(Lr.x1!=Lr.x2 || Lr.y1!=Lr.y2)
-   if(dodaj_obiekt((BLOK *)dane, (void*)&Lr)==NULL) return 0;
-   else if(WymInter) {
-       rysuj_obiekt((char*)&Lr, COPY_PUT, 1);
-       CUR_OFF(x,y);
-   }
+  if (Lr.x1!=Lr.x2 || Lr.y1!=Lr.y2)
+  {
+	  if(dodaj_obiekt((BLOK *)dane, (void*)&Lr)==NULL) return 0;
+	  if(WymInter) {
+	  	rysuj_obiekt((char*)&Lr, COPY_PUT, 1);
+	  	CUR_OFF(x,y);
+	  }
+  }
   return 1;
 }
 
@@ -363,8 +367,8 @@ static void punktsel(double X0, double Y0)
   WymPunkt ( X ,Y , 1 ) ;
 }
 
-#include "bibwymo.c"
-#include "bibwyml.c"
+#include "bibwymo.inl"
+#include "bibwyml.inl"
 
 static void  punkt(void)
 { unsigned typ;

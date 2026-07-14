@@ -13,10 +13,11 @@
 *   See readme_alfacad.txt for copyright information.
 *
 */
-
+//part of b_menu.c
 #define __B_HLP__
 
 #include "menu.h"
+
 extern BOOL Semaphore;
 extern BOOL Cust_Semaphore;
 extern int Expand_flex(void);
@@ -36,8 +37,7 @@ void GetEsc(void)
    }
 }
 
-TMENU mHelp={96,32,32,30,20,4,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmHelp,NULL,NULL};
-
+static TMENU mHelp={96,32,32,30,20,4,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmHelp,NULL,NULL, NULL};
 
 int Lastfun()
 {

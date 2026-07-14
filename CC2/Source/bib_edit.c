@@ -46,7 +46,7 @@ extern int TTF_text_len(char* text);
 extern int utf8len(const char* s);
 extern int lenutf8to(const unsigned char* s, int to);
 extern void set_strwyj(void);
-extern int get_dialog_string(char *tekst, char *legal, int maxlength, int width0, int kom, int *tab);
+extern int get_dialog_string(char *tekst, int single, char *legal, int maxlength, int width0, int kom, int *tab);
 
 extern BOOL text_edit_dialog;
 
@@ -96,7 +96,7 @@ static void uaktualnijs1 (ESTR *lps_et, int n)
 	  max_len = (int)(((float)(x1-x) / ((float)text_len_pxl / fwlen)) /*+ 0.5*/);
 	  if (max_len < fwlen)
 	  {
-		  m_len = lenutf8to(lps_et->st, max_len);
+		  m_len = lenutf8to((unsigned char*)lps_et->st, max_len);
 		  if (m_len<strlen(buf)) buf[m_len] = '\0';
 	  }
   }
@@ -291,14 +291,14 @@ static int read_estr(void)
   }
 
   if (((et[np]->mode==GV_STRING) || (et[np]->mode == GV_STRING_D)) && (text_edit_dialog==TRUE)) {
-      ret=get_dialog_string(buf, "", MaxTextLen*2, 0, 13, &tab);
+      ret=get_dialog_string(buf, 1, "", MaxTextLen*2, 0, 13, &tab);
       if (ret==-1) zn=TAB;
       else if (ret==0) zn=ESC;
       else zn=ENTER;
   }
   else
   {
-      zn = editstring(buf, "", MaxTextLen * 2, (float)et[np]->lmax, b_graph_value, et[np]->extend, TRUE, 4, 4);
+      zn = editstring((unsigned char*)buf, "", MaxTextLen * 2, (float)et[np]->lmax, b_graph_value, et[np]->extend, TRUE, 4, 4);
   }
   MVCUR=CUR;
   uaktualnijs (E_Clear) ;
@@ -418,7 +418,7 @@ static int read_estr_zn(char zn0)
   {
     b_graph_value = TRUE ;
   }
-  zn= editstring (buf, "", MaxTextLen, (float)et[np]->lmax, b_graph_value, 1, FALSE, 4, 4) ;
+  zn= editstring ((unsigned char*)buf, "", MaxTextLen, (float)et[np]->lmax, b_graph_value, 1, FALSE, 4, 4) ;
   MVCUR=CUR;
   uaktualnijs (E_Clear) ;
 #define DOWNKEY 336
@@ -516,7 +516,7 @@ int edycjastr(void)
         set_strwyj();
         return -(np + 1);
     }
-	case SHTAB   : if(np<lp-1)np++ ;
+	case SHTAB: if(np<lp-1)np++ ;
 			 else np=0;
 			 break;
 	case TAB: if(np>0)np-- ;

@@ -616,7 +616,7 @@ POLE pmOpcje[] = {
 #define _PAGE_INTERRUPT_ u8"No '*PAGE' block ! Printing terminated"
 #define _CONVERSION_TERMINATION_ u8"WAIT !!! Converting file. Termination -> Esc... "
 #define _ERROR_DXF_ u8"Error in DXF file or termintion  "
-#define _LINE_NO_ u8" -> line %#ld"
+#define _LINE_NO_ u8" -> line %ld"
 
 #define _TO_MANY_WIN_ u8"Too many open windows"
 #define _CLOSE_WINDOW_ u8"Do you want to close the window ?"
@@ -838,7 +838,7 @@ POLE pmKolorT_[] = {
 
 TMENU mKolorAC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,72,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 
-#define _OTHER_NO_ u8"֍[X] other>>> %#ld"
+#define _OTHER_NO_ u8"֍[X] other>>> %d"
 
 static POLE pmKrok_k[9] = {
 	 {u8"[A]\0  2.5  *",'A',0,NULL},
@@ -1660,7 +1660,7 @@ static char* desktop_data_param_comment[] =
 
 
 #define _UNABLE_INSTALL_GRAPHIC_ u8"Unable to initialize graphics mode"
-#define _ERROR_READING_DAT_ u8"Error reading file: alfacad.dat\n"
+#define _ERROR_READING_DAT_ (const char*)u8"Error reading file: alfacad.dat\n"
 
 #define _MACRO_C__ L'a'
 #define _EXECUTE_C__ L'e'
@@ -3303,9 +3303,6 @@ static POLE pmMakro[] = {
 	{u8"Load",L'L',94,NULL},
 	{u8"Save",L'S',95,NULL}  };
 
-#define _DRAW__ L'd';
-#define _TEXT__ L't';
-
 #endif
 
 #ifdef __O_PAR_B__
@@ -4078,7 +4075,7 @@ static POLE pmZmienne[] = {
 	  {u8"Extension lines\0        ", 'E',188,&mAddLine} };  //12
 
 
-  char *_LFORMAT_[]={u8"Decimal",u8"Engineering",u8"Architectural",u8"Fractional"};
+  char *_LFORMAT_[]={"Decimal","Engineering","Architectural","Fractional"};
 
 #endif
 

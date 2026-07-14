@@ -39,9 +39,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "AlfaCADPL::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCADPL-Debug-8f602acef464a1941bcc.json",
-					"name" : "AlfaCADPL",
+					"id" : "AlfaCADUA::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-AlfaCADUA-Debug-67cfeb7d3c70c47e760e.json",
+					"name" : "AlfaCADUA",
 					"projectIndex" : 0
 				}
 			]
@@ -50,7 +50,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-debug_pl",
+		"build" : "/home/marek/CC2/Source/cmake-build-debug_ua",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

@@ -124,7 +124,7 @@ static t_token_value 	get_token 	(void) ;
 static name 		*look 		(char *, int);
 static void 		free_store 	(void);
 static double 		error 		(int no_err) ;
-static BOOL		insertfunction  (char *funcname, int nargs, d_f_va funcptr) ;
+static BOOL		insertfunction  (const char *funcname, int nargs, d_f_va funcptr) ;
 
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
@@ -626,8 +626,9 @@ void set_calc_ltype(int typ)
     ltype=typ;
 }
 
-static BOOL insert_function (void)
-/*------------------------------*/
+/*
+static BOOL insert_function_old (void)
+//------------------------------------
 {
   BOOL b_ret ;
 
@@ -666,6 +667,61 @@ static BOOL insert_function (void)
     b_ret = FALSE ;
   }
   return b_ret ;
+}
+*/
+
+//Definition of a structure to hold the function data
+struct MathFunctionMapping {
+    const char* name;
+    int arg_count;
+    d_f_va func_ptr;
+};
+
+static BOOL insert_function (void)
+{
+    // All functions in a clean table
+    static const MathFunctionMapping math_table[] = {
+        {"sqrt",   1, do_sqrt},
+        {"sin",    1, do_sin},
+        {"cos",    1, do_cos},
+        {"tan",    1, do_tan},
+        {"log",    1, do_log},
+        {"log10",  1, do_log10},
+        {"pow",    2, do_pow},
+        {"asin",   1, do_asin},
+        {"asinr",  1, do_asinr},
+        {"acos",   1, do_acos},
+        {"acosr",  1, do_acosr},
+        {"atan",   1, do_atan},
+        {"atanr",  1, do_atanr},
+        {"min",    2, do_min},
+        {"min2",   2, do_min},
+        {"min3",   3, do_min3},
+        {"max",    2, do_max},
+        {"max2",   2, do_max},
+        {"max3",   3, do_max3},
+        {"xy",     2, do_xy},
+        {"lin",    2, do_LIN},
+        {"arc",    6, do_ARC},
+        {"vec",    3, do_VEC},
+        {"vec2",   6, do_VEC2},
+        {"fil",    2, do_FIL},
+        {"cir",    1, do_CIR},
+        {"elp",    3, do_ELP},
+        {"elpa",   5, do_ELPA},
+        {"lint",   1, do_lint}
+    };
+
+    // 3. Loop through the table and register them
+    //    Using const_cast here handles the legacy char* once for everything.
+    for (const auto& item : math_table) {
+        char* mutable_name = const_cast<char*>(item.name);
+        if (insertfunction(mutable_name, item.arg_count, item.func_ptr) == FALSE) {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
 }
 
 /*-------------------------------------------------------------*/
@@ -756,11 +812,11 @@ static double error (int no_err)
 }
 
 
-static name * look (char *p, int ins = 0)
-/*-------------------------------------*/
+static name * look (const char *p, int ins = 0)
+/*-------------------------------------------*/
 {
   int ii = 0 ;						//hash
-  char *pp = p ;
+  const char *pp = p ;
   while (*pp)
   {
     ii <<= 1 ;
@@ -795,14 +851,14 @@ static name * look (char *p, int ins = 0)
   return nn ;
 }
 
-static inline name *insert (char *s)
+static inline name *insert (const char *s)
 /*----------------------------------*/
 {
   return look (s, 1) ;
 }
 
-static BOOL insertfunction (char *funcname, int nargs, d_f_va funcptr)
-/*-------------------------------------------------------------------*/
+static BOOL insertfunction (const char *funcname, int nargs, d_f_va funcptr)
+/*------------------------------------------------------------------------*/
 {
   BOOL b_ret ;
   b_ret = FALSE ;
@@ -1072,8 +1128,10 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
   int i,iii;
   char *pow_, *min_, *min2_, *min3_, *min4_, *min5_, *max_, *max2_, *max3_, *max4_, *max5_, *xy_, *LIN_, *ARC_, *VEC_, *VEC2_, *FIL_, *CIR_, *ELP_, *ELPA_, *LINT_;
 
-  //tutaj mozna sprawdzic czy wszystkie znaki zawieraja cyfry, kropke i przecinek
-  //jezeli tak, i jezeli wystapil przecinek, mozna go zamienic na kropke
+  // tutaj mozna sprawdzic czy wszystkie znaki zawieraja cyfry, kropke i przecinek
+  // jezeli tak, i jezeli wystapil przecinek, mozna go zamienic na kropke
+  // here you can check if all characters contain numbers, a period, and a comma
+  // if so, and if a comma occurs, you can replace it with a period
   pow_=strstr(buf,"pow(");
   min_=strstr(buf,"min(");
   min2_=strstr(buf,"min2(");
@@ -1111,7 +1169,12 @@ int calculator (char *buf, int *retval_no, double *buf_ret)
 
   b_err = 0;
   strlwr_ (buf) ;
-  if (buf[strlen(buf)]!=';') strncat(buf,";",1);
+
+  size_t len = strlen(buf);
+  // Only check if the string isn't empty, doesn't end in ';', and has room for 1 more char
+  if (len > 0 && buf[len - 1] != ';' && len < (sizeof(buf) - 1)) {
+      strcat(buf, ";");
+  }
   
   if (*retval_no <= 0   ||   buf_ret == NULL        ||
       buf_ret == NULL   || ini_buf (buf) == FALSE)

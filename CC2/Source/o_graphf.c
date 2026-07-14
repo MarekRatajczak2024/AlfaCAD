@@ -83,7 +83,7 @@ get_graphf_param (T_Fstring key_name, T_Fstring ret_string)
   s__graphf_names [i__graphfno].sz_graphf_name [MAX_GRAPHF_NAME_LEN - 1] = '\0' ;
   s__graphf_names [i__graphfno].i_off = i__buf_off ;
   strcpy (&ptrsz__graphf_formula [i__buf_off], ret_string) ;
-  i__buf_off += strlen (ret_string) + 1 ;
+  i__buf_off += (int)strlen (ret_string) + 1 ;
 
   strcpy(pmGraphf [i__graphfno + 1].txt, &(s__graphf_names [i__graphfno].sz_graphf_name [0])) ;
   
@@ -112,7 +112,7 @@ int Read_Graph_Function(void)
         ptrsz__graphf_formula = realloc(ptrsz__graphf_formula, i__buf_off + 100);
     }
     
-    strcpy(pmGraphf[0].txt, _CURRENT_);
+    strcpy(pmGraphf[0].txt, (const char*)_CURRENT_);
 
     pmGraphf[0].wcod = ' ';
     pmGraphf[0].menu = NULL;

@@ -1347,9 +1347,9 @@ int draw_disp_label(LINIA *L, LINIA *Le, double dx, double vpar1, double vpar2, 
         T.warstwa = L->warstwa;
         T.kolor = L->kolor;
         T.czcionka = zmwym.czcionka;
-        T.wysokosc = zmwym.wysokosc * 0.5;
-        if (Check_if_Equal2(dx, PL1.dl))
-            T.kat = (Pi_ * (PL.kat+180) / 180);
+        T.wysokosc = (float)zmwym.wysokosc * 0.5;
+        if (Check_if_Equal2(dx, PL.dl))
+            T.kat = (float)(Pi_ * (PL.kat+180) / 180);
         else
             T.kat = Pi_ * PL.kat / 180;
         T.blok=1;
@@ -13727,7 +13727,7 @@ else
     runcode = SystemSilent("sumatrapdf64 -new-window", params);  //RunSilent("sumatrapdf64 -new-window", params);
 #endif
     }
-    printf("%d", runcode);
+    printf("%lu", runcode);
 
     disable_F11();
     ret = Expand_flex();
@@ -13766,7 +13766,7 @@ else
 #ifndef LINUX
             sprintf(params, "%s", params_in);
             runcode = RunSilent("notepad", params);
-            printf("%d", runcode);
+            printf("%lu", runcode);
 
             runcode = 255;
 #endif

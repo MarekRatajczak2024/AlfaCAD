@@ -1209,7 +1209,7 @@ static BOOL copy_offset_object(double df_x, double df_y)
         return TRUE; 	/*!!!!!!*/
     }
 
-    
+    return FALSE;
 }
 
 

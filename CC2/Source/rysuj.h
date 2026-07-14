@@ -36,7 +36,7 @@ int Client_number=0;
 int Alf_window_number=0;
 BOOL original_color_print;
 BOOL normalize_text=TRUE;
-char background_pcx_file[MAXPATH]="Background\\gregre.pcx";
+char background_pcx_file[MAXPATH];
 WARSTWY_ON_PCX  Warstwy_On_PCX[256], Warstwy_On_Solids[256];
 int aspect_ratio=0;
 int start_disk=2;
@@ -377,7 +377,8 @@ void (*MPINI)(int n)=NULL;
 unsigned long buf_mem_menu=68000L;
 int Current_Layer=0, No_Layers = 1, No_Layers_DXF = 0;
 char *bufor_makra_esc[] = {"\0","\0", "\0"};  //was {'\0','\0', '\0'}
-char *bufor_makra=NULL, *aktmakro=NULL, *mkbuf=NULL, *mbufmx = NULL;
+char *bufor_makra=NULL, *aktmakro=NULL; // *mkbuf=NULL, *mbufmx = NULL;
+unsigned char *mkbuf=NULL, *mbufmx = NULL;
 LAYER Layers[MAX_NUMBER_OF_LAYERS];
 LAYER Layers_DXF[MAX_NUMBER_OF_LAYERS_DXF];
 int FormatX=0,FormatY=0 ;

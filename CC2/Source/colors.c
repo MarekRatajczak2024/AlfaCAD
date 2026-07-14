@@ -265,7 +265,7 @@ int colors_set1(int n)
   return ret;
 }
 
-unsigned int colors_zone(unsigned int *color_to_set)
+unsigned int colors_zone(unsigned int color_to_set)
 /*-------------------------------------------------*/
 {
 	int nrBat;
@@ -277,7 +277,7 @@ unsigned int colors_zone(unsigned int *color_to_set)
 	memmove(pdBut, &But_Cancel, sizeof(BUTTON));
 	Get_Default_Color_Dlg(&color_dlg);
 	init_button_colors_dialog();
-	col_state = (unsigned int)color_to_set;
+	col_state = (int)color_to_set;
 	nrBat = col_state+1;
 	Set_Check_Button(&colors_config, nrBat, 1);
 

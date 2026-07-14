@@ -158,8 +158,9 @@ get_config_param (T_Fstring key_name, T_Fstring ret_string)
       return FALSE;
    }
    line_type_number = i + 1;	/*linia ciagla numer zero*/
-   strncpy ( typ_linii.nazwa, key_name, MaxLenNameLine);
-   typ_linii.nazwa [MaxLenNameLine] = '\0';
+   //strncpy ( typ_linii.nazwa, key_name, MaxLenNameLine);
+   //typ_linii.nazwa [MaxLenNameLine - 1] = '\0';
+   snprintf(typ_linii.nazwa, MaxLenNameLine, "%s", key_name);
 
    p = ret_string;
    p = strtok (p, ",");

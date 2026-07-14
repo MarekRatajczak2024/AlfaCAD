@@ -273,44 +273,6 @@ const double INV_FY_XY   = 1.41421356; // 1.0 / (1.0 / sqrt(2.0))
 const double INV_FX_VERT = 1.41421356;
 const double INV_FY_VERT = 0.81649658;
 
-//not optimal version
-double isometric_vector_length_f_in_plane__(
-        enum PlaneType plane,
-        float x1, float y1,
-        float x2, float y2)
-{
-    double dx = (double)(x2 - x1);
-    double dy = (double)(y2 - y1);
-
-    if (dx == 0.0 && dy == 0.0) return 0.0;
-
-    const double fx_xy = sqrt(3.0 / 2.0), fy_xy = 1.0 / sqrt(2.0);
-    const double fx_vert = 1.0 / sqrt(2.0), fy_vert = sqrt(3.0 / 2.0);
-
-    double inv_fx, inv_fy;
-
-    double angle, fx, fy;
-    switch (plane) {
-        case XY_PLANE: angle = 0.0;         fx = fx_xy;   fy = fy_xy;   break;
-        case XZ_PLANE: angle = 5.759586532; fx = fx_vert; fy = fy_vert; break;
-        case YZ_PLANE: angle = 0.523598776; fx = fx_vert; fy = fy_vert; break;
-        default: return sqrt(dx*dx + dy*dy);
-    }
-
-    double cosA = cos(angle);
-    double sinA = sin(angle);
-
-// Rotate point to ellipse local coordinate system
-    double xr = dx * cosA + dy * sinA;
-    double yr = -dx * sinA + dy * cosA;
-
-    double x_scaled = xr * inv_fx;
-    double y_scaled = yr * inv_fy;
-
-// Calculate radius
-    return sqrt((xr / fx) * (xr / fx) + (yr / fy) * (yr / fy));
-}
-
 double isometric_vector_length_f_in_plane(enum PlaneType plane, float x1, float y1, float x2, float y2) {
     double dx = (double)(x2 - x1);
     double dy = (double)(y2 - y1);

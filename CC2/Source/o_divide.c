@@ -255,7 +255,7 @@ static void set_divide_mode (int ev_number)
        komunikat0 (82) ;
        if (-1 != (np__divide = dodajstr (&e__divide)))
        {
-	 sprintf (e__divide.st, "%#6d", s__divide.i_seg_no) ;
+	 sprintf (e__divide.st, "%6d", s__divide.i_seg_no) ;
 	 Out_Edited_Draw_Param ((ESTR *)&e__divide, TRUE) ;
        }
        break ;
@@ -1585,7 +1585,7 @@ static void divide_seg_no (void)
     d = 10000 ;
   }
   s__divide.i_seg_no = (int)d ;
-  sprintf (e__divide.st, "%#6d", (int)d) ;
+  sprintf (e__divide.st, "%6d", (int)d) ;
   if (s__divide.b_divide == TRUE)
   {
     Out_Edited_Draw_Param ((ESTR *)&e__divide, TRUE) ;

@@ -22,7 +22,11 @@ static int list_passthrough_eq(const void *a, const void *b)
     void *sa = *(void **)a;
     void *sb = *(void **)b;
 
-    return (int)sa - (int)sb;
+    ////return (int)((char*)sa - (char*)sb);
+    // Warning-free, overflow-proof, and universally cross-platform
+    if (sa < sb) return -1;
+    if (sa > sb) return 1;
+    return 0;
 }
 
 void merge_sort(void *base, size_t nel, size_t width, int (*cmp)(const void *, const void *))
@@ -438,6 +442,8 @@ bool list_sort(list_t *l, list_eq e)
         return false;
 
     merge_sort(l->elements, l->len, sizeof(*l->elements), l->cbs.leq);
+
+    return true;
 }
 
 

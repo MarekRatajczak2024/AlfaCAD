@@ -64,7 +64,10 @@ extern void get_posXY(double *pozx, double *pozy);
 extern BOOL Semaphore;
 
 #ifndef LINUX
-int gettimeofday(struct timeval* tp, struct timezone* tzp);
+// Forward declare the structures globally first
+struct timeval;
+struct timezone;
+extern int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #endif
 
 POLE pmanimation[] = {

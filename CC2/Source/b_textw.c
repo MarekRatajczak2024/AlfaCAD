@@ -14,6 +14,9 @@
 *
 */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpointer-sign"
+
 #include<forwin.h>
 #define ALLEGWIN
 #include <allegext.h>
@@ -317,7 +320,7 @@ int Get_W_Matix_Len(int i_font)
 
 int Get_W_Matix_Len_TTF(int i_font, int height)
 {
-	return ((unsigned int)'W', i_font, height);
+	return Get_Char_Matix_Len_TTF((unsigned int)'W', i_font, (float)height);
 }
 
 
@@ -379,7 +382,8 @@ double Get_TTF_Char_Left_Top(TEXT *ptrs_text, char *ptrsz_t, double font_scale, 
 double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, int font_index0, int *TTF_width, int *TTF_height, double *matrix_d, int *i_matrix_d)
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 {
-  unsigned char *ptrsz_tmp ;
+  //unsigned
+  char *ptrsz_tmp ;
   double l_len, l_len_bar, l_len_index;
   double margin=0.0;
   double margin_char_scale0 = 1.0, margin_char_scale =1.0, margin_char_scale_index = 1.0;
@@ -1544,7 +1548,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 		if ((strlen(t0->text) == 0) && (t0->typ > 2))
 		{
 			memmove(&t1, t0, sizeof(TEXT));  //TEXT_NAG));
-			t1.text[0] = 255;
+			t1.text[0] = '\377'; //255;
 			t1.text[1] = '\0';
 
 			t = &t1;
@@ -1599,7 +1603,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 		zn = (unsigned char *)t->text;
 		out_break = FALSE;
-		while ((zn != '\0') && (!out_break))
+		while ((*zn != '\0') && (!out_break))
 		{
 			if (wysokosc_p <= 1.0)
 			{
@@ -1658,7 +1662,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 				}
 			}
 			//next line if exists
-			ptr_zn = strchr(zn, '\n');
+			ptr_zn = strchr((const char*)zn, '\n');
 			if (ptr_zn != NULL)
 			{
 				zn = ptr_zn + 1;
@@ -2422,3 +2426,5 @@ void outtextxy_wP (TEXT *t, int mode)
     else SetColorAC(8);
   outtextxy_wP_ (t, mode) ;
 }
+
+#pragma clang diagnostic pop

@@ -12,8 +12,8 @@
 //not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define strdup      _strdup
 #endif
-
 
 int str_eq_int(const char *a, const char *b, bool casecmp)
 {
@@ -45,6 +45,7 @@ static char* strdup__(const char* s) {
     return new_str;
 }
 
+#if !defined(MACOS) && !defined(_WIN32)
 static char* strdup(const char* s) {
     if (s == NULL) return NULL;
     size_t len = strlen(s) + 1;
@@ -54,6 +55,7 @@ static char* strdup(const char* s) {
     }
     return new_str;
 }
+#endif
 
 list_str_t *list_str_create(list_str_flags_t flags)
 {
@@ -66,7 +68,7 @@ list_str_t *list_str_create(list_str_flags_t flags)
     if (flags & LIST_STR_CASECMP)
         cbs.leq = str_eq;
     if (flags & LIST_STR_SORT)
-        lflags != LIST_SORT;
+        lflags |= LIST_SORT;
     return (list_str_t *)list_create(&cbs, lflags);
 }
 

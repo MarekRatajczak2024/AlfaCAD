@@ -424,7 +424,7 @@ static BUTTON buttons [35] =
   },
 };
 
-const IMAGE images[] =
+static IMAGE images[] =
 {
  {  XpColor+2, YpColor + 2* DYColorEdit, 32, 32, 34,image_pl_tips0}, //line thickness
  {  XpColor+2, YpColor + 3* DYColorEdit, 32, 32, 35,image_pl_tips1},
@@ -514,13 +514,13 @@ static LABEL lab_color=
 static TDIALOG ploter_dlg =
 {
 	7, 10, 523,209,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
-	plt_dlg_labs0,
+	(char*)plt_dlg_labs0,
 	0, NULL,
-	LAB_SIZE, &lab_table,
-	5, &gr_box,
-	EDIT_SIZE, &edit_table,
-	14, &images,
-	35, &buttons,
+	LAB_SIZE, (LABEL(*)[])&lab_table,
+	5, (GROUP_BOX(*)[])&gr_box,
+	EDIT_SIZE, (INPUTLINE(*)[])&edit_table,
+	14, (IMAGE(*)[])&images,
+	35, (BUTTON(*)[])&buttons,
 	0,NULL,
 	0,NULL,
     0,NULL, //Sliders

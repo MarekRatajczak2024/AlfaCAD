@@ -447,7 +447,7 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
            }
 
            if (set_adr) {
-               pmList_Blok[k].menu = (void *) ((long) ((char *) ptrs_block - dane));
+               pmList_Blok[k].menu = (void *)(intptr_t)((char *)ptrs_block - dane);
                pmList_Blok[k].iconno = k;
            } else {
                pmList_Blok[k].menu = NULL;
@@ -522,8 +522,8 @@ static BLOK * copy_block_List (int n)
 {
     BLOK *ptrs_sel_blok ;
 
-    ptrs_sel_blok = (BLOK*)(dane + ptr__off_block [n]) ;
-    ptrs_sel_blok = (BLOK*)(dane + (long)pmList_Blok[n].menu) ;
+    //ptrs_sel_blok = (BLOK*)(dane + ptr__off_block [n]) ;
+    ptrs_sel_blok = (BLOK*)(dane + (intptr_t)pmList_Blok[n].menu) ;
     ptrs_sel_blok = (BLOK*)Copy_Object ((char  *)ptrs_sel_blok) ;
     return ptrs_sel_blok ;
 }

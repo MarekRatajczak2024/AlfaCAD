@@ -909,7 +909,7 @@ void my_horizontal_polygon(int *xy, int kolorA)
 	dxl = dist * fabs(sin(angle_l));
 	dxp = dist * fabs(sin(angle_p));
 
-	if (fabs(y1 - y4) <= dist)
+	if (abs(y1 - y4) <= dist)
 	{
 		line(allegro_prn_bmp, min( min(x1,x2), min(x3, x4)), y1, max(max(x1, x2), max(x3, x4)), y2, kolorA);
 		return;
@@ -4782,6 +4782,9 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
                 Lt.y2 = Lth.y2 + (float) ((ptrs_vector->magnitude2 / thermal_magnitude) * kos1th);
             }
 
+    			Ltx = (Lt.x1 + Lt.x2) / 2;
+    			Lty = (Lt.y1 + Lt.y2) / 2;
+
                 parametry_lini(&Lt, &PL1);
                 kos2 = sin(Pi * (PL1.kat + 90) / 180);
                 koc2 = cos(Pi * (PL1.kat + 90) / 180);
@@ -8337,8 +8340,10 @@ static BOOL draw_border_solidarc_to_drive (SOLIDARC *ptr_sa, int type__drive)
                 (Check_if_Equal(w1->xy[3], xy[3])) &&
                 (Check_if_Equal(w1->xy[0], xy[0])) &&
                 (Check_if_Equal(w1->xy[1], xy[1])))
-                if (!ptr_sa->reversed) begin_line=0;
-                else end_line=0;
+            {
+	            if (!ptr_sa->reversed) begin_line=0;
+	            else end_line=0;
+            }
         }
         else if (nag1->obiekt==Osolidarc)
         {
@@ -8350,14 +8355,16 @@ static BOOL draw_border_solidarc_to_drive (SOLIDARC *ptr_sa, int type__drive)
                 (Check_if_Equal(xy1[5], xy[3])) &&
                 (Check_if_Equal(xy1[6], xy[0])) &&
                 (Check_if_Equal(xy1[7], xy[1])))
-                if (!ptr_sa->reversed) begin_line=0;
-                else end_line=0;
+            {
+	            if (!ptr_sa->reversed) begin_line=0;
+	            else end_line=0;
+            }
         }
 
-        last_trace_point[0].x=xy[0];
-        last_trace_point[0].y=xy[1];
-        last_trace_point[1].x=xy[2];
-        last_trace_point[1].y=xy[3];
+        last_trace_point[0].x=(float)xy[0];
+        last_trace_point[0].y=(float)xy[1];
+        last_trace_point[1].x=(float)xy[2];
+        last_trace_point[1].y=(float)xy[3];
     }
 
 
@@ -11225,7 +11232,7 @@ static BOOL get_prn_status (BOOL text_mode)
      if (retval == FALSE)
      {
        ErrList (42);
-       key = Get_Legal_Key ("kKpP");
+       key = Get_Legal_Key ((char*)"kKpP");
        ClearErr ();
        if (key == 'p' || key == 'P')
        {

@@ -122,7 +122,7 @@ void *luk_w_in_block (void  *adr, BOOL draw)
     zmien_atrybut (ADP1, ADK1,	ANieOkreslony, Ausuniety)	;
     usun_blok(ADP1,ADK1);
     //inserting block into stirrup block
-    B1->blok=Ablok;
+    B1->blok=1;
     nb1=(BLOK*)dodaj_obiekt((BLOK*)dane,B1);
     //freeing buffer
     free(B1);

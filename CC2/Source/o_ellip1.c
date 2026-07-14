@@ -700,6 +700,8 @@ BOOL Make_Ellipse_variant(double df_xc,
         lastY = y;
     }
     linen (pikseleX0 (lastX), pikseleY0 (lastY), pikseleX0 (lastX0), pikseleY0 (lastY0), i_mode) ;
+
+    return TRUE;
 }
 
 
@@ -1109,10 +1111,10 @@ void Tangential_Point_To_Ellipse(double cx, double cy, double rx, double ry, dou
     f1=sqrt(((rx*rx*mm*mm)+(ry*ry)));
 
     x1=-(rx*rx*mm)/f1;
-    x1=-(ry*ry)/f1;
+    y1=-(ry*ry)/f1;
 
     x2=(rx*rx*mm)/f1;
-    x2=(ry*ry)/f1;
+    y2=(ry*ry)/f1;
 
     //choosing point
     *x=x1+cx;
@@ -1271,6 +1273,7 @@ int Get_Circle_Points(double df_xc, double df_yc, double df_r, double xy[])
         xy[i*2] = df_xc + df_r * cos(df_elangle);
         xy[i*2+1] = df_yc + df_r * sin(df_elangle);
     }
+    return 1;
 }
 
 BOOL Make_Ellipse_Shadow(double df_xc,

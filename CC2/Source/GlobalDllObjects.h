@@ -12,10 +12,12 @@
 	#error include 'stdafx.h' before including this file for PCH
 #endif
 
-#include "res\resource.h"		// main symbols
+#ifndef LINUX
+#include "res/resource.h"
+#endif
 
 #define MAXPATH   260
-#define FILENO 16
+#define FILENO 32
 
 typedef struct Client_Bitmap
 {
@@ -57,21 +59,20 @@ class CGlobalDllObjectsApp : public CWinApp
 public:
 	CGlobalDllObjectsApp();
 
-// Overrides
+	// Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CGlobalDllObjectsApp)
-	public:
-	virtual BOOL InitInstance();
-	virtual int ExitInstance();
+public:
+	BOOL InitInstance() override;  // Removed 'virtual', kept 'override'
+	int ExitInstance() override;   // Removed 'virtual', kept 'override'
 	//}}AFX_VIRTUAL
 
 	//{{AFX_MSG(CGlobalDllObjectsApp)
-		// NOTE - the ClassWizard will add and remove member functions here.
-		//    DO NOT EDIT what you see in these blocks of generated code !
+	// NOTE - the ClassWizard will add and remove member functions here.
+	//    DO NOT EDIT what you see in these blocks of generated code !
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
-
 
 class GLOBALDLLOBJECTS_API CTest
 {
@@ -79,7 +80,7 @@ public:
  // Jedyne dozwolone konstruowanie obiektu
  // odbywa się z użyciem operatora placement
  // new.
- void* operator new(size_t) { return NULL; }
+ void* operator new(size_t) = delete;
  void* operator new(size_t, void* p) { return p; }
  void operator delete(void*) {};
 

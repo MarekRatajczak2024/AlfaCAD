@@ -246,7 +246,7 @@ if (NULL == (ptrs_block = object_to_block ((void *)ptrs_ellipticalarc, c_desc)))
 return (char*)ptrs_ellipticalarc ;
 }
 
-i_make_type = i_make_type = DE_ADD_Ell_Arc_SGP ;
+i_make_type = DE_ADD_Ell_Arc_SGP ;
 b_ret = Make_EllipticalArc (df_cx, df_cy, df_xaxis, df_yaxis, df_angle, df_sangle, df_eangle, 0,
                           &ptrs_block, (void*)&s_ellipticalarc, i_make_type, Anormalny, Guma, O2BlockPline, 0, s_ellipticalarc.kolor, 1) ;
 

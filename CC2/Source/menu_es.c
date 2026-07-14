@@ -617,7 +617,7 @@ POLE pmOpcje[] = {
 #define _PAGE_INTERRUPT_ u8"¡No hay bloque '*PAGE'! Impresión terminada"
 #define _CONVERSION_TERMINATION_ u8"¡ESPERE! Convirtiendo archivo. Terminación -> Esc... "
 #define _ERROR_DXF_ u8"Error en archivo DXF o terminación  "
-#define _LINE_NO_ u8" -> fila %#ld"
+#define _LINE_NO_ u8" -> fila %ld"
 
 #define _TO_MANY_WIN_ u8"Demasiadas ventanas abiertas"
 #define _CLOSE_WINDOW_ u8"¿Quieres cerrar la ventana?"
@@ -771,7 +771,7 @@ char stay_string[64]="No mostrarlo de nuevo";
 
 #define _YES_ "S"
 #define _NO_ "N"
-static char ggsel[10][16] = { u8"punto Final", u8"Extremo más cercano", u8"Medio", u8"Intersección", u8"Centro", u8"Perpendicular",
+static char ggsel[10][24] = { u8"punto Final", u8"Extremo más cercano", u8"Medio", u8"Intersección", u8"Centro", u8"Perpendicular",
 "Tangencial", "Adyacente", "punto","----" };
 
 POLE pmKolor[] = {
@@ -836,7 +836,7 @@ POLE pmKolorT_[] = {
 
 TMENU mKolorAC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,72,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 
-#define _OTHER_NO_ u8"֍[X] otro >>> %#ld"
+#define _OTHER_NO_ u8"֍[X] otro >>> %d"
 
 static POLE pmKrok_k[9] = {
 	 {u8"[A]\0  2.5  *",'A',0,NULL},
@@ -3290,9 +3290,6 @@ static POLE pmMakro[] = {
 	{u8"Cargar archivo",L'C',94,NULL},
 	{u8"Guardar en archivo",L'G',95,NULL}  };
 
-#define _DRAW__ L'd';
-#define _TEXT__ L't';
-
 #endif
 
 #ifdef __O_PAR_B__
@@ -4053,13 +4050,13 @@ static POLE pmZmienne[] = {
 	  {u8"Altura del texto\0             ", 'A',179,NULL},
 	  {u8"factor de ancho de teXto\0     ", 'X',180,NULL},
 	  {u8"texto en Cursiva\0             ", 'C',181, &mItalics},
-	  {u8"texto en negrita\0             ", 'N',182, &mBold},
+	  {u8"texto en Negrita\0             ", 'N',182, &mBold},
 	  {u8"Fuente\0                       ", 'F',183, (TMENU*)&mCzcionkaW},
       {u8"formato de Rótulo\0            ", 'R',697, &mLFormat},
 	  {u8"Precisión\0                    ", 'P',184,NULL},
-	  {u8"terminadores\0                 ", 'I',185,&mStrzalka},
+	  {u8"termInadores\0                 ", 'I',185,&mStrzalka},
 	  {u8"Desplazamiento de línea\0      ", 'D',186,NULL},
-	  {u8"dirección del texto\0          ",' K',187,&mKierunekT} ,
+	  {u8"dirección del texto\0          ", 'K',187,&mKierunekT} ,
 	  {u8"líneas de Extensión\0          ", 'E',188,&mAddLine} };
 
 char *_LFORMAT_[]={u8"Decimal",u8"Ingeniería",u8"Arquitectónico",u8"Fraccionario"};

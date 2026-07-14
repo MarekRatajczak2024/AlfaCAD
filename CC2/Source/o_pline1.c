@@ -353,7 +353,7 @@ int Check_Pline_to_Fillet (void *ptr_ob1, void *ptr_ob2)
     {
       return FILLET_PL_NO ;
     }
-    if (labs ((char *)ptr_ob1 - (char *)ptr_ob2) == sizeof (LINIA))
+    if (llabs ((char *)ptr_ob1 - (char *)ptr_ob2) == sizeof (LINIA))
     {
       return FILLET_PL_YES ;
     }

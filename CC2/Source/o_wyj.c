@@ -359,6 +359,12 @@ extern int utf8len(const char *s);
 extern void fill_demo_keys(void);;
 extern void Destroy_Hatch_Patterns(void);
 
+extern void free_cursors(void);
+
+#ifdef LINUX
+extern void cleanup_shared_memory(void);
+#endif
+
 #ifdef MACOS
 extern int send_AppleScript_Exit(pid_t pid);
 extern pid_t get_e_pid(void);
@@ -367,6 +373,8 @@ extern void MoveOSXCursor(int x, int y);
 #ifdef ALLEGRO5
 extern void position_mouse_xy(int x, int y);
 #endif
+
+extern void Reset_Pointer(void);
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude;
@@ -3174,9 +3182,9 @@ return_to_dialog:
 #endif
    }
 
-  if ((ptrs_ini_date->prn_type==PRN_PCX)
+  if (ptrs_ini_date->prn_type==PRN_PCX
       #ifdef LINUX
-      || (ptrs_ini_date->prn_type==PRN_WINDOWS)
+      || ptrs_ini_date->prn_type==PRN_WINDOWS
       #endif
     )
    {
@@ -3482,7 +3490,7 @@ BOOL DrawToPrn_Serial(int first_number, int last_number, int if_init, int if_exi
   for (i=first_number; i<=last_number; i++)
   {
     zwolnienie_pamieci();
-    sprintf(zbior_danych,"Rysunki/#%ld", i);
+    sprintf(zbior_danych,"Rysunki/#%d", i);
     czytaj_rysunek(zbior_danych, TRUE);
     Ini_Place_Marker ();
     Ini_Layers_Dlg () ;
@@ -3535,11 +3543,11 @@ BOOL DrawToPrn_SerialS(int first_number, int last_number, int if_init, int if_ex
   for (i=first_number; i<=last_number; i++)
   {
     zwolnienie_pamieci();
-    sprintf(zbior_danych,"RYSUNKI/#S%ld", i);
+    sprintf(zbior_danych,"RYSUNKI/#S%d", i);
     czytaj_rysunek(zbior_danych, TRUE);
     Ini_Place_Marker ();
     Ini_Layers_Dlg () ;
-    if ((i==1) && (if_init==1))
+    if (i==1 && if_init==1)
     {
       if (DrawToPrn0(2,1)==FALSE)
        { ret_var=0;
@@ -3586,7 +3594,7 @@ BOOL DrawToPrn_SerialZ(int first_number, int last_number, int if_init, int if_ex
   for (i=first_number; i<=last_number; i++)
   {
     zwolnienie_pamieci();
-    sprintf(zbior_danych,"RYSUNKI/#Z%ld", i);
+    sprintf(zbior_danych,"RYSUNKI/#Z%d", i);
     czytaj_rysunek(zbior_danych, TRUE);
     Ini_Place_Marker ();
     Ini_Layers_Dlg () ;
@@ -3637,7 +3645,7 @@ BOOL DrawToPrn_SerialP(int first_number, int last_number, int if_init, int if_ex
   for (i=first_number; i<=last_number; i++)
   {
     zwolnienie_pamieci();
-    sprintf(zbior_danych,"RYSUNKI/#P%ld", i);
+    sprintf(zbior_danych,"RYSUNKI/#P%d", i);
     czytaj_rysunek(zbior_danych, TRUE);
     Ini_Place_Marker ();
     Ini_Layers_Dlg () ;
@@ -3688,7 +3696,7 @@ BOOL DrawToPrn_SerialPT(int numbers, int tab_pref[174], int if_init, int if_exit
   for (i=0; i<=numbers; i++)
   {
     zwolnienie_pamieci();
-    sprintf(zbior_danych,"RYSUNKI/#P%ld", tab_pref[i]);
+    sprintf(zbior_danych,"RYSUNKI/#P%d", tab_pref[i]);
     czytaj_rysunek(zbior_danych, TRUE);
     Ini_Place_Marker ();
     Ini_Layers_Dlg () ;
@@ -4023,7 +4031,7 @@ void DwgIn(void)
 	if (runcode > 0)
 	{
 		CUR_OFF(X, Y);
-		sprintf(error_str_code, "%s%u", err_message_code, runcode);
+		sprintf(error_str_code, "%s%lu", err_message_code, runcode);
 		for (int i = 1; i < 13; i++)
 		{
 			if (runcode & (int)pow(2, i))
@@ -4160,8 +4168,8 @@ void DxfInExe(char *sk, DXF_Header *head)
   komunikat(0);
 
   strcpy(zbior_danych_2,"");
-  strcpy(str1, _CONVERSION_TERMINATION_);
-  strncat(str1,sk,strlen(sk));
+  strcpy(str1, (char*)_CONVERSION_TERMINATION_);
+  strncat(str1,sk,sizeof(str1) - strlen(str1) - 1);
   ErrListStr(str1);
   Error=0;
   backup_hatch_pattern();
@@ -4177,10 +4185,10 @@ void DxfInExe(char *sk, DXF_Header *head)
     {
      if (k>1)
      {
-      strcpy(str1, _ERROR_DXF_);
-	  sprintf(str2, _LINE_NO_, k);
+      strcpy(str1, (char*)_ERROR_DXF_);
+      sprintf(str2, (const char *)_LINE_NO_, (long)k);
 
-      strncat(str1,sk,strlen(sk));
+      strncat(str1,sk,sizeof(str1) - strlen(str1) - 1);
       strcat(str1, str2);
       ErrListStr(str1);
       key = Get_Legal_Key ("\033\015");
@@ -4437,7 +4445,6 @@ int Restore_params(void)
 
 	l_kr = put_localx(Drawing_Params[DRAWING_NUMBER].local_x);
 	l_kr = put_localy(Drawing_Params[DRAWING_NUMBER].local_y);
-	l_kr = put_angle_l(Drawing_Params[DRAWING_NUMBER].angle_l);
 
 	TRANSLUCENCY = Drawing_Params[DRAWING_NUMBER].TRANSLUCENCY;
     GTRANSLUCENCY = Drawing_Params[DRAWING_NUMBER].GTRANSLUCENCY;
@@ -4452,7 +4459,11 @@ int Restore_params(void)
 	swobodny_blok = Drawing_Params[DRAWING_NUMBER].swobodny_blok;
 	swobodny_tekst = Drawing_Params[DRAWING_NUMBER].swobodny_tekst;
 	memcpy(&options1, &Drawing_Params[DRAWING_NUMBER].options1, sizeof(OPTIONS1));
-	normalize_text = Drawing_Params[DRAWING_NUMBER].options1.normalize_text;
+ //after restoring cartesian-isometric the angle_l can be restored, then cursor reset
+ l_kr = put_angle_l(Drawing_Params[DRAWING_NUMBER].angle_l);
+ Reset_Pointer();
+
+	normalize_text = (BOOL)Drawing_Params[DRAWING_NUMBER].options1.normalize_text;
 	memcpy(&sel, &Drawing_Params[DRAWING_NUMBER].sel, sizeof(SEL));
 	dane = Drawing_Params[DRAWING_NUMBER].dane;
 	dane_size = Drawing_Params[DRAWING_NUMBER].dane_size;
@@ -4594,6 +4605,7 @@ int Deposit_params(void)
 	Drawing_Params[DRAWING_NUMBER].angle_l = get_angle_l();
 
 	Drawing_Params[DRAWING_NUMBER].TRANSLUCENCY = TRANSLUCENCY;
+ Drawing_Params[DRAWING_NUMBER].GTRANSLUCENCY=GTRANSLUCENCY;
 
 	memcpy(&Drawing_Params[DRAWING_NUMBER].sektory_arkusza_ext, &sektory_arkusza_ext, sizeof(SEKTORY_EXT));
 	Drawing_Params[DRAWING_NUMBER].KursorS = KursorS;
@@ -4733,6 +4745,7 @@ void New_window_factory(int NEW_DRAWING_NUMBER, char *sk) //open another drawing
 	load_file_to_history(sk);
 
 	strcpy(zbior_danych, sk);
+
 	out_file_name();
 	Clear_View();
 	czytaj_rysunek(sk, TRUE);
@@ -4741,7 +4754,7 @@ void New_window_factory(int NEW_DRAWING_NUMBER, char *sk) //open another drawing
 	Ini_Layers_Dlg();
 	Change = FALSE;
 	Set_Auto_Backup(FALSE);
-    komunikat0(0);
+    komunikat0(0);   //WARNING 01-07-2026
 }
 
 int get_empty_buffer(void)
@@ -5243,7 +5256,7 @@ void Close_window(void)
 		i++;
 		j++;
 		if (i == MAX_NUMBER_OF_WINDOWS) i = 0;
-		if (j == 16)  //something went wrong, no drawing exists
+		if (j == MAX_NUMBER_OF_WINDOWS)  //something went wrong, no drawing exists
 		{
 			ret = ask_question(1, "", "OK", "", _NO_MORE_DRAWINGS_, 12, _NEW_DRAWING_, 11, 1, 61);
 			Change = FALSE;
@@ -5480,7 +5493,7 @@ void Koniec(void)
    Done_CUPS_Printers();
    komunikat_str("@ 10");
    Delete_All_Dump_bitmap();
-   strcpy(byebye, u8"See you soon! Na razie! Побачимося ! Hasta luego !");
+   strcpy(byebye, (char*)u8"See you soon! Na razie! Побачимося ! Hasta luego !");
    komunikat_str(byebye);
 
 #ifdef ALLEGRO5
@@ -5545,13 +5558,27 @@ void Koniec(void)
 
    DoneArgs();
 
+   free_cursors();
+
+
+   if (Number_of_clients == 1)
+   {
+    komunikat_str("Goodbye");
+   }
+
    my_sleep(100);
 
+#ifdef LINUX
+   cleanup_shared_memory();
 #ifndef MACOS
    quick_exit(0);
 #else
       exit(0);
 #endif
+#else
+   quick_exit(0);
+#endif
+
 
    return;
   }
@@ -5889,7 +5916,7 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
     int curr_x01, curr_y01, curr_h1, curr_v1;
     int monitor=0;
     int ret_menu=0;
-	int ret_ref;
+	   int ret_ref;
 
     if (save_upd==0) {
         ret_ref = get_window_origin_and_size(&curr_x0, &curr_y0, curr_h, curr_v);
@@ -5937,6 +5964,7 @@ int Save_Update_flex(int save_upd, int *curr_h, int *curr_v)
 
         return ret_menu;
     }
+  return ret_menu;
 }
 
 int Expand_flex__(void)
@@ -6214,7 +6242,7 @@ void DemoModeOn(void)
 	draw_keyimage_(-1, FALSE, FALSE, FALSE);
 
 	DEMO_RECORDING = TRUE;
-	set_demo_scale(2.0);
+	set_demo_scale(2.0f);
 	menu_par_new((*mOpcje.pola)[9].txt, _YES__);
 	ret = ask_question(1, "", "OK", "", _DEMO_MODE_, 1, _DEMO_MODE1_, 1, 1, 61);
 }
@@ -6224,7 +6252,7 @@ void DemoModeOff(void)
 	draw_demokeyimage_(-1, -1, FALSE, FALSE, FALSE);
 
 	DEMO_RECORDING = FALSE;
-	set_demo_scale(1.0);
+	set_demo_scale(1.0f);
 	menu_par_new((*mOpcje.pola)[9].txt, _NO__);
 
 }
@@ -6472,7 +6500,7 @@ void CzcionkaE(void)
 
     f_ini = fopen ( font_file_name , "wt" ) ;
     fprintf(f_ini,"%s\n",font_name);
-    fprintf(f_ini,"%ld,%ld,%ld,%ld,%ld,%ld\n",MP_SIZE,ED_INF_HEIGHT,BAR_G,HEIGHT,WIDTH,FONTNUMBER);
+    fprintf(f_ini,"%d,%d,%d,%d,%d,%d\n",MP_SIZE,ED_INF_HEIGHT,BAR_G,HEIGHT,WIDTH,FONTNUMBER);
     fprintf(f_ini,"%s\n",font_name1);
     fclose(f_ini);
 

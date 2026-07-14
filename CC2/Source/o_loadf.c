@@ -233,8 +233,8 @@ extern void Set_Pointer(void);
 #define ID_REMOVE          18 
 #define ID_RMDIR           19
 
-#define DXBut DXBut0 -20
-#define DYBut DYBut0 -10
+#define DXBut (DXBut0 -20)
+#define DYBut (DYBut0 -10)
 #define DXBut1 (DXBut0/2)
 #define DYBut1 (DYBut0/2)
 #define DXBut2 (DXBut0/4)
@@ -358,11 +358,19 @@ static BUTTON button[4 /*11*//*8*/] =
 
 };
 
-static LABEL label[2 /*3*/ /*8*/ /*5*/] =
+static LABEL label[] =
 {
 #define LAB_PATH 0
 	  { XpGrName + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_n_p,0,0},
 	  { XpGrValue + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_p,0,0},
+
+    { XpGrName + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_n_p,0,0},
+    { XpGrValue + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_p,0,0},
+
+    { XpGrName + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_n_p,0,0},
+    { XpGrValue + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_p,0,0},
+
+    { XpGrName + DXIL, YpGrSpecification +3, 0, 0, COLOR_NULL,COLOR_NULL, edycja_n_p,0,0},
 #define LAB_PATH_PROT 4
 };
 
@@ -567,7 +575,7 @@ long_long min_l(long_long value1, long_long value2)
    return ( (value1 < value2) ? value1 : value2);
 }
 
-
+/*
 static void prot_file (BOOL b_draw)
 //---------------------------------
 {
@@ -599,11 +607,11 @@ static void prot_file (BOOL b_draw)
       strupr2(sz__current_path_prot);
     if (b_draw == TRUE)
     {
-      Draw_Label (&label [LAB_PATH_PROT], TRUE) ;
+      Draw_Label (&label[LAB_PATH_PROT], TRUE) ;
     }
   }
 }
-
+*/
 
 #ifdef aaaasaa
 static int change_ver (void)
@@ -1135,7 +1143,7 @@ static int branch_file (void)
     {
       strcpy (sz__edit_prot_name, sz__current_mask) ;
     }
-    prot_file (TRUE) ;
+    ////prot_file (TRUE) ;
     Draw_ListBox (&listbox[LIST_FILES]);
     ret = Dlg_Ret_Val_Continue_LB;
   }
@@ -1212,7 +1220,7 @@ static int branch_drive (void)
     return ret ;
   }
   Draw_ListBox (&listbox[LIST_FILES]);
-  prot_file (TRUE) ;
+  ////prot_file (TRUE) ;
   return ret ;
 }
 
@@ -1236,9 +1244,9 @@ int ViewPattern(char *FileName, char *ext)
 	PALLETE pal;
     BITMAP *screenplay=Get_Screenplay();
 
-    if (strcmp(strupr(ext), ".PCX") == NULL) background_pcx_test = load_pcx(FileName, pal);
-    else if (strcmp(strupr(ext), ".PNG") == NULL) background_pcx_test = load_png(FileName, pal);
-    else if ((strcmp(strupr(ext), ".JPG") == NULL) || (strcmp(strupr(ext), ".JPEG") == NULL)) background_pcx_test = load_jpg(FileName, pal);
+    if (strcmp(strupr(ext), ".PCX") == 0) background_pcx_test = load_pcx(FileName, pal);
+    else if (strcmp(strupr(ext), ".PNG") == 0) background_pcx_test = load_png(FileName, pal);
+    else if ((strcmp(strupr(ext), ".JPG") == 0) || (strcmp(strupr(ext), ".JPEG") == 0)) background_pcx_test = load_jpg(FileName, pal);
     else return 0;
 
 	if (background_pcx_test)
@@ -1256,9 +1264,9 @@ int ViewBitmap(char* FileName, char *ext)
     PALLETE pal;
 
 
-    if (strcmp(strupr(ext), ".PCX") == NULL) background_pcx_test = load_pcx(FileName, pal);
-    else if (strcmp(strupr(ext), ".PNG") == NULL) background_pcx_test = load_png(FileName, pal);
-    else if ((strcmp(strupr(ext), ".JPG") == NULL) || (strcmp(strupr(ext), ".JPEG") == NULL)) background_pcx_test = load_jpg(FileName, pal);
+    if (strcmp(strupr(ext), ".PCX") == 0) background_pcx_test = load_pcx(FileName, pal);
+    else if (strcmp(strupr(ext), ".PNG") == 0) background_pcx_test = load_png(FileName, pal);
+    else if ((strcmp(strupr(ext), ".JPG") == 0) || (strcmp(strupr(ext), ".JPEG") == 0)) background_pcx_test = load_jpg(FileName, pal);
     
     if (background_pcx_test)
     {
@@ -1325,7 +1333,7 @@ int ViewBlock(char *FileName, BOOL set_color)
 
    if ((ADP1 == NULL) || (ADK1 == NULL)) return 0;
 
-   if (ret_read = 0) return 0;
+   if (ret_read == 0) return 0;
    ///////
   }
   else
@@ -1724,7 +1732,7 @@ void make_dir (void)
             return ;
           }
           Draw_ListBox (&listbox[LIST_FILES]);
-          prot_file (TRUE) ;  
+          ////prot_file (TRUE) ;
           return;  
          /**/
          }
@@ -1782,7 +1790,7 @@ void remove_dir (void)
             return ;
           }
           Draw_ListBox (&listbox[LIST_FILES]);
-          prot_file (TRUE) ;  
+          ////prot_file (TRUE) ;
           return;  
          /**/
          }
@@ -2428,71 +2436,6 @@ static BOOL ini_drive_control (void)
   listbox [LIST_DRIVE].poz = cur_index % LIST_DRIVE_MAX; /*pozycja kursora */
   listbox [LIST_DRIVE].foff = cur_index - listbox [LIST_DRIVE].poz; /*pierwsza pozycja w okienku*/
   return TRUE;
-}
-
-
-static BOOL ini_dlg_control_prot (void)
-/*-----------------------------------*/
-{
-  char dir [MAXDIR]="" ;
-  char path_full [MAXPATH]="";
-  char drive[MAXDRIVE]="";
-  char file[MAXFILE]="";
-  char ext[MAXEXT]="";
-  int flags;
-  T_PTR_Prototype ptrs_prot ;
-  char *ptr;
-
-  Check_Radio_Button (&load_file_dlg, ID_FILE_RADIO, ID_PROTOTYPE_RADIO,
-                     ID_FILE_RADIO, FALSE) ;
-  button [BUT_PROT_RADIO].enable = 1 ;
-  Set_Check_Button (&load_file_dlg, ID_PROTOTYPE_CHECK, TRUE) ;
-  button [BUT_PROT_CHECK].enable = 1 ;
-  if (i__type_load != INI_FILE)
-  {
-    Set_Check_Button (&load_file_dlg, ID_PROTOTYPE_CHECK, FALSE) ;
-    button [BUT_PROT_CHECK].enable = 0 ;
-    sz__edit_prot_name [0] = '\0' ;
-    sz__directory_prot_lab [0] = '\0' ;
-    button [BUT_PROT_RADIO].enable = 0 ;
-    return TRUE ;
-  }
-
-
-  
-  ptrs_prot = Get_Prototype () ;
-  flags=fnsplit (Get_Prototype ()->sz_prot, drive, dir, file, ext);
-  
-  strcpy (sz__edit_prot_name, file) ;
-  strcat (sz__edit_prot_name, ext) ;
-  ptr=Current_Directory (0, sz__current_path_prot) ;
-
-  if (sz__current_path_prot [strlen (sz__current_path_prot) - 1] != Slash)
-  {
-    strcat (sz__current_path_prot, SSlash);
-  }
-
-  
-  strupr2(sz__current_path_prot);
-  
-  if (flags & DIRECTORY || flags & DRIVE)
-  {
-    if (TRUE == test_dir (drive, dir, path_full))
-    {
-
-	  if (path_full [strlen (path_full) - 1] != Slash)
-      {
-        strcat (path_full, SSlash);
-      }
-
-      strupr2(path_full);
-      
-      strcpy (sz__current_path_prot, path_full) ;
-    }
-  }
-  
-  make_dir_lab (sz__current_path_prot, TRUE) ;
-  return TRUE ;
 }
 
 static BOOL ini_dlg_control_spec (void)

@@ -37,7 +37,9 @@
 extern void delay(int time);
 extern BOOL Semaphore;
 extern BOOL Cust_Semaphore;
+#ifdef LINUX
 extern long filelength(int f);
+#endif
 extern void setfillstyle_(int pattern, int color);
 extern void setcolor(int kolor);
 
@@ -124,6 +126,7 @@ void makro_esc(void)
 
   return;
 
+	/*
   bufor_makra[0]= ENTER;
   bufor_makra[1]=0;
   mkbuf_end=bufor_makra + 1;
@@ -136,30 +139,8 @@ void makro_esc(void)
 	mkbuf = bufor_makra_esc[0];
 	mkbuf_end = bufor_makra_esc[0] + 1;
 	aktmakro = bufor_makra_esc[0];
+	*/
 }
-
-void makro_wine(void)
-{
-
-	bufor_makra[0] = _DRAW__;
-	bufor_makra[1] = _TEXT__;
-	bufor_makra[2] = 'A';
-	bufor_makra[3] = 'l';
-	bufor_makra[4] = 'f';
-	bufor_makra[5] = 'a';
-	bufor_makra[6] = 'C';
-	bufor_makra[7] = 'A';
-	bufor_makra[8] = 'D';
-	bufor_makra[9] = 0x0D;
-	bufor_makra[10] = 0x1B;
-	bufor_makra[11] = 0x1B;
-	bufor_makra[12] = 0x00;
-	bufor_makra[13] = 0x75;
-	mkbuf_end = bufor_makra + 14;
-	aktmakro = bufor_makra;
-}
-
-
 
 static void WykonanieMakra(void)
 /*---------------------------------*/

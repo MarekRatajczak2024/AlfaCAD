@@ -3557,7 +3557,7 @@ static int detectPresence( char const * aExecutable )
 #ifdef _GNU_SOURCE /*to bypass this, just comment out "#define _GNU_SOURCE" at the top of the file*/
       if ( lBuff[strlen( lBuff ) -1] == '\n' ) lBuff[strlen( lBuff ) -1] = '\0' ;
       lAllocatedCharString = realpath(lBuff,NULL); /*same as canonicalize_file_name*/
-      ptr_aExecutable=strstr(aExecutable, "./");
+      ptr_aExecutable=strstr((char*)aExecutable, "./");
       if (ptr_aExecutable!=NULL) ptr_aExecutable+=2;
       else ptr_aExecutable=(char *)aExecutable;
       lSubstringUndetected = ! strstr(lAllocatedCharString, ptr_aExecutable);
@@ -6970,7 +6970,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
         }
          */
 
-        printf(lBuff_ex);
+        printf("%s",lBuff_ex);
         pclose(lIn);
 
         // 2. Identify the status code flag
@@ -7016,7 +7016,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
                 *pos_g = '\0';
             }
 
-            strcpy(params, pos1D + 1);
+            strcpy((char*)params, pos1D + 1);
             *pos1D = '\0';
         }
 
@@ -7112,7 +7112,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
                 *pos_g = '\0';
             }
 
-            strcpy(params, pos1D + 1);
+            strcpy((char*)params, pos1D + 1);
             *pos1D = '\0';
         }
 

@@ -564,12 +564,17 @@ int(*serv134)(void) = { NULL };
 int(*serv135)(void) = { NULL };
 
 static BITMAP *alfa_mouse_null = NULL;
+static BITMAP *alfa_mouse_null_orig = NULL;
 static BITMAP *alfa_mouse_pointer = NULL;/* default mouse pointer */
+static BITMAP *alfa_mouse_pointer_orig = NULL;/* default mouse pointer */
 static BITMAP *alfa_mouse_pointer32 = NULL;/* default mouse pointer */
+static BITMAP *alfa_mouse_pointer32_orig = NULL;/* default mouse pointer */
 static BITMAP *alfa_mouse_pointer48 = NULL;/* default mouse pointer */
 
 static BITMAP *alfa_mouse_edit = NULL;
+static BITMAP *alfa_mouse_edit_orig = NULL;
 static BITMAP *alfa_mouse_edit32 = NULL;
+static BITMAP *alfa_mouse_edit32_orig = NULL;
 static BITMAP *alfa_mouse_edit48 = NULL;
 
 static BITMAP *alfa_mouse_sprite = NULL;
@@ -1388,7 +1393,7 @@ double my_round(double x, unsigned int digits) {
 void ltoa1 (long wartosc, char * buf, int width)
 /*--------------------------------------------*/
 {
- sprintf(buf,"%#10ld",wartosc);
+ sprintf(buf,"%10ld",wartosc);
 }
 
 void dtoa(double wartosc, char * buf, int width, int prec)
@@ -1700,6 +1705,8 @@ int put_angle_lr(double a_l0, double a_l)
     Set_Screen();
     CUR_OFF(X,Y);
     CUR_ON(X,Y);
+
+	return 1;
 }
 
 int put_localx(double local_x)
@@ -3023,7 +3030,7 @@ void  grid_on(void)
   if (gxk == 0 || gyk == 0) return;
   //if (((!options1.uklad_izometryczny) && (((pikseleX(Xk)-pikseleX(Xp))/gxk<5) || (abs(pikseleY(Yk)-pikseleY(Yp))/gyk<5))) ||
   //   ((options1.uklad_izometryczny) && (((pikseleX(Xk)-pikseleX(Xp))/gxk<5) || (abs(pikseleY(Yk)-pikseleY(Yp))/gyk<2))))
-  if (gxk<0 || gyk<0 || ((gxk > 1) && (fabs(*(gx + 1) - *(gx))<5)) || ((gyk > 2) && (fabs(*(gy + 1) - *(gy + 2))<5)))
+  if (gxk<0 || gyk<0 || ((gxk > 1) && (abs(*(gx + 1) - *(gx))<5)) || ((gyk > 2) && (abs(*(gy + 1) - *(gy + 2))<5)))
   /*grid mesh less than 5 pxl*/
     {
       if (!grid_kom) ErrList(1);
@@ -3044,7 +3051,7 @@ void  grid_on(void)
   //setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
 
   if (gxk > 1)
-	  gsizex = max(min(fabs(*(gx + 1) - *(gx)) / 6 /*3*/, 10), 1);
+	  gsizex = max(min(abs(*(gx + 1) - *(gx)) / 6 /*3*/, 10), 1);
   else
       gsizex = 10;
 
@@ -3053,10 +3060,10 @@ void  grid_on(void)
   	  if (*(gy) == *(gy + 1))
   	  {
 	  	  if (gyk > 2)
-	  	  	gsizey = max(min(fabs(*(gy + 1) - *(gy + 2)) / 6 /*3*/, 10), 1);
+	  	  	gsizey = max(min(abs(*(gy + 1) - *(gy + 2)) / 6 /*3*/, 10), 1);
   	  	else gsizey=gsizex;
   	  }
-	  else gsizey = max(min(fabs(*(gy) - *(gy + 1)) / 6 /*3*/, 10), 1);
+	  else gsizey = max(min(abs(*(gy) - *(gy + 1)) / 6 /*3*/, 10), 1);
   }
   else
       gsizey = 10;
@@ -3457,8 +3464,8 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 
 	if (lineinfo.thickness >= 3)
 	{
-		delxxx = fabs(x2 - x1);
-		delyyy = fabs(y2 - y1);
+		delxxx = (double)abs((int)x2 - (int)x1);
+		delyyy = (double)abs((int)y2 - (int)y1);
 		if (delxxx > delyyy)
 		{
 			de_x = 0;
@@ -3477,22 +3484,22 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 
 	if (l_e == 1)
 	{
-		LINE(x1, y1, x2, y2);
+		LINE((int)x1, (int)y1, (int)x2, (int)y2);
 		if (lineinfo.thickness >= 3)
 		{
-			LINE(x1 - de_x, y1 - de_y, x2 - de_x, y2 - de_y);
-			LINE(x1 + de_x, y1 + de_y, x2 + de_x, y2 + de_y);
+			LINE((int)x1 - de_x, (int)y1 - de_y, (int)x2 - de_x, (int)y2 - de_y);
+			LINE((int)x1 + de_x, (int)y1 + de_y, (int)x2 + de_x, (int)y2 + de_y);
 			if (lineinfo.thickness == 4)
 			{
-				LINE(x1 - de2_x, y1 - de2_y, x2 - de2_x, y2 - de2_y);
-				LINE(x1 + de2_x, y1 + de2_y, x2 + de2_x, y2 + de2_y);
+				LINE((int)x1 - de2_x, (int)y1 - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+				LINE((int)x1 + de2_x, (int)y1 + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 			}
 		}
 	}
 	else
 	{
-		delxxx = x2 - x1;
-		delyyy = y2 - y1;
+		delxxx = (double)(x2 - x1);
+		delyyy = (double)(y2 - y1);
 		lxy = sqrt((delxxx*delxxx) + (delyyy*delyyy));
 		if (lxy < pp0)  //dlugosc odcinka jest mniejsza od wzorca
 		{
@@ -3507,17 +3514,17 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 			delxx = delxxx / nlr;
 			delyy = delyyy / nlr;
 		}
-		nl = (lxy / pp0);
+		nl = (int)(lxy / pp0);
 		if (nl > 0)
 		{
 			delxxxx = delxxx / lxy;
 			delyyyy = delyyy / lxy;
 			for (iii = 1; iii <= (nl + 1); iii++)
 			{
-				xxp1 = x1 + (iii - 1)*delxx;
-				yyp1 = y1 + (iii - 1)*delyy;
-				xxk1 = xxp1 + delxxxx * (pp[0]);
-				yyk1 = yyp1 + delyyyy * (pp[0]);
+				xxp1 = (float)((float)x1 + (iii - 1)*delxx);
+				yyp1 = (float)((float)y1 + (iii - 1)*delyy);
+				xxk1 = (float)(xxp1 + delxxxx * (pp[0]));
+				yyk1 = (float)(yyp1 + delyyyy * (pp[0]));
 				xxp = (int)xxp1;
 				yyp = (int)yyp1;
 				xxk = (int)xxk1;
@@ -3542,26 +3549,26 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 						pp[1] = 3;
 						pp0 = 4;
 					}
-					delxxx = x2 - x1;
-					delyyy = y2 - y1;
+					delxxx = (double)(x2 - x1);
+					delyyy = (double)(y2 - y1);
 					lxy = sqrt((delxxx*delxxx) + (delyyy*delyyy));
 					if (lxy < pp0)  //dlugosc ostatniego odcinka jest mniejsza od nowego wzorca
 					{
 						if (lineinfo.thickness == 0)
 						{
 							putpixel_(xxp, yyp, color_cur);
-							putpixel_(x2, y2, color_cur);
+							putpixel_((int)x2, (int)y2, color_cur);
 						}
-						else LINE(xxp, yyp, x2, y2);
+						else LINE(xxp, yyp, (int)x2, (int)y2);
 
 						if (lineinfo.thickness >= 3)
 						{
-							LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-							LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+							LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+							LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 							if (lineinfo.thickness == 4)
 							{
-								LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-								LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+								LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+								LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 							}
 						}
 					}
@@ -3573,17 +3580,17 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 							delxx = delxxx / nlr;
 							delyy = delyyy / nlr;
 						}
-						nl = (lxy / pp0);
+						nl = (int)(lxy / pp0);
 						if (nl > 0)
 						{
 							delxxxx = delxxx / lxy;
 							delyyyy = delyyy / lxy;
 							for (iii = 1; iii <= (nl + 1); iii++)
 							{
-								xxp1 = x1 + (iii - 1)*delxx;
-								yyp1 = y1 + (iii - 1)*delyy;
-								xxk1 = xxp1 + delxxxx * (pp[0]);
-								yyk1 = yyp1 + delyyyy * (pp[0]);
+								xxp1 = (float)((float)x1 + (iii - 1)*delxx);
+								yyp1 = (float)((float)y1 + (iii - 1)*delyy);
+								xxk1 = (float)(xxp1 + delxxxx * (pp[0]));
+								yyk1 = (float)(yyp1 + delyyyy * (pp[0]));
 								xxp = (int)xxp1;
 								yyp = (int)yyp1;
 								xxk = (int)xxk1;
@@ -3593,17 +3600,17 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 									if (lineinfo.thickness == 0)
 									{
 										putpixel_(xxp, yyp, color_cur);
-										putpixel_(x2, y2, color_cur);
+										putpixel_((int)x2, (int)y2, color_cur);
 									}
-									else LINE(xxp, yyp, x2, y2);
+									else LINE(xxp, yyp, (int)x2, (int)2);
 									if (lineinfo.thickness >= 3)
 									{
-										LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-										LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+										LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+										LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 										if (lineinfo.thickness == 4)
 										{
-											LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-											LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+											LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+											LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 										}
 									}
 								}
@@ -3640,10 +3647,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 2)
 					{
-						xxp2 = xxk1 + delxxxx * (pp[1]);
-						yyp2 = yyk1 + delyyyy * (pp[1]);
-						xxk2 = xxp2 + delxxxx * (pp[2]);
-						yyk2 = yyp2 + delyyyy * (pp[2]);
+						xxp2 = (float)(xxk1 + delxxxx * (pp[1]));
+						yyp2 = (float)(yyk1 + delyyyy * (pp[1]));
+						xxk2 = (float)(xxp2 + delxxxx * (pp[2]));
+						yyk2 = (float)(yyp2 + delyyyy * (pp[2]));
 						xxp = (int)xxp2;
 						yyp = (int)yyp2;
 						xxk = (int)xxk2;
@@ -3662,10 +3669,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 4)
 					{
-						xxp3 = xxk2 + delxxxx * (pp[3]);
-						yyp3 = yyk2 + delyyyy * (pp[3]);
-						xxk3 = xxp3 + delxxxx * (pp[4]);
-						yyk3 = yyp3 + delyyyy * (pp[4]);
+						xxp3 = (float)(xxk2 + delxxxx * (pp[3]));
+						yyp3 = (float)(yyk2 + delyyyy * (pp[3]));
+						xxk3 = (float)(xxp3 + delxxxx * (pp[4]));
+						yyk3 = (float)(yyp3 + delyyyy * (pp[4]));
 						xxp = (int)xxp3;
 						yyp = (int)yyp3;
 						xxk = (int)xxk3;
@@ -3684,10 +3691,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 6)
 					{
-						xxp4 = xxk3 + delxxxx * (pp[5]);
-						yyp4 = yyk3 + delyyyy * (pp[5]);
-						xxk4 = xxp4 + delxxxx * (pp[6]);
-						yyk4 = yyp4 + delyyyy * (pp[6]);
+						xxp4 = (float)(xxk3 + delxxxx * (pp[5]));
+						yyp4 = (float)(yyk3 + delyyyy * (pp[5]));
+						xxk4 = (float)(xxp4 + delxxxx * (pp[6]));
+						yyk4 = (float)(yyp4 + delyyyy * (pp[6]));
 						xxp = (int)xxp4;
 						yyp = (int)yyp4;
 						xxk = (int)xxk4;
@@ -3706,10 +3713,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 8)
 					{
-						xxp5 = xxk4 + delxxxx * (pp[7]);
-						yyp5 = yyk4 + delyyyy * (pp[7]);
-						xxk5 = xxp5 + delxxxx * (pp[8]);
-						yyk5 = yyp5 + delyyyy * (pp[8]);
+						xxp5 = (float)(xxk4 + delxxxx * (pp[7]));
+						yyp5 = (float)(yyk4 + delyyyy * (pp[7]));
+						xxk5 = (float)(xxp5 + delxxxx * (pp[8]));
+						yyk5 = (float)(yyp5 + delyyyy * (pp[8]));
 						xxp = (int)xxp5;
 						yyp = (int)yyp5;
 						xxk = (int)xxk5;
@@ -3728,10 +3735,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 10)
 					{
-						xxp6 = xxk5 + delxxxx * (pp[9]);
-						yyp6 = yyk5 + delyyyy * (pp[9]);
-						xxk6 = xxp6 + delxxxx * (pp[10]);
-						yyk6 = yyp6 + delyyyy * (pp[10]);
+						xxp6 = (float)(xxk5 + delxxxx * (pp[9]));
+						yyp6 = (float)(yyk5 + delyyyy * (pp[9]));
+						xxk6 = (float)(xxp6 + delxxxx * (pp[10]));
+						yyk6 = (float)(yyp6 + delyyyy * (pp[10]));
 						xxp = (int)xxp6;
 						yyp = (int)yyp6;
 						xxk = (int)xxk6;
@@ -3750,10 +3757,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 12)
 					{
-						xxp7 = xxk6 + delxxxx * (pp[11]);
-						yyp7 = yyk6 + delyyyy * (pp[11]);
-						xxk7 = xxp7 + delxxxx * (pp[12]);
-						yyk7 = yyp7 + delyyyy * (pp[12]);
+						xxp7 = (float)(xxk6 + delxxxx * (pp[11]));
+						yyp7 = (float)(yyk6 + delyyyy * (pp[11]));
+						xxk7 = (float)(xxp7 + delxxxx * (pp[12]));
+						yyk7 = (float)(yyp7 + delyyyy * (pp[12]));
 						xxp = (int)xxp7;
 						yyp = (int)yyp7;
 						xxk = (int)xxk7;
@@ -3776,15 +3783,15 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 		}
 		else
 		{
-			LINE(x1, y1, x2, y2);
+			LINE((int)x1, (int)y1, (int)x2, (int)y2);
 			if (lineinfo.thickness >= 3)
 			{
-				LINE(x1 - de_x, y1 - de_y, x2 - de_x, y2 - de_y);
-				LINE(x1 + de_x, y1 + de_y, x2 + de_x, y2 + de_y);
+				LINE((int)x1 - de_x, (int)y1 - de_y, (int)x2 - de_x, (int)y2 - de_y);
+				LINE((int)x1 + de_x, (int)y1 + de_y, (int)x2 + de_x, (int)y2 + de_y);
 				if (lineinfo.thickness == 4)
 				{
-					LINE(x1 - de2_x, y1 - de2_y, x2 - de2_x, y2 - de2_y);
-					LINE(x1 + de2_x, y1 + de2_y, x2 + de2_x, y2 + de2_y);
+					LINE((int)x1 - de2_x, (int)y1 - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+					LINE((int)x1 + de2_x, (int)y1 + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 				}
 			}
 		}
@@ -4103,8 +4110,8 @@ int lineC(long x1, long y1, long x2, long y2)
 
    if (lineinfo.thickness>=3)
    {
-    delxxx=fabs(x2-x1);
-    delyyy=fabs(y2-y1);
+    delxxx=(double)abs((int)x2-(int)x1);
+    delyyy=(double)abs((int)y2-(int)y1);
     if (delxxx>delyyy)
     {
     de_x=0;
@@ -4123,22 +4130,22 @@ int lineC(long x1, long y1, long x2, long y2)
   
    if (l_e==1) 
    {
-    LINE(x1,y1,x2,y2);
+    LINE((int)x1,(int)y1,(int)x2,(int)y2);
     if (lineinfo.thickness>=3) 
     {
-     LINE(x1-de_x,y1-de_y,x2-de_x,y2-de_y);
-     LINE(x1+de_x,y1+de_y,x2+de_x,y2+de_y);
+     LINE((int)x1-de_x,(int)y1-de_y,(int)x2-de_x,(int)y2-de_y);
+     LINE((int)x1+de_x,(int)y1+de_y,(int)x2+de_x,(int)y2+de_y);
      if (lineinfo.thickness==4)
       {
-       LINE(x1-de2_x,y1-de2_y,x2-de2_x,y2-de2_y);
-       LINE(x1+de2_x,y1+de2_y,x2+de2_x,y2+de2_y);
+       LINE((int)x1-de2_x,(int)y1-de2_y,(int)x2-de2_x,(int)y2-de2_y);
+       LINE((int)x1+de2_x,(int)y1+de2_y,(int)x2+de2_x,(int)y2+de2_y);
       }
     }
    } 
     else
     {
-     delxxx=x2-x1;
-     delyyy=y2-y1;
+     delxxx=(double)(x2-x1);
+     delyyy=(double)(y2-y1);
      lxy=sqrt((delxxx*delxxx)+(delyyy*delyyy));
 
      nlr=lxy/pp0;
@@ -4146,19 +4153,19 @@ int lineC(long x1, long y1, long x2, long y2)
        {
          delxx=delxxx/nlr;
          delyy=delyyy/nlr;
-		 nl = (lxy / pp0);
-       } 
-	 else nl = -1;
+		 nl = (int)(lxy / pp0);
+       }
+    	else nl = -1;
      if (nl>=0) 
       { 
        delxxxx=delxxx/lxy;
        delyyyy=delyyy/lxy;
        for (iii=1; iii<=(nl+1); iii++)
        {
-		xxp1=x1+(iii-1)*delxx;
-		yyp1=y1+(iii-1)*delyy;
-		xxk1=xxp1+delxxxx*(pp[0]);
-		yyk1=yyp1+delyyyy*(pp[0]);
+		xxp1=(float)((float)x1+(iii-1)*delxx);
+		yyp1=(float)((float)y1+(iii-1)*delyy);
+		xxk1=(float)(xxp1+delxxxx*(pp[0]));
+		yyk1=(float)(yyp1+delyyyy*(pp[0]));
 		xxp=(int)xxp1;
 		yyp=(int)yyp1;
 		xxk=(int)xxk1;
@@ -4195,26 +4202,26 @@ int lineC(long x1, long y1, long x2, long y2)
 					pp0 = 1;
 				}
 			}
-			delxxx = x2 - x1;
-			delyyy = y2 - y1;
+			delxxx = (double)(x2 - x1);
+			delyyy = (double)(y2 - y1);
 			lxy = sqrt((delxxx*delxxx) + (delyyy*delyyy));
 			if (lxy < pp0)  //dlugosc ostatniego odcinka jest mniejsza od nowego wzorca
 			{
 				if (lineinfo.thickness == 0)
 				{
 					putpixel_(xxp, yyp, color_cur);
-					putpixel_(x2, y2, color_cur);
+					putpixel_((int)x2, (int)y2, color_cur);
 				}
-				else LINE(xxp, yyp, x2, y2);
+				else LINE(xxp, yyp, (int)x2, (int)y2);
 
 				if (lineinfo.thickness >= 3)
 				{
-					LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-					LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+					LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+					LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 					if (lineinfo.thickness == 4)
 					{
-						LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-						LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+						LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+						LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 					}
 				}
 			}
@@ -4226,17 +4233,17 @@ int lineC(long x1, long y1, long x2, long y2)
 					delxx = delxxx / nlr;
 					delyy = delyyy / nlr;
 				}
-				nl = (lxy / pp0);
+				nl = (int)(lxy / pp0);
 				if (nl > 0)
 				{
 					delxxxx = delxxx / lxy;
 					delyyyy = delyyy / lxy;
 					for (iii = 1; iii <= (nl + 1); iii++)
 					{
-						xxp1 = x1 + (iii - 1)*delxx;
-						yyp1 = y1 + (iii - 1)*delyy;
-						xxk1 = xxp1 + delxxxx * (pp[0]);
-						yyk1 = yyp1 + delyyyy * (pp[0]);
+						xxp1 = (float)((float)x1 + (iii - 1)*delxx);
+						yyp1 = (float)((float)y1 + (iii - 1)*delyy);
+						xxk1 = (float)(xxp1 + delxxxx * (pp[0]));
+						yyk1 = (float)(yyp1 + delyyyy * (pp[0]));
 						xxp = (int)xxp1;
 						yyp = (int)yyp1;
 						xxk = (int)xxk1;
@@ -4246,18 +4253,18 @@ int lineC(long x1, long y1, long x2, long y2)
 							if (lineinfo.thickness == 0)
 							{
 								putpixel_(xxp, yyp, color_cur);
-								putpixel_(x2, y2, color_cur);
+								putpixel_((int)x2, (int)y2, color_cur);
 							}
-							else LINE(xxp, yyp, x2, y2);
+							else LINE(xxp, yyp, (int)x2, (int)y2);
 
 							if (lineinfo.thickness >= 3) 
 							{
-								LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-								LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+								LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+								LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 								if (lineinfo.thickness == 4)
 								{
-									LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-									LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+									LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+									LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 								}
 							}
 						}
@@ -4314,10 +4321,10 @@ int lineC(long x1, long y1, long x2, long y2)
 
          for (il=1; il<(l_e-1); il+=2)
 		 {
-			xxp2=xxk1+delxxxx*(pp[il]);
-			yyp2=yyk1+delyyyy*(pp[il]);
-			xxk2=xxp2+delxxxx*(pp[il+1]);
-			yyk2=yyp2+delyyyy*(pp[il+1]);
+			xxp2=(float)(xxk1+delxxxx*(pp[il]));
+			yyp2=(float)(yyk1+delyyyy*(pp[il]));
+			xxk2=(float)(xxp2+delxxxx*(pp[il+1]));
+			yyk2=(float)(yyp2+delyyyy*(pp[il+1]));
 			xxp=(int)xxp2;
 			yyp=(int)yyp2;
 			xxk=(int)xxk2;
@@ -4328,7 +4335,7 @@ int lineC(long x1, long y1, long x2, long y2)
 
 				if (iii > nl)
 				{
-					if (!clip_line(&xxp, &yyp, &xxk, &yyk, xx1, yy1, xx2, yy2)) goto break__;
+					if (!clip_line(&xxp, &yyp, &xxk, &yyk, (int)xx1, (int)yy1, (int)xx2, (int)yy2)) goto break__;
 				}
 
 
@@ -4360,7 +4367,7 @@ break__:
 		
 		if ((iii > nl) && (pattern_count) && (lineinfo.upattern > 0))
 		{
-			lx_ = (int)(sqrt((x2 - xxp_) * (x2 - xxp_) + (y2 - yyp_) * (y2 - yyp_)));
+			lx_ = (int)(sqrt((double)(x2 - xxp_) * (x2 - xxp_) + (y2 - yyp_) * (y2 - yyp_)));
 
 			pattern_offset = pattern_offset + lx_;
 			
@@ -4370,15 +4377,15 @@ break__:
      }
      else  
      {
-      LINE(x1,y1,x2,y2);
+      LINE((int)x1,(int)y1,(int)x2,(int)y2);
       if (lineinfo.thickness>=3) 
       {
-       LINE(x1-de_x,y1-de_y,x2-de_x,y2-de_y);
-       LINE(x1+de_x,y1+de_y,x2+de_x,y2+de_y);
+       LINE((int)x1-de_x,(int)y1-de_y,(int)x2-de_x,(int)y2-de_y);
+       LINE((int)x1+de_x,(int)y1+de_y,(int)x2+de_x,(int)y2+de_y);
        if (lineinfo.thickness==4)
         {
-         LINE(x1-de2_x,y1-de2_y,x2-de2_x,y2-de2_y);
-         LINE(x1+de2_x,y1+de2_y,x2+de2_x,y2+de2_y);
+         LINE((int)x1-de2_x,(int)y1-de2_y,(int)x2-de2_x,(int)y2-de2_y);
+         LINE((int)x1+de2_x,(int)y1+de2_y,(int)x2+de2_x,(int)y2+de2_y);
         }
       }
      } 
@@ -4494,8 +4501,8 @@ int lineC0(long x1, long y1, long x2, long y2)
 
 	if (lineinfo.thickness >= 3) 
 	{
-		delxxx = fabs(x2 - x1);
-		delyyy = fabs(y2 - y1);
+		delxxx = (double)abs((int)x2 - (int)x1);
+		delyyy = (double)abs((int)y2 - (int)y1);
 		if (delxxx > delyyy)
 		{
 			de_x = 0;
@@ -4514,22 +4521,22 @@ int lineC0(long x1, long y1, long x2, long y2)
 
 	if (l_e == 1)
 	{
-		LINE(x1, y1, x2, y2);
+		LINE((int)x1, (int)y1, (int)x2, (int)y2);
 		if (lineinfo.thickness >= 3) 
 		{
-			LINE(x1 - de_x, y1 - de_y, x2 - de_x, y2 - de_y);
-			LINE(x1 + de_x, y1 + de_y, x2 + de_x, y2 + de_y);
+			LINE((int)x1 - de_x, (int)y1 - de_y, (int)x2 - de_x, (int)y2 - de_y);
+			LINE((int)x1 + de_x, (int)y1 + de_y, (int)x2 + de_x, (int)y2 + de_y);
 			if (lineinfo.thickness == 4)
 			{
-				LINE(x1 - de2_x, y1 - de2_y, x2 - de2_x, y2 - de2_y);
-				LINE(x1 + de2_x, y1 + de2_y, x2 + de2_x, y2 + de2_y);
+				LINE((int)x1 - de2_x, (int)y1 - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+				LINE((int)x1 + de2_x, (int)y1 + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 			}
 		}
 	}
 	else
 	{
-		delxxx = x2 - x1;
-		delyyy = y2 - y1;
+		delxxx = (double)(x2 - x1);
+		delyyy = (double)(y2 - y1);
 		lxy = sqrt((delxxx*delxxx) + (delyyy*delyyy));
 		if (lxy < pp0)  //dlugosc odcinka jest mniejsza od wzorca
 		{
@@ -4544,17 +4551,17 @@ int lineC0(long x1, long y1, long x2, long y2)
 			delxx = delxxx / nlr;
 			delyy = delyyy / nlr;
 		}
-		nl = (lxy / pp0);
+		nl = (int)(lxy / pp0);
 		if (nl > 0)
 		{
 			delxxxx = delxxx / lxy;
 			delyyyy = delyyy / lxy;
 			for (iii = 1; iii <= (nl + 1); iii++)
 			{
-				xxp1 = x1 + (iii - 1)*delxx;
-				yyp1 = y1 + (iii - 1)*delyy;
-				xxk1 = xxp1 + delxxxx * (pp[0]);
-				yyk1 = yyp1 + delyyyy * (pp[0]);
+				xxp1 = (float)((float)x1 + (iii - 1)*delxx);
+				yyp1 = (float)((float)y1 + (iii - 1)*delyy);
+				xxk1 = (float)(xxp1 + delxxxx * (pp[0]));
+				yyk1 = (float)(yyp1 + delyyyy * (pp[0]));
 				xxp = (int)xxp1;
 				yyp = (int)yyp1;
 				xxk = (int)xxk1;
@@ -4579,26 +4586,26 @@ int lineC0(long x1, long y1, long x2, long y2)
 						pp[1] = 3;
 						pp0 = 4;
 					}
-					delxxx = x2 - x1;
-					delyyy = y2 - y1;
+					delxxx = (double)(x2 - x1);
+					delyyy = (double)(y2 - y1);
 					lxy = sqrt((delxxx*delxxx) + (delyyy*delyyy));
 					if (lxy < pp0)  //dlugosc ostatniego odcinka jest mniejsza od nowego wzorca
 					{
 						if (lineinfo.thickness == 0)
 						{
 							putpixel_(xxp, yyp, color_cur);
-							putpixel_(x2, y2, color_cur);
+							putpixel_((int)x2, (int)y2, color_cur);
 						}
-						else LINE(xxp, yyp, x2, y2);
+						else LINE(xxp, yyp, (int)x2, (int)y2);
 
 						if (lineinfo.thickness >= 3) 
 						{
-							LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-							LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+							LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+							LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 							if (lineinfo.thickness == 4)
 							{
-								LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-								LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+								LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+								LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 							}
 						}
 					}
@@ -4610,17 +4617,17 @@ int lineC0(long x1, long y1, long x2, long y2)
 							delxx = delxxx / nlr;
 							delyy = delyyy / nlr;
 						}
-						nl = (lxy / pp0);
+						nl = (int)(lxy / pp0);
 						if (nl > 0)
 						{
 							delxxxx = delxxx / lxy;
 							delyyyy = delyyy / lxy;
 							for (iii = 1; iii <= (nl + 1); iii++)
 							{
-								xxp1 = x1 + (iii - 1)*delxx;
-								yyp1 = y1 + (iii - 1)*delyy;
-								xxk1 = xxp1 + delxxxx * (pp[0]);
-								yyk1 = yyp1 + delyyyy * (pp[0]);
+								xxp1 = (float)((float)x1 + (iii - 1)*delxx);
+								yyp1 = (float)((float)y1 + (iii - 1)*delyy);
+								xxk1 = (float)(xxp1 + delxxxx * (pp[0]));
+								yyk1 = (float)(yyp1 + delyyyy * (pp[0]));
 								xxp = (int)xxp1;
 								yyp = (int)yyp1;
 								xxk = (int)xxk1;
@@ -4630,17 +4637,17 @@ int lineC0(long x1, long y1, long x2, long y2)
 									if (lineinfo.thickness == 0)
 									{
 										putpixel_(xxp, yyp, color_cur);
-										putpixel_(x2, y2, color_cur);
+										putpixel_((int)x2, (int)y2, color_cur);
 									}
-									else LINE(xxp, yyp, x2, y2);
+									else LINE(xxp, yyp, (int)x2, (int)y2);
 									if (lineinfo.thickness >= 3) 
 									{
-										LINE(xxp - de_x, yyp - de_y, x2 - de_x, y2 - de_y);
-										LINE(xxp + de_x, yyp + de_y, x2 + de_x, y2 + de_y);
+										LINE(xxp - de_x, yyp - de_y, (int)x2 - de_x, (int)y2 - de_y);
+										LINE(xxp + de_x, yyp + de_y, (int)x2 + de_x, (int)y2 + de_y);
 										if (lineinfo.thickness == 4)
 										{
-											LINE(xxp - de2_x, yyp - de2_y, x2 - de2_x, y2 - de2_y);
-											LINE(xxp + de2_x, yyp + de2_y, x2 + de2_x, y2 + de2_y);
+											LINE(xxp - de2_x, yyp - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+											LINE(xxp + de2_x, yyp + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 										}
 									}
 								}
@@ -4678,10 +4685,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 2)
 					{
-						xxp2 = xxk1 + delxxxx * (pp[1]);
-						yyp2 = yyk1 + delyyyy * (pp[1]);
-						xxk2 = xxp2 + delxxxx * (pp[2]);
-						yyk2 = yyp2 + delyyyy * (pp[2]);
+						xxp2 = (float)(xxk1 + delxxxx * (pp[1]));
+						yyp2 = (float)(yyk1 + delyyyy * (pp[1]));
+						xxk2 = (float)(xxp2 + delxxxx * (pp[2]));
+						yyk2 = (float)(yyp2 + delyyyy * (pp[2]));
 						xxp = (int)xxp2;
 						yyp = (int)yyp2;
 						xxk = (int)xxk2;
@@ -4700,10 +4707,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 4)
 					{
-						xxp3 = xxk2 + delxxxx * (pp[3]);
-						yyp3 = yyk2 + delyyyy * (pp[3]);
-						xxk3 = xxp3 + delxxxx * (pp[4]);
-						yyk3 = yyp3 + delyyyy * (pp[4]);
+						xxp3 = (float)(xxk2 + delxxxx * (pp[3]));
+						yyp3 = (float)(yyk2 + delyyyy * (pp[3]));
+						xxk3 = (float)(xxp3 + delxxxx * (pp[4]));
+						yyk3 = (float)(yyp3 + delyyyy * (pp[4]));
 						xxp = (int)xxp3;
 						yyp = (int)yyp3;
 						xxk = (int)xxk3;
@@ -4722,10 +4729,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 6)
 					{
-						xxp4 = xxk3 + delxxxx * (pp[5]);
-						yyp4 = yyk3 + delyyyy * (pp[5]);
-						xxk4 = xxp4 + delxxxx * (pp[6]);
-						yyk4 = yyp4 + delyyyy * (pp[6]);
+						xxp4 = (float)(xxk3 + delxxxx * (pp[5]));
+						yyp4 = (float)(yyk3 + delyyyy * (pp[5]));
+						xxk4 = (float)(xxp4 + delxxxx * (pp[6]));
+						yyk4 = (float)(yyp4 + delyyyy * (pp[6]));
 						xxp = (int)xxp4;
 						yyp = (int)yyp4;
 						xxk = (int)xxk4;
@@ -4744,10 +4751,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 8)
 					{
-						xxp5 = xxk4 + delxxxx * (pp[7]);
-						yyp5 = yyk4 + delyyyy * (pp[7]);
-						xxk5 = xxp5 + delxxxx * (pp[8]);
-						yyk5 = yyp5 + delyyyy * (pp[8]);
+						xxp5 = (float)(xxk4 + delxxxx * (pp[7]));
+						yyp5 = (float)(yyk4 + delyyyy * (pp[7]));
+						xxk5 = (float)(xxp5 + delxxxx * (pp[8]));
+						yyk5 = (float)(yyp5 + delyyyy * (pp[8]));
 						xxp = (int)xxp5;
 						yyp = (int)yyp5;
 						xxk = (int)xxk5;
@@ -4766,10 +4773,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 10)
 					{
-						xxp6 = xxk5 + delxxxx * (pp[9]);
-						yyp6 = yyk5 + delyyyy * (pp[9]);
-						xxk6 = xxp6 + delxxxx * (pp[10]);
-						yyk6 = yyp6 + delyyyy * (pp[10]);
+						xxp6 = (float)(xxk5 + delxxxx * (pp[9]));
+						yyp6 = (float)(yyk5 + delyyyy * (pp[9]));
+						xxk6 = (float)(xxp6 + delxxxx * (pp[10]));
+						yyk6 = (float)(yyp6 + delyyyy * (pp[10]));
 						xxp = (int)xxp6;
 						yyp = (int)yyp6;
 						xxk = (int)xxk6;
@@ -4788,10 +4795,10 @@ int lineC0(long x1, long y1, long x2, long y2)
 					}
 					if (l_e > 12)
 					{
-						xxp7 = xxk6 + delxxxx * (pp[11]);
-						yyp7 = yyk6 + delyyyy * (pp[11]);
-						xxk7 = xxp7 + delxxxx * (pp[12]);
-						yyk7 = yyp7 + delyyyy * (pp[12]);
+						xxp7 = (float)(xxk6 + delxxxx * (pp[11]));
+						yyp7 = (float)(yyk6 + delyyyy * (pp[11]));
+						xxk7 = (float)(xxp7 + delxxxx * (pp[12]));
+						yyk7 = (float)(yyp7 + delyyyy * (pp[12]));
 						xxp = (int)xxp7;
 						yyp = (int)yyp7;
 						xxk = (int)xxk7;
@@ -4814,15 +4821,15 @@ int lineC0(long x1, long y1, long x2, long y2)
 		}
 		else
 		{
-			LINE(x1, y1, x2, y2);
+			LINE((int)x1, (int)y1, (int)x2, (int)y2);
 			if (lineinfo.thickness >= 3)
 			{
-				LINE(x1 - de_x, y1 - de_y, x2 - de_x, y2 - de_y);
-				LINE(x1 + de_x, y1 + de_y, x2 + de_x, y2 + de_y);
+				LINE((int)x1 - de_x, (int)y1 - de_y, (int)x2 - de_x, (int)y2 - de_y);
+				LINE((int)x1 + de_x, (int)y1 + de_y, (int)x2 + de_x, (int)y2 + de_y);
 				if (lineinfo.thickness == 4)
 				{
-					LINE(x1 - de2_x, y1 - de2_y, x2 - de2_x, y2 - de2_y);
-					LINE(x1 + de2_x, y1 + de2_y, x2 + de2_x, y2 + de2_y);
+					LINE((int)x1 - de2_x, (int)y1 - de2_y, (int)x2 - de2_x, (int)y2 - de2_y);
+					LINE((int)x1 + de2_x, (int)y1 + de2_y, (int)x2 + de2_x, (int)y2 + de2_y);
 				}
 			}
 		}
@@ -5415,7 +5422,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
     lineC (x1, y1, x2, y2) ;
     lineC (x1, y2, x2, y1) ;
     if (mode==COPY_PUT)
-    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1)/5, mode);
+    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)x2-(int)x1)/5, mode);
     break;
    case 7: /*junction*/
 	   ////lineC(x1, y1, x2, y2); ////
@@ -5424,36 +5431,36 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
 	   {
 		   if (kolor) set_mode_trans();
 		   //	   set_fill_color(k->kolor);
-		   Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 5);
+		   Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 5);
 		   if (kolor) set_mode_solid();
 	   }
-	   else   DrawCircle(pikseleX0(ptrs_point->x), pikseleY0(ptrs_point->y), fabs(x2 - x1) / 5, mode);
+	   else   DrawCircle(pikseleX0(ptrs_point->x), pikseleY0(ptrs_point->y), abs((int)(x2 - x1)) / 5, mode);
 	   break;
    case 8: /*pin*/
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
-    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1)/3, mode);
+    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
      else lineC (x1, y2, x2, y1) ;
     break;
    case 9: /*pin_g*/
     lineC (x12, y12, x12, y2) ;
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
-    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1)/3, mode);
+    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
      else lineC (x1, y2, x2, y1) ;
     break; 
    case 10: /*pin_d*/
     lineC (x12, y12, x12, y1) ;
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
-    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1)/3, mode);
+    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
      else lineC (x1, y2, x2, y1) ;
     break;
    case 11: /*pin_s*/
     lineC (x1, y12, x2, y12) ;
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
-    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1)/3, mode);
+    DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
      else lineC (x1, y2, x2, y1) ;
     break;
        case 12: /*fixed D*/
@@ -5463,11 +5470,11 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            lineC (x12, y1, x12, y2) ;
            lineC (x1, y12, x2, y12) ;
            if (kolor) set_mode_trans();
-           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 1.5);  //2
+           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 1.5);  //2
            if (kolor) set_mode_solid();
            linestyle(128);
            dxy=pikseleDX(df_psize*2.5);  //2
-           dd = (x2 - x1) / 1.5;  //2
+           dd = (long)((double)(x2 - x1) / 1.5);  //2
            dd1=(x2-x1)/2;
            switch (ptrs_point->typ)
            {
@@ -5483,6 +5490,8 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
                case 15:
                    lineC(x1 - dxy, y12 - dd, x2 + dxy, y12 - dd);
                    break;
+               default:
+           	       break;
            }
        break;
        case 16: /*pinned D*/
@@ -5491,7 +5500,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
        case 19: /*pinned U*/
            lineC (x12, y1, x12, y2) ;
            lineC (x1, y12, x2, y12) ;
-           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1), mode);
+           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1)), mode);
            linestyle(128);
            dxy=pikseleDX(df_psize*3);
            dd = (x2 - x1);
@@ -5519,7 +5528,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            lineC (x12, y1, x12, y2) ;
            lineC (x1, y12, x2, y12) ;
            if (kolor) set_mode_trans();
-           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 1.5);  //2
+           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 1.5);  //2
            if (kolor) set_mode_solid();
            linestyle(128);
            dxy=pikseleDX(df_psize*2.5);  //2
@@ -5543,6 +5552,8 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
                    lineC (x1-dxy, y12-dd, x2+dxy, y12-dd);
                    lineC (x1-dxy, y12-dd-dd1, x2+dxy, y12-dd-dd1);
                    break;
+           default:
+           	break;
            }
            break;
        case 24: /*pinned roller D*/
@@ -5551,7 +5562,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
        case 27: /*pinned roller U*/
            lineC (x12, y1, x12, y2) ;
            lineC (x1, y12, x2, y12) ;
-           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1), mode);
+           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1)), mode);
            linestyle(128);
            dxy=pikseleDX(df_psize*3);
            dd = (x2 - x1);
@@ -5580,7 +5591,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            lineC (x12, y1, x12, y2) ;
            lineC (x1, y12, x2, y12) ;
            if (kolor) set_mode_trans();
-           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 1.5);  //2
+           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 1.5);  //2
            if (kolor) set_mode_solid();
            linestyle(96);
            dxy=pikseleDX(df_psize*2.325);  //2.5
@@ -5609,7 +5620,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            //lineC (x1, y12, x2, y12) ;
            lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
            if (kolor) set_mode_trans();
-           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 1.5);  //2
+           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 1.5);  //2
            if (kolor) set_mode_solid();
            linestyle(128);
            dxy=pikseleDX(df_psize*2.5);  //2
@@ -5658,7 +5669,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            //lineC (x1, y12, x2, y12) ;
            lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
            if (kolor) set_mode_trans();
-           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)fabs(x2 - x1) / 1.5);  //2
+           Draw_Kolo((long_long)pikseleX0(ptrs_point->x), (long_long)pikseleY0(ptrs_point->y), (long_long)abs((int)(x2 - x1)) / 1.5);  //2
            if (kolor) set_mode_solid();
            linestyle(128);
            dxy=pikseleDX(df_psize*2.5);  //2
@@ -5706,7 +5717,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
            //lineC (x1, y12, x2, y12) ;
            lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
-           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1), mode);
+           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1)), mode);
            linestyle(128);
            dxy=pikseleDX(df_psize*3);
            dd=(x2-x1);
@@ -5753,7 +5764,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
            //lineC (x1, y12, x2, y12) ;
            lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
-           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), fabs(x2-x1), mode);
+           DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1)), mode);
            linestyle(128);
            dxy=pikseleDX(df_psize*3);
            dd=(x2-x1);
@@ -12019,11 +12030,10 @@ void percentage (int percent)
   setfillstyle_(SOLID_FILL, BKCOLOR) ;
   bar(x, y, maxX, y + ED_INF_HEIGHT - 1);
   setcolor (kolory.ink) ;
-  sprintf(buf, "  %ld %s",(int)percent,"%") ;
+  sprintf(buf, "  %d %s",percent,"%") ;
   buf [18] = '\0' ;
   moveto(x+10*WIDTH, y);
   outtext_r (buf) ;
-  return;
 }
 
 void percentage_out (void)
@@ -12036,8 +12046,7 @@ void percentage_out (void)
   moveto(x,y);
   setfillstyle_(SOLID_FILL, BKCOLOR) ;
   bar(x, y, x + 20 * WIDTH + 2, y + ED_INF_HEIGHT - 1);
-  
-  return;
+
 }
 
 void param_line_out(void)
@@ -12137,8 +12146,8 @@ void korekta_obiektow_blokow(void)
 			  free(end_block);
 			  free(adr_block);
 
-			  sprintf(str, _SYSTEM_MESSAGE_);
-			  sprintf(str1, _INTERRAPTED_);
+			  sprintf(str, "%s", _SYSTEM_MESSAGE_);
+			  sprintf(str1, "%s", _INTERRAPTED_);
 
 			  ClearInfo0();
 
@@ -12235,18 +12244,18 @@ void korekta_obiektow_blokow(void)
                      n_changes1++;
                    }
                  }
-               if (n_blocks<MAX_N_BLOCKS)
-               {
-                n_blocks++;
-                end_block[n_blocks-1]=(char *)((long_long)adh+(long_long)(sizeof(NAGLOWEK))+ (long_long)b->n);
-                adr_block[n_blocks-1]=adh;
+                if (n_blocks<MAX_N_BLOCKS)
+                {
+	                n_blocks++;
+	                end_block[n_blocks-1]=(char *)((long_long)adh+(long_long)(sizeof(NAGLOWEK))+ (long_long)b->n);
+	                adr_block[n_blocks-1]=adh;
                 }
 			   else
 			   {
 				   To_many_blocks = TRUE;
 
-				   sprintf(str, _SYSTEM_MESSAGE_);
-				   sprintf(str1, _TOO_MANY_BLOCKS_);
+				   sprintf(str, "%s", _SYSTEM_MESSAGE_);
+				   sprintf(str1, "%s", _TOO_MANY_BLOCKS_);
 				  
 				   free(end_block);
 				   free(adr_block);
@@ -12326,8 +12335,8 @@ void korekta_obiektow_blokow(void)
  if (To_many_blocks==TRUE)
   { 
 
-	 sprintf(str, _SYSTEM_MESSAGE_);
-	 sprintf(str1, _TOO_MANY_BLOCKS_);
+	 sprintf(str, "%s", _SYSTEM_MESSAGE_);
+	 sprintf(str1, "%s", _TOO_MANY_BLOCKS_);
 
 	ret = ask_question(1, "", "OK", "", str, 12, str1, 11, 1, 0);
   }
@@ -12335,8 +12344,8 @@ void korekta_obiektow_blokow(void)
  if ((n_changes+n_changes1+n_changes2)>0)
   { 
 
-	 sprintf(str, _SYSTEM_MESSAGE_);
-	 sprintf(str1, _BLOCKS_CORRECTED_, n_changes + n_changes2, n_changes1);
+	 sprintf(str, "%s", _SYSTEM_MESSAGE_);
+	 sprintf(str1, _BLOCKS_CORRECTED_, (long)(n_changes + n_changes2), (long)n_changes1);
 
 	ret = ask_question(1, "", "OK", "", str, 12, str1, 11, 1, 0);
     Change=TRUE;
@@ -12344,7 +12353,7 @@ void korekta_obiektow_blokow(void)
  else
  {
 
-	 sprintf(str, _SYSTEM_MESSAGE_);
+	 sprintf(str, "%s", _SYSTEM_MESSAGE_);
 	 sprintf(str1, _BLOCKS_TESTED_, n_blocks);
 
 	 ret = ask_question(1, "", "OK", "", str, 12, str1, 11, 1, 0);
@@ -13417,8 +13426,10 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                        (Check_if_Equal(w1->xy[3], xy[3])) &&
                        (Check_if_Equal(w1->xy[0], xy[0])) &&
                        (Check_if_Equal(w1->xy[1], xy[1])))
-                       if (!sa->reversed) begin_line=0;
-                       else end_line=0;
+                   {
+	                   if (!sa->reversed) begin_line=0;
+	                   else end_line=0;
+                   }
                }
                else if (nag1->obiekt==Osolidarc)
                {
@@ -13430,14 +13441,16 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                        (Check_if_Equal(xy1[5], xy[3])) &&
                        (Check_if_Equal(xy1[6], xy[0])) &&
                        (Check_if_Equal(xy1[7], xy[1])))
-                       if (!sa->reversed) begin_line=0;
-                       else end_line=0;
+                   {
+	                   if (!sa->reversed) begin_line=0;
+	                   else end_line=0;
+                   }
                }
 
-               last_trace_point[0].x=xy[0];
-               last_trace_point[0].y=xy[1];
-               last_trace_point[1].x=xy[2];
-               last_trace_point[1].y=xy[3];
+               last_trace_point[0].x=(float)xy[0];
+               last_trace_point[0].y=(float)xy[1];
+               last_trace_point[1].x=(float)xy[2];
+               last_trace_point[1].y=(float)xy[3];
            }
 
          rysuj_solidarc_(sa, mode, 1, TRUE, FALSE, begin_line, end_line);
@@ -14231,7 +14244,7 @@ void flip_shift_screen(LINIA *line_g0) {
 
 	x11 = pXp; x22 = pXk;
 
-	my_blit((BITMAP*)second_screen, ssx0, ssy0, pXp + sx0, maxY - (pYp - pYk) + sy0, pXk - pXp + 1 - abs(ldx), pYp - pYk + 1 - abs(ldy));
+	my_blit((BITMAP*)second_screen, ssx0, ssy0, (int)(pXp + sx0), (int)(maxY - (pYp - pYk) + sy0), (int)(pXk - pXp + 1 - abs((int)ldx)), (int)(pYp - pYk + 1 - abs((int)ldy)));
 
 	//filling the void
 	setfillstyle_(SOLID_FILL, kolory.paper);
@@ -14244,14 +14257,14 @@ void flip_shift_screen(LINIA *line_g0) {
 
 void flip_screen(void) {
     int mxxx, myyy;
-    my_blit((BITMAP *) second_screen, 0, 0, pXp, maxY - (pYp - pYk), pXk - pXp + 1, pYp - pYk + 1);
+    my_blit((BITMAP *) second_screen, 0, 0, (int)pXp, (int)(maxY - (pYp - pYk)), (int)(pXk - pXp + 1), (int)(pYp - pYk + 1));
     get_mouse_mickeys(&mxxx, &myyy);
 }
 
 #ifdef ALLEGRO5
 void flip_screen_sd(BITMAP * src_screen, BITMAP * dst_screen) {
     int mxxx, myyy;
-    my_blit_sd(src_screen, dst_screen,0, 0, pXp, maxY - (pYp - pYk), pXk - pXp + 1, pYp - pYk + 1);
+    my_blit_sd(src_screen, dst_screen,0, 0, (int)pXp, (int)(maxY - (pYp - pYk)), (int)(pXk - pXp + 1), (int)(pYp - pYk + 1));
     get_mouse_mickeys(&mxxx, &myyy);
 }
 #endif
@@ -14832,7 +14845,7 @@ void dimm_dialog_bitmap(BITMAP *src, BITMAP *dst, int dx, int dy, int gray_sat)
 	 ddy = y2 - y1;
 
 
-	 if (abs(pXk - pXp - 2*iXpk) > abs(pYk - pYp - 2*iYpk))  //landscape
+	 if (abs((int)(pXk - pXp - 2*iXpk)) > abs((int)(pYk - pYp - 2*iYpk)))  //landscape
 	 {
 		 ddxy = abs(ddy - ddx);
 		 ddyx = 0;
@@ -15790,7 +15803,7 @@ re_read_zb:
    {
     setfillstyle_(EMPTY_FILL,0);
    }
-  if (Get_Buf_Mak_Size () > 2)  mbufmx = bufor_makra + Get_Buf_Mak_Size () - 2 ;
+  if (Get_Buf_Mak_Size () > 2)  mbufmx = (unsigned char *)(bufor_makra + Get_Buf_Mak_Size () - 2) ;
   else  mbufmx = NULL;
   Ini_Global_Object ();
   if (re_read==TRUE)
@@ -16501,18 +16514,32 @@ void reini_edit_cursors(BITMAP *small_one, BITMAP *big_one, BITMAP *huge_one)
     else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 }
 
+void free_cursors(void)
+{
+#ifdef LINUX
+	if (alfa_mouse_null_orig!=NULL) { destroy_bitmap(alfa_mouse_null_orig); alfa_mouse_null_orig=NULL;}
+#endif
+	if (alfa_mouse_pointer32_orig!=NULL) { destroy_bitmap(alfa_mouse_pointer32_orig); alfa_mouse_pointer32_orig=NULL; }
+	if (alfa_mouse_pointer_orig!=NULL) { destroy_bitmap(alfa_mouse_pointer_orig); alfa_mouse_pointer_orig=NULL; }
+	if (alfa_mouse_edit32_orig!=NULL) { destroy_bitmap(alfa_mouse_edit32_orig); alfa_mouse_edit32_orig=NULL; }
+	if (alfa_mouse_edit_orig!=NULL) { destroy_bitmap(alfa_mouse_edit_orig); alfa_mouse_edit_orig=NULL; }
+}
+
 void ini_cursors(void)
 {
     
     #ifdef LINUX
         if (alfa_mouse_null!=NULL) destroy_bitmap(alfa_mouse_null);
         alfa_mouse_null = create_mouse_null(alfa_mouse_data_null);
+	    alfa_mouse_null_orig=alfa_mouse_null;
     #endif
 
       if (alfa_mouse_pointer32!=NULL) destroy_bitmap(alfa_mouse_pointer32);
       if (alfa_mouse_pointer != NULL) destroy_bitmap(alfa_mouse_pointer);
       alfa_mouse_pointer32 = create_mouse_pointer32(alfa_mouse_arrow_data32);
+	  alfa_mouse_pointer32_orig=alfa_mouse_pointer32;
       alfa_mouse_pointer = create_mouse_pointer(alfa_mouse_arrow_data);
+	  alfa_mouse_pointer_orig=alfa_mouse_pointer;
 
       alfa_mouse_pointer48=alfa_mouse_pointer32;  //there is no huge cursor created so far
 
@@ -16523,20 +16550,33 @@ void ini_cursors(void)
     if (alfa_mouse_edit32!=NULL) destroy_bitmap(alfa_mouse_edit32);
     if (alfa_mouse_edit != NULL) destroy_bitmap(alfa_mouse_edit);
     alfa_mouse_edit32 = create_mouse_pointer32(alfa_mouse_edit_data32);
+	alfa_mouse_edit32_orig=alfa_mouse_edit32;
     alfa_mouse_edit = create_mouse_pointer(alfa_mouse_edit_data);
+	alfa_mouse_edit_orig=alfa_mouse_edit;
 
     alfa_mouse_edit48=alfa_mouse_edit32;
 
-    if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
-    else if (BIGCURSOR=1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
-    else  alfa_mouse_edit_sprite = alfa_mouse_edit;
+    //if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
+    //else if (BIGCURSOR=1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
+    //else  alfa_mouse_edit_sprite = alfa_mouse_edit;
 
-    if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
-    else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
-    else  alfa_mouse_busy_sprite = icon_hourglass_mem;
+    //if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    //else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
+    //else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 
     set_mouse_sprite(alfa_mouse_sprite);
 
+}
+
+void ini_cursors_edit_hourglass(void)
+{
+	if (BIGCURSOR==2) alfa_mouse_edit_sprite = alfa_mouse_edit48;
+	else if (BIGCURSOR==1) alfa_mouse_edit_sprite = alfa_mouse_edit32;
+	else  alfa_mouse_edit_sprite = alfa_mouse_edit;
+
+	if (BIGCURSOR==2) alfa_mouse_busy_sprite = icon_hourglass_mem;
+	else if (BIGCURSOR==1) alfa_mouse_busy_sprite = icon_hourglass_mem;
+	else  alfa_mouse_busy_sprite = icon_hourglass_mem;
 }
 
 void ini_cursor_busy(void)
@@ -16561,7 +16601,7 @@ void reset_cursor(void)
   BOOL eof_file;
   int k_style_DXF;
 
-  ini_cursors();
+  ini_cursors_edit_hourglass();  //27-06-2026
 
   set_clip_rect((BITMAP*)second_screen, 0, 0, getmaxx(), getmaxy());
 
@@ -16834,7 +16874,7 @@ int my_getch(void)
      return key_buffer1;
    }
 
- key0 = ureadkey(&scancode);
+ key0 = ureadkey((int*)&scancode);
 #ifdef LINUX
  if ((key0==127) && (scancode==77)) key0=0;
 #endif

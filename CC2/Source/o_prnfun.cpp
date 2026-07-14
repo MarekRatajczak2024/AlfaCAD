@@ -57,6 +57,13 @@
 #ifndef LINUX
 //#include "hpdf_image.h"
 #endif
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wwrite-strings"
+
 #include "o_lttype.h"
 #include "hpdf_errorcodes.h"
 #include "allegro/internal/aintern.h"
@@ -1535,7 +1542,7 @@ static BOOL draw_left_margin (char *ptrsz_buf, unsigned int i_buflen)
   n1 = i_dotno % 256 ;
   n2 = i_dotno / 256 ;
   
-  memset (ptrsz_buf, i_dotno, 0) ;
+  memset (ptrsz_buf, 0, i_dotno) ;
   if (x24mode)
  { if (Write_To_Device (CMIBM, strlen (CMIBM)) != strlen (CMIBM)) return FALSE ;
    if (Write_To_Device (&i_dotnox24n1, sizeof (i_dotnox24n1)) != sizeof(i_dotnox24n1)) return FALSE ;
@@ -2761,11 +2768,11 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
 
   top = abs(jednostki_h_to_byte_prn(ptrs__prn_ini_date->top_margin) * 8);
 
-  if ((ptrs__prn_ini_date->prn_type==PRN_PCX)
+  if (ptrs__prn_ini_date->prn_type==PRN_PCX
       #ifdef LINUX
-      || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)
+      || ptrs__prn_ini_date->prn_type == PRN_WINDOWS
       #endif
-            )
+    )
 	{
 
 	   sprintf(imageFileName, "%s%03d.bmp",bitmap_Image, Client_number);
@@ -2929,11 +2936,11 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
 			  vertical_i = top;
 
 		  }
-		  else if ((ptrs__prn_ini_date->prn_type == PRN_PCX)
+		  else if (ptrs__prn_ini_date->prn_type == PRN_PCX
                #ifdef LINUX
-                || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
+                || ptrs__prn_ini_date->prn_type == PRN_WINDOWS  //just for LINUX
                #endif
-                  )
+            )
 		  {
 
 			  correct_prn_bitmap_colors(allegro_prn_bmp);
@@ -2948,22 +2955,22 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
               if (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
               {
 #ifdef LINUX
-                  sprintf(imageFileNamePdf, "%s%03d.pdf",bitmap_Image, Client_number);
-                  sprintf(params, "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
-                  runcode = RunSilent("image2image.exe", params);
+                  snprintf(imageFileNamePdf, sizeof(imageFileNamePdf), "%s%03d.pdf",bitmap_Image, Client_number);
+                  snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
+                  runcode = RunSilent((char*)"image2image.exe", params);
 
                   if (runcode > 0) {
-                      sprintf(error_str, "%s", _FILE_WRITING_ERROR_);
+                      snprintf(error_str, sizeof(error_str), "%s", _FILE_WRITING_ERROR_);
                       ErrListStr(error_str);
                   }
 
-                  sprintf(params, "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
-                  runcode = SystemSilent("lpoptions",params);
+                  snprintf(params, sizeof(params), "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
+                  runcode = SystemSilent((char*)"lpoptions",params);
 
-                  sprintf(params, "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
+                  snprintf(params, sizeof(params),"-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
                   runcode = SystemSilent("lp",params);
                   if (runcode > 0) {
-                      sprintf(error_str, "%s%d", err_message_cups, runcode);
+                      snprintf(error_str, sizeof(error_str), "%s%lu", err_message_cups, runcode);
                       ErrListStr(error_str);
                   }
 #endif
@@ -2978,10 +2985,10 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
                   } else {
                       ret = get_dest_image_file_name(ptrs__prn_ini_date->plik, fnd, i_pageno,
                                                      ptrs__prn_ini_date->image_format);
-                      sprintf(params, "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
-                      runcode = RunSilent("image2image.exe", params);
+                      snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
+                      runcode = RunSilent((char*)"image2image.exe", params);
                       if (runcode > 0) {
-                          sprintf(error_str, "%s%d", err_message, runcode);
+                          snprintf(error_str, sizeof(error_str),"%s%lu", err_message, runcode);
                           ErrListStr(error_str);
                       }
                   }
@@ -3040,9 +3047,9 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
 	xmin = xmax - df_margin;
   }
 
-  if ((ptrs__prn_ini_date->prn_type == PRN_PCX)
+  if (ptrs__prn_ini_date->prn_type == PRN_PCX
 #ifdef LINUX
-    || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
+    || ptrs__prn_ini_date->prn_type == PRN_WINDOWS  //just for LINUX
 #endif
     )
   {
@@ -3058,25 +3065,22 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
       if (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
       {
 #ifdef LINUX
-          sprintf(imageFileNamePdf, "%s%03d.pdf",bitmap_Image, Client_number);
-          sprintf(params, "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
+          snprintf(imageFileNamePdf, sizeof(imageFileNamePdf), "%s%03d.pdf",bitmap_Image, Client_number);
+          snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
           runcode = RunSilent("image2image.exe", params);
 
           if (runcode > 0) {
-
-              sprintf(error_str, "%s", _FILE_WRITING_ERROR_);
-
+              snprintf(error_str, sizeof(error_str), "%s", _FILE_WRITING_ERROR_);
               ErrListStr(error_str);
           }
 
-          sprintf(params, "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
-          runcode = SystemSilent("lpoptions",params);
+          snprintf(params, sizeof(params), "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
+          runcode = SystemSilent((char*)"lpoptions",params);
 
-          sprintf(params, "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
-          runcode = SystemSilent("lp",params);
+          snprintf(params, sizeof(params), "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
+          runcode = SystemSilent((char*)"lp",params);
           if (runcode > 0) {
-              sprintf(error_str, "%s%d", err_message_cups, runcode);
-
+              snprintf(error_str, sizeof(error_str),"%s%lu", err_message_cups, runcode);
               ErrListStr(error_str);
           }
 #endif
@@ -3092,11 +3096,11 @@ static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
           } else {
               ret = get_dest_image_file_name(ptrs__prn_ini_date->plik, fnd, i_pageno, ptrs__prn_ini_date->image_format);
 
-              sprintf(params, "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
-              runcode = RunSilent("image2image.exe", params);
+              snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
+              runcode = RunSilent((char*)"image2image.exe", params);
               if (runcode > 0) {
-                  sprintf(error_str, "%s%d", err_message, runcode);
-                  ret = ask_question(1, "", confirm, "", error_str, 12, "", 11, 1, 62);
+                  snprintf(error_str, sizeof(error_str),"%s%lu", err_message, runcode);
+                  ret = ask_question(1, (char*)"", confirm, (char*)"", error_str, 12, "", 11, 1, 62);
 
                   CUR_ON(X, Y);
               }
@@ -3148,7 +3152,7 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
 
   if (strlen(zbior_danych_2)>0)
   {
-   k=pisz_zbior("RYSUJ.$2", FALSE, 1) ;
+   k=pisz_zbior((char*)"RYSUJ.$2", FALSE, 1) ;
    if ( k )  return FALSE;
   }
   i_pageno = 0 ;
@@ -3165,14 +3169,14 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
 
   top = abs(jednostki_h_to_byte_prn(ptrs__prn_ini_date->top_margin) * 8);
 
-  if ((ptrs__prn_ini_date->prn_type==PRN_PCX)
+  if (ptrs__prn_ini_date->prn_type==PRN_PCX
       #ifdef LINUX
-      || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)
+      || ptrs__prn_ini_date->prn_type == PRN_WINDOWS
 #endif
-            )
+    )
 	{
 
-	  sprintf(imageFileName, "%s%03d.bmp", bitmap_Image, Client_number);
+	  snprintf(imageFileName, sizeof(imageFileName), "%s%03d.bmp", bitmap_Image, Client_number);
 
 	  xp = ptrs__prn_ini_date->xp;
 	  xk = ptrs__prn_ini_date->xk;
@@ -3320,11 +3324,11 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
 			vertical_i = top;
 
 		}
-	    else if ((ptrs__prn_ini_date->prn_type == PRN_PCX)
+	    else if (ptrs__prn_ini_date->prn_type == PRN_PCX
 #ifdef LINUX
-           || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
+           || ptrs__prn_ini_date->prn_type == PRN_WINDOWS  //just for LINUX
 #endif
-           )
+        )
 	    {
 		  correct_prn_bitmap_colors(allegro_prn_bmp);
 
@@ -3339,22 +3343,22 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
           {
 #ifdef LINUX
 
-              sprintf(imageFileNamePdf, "%s%03d.pdf",bitmap_Image, Client_number);
-              sprintf(params, "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
-              runcode = RunSilent("image2image.exe", params);
+              snprintf(imageFileNamePdf, sizeof(imageFileNamePdf), "%s%03d.pdf",bitmap_Image, Client_number);
+              snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
+              runcode = RunSilent((char*)"image2image.exe", params);
 
               if (runcode > 0) {
-                  sprintf(error_str, "%s", _FILE_WRITING_ERROR_);
+                  snprintf(error_str, sizeof(error_str), "%s", _FILE_WRITING_ERROR_);
                   ErrListStr(error_str);
               }
 
-              sprintf(params, "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
-              runcode = SystemSilent("lpoptions",params);
+              snprintf(params, sizeof(params), "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
+              runcode = SystemSilent((char*)"lpoptions",params);
 
-              sprintf(params, "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
-              runcode = SystemSilent("lp",params);
+              snprintf(params, sizeof(params), "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
+              runcode = SystemSilent((char*)"lp",params);
               if (runcode > 0) {
-                  sprintf(error_str, "%s%d", err_message_cups, runcode);
+                  snprintf(error_str, sizeof(error_str), "%s%lu", err_message_cups, runcode);
                   ErrListStr(error_str);
               }
 #endif
@@ -3369,10 +3373,10 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
               } else {
                   ret = get_dest_image_file_name(ptrs__prn_ini_date->plik, fnd, i_pageno,
                                                  ptrs__prn_ini_date->image_format);
-                  sprintf(params, "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
+                  snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
                   runcode = RunSilent("image2image.exe", params);
                   if (runcode > 0) {
-                      sprintf(error_str, "%s%d", err_message, runcode);
+                      snprintf(error_str, sizeof(error_str), "%s%lu", err_message, runcode);
                       ErrListStr(error_str);
                   }
               }
@@ -3423,9 +3427,9 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
 	ymin = ymax - df_margin;
   }
   
-  if ((ptrs__prn_ini_date->prn_type == PRN_PCX)
+  if (ptrs__prn_ini_date->prn_type == PRN_PCX
 #ifdef LINUX
-    || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
+    || ptrs__prn_ini_date->prn_type == PRN_WINDOWS  //just for LINUX
 #endif
     )
   {
@@ -3441,23 +3445,23 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
       if (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)  //just for LINUX
       {
 #ifdef LINUX
-          sprintf(imageFileNamePdf, "%s%03d.pdf",bitmap_Image, Client_number);
+          snprintf(imageFileNamePdf, sizeof(imageFileNamePdf), "%s%03d.pdf",bitmap_Image, Client_number);
 
-          sprintf(params, "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
-          runcode = RunSilent("image2image.exe", params);
+          snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, imageFileNamePdf, matrix_head.vertical_density);
+          runcode = RunSilent((char*)"image2image.exe", params);
 
           if (runcode > 0) {
-              sprintf(error_str, "%s", _FILE_WRITING_ERROR_);
+              snprintf(error_str, sizeof(error_str), "%s", _FILE_WRITING_ERROR_);
               ErrListStr(error_str);
           }
 
-          sprintf(params, "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
+          snprintf(params, sizeof(params), "-d %s -o Resolution=%ddpi", ptrs__prn_ini_date->printer, matrix_head.vertical_density); //ptrs__prn_ini_date->density);
           runcode = SystemSilent("lpoptions",params);
 
-          sprintf(params, "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
+          snprintf(params, sizeof(params), "-c -d %s %s", ptrs__prn_ini_date->printer, imageFileNamePdf); //imageFileName);
           runcode = SystemSilent("lp",params);
           if (runcode > 0) {
-              sprintf(error_str, "%s%d", err_message_cups, runcode);
+              snprintf(error_str, sizeof(error_str), "%s%lu", err_message_cups, runcode);
               ErrListStr(error_str);
           }
 #endif
@@ -3470,10 +3474,10 @@ static BOOL draw_sheet_prn_rot (void)    /* z obrotem */
               }
           } else {
               ret = get_dest_image_file_name(ptrs__prn_ini_date->plik, fnd, i_pageno, ptrs__prn_ini_date->image_format);
-              sprintf(params, "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
-              runcode = RunSilent("image2image.exe", params);
+              snprintf(params, sizeof(params), "\"%s\" %s %d", imageFileName, fnd, matrix_head.vertical_density);
+              runcode = RunSilent((char*)"image2image.exe", params);
               if (runcode > 0) {
-                  sprintf(error_str, "%s%d", err_message, runcode);
+                  snprintf(error_str, sizeof(error_str), "%s%lu", err_message, runcode);
                   ErrListStr(error_str);
               }
           }
@@ -3509,7 +3513,13 @@ static void clear_matrix (BOOL set_background)
     int b_color24, kolor256;
 
 #ifdef ALLEGRO_PRN_BMP
-  if ((ptrs__prn_ini_date->prn_type == PRN_PCX) || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS))
+	// Guard Clause: If it's not a PCX or Windows printer, skip this whole bitmap routine immediately
+	if (ptrs__prn_ini_date->prn_type != PRN_PCX && ptrs__prn_ini_date->prn_type != PRN_WINDOWS)
+	{
+		return;
+	}
+	//which replaced condition below
+  //if ((ptrs__prn_ini_date->prn_type == PRN_PCX) || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS))
 	  if (BITS_PER_DOT < 24)
 	  {
 		  if ((set_background) && (ptrs__prn_ini_date->background)) clear_to_color(allegro_prn_bmp, get_palette_color(kolory.paper));
@@ -3518,37 +3528,37 @@ static void clear_matrix (BOOL set_background)
 	  else
 	  {
 #ifdef LINUX
-      if ((set_background) && (ptrs__prn_ini_date->background))
-      {
-          int b_color;
-          int tmpR, tmpG, tmpB, tmpA;
-          b_color = get_palette_color(kolory.paper);
-          tmpB = b_color & 0xFF; b_color >>= 8;
-          tmpG = b_color & 0xFF; b_color >>= 8;
-          tmpR = b_color & 0xFF; b_color >>= 8;
-          tmpA = b_color & 0xFF; /* dwColor >>= 8; */
+	      if (set_background && ptrs__prn_ini_date->background)
+	      {
+	          int b_color;
+	          int tmpR, tmpG, tmpB, tmpA;
+	          b_color = get_palette_color(kolory.paper);
+	          tmpB = b_color & 0xFF; b_color >>= 8;
+	          tmpG = b_color & 0xFF; b_color >>= 8;
+	          tmpR = b_color & 0xFF; b_color >>= 8;
+	          tmpA = b_color & 0xFF; /* dwColor >>= 8; */
 
-          b_color24 = ((tmpB & 0xff) << 16) + ((tmpG & 0xff) << 8) + (tmpR & 0xff);
+	          b_color24 = ((tmpB & 0xff) << 16) + ((tmpG & 0xff) << 8) + (tmpR & 0xff);
 
-          if ((ptrs__prn_ini_date->gray_print) || !(ptrs__prn_ini_date->color_print) || (ptrs__prn_ini_date->PCX_gray))  //|| (ptrs__prn_ini_date->PCX_gray) this is not clear if should be
-          {
-              intensity = 0.2989 * tmpR + 0.5870 * tmpG + 0.1140 * tmpB;
+	          if ((ptrs__prn_ini_date->gray_print) || !(ptrs__prn_ini_date->color_print) || (ptrs__prn_ini_date->PCX_gray))  //|| (ptrs__prn_ini_date->PCX_gray) this is not clear if should be
+	          {
+	              intensity = 0.2989 * tmpR + 0.5870 * tmpG + 0.1140 * tmpB;
 
-              if (intensity < 252) intensity *= intensity_tab[ptrs__prn_ini_date->gray_saturation];
+	              if (intensity < 252) intensity *= intensity_tab[ptrs__prn_ini_date->gray_saturation];
 
-              int_intensity = (byte_) intensity;
-              b_color24 = makecol(int_intensity, int_intensity, int_intensity);
+	              int_intensity = (byte_) intensity;
+	              b_color24 = makecol(int_intensity, int_intensity, int_intensity);
 
-          } else if (!(ptrs__prn_ini_date->color_print)) {
-              if ((tmpB < 252) && (tmpG < 252) && (tmpB < 252)) {
-                  //int_intensity = 0xFF;
-                  //int_intensity = 0;
-                  //b_color24 = makecol(int_intensity, int_intensity, int_intensity);
-                  b_color24 = makecol(255, 255, 255);
-              }
-          }
-      }
-      else b_color24=makecol(255, 255, 255);
+	          } else if (!(ptrs__prn_ini_date->color_print)) {
+	              if ((tmpB < 252) && (tmpG < 252) && (tmpB < 252)) {
+	                  //int_intensity = 0xFF;
+	                  //int_intensity = 0;
+	                  //b_color24 = makecol(int_intensity, int_intensity, int_intensity);
+	                  b_color24 = makecol(255, 255, 255);
+	              }
+	          }
+	      }
+	      else b_color24=makecol(255, 255, 255);
 #else
           if ((set_background) && (ptrs__prn_ini_date->background))
           {
@@ -3585,9 +3595,9 @@ static void clear_matrix (BOOL set_background)
                   }
               }
           }
-          else b_color24=makecol(255, 255, 255);
+	      else b_color24=makecol(255, 255, 255);
 #endif
-          clear_to_color(allegro_prn_bmp, b_color24);
+      clear_to_color(allegro_prn_bmp, b_color24);
 	  }
 #else
 
@@ -3730,7 +3740,7 @@ void Init_TTF_text_to_matrix(TEXT *t, double font_scale, int font_index, int kol
 
 	//reflection;
     
-	if ((ptrs__prn_ini_date->prn_type == PRN_PCX))
+	if (ptrs__prn_ini_date->prn_type == PRN_PCX)
 	{
 
 		kolor.red = _dac_normal[kolor256][0] << 2;
@@ -3922,9 +3932,8 @@ int split_dim_line(LINIA *L, LINIA *L_tmp, LINIA *L_tmp1) {
                     return ret;
                 }
             }
-            else return 0;
         }
-        else return 0;
+	return 0;
 }
 
 int split_dim_arc(LUK *l, LUK *l_tmp, LUK *l_tmp1) {
@@ -3967,11 +3976,9 @@ int split_dim_arc(LUK *l, LUK *l_tmp, LUK *l_tmp1) {
                     return ret;
                 }
             }
-            else return 0;
         }
-        else return 0;
     }
-    else return 0;
+    return 0;
 }
 
 int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1) {
@@ -3996,6 +4003,7 @@ int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICAL
                 ret=trim_ellipticalarc_to_quad(ea, &t_outline, ea_tmp, ea_tmp1);
                 return ret;
             }
+        	return 0;
         }
         else if (nag1->obiekt == Olinia)
         {
@@ -4014,11 +4022,10 @@ int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICAL
                     return ret;
                 }
             }
-            else return 0;
         }
-        else return 0;
     }
-    else return 0;
+
+    return 0;
 }
 
 static BOOL draw_to_matrix_entities(Print_Rect window_to_print, int entities, char frozen)
@@ -4067,7 +4074,7 @@ static BOOL draw_to_matrix_entities(Print_Rect window_to_print, int entities, ch
   if (strlen(zbior_danych_2)>0)
   {
    zwolnienie_pamieci();
-   k = czytaj_zbior("RYSUJ.$2", b_err, TRUE, TRUE);
+   k = czytaj_zbior((char*)"RYSUJ.$2", b_err, TRUE, TRUE);
     if (k)
     {
       if (k == 1 && b_err == TRUE)
@@ -4201,7 +4208,7 @@ if (draw_logo==TRUE)
 }
 
 
- if ((ptrs__prn_ini_date->print_sheet == TRUE)) // &&   //08-12-2020
+ if (ptrs__prn_ini_date->print_sheet == TRUE) // &&   //08-12-2020
     // (ptrs__prn_ini_date->print_window == TRUE))
  {
 	 SHEET_IS_PRINTED = TRUE;
@@ -5891,9 +5898,9 @@ static BOOL draw_matrix_to_file (void)
 /*-----------------------------------*/
 {
 
-  if ((ptrs__prn_ini_date->prn_type== PRN_PCX)
+  if (ptrs__prn_ini_date->prn_type== PRN_PCX
 #ifdef LINUX
-    || (ptrs__prn_ini_date->prn_type == PRN_WINDOWS)
+    || ptrs__prn_ini_date->prn_type == PRN_WINDOWS
 #endif
     )
   {
@@ -5919,7 +5926,7 @@ static BOOL write_laser_command (char *ptrsz_str1, char *ptrsz_str2, long val)
 {
   char sz_buf [10] ;
 
-  sprintf(sz_buf,"%#ld",val); 
+  sprintf(sz_buf,"%ld",val);
   if (Write_To_Device (ptrsz_str1, strlen (ptrsz_str1)) != strlen (ptrsz_str1)) return FALSE ;
   if (Write_To_Device (sz_buf, strlen (sz_buf)) != strlen (sz_buf)) return FALSE ;
   if (Write_To_Device (ptrsz_str2, strlen (ptrsz_str2)) != strlen (ptrsz_str2)) return FALSE ;
@@ -6475,13 +6482,13 @@ static BOOL make_matrix_head(void)
 		if (ptrs__prn_ini_date->color_print == TRUE)
 		{
 
-			if ((ptrs__prn_ini_date->print_sheet == TRUE))
+			if (ptrs__prn_ini_date->print_sheet == TRUE)
 				matrix_len = (GetFreeMemSize() / 4) - 30;
 			else matrix_len = (GetFreeMemSize() / 2) - 18;
 		}
 		else
 		{
-			if ((ptrs__prn_ini_date->print_sheet == TRUE))
+			if (ptrs__prn_ini_date->print_sheet == TRUE)
 				matrix_len = (GetFreeMemSize() / 4) - 30;
 			else matrix_len = (GetFreeMemSize() / 2) - 18;
 		}
@@ -6512,7 +6519,7 @@ static BOOL make_matrix_head(void)
 
 		if (allegro_prn_bmp == NULL)
 		{
-			Internal_Error(__LINE__, __FILE__);
+			Internal_Error(__LINE__, const_cast<char*>(__FILE__));
 			return FALSE;
 		}
 
@@ -6525,14 +6532,14 @@ static BOOL make_matrix_head(void)
 #else
 		if (NULL == NewBuffer((char **)&matrix_head.lp_matrix_PCX))
 		{
-			Internal_Error(__LINE__, __FILE__);
+			Internal_Error(__LINE__, const_cast<char*>(__FILE__));
 			return FALSE;
 		}
 
 		if (FALSE == SetBufferSize((char  *)matrix_head.lp_matrix_PCX, matrix_len + 64))  //*8 or *BITS_PER_DOT
 		{
 			DisposeBuffer((char  *)matrix_head.lp_matrix_PCX);
-			Internal_Error(__LINE__, __FILE__);
+			Internal_Error(__LINE__, const_cast<char*>(__FILE__));
 			return FALSE;
 		}
 #endif
@@ -6659,7 +6666,7 @@ to kolor z banku 1;
 
 	if (dot_off < 0 || dot_off_PCX < 0 || dot_off >= matrix_head.len)
 	{
-		Internal_Error(__LINE__, __FILE__);
+		Internal_Error(__LINE__, const_cast<char*>(__FILE__));
 	}
 	/*zapalenie bitu (x % 8) bajtu o adresie (*lp_dot_byte)  */
 	pom = 1;
@@ -7803,7 +7810,7 @@ static void line_prn(double x01, double y01, double x02, double y02, int kolor25
 		}
 	}
 
-	if ((ptrs__prn_ini_date->prn_type == PRN_PCX))
+	if (ptrs__prn_ini_date->prn_type == PRN_PCX)
 	{
 		//kolor.red = _dac_normal[kolor256][2] << 2;
 		//kolor.gre = _dac_normal[kolor256][1] << 2;
@@ -7968,7 +7975,7 @@ void line_prn_trans(double x01, double y01, double x02, double y02, int kolor256
 		}
 	}
 
-	if ((ptrs__prn_ini_date->prn_type == PRN_PCX))
+	if (ptrs__prn_ini_date->prn_type == PRN_PCX)
 	{
 
 		kolor.red = _dac_normal[kolor256][0] << 2;
@@ -8927,5 +8934,7 @@ void Draw_Solid_Gradient(int numpoints, float *xy, int bw, int grey, unsigned ch
 
 }
 
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
 
 #undef __O_PRNFUN__

@@ -3710,8 +3710,7 @@ int trim_line_to_quad(LINIA *ptrs_line, QUAD *quad, LINIA *line_tmp, LINIA *line
     {
         df__tsel = (xsel - ptrs_line->x1) / (ptrs_line->x2 - ptrs_line->x1) ;
     }
-    else
-    if (FALSE == Check_if_Equal (ptrs_line->y1, ptrs_line->y2))
+    else if (FALSE == Check_if_Equal (ptrs_line->y1, ptrs_line->y2))
     {
         df__tsel = (ysel - ptrs_line->y1) / (ptrs_line->y2 - ptrs_line->y1) ;
     }
@@ -3727,8 +3726,8 @@ int trim_line_to_quad(LINIA *ptrs_line, QUAD *quad, LINIA *line_tmp, LINIA *line
 
     for (i = 0; i < 8; i += 2)
     {
-        line_tmp_w.x1 = df_x1;
-        line_tmp_w.y1 = df_y1;
+        line_tmp_w.x1 = (float)df_x1;
+        line_tmp_w.y1 = (float)df_y1;
         line_tmp_w.x2 = quad->xy[i];
         line_tmp_w.y2 = quad->xy[i+1];
 
@@ -3793,7 +3792,7 @@ int trim_line_to_quad(LINIA *ptrs_line, QUAD *quad, LINIA *line_tmp, LINIA *line
     }
     if (b_add1 == FALSE && b_add2 == TRUE)
     {
-        memcpy ((void*)&line_tmp, (void*)&line_tmp1, sizeof (LINIA)) ;
+        memcpy (line_tmp, line_tmp1, sizeof (LINIA)) ;
         b_add1 = TRUE ;
         b_add2 = FALSE ;
     }

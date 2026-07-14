@@ -1066,8 +1066,8 @@ unsigned int mazovia2utf8char(unsigned char mazovia_code)
 	}
 	return int_code;
 }
-
-int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
+/*
+int mazovia2utf8_old(char *mazoviatext, char *utf8text, int maxlen)
 {
 	unsigned char *zn;
 	unsigned char *utf8ptr;
@@ -1084,7 +1084,7 @@ int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
 		if (*zn >= 127)
 		{
 			bytes_n = ucs2_to_utf8(mazovia2utf8char(*zn), utf8c);
-			if ((*zn < 1920) && (bytes_n < 3))
+			if (*zn < 1920 && bytes_n < 3)
 			{
 				if ((len + 2) <= maxlen)
 				{
@@ -1119,6 +1119,55 @@ int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
 	*utf8ptr = '\0';
 	return len;
 }
+*/
+int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
+{
+	unsigned char *zn;
+	unsigned char *utf8ptr;
+	int bytes_n;
+	unsigned char utf8c[4];
+	int len;
+	int i;
+
+	zn = (unsigned char *)mazoviatext;
+	utf8ptr = (unsigned char *)utf8text;
+	len = 0;
+
+	while (*zn != '\0')
+	{
+		if (*zn >= 127)
+		{
+			// Get the unicode point and convert it into a UTF-8 byte stream
+			bytes_n = ucs2_to_utf8(mazovia2utf8char(*zn), utf8c);
+
+			// Dynamically check if the generated sequence fits into the remaining buffer space
+			if ((len + bytes_n) <= maxlen)
+			{
+				// Safely copy all generated UTF-8 bytes (handles 1, 2, or 3 byte conversions perfectly)
+				for (i = 0; i < bytes_n; i++)
+				{
+					*utf8ptr = utf8c[i];
+					utf8ptr++;
+				}
+				len += bytes_n;
+			}
+		}
+		else
+		{
+			// Standard ASCII mapping
+			if ((len + 1) <= maxlen)
+			{
+				*utf8ptr = *zn;
+				utf8ptr++;
+				len++;
+			}
+		}
+		zn++;
+	}
+	*utf8ptr = '\0';
+	return len;
+}
+
 
 static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 /*-----------------------------------------------------------------------*/
@@ -1802,7 +1851,8 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
 	  *numer_bledu = 185;
 
-      if (proc_io == _write)
+      //if (proc_io == _write)
+      if (proc_io == (int (*) (int, void*, unsigned))_write)
 	  {	  
 		  i_layersno = (No_Layers <= 16) ? MAX_OLD_NUMBER_OF_LAYERS : No_Layers;
 		  sourceLen = sizeof(LAYER)*i_layersno;
@@ -1821,11 +1871,13 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 	  if (proc_io(f, &destLenInt, sizeof(int)) != sizeof(int)) { free(layersBuf); return FALSE; }
 	  if (proc_io(f, layersBuf, destLenInt) != destLenInt) { free(layersBuf); return FALSE; }
 
-	  if (proc_io == _write)
+	  //if (proc_io == _write)
+	  if (proc_io == (int (*) (int, void*, unsigned))_write)
           free(layersBuf);
 	  *numer_bledu = 189;
 
-	  if (proc_io == _read)
+	  //if (proc_io == _read)
+	  if (proc_io == (int (*) (int, void*, unsigned))_read)
 	  {
 
 		  destLenIntlong = destLenInt;
@@ -4023,7 +4075,7 @@ BOOL Copy_File(char *ptrsz_fnd, char *ptrsz_fns)
 						   &si,            // Pointer to STARTUPINFO structure
 						   &pi)            // Pointer to PROCESS_INFORMATION structure
 		) {
-    		fprintf(stderr, "CreateProcess failed (%d).\n", GetLastError());
+    		fprintf(stderr, "CreateProcess failed (%lu).\n", GetLastError());
     		return 1;
 		}
 
@@ -4142,7 +4194,7 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
 	  runcode = RunSilent("image2pcx.exe", params);
 	  if (runcode > 0)
 	  {
-		  sprintf(error_str, "%s%d", zb_err_message, runcode);
+		  sprintf(error_str, "%s%lu", zb_err_message, runcode);
 		  ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 		  return 0;
 	  }
@@ -4334,7 +4386,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 		runcode = RunSilent("image2png.exe", params);
 		if (runcode > 0)
 		{
-			sprintf(error_str, "%s%d", zb_err_message, runcode);
+			sprintf(error_str, "%s%lu", zb_err_message, runcode);
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
@@ -4356,7 +4408,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 		runcode = RunSilent("image2jpg.exe", params);
 		if (runcode > 0)
 		{
-			sprintf(error_str, "%s%d", zb_err_message, runcode);
+			sprintf(error_str, "%s%lu", zb_err_message, runcode);
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
@@ -4379,7 +4431,7 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 		runcode = RunSilent("jpg2noexif.exe", params);
 		if (runcode > 0)
 		{
-			sprintf(error_str, "%s%d", zb_err_message, runcode);
+			sprintf(error_str, "%s%lu", zb_err_message, runcode);
 			ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 			return 0;
 		}
@@ -4666,7 +4718,7 @@ int Convert_Image_to_ALX(char *fn) {
         runcode = RunSilent("image2image.exe", params);
 
         if (runcode > 0) {
-            sprintf(error_str, "%s%d", zb_err_message, runcode);
+            sprintf(error_str, "%s%lu", zb_err_message, runcode);
             ret = ask_question(1, "", zb_confirm, "", error_str, 12, "", 11, 1, 62);
 
             komunikat0(0);

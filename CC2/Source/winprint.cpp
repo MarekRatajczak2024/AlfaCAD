@@ -24,7 +24,7 @@
 #include <winspool.h>
 #include <shlobj_core.h>
 ////#include "WinGdi.h"
-#include "..\..\source\res\resource.h"
+#include "res/resource.h"
 #else
 #include <stdlib.h>
 #include <sys/utsname.h>
@@ -53,8 +53,12 @@
 #include <stdio.h>
 #include <cups/cups.h>
 
+#ifndef BOOL
 #define BOOL unsigned char
+#endif
+#ifndef TRUE
 #define TRUE true
+#endif
 #include <stdio.h>
 #include <string.h>
 #define MAXPATH   260
@@ -78,7 +82,7 @@ typedef struct
 } QUOTE;
 #define EMPTY "                                                                                                                                "
 
-#define MAX_NUMBER_OF_WINDOWS 16  //also copied in bib_e.h
+#define MAX_NUMBER_OF_WINDOWS 32  //also copied in bib_e.h
 
 static Client_Bitmap client_bitmap[MAX_NUMBER_OF_WINDOWS] = { {0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},
 									{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},{0,0,0,0,0,EMPTY,EMPTY},
@@ -364,6 +368,22 @@ void Child_Message(int mode_)
     }
 }
 
+
+#include <random>
+
+int get_random_quote_index(int max_quote) {
+	// 'static' ensures these are initialized ONLY ONCE when the function
+	// is first called, preserving the engine state across program runs.
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+
+	// Define a perfectly uniform distribution from 0 to max_quote - 1
+	std::uniform_int_distribution<int> distrib(0, max_quote - 1);
+
+	// Generate and return the safe random index instantly
+	return distrib(gen);
+}
+
 void Initial_Message(char file_name[255])
 { int ret=2;
  char *l_and_q;
@@ -414,10 +434,13 @@ void Initial_Message(char file_name[255])
 	 strcat(logoandquote, "\nRunning on Windows");
  }
 
+	/*
  srand((unsigned int)time(0));
  int rand_result = (rand() % 2000);
  Sleep(rand_result);
  rand_result = (rand() % max_quote);
+ */
+ int rand_result = get_random_quote_index(max_quote);
 
  fptr = fopen(_QUOTE_, "rb+, ccs=UTF-8");
  if (fptr != NULL)
@@ -470,7 +493,7 @@ if (ret == IDCANCEL) exit(0);
     free(buf);
 
     ///////////////////
-#else LINUX
+#else
     char *session_type = getenv("XDG_SESSION_TYPE");
 
     if (session_type != NULL) {
@@ -492,10 +515,12 @@ if (ret == IDCANCEL) exit(0);
 
     strcat(logoandquote,str_linux);
 
-    //srand((unsigned int)time(0));
+	/*
     int rand_result = (rand() % 2000);
     my_sleep(rand_result);
     rand_result = (rand() % max_quote);
+    */
+	int rand_result = get_random_quote_index(max_quote);
 
     fptr = fopen(_QUOTE_, "rb+, ccs=UTF-8");
     if (fptr != NULL)

@@ -1419,7 +1419,7 @@ static int draw_disp_label(LINIA *L, LINIA *Le, double dx, double vpar1, double 
         T.kolor = L->kolor;
         T.czcionka = zmwym.czcionka;
         T.wysokosc = (float)(zmwym.wysokosc * 0.5);
-        if (Check_if_Equal2(dx, PL1.dl))
+        if (Check_if_Equal2(dx, PL.dl))
             T.kat = (float)(Pi_ * (PL.kat+180) / 180);
         else
             T.kat = Pi_ * PL.kat / 180;
@@ -12053,7 +12053,7 @@ void Grid_analysis(void) {
                     {
                         for (ii = 0; ii < st_element_no; ii++) {
                             fgets(report_row, MaxTextLen, f);
-                            ret = sscanf(report_row, "%d %s %lf %lf %lf %lf %lf %lf", &element_no, &max_min, &Nx_, &Vy_, &Vz_, &Txx_, &Myy_, &Mzz_);
+                            ret = sscanf(report_row, "%d %s %lf %lf %lf %lf %lf %lf", &element_no, max_min, &Nx_, &Vy_, &Vz_, &Txx_, &Myy_, &Mzz_);
 
                             property_no = abs(st_element[element_no - 1].property_no); ////negative is for virtual element
                             //search for properties
@@ -21396,7 +21396,7 @@ else
     runcode = SystemSilent("sumatrapdf64 -new-window", params);  //RunSilent("sumatrapdf64 -new-window", params);
 #endif
     }
-    printf("%d", runcode);
+    printf("%lu", runcode);
 
     disable_F11();
     ret = Expand_flex();
@@ -21435,7 +21435,7 @@ else
 #ifndef LINUX
             sprintf(params, "%s", params_in);
             runcode = RunSilent("notepad", params);
-            printf("%d", runcode);
+            printf("%lu", runcode);
 
             runcode = 255;
 #endif

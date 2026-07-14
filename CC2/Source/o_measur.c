@@ -1790,8 +1790,8 @@ static void redcrA (char typ)
 
 
   standard_func();
- out_kat==0;
- Angle_Measure(&line_geee, &line_geee1, &out_kat, 0) ;
+  out_kat=0;
+  Angle_Measure(&line_geee, &line_geee1, &out_kat, 0) ;
 }
 
 

@@ -114,16 +114,18 @@ static void near korektalr(void)
   y1=-(adrl->x1-X0)*katr.sin+(adrl->y1-Y0)*katr.cos;
   y2=-(adrl->x2-X0)*katr.sin+(adrl->y2-Y0)*katr.cos;
   if (y1*y2>0)
-   if(ws==1)
-    { adrl->x2=X02;
-      adrl->y2=Y02;
-      ws=2;
-    }
-   else
-    { adrl->x2=X01;
-      adrl->y2=Y01;
-      ws=1;
-    }
+  {
+      if(ws==1)
+      { adrl->x2=X02;
+          adrl->y2=Y02;
+          ws=2;
+      }
+      else
+      { adrl->x2=X01;
+          adrl->y2=Y01;
+          ws=1;
+      }
+  }
 }
 
 /*---------------------------------------------------------------*/
@@ -567,7 +569,7 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
                   while (*ptr_n!='\0')
                   {
                       if (*ptr_n=='\n') strcat(eT.st,"\\n");
-                      else if (*ptr_n!='\r') strncat(eT.st,ptr_n,1);
+                      else if (*ptr_n!='\r') strncat(eT.st,ptr_n,MaxTextLen - strlen(eT.st) - 1);
                       ptr_n++;
                   }
                   eT.address = adr;

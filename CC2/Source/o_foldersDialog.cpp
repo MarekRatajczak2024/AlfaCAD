@@ -19,11 +19,11 @@
 //
 #ifndef LINUX
 //////////////////////////////////////////////////////////////////////
-#include "stdafx.h"
+#include "StdAfx.h"
 #include <strsafe.h>
 #include <WinUser.h>
 
-
+#include <cstdint>
 #include<windows.h>
 #include<windowsx.h>
 #include<commctrl.h>
@@ -82,12 +82,13 @@ extern "C" {
 }
 #endif
 
-
 int myCharUpperW(int zn)
 {
-	if (zn > 0) return (int)CharUpperW((LPWSTR)zn);
-	else return zn;
+	// Cast through intptr_t to bridge the 32-bit/64-bit pointer widening and narrowing gap safely
+	if (zn > 0) return (int)(intptr_t)CharUpperW((LPWSTR)(intptr_t)zn);
+	return zn;
 }
+
 
 unsigned int Ntohl(int chunklen)
 {
@@ -409,14 +410,16 @@ BOOL CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			bi.pszDisplayName = dname;
 			bi.lpszTitle = TEXT("Click the check box to HIDE/SHOW the edit contol.....");
 
-#define BIF_NONEWFOLDERBUTTON  0x0200
+////#define BIF_NONEWFOLDERBUTTON  0x0200
 
 			bi.ulFlags = BIF_NONEWFOLDERBUTTON | BIF_RETURNONLYFSDIRS;
 			bi.lpfn = BrowseCallbackProc;
-			ITEMIDLIST *pidl = SHBrowseForFolder(&bi);
+			//ITEMIDLIST *pidl = SHBrowseForFolder(&bi);
+			//instead changed on 12-06-2026
+			LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
 
 			//Displays the selected folder
-			if (pidl != NULL)
+			if (pidl != nullptr)
 				MessageBox(hDlg, c, "Show the edit control", 0);
 
 			imalloc->Free(pidl);
@@ -552,8 +555,8 @@ int VeryMy_GetOpenFolder(HWND hwnd, char *f_name, char *sz__current_path_file, c
 
 		pMalloc->Release();
 
-    delete pszRootPath;
-	delete pszDefaultRootPath;
+    delete[] pszRootPath;
+	delete[] pszDefaultRootPath;
 
 	}
 

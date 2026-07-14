@@ -297,6 +297,7 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
 }
 
 #ifndef LINUX
+/*
 void encodewin0(char *utf8text, char *wintext)
 {
 	int ret;
@@ -307,6 +308,7 @@ void encodewin0(char *utf8text, char *wintext)
     unicode2win(unicodetext, wintext, count);
 
 }
+*/
 /*
 void encodewin(char* utf8text, char* wintext)
 {
@@ -352,14 +354,14 @@ int Get_Str_From_Clip(char *ptrsz_buf,
 	
 	ptrsz_tmp= GetStringFromClipboard();
 
-	strcpy(&ptrsz_sz_tmp, ptrsz_tmp);
+	strcpy(ptrsz_sz_tmp, ptrsz_tmp);
 
     //if (IsTextUnicode(&ptrsz_sz_tmp))
-    valid = valid_utf8(ptrsz_sz_tmp, strlen((char*)ptrsz_sz_tmp));
+    valid = valid_utf8(ptrsz_sz_tmp, (int32_t)strlen(ptrsz_sz_tmp));
 
-    if (!valid) decodingwin(&ptrsz_sz_tmp);  //UTF-8 original
+    if (!valid) decodingwin(ptrsz_sz_tmp);  //UTF-8 original
 
-	i_len = strlen(ptrsz_sz_tmp);
+	i_len = (int)strlen(ptrsz_sz_tmp);
 	strcpy(sz_tmp, &ptrsz_buf[i_poz]);
 	ptrsz_buf[i_poz] = '\0';
 

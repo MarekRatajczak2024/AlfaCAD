@@ -56,7 +56,7 @@ typedef struct TBufHeapTab
 	char  * BufHeapEnd = NULL;
 } TBufHeapTab;
 
-static TBufHeapTab BufHeapTab[16];
+static TBufHeapTab BufHeapTab[MAX_NUMBER_OF_WINDOWS];   //was 16, now is 32
 
 static int i_test_count = 0 ;
 
@@ -95,7 +95,7 @@ static TBuffer *GetBufSpec (char  *P)
   ptrs_buffer->Size < 0 ||
       P + ptrs_buffer->Size > BufHeapTab[DRAWING_NUMBER].BufHeapEnd)
   {
-    Internal_Error (__LINE__, (char*)__FILE__) ;
+    Internal_Error (__LINE__, const_cast<char*>(__FILE__)) ;
   }
   return ptrs_buffer ;
 }

@@ -84,7 +84,7 @@ extern void hatch_angle_rotate_parallel(void);
 
 extern void change_layer (char  *adr,char  *adrk, int new_layer);
 extern void normalize_layer (char *adr, char *adrk);
-extern unsigned char *Change_Block_Descript(BLOK *, void *, int) ;
+extern char *Change_Block_Descript(BLOK *, void *, int) ;
 extern int InsBibFile(char *fn);
 extern int ReadBlock_(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *buf, int len, int *object_no, BOOL b_current_ver);
 extern BOOL check_if_obiekt (char  *adp, char  *adk, int atrybut, int obiekt) ;
@@ -198,6 +198,7 @@ extern void enable_F11(void);
 extern BOOL get_block_changed(void);
 
 #define MaxLen 255
+#define MaxBlockNameLen 60
 #define r18 18
 #define r22 16 //22
 #define r12 12
@@ -1997,7 +1998,11 @@ int getBlockFromDialog(TMENU *mBlockList0, long *my_ptr__off_block)
                 buttons_blk[j*nx_but + i + FIXED_BUT_BLK].y = j * (DY_BUT[ButSizeBlk] + 5) + 5;
                 buttons_blk[j*nx_but + i + FIXED_BUT_BLK].id = (j*nx_but + i + ID_INSERT);
                 buttons_blk[j*nx_but + i + FIXED_BUT_BLK].txt = BlockList[n_list_begin_blk + j*nx_but + i].txt;
-                buttons_blk[j*nx_but + i + FIXED_BUT_BLK].adr = (long)(BlockList[n_list_begin_blk + j*nx_but + i].menu);
+                //buttons_blk[j*nx_but + i + FIXED_BUT_BLK].adr = (long)(BlockList[n_list_begin_blk + j*nx_but + i].menu);
+            	//modified on 12-07-2026
+            	// Step 1: Cast the pointer to a compiler-native integer width (intptr_t)
+            	// Step 2: Trim/cast it to destination variable type (long)
+            	buttons_blk[j*nx_but + i + FIXED_BUT_BLK].adr = (long)(intptr_t)(BlockList[n_list_begin_blk + j*nx_but + i].menu);
                 buttons_blk[j*nx_but + i + FIXED_BUT_BLK].flags = (unsigned int)(BlockList[n_list_begin_blk + j*nx_but + i].wcod);
                 buttons_blk[j*nx_but + i + FIXED_BUT_BLK].reference=(BlockList[n_list_begin_blk + j*nx_but + i].iconno);
                 if ((j*nx_but + i) > d_n_list)
@@ -4508,7 +4513,7 @@ void Place_Wstaw_PCX (int opcja)
   int l_kr;
   static int ( *SW[3])() ;
   char blok_type [30] = "";
-  char blok_name [60] = "";
+  char blok_name [MaxBlockNameLen] = "";
   double XX, YY;
   int akt;
 
@@ -4545,7 +4550,7 @@ void Place_Wstaw_PCX (int opcja)
   }  
   if (blok_name [0] != 0)
   {
-     blok_name [MaxLen - 1] = '\0';
+     blok_name [MaxBlockNameLen - 1] = '\0';
      komunikat_str (blok_name);
   }
 
@@ -4562,7 +4567,7 @@ void Place_Wstaw_PNG_JPG(int opcja, int type)
 	int l_kr;
 	static int(*SW[3])();
 	char blok_type[30] = "";
-	char blok_name[60] = "";
+	char blok_name[MaxBlockNameLen] = "";
 	double XX, YY;
 	int akt;
 
@@ -4599,7 +4604,7 @@ void Place_Wstaw_PNG_JPG(int opcja, int type)
 	}
 	if (blok_name[0] != 0)
 	{
-		blok_name[MaxLen - 1] = '\0';
+		blok_name[MaxBlockNameLen - 1] = '\0';
 		komunikat_str(blok_name);
 	}
 	
@@ -5172,6 +5177,11 @@ void set_block_angle(double angle)
 double get_block_angle(void)
 {
     return block_angle;
+}
+
+void set_background_pcx_file(void)
+{
+	sprintf(background_pcx_file,"%s%c%s",(const char *)BACKGROUND,Slash,"wall_cladding_stone_254.jpg");
 }
 
 

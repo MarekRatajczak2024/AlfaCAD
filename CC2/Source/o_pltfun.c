@@ -260,14 +260,14 @@ static BOOL plt_ini (void)
   //ustalenie dlugosci strony
   if (ptrs__ini_date->page_size==1)
    {
-     page_size = fabs((JednostkiPltX(ptrs__ini_date->xk, ptrs__ini_date->yk, FALSE)
+     page_size = (int)(abs((int)(JednostkiPltX(ptrs__ini_date->xk, ptrs__ini_date->yk, FALSE)
                  - JednostkiPltX(ptrs__ini_date->xp, ptrs__ini_date->yp, FALSE)))
-                 + (ptrs__config->rozdz * ptrs__ini_date->dx) + hardware_margin_plt;
+                 + (ptrs__config->rozdz * ptrs__ini_date->dx) + hardware_margin_plt);
 
        ret = snprintf(s_page_size, 10, "%d",page_size);
-     page_width = fabs((JednostkiPltY(ptrs__ini_date->xk, ptrs__ini_date->yk)
+     page_width = (int)(abs((int)(JednostkiPltY(ptrs__ini_date->xk, ptrs__ini_date->yk)
                  - JednostkiPltY(ptrs__ini_date->xp, ptrs__ini_date->yp)))
-                 + (ptrs__config->rozdz * ptrs__ini_date->dy) + hardware_margin_plt;
+                 + (ptrs__config->rozdz * ptrs__ini_date->dy) + hardware_margin_plt);
 
        ret = snprintf(s_page_width, 10, "%d",page_width);
      if (Write_To_Device (PS, strlen (PS)) != strlen (PS)) return FALSE;
@@ -500,8 +500,8 @@ static BOOL go_to_plt ( long x, long y)
   }
   else
   {
-	  sprintf(sx, "%#ld", x);
-	  sprintf(sy, "%#ld", y);
+	  sprintf(sx, "%ld", x);
+	  sprintf(sy, "%ld", y);
   }
   if (Write_To_Device (sx, strlen(sx)) != strlen (sx)) return FALSE;
   if (Write_To_Device (PRZ, strlen (PRZ))  != strlen (PRZ)) return FALSE;
@@ -536,8 +536,8 @@ BOOL rr_go ( long dx, long dy)
   }
   else
   {
-	  sprintf(sx, "%#ld", dx);
-	  sprintf(sy, "%#ld", dy);
+	  sprintf(sx, "%ld", dx);
+	  sprintf(sy, "%ld", dy);
   }
   if (Write_To_Device (sx, strlen(sx)) != strlen (sx)) return FALSE;
   if (Write_To_Device (PRZ, strlen (PRZ))  != strlen (PRZ)) return FALSE;
@@ -579,8 +579,8 @@ static BOOL draw_to_plt(long x, long y)
 	}
 	else
 	{
-		sprintf(sx, "%#ld", x);
-		sprintf(sy, "%#ld", y);
+		sprintf(sx, "%ld", x);
+		sprintf(sy, "%ld", y);
 		if (Write_To_Device(PRZ, strlen(PRZ)) != strlen(PRZ)) return FALSE;
 	}
   if (Write_To_Device (sx, strlen(sx)) != strlen (sx)) return FALSE;
@@ -739,7 +739,7 @@ static BOOL draw_sheet_plt(int pen0)
 
     if (BLOK_SIEC==TRUE)
      {
-      if (nag>block_adr) BLOK_SIEC=FALSE;
+      if ((char*)nag>block_adr) BLOK_SIEC=FALSE;
      }
 
     if (( object_to_pen ( nag ) == pen0) || ( object_to_pen ( nag ) == 256))
@@ -1042,7 +1042,7 @@ static BOOL draw_sheet_plt(int pen0)
              //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
              if (ptrs__ini_date->ink_plotter == 1)
              {
-                 switch (((AVECTOR*)nag)->style<10)
+                 switch (((AVECTOR*)nag)->style)
                  {
                      case 0:
                      case 1:
@@ -1418,7 +1418,7 @@ static BOOL draw_sheet_plt(int pen0)
            //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
            if (ptrs__ini_date->ink_plotter == 1)
            {
-               switch (((AVECTOR*)nag)->style<10)
+               switch (((AVECTOR*)nag)->style)
                {
                    case 0:
                    case 1:
@@ -1789,7 +1789,7 @@ static BOOL draw_sheet_plt1(int pen0)
              //dla plotera atramentoweg nalezy dodatkowo ustawic grubosc
              if (ptrs__ini_date->ink_plotter == 1)
              {
-                 switch (((AVECTOR*)nag)->style<10)
+                 switch (((AVECTOR*)nag)->style)
                  {
                      case 0:
                      case 1:
@@ -1869,7 +1869,7 @@ static int object_to_pen ( NAGLOWEK * nag )
 	   break;
          case Ovector:
              V = (AVECTOR*)nag;
-             switch (V->style<10)
+             switch (V->style)
              {
                  case 0:
                  case 1:

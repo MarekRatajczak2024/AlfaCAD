@@ -85,20 +85,17 @@ static void  cur_off (double x,double y)
 static void  cur_on (double x, double y)
 /*---------------------------------------*/
 {
-    int patt_offs_prev;
-   // char st[16];
-
-  LiniaG.x2 = x ;
-  LiniaG.y2 = y ;
+  LiniaG.x2 = (float)x ;
+  LiniaG.y2 = (float)y ;
   if (df__Sketch_Dist_Max  <= dP1P2 (LiniaG.x1, LiniaG.y1, x, y) &&
     TRUE == add_sketch_line ())
   {
-    global_mode == 0;
+    global_mode = 0;
     outline (&LiniaG, COPY_PUT, 0) ;
     LiniaG.x1 = LiniaG.x2 ;
     LiniaG.y1 = LiniaG.y2 ;
-    LiniaG.x2 = X ;
-    LiniaG.y2 = Y ;
+    LiniaG.x2 = (float)X ;
+    LiniaG.y2 = (float)Y ;
     Orto_Dir = I_Orto_NoDir;
   }
   set_pattern_offset(patt_offs_bak);
@@ -139,7 +136,6 @@ static void dist_sketch (void)
   int retval_no = 1 ;
   double buf_ret [1] ;
   double d ;
-  char *ptr;
 
   if (EOF == sprintf(sk, "%-6.2lf", jednostki_d_to_plt_d (df__Sketch_Dist_Max )))
   {

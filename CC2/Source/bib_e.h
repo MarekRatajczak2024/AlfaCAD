@@ -74,9 +74,9 @@
 
 #define HIGH_SIZE 40000
 
-#define MAX_IMAGES 32 //25
+#define MAX_IMAGES 48  //for FORTIPS_MAP
 
-#define MAX_NUMBER_OF_WINDOWS 16
+#define MAX_NUMBER_OF_WINDOWS 32  //16  max number of drawings (windows) in multidocument
 
 #define HATCH_OUTLINE_TYPE 225
 
@@ -2820,8 +2820,8 @@ enum OKNOTYP {Cross=0,Dragg,Windoww};
 #define ESC 27
 #define MOUSEESC ESC
 #define DEL 83
-#define ShTAB 15
-#define SHTAB 271
+//#define ShTAB 15   //depreciated
+#define SHTAB 2063 //271  //this is also declared in o_editst.c
 #define Shift_F5 344
 #define Pi2 (2*3.1415926535897931)
 #define Pi_ 3.1415926535897931

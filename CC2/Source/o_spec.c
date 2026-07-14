@@ -434,7 +434,7 @@ BOOL Save_Spec (int f, T_spec_name *ptrs_specs)
      //struct tm *gmtime(const time_t *);
      //struct tm *localtime(const time_t *);
      //time_t mktime(struct tm *) __DARWIN_ALIAS(mktime);
-      sprintf(nowa_data,"%#ld.%#ld.%#ld",aktualna_data.da_day,aktualna_data.da_mon,
+      sprintf(nowa_data,"%d.%d.%d",aktualna_data.da_day,aktualna_data.da_mon,
               aktualna_data.da_year);
       strcpy(ptrs_specs[13].spec_value,nowa_data);
      }

@@ -1789,7 +1789,7 @@ void wskaz(int info)
       goto koniec;
   if ((info1) && (type_address_no>0))
   {
-      if ((type_address_no==1)/* || ((typL & Bprzeciecie) && (type_address_no==2))*/)
+      if (type_address_no==1)   /* || ((typL & Bprzeciecie) && (type_address_no==2))*/
       {
           PTR__Sel_Adr=type_address[0].address;
           TYP=type_address[0].TYP;

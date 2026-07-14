@@ -1732,14 +1732,6 @@ static char confirm[] = u8"Confirmar";
 
 #define _THE_ZONE_IS_ASSIGNED_TO_ANOTHER_ZONE_ u8"La zona está contenida dentro de otra zona, lo cual aún no está permitido"
 
-#define _SHIELD_ID_NOT_FOUND_ u8"'%SHIELD: ID' not found"
-#define _PREPARING_DATA_ u8"Structure review and data preparation"
-#define _BUILDING_MESH_ u8"Building mesh"
-#define _BUILDING_GRID_ u8"Preparing grid for solver"
-#define _SOLVING_ u8"Solving"
-#define _GEOMETRY_ u8"Geometry"
-#define _BUILDING_BLOCKS_ u8"Building blocks for "
-
 #define _Yes_ "Sí"
 #define _No_ "No"
 #define _YES_NO_ESC_ u8"SNsn\033"

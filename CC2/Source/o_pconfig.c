@@ -75,8 +75,8 @@ static int ret;
 
 static int col_state[24] ={15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15};
 static int kolor_pola0[19]={15,13,15,12,11,2,12,1,13,15,0,0,0,0,0,0,0,0,0};
-static int kolor_pola_profil[24]={7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
-static int kolor_pola_profil_tmp[24]={7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
+static int kolor_pola_profil[25]={7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
+static int kolor_pola_profil_tmp[25]={7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
 
 /*numer koloru aktywnego*/
 

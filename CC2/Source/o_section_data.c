@@ -669,7 +669,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                     // 🔬 SI DESIGN INTERFACE LAYOUT (Output Target: MPa)
                     // ===========================================================
                     // Standard European structural default fallback (B500B Baseline)
-                    double design_rebar_fy = 434.78; // 500 / 1.15
+                    design_rebar_fy = 434.78; // 500 / 1.15
 
                     if (strcmp(rebar_grade, "B400B") == 0)       { design_rebar_fy = 347.83; }
                     else if (strcmp(rebar_grade, "B500B") == 0)  { design_rebar_fy = 434.78; }
@@ -687,7 +687,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                     // 🇺🇸 IMPERIAL DESIGN INTERFACE LAYOUT (Output Target: psi)
                     // ===========================================================
                     // Standard American structural default fallback (Grade 60 Baseline)
-                    double design_rebar_fy = 60000.0; // Stays fully un-factored as required by ASCE/ACI code loops
+                    design_rebar_fy = 60000.0; // Stays fully un-factored as required by ASCE/ACI code loops
 
                     if (strcmp(rebar_grade, "Grade 40") == 0)      { design_rebar_fy = 40000.0; }
                     else if (strcmp(rebar_grade, "Grade 60") == 0) { design_rebar_fy = 60000.0; }
@@ -711,7 +711,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             sprintf(par[15], "%g", d);
             sprintf(par[16], "%g", a);
 
-            sprintf(section_data, "#%d h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\\n E=%s G=%s r=0 d=%s a=%s  %s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], type0);
+            sprintf(section_data, "#%d h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\n E=%s G=%s r=0 d=%s a=%s  %s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], type0);
             return section_data;
         }
     }
@@ -1632,7 +1632,7 @@ char *get_concrete_section(int property_no, char *material, char *region, SECTIO
     case 3:
     case 4:
     case 5:
-        sprintf(section_data, "#%d RC h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\\n E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
+        sprintf(section_data, "#%d RC h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\n E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);
         break;
     case 6:
         sprintf(section_data, "#%d RC h=%s E=%s G=%s r=0 d=%s a=%s  %s%s%s%s%s", property_no, par[0], par[13], par[14], par[15], par[16], par[17], par[18],  par[19], par[20], par[21]);

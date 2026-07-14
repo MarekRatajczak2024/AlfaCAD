@@ -102,7 +102,7 @@ int param_no[iOuterBlockName+1];
 static void uaktualnij_pola (void)
 /*------------------------------*/
 {
-  char sk [20] ;
+  char sk [32] ;
   char sk1[MAXPATH];
   unsigned long_long mem_virtual, mem_dos ;
   char * st ;
@@ -114,18 +114,25 @@ static void uaktualnij_pola (void)
 
   mem_virtual = Get_Free_Virtual_Memory();
 
+#ifdef BIT64
   sprintf (sk, "%lld / %lld", Get_Buf_Mem_Size () / 1024, Get_memory_size() / 1024) ;
+#else
+  sprintf(sk, "%ld / %ld", Get_Buf_Mem_Size() / 1024, Get_memory_size() / 1024);
+#endif
+
   menu_par_new((*mInfo.pola)[0].txt, sk) ;
 
   imageBMPsize1=Get_imageBMPsize() / (1024 * 1000);
   imageBMPsize_used1 = imageBMPsize_used / (1024 * 1000);
   imageBMPsize_total_used1 = imageBMPsize_total_used / (1024 * 1000);
  
-//  sprintf (sk, "%#ld", imageBMPsize / 1024/*mem_virtual*/) ;
+//  sprintf (sk, "%ld", imageBMPsize / 1024/*mem_virtual*/) ;
+
   sprintf (sk, "%lld/%lld (%lld)", imageBMPsize1, imageBMPsize_total_used1, imageBMPsize_used1) ;
+
   menu_par_new((*mInfo.pola)[1].txt, sk) ;
 
-  sprintf (sk, "%lu", dane_size - 8 /*4*/) ;
+
   menu_par_new((*mInfo.pola)[2].txt, sk) ;
 
   sprintf (sk, "%llu", Bufor_Wydruku / 1024 ) ;
@@ -173,7 +180,7 @@ void Change_Buffer_Size(void)
 
 	Buf_Mem_Size = Get_memory_size() / 1024;
 
-	sprintf(sk, "%ld", Buf_Mem_Size);
+	sprintf(sk, "%lld", Buf_Mem_Size);
 	if (!get_string(sk, numbers, MaxTextLen, 0, 193)) return;
 	if (FALSE == calculator(sk, &retval_no, buf_ret) || retval_no < 1)
 	{
@@ -208,7 +215,7 @@ void Change_Printing_Buffer_Size(void)
 
 	Print_Buf_Size = Bufor_Wydruku / 1024;
 
-	sprintf(sk, "%ld", Print_Buf_Size);
+	sprintf(sk, "%lld", Print_Buf_Size);
 	if (!get_string(sk, numbers, MaxTextLen, 0, 194)) return;
 	if (FALSE == calculator(sk, &retval_no, buf_ret) || retval_no < 1)
 	{

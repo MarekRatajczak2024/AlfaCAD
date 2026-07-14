@@ -360,7 +360,7 @@ void calc_bspline_other(int n, float points[], int p1, float *out_x, float *out_
 }
 
 
-int test_NURBS(void) {
+int test_NURBS_not_used_function(void) {
 
 	int i;
 	int npts, k, p1;
@@ -410,6 +410,8 @@ int test_NURBS(void) {
 	b[13] = 5;
 	b[14] = 0;
 	b[15] = 1;
+
+	return 1;
 
 }
 
@@ -1108,7 +1110,7 @@ static void redcr0(char typ)
 {
 	static void(*CUR_oN)(double, double);
 	static void(*CUR_oFF)(double, double);
-	static int(*SW[2])(), akt;
+	static int(*SW[5])(), akt;
 	static TMENU *menu;
     static char st[POLE_TXT_MAX];
     unsigned short cod = L' ';
@@ -1137,12 +1139,12 @@ static void redcr0(char typ)
 		
 		CUR_oFF = CUR_OFF;  CUR_OFF = cursel_off;
 		CUR_oN = CUR_ON;   CUR_ON = cursel_on;
-		SW[0] = SERV[73];  SERV[73] = sel_t;
-		SW[1] = SERV[81];  SERV[81] = sel_d;
-		SW[4] = SERV[83];  SERV[83] = previous_point;  //Del
+		SW[0] = SERV[73];  SERV[73] = (int (*)(void)) sel_t;
+		SW[1] = SERV[81];  SERV[81] = (int (*)(void)) sel_d;
+		SW[4] = SERV[83];  SERV[83] = (int (*)(void)) previous_point;  //Del
 
-		SW[3] = SERV[71];  SERV[71] = close_spline_point;  //Home
-		SW[2] = SERV[79];  SERV[79] = end_spline_point;  //End
+		SW[3] = SERV[71];  SERV[71] = (int (*)(void)) close_spline_point;  //Home
+		SW[2] = SERV[79];  SERV[79] = (int (*)(void)) end_spline_point;  //End
 		CUR_ON(X, Y);
 	}
 	else
@@ -1704,7 +1706,7 @@ static void redcr_continue(char typ)
 {
 	static void(*CUR_oN)(double, double);
 	static void(*CUR_oFF)(double, double);
-	static int(*SW[3])(), akt, sel_cur;
+	static int(*SW[5])(), akt, sel_cur;
 
 	if (typ == 0)
 	{
@@ -1756,17 +1758,17 @@ static void get_param_end_ob(void   *ptr_object,
 	ptrs_spline = (SPLINE*)ptr_object;
 	*df_xend = X; 	/*dla koniecL_, koniecl_ */
 	*df_yend = Y;
-	if ((((NAGLOWEK*)ptr_object)->obiekt == Olinia))
+	if (((NAGLOWEK*)ptr_object)->obiekt == Olinia)
 	{
 		koniecL_(df_xend, df_yend, ptr_object);
 		x1 = ptrs_line->x1;
 		y1 = ptrs_line->y1;
 	}
-	else if ((((NAGLOWEK*)ptr_object)->obiekt == Oluk))
+	else if (((NAGLOWEK*)ptr_object)->obiekt == Oluk)
 	{
 		koniecl_(df_xend, df_yend, ptr_object);
-		x1 = ptrs_arc->x + ptrs_arc->r * cos(ptrs_arc->kat1);
-		y1 = ptrs_arc->y + ptrs_arc->r * sin(ptrs_arc->kat1);
+		x1 = ptrs_arc->x + ptrs_arc->r * cosf(ptrs_arc->kat1);
+		y1 = ptrs_arc->y + ptrs_arc->r * sinf(ptrs_arc->kat1);
 	}
 	else //spline
 	{
@@ -1810,12 +1812,12 @@ static double get_continue_angle(void *ptr_con, BOOL b_first_end)
 			((b_first_end == TRUE) ? -1 : 1) * 1, &x2, &y2);
 		x2 += ptrs_arc->x;
 		y2 += ptrs_arc->y;
-		x1 = ptrs_arc->x + ptrs_arc->r * cos(ptrs_arc->kat1);
-		y1 = ptrs_arc->y + ptrs_arc->r * sin(ptrs_arc->kat1);
+		x1 = ptrs_arc->x + ptrs_arc->r * cosf(ptrs_arc->kat1);
+		y1 = ptrs_arc->y + ptrs_arc->r * sinf(ptrs_arc->kat1);
 		if (b_first_end == FALSE)
 		{
-			x1 = ptrs_arc->x + ptrs_arc->r * cos(ptrs_arc->kat2);
-			y1 = ptrs_arc->y + ptrs_arc->r * sin(ptrs_arc->kat2);
+			x1 = ptrs_arc->x + ptrs_arc->r * cosf(ptrs_arc->kat2);
+			y1 = ptrs_arc->y + ptrs_arc->r * sinf(ptrs_arc->kat2);
 		}
 		angle = Atan2(y2 - y1, x2 - x1);
 	}

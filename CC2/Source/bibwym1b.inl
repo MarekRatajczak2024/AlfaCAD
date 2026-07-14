@@ -1,4 +1,6 @@
-﻿/*   ______   ___       ___         ____     ______  ____
+﻿#pragma once
+#line 1 "bibwym1b.inl"
+/*   ______   ___       ___         ____     ______  ____
 *   /\  _  \ /\_ \    /'___\       /\  _`\  /\  _  \/\  _`\
 *   \ \ \L\ \\//\ \  /\ \__/   __  \ \ \/\_\\ \ \L\ \ \ \/\ \
 *    \ \  __ \ \ \ \ \ \ ,__\/'__`\ \ \ \/_/_\ \  __ \ \ \ \ \
@@ -25,7 +27,7 @@ extern void Restore_Pointer(void);
 #define MaxMenuWinFont 32
 
 PTMENU mCzcionkaW = { 1,0,0,FONTNAMELEN + 1,50,10,FIXED,CMNU,CMBR,CMTX,0,72,0,0,0,&pmCzcionka,NULL,NULL};
-TMENU mZmienne={12,0,0,34,1,3,2|ICONS|TADD,CMNU,CMBR,CMTX,0,0,0,0,0,&pmZmienne,NULL,NULL};
+TMENU mZmienne={12,0,0,34,1,3,2|ICONS|TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[])&pmZmienne,NULL,NULL};
 
 static void drawwZmienne(void)
 {
@@ -56,14 +58,12 @@ static void kolorL (void)
   baronoff(&mZmienne);
   draww(&mZmienne);
   baronoff(&mZmienne);
-
-  return ;
 }
 
 static void kolorLX(void)
 /*-----------------------------*/
 {
-  int i_poz, i_color, i_color0 ;
+  int i_color, i_color0 ;
   char  sk[24], *sk1;
 
   i_color0 = zmwym.Lkolor;
@@ -86,10 +86,10 @@ static void kolorLX(void)
   
   if (zmwym.Lkolor>=16)
    {
-     sprintf(sk,u8"֍[X]  %#ld",zmwym.Lkolor);
+     sprintf(sk,(const char *)u8"֍[X]  %d", zmwym.Lkolor);
      sk1=strpbrk(sk," ");
    }  
-   else
+  else
     {
      strcpy(sk,(*mKolorL.pola) [zmwym.Lkolor - 1].txt);
      sk1=strpbrk(sk," ");
@@ -100,8 +100,7 @@ static void kolorLX(void)
   draww(&mZmienne) ;
   baronoff(&mZmienne);
   return_back = 1;  
-  
-  return;
+
 }
 
 static void kolorT (void)
@@ -123,13 +122,12 @@ static void kolorT (void)
   baronoff(&mZmienne);
   draww(&mZmienne);
   baronoff(&mZmienne);
-  return ;
 }
 
 static void kolorTX(void)
 /*-----------------------------*/
 {
-	int i_poz, i_color, i_color0;
+	int i_color, i_color0;
 	char  sk[24], *sk1;
 
 
@@ -152,10 +150,10 @@ static void kolorTX(void)
   
   if (zmwym.Tkolor>=16)
    {
-     sprintf(sk,u8"֍[X] %#ld",zmwym.Tkolor);
+     sprintf(sk,(const char *)u8"֍[X] %d",zmwym.Tkolor);
      sk1=strpbrk(sk," ");
    }  
-   else
+  else
     {
      strcpy(sk,(*mKolorT.pola) [zmwym.Tkolor - 1].txt);
      sk1=strpbrk(sk," ");
@@ -166,8 +164,7 @@ static void kolorTX(void)
   draww(&mZmienne);
   baronoff(&mZmienne);
   return_back = 1; 
-  
-  return;
+
 }
 
 
@@ -354,8 +351,8 @@ static void linia_ob (void)
 static void  kierunek_t (void)
 /*-----------------------------*/
 {
-  char  *sk;
-  static char *P[] = {u8"_A_",u8"-A-", u8"\\A" };
+  char  *sk="";
+  static char *P[] = {"_A_","-A-", "\\A" };
 
   switch (mKierunekT.poz)
   {
@@ -374,6 +371,8 @@ static void  kierunek_t (void)
           zmwym.collinear=1;
           sk=P[2];
           break;
+      default:
+          break;
   }
   menu_par_new((*mZmienne.pola)[11].txt, sk);
   drawwZmienne();
@@ -383,8 +382,7 @@ static void  kierunek_t (void)
 static void  add_line (void)
 /*---------------------------*/
 {
-  char  *sk ;
-  static char *E[] = {u8"A", "F" };
+  static char *E[] = {"A", "F" };
 
   zmwym.b_add_line_const = TRUE ;
   if (mAddLine.poz == 1)
@@ -430,8 +428,8 @@ static void Fractions(void)
 }
 
 static void  strzalka(void)
-{ char  *sk,*sk1;
-static char *S[] = {u8"<--->|","-/---/-","-*---*-" };
+{
+static char *S[] = {"<--->|","-/---/-","-*---*-" };
   if (zmwym.strzalka==mStrzalka.poz) return;
   zmwym.strzalka=mStrzalka.poz;
   menu_par_new((*mZmienne.pola)[9].txt, S[zmwym.strzalka]);
@@ -443,9 +441,9 @@ static void near uaktualnij_polaw (void)
 {
   int i_menu_color ;
   char sk [MaxTextLen], *sk1, *ptrsz_temp ;
-  static char *S[]={u8"<--->|","-/---/-","-*---*-"};
-  static char *P[] = {u8"_A_","-A-", "\\A" };
-  static char *E[] = {u8"A", "F"};
+  static char *S[]={"<--->|","-/---/-","-*---*-"};
+  static char *P[] = {"_A_","-A-", "\\A" };
+  static char *E[] = {"A", "F"};
 
   i_menu_color = Color_No_to_Menu_No (zmwym.Lkolor) ;
   if (i_menu_color>=16) 
@@ -458,7 +456,7 @@ static void near uaktualnij_polaw (void)
   if (i_menu_color>=16)
    {
 	 strcpy(sk,"");
-     sprintf(sk,u8"֍[X] %#ld",zmwym.Lkolor);
+     sprintf(sk,(const char*)u8"֍[X] %d",zmwym.Lkolor);
      sk1=strpbrk(sk," ");
    }  
    else
@@ -479,7 +477,7 @@ static void near uaktualnij_polaw (void)
   if (i_menu_color>=16)
    {
 	 strcpy(sk,"");
-     sprintf(sk,u8"֍[X] %#ld",zmwym.Tkolor);
+     sprintf(sk,(const char*)u8"֍[X] %d",zmwym.Tkolor);
      sk1=strpbrk(sk," ");
    }  
    else
@@ -543,7 +541,7 @@ static void near uaktualnij_polaw (void)
   {
     mAddLine.poz = 1 ;
   }
-  ptrsz_temp = (*mAddLine.pola) [mAddLine.poz].txt ;
+  //ptrsz_temp = (*mAddLine.pola) [mAddLine.poz].txt ;
   menu_par_new((*mZmienne.pola)[12].txt, E[zmwym.b_add_line_const]);
 }
 

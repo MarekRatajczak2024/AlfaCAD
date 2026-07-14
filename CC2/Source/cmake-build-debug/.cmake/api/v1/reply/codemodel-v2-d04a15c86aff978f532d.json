@@ -39,9 +39,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "AlfaCADES::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-AlfaCADES-Debug-08d10c6ef42bc2167b1e.json",
-					"name" : "AlfaCADES",
+					"id" : "AlfaCAD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-AlfaCAD-Debug-64c515a604a43b372e90.json",
+					"name" : "AlfaCAD",
 					"projectIndex" : 0
 				}
 			]
@@ -50,7 +50,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/marek/CC2/Source/cmake-build-debug_es",
+		"build" : "/home/marek/CC2/Source/cmake-build-debug",
 		"source" : "/home/marek/CC2/Source"
 	},
 	"version" : 

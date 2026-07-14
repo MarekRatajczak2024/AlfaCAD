@@ -614,7 +614,7 @@ POLE pmOpcje[] = {
 #define _PAGE_INTERRUPT_ u8"Brak bloku '*ARKUSZ' ! Wydruk zatrzymany "
 #define _CONVERSION_TERMINATION_ u8"CZEKAJ !!! Konwersja zbioru. Przerwanie -> Esc... "
 #define _ERROR_DXF_ u8"Błąd w zbiorze DXF lub przerwanie  "
-#define _LINE_NO_ u8" -> linia %#ld"
+#define _LINE_NO_ u8" -> linia %ld"
 
 #define _TO_MANY_WIN_ u8"Zbyt dużo otwartych okien"
 #define _CLOSE_WINDOW_  u8"Czy napewno zamknąć okno ?"
@@ -836,7 +836,7 @@ POLE pmKolorT_[] = {
 
 TMENU mKolorAC = { MAXCOLOR,MAXWCOLOR,MAXWCOLOR,23,56,5,0,CMNU,CMBR,CMTX,15,72,0,0,0,(POLE(*)[]) &pmKolor,NULL,NULL };
 
-#define _OTHER_NO_ u8"֍[X] inny>>> %#ld"
+#define _OTHER_NO_ u8"֍[X] inny>>> %d"
 
 static POLE pmKrok_k[9] = {
 	 {u8"[A]\0  2.5  *",'A',0,NULL},
@@ -3287,9 +3287,6 @@ static POLE pmMakro[] = {
 	{u8"Wykonanie",L'W',93,NULL},
 	{u8"Читати",L'C',94,NULL},
 	{u8"Zapisz",L'Z',95,NULL} };
-
-#define _DRAW__ L'r';
-#define _TEXT__ L't';
 
 #endif
 

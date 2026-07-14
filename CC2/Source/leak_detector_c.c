@@ -40,7 +40,9 @@ static void add(MEM_INFO alloc_info)
 	mem_leak_info = (MEM_LEAK *) malloc (sizeof(MEM_LEAK));
 	mem_leak_info->mem_info.address = alloc_info.address;
 	mem_leak_info->mem_info.size = alloc_info.size;
-	strcpy(mem_leak_info->mem_info.file_name, alloc_info.file_name); 
+	////strcpy(mem_leak_info->mem_info.file_name, alloc_info.file_name);  //modified on 12-07-2026
+	snprintf(mem_leak_info->mem_info.file_name, sizeof(mem_leak_info->mem_info.file_name), "%s", alloc_info.file_name);
+
 	mem_leak_info->mem_info.line = alloc_info.line;
 	mem_leak_info->next = NULL;
     mem_leak_info->flag=0;
@@ -242,7 +244,7 @@ void report_mem_leak(void)
 		{
 			if (leak_info->flag == 0)
 			{
-				fprintf(fp_write, "address : %llu\n", leak_info->mem_info.address);
+				fprintf(fp_write, "address : %llu\n", (unsigned long long)leak_info->mem_info.address);
 				fprintf(fp_write, "size    : %d bytes\n", leak_info->mem_info.size);
 				fprintf(fp_write, "file    : %s\n", leak_info->mem_info.file_name);
 				fprintf(fp_write, "line    : %d\n", leak_info->mem_info.line);

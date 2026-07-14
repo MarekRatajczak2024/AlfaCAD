@@ -20,6 +20,8 @@
 #endif
 #define byte_ unsigned char
 
+#include <forwin.h>
+
 #include <allegro.h>
 
 #include "leak_detector_c.h"
@@ -59,7 +61,7 @@
 */
 
 
-#include <forwin.h>
+////#include <forwin.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define ALLEGWIN
@@ -93,7 +95,7 @@ typedef uint16_t fixed_point_t;
 extern BITMAP *screenplay;
 
 
-extern BITMAP *_fixup_loaded_bitmap(BITMAP *bmp, PALETTE pal, int bpp);
+//extern BITMAP *_fixup_loaded_bitmap(BITMAP *bmp, PALETTE pal, int bpp);
 
 //extern int qsort_by_val(double *e1, double *e2);
 extern int qsort_by_val(const void *e1, const void *e2);
@@ -133,7 +135,9 @@ extern int TRANSLUCENCY;
 extern void set_mode_solid(void);
 extern void Rotate_Point(double, double, double, double, double, double, double*, double*);
 extern int Draw_png(B_PCX *pcx, int kod_obiektu);
+#ifdef LINUX
 extern long filelength(int f);
+#endif
 
 static B_PCX *adr_pcx;
 static char *adres_pcx;
@@ -1719,7 +1723,7 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 		pal = &tmppal;
 	}
 
-	pcx = buffer;
+	pcx = (char*)buffer;
 	pcx_header = (PCXheader*)pcx;
 
 	bit_per_pixel = pcx_header->bits_per_pixel;
@@ -1852,7 +1856,8 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 		if ((bpp != 8) && (!want_palette))
 			pal = NULL;
 
-		b = _fixup_loaded_bitmap(b, *pal, dest_depth);
+		//b = _fixup_loaded_bitmap(b, *pal, dest_depth);
+		b = fixup_loaded_bitmap(b, *pal, dest_depth);
 	}
 
 	/* construct a fake palette if 8-bit mode is not involved */

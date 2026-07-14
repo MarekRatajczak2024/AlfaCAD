@@ -970,7 +970,7 @@ void Automatic_numbering (void)
   
 
     
-//  sprintf(tekst1,"%#ld",typ_tekstu);
+//  sprintf(tekst1,"%ld",typ_tekstu);
 //  komunikat_str(tekst1);  delay(2000);  
   
   /*3.zmiana automatyczna lub potwierdzana*/
@@ -1203,7 +1203,7 @@ void Automatic_numbering (void)
            if (founded==TRUE)
            {
             strcpy(st_dest1,st_dest_symbol);
-            sprintf(sufiks,"%ld",st_dest_numer_i);
+            sprintf(sufiks,"%d",st_dest_numer_i);
             strcat(st_dest1,sufiks);
             st_dest_numer_i--;
             

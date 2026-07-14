@@ -299,7 +299,7 @@ int IntersectionlL (LUK  *ptrs_arc,
                     double *ptrdf_tl,
                     double *ptrdf_aa)
 {
-    IntersectionLl(ptrs_line,ptrs_arc,ptrdf_x,ptrdf_y,ptrdf_tl,ptrdf_aa);
+    return IntersectionLl(ptrs_line,ptrs_arc,ptrdf_x,ptrdf_y,ptrdf_tl,ptrdf_aa);
 }
 
 int IntersectionOO (OKRAG  *ptrs_circle1,

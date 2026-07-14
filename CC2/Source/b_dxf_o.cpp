@@ -1535,10 +1535,10 @@ void alfpro2acad (char * tekst)
     if (*ptrsz_tmp=='\140') *ptrsz_tmp='\137';
        else
     if ((*ptrsz_tmp=='\173') || (*ptrsz_tmp=='\174') || (*ptrsz_tmp=='\175') ||
-        (*ptrsz_tmp=='\176') || (*ptrsz_tmp=='\177') || (*ptrsz_tmp=='\200'))
+        (*ptrsz_tmp=='\176') || (*ptrsz_tmp=='\177') || (*ptrsz_tmp==0x80))    //'\200'
           *ptrsz_tmp='\137';
        else
-    if (*ptrsz_tmp=='\361') *ptrsz_tmp='\261';    
+  	if (*ptrsz_tmp==0xF1) *ptrsz_tmp=0xB1;
        else
       { switch (*ptrsz_tmp)
        { 
@@ -1653,7 +1653,7 @@ void utf82acad(char * tekst)
 		if (unicode < 127)
 		{
 			ch = unicode;
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch,  sizeof(buf) - strlen(buf) - 1);
 		}
 		else
 		{
@@ -1702,7 +1702,7 @@ void utf82acad(char * tekst)
 				ch = '\40';
 				break;
 			}
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 	}
 	strcpy(tekst, buf);
@@ -1785,7 +1785,7 @@ void utf82latin(char * tekst)
 		if (unicode < 127)
 		{
 			ch = unicode;
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 		else
 		{
@@ -1833,7 +1833,7 @@ void utf82latin(char * tekst)
 				ch = '\40';
 				break;
 			}
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 	}
 	strcpy(tekst, buf);
@@ -1899,14 +1899,14 @@ void utf82none(char * tekst)
 		{
             ch = unicode;
 			if ((ch == '/') || (ch == '@')) ch = '_';
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 		else
 		{
 			switch (unicode)
 			{
 			case 0X58E:   ch = '_';  //
-				strncat(buf, &ch, 1);
+				strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 				break;
 			case 0X105:  ch = 'a';   //a
 				break;
@@ -1950,7 +1950,7 @@ void utf82none(char * tekst)
 				ch = '_';
 				break;
 			}
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 	}
 	strcpy(tekst, buf);
@@ -1983,7 +1983,7 @@ void utf82ISOlatin(char * tekst)
 		if (unicode < 127)
 		{
 			ch = unicode;
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 		else
 		{
@@ -2031,7 +2031,7 @@ void utf82ISOlatin(char * tekst)
 				ch = '\40';
 				break;
 			}
-			strncat(buf, &ch, 1);
+			strncat(buf, &ch, sizeof(buf) - strlen(buf) - 1);
 		}
 	}
 	strcpy(tekst, buf);
@@ -2290,7 +2290,8 @@ int PISZ_OBJECTS::RysujText(TEXT* t)
   return OkWeWy;
 }
 
-char *replace_lncr(char *mtext)
+/*
+char *replace_lncr_old(char *mtext)
 {
     int i, l;
     static char new_mtext[2048+1];
@@ -2301,11 +2302,46 @@ char *replace_lncr(char *mtext)
     for (i = 0; i < l; i++)
     {
         if (mtext[i] == '\r') { ; }
-        else if (mtext[i] == '\n') strncat(new_mtext, "\\P", 2);
+        else if (mtext[i] == '\n') strncat(new_mtext, "\\P", sizeof(new_mtext) - strlen(new_mtext) - 1);
         else strncat(new_mtext, &mtext[i], 1);
     }
     return new_mtext;
 }
+*/
+
+char *replace_lncr(char *mtext)
+{
+	int i, l;
+	int dst = 0; // Tracks our current position in the destination buffer
+	static char new_mtext[2048 + 1];
+
+	l = (int)strlen(mtext);
+
+	for (i = 0; i < l; i++)
+	{
+		// 1. Safety check to completely prevent buffer overflows (Max 2046 to allow room for "\\P" + \0)
+		if (dst >= 2046) {
+			break;
+		}
+
+		if (mtext[i] == '\r') {
+			/* Skip carriage returns */
+		}
+		else if (mtext[i] == '\n') {
+			new_mtext[dst++] = '\\';
+			new_mtext[dst++] = 'P';
+		}
+		else {
+			new_mtext[dst++] = mtext[i];
+		}
+	}
+
+	// 2. Explicitly null-terminate the final string
+	new_mtext[dst] = '\0';
+
+	return new_mtext;
+}
+
 
 int PISZ_OBJECTS::RysujMText(TEXT* t)
 {
@@ -3257,7 +3293,7 @@ int PISZ_OBJECTS::RysujPoint(T_Point *p, int *p_block_sufix)
             ins_b.invisible = 0;
 
             *p_block_sufix += 1;
-            sprintf(sufiks_bloku, "%#ld", *p_block_sufix);
+            snprintf(sufiks_bloku, sizeof(sufiks_bloku), "%d", *p_block_sufix);
 
             if (strlen(ins_b.nazwa_bloku) > 27) ins_b.nazwa_bloku[26] = '\0';
 
@@ -6326,6 +6362,8 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 Lt.y2 = Lth.y2 + (float) ((ptrs_vector->magnitude2 / thermal_magnitude) * kos1th);
             }
 
+    		Ltx = (Lt.x1 + Lt.x2) / 2;
+    		Lty = (Lt.y1 + Lt.y2) / 2;
 
             parametry_lini(&Lt, &PL1);
             kos2=sin(Pi*(PL1.kat+90)/180.);
@@ -8528,8 +8566,8 @@ int My_App_PISZ_DXF_ASCII::MyEntities(void)
              ins_b.y0=0;
              ins_b.z0=0;
             }
-           block_sufix+=1;
-           sprintf(sufiks_bloku, "%#ld", block_sufix);
+            block_sufix+=1;
+           snprintf(sufiks_bloku, sizeof(sufiks_bloku), "%d", block_sufix);
            
            if (strlen(ins_b.nazwa_bloku)>27) ins_b.nazwa_bloku[26]='\0';
            

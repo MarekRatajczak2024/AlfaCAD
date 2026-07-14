@@ -102,13 +102,15 @@ int findfile_recursive(char *folder,const char *filename, char *fullpath)
     return findfile_recursive_exe(folder, filename, fullpath);
 }
 #else
+
+/*
 #include <stdio.h>
 #include <Windows.h>
 
 int findfile_recursive(const char *folder, const char *filename, char *fullpath)
 {
     char wildcard[MAX_PATH];
-    sprintf(wildcard, "%s\\*", folder);
+    snprintf(wildcard, sizeof(wildcard), "%s\\*", folder);
     WIN32_FIND_DATA fd;
     HANDLE handle = FindFirstFile(wildcard, &fd);
     if(handle == INVALID_HANDLE_VALUE) return 0;
@@ -117,16 +119,72 @@ int findfile_recursive(const char *folder, const char *filename, char *fullpath)
         if(strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
             continue;
         char path[MAX_PATH];
-        sprintf(path, "%s\\%s", folder, fd.cFileName);
+        snprintf(path, sizeof(path), "%s\\%s", folder, fd.cFileName);
 
         if(_stricmp(fd.cFileName, filename) == 0)
-            strcpy(fullpath, path);
+            strncpy(fullpath, path, 259);
         else if(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             findfile_recursive(path, filename, fullpath);
         if(strlen(fullpath))
             break;
     } while(FindNextFile(handle, &fd));
     FindClose(handle);
-    return strlen(fullpath);
+    return (int)strlen(fullpath);
 }
+*/
+#include <stdio.h>
+#include <string.h>
+#include <Windows.h>
+
+int findfile_recursive(const char *folder, const char *filename, char *fullpath)
+{
+    // Ensure fullpath is clean on the very first root call
+    // (Optional: remove if you guarantee the caller zeroes it out)
+    if (fullpath == NULL) return 0;
+
+    char wildcard[MAX_PATH];
+    // Protect against folder paths that are too long
+    if (snprintf(wildcard, sizeof(wildcard), "%s\\*", folder) >= (int)sizeof(wildcard)) {
+        return 0;
+    }
+
+    WIN32_FIND_DATA fd;
+    HANDLE handle = FindFirstFile(wildcard, &fd);
+    if (handle == INVALID_HANDLE_VALUE) return 0;
+
+    int found = 0;
+
+    do
+    {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+
+        char path[MAX_PATH];
+        if (snprintf(path, sizeof(path), "%s\\%s", folder, fd.cFileName) >= (int)sizeof(path)) {
+            continue; // Skip paths that exceed MAX_PATH to prevent truncation crashes
+        }
+
+        // Check for match (case-insensitive)
+        if (_stricmp(fd.cFileName, filename) == 0)
+        {
+            // Safely copy to fullpath and guarantee null-termination
+            snprintf(fullpath, MAX_PATH, "%s", path);
+            found = 1;
+            break;
+        }
+        // If it's a directory, recurse into it
+        else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            if (findfile_recursive(path, filename, fullpath) > 0)
+            {
+                found = 1;
+                break; // Found in subdirectory, exit early!
+            }
+        }
+    } while (FindNextFile(handle, &fd));
+
+    FindClose(handle);
+    return found ? (int)strlen(fullpath) : 0;
+}
+
 #endif

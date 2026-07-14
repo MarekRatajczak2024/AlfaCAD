@@ -184,7 +184,7 @@ char * alfa_editBox(
 
 #ifdef MACOS
     fontfile_p=strrchr(fontfile,'/');
-    if (fontfile_p==NULL) fontfile_p=fontfile;
+    if (fontfile_p==NULL) fontfile_p=(char*)fontfile;
     else fontfile_p++;
 #else
     fontfile_p=(char*)fontfile;

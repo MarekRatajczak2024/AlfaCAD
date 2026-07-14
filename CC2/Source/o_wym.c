@@ -39,7 +39,7 @@
 extern BOOL Semaphore;
 
 
- #include "bibwym_b.c"
+ #include "bibwym_b.inl"
 void Wymiarowanie(void)
   {
     Semaphore = FALSE;
