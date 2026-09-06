@@ -1,20 +1,26 @@
-﻿***AlfaCAD was conceived as a simple, universal program for creating technical drawings. However, "universal" does not mean "almighty". It is a Swiss Army knife rather than a box full of tools most of which are a secret to the user and probably will never be used.***
+***AlfaCAD was conceived as a simple, universal program for creating technical drawings. However, "universal" does not mean "almighty". It is a Swiss Army knife rather than a box full of tools most of which are a secret to the user and probably will never be used.***
 
 <p align="center" width="100%">
   <img width="25%" src="alfalogosaktrans2.png" />
 </p>
 
+AlfaCAD was designed as a program for creating any drawing, but mostly engineering drawings in virtually any industry, which are limited rather by access to an existing or user-created block library for fast drawing creation, than the set of functions available in the program.
+This approach has changed significantly in version 2.6, where a new feature called "Applications" has been implemented, with the first item on the list being the "Static and Dynamic Analysis" feature.
 
-*Recently, AlfaCAD has been equipped with tools and a module for static and dynamic analysis of structures, complementing its capabilities for creating any type of technical drawings with very specialized calculations and a way of presenting their results.*
+*Following this path,AlfaCAD has been gradually equipped with tools and modules for static and dynamic analysis of frames, trusses and beam grids, as well as static analysis of plates and shields (shells) using the finite element method (FEM), complementing its capabilities for creating any type of technical drawings with very specialized calculations and a way of presenting their results.*
 
-***Compilation of AlfaCAD v. 2.x and all necessary libraries***
+*Recently, in version 3.0, the "Profiles" application continues this development path. It is a suite of functions that enables quick and relatively easy development of utility profile drawings. It plots essential elements such as ground levels, road elevations, pipe crowns/inverts, utility cross-sections, and geological borehole logs.*
+
+*There is also the "Utility Map" interface containing tools for tracing utility alignments over georeferenced backgrounds.*
+
+***Compilation of AlfaCAD v. 3.x and all necessary libraries***
 
 ***AlfaCAD***<br>
 ***Linux***
 
 From AlfaCAD-CC2.zip file extract CC2 folder to the main home folder, or any other folder which from now on we will call “CC2 root folder”.
 
-CC2 stands for “Cooking CAD 2”, where 2 is just the version. We are cooking CAD.
+CC2 stands for “Cooking CAD too”. We are cooking CAD.
 
 From AlfaCAD-Linux-Pack.tar extract all zip files to any temporary folder, then extract each of them to the folder where CC2 root folder was created. So eventually you will get such structure of folders:
 
@@ -218,6 +224,11 @@ qt5\qt5-build32\qtbase\lib\Qt53DCore.lib<code>&nbsp;&nbsp;&nbsp;&nbsp;</code>32b
 
 If anyone has problems with linking provided library files, or wants to modify them, for any reason, here is the recipe how to do that:
 
+***AlfaCAD***<br>
+***MacOS***
+
+Details of compilation under MacOS will be described soon, as there are differences compared to the Linux version.
+
 ***Allegro***
 
 Allegro is a cross-platform library mainly aimed at video game and multimedia programming. It handles common, low-level tasks such as creating windows, accepting user input, loading data, drawing images, playing sounds, etc. and generally abstracting away the underlying platform. However, Allegro is not a game engine: you are free to design and structure your program as you like. For example CAD programs. Allegro was originally created by Shawn Hargreaves as early as 1990 for Atari ST, then migrated trough DJGPP compilers in 1995 in MS-DOS, to eventually be ported in Windows, Unix and Linux.
@@ -251,12 +262,12 @@ alleg44.dll<br>
 jpgalleg.dll<br>
 respectively for 64 and 32bit versions
 
-Linux compilation
+***Linux compilation***
 
 Compilation is based on cmake with allegro5-4.4.3/CmakeCache.txt configuration file. It’s enough to compile allegro Release and jpgalleg Release profiles to get all what is needed.<br>
 Produced \*.so files should be copied to the main AlfaCAD folder, if re-compiled after any changes. \*.a files will be used by AlfaCAD project, and they should stay where they are.
 
-Windows compilation
+***Windows compilation***
 
 There are VS2022 projects:<br>
 allegro-4.4.3.1\allegro\build\ALLEGRO.sln"<code>&nbsp;&nbsp;&nbsp;&nbsp;</code>64bit<br>
@@ -281,6 +292,10 @@ allegro5-4.4.4\build\lib\RelWithDebInfo\jpgalleg.lib 32bit<br>
 and<br>
 allegro5-4.4.4\build\lib\RelWithDebInfo\alleg44.dll 32bit<br>
 allegro5-4.4.4\build\lib\RelWithDebInfo\jpgalleg.dll 32bit
+
+***MacOS compilation***
+
+*Details of compilation under MacOS will be described soon, as there are differences compared to the Linux version.*
 
 ***glyph-keeper***
 
@@ -611,7 +626,7 @@ Enjoy AlfaCAD
 
 author
 
-Marek Ratajczak<code>&nbsp;&nbsp;&nbsp;&nbsp;</code>October 2024<br>
+Marek Ratajczak<code>&nbsp;&nbsp;&nbsp;&nbsp;</code>September 2026<br>
 
 
 *Ultimately, I did what I always thought I would do. I'm not just taking advantage of Open Source, I'm contributing to it too.*
