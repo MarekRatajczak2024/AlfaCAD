@@ -191,36 +191,36 @@ static BOOL reflection_bak = FALSE;
 static T_Prn_Ini_Date   prn_ini_date=
 {
 	PRN_WINDOWS,          /*typ drukarki*/
-	PRN_MODE_IBM,
+	PRN_MODE_IBM,         /*tryb drukarki - EPSON, IBM*/
 	TRUE,           /*kondensacja do rozmirow papieru, wydruk  w skali*/
 	D_DRAFT,        /* D_HIGH, D_DOUBLE, D_NORMAL, D_DRAFT*/ /*gestosc drukowania*/
 	TRUE,           /*caly rysunek, okno*/
-	0.0,              /* okno do plotowania*/
-	0.0,              /* okno do plotowania*/
-	0.0,              /* okno do plotowania*/
-	0.0,              /* okno do plotowania*/
-	0.0,             /* h0*/
-    0.0,0.0,0.0,0.0,        /*wewnetrzne okno do plotowania*/
+	0.0f,              /* okno do plotowania*/
+	0.0f,              /* okno do plotowania*/
+	0.0f,              /* okno do plotowania*/
+	0.0f,              /* okno do plotowania*/
+	0.0f,             /* h0*/
+    0.0f,0.0f,0.0f,0.0f,        /*wewnetrzne okno do plotowania*/
 	FALSE,          /*obrot rysunku 1 - tak, 0 - nie*/
    FALSE,          /*odwrocenie rysunku*/
    FALSE,           /*reflection*/
 	TRUE,           /*wydruk do zbioru*/
 	0,              /*numer pierwszej strony*/
-	5.0,              /*zakladka*/
-	0.10,		/*szerokosc linii bardzo cienkiej*/
-	0.18,            /*szerokosc linii cienkiej*/
-	0.35,            /*                grubej*/
-	0.50,            /*                b. grubej*/
-	0.70,		/*		  najgrubszej*/
-	0.0,            /*gorny margines*/
-	0.0,            /*dolny margines*/
-	0.0,            /*lewy margines*/
-	0.0,            /*prawy margines*/
-	210.0,           /*szerokosc wydruku*/
-	297.0,           /*wysokosc wydruku*/
-	210.0,           /*szerokosc wydruku drukarki*/
-	297.0,           /*wysokosc wydruku drukarki*/
-	1.0,             /*skala dla wydruku w skali*/
+	5.0f,              /*zakladka*/
+	0.10f,		/*szerokosc linii bardzo cienkiej*/
+	0.18f,            /*szerokosc linii cienkiej*/
+	0.35f,            /*                grubej*/
+	0.50f,            /*                b. grubej*/
+	0.70f,		/*		  najgrubszej*/
+	0.0f,            /*gorny margines*/
+	0.0f,            /*dolny margines*/
+	0.0f,            /*lewy margines*/
+	0.0f,            /*prawy margines*/
+	210.0f,           /*szerokosc wydruku*/
+	297.0f,           /*wysokosc wydruku*/
+	210.0f,           /*szerokosc wydruku drukarki*/
+	297.0f,           /*wysokosc wydruku drukarki*/
+	1.0f,             /*skala dla wydruku w skali*/
 	0,              /*actual scale*/
 	0,              /*pauza na zmiane arkusza*/
 	0,              /*zmiama strony*/
@@ -239,19 +239,21 @@ static T_Prn_Ini_Date   prn_ini_date=
    0,              /*ploter*/
    0,			   /*oce*/
    0,              /*fixed_name*/
-   "",
-   1,
-   2,
-   1.0,			   /*korekta gruboci linii poziomej*/
-   1.0,			   /*korekta gruboci linii pionowej*/
+   "",             /*actual file name*/
+   1,              /*copies*/
+   2,              /*thin_point_PCX*/
+   1.0f,			   /*korekta gruboci linii poziomej*/
+   1.0f,			   /*korekta gruboci linii pionowej*/
    0,              /*default roll*/
    0,			   /*WinPrint default*/
    "BMP",              /*image format*/
-   0,
-   0,
-   0,
-   3,
-   0
+   0,              /*image_format_i*/
+   0,              /*bitmap only*/
+   0,              /*import png*/
+   0,              /*print translucent solids*/
+   3,              /*grey saturation*/
+   0,              /*background*/
+   "",             /*actual printer name*/
 };
 
 extern char *prn_file;

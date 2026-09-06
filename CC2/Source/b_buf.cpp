@@ -56,7 +56,7 @@ typedef struct TBufHeapTab
 	char  * BufHeapEnd = NULL;
 } TBufHeapTab;
 
-static TBufHeapTab BufHeapTab[MAX_NUMBER_OF_WINDOWS];   //was 16, now is 32
+static TBufHeapTab BufHeapTab[MAX_NUMBER_OF_WINDOWS+1];   //was 16, now is 32  +1 for sketch
 
 static int i_test_count = 0 ;
 
@@ -203,8 +203,6 @@ sleep(5);
    else zaalokowano=TRUE;
   }
 
-
-
   BufHeapTab[DRAWING_NUMBER].BufHeapLen=0;
   BufHeapTab[DRAWING_NUMBER].BufHeapPtr= BufHeapTab[DRAWING_NUMBER].BufHeapStart;
   BufHeapTab[DRAWING_NUMBER].BufHeapPtrBase = BufHeapTab[DRAWING_NUMBER].BufHeapPtr;
@@ -213,8 +211,6 @@ sleep(5);
   //zaalokowanie pamieci dla bufora BMP
   imageBMPsize=(phisical_RAM - BufHeapTab[DRAWING_NUMBER].BufHeapSize) * 0.95;  //z marginesem bezpieczenstwa
 
- 
-  return ;
 }
 
 void InitBuffers(void)

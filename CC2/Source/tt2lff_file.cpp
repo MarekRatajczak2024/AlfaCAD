@@ -129,7 +129,7 @@ std::string clearZeros(double num/*, int precision*/){
 	snprintf(&(numLine[0]),precision+5, numFormat, num);
     std::string str = numLine;
     //int i = str.length()- 1;
-	int i = strlen(str.c_str()) - 1;
+	int i = (int)strlen(str.c_str()) - 1;
     while (str.at(i) == '0' && i>1) {
         --i;
     }

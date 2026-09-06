@@ -1304,7 +1304,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
        strcat (Current_File_Directory, "\\");
       }
 
-     strupr(Current_File_Directory);
+     //strupr(Current_File_Directory);  //bad for Linux and MacOS
      
    }
    else
@@ -1315,7 +1315,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
 	 change_bs2s(ret_string);
 
      strcpy(EXPLORER_EXE, ret_string);
-     strupr(EXPLORER_EXE);
+     //strupr(EXPLORER_EXE);  //bad for Linux and MacOS
     }
    else
    if (stricmp (key_name, IC_LOG) == 0 )
@@ -1324,7 +1324,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
 	 change_bs2s(ret_string);
 
       strcpy(log_dir, ret_string);
-      strupr(log_dir);
+      //strupr(log_dir);  //bad for Linux and MacOS
     }
    else
    if (stricmp (key_name, IC_BLOK) == 0 )
@@ -1333,7 +1333,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
 	 change_bs2s(ret_string);
 
       strcpy(bloki_dir, ret_string);
-      strupr(bloki_dir);
+      //strupr(bloki_dir);  //bad for Linux and MacOS
     }
    else
    if (stricmp (key_name, IC_KATALOG) == 0 )
@@ -1341,7 +1341,7 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
        change_bs2s(ret_string);
 
       strcpy(katalogi_dir, ret_string);
-      strupr(katalogi_dir);
+      //strupr(katalogi_dir);  //bad for Linux and MacOS
     }
    else
    if (stricmp (key_name, IC_TTF_FONTS) == 0 )
@@ -1396,15 +1396,6 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
       }
    }
     */
-   else
-   if (stricmp (key_name, IC_AUTOZOOMBLOCK) == 0 )
-   {
-      if (( sscanf (ret_string, "%d", &val_int) == 1)  &&
-          ((val_int == 0) || (val_int == 1)))
-      {
- 	     auto_zoom_block = val_int;
-      }
-   }
    else
    if (stricmp (key_name, IC_BUFMAKSIZE) == 0 )
    {
@@ -1590,6 +1581,15 @@ static BOOL get_desktop(T_Fstring key_name, T_Fstring ret_string)
 					auto_pan_block = val_int;
 				}
 			}
+            else
+            if (stricmp (key_name, IC_AUTOZOOMBLOCK) == 0 )
+            {
+                if (( sscanf (ret_string, "%d", &val_int) == 1)  &&
+                    ((val_int == 0) || (val_int == 1)))
+                {
+                    auto_zoom_block = val_int;
+                }
+            }
 			else
 				if (stricmp(key_name, IC_DYNAMIC_MENU) == 0)
 				{

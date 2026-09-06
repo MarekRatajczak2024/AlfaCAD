@@ -77,6 +77,7 @@ typedef unsigned long DWORD;
 #ifdef LINUX
 #define _write write
 #define _read read
+#define S_IREAD S_IRUSR
 //#define _POSIX_C_SOURCE 200809L
 #include <signal.h>
 #endif
@@ -125,17 +126,17 @@ extern void free_console(void);
 static double df__text_height, df__text_width_factor ;
 static BOOL b__italics ;
 static BOOL b__bold ;
-static char df__text_type ;
-static char df__text_justowanie ;
-static char df__text_ukryty ;
-static char df__text_czcionka ;  
+static unsigned char df__text_type ;
+static unsigned char df__text_justowanie ;
+static unsigned char df__text_ukryty ;
+static unsigned char df__text_czcionka ;
 static int w__spec_no ;
 static long l__dane_size ;  //TO XCHECK
 
 void change_colors (char  *adr,char  *adrk, int kolor_elementu);
 
-void change_layer (char  *adr,char  *adrk, int new_layer);
-void normalize_layer (char *adr, char *adrk);
+void change_layer (char  *adr,char  *adrk, int new_layer, int alfab_version);
+void normalize_layer (char *adr, char *adrk, int alfab_version);
 static void change_types_2_0_to_2_1 (char  *adr,char  *adrk);
 static void change_texts_2_1_to_3_0 (char *adp, char *adk);
 
@@ -203,6 +204,8 @@ extern void set_st_jedn(void);
 extern void fill_demo_keys(void);
 
 extern char  *dane0;
+extern MyDane dane_profs1;
+extern double reference_angle;
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude; //units per mm  default 1 Celsius per 1 mm on drawing paper
@@ -313,22 +316,22 @@ typedef enum
 
 int pbm_scale=1;  //-s
 int pbm_interpolation=3;  //-1  linear  or  -3 cubic
-float pbm_threshold=0.45; //-t
+float pbm_threshold=0.45f; //-t
 BOOL pbm_invert=FALSE; // -i
 int pbm_filter=4;  //-f
 BOOL pbm_nofilter=FALSE;  //-n
 
-float alx_scale=0.1;  //-x
-float alx_blacklevel=0.5;  //-k
+float alx_scale=0.1f;  //-x
+float alx_blacklevel=0.5f;  //-k
 int alx_turdsize=2;  //-t
 int alx_alphamax=1;  //-a
-float alx_curve_tolerance=0.2;  //-O
+float alx_curve_tolerance=0.2f;  //-O
 int alx_quantize=10;  //-u
 
 
-char typ_linii2_0_to_2_1(char typ2_0) 
-{ char grubosc, typ;
-  char typ2_1;
+unsigned char typ_linii2_0_to_2_1(unsigned char typ2_0)
+{ unsigned char grubosc, typ;
+  unsigned char typ2_1;
  grubosc=(typ2_0 / 5) + 1;
  typ=typ2_0 % 5;
  typ2_1=grubosc * 32 + typ;
@@ -336,7 +339,7 @@ char typ_linii2_0_to_2_1(char typ2_0)
 }
 
 
-BOOL is_utf8(const char* string)
+BOOL is_utf8_old(const char* string)
 {
     if (!string)
         return 0;
@@ -410,6 +413,67 @@ BOOL is_utf8(const char* string)
             continue;
         }
 
+        return 0;
+    }
+
+    return 1;
+}
+
+
+BOOL is_utf8(const char* string)
+{
+    if (!string)
+        return 0;
+
+    const unsigned char* bytes = (const unsigned char*)string;
+    while (*bytes)
+    {
+        // 1-Byte Cases (All Valid ASCII: 0x01 to 0x7F)
+        // (0x00 is already handled by the while(*bytes) loop condition)
+        if (bytes[0] <= 0x7F) {
+            bytes += 1;
+            continue;
+        }
+
+        // 2-Byte Cases (Non-overlong)
+        if (0xC2 <= bytes[0] && bytes[0] <= 0xDF) {
+            // CRITICAL: Ensure bytes[1] is not the null terminator before reading it
+            if (bytes[1] == '\0' || bytes[1] < 0x80 || bytes[1] > 0xBF) return 0;
+            bytes += 2;
+            continue;
+        }
+
+        // 3-Byte Cases
+        if (0xE0 <= bytes[0] && bytes[0] <= 0xEF) {
+            // CRITICAL: Ensure we don't read past the end of the string
+            if (bytes[1] == '\0' || bytes[2] == '\0') return 0;
+
+            if ((bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+                (((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+                (bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)))
+            {
+                bytes += 3;
+                continue;
+            }
+            return 0; // Failed specific 3-byte validation constraints
+        }
+
+        // 4-Byte Cases
+        if (0xF0 <= bytes[0] && bytes[0] <= 0xF4) {
+            // CRITICAL: Ensure we don't read past the end of the string
+            if (bytes[1] == '\0' || bytes[2] == '\0' || bytes[3] == '\0') return 0;
+
+            if ((bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+                ((0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+                (bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)))
+            {
+                bytes += 4;
+                continue;
+            }
+            return 0; // Failed specific 4-byte validation constraints
+        }
+
+        // Any byte sequence starting with 0x80-0xB1, 0xF5-0xFF is explicitly an invalid leader
         return 0;
     }
 
@@ -1120,7 +1184,7 @@ int mazovia2utf8_old(char *mazoviatext, char *utf8text, int maxlen)
 	return len;
 }
 */
-int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
+int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen, unsigned char *underlining)
 {
 	unsigned char *zn;
 	unsigned char *utf8ptr;
@@ -1135,7 +1199,15 @@ int mazovia2utf8(char *mazoviatext, char *utf8text, int maxlen)
 
 	while (*zn != '\0')
 	{
-		if (*zn >= 127)
+		//let's elliminate %%U and %%u too
+		if (*zn == '\45' &&
+			*(zn + 1) == '\45' &&
+			(*(zn + 2) == '\125' || *(zn + 2) == '\165'))
+		{
+			*underlining = TRUE;
+			zn += 2;
+		}
+		else if (*zn >= 127)
 		{
 			// Get the unicode point and convert it into a UTF-8 byte stream
 			bytes_n = ucs2_to_utf8(mazovia2utf8char(*zn), utf8c);
@@ -1179,6 +1251,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 	char *adb_address;
 	TEXT3 *old_text;
 	TEXT new_text;
+    B_PCX *pcx;
 	BLOK new_block;
 	char  *adr;
 	int ii, i_t, d_dl;
@@ -1195,6 +1268,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 	int len_desc_new;
 	int len_text_old;
     int blok_no=0;
+	unsigned char underline=0;
 
 	int a;
 
@@ -1207,8 +1281,8 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 	while (ad != -1)
 	{
 		
-		percent_d = ad; //-dane;
-		percent_d /= dane_size;
+		percent_d = (double)ad; //-dane;
+		percent_d /= (double)dane_size;
 		percent_d *= 100;
 		percent = (int)percent_d;
 		if (percent >= percent0)
@@ -1232,7 +1306,11 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 
 			memmove(&new_text, old_text, sizeof(TEXT3));
 
-			len=mazovia2utf8(old_text->text, new_text.text, MaxMultitextLen + 1);
+			underline=old_text->underline;
+
+			len=mazovia2utf8(old_text->text, new_text.text, MaxMultitextLen + 1, &underline);
+
+			new_text.underline = underline;
 			
 			new_text.dl = strlen(new_text.text);
 
@@ -1260,7 +1338,7 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 					len_desc_old_text = ptrs_desc_bl->len;
 
 					memmove(&new_block, adb, sizeof(BLOK));
-					len_desc_new_text = mazovia2utf8(ptrs_desc_bl->sz_type, new_sz_type, MaxLen) + 1;
+					len_desc_new_text = mazovia2utf8(ptrs_desc_bl->sz_type, new_sz_type, MaxLen, &underline) + 1;
 					len_desc_new = len_desc_old + (len_desc_new_text - len_desc_old_text);
 					if (len_desc_new_text == len_desc_old_text)
 					{
@@ -1289,6 +1367,11 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
             if ((blok_no==0) && (block_type!=NULL)) strcpy(block_type, new_sz_type);
                 blok_no++;
 			break;
+        case Opcx:
+                adr = dane + ad;
+                pcx = (B_PCX *)adr;
+                pcx->on_front=0;
+            break;
 		default:  off = ad + sizeof(NAGLOWEK) + ((NAGLOWEK*)(dane + ad))->n;
 			break;
 		}
@@ -1302,7 +1385,35 @@ static BOOL ver4_0_to_4_1(long_long off, long_long offk, char *block_type)
 }
 
 
-static BOOL ver4_1_to_4_2(long_long off, long_long offk)  //FOR THE FUTURE
+static BOOL ver4_1_to_4_2(char *adp0, char *adk0)  //FOR THE FUTURE
+{   BOOL b_ret;
+    long_long ad, size;
+    BLOK *adb;
+    NAGLOWEK_EXT *nag_ext;
+    char *adp=adp0, *adk=adk0;
+
+    while (adp<adk)
+    {
+        nag_ext = (NAGLOWEK_EXT*)adp;
+        switch (nag_ext->obiekt)
+        {
+            case OdBLOK:
+                adb = (BLOK *)(adp);
+                adb->warstwa_blk=0;
+                adp+= sizeof(NAGLOWEK) + B3 + adb->dlugosc_opisu_obiektu;
+                break;
+            default:
+                nag_ext->warstwa=nag_ext->warstwa_shd;
+                nag_ext->warstwa_shd=0;
+                adp+= sizeof(NAGLOWEK) + nag_ext->n;
+                break;
+        }
+    }
+	return TRUE;
+}
+
+
+static BOOL ver4_2_to_4_3(long_long off, long_long offk)  //FOR THE FUTURE
 {
     NAGLOWEK *nag;
     long_long ad, size;
@@ -1327,7 +1438,7 @@ static BOOL ver4_1_to_4_2(long_long off, long_long offk)  //FOR THE FUTURE
     int len_desc_new;
     int len_text_old;
 
-    return TRUE;
+    return TRUE;  //TEMPORARY
 
     percent0 = 0;
 
@@ -1403,7 +1514,8 @@ static void ver4_0_to_4_1_Layer(void)
 	//converting Layers
 	for (i = 0; i < No_Layers; i++)
 	{
-		len = mazovia2utf8(Layers[i].name, nameUTF8, maxlen_w);
+		unsigned char underline;
+		len = mazovia2utf8(Layers[i].name, nameUTF8, maxlen_w, &underline);
 		strncpy(Layers[i].name, nameUTF8, maxlen_w);
 		Layers[i].len_name = strlen(Layers[i].name);
 	}
@@ -1418,15 +1530,17 @@ void ver4_0_to_4_1_Spec(T_spec_name *ptrs_specs, int i_spec_no)
 	char new_spec_value[Max_Spec_Value];
 	char new_spec_name[Max_Spec_Name];
 
+	unsigned char underline;
+
 	for (i = 0; i < i_spec_no; i++)
 	{
 		
 		strcpy(old_spec_name, ptrs_specs[i].spec_name);
-		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name);
+		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name, &underline);
 		strcpy(ptrs_specs[i].spec_name, new_spec_name);
 
 		strcpy(old_spec_value, ptrs_specs[i].spec_value);
-		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value);
+		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value, &underline);
 		strcpy(ptrs_specs[i].spec_value, new_spec_value);
 	}
 }
@@ -1441,21 +1555,22 @@ static void ver4_0_to_4_1_Table(void)
 	char new_spec_name[Max_Spec_Name];
 	
 	//converting nameplate
+	unsigned char underline;
 
 	for (i = 0; i < Max_No_Spec; i++)
 	{
 		get_spec_name(i, old_spec_name);
-		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name);
+		len = mazovia2utf8(old_spec_name, new_spec_name, Max_Spec_Name, &underline);
 		put_spec_name(i, new_spec_name);
 
 		get_spec_string(i, old_spec_value);
-		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value);
+		len = mazovia2utf8(old_spec_value, new_spec_value, Max_Spec_Value, &underline);
 		put_spec_string(i, new_spec_value);
 	}
 
 }
 
-static void change_textstyle_global(char *def_text_font)
+static void change_textstyle_global(unsigned char *def_text_font)
 {
 	*def_text_font = PTRS__Font_Table.new_no[(int)def_text_font[0]];
 }
@@ -1738,11 +1853,10 @@ long pisz(int f, char  *buf, unsigned long_long nbyte)
  return nbyte ;
 }
 
-static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL read_Xp_Yp, int opcja_warstw, int *numer_bledu, int *pattern_library_no_var)
+static BOOL read_write_param (int f, int alfa_version, int (*proc_io) (int, void*, unsigned), BOOL read_Xp_Yp, int opcja_warstw, int *numer_bledu, int *pattern_library_no_var)
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 {
 #define RES_LEN 4 //12
-  const char PROFIL_TEMP_FILE [] = "ALFPROF.TMP" ;
   int i_f_handle ;
   char sz_reserve [RES_LEN] ;
   int i_layersno, i, iin ;
@@ -1753,7 +1867,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   double zn_b1d;
   double local_x, local_y;
   double dl_z_b_2;
-  MyDane dane_profs;
+  ////MyDane dane_profs;
   MyDane dane_profs0={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   double nul_Xp, nul_Yp ;
   double rezerwa;
@@ -1842,7 +1956,11 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
    }
   else  //only for ver4_1
   {
-	  char *layersBuf = (Bytef *)malloc(sizeof(LAYER)*MAX_NUMBER_OF_LAYERS + 1024);
+	  ////char *layersBuf = (Bytef *)malloc(sizeof(LAYER)*MAX_NUMBER_OF_LAYERS + 1024);
+      ////preparing for big number of layers
+      i_layersno = (No_Layers <= 16) ? MAX_OLD_NUMBER_OF_LAYERS : No_Layers;
+      char *layersBuf = (Bytef *)malloc(sizeof(LAYER)*i_layersno + 1024);   ////uncompress only the number of existing layers
+
 	  uLongf destLen;
 	  int destLenInt;
 	  int ret;
@@ -1932,15 +2050,16 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   *numer_bledu = 196;
   if (proc_io (f, &skala_p_x_f, sizeof(float)) != sizeof(float)) return FALSE ;
   if (proc_io (f, &rpp_f, sizeof(float)) != sizeof(float)) return FALSE ;
-  l_kr=put_skala_profilu_x(skala_p_x_f);
+  //l_kr=put_skala_profilu_x(skala_p_x_f);
   l_kr=put_poziom_pp(rpp_f);
 
   if (proc_io (f, &zn_b1, sizeof(int)) != sizeof(int)) return FALSE ;
   if (proc_io (f, &zn_b2, sizeof(int)) != sizeof(int)) return FALSE ;
 
-  local_x=0;
-  local_y=0;
-  angle_l=0;
+  local_x=0.;
+  local_y=0.;
+  angle_l=0.;
+  reference_angle=0.;
   l_kr=put_angle_l(angle_l);
   *numer_bledu = 197;
 
@@ -1952,217 +2071,428 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
 
   l_kr=put_znacznik_aplikacji(0);
 
-  //if (proc_io(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
-  if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
-  TRANSLUCENCY=(int)null_var_short_int;
-  if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
-  if (null_var_short_int>0) GTRANSLUCENCY=(int)null_var_short_int;
-     else GTRANSLUCENCY=255;
-
-  if ((TRANSLUCENCY < 26) || (TRANSLUCENCY > 255))  TRANSLUCENCY = 179;
-  if ((GTRANSLUCENCY < 26) || (GTRANSLUCENCY > 255))  GTRANSLUCENCY = 255;
-
-  reset_trans_blender();
-  
-  if (proc_io(f, &pattern_library_no_var_int, sizeof(int)) != sizeof(int)) return FALSE;
-
-  *pattern_library_no_var = pattern_library_no_var_int;
-
-  rescaling_menu_mode=0;  //initialization for older files
-
-  if (opcja_warstw == 2) {
-      if (proc_io(f, &prn_window.xp, sizeof(double)) != sizeof(double)) return FALSE;
-      if (proc_io(f, &prn_window.yp, sizeof(double)) != sizeof(double)) return FALSE;
-      if (proc_io(f, &prn_window.xk, sizeof(double)) != sizeof(double)) return FALSE;
-      if (proc_io(f, &prn_window.yk, sizeof(double)) != sizeof(double)) return FALSE;
-
-      set_priv_prn_window(prn_window.xp, prn_window.yp, prn_window.xk, prn_window.yk);
-      iin = 0;
-  }
-  else
+  if (alfa_version < ver4_0)  //ver4_0
   {
-      set_priv_prn_window(0.0, 0.0, 0.0, 0.0);
-      iin = 6;
+  	iin=1;
+  	if (proc_io (f, &zn_b1d, sizeof(double)) != sizeof(double)) return FALSE ;
+  	if ((zn_b1d==101) || (zn_b1d==102) || (zn_b1d==103))
+  	{
+  		l_kr=put_skala_profilu_x(skala_p_x_f);
+
+  		if (zn_b1d==101) put_typ_profilu(0);
+  		else if (zn_b1d==102) put_typ_profilu(1);
+  		else put_typ_profilu(2);
+
+  		//if (proc_io (f, &dane_profs1, sizeof(MyDane)) != sizeof(MyDane)) return FALSE ;  /* odczyt My_Data */
+  		//if (proc_io (f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE ;
+  		if (proc_io (f, &dane_profs1, 200) != 200) return FALSE ;  /* odczyt My_Data */
+  		////if (proc_io (f, &rezerwa_int, sizeof(int)) != sizeof(int)) return FALSE ;
+  		dane_profs1.param1=pow(2,20)-1;
+
+  		l_kr=put_hektometr(dane_profs1.spi1,0);
+  		l_kr=put_hektometr(dane_profs1.spi2,1);
+/*
+#ifndef LINUX
+  		i_f_handle=open(PROFIL_TEMP_FILE, O_CREAT|O_TRUNC|O_BINARY|O_WRONLY,S_IWRITE);
+#else
+  		i_f_handle=open(PROFIL_TEMP_FILE, O_CREAT|O_TRUNC|O_RDWR, 0666);
+#endif
+
+  		if (i_f_handle == -1)
+  		{
+  			ErrList(103);
+  		}
+  		if (write (i_f_handle, &dane_profs1, sizeof(dane_profs1)) != sizeof(dane_profs1))
+  		{
+  			close (i_f_handle) ;
+  			ErrList(104);
+  		}
+  		else
+  		{
+  			close (i_f_handle) ;
+  			//l_kr=put_znacznik_aplikacji(101);
+  		}
+*/
+  		l_kr=put_znacznik_aplikacji(101);
+  	}
+  	else
+  	{
+  		skala_p_x_f=1.f;
+  		l_kr=put_skala_profilu_x(skala_p_x_f);
+
+  		iin=25;
+  		for (i=0; i<iin; i++)
+  		{
+  			if (proc_io (f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE ;
+  		}
+
+  		l_kr=put_hektometr(0,0);
+  		l_kr=put_hektometr(0,1);
+  	}
+  	//filling with other data
+  	TRANSLUCENCY = 179;
+  	GTRANSLUCENCY = 255;
+  	set_priv_prn_window(0.0, 0.0, 0.0, 0.0);
+  	s_magnitude=units ? s_magnitude_imp0 : s_magnitude0;
+  	ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0;
+  	q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
+  	src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
+  	stress_precision=stress_precision0;
+
+  	static_colors.node_element_color=static_colors0.node_element_color;
+  	static_colors.tension_color=static_colors0.tension_color;
+  	static_colors.compression_color=static_colors0.compression_color;
+  	static_colors.shear_color=static_colors0.shear_color;
+  	static_colors.moment_color=static_colors0.moment_color;
+  	static_colors.deformation_color=static_colors0.deformation_color;
+  	static_colors.reaction_color=static_colors0.reaction_color;
+  	static_colors.dynamic_color=static_colors0.dynamic_color;
+
+  	n_magnitude=units ? n_magnitude_imp0 : n_magnitude0;
+  	v_magnitude=units ? v_magnitude_imp0 : v_magnitude0;
+  	m_magnitude=units ? m_magnitude_imp0 : m_magnitude0;
+  	d_magnitude=units ? d_magnitude_imp0 : d_magnitude0;
+  	r_magnitude=units ? r_magnitude_imp0 : r_magnitude0;
+  	rm_magnitude=units ? rm_magnitude_imp0 : rm_magnitude0;
+
+  	thermal_precision=thermal_precision0;
+  	load_precision=load_precision0;
+  	force_precision=force_precision0;
+  	moment_precision=moment_precision0;
+  	displacement_precision=displacement_precision0;
+  	rotation_precision=rotation_precision0;
+
+  	flood_magnitude = units ? flood_magnitude_imp0 : flood_magnitude0;
+  	thermal_magnitude = units ? thermal_magnitude_imp0 : thermal_magnitude0;
+  	shear_magnitude=units ? shear_magnitude_imp0 : shear_magnitude0;
+
+  	r_precision=r_precision0;
+
+  	ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0;
+  	load_magnitude=units ? load_magnitude_imp0 : load_magnitude0;
+  	force_magnitude=units ? force_magnitude_imp0 : force_magnitude0;
+  	moment_magnitude=units ? moment_magnitude_imp0 : moment_magnitude0;
+  	displacement_magnitude=units ? displacement_magnitude_imp0 : displacement_magnitude0;
+  	rotation_magnitude=units ? rotation_magnitude_imp0 : rotation_magnitude0;
+
+  	p_magnitude=units ? p_magnitude_imp0 : p_magnitude0;
+  	zmwym_fraction=64;
+
+  	sektory_arkusza_ext.dy = 75;
+  	sektory_arkusza_ext.margin_width = 2.5f;
+  	sektory_arkusza_ext.frame_line = 1; // 32;
+  	sektory_arkusza_ext.sector_line = 2; // 64;
+  	sektory_arkusza_ext.reversed = 0;
+  	sektory_arkusza_ext.frame_color = 7;
+  	sektory_arkusza_ext.sector_color = 7;
+  	sektory_arkusza_ext.font = 0;
+  	sektory_arkusza_ext.reserve = 0;
+  	sektory_arkusza_ext.frame_offset = 0.25f;
+
+  	sektory_arkusza.dx = 75;
+  	sektory_arkusza.first_number = 1;
+  	sektory_arkusza.prefix = 0;
+  	sektory_arkusza.draw = 0;
+  	sektory_arkusza.ramka = 0;
+  	sektory_arkusza.styl = 0;
+
   }
+  	else
+  	{
+  		//if (proc_io(f, &TRANSLUCENCY, sizeof(int)) != sizeof(int)) return FALSE;
+  		if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
+  		TRANSLUCENCY=(int)null_var_short_int;
+  		if (proc_io(f, &null_var_short_int, sizeof(int16_t)) != sizeof(int16_t)) return FALSE;
+  		if (null_var_short_int>0) GTRANSLUCENCY=(int)null_var_short_int;
+  		else GTRANSLUCENCY=255;
 
-     for (i = 0; i < iin; i++)
-     {
-        if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
-     }
+  		if ((TRANSLUCENCY < 26) || (TRANSLUCENCY > 255))  TRANSLUCENCY = 179;
+  		if ((GTRANSLUCENCY < 26) || (GTRANSLUCENCY > 255))  GTRANSLUCENCY = 255;
 
-      float magnitude, precision;
+  		reset_trans_blender();
 
-      int marker;
+  		if (proc_io(f, &pattern_library_no_var_int, sizeof(int)) != sizeof(int)) return FALSE;
 
-      long l_off___ = lseek (f, 0, SEEK_CUR);
-      if (proc_io(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
-      if (proc_io(f, &null_var_float, sizeof(float)) != sizeof(float)) return FALSE;
+  		*pattern_library_no_var = pattern_library_no_var_int;
 
-      if ((marker==1234567) || (marker==1234568) || (marker==1234569))
-      {
-          if ((null_var_float>0) && (null_var_float<=10000)) q_magnitude=null_var_float;
-          else q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
+  		rescaling_menu_mode=0;  //initialization for older files
 
-          if (proc_io(f, &static_stress_colors, sizeof(STATIC_STRESS_COLORS)) != sizeof(STATIC_STRESS_COLORS)) return FALSE;
+  		if (opcja_warstw == 2) {
+  			if (proc_io(f, &prn_window.xp, sizeof(double)) != sizeof(double)) return FALSE;
+  			if (proc_io(f, &prn_window.yp, sizeof(double)) != sizeof(double)) return FALSE;
+  			if (proc_io(f, &prn_window.xk, sizeof(double)) != sizeof(double)) return FALSE;
+  			if (proc_io(f, &prn_window.yk, sizeof(double)) != sizeof(double)) return FALSE;
 
-          if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-          if (Check_if_LE(magnitude, 0.0)) s_magnitude=units ? s_magnitude_imp0 : s_magnitude0; else s_magnitude=(double)magnitude;
+  			set_priv_prn_window(prn_window.xp, prn_window.yp, prn_window.xk, prn_window.yk);
+  			iin = 0;
+  		}
+  		else
+  		{
+  			set_priv_prn_window(0.0, 0.0, 0.0, 0.0);
+  			iin = 6;
+  		}
 
-          ss_magnitude=s_magnitude;
+  		for (i = 0; i < iin; i++)
+  		{
+  			if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
+  		}
 
-          if (marker==1234567)
-          {
-              src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
-              if (proc_io(f, &stress_precision, sizeof(double)) != sizeof(double)) return FALSE;
-              if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0;
-          }
-          else  //(marker==1234568)
-          {
-              if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-              if (Check_if_LE(magnitude, 0.0)) src_magnitude=units? src_magnitude_imp0 : src_magnitude0; else src_magnitude=(double)magnitude;
-              if (proc_io(f, &precision, sizeof(float)) != sizeof(float)) return FALSE;
-              if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0; else stress_precision=(double)precision;
-          }
-      }
-      else
-      {
-          memmove(&static_stress_colors, &static_stress_colors0, sizeof(STATIC_STRESS_COLORS));
-          s_magnitude=units ? s_magnitude_imp0 : s_magnitude0;
-          ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0;
-          q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
-          src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
-          stress_precision=stress_precision0;
-      }
+  		float magnitude, precision;
 
-      if (proc_io(f, &static_colors, sizeof(STATIC_COLORS)) != sizeof(STATIC_COLORS)) return FALSE;
-      if (static_colors.node_element_color==0) static_colors.node_element_color=static_colors0.node_element_color;
-      if (static_colors.tension_color==0) static_colors.tension_color=static_colors0.tension_color;
-      if (static_colors.compression_color==0) static_colors.compression_color=static_colors0.compression_color;
-      if (static_colors.shear_color==0) static_colors.shear_color=static_colors0.shear_color;
-      if (static_colors.moment_color==0) static_colors.moment_color=static_colors0.moment_color;
-      if (static_colors.deformation_color==0) static_colors.deformation_color=static_colors0.deformation_color;
-      if (static_colors.reaction_color==0) static_colors.reaction_color=static_colors0.reaction_color;
-      if (static_colors.dynamic_color==0) static_colors.dynamic_color=static_colors0.dynamic_color;
+  		int marker;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) n_magnitude=units ? n_magnitude_imp0 : n_magnitude0; else n_magnitude=(double)magnitude;
+  		long l_off___ = lseek (f, 0, SEEK_CUR);
+  		if (proc_io(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
+  		if (proc_io(f, &null_var_float, sizeof(float)) != sizeof(float)) return FALSE;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) v_magnitude=units ? v_magnitude_imp0 : v_magnitude0; else v_magnitude=(double)magnitude;
+  		if ((marker==1234567) || (marker==1234568) || (marker==1234569) || (marker==1234570))
+  		{
+  			if ((null_var_float>0) && (null_var_float<=10000)) q_magnitude=null_var_float;
+  			else q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) m_magnitude=units ? m_magnitude_imp0 : m_magnitude0; else m_magnitude=(double)magnitude;
+  			if (proc_io(f, &static_stress_colors, sizeof(STATIC_STRESS_COLORS)) != sizeof(STATIC_STRESS_COLORS)) return FALSE;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) d_magnitude=units ? d_magnitude_imp0 : d_magnitude0; else d_magnitude=(double)magnitude;
+  			if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  			if (Check_if_LE(magnitude, 0.0)) s_magnitude=units ? s_magnitude_imp0 : s_magnitude0; else s_magnitude=(double)magnitude;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) r_magnitude=units ? r_magnitude_imp0 : r_magnitude0; else r_magnitude=(double)magnitude;
+  			ss_magnitude=s_magnitude;
 
-      if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-      if (Check_if_LE(magnitude, 0.0)) rm_magnitude=units ? rm_magnitude_imp0 : rm_magnitude0; else rm_magnitude=(double)magnitude;
+  			if (marker==1234567)
+  			{
+  				src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
+  				if (proc_io(f, &stress_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  				if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0;
+  			}
+  			else  //(marker==1234568)
+  			{
+  				if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  				if (Check_if_LE(magnitude, 0.0)) src_magnitude=units? src_magnitude_imp0 : src_magnitude0; else src_magnitude=(double)magnitude;
+  				if (proc_io(f, &precision, sizeof(float)) != sizeof(float)) return FALSE;
+  				if (Check_if_LE(stress_precision, 0.0)) stress_precision=stress_precision0; else stress_precision=(double)precision;
+  			}
+  		}
+  		else
+  		{
+  			memmove(&static_stress_colors, &static_stress_colors0, sizeof(STATIC_STRESS_COLORS));
+  			s_magnitude=units ? s_magnitude_imp0 : s_magnitude0;
+  			ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0;
+  			q_magnitude=units ? q_magnitude_imp0 : q_magnitude0;
+  			src_magnitude=units ? src_magnitude_imp0 : src_magnitude0;
+  			stress_precision=stress_precision0;
+  		}
 
-      if (proc_io(f, &thermal_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(thermal_precision, 0.0)) thermal_precision=thermal_precision0;
-      if (proc_io(f, &load_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(load_precision, 0.0)) load_precision=load_precision0;
-      if (proc_io(f, &force_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(force_precision, 0.0)) force_precision=force_precision0;
-      if (proc_io(f, &moment_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(moment_precision, 0.0)) moment_precision=moment_precision0;
-      if (proc_io(f, &displacement_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(displacement_precision, 0.0)) displacement_precision=displacement_precision0;
-      if (proc_io(f, &rotation_precision, sizeof(double)) != sizeof(double)) return FALSE;
-      if (Check_if_LE(rotation_precision, 0.0)) rotation_precision=rotation_precision0;
+  		if (proc_io(f, &static_colors, sizeof(STATIC_COLORS)) != sizeof(STATIC_COLORS)) return FALSE;
+  		if (static_colors.node_element_color==0) static_colors.node_element_color=static_colors0.node_element_color;
+  		if (static_colors.tension_color==0) static_colors.tension_color=static_colors0.tension_color;
+  		if (static_colors.compression_color==0) static_colors.compression_color=static_colors0.compression_color;
+  		if (static_colors.shear_color==0) static_colors.shear_color=static_colors0.shear_color;
+  		if (static_colors.moment_color==0) static_colors.moment_color=static_colors0.moment_color;
+  		if (static_colors.deformation_color==0) static_colors.deformation_color=static_colors0.deformation_color;
+  		if (static_colors.reaction_color==0) static_colors.reaction_color=static_colors0.reaction_color;
+  		if (static_colors.dynamic_color==0) static_colors.dynamic_color=static_colors0.dynamic_color;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) n_magnitude=units ? n_magnitude_imp0 : n_magnitude0; else n_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) v_magnitude=units ? v_magnitude_imp0 : v_magnitude0; else v_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) m_magnitude=units ? m_magnitude_imp0 : m_magnitude0; else m_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) d_magnitude=units ? d_magnitude_imp0 : d_magnitude0; else d_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) r_magnitude=units ? r_magnitude_imp0 : r_magnitude0; else r_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) rm_magnitude=units ? rm_magnitude_imp0 : rm_magnitude0; else rm_magnitude=(double)magnitude;
+
+  		if (proc_io(f, &thermal_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(thermal_precision, 0.0)) thermal_precision=thermal_precision0;
+  		if (proc_io(f, &load_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(load_precision, 0.0)) load_precision=load_precision0;
+  		if (proc_io(f, &force_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(force_precision, 0.0)) force_precision=force_precision0;
+  		if (proc_io(f, &moment_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(moment_precision, 0.0)) moment_precision=moment_precision0;
+  		if (proc_io(f, &displacement_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(displacement_precision, 0.0)) displacement_precision=displacement_precision0;
+  		if (proc_io(f, &rotation_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(rotation_precision, 0.0)) rotation_precision=rotation_precision0;
 
 
-      if ((marker==1234568) || (marker==1234569))  //upgraded from 1234567
-      {
-          if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-          if (Check_if_LE(magnitude, 0.0)) flood_magnitude = units ? flood_magnitude_imp0 : flood_magnitude0; else flood_magnitude = (double) magnitude;
-          if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-          if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude = units ? thermal_magnitude_imp0 : thermal_magnitude0; else thermal_magnitude = (double) magnitude;
-          if (marker==1234569)  //extra 10 double more
-          {
-              if (proc_io(f, &shear_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-              if (Check_if_LE(shear_magnitude, 0.0)) shear_magnitude=units ? shear_magnitude_imp0 : shear_magnitude0;
-              if (proc_io(f, &r_precision, sizeof(double)) != sizeof(double)) return FALSE;
-              if (Check_if_LE(r_precision, 0.0)) r_precision=r_precision0;
+  		if ((marker==1234568) || (marker==1234569) || (marker==1234570))  //upgraded from 1234567
+  		{
+  			if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  			if (Check_if_LE(magnitude, 0.0)) flood_magnitude = units ? flood_magnitude_imp0 : flood_magnitude0; else flood_magnitude = (double) magnitude;
+  			if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  			if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude = units ? thermal_magnitude_imp0 : thermal_magnitude0; else thermal_magnitude = (double) magnitude;
+  			if ((marker==1234569) || (marker==1234570))  //extra 10 double more
+  			{
+  				if (proc_io(f, &shear_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  				if (Check_if_LE(shear_magnitude, 0.0)) shear_magnitude=units ? shear_magnitude_imp0 : shear_magnitude0;
+  				if (proc_io(f, &r_precision, sizeof(double)) != sizeof(double)) return FALSE;
+  				if (Check_if_LE(r_precision, 0.0)) r_precision=r_precision0;
 
-              //one integers
-              if (proc_io(f, &rescaling_menu_mode, sizeof(int)) != sizeof(int)) return FALSE;
-              //one float
-              if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-              if (Check_if_LE(magnitude, 0.0)) ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0; else ss_magnitude=(double)magnitude;
+  				//one integers
+  				if (proc_io(f, &rescaling_menu_mode, sizeof(int)) != sizeof(int)) return FALSE;
+  				//one float
+  				if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  				if (Check_if_LE(magnitude, 0.0)) ss_magnitude=units ? ss_magnitude_imp0 : ss_magnitude0; else ss_magnitude=(double)magnitude;
 
-              for (i = 0; i < 7; i++)  //7 in reserves
-              {
-                  if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
-              }
-          }
-          else
-          {
-              if (flood_magnitude>0.5)  shear_magnitude = units ? shear_magnitude_imp0 : shear_magnitude0;
-              else shear_magnitude = shear_magnitude_imp0;
-              r_precision=r_precision0;
-          }
-      }
-      else
-      {
-          flood_magnitude =  units ? flood_magnitude_imp0 : flood_magnitude0;
-          shear_magnitude = units ? shear_magnitude_imp0 : shear_magnitude0;
-          r_precision=r_precision0;
-          if (proc_io(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-          if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude = units ? thermal_magnitude_imp0 : thermal_magnitude0;
-      }
+  				if (marker==1234569)
+  				{
+  					for (i = 0; i < 7; i++)  //7 in reserves
+  					{
+  						if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
+  					}
+  				}
+  				else //for applications
+  				{
+#ifdef PROFILE
+  					// dane_profs1=dane_profs0;
+  					////memmove(&dane_profs1, &dane_profs0, sizeof(MyDane));
+  					iin=32;
+  					if (proc_io (f, &zn_b1d, sizeof(double)) != sizeof(double)) return FALSE ;
+  					if ((zn_b1d==101) || (zn_b1d==102) || (zn_b1d==103))
+  					{
+  						l_kr=put_skala_profilu_x(skala_p_x_f);
 
-    if (proc_io(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(load_magnitude, 0.0)) load_magnitude=units ? load_magnitude_imp0 : load_magnitude0;
-    if (proc_io(f, &force_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(force_magnitude, 0.0)) force_magnitude=units ? force_magnitude_imp0 : force_magnitude0;
-    if (proc_io(f, &moment_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(moment_magnitude, 0.0)) moment_magnitude=units ? moment_magnitude_imp0 : moment_magnitude0;
-    if (proc_io(f, &displacement_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(displacement_magnitude, 0.0)) displacement_magnitude=units ? displacement_magnitude_imp0 : displacement_magnitude0;
-    if (proc_io(f, &rotation_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
-    if (Check_if_LE(rotation_magnitude, 0.0)) rotation_magnitude=units ? rotation_magnitude_imp0 : rotation_magnitude0;
+  						if (zn_b1d==101) put_typ_profilu(0);
+  						else if (zn_b1d==102) put_typ_profilu(1);
+  						else put_typ_profilu(2);
+  						if (proc_io (f, &dane_profs1, sizeof(MyDane)) != sizeof(MyDane)) return FALSE ;  /* odczyt MyDane */
+  						if (proc_io(f, &null_var_int, sizeof(int)) != sizeof(int)) return FALSE;
 
-    if (proc_io(f, &zmwym_fraction, sizeof(int)) != sizeof(int)) return FALSE;
-    if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
-    if (Check_if_LE(magnitude, 0.0)) p_magnitude=units ? p_magnitude_imp0 : p_magnitude0; else p_magnitude=(double)magnitude;
+  						l_kr=put_hektometr(dane_profs1.spi1,0);
+  						l_kr=put_hektometr(dane_profs1.spi2,1);
 
-    if (zmwym_fraction<1) zmwym_fraction=64;   //initiation if not set
+  						dane_profs1.param1=pow(2,20)-1;
 
-    *numer_bledu = 198;
-    s_ext_len = sizeof(SEKTORY_EXT);
+  						//zapisanie do zbioru dyskowego
+/*
+#ifndef LINUX
+  						i_f_handle=open(PROFIL_TEMP_FILE, O_CREAT|O_TRUNC|O_BINARY|O_WRONLY,S_IWRITE);
+#else
+  						i_f_handle=open(PROFIL_TEMP_FILE, O_CREAT|O_TRUNC|O_RDWR, 0666); //S_IRWXU | S_IRWXG | S_IRWXO);
+#endif
+  						if (i_f_handle == -1)
+  						{
+  							ErrList(103);
+  						}
+  						if (write (i_f_handle, &dane_profs1, sizeof(dane_profs1)) != sizeof(dane_profs1))
+  						{
+  							close (i_f_handle) ;
+  							ErrList(104);
+  						}
+  						else
+  						{
+  							close (i_f_handle) ;
+  							//l_kr=put_znacznik_aplikacji(101);
+  						}
+  						*/
+  						l_kr=put_znacznik_aplikacji(101);
+  						iin-=27;
+  					}
+  					else
+  					{
+  						skala_p_x_f=1.f;
+  						l_kr=put_skala_profilu_x(skala_p_x_f);
 
-    if (proc_io(f, &sektory_arkusza_ext, sizeof(SEKTORY_EXT)) != sizeof(SEKTORY_EXT)) return FALSE;
-    if (sektory_arkusza_ext.dy == 0)
-    {
-        sektory_arkusza_ext.dy = 75;
-        sektory_arkusza_ext.margin_width = 2.5;
-        sektory_arkusza_ext.frame_line = 1; // 32;
-        sektory_arkusza_ext.sector_line = 2; // 64;
-        sektory_arkusza_ext.reversed = 0;
-        sektory_arkusza_ext.frame_color = 7;
-        sektory_arkusza_ext.sector_color = 7;
-        sektory_arkusza_ext.font = 0;
-        sektory_arkusza_ext.reserve = 0;
-        sektory_arkusza_ext.frame_offset = 0.25;
-    }
-    s_len = sizeof(SEKTORY);
-    if (proc_io(f, &sektory_arkusza, sizeof(SEKTORY)) != sizeof(SEKTORY)) return FALSE;
-    if (sektory_arkusza.dx == 0)
-    {
-        sektory_arkusza.dx = 75;
-        sektory_arkusza.first_number = 1;
-        sektory_arkusza.prefix = 0;
-        sektory_arkusza.draw = 0;
-        sektory_arkusza.ramka = 0;
-        sektory_arkusza.styl = 0;
-    }
+  						if (proc_io (f, &dane_profs1, sizeof(MyDane)) != sizeof(MyDane)) return FALSE ;  /* odczyt MyDane */
+  						if (proc_io(f, &null_var_int, sizeof(int)) != sizeof(int)) return FALSE;
+  						l_kr=put_hektometr(0,0);
+  						l_kr=put_hektometr(0,1);
 
-    *numer_bledu = 199;
+  						iin-=27;
+  					}
+
+                    if (proc_io (f, &reference_angle, sizeof(double)) != sizeof(double)) return FALSE ;
+                    if ((reference_angle>360.) || (reference_angle<-360.)) reference_angle=0;
+                    iin--;
+
+  					for (i=0; i<iin; i++)
+  					{
+  						if (proc_io (f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE ;
+  					}
+
+#else
+  					skala_p_x_f=1.f;
+  					l_kr=put_skala_profilu_x(skala_p_x_f);
+
+  					for (i = 0; i < 32; i++)  //32 in reserves  for use in profiles
+  					{
+  						if (proc_io(f, &null_var[i], sizeof(double)) != sizeof(double)) return FALSE;
+  					}
+#endif
+  				}
+  			}
+  			else
+  			{
+  				if (flood_magnitude>0.5)  shear_magnitude = units ? shear_magnitude_imp0 : shear_magnitude0;
+  				else shear_magnitude = shear_magnitude_imp0;
+  				r_precision=r_precision0;
+  			}
+  		}
+  		else
+  		{
+  			flood_magnitude =  units ? flood_magnitude_imp0 : flood_magnitude0;
+  			shear_magnitude = units ? shear_magnitude_imp0 : shear_magnitude0;
+  			r_precision=r_precision0;
+  			if (proc_io(f, &thermal_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  			if ((Check_if_LE(magnitude, 0.0)) || (Check_if_GT(magnitude, 1024.0))) thermal_magnitude = units ? thermal_magnitude_imp0 : thermal_magnitude0;
+  		}
+
+  		if (proc_io(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(load_magnitude, 0.0)) load_magnitude=units ? load_magnitude_imp0 : load_magnitude0;
+  		if (proc_io(f, &force_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(force_magnitude, 0.0)) force_magnitude=units ? force_magnitude_imp0 : force_magnitude0;
+  		if (proc_io(f, &moment_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(moment_magnitude, 0.0)) moment_magnitude=units ? moment_magnitude_imp0 : moment_magnitude0;
+  		if (proc_io(f, &displacement_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(displacement_magnitude, 0.0)) displacement_magnitude=units ? displacement_magnitude_imp0 : displacement_magnitude0;
+  		if (proc_io(f, &rotation_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
+  		if (Check_if_LE(rotation_magnitude, 0.0)) rotation_magnitude=units ? rotation_magnitude_imp0 : rotation_magnitude0;
+
+  		if (proc_io(f, &zmwym_fraction, sizeof(int)) != sizeof(int)) return FALSE;
+  		if (proc_io(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
+  		if (Check_if_LE(magnitude, 0.0)) p_magnitude=units ? p_magnitude_imp0 : p_magnitude0; else p_magnitude=(double)magnitude;
+
+  		if (zmwym_fraction<1) zmwym_fraction=64;   //initiation if not set
+
+  		*numer_bledu = 198;
+  		s_ext_len = sizeof(SEKTORY_EXT);
+
+  		if (proc_io(f, &sektory_arkusza_ext, sizeof(SEKTORY_EXT)) != sizeof(SEKTORY_EXT)) return FALSE;
+  		if (sektory_arkusza_ext.dy == 0)
+  		{
+  			sektory_arkusza_ext.dy = 75;
+  			sektory_arkusza_ext.margin_width = 2.5f;
+  			sektory_arkusza_ext.frame_line = 1; // 32;
+  			sektory_arkusza_ext.sector_line = 2; // 64;
+  			sektory_arkusza_ext.reversed = 0;
+  			sektory_arkusza_ext.frame_color = 7;
+  			sektory_arkusza_ext.sector_color = 7;
+  			sektory_arkusza_ext.font = 0;
+  			sektory_arkusza_ext.reserve = 0;
+  			sektory_arkusza_ext.frame_offset = 0.25f;
+  		}
+  		s_len = sizeof(SEKTORY);
+  		if (proc_io(f, &sektory_arkusza, sizeof(SEKTORY)) != sizeof(SEKTORY)) return FALSE;
+  		if (sektory_arkusza.dx == 0)
+  		{
+  			sektory_arkusza.dx = 75;
+  			sektory_arkusza.first_number = 1;
+  			sektory_arkusza.prefix = 0;
+  			sektory_arkusza.draw = 0;
+  			sektory_arkusza.ramka = 0;
+  			sektory_arkusza.styl = 0;
+  		}
+
+  		*numer_bledu = 199;
+  	}  //<ver4_0
 
   if (zn_b2==3)
    {
@@ -2201,7 +2531,7 @@ static BOOL read_write_param (int f, int (*proc_io) (int, void*, unsigned), BOOL
   if (rezerwa_char==1) swobodny_tekst=TRUE; else swobodny_tekst=FALSE;
   /*tryb lokalizacji*/
   if (proc_io (f, &rezerwa_char, sizeof(char)) != sizeof(char)) return FALSE ;
-  if (rezerwa_char>0) 
+  if (rezerwa_char>0)
     {
      sel.gor=1;
      sel.nr=rezerwa_char-1;
@@ -2241,7 +2571,6 @@ static BOOL read_write_param1_1 (int f, int (*proc_io) (int, void*, unsigned), B
 /*----------------------------------------------------------------------*/
 {
 #define RES_LEN 4 //12
-  const char PROFIL_TEMP_FILE [] = "ALFPROF.TMP" ;
   int i_f_handle ;
   char sz_reserve [RES_LEN] ;
   int i_layersno, i, iin ;
@@ -2425,7 +2754,6 @@ static BOOL write_param (int f, int *error_code1)
 /*----------------------------------------------------------------------*/
 {
 #define RES_LEN 4 //12
-  const char PROFIL_TEMP_FILE [] = "ALFPROF.TMP" ;
   int i_f_handle ;
   char sz_reserve [RES_LEN] ;
   int i_layersno, i ;
@@ -2442,8 +2770,8 @@ static BOOL write_param (int f, int *error_code1)
   char null_var_char;
   double local_x, local_y;
   double angle_l;
-  MyDane dane_profs;
-  MyDane dane_profs0={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /*,0*/};
+  ////MyDane dane_profs;
+  ////MyDane dane_profs0={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /*,0*/};
   uLong sourceLen;
   unsigned int l__dane_size_uint;
   PRIV_PRN_WINDOW *prn_window;
@@ -2475,9 +2803,14 @@ static BOOL write_param (int f, int *error_code1)
 
   if (write (f, &No_Layers, sizeof(int)) != sizeof(int)) return FALSE ;
 
-  layersBuf = (Bytef *)malloc(sizeof(LAYER)*MAX_NUMBER_OF_LAYERS + 1024);
+  ////layersBuf = (Bytef *)malloc(sizeof(LAYER)*MAX_NUMBER_OF_LAYERS + 1024);
 
   i_layersno = (No_Layers <= 16) ? MAX_OLD_NUMBER_OF_LAYERS : No_Layers ;
+
+  ////for bigger number of layers
+  layersBuf = (Bytef *)malloc(sizeof(LAYER)*i_layersno + 1024);
+
+
   sourceLen = sizeof(LAYER)*i_layersno;
 
   destLen = compressBound(sourceLen);
@@ -2565,7 +2898,9 @@ static BOOL write_param (int f, int *error_code1)
     //it was upgraded now
     //int marker=1234568;
     //it was upgraded again
-    int marker=1234569;
+
+    //int marker=1234569;
+	int marker=1234570;  //including profiles
 
     if (write(f, &marker, sizeof(int)) != sizeof(int)) return FALSE;
 
@@ -2615,10 +2950,84 @@ static BOOL write_param (int f, int *error_code1)
   magnitude=(float)ss_magnitude;
   if (write(f, &magnitude, sizeof(float)) != sizeof(float)) return FALSE;
   null_var[0]=0.0;
-  for (i = 0; i < 7; i++)  //reserves
-    {
-        if (write(f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE;
-    }
+  if (marker==1234569)  //older
+  {
+	  for (i = 0; i < 7; i++)  // 7 in reserves
+	  {
+	  	if (write(f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE;
+	  }
+  }
+	else //newer for applications
+	{
+#ifdef PROFILE
+		iin=32;
+		l_kr=get_znacznik_aplikacji();
+
+		////l_kr=101;
+
+		if (l_kr==101)
+		{
+			/*
+			//odczytanie danych z pliku binarnego
+			i_f_handle = open (PROFIL_TEMP_FILE, O_BINARY | O_RDONLY, S_IREAD) ;
+			if (i_f_handle == -1)
+			{
+				//zerowanie danych dane_profs
+				// dane_profs=dane_profs0;
+				memmove(&dane_profs, &dane_profs0, sizeof(MyDane));
+			}
+			else
+			{
+				if (read (i_f_handle, &dane_profs, sizeof(dane_profs)) != sizeof(dane_profs))
+				{
+					//zerowanie danych dane_profs
+					//dane_profs=dane_profs0;
+					memmove(&dane_profs, &dane_profs0, sizeof(MyDane));
+				}
+				close (i_f_handle) ;
+			}
+		    */
+			dane_profs1.spi1=get_hektometr_p();
+			dane_profs1.spi2=get_hektometr_k();
+
+			/* w parametrze dane_profs1.spi3 zapamietana jest wartosc odl. dla rki */
+			/* w parametrze dane_profs1.opi1 zapamietana jest wartosc odl. dla rkp */
+			/* w parametrze dane_profs1.opi2 zapamietana jest wartosc odl. dla ru */
+			/* w parametrze dane_profs1.opi3 zapamietana jest wartosc odl. dla rt */
+			typ_profilu0=get_typ_profilu();
+			if (typ_profilu0==0) zn_b1d=101;
+			else if (typ_profilu0==1) zn_b1d=102;
+			else zn_b1d=103;
+			if (write (f, &zn_b1d, sizeof(double)) != sizeof(double)) return FALSE ;
+			if (write (f, &dane_profs1, sizeof(MyDane)) != sizeof(MyDane)) return FALSE ;
+			null_var_int=0;
+			if (write (f, &null_var_int, sizeof(int)) != sizeof(int)) return FALSE ;
+			iin-=27;
+		}
+        else  //no application
+        {
+        	if (write (f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE ;
+	        if (write (f, &null_var, sizeof(MyDane)) != sizeof(MyDane)) return FALSE ;
+        	null_var_int=0;
+        	if (write (f, &null_var_int, sizeof(int)) != sizeof(int)) return FALSE ;
+        	iin-=27;
+        }
+
+        if (write (f, &reference_angle, sizeof(double)) != sizeof(double)) return FALSE ;
+        iin--;
+		//reserve
+		for (i=0; i<iin; i++)
+		{
+			if (write (f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE ;
+		}
+
+#else
+  		for (i = 0; i < 32; i++)  // 32 in reserves
+  		{
+  			if (write(f, &null_var[0], sizeof(double)) != sizeof(double)) return FALSE;
+  		}
+#endif
+	}
 
   if (write(f, &load_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
   if (write(f, &force_magnitude, sizeof(double)) != sizeof(double)) return FALSE;
@@ -2718,8 +3127,8 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
   unsigned char background_color;
   int opcja_warstw;
   int error_code=0;
-  char df__zones_font;
-  char df__dim_font;
+  unsigned char df__zones_font;
+  unsigned char df__dim_font;
   int pattern_library_no_var, pattern_library_no;
   int i;
 
@@ -2798,7 +3207,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
 
     else if (alfa_version == ver2_0) //if (strcmp (blok_naglowka, VER2_0) == 0)
     {
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 0, 0, &pattern_library_no_var)) { error_code = 6; goto error; }
+      if (FALSE == read_write_param (f, alfa_version, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 0, 0, &pattern_library_no_var)) { error_code = 6; goto error; }
       if (!SetBufferDaneSize (l__dane_size)) { error_code = 101; goto error18; }
 
         del_dane0=dane0-dane00;
@@ -2825,7 +3234,7 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
     }
     else if (alfa_version == ver2_1)  //if (strcmp (blok_naglowka, VER2_1) == 0)
     {
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 1, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
+      if (FALSE == read_write_param (f, alfa_version, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, 1, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
       if (!SetBufferDaneSize (l__dane_size)) { error_code = 102; goto error18; }
 
         del_dane0=dane0-dane00;
@@ -2866,9 +3275,9 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
           opcja_warstw = 2;
 	  else opcja_warstw = 1;
 
-      if (FALSE == read_write_param (f, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, opcja_warstw, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
+      if (FALSE == read_write_param (f, alfa_version, (int (*)(int, void *, unsigned int)) _read, read1_Xp_Yp, opcja_warstw, &numer_bledu, &pattern_library_no_var)) { error_code = numer_bledu; goto error; }
 
-      if (alfa_version < ver4_1) lseek(f, -16, SEEK_CUR);
+      ////if (alfa_version < ver4_1) lseek(f, -16, SEEK_CUR);
 
       if (!SetBufferDaneSize (l__dane_size)) { error_code = 19; goto error; }
 
@@ -2928,15 +3337,17 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
 	if (alfa_version < ver4_1) //(strcmp(blok_naglowka, VER4_1) != 0)
 	{
 		/*CHANGING TEXTS TO UTF8*/
+        /*removing skin image:  pcx->on_front=0 */
 
 		if (FALSE == ver4_0_to_4_1(0, dane_size - 1, NULL)) { error_code = 23; goto error; }
 
 		ver4_0_to_4_1_Layer();
 		ver4_0_to_4_1_Table();
 	}
-    else if (alfa_version < ver4_2)
+
+    if (alfa_version < ver4_2)
     {
-        if (FALSE == ver4_1_to_4_2(0, dane_size - 1)) { error_code = 23; goto error; }
+        if (FALSE == ver4_1_to_4_2(dane, dane+dane_size)) { error_code = 23; goto error; }
     }
 
 	//changinh text styles indexes, has to be done always
@@ -2980,8 +3391,8 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
 	if (TRUE == Check_if_LE (df__text_width_factor, 0)) { error_code = 33; goto error; }
 		//sprawdz zmwym !!
 
-    TextG.wysokosc = df__text_height;
-    TextG.width_factor =  df__text_width_factor ;
+    TextG.wysokosc = (float)df__text_height;
+    TextG.width_factor =  (float)df__text_width_factor ;
     TextG.italics = b__italics ;
     TextG.bold = b__bold ;
     TextG.czcionka = df__text_czcionka;
@@ -3000,24 +3411,26 @@ int czytaj_zbior (char *argv, BOOL err_message, BOOL b_current_ver, BOOL read_Xp
       Layers [0].len_name = 1;
       strcpy (Layers [0].name, "0");
     }
-    
-    Layers [255].on = 0;
-    Layers [255].edit = 1;
-    Layers [255].point = 1;
-    Layers [255].color = 7;  /*bialy*/
-    Layers [255].line_type = 64;
-    Layers [255].len_name = 0;
-    strcpy (Layers [255].name, "");
 
-    Layers [254].on = 1;
 
-    Layers [254].edit = 1;
+    //now layer 255 and 254 is repalced by MAX_NUMBER_OF_LAYERS - 1 and MAX_NUMBER_OF_LAYERS - 2
 
-    Layers [254].point = 1;
-    Layers [254].color = 7;  /*bialy*/
-    Layers [254].line_type = 64;
-    Layers [254].len_name = 0;
-    strcpy (Layers [254].name, "");
+    Layers [MAX_NUMBER_OF_LAYERS - 1].on = 0;
+    Layers [MAX_NUMBER_OF_LAYERS - 1].edit = 1;
+    Layers [MAX_NUMBER_OF_LAYERS - 1].point = 1;
+    Layers [MAX_NUMBER_OF_LAYERS - 1].color = 7;  //white
+    Layers [MAX_NUMBER_OF_LAYERS - 1].line_type = 64;
+    Layers [MAX_NUMBER_OF_LAYERS - 1].len_name = 0;
+    strcpy (Layers [MAX_NUMBER_OF_LAYERS - 1].name, "");
+
+    //for sector purpose
+    Layers [MAX_NUMBER_OF_LAYERS - 2].on = 1;
+    Layers [MAX_NUMBER_OF_LAYERS - 2].edit = 1;
+    Layers [MAX_NUMBER_OF_LAYERS - 2].point = 1;
+    Layers [MAX_NUMBER_OF_LAYERS - 2].color = 7;  //white
+    Layers [MAX_NUMBER_OF_LAYERS - 2].line_type = 64;
+    Layers [MAX_NUMBER_OF_LAYERS - 2].len_name = 0;
+    strcpy (Layers [MAX_NUMBER_OF_LAYERS - 2].name, "");
 
     zmien_atrybut(dane, dane + dane_size, Ablok, Anormalny);
 
@@ -3068,7 +3481,7 @@ int pisz_zbior(char *argv, BOOL b_erase, int every)
 /*------------------------------------------------*/
 {
 	T_Prot_Date * ptrs_prot;
-	char blok_naglowka[VER_LEN + 1] = VER4_1; //VER4_1; //VER4_0; // VER3_1 /*VER2_0 ;*/ /*VER2_1*/;  //VER3_1 uznawana jest za wiarygodna, i pomijana jest standardowo kontrola blokow
+	char blok_naglowka[VER_LEN + 1] = VER4_2; //VER4_1; //VER4_1; //VER4_0; // VER3_1 /*VER2_0 ;*/ /*VER2_1*/;  //VER3_1 uznawana jest za wiarygodna, i pomijana jest standardowo kontrola blokow
 	int f;
 	char fn[MAXPATH];
 	BOOL b_close = FALSE;
@@ -3316,7 +3729,7 @@ int get_patterns_for_solids(unsigned char* pattern_numbers)
 int WriteBlock(char *fn, double Px, double Py, char *buf_name, char *buf_type, int every, int bak)
 //-------------------------------------------------------------------------------------------------
 {
-	char blok_naglowka[VERB_LEN] = VERB4_1; /*VERB4_1*/ /*VERB4_0*/ /*VERB3_0*/ /*VERB2_0*/ /*VERB2_1*/
+	char blok_naglowka[VERB_LEN] = VERB4_2; //  VERB4_1; /*VERB4_1*/ /*VERB4_0*/ /*VERB3_0*/ /*VERB2_0*/ /*VERB2_1*/
 	int f;
 	long_long l, poz_blok, size_blok = B3;
 	NAGLOWEK *ad;
@@ -4230,8 +4643,8 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
        strcpy(b_pcx.pcx,fn1);
        b_pcx.len_pcx=strlen(b_pcx.pcx);
        
-       b_pcx.x= X;
-       b_pcx.y= Y; 
+       b_pcx.x= (float)X;
+       b_pcx.y= (float)Y;
 
 	   b_pcx.kod_obiektu = 0;
 	   b_pcx.warstwa = Current_Layer;
@@ -4275,8 +4688,8 @@ int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *b
        komunikat0(0);
        komunikat(0);
 
-       b_pcx.x=b_pcx_x;
-       b_pcx.y=b_pcx_y;
+       b_pcx.x=(float)b_pcx_x;
+       b_pcx.y=(float)b_pcx_y;
 
        if (!LoadPCX_real(&b_pcx, fn)) return 0;
 
@@ -4458,13 +4871,13 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	if (vert_res == 0) vert_res = 150;
 
 	head.xmin = 0;
-	head.xmax = width;
+	head.xmax = (short)width;
 	head.ymin = 0;
-	head.ymax = height;
+	head.ymax = (short)height;
 
-	head.bits_per_pixel = bits_per_pixel; // 24 (fixed) or 32 for alpha channel
-	head.horz_res = horz_res;
-	head.vert_res = vert_res;
+	head.bits_per_pixel = (char)bits_per_pixel; // 24 (fixed) or 32 for alpha channel
+	head.horz_res = (short)horz_res;
+	head.vert_res = (short)vert_res;
 
 	//dialog 
 
@@ -4484,8 +4897,8 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	strcpy(b_pcx.pcx, fn1);
 	b_pcx.len_pcx = strlen(b_pcx.pcx);
 
-	b_pcx.x = X;
-	b_pcx.y = Y;
+	b_pcx.x = (float)X;
+	b_pcx.y = (float)Y;
 
 	b_pcx.kod_obiektu = type+2;
 	b_pcx.warstwa = Current_Layer;
@@ -4498,8 +4911,8 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	b_pcx.set_foreground = 0;
 	b_pcx.background = 15; // 255;
 	b_pcx.foreground = 255;
-	b_pcx.i_x = width;
-	b_pcx.i_y = height;
+	b_pcx.i_x = (int)width;
+	b_pcx.i_y = (int)height;
 
 	B_PCX* pcx = (B_PCX*)&b_pcx;
 	REAL_PCX* rpcx = (REAL_PCX*)pcx->pcx;
@@ -4530,8 +4943,8 @@ int Read_PNG_JPG_real(char *fn, double *Px, double *Py, RYSPOZ *adp, RYSPOZ *adk
 	komunikat(0);
 
 
-	b_pcx.x = b_pcx_x;
-	b_pcx.y = b_pcx_y;
+	b_pcx.x = (float)b_pcx_x;
+	b_pcx.y = (float)b_pcx_y;
 
 	
     if (!Load_PNG_JPG_real(&b_pcx, fn, width, height, horz_res, vert_res, bits_per_pixel, type)) return 0;
@@ -4804,7 +5217,7 @@ int ReadBlock_ (char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk,	char *bu
   char *ad;
   int f,f_temp; 
   long_long l=0, size, size1, size0 ;
-  unsigned len;
+  int len;
   char fn1 [MAXPATH] ;
   char fn_temp [MAXPATH] ;
   int i_ret = IO_RET_OK ;
@@ -4845,7 +5258,7 @@ int ReadBlock_ (char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk,	char *bu
   char tekst_tekst[MaxLen];
   int no_blok;
   unsigned long_long dl_file;
-  char typ2_1;
+  unsigned char typ2_1;
   int aktywacja_kolorow ;
   int kolor_elementu = 0;
   T_Desc_Ex_Block 	*ptrs_desc_bl ;
@@ -4858,7 +5271,7 @@ int ReadBlock_ (char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk,	char *bu
   int numer_bledu;
   BOOL e_of_f=FALSE;
   off_t new_position;
-  int ex_block_pos;
+  long ex_block_pos;
   char block_type [Max_Spec_Block] ;
  
   *adp = NULL ;
@@ -4929,7 +5342,7 @@ read_again:
 	   goto error ;
 	 }
 
-      if (read_c(f,buf,len)!=len) 
+      if (read_c(f,buf,len)!=len)
          {
 	   goto error ;
 	 }
@@ -4994,8 +5407,8 @@ read_again:
             tekst_nag.przec = tekst_nag1_1.przec ; 
             tekst_nag.blok = 1;
             tekst_nag.n = tekst_nag1_1.n + 2 ;  
-  	    tekst_nag.warstwa = tekst_nag1_1.warstwa ; 
-            tekst_nag.kolor = tekst_nag1_1.kolor ; 
+  	        tekst_nag.warstwa = tekst_nag1_1.warstwa ;
+            tekst_nag.kolor = tekst_nag1_1.kolor ;
             tekst_nag.czcionka = tekst_nag1_1.czcionka ;
             tekst_nag.kat = tekst_nagend1_1.kat ;
             tekst_nag.wysokosc = tekst_nagend1_1.wysokosc ;
@@ -5025,7 +5438,7 @@ read_again:
            linia.przec = linia1_1.przec ; 
            linia.blok = 1 ; 
            linia.n = linia1_1.n + 2;
-           linia.warstwa = linia1_1.warstwa ; 
+           linia.warstwa = linia.warstwa_shd = linia1_1.warstwa ;
            linia.kolor = linia1_1.kolor ; 
            linia.typ = typ_linii2_0_to_2_1(linia1_1.typ) ;
            linia.x1 = liniaend1_1.x1 ;
@@ -5047,7 +5460,7 @@ read_again:
            luk.przec = luk1_1.przec ; 
            luk.blok = 1;
            luk.n = luk1_1.n + 2 ;  
-           luk.warstwa = luk1_1.warstwa ; 
+           luk.warstwa = luk.warstwa_shd = luk1_1.warstwa ;
            luk.kolor = luk1_1.kolor ; 
            luk.typ = typ_linii2_0_to_2_1(luk1_1.typ) ;
            luk.x = lukend1_1.x ;
@@ -5070,7 +5483,7 @@ read_again:
            okrag.przec = okrag1_1.przec ; 
            okrag.blok = 1;
            okrag.n = okrag1_1.n + 2 ;  
-           okrag.warstwa = okrag1_1.warstwa ; 
+           okrag.warstwa = okrag.warstwa_shd = okrag1_1.warstwa ;
            okrag.kolor = okrag1_1.kolor ; 
            okrag.typ = typ_linii2_0_to_2_1(okrag1_1.typ) ;
            okrag.x = okragend1_1.x ;
@@ -5091,7 +5504,7 @@ read_again:
            okrag.przec = okrag1_1.przec ; 
            okrag.blok = 1;
            okrag.n = okrag1_1.n + 2 ;  
-           okrag.warstwa = okrag1_1.warstwa ; 
+           okrag.warstwa = okrag.warstwa_shd = okrag1_1.warstwa ;
            okrag.kolor = okrag1_1.kolor ; 
            okrag.typ = typ_linii2_0_to_2_1(okrag1_1.typ);
            okrag.x = okragend1_1.x ;
@@ -5119,7 +5532,7 @@ read_again:
            wielokat.przec = wielokatx1_1.przec ; 
            wielokat.blok = 1;
            wielokat.n = wielokatx1_1.n + 4 /*2*/ ;  
-           wielokat.warstwa = wielokatx1_1.warstwa ; 
+           wielokat.warstwa = wielokat.warstwa_shd = wielokatx1_1.warstwa ;
            wielokat.kolor = wielokatx1_1.kolor ; 
            wielokat.temp1 = wielokatx1_1.temp1 ;
 		   wielokat.translucent = 0;
@@ -5158,7 +5571,7 @@ read_again:
              wielokat.xy[7] = 0;
              }
              
-            if (write(f_temp, &wielokat, wielokat.n+sizeof(NAGLOWEK))!=(wielokat.n+sizeof(NAGLOWEK))) goto error1;
+             if (write(f_temp, &wielokat, wielokat.n+sizeof(NAGLOWEK))!=(wielokat.n+sizeof(NAGLOWEK))) goto error1;
 	   break ;	
          case Opoint :
       
@@ -5173,7 +5586,7 @@ read_again:
            point.przec = point1_1.przec ; 
            point.blok = 1 ; 
            point.n = point1_1.n + 2 ;  
-           point.warstwa = point1_1.warstwa ; 
+           point.warstwa = point.warstwa_shd = point1_1.warstwa ;
            point.kolor = point1_1.kolor ; 
 		   point.typ = 0;
            point.x = pointend1_1.x ;
@@ -5201,10 +5614,9 @@ read_again:
              if (read_i(f, &ExBlok1_1.len, 2)!=2 ) goto error1;  
              if (read(f, &tekst_tekst, ExBlok1_1.len)!=ExBlok1_1.len) goto error1;
            }
-           else
+          else
             {
-            if (read(f, &tekst_tekst, blok1_1.dlugosc_opisu_obiektu)!=blok1_1.dlugosc_opisu_obiektu) goto error1;
-        
+                if (read(f, &tekst_tekst, blok1_1.dlugosc_opisu_obiektu)!=blok1_1.dlugosc_opisu_obiektu) goto error1;
             }
           }  
           if (no_blok<2)
@@ -5217,12 +5629,13 @@ read_again:
            blok.obiektt3 = 0;//blok1_1.obiektt3 ; 
            blok.widoczny = blok1_1.widoczny ; 
            blok.przec = blok1_1.przec ; 
-           blok.blok = 0 ; 
+           blok.blok = 0 ;
+           blok.warstwa_blk = 0;
            blok.n = blok1_1.n;    /*na razie....*/
            blok.kod_obiektu = blok1_1.kod_obiektu; 
            blok.flag = 0;  //rezerwa
            blok.dlugosc_opisu_obiektu = blok1_1.dlugosc_opisu_obiektu + 4; 
-           ExBlok.flags = ExBlok1_1.flags;
+           ExBlok.flags = (int)ExBlok1_1.flags;
            ExBlok.x = ExBlok1_1.x;
            ExBlok.y = ExBlok1_1.y;
            ExBlok.len = ExBlok1_1.len;
@@ -5253,7 +5666,7 @@ read_again:
 go_koniec:
       close(f);  
       poz_akt = lseek (f_temp, 0, 1);
-      dl_blok = poz_akt - poz_blok - sizeof(long);
+      dl_blok = poz_akt - poz_blok - (long long)sizeof(long);
       if (lseek(f_temp, poz_blok, SEEK_SET) !=poz_blok) goto error1;
       poz_akt = lseek (f_temp, 0, 1);
       if (write(f_temp, &dl_blok, sizeof(long))!= sizeof(long)) goto error1;
@@ -5285,7 +5698,7 @@ error1:
       ErrListStr(st);
       //delay(200);
       return IO_RET_RW_ERR ;
-    }
+    }  ///1_1
 
     else if (alfab_version >= verb2_0)
     {
@@ -5310,7 +5723,8 @@ error1:
 
 	   if (alfab_version < verb4_1) //(strcmp(blok_naglowka, VERB4_1) != 0)
 	   {
-		   len = mazovia2utf8(buf, buf_utf8, lenmax-10);
+	   	   unsigned char underline;
+		   len = mazovia2utf8(buf, buf_utf8, lenmax-10, &underline);
 		   strncpy(buf, buf_utf8, lenmax - 10);
 	   }
 
@@ -5438,8 +5852,8 @@ error1:
                   
              } 
            }  
-	    if (options1.save_original_layer==0) change_layer ((char  *)ad, adh, Current_Layer); 
-	      else normalize_layer ((char *)ad, adh);
+	    if (options1.save_original_layer==0) change_layer ((char  *)ad, adh, Current_Layer, alfab_version); //changing layer in new format
+	      else normalize_layer ((char *)ad, adh, alfab_version);
 	    if (alfab_version == verb2_0) //(strcmp (blok_naglowka, VERB2_0) == 0)
 	     {
 	      change_types_2_0_to_2_1 ((char *)ad, adh);
@@ -5459,7 +5873,7 @@ error1:
 		  l += (dane_size-dane_size00);
 		}
 
-		//converting to utf8 
+		//converting to utf8 and removing pcx->on_front
 		if (alfab_version < verb4_1) //(strcmp(blok_naglowka, VERB4_1) != 0)
 		{
 			dane_size00 = dane_size;
@@ -5518,7 +5932,7 @@ aa:
 
 #define UPDAT_BLOCK
 #ifdef UPDAT_BLOCK
-        if (alfab_version < verb4_1)
+        if (alfab_version < verb4_2)  //current version
         {
             ADP = dane;
             ADK = dane + l -1;
@@ -5682,8 +6096,8 @@ void change_color(char  *adr, char  *adrk, int kolor_elementu)
 	}
 }
 
-void change_layer (char  *adr,char  *adrk, int new_layer)
-/*-------------------------------------------------------------*/
+void change_layer (char  *adr,char  *adrk, int new_layer, int alfab_version)
+/*------------------------------------------------------------------------*/
 {
  NAGLOWEK *nag;
  char *ad;
@@ -5695,15 +6109,26 @@ void change_layer (char  *adr,char  *adrk, int new_layer)
      if (nag->obiekt != OdBLOK)
      {
        ((LINIA*)nag)->warstwa = new_layer;
+       if (alfab_version<verb4_2)
+             ((LINIA*)nag)->warstwa_shd=0;
      }
+     else
+     {
+         ((BLOK*)nag)->warstwa_blk=0;  //zeroing
+         if (((BLOK*)nag)->obiektt2==O2BlockDXF)
+         {
+             ((BLOK*)nag)->obiektt2=O2NoBlockS;  //0
+         }
+     }
+
      nag->blok = ElemBlok;
      obiekt_tok_all (NULL, adrk, &ad, ONieOkreslony);
   }
   ((NAGLOWEK*)adr)->blok = NoElemBlok ;
 }
 
-void normalize_layer (char  *adr,char  *adrk)
-/*-----------------------------------------*/
+void normalize_layer (char  *adr,char  *adrk, int alfab_version)
+/*-------------------------------------------------------------*/
 {
  NAGLOWEK *nag;
  char *ad;
@@ -5718,9 +6143,14 @@ void normalize_layer (char  *adr,char  *adrk)
      nag = (NAGLOWEK*)ad;
      if (nag->obiekt != OdBLOK)
      {
-       if ((((LINIA*)nag)->warstwa > max_layer_number) && ((((LINIA*)nag)->warstwa)!=255))
+       ////if ((((LINIA*)nag)->warstwa > max_layer_number) && ((((LINIA*)nag)->warstwa)!=255))  //old limitation
+       if (alfab_version<verb4_2)
+           ((LINIA*)nag)->warstwa=((LINIA*)nag)->warstwa_shd;
+
          max_layer_number = ((LINIA*)nag)->warstwa;
      }
+     else ((BLOK*)nag)->warstwa_blk=0;  //zeroing
+
      nag->blok = ElemBlok;
      obiekt_tok_all (NULL, adrk, &ad, ONieOkreslony);
   }

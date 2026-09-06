@@ -62,7 +62,7 @@ bool isConvex(vector<vector<float> >& points)
 {
     // Stores count of
     // edges in polygon
-    int N = points.size();
+    int N = (int)points.size();
 
     // Stores direction of cross product
     // of previous traversed edges

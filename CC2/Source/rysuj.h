@@ -29,15 +29,17 @@ BOOL use_getopenfilename=TRUE;
 BOOL window_was_resized=FALSE;
 BOOL sleep_state=FALSE;
 BOOL mouse_out = FALSE;
-char HATCH_TEMP_FILE[13]="ALFHATCH.000";
-char RYSUJ$1[13]="RYSUJ$.000";
+char HATCH_TEMP_FILE[16]="ALFAHATCH.000";
+char RYSUJ$1[16]="RYSUJ$.000";
+char PROFIL_TEMP_FILE [16] = "ALFAPROF.000" ;
+char PROFIL_TEMP_FILE_BAK [16] = "ALFAPROFBAK.000" ;
 int Number_of_clients=0;
 int Client_number=0;
 int Alf_window_number=0;
 BOOL original_color_print;
 BOOL normalize_text=TRUE;
 char background_pcx_file[MAXPATH];
-WARSTWY_ON_PCX  Warstwy_On_PCX[256], Warstwy_On_Solids[256];
+WARSTWY_ON_PCX  Warstwy_On_PCX[MAX_NUMBER_OF_LAYERS], Warstwy_On_Solids[MAX_NUMBER_OF_LAYERS];
 int aspect_ratio=0;
 int start_disk=2;
 int gfx_gd=7;
@@ -85,6 +87,8 @@ double rzedna_ti_prec=0.01;    //[m]
 double rzedna_tp_prec=0.01;    //[m]
 double spadek_prec=0.1;      //[%.]
 double zaglebienie_prec=0.01;    //[m]
+double srednica_punktu_zalamania=0.7; //[mm]
+double skala_bloku_hm_km=1.0; //
 int odleglosc_poz;
 int rzedna_i_poz;
 int rzedna_p_poz;
@@ -202,7 +206,7 @@ char TracePatternName[MAXPATH] = "";
 BOOL change_color_wsp = FALSE;
 BOOL auto_pan_block = FALSE;
 BOOL auto_zoom_block = FALSE;
-char global_kom [100] ="";
+char global_kom [256] ="";
 BOOL auto_tekst = FALSE;
 int tekst_interwal = 1;
 BOOL hold_scrsaver = FALSE;
@@ -225,6 +229,8 @@ unsigned long memory_size = 32000000L;
 int killpline = 0;
 int killblock = 0;
 OPTIONS1 options1 = {0,0,0,0,0,0,0,0};
+OPTIONS2 options2 = {0};
+
 BOOL undo_avail = FALSE;
 UNDO_TAB_REC UNDO_TAB [4] = {0,0,0,0,0,0,0,0,0,
                              0,0,0,0,0,0,0,0,0,
@@ -390,6 +396,7 @@ int AXIS_DIV=0;
 int OBRYS=0;
 int PLATE=0;
 int SIEC_P=0;
+int SIEC_PC=0;
 int HOLE=0;
 int WALL=0;
 int ZONE=0;

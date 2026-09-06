@@ -171,6 +171,8 @@ static char *trace_block_begin = NULL, *trace_block_end=NULL;
 static BOOL trace_block=FALSE;
 static POINTF last_trace_point[2], next_trace_point[2];
 
+static NAGLOWEK *ad_transform_global=NULL;
+
 QUAD quad0, quad1;
 
 BOOL enforce_vector_scale=FALSE;
@@ -201,8 +203,8 @@ static void zwpcx (char  *adr, double dx, double dy)
   B_PCX *pcx ;
 
   pcx = (B_PCX*)adr ;
-  pcx->x += dx ;
-  pcx->y += dy ;
+  pcx->x += (float)dx ;
+  pcx->y += (float)dy ;
   pcx->widoczny=1;
   if ((!pcx->on_front) && ((Check_if_Equal(dx,0.0)==FALSE) || (Check_if_Equal(dy,0.0)==FALSE)))
            regen_ctx=TRUE;
@@ -214,18 +216,18 @@ static void zwlinia(char  *adr,double dx,double dy)
   switch(l->obiektt1)
    { case Guma    :
      case Sztywny :
-	  l->x1+=dx;
-	  l->x2+=dx;
-	  l->y1+=dy;
-	  l->y2+=dy;
+	  l->x1+=(float)dx;
+	  l->x2+=(float)dx;
+	  l->y1+=(float)dy;
+	  l->y2+=(float)dy;
 	  break;
      case Utwierdzony1 :
-	  l->x2+=dx;
-	  l->y2+=dy;
+	  l->x2+=(float)dx;
+	  l->y2+=(float)dy;
 	  break;
      case Utwierdzony2 :
-	  l->x1+=dx;
-	  l->y1+=dy;
+	  l->x1+=(float)dx;
+	  l->y1+=(float)dy;
 	  break;
    }
   if(linia_wybrana(l)) l->widoczny=1;
@@ -241,18 +243,18 @@ static void zwvector(char  *adr,double dx,double dy)
             switch (v->obiektt1) {
                 case Guma    :
                 case Sztywny :
-                    v->x1 += dx;
-                    v->x2 += dx;
-                    v->y1 += dy;
-                    v->y2 += dy;
+                    v->x1 += (float)dx;
+                    v->x2 += (float)dx;
+                    v->y1 += (float)dy;
+                    v->y2 += (float)dy;
                     break;
                 case Utwierdzony1 :
-                    v->x2 += dx;
-                    v->y2 += dy;
+                    v->x2 += (float)dx;
+                    v->y2 += (float)dy;
                     break;
                 case Utwierdzony2 :
-                    v->x1 += dx;
-                    v->y1 += dy;
+                    v->x1 += (float)dx;
+                    v->y1 += (float)dy;
                     break;
             }
             break;
@@ -303,18 +305,18 @@ static void zwlinia3D(char  *adr,double dx,double dy)
   switch(l->obiektt1)
    { case Guma    :
      case Sztywny :
-	  l->x1+=dx;
-	  l->x2+=dx;
-	  l->y1+=dy;
-	  l->y2+=dy;
+	  l->x1+=(float)dx;
+	  l->x2+=(float)dx;
+	  l->y1+=(float)dy;
+	  l->y2+=(float)dy;
 	  break;
      case Utwierdzony1 :
-	  l->x2+=dx;
-	  l->y2+=dy;
+	  l->x2+=(float)dx;
+	  l->y2+=(float)dy;
 	  break;
      case Utwierdzony2 :
-	  l->x1+=dx;
-	  l->y1+=dy;
+	  l->x1+=(float)dx;
+	  l->y1+=(float)dy;
 	  break;
    }
   if(linia_wybrana((LINIA *)l)) l->widoczny=1;
@@ -331,14 +333,14 @@ static void zwlinia3DZ(char  *adr,double dx,double dy)
   switch(l->obiektt1)
    { case Guma    :
      case Sztywny :
-	  l->z1+=dz;
-	  l->z2+=dz;
+	  l->z1+=(float)dz;
+	  l->z2+=(float)dz;
 	  break;
      case Utwierdzony1 :
-	  l->z2+=dz;
+	  l->z2+=(float)dz;
 	  break;
      case Utwierdzony2 :
-	  l->z1+=dz;
+	  l->z1+=(float)dz;
 	  break;
    }
   if(linia_wybrana((LINIA *)l)) l->widoczny=1;
@@ -370,8 +372,8 @@ static void zwblock (char  *adr, double dx, double dy)
       )
      && ptrs_desc_bl->flags == EBF_IP)
   {
-    ptrs_desc_bl->x += dx ;
-    ptrs_desc_bl->y += dy ;
+    ptrs_desc_bl->x += (float)dx ;
+    ptrs_desc_bl->y += (float)dy ;
   }
 }
 
@@ -381,8 +383,8 @@ static void zwpoint (char  *adr, double dx, double dy)
   T_Point *ptrs_point ;
 
   ptrs_point = (T_Point*)adr ;
-  ptrs_point->x += dx ;
-  ptrs_point->y += dy ;
+  ptrs_point->x += (float)dx ;
+  ptrs_point->y += (float)dy ;
   ptrs_point->widoczny=Point_Selected(ptrs_point);
 }
 
@@ -437,17 +439,17 @@ static void zwluk(char  *adr,double dx,double dy)
 	  break;
      case Utwierdzony1 :
      case Utwierdzony2 :
-	  xs=l->x+l->r*cos(l->kat1);
-	  ys=l->y+l->r*sin(l->kat1);
-	  xe=l->x+l->r*cos(l->kat2);
-	  ye=l->y+l->r*sin(l->kat2);
-	  lc_2 = ((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys)) / 4 ;
+	  xs=l->x+l->r*cosf(l->kat1);
+	  ys=l->y+l->r*sinf(l->kat1);
+	  xe=l->x+l->r*cosf(l->kat2);
+	  ye=l->y+l->r*sinf(l->kat2);
+	  lc_2 = ((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys)) / 4. ;
 	  h=l->r + ws * sqrt(fabs(l->r*l->r-lc_2));
 	  if(h<OZero) return;
 	  if(l->obiektt1==Utwierdzony1) { xe+=dx;ye+=dy; }
 	  else { xs+=dx;ys+=dy; }
 	  lc_2 =.25*((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys));
-	  l->r = (lc_2 + h * h) / (2 * h);
+	  l->r = (float)((lc_2 + h * h) / (2. * h));
 	  x0=(xe+xs)/2;
 	  y0=(ye+ys)/2;
 	  xs0 = xs - x0 ;
@@ -461,11 +463,11 @@ static void zwluk(char  *adr,double dx,double dy)
 	  ws = (h < l->r) ?  -1 : 1;
 	  yr= ws * yr;
 	  obrd(si,co,xr,yr,&xr,&yr);
-	  l->x=xr+x0; l->y=yr+y0;
+	  l->x=(float)(xr+x0); l->y=(float)(yr+y0);
 	  xs=xs-l->x;  xe=xe-l->x;
 	  ys=ys-l->y;  ye=ye-l->y;
-	  l->kat1=Atan2(ys,xs);
-	  l->kat2=Atan2(ye,xe);
+	  l->kat1=(float)Atan2(ys,xs);
+	  l->kat2=(float)Atan2(ye,xe);
 	  break;
    }
   l->widoczny=luk_wybrany(l);
@@ -497,17 +499,17 @@ static void zwsolidarc(char  *adr,double dx,double dy)
             break;
         case Utwierdzony1 :
         case Utwierdzony2 :
-            xs=sa->x+sa->r*cos(sa->kat1);
-            ys=sa->y+sa->r*sin(sa->kat1);
-            xe=sa->x+sa->r*cos(sa->kat2);
-            ye=sa->y+sa->r*sin(sa->kat2);
-            lc_2 = ((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys)) / 4 ;
+            xs=sa->x+sa->r*cosf(sa->kat1);
+            ys=sa->y+sa->r*sinf(sa->kat1);
+            xe=sa->x+sa->r*cosf(sa->kat2);
+            ye=sa->y+sa->r*sinf(sa->kat2);
+            lc_2 = ((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys)) / 4. ;
             h=sa->r + ws * sqrt(fabs(sa->r*sa->r-lc_2));
             if(h<OZero) return;
             if(sa->obiektt1==Utwierdzony1) { xe+=dx;ye+=dy; }
             else { xs+=dx;ys+=dy; }
             lc_2 =.25*((xe-xs)*(xe-xs)+(ye-ys)*(ye-ys));
-            sa->r = (lc_2 + h * h) / (2 * h);
+            sa->r = (float)((lc_2 + h * h) / (2. * h));
             x0=(xe+xs)/2;
             y0=(ye+ys)/2;
             xs0 = xs - x0 ;
@@ -521,11 +523,11 @@ static void zwsolidarc(char  *adr,double dx,double dy)
             ws = (h < sa->r) ?  -1 : 1;
             yr= ws * yr;
             obrd(si,co,xr,yr,&xr,&yr);
-            sa->x=xr+x0; sa->y=yr+y0;
+            sa->x=(float)(xr+x0); sa->y=(float)(yr+y0);
             xs=xs-sa->x;  xe=xe-sa->x;
             ys=ys-sa->y;  ye=ye-sa->y;
-            sa->kat1=Atan2(ys,xs);
-            sa->kat2=Atan2(ye,xe);
+            sa->kat1=(float)Atan2(ys,xs);
+            sa->kat2=(float)Atan2(ye,xe);
             break;
     }
     sa->widoczny=solidarc_wybrany(sa);
@@ -534,15 +536,15 @@ static void zwsolidarc(char  *adr,double dx,double dy)
 static void zwokrag(char  *adr,double dx,double dy)
 { OKRAG *o;
   o=(OKRAG*)adr;
-  o->x+=dx;
-  o->y+=dy;
+  o->x+=(float)dx;
+  o->y+=(float)dy;
   o->widoczny=okrag_wybrany(o);
 }
 static void zwkolo(char  *adr,double dx,double dy)
 { OKRAG *k;
   k=(OKRAG*)adr;
-  k->x+=dx;
-  k->y+=dy;
+  k->x+=(float)dx;
+  k->y+=(float)dy;
   k->widoczny=okrag_wybrany(k);
 }
 
@@ -617,11 +619,11 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
 
                 Rotate_Point(si, co, xs, ys, ea->x, ea->y,  &eax, &eay);
 
-                ea->x=eax + (ddxx)*co;
-                ea->y=eay + (ddxx)*si;
+                ea->x=(float)(eax + (ddxx)*co);
+                ea->y=(float)(eay + (ddxx)*si);
 
-                ea->rx*=lambda;
-                ea->angle=angle;
+                ea->rx*=(float)lambda;
+                ea->angle=(float)angle;
 
                 xe+=dx;
                 ye+=dy;
@@ -658,31 +660,31 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
 
                 Rotate_Point(si, co, xe, ye, ea->x, ea->y,  &eax, &eay);
 
-                ea->x=eax + (ddxx)*co;
-                ea->y=eay + (ddxx)*si;
+                ea->x=(float)(eax + (ddxx)*co);
+                ea->y=(float)(eay + (ddxx)*si);
 
 
-                ea->rx*=lambda;
-                ea->angle=angle;
+                ea->rx*=(float)lambda;
+                ea->angle=(float)angle;
 
                 xs+=dx;
                 ys+=dy;
 
             }
 
-            ea->kat1=Atan2(ys-(ea->y), xs-(ea->x)) - angle;
-            ea->kat2=Atan2(ye-(ea->y), xe-(ea->x)) - angle;
+            ea->kat1=(float)Atan2(ys-(ea->y), xs-(ea->x)) - angle;
+            ea->kat2=(float)Atan2(ye-(ea->y), xe-(ea->x)) - angle;
 
-            ea->kat1= Angle_Normal(ea->kat1);
-            ea->kat2= Angle_Normal(ea->kat2);
+            ea->kat1= (float)Angle_Normal(ea->kat1);
+            ea->kat2= (float)Angle_Normal(ea->kat2);
 
             xxs=xs;
             yys=ys;
             xxe=xe;
             yye=ye;
 
-            si = sin(-ea->angle);
-            co = cos(-ea->angle);
+            si = sinf(-ea->angle);
+            co = cosf(-ea->angle);
 
             Rotate_Point(si, co, ea->x, ea->y, xxs, yys, &xxs, &yys);
             Rotate_Point(si, co, ea->x, ea->y, xxe, yye, &xxe, &yye);
@@ -694,8 +696,8 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
 
             if (!ret)  return;
 
-            ea->rx = a;
-            ea->ry = b;
+            ea->rx = (float)a;
+            ea->ry = (float)b;
 
 
             break;
@@ -709,8 +711,8 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
             xxe=xe;
             yye=ye;
 
-            si = sin(-ea->angle);
-            co = cos(-ea->angle);
+            si = sinf(-ea->angle);
+            co = cosf(-ea->angle);
 
             Rotate_Point(si, co, ea->x, ea->y, xxs, yys, &xxs, &yys);
             Rotate_Point(si, co, ea->x, ea->y, xxe, yye, &xxe, &yye);
@@ -751,22 +753,22 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
             if (!ret)  return;
 
             //restoring angles
-            ea->kat1=Atan2(yys-(eay), xxs-(eax));
-            ea->kat2=Atan2(yye-(eay), xxe-(eax));
+            ea->kat1=(float)Atan2(yys-(eay), xxs-(eax));
+            ea->kat2=(float)Atan2(yye-(eay), xxe-(eax));
 
-            ea->kat1= Angle_Normal(ea->kat1);
-            ea->kat2= Angle_Normal(ea->kat2);
+            ea->kat1= (float)Angle_Normal(ea->kat1);
+            ea->kat2= (float)Angle_Normal(ea->kat2);
 
-            si = sin(ea->angle);
-            co = cos(ea->angle);
+            si = sinf(ea->angle);
+            co = cosf(ea->angle);
 
             ////Rotate_Point(si, co, 0, 0, delxx, delyy, &delx, &dely);  this is not necessary
 
-            ea->x+=dx*lambda;
-            ea->y+=dy*lambda;
+            ea->x+=(float)(dx*lambda);
+            ea->y+=(float)(dy*lambda);
 
-            ea->rx=a;
-            ea->ry=b;
+            ea->rx=(float)a;
+            ea->ry=(float)b;
 
             break;
     }
@@ -776,16 +778,16 @@ static void zwellipticalarc(char  *adr,double dx,double dy)
 static void zwellipse(char  *adr,double dx,double dy)
 { ELLIPSE *e;
     e=(ELLIPSE*)adr;
-    e->x+=dx;
-    e->y+=dy;
+    e->x+=(float)dx;
+    e->y+=(float)dy;
     e->widoczny=elipsa_wybrana_prec(e);
 }
 
 static void zwfilledellipse(char  *adr,double dx,double dy)
 { ELLIPSE *fe;
     fe=(ELLIPSE*)adr;
-    fe->x+=dx;
-    fe->y+=dy;
+    fe->x+=(float)dx;
+    fe->y+=(float)dy;
     fe->widoczny=elipsa_wybrana_prec(fe);
 }
 
@@ -811,8 +813,8 @@ static void zwspline(char  *adr, double dx, double dy)
 				ptr_win->y01 <= s->xy[i + 1] &&
 				s->xy[i + 1] <= ptr_win->y02))
 		{
-			s->xy[i] += dx;
-			s->xy[i + 1] += dy;
+			s->xy[i] += (float)dx;
+			s->xy[i + 1] += (float)dy;
 		}
 	}
 	if (b_stretch == TRUE)
@@ -847,8 +849,8 @@ static void zwwwielokat(char  *adr,double dx,double dy)
 	ptr_win->y01 <= w->xy[i + 1] &&
 	w->xy[i + 1] <= ptr_win->y02) )
     {
-       w->xy[i] += dx ;
-       w->xy[i + 1] += dy ;
+       w->xy[i] += (float)dx ;
+       w->xy[i + 1] += (float)dy ;
     }
   }
   if (b_stretch == TRUE)
@@ -887,7 +889,7 @@ static void zwwwielokat3DZ(char  *adr,double dx,double dy)
 	ptr_win->y01 <= w->xy[i + 1] &&
 	w->xy[i + 1] <= ptr_win->y02) )
     {
-      w->xy[w->lp + j] += dz ;
+      w->xy[w->lp + j] += (float)dz ;
     }
   }
   if (b_stretch == TRUE)
@@ -928,17 +930,17 @@ static void sklinia(char  *adr,double x,double y,double k1, double k2)
    del_y2=l->y2-punkt_sy;
    
    Scale_Point (k1, k2 ,x,y,punkt_sx,punkt_sy,&xp,&yp);
-   l->x1=xp+del_x1;
-   l->y1=yp+del_y1;
-   l->x2=xp+del_x2;
-   l->y2=yp+del_y2;
+   l->x1=(float)(xp+del_x1);
+   l->y1=(float)(yp+del_y1);
+   l->x2=(float)(xp+del_x2);
+   l->y2=(float)(yp+del_y2);
   }
   else
   {
    Scale_Point (k1, k2 ,x,y,l->x1,l->y1,&xp,&yp);
-   l->x1=xp;l->y1=yp;
+   l->x1=(float)xp; l->y1=(float)yp;
    Scale_Point (k1, k2 ,x,y,l->x2,l->y2,&xp,&yp);
-   l->x2=xp;l->y2=yp;
+   l->x2=(float)xp; l->y2=(float)yp;
   }
   
   if(linia_wybrana(l)) l->widoczny=1;
@@ -964,9 +966,9 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
         case 14:
         case 15:
             Scale_Point (k1, k2 ,x,y,v->x1,v->y1,&xp,&yp);
-            v->x1=xp;v->y1=yp;
+            v->x1=(float)xp; v->y1=(float)yp;
             Scale_Point (k1, k2 ,x,y,v->x2,v->y2,&xp,&yp);
-            v->x2=xp;v->y2=yp;
+            v->x2=(float)xp; v->y2=(float)yp;
             break;
         case 4:  //force
         case 18: //slab force
@@ -976,8 +978,8 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
             del_x=(v->x2 - v->x1);
             del_y=(v->y2 - v->y1);
             Scale_Point (k1, k2 ,x,y,v->x1,v->y1,&xp,&yp);
-            v->x1=xp; v->y1=yp;
-            v->x2=v->x1+del_x; v->y2=v->y1+del_y;
+            v->x1=(float)xp; v->y1=(float)yp;
+            v->x2=v->x1+(float)del_x; v->y2=v->y1+(float)del_y;
             break;
         case 5:  //arcs
         case 6:
@@ -994,10 +996,10 @@ static void skvector(char  *adr,double x,double y,double k1, double k2)
         case 16:
             //Scale_Circle_Vector(v, x, y, k1, k2);
             Scale_Point (k1, k2 ,x,y,v->x1,v->y1,&xp,&yp) ;
-            v->x1 = xp; v->y1 = yp;
+            v->x1 = (float)xp; v->y1 = (float)yp;
             Scale_Point (k1, k2 ,x,y,v->x2,v->y2,&xp,&yp);
-            v->x2=xp;v->y2=yp;
-            v->r*=k1;  //k2 is ignored
+            v->x2=(float)xp;v->y2=(float)yp;
+            v->r*=(float)1;  //k2 is ignored
             v->magnitude1=milimetryob(v->r);
             break;
     }
@@ -1015,9 +1017,9 @@ double xp, yp, zp; // *punkt_sx, punkt_sy, del_x1, del_y1, del_x2, del_y2;
    k3=k1;
    z=0;
    Scale_Point3D (k1, k2, k3 ,x,y,z,l->x1,l->y1,l->z1,&xp,&yp,&zp);
-   l->x1=xp;l->y1=yp;l->z1=zp;
+   l->x1=(float)xp; l->y1=(float)yp; l->z1=(float)zp;
    Scale_Point3D (k1, k2, k3 ,x,y,z,l->x2,l->y2,l->z2,&xp,&yp,&zp);
-   l->x2=xp;l->y2=yp;l->z2=zp;
+   l->x2=(float)xp; l->y2=(float)yp; l->z2=(float)zp;
   
   if(linia_wybrana((LINIA *)l)) l->widoczny=1;
   else l->widoczny=0;
@@ -1050,8 +1052,8 @@ static void skblock (char  *adr,double x,double y,double k1, double k2)
       && ptrs_desc_bl->flags == EBF_IP)
   {
     Scale_Point (k1, k2 ,x, y, ptrs_desc_bl->x, ptrs_desc_bl->y, &xp, &yp) ;
-    ptrs_desc_bl->x = xp ;
-    ptrs_desc_bl->y = yp ;
+    ptrs_desc_bl->x = (float)xp ;
+    ptrs_desc_bl->y = (float)yp ;
   }
 }
 
@@ -1063,8 +1065,8 @@ static void skpoint (char  *adr,double x,double y,double k1, double k2)
 
   ptrs_point = (T_Point*)adr ;
   Scale_Point (k1, k2 ,x, y, ptrs_point->x, ptrs_point->y, &xp, &yp) ;
-  ptrs_point->x = xp ;
-  ptrs_point->y = yp ;
+  ptrs_point->x = (float)xp ;
+  ptrs_point->y = (float)yp ;
 }
 
 static void skpcx (char  *adr,double x,double y,double k1, double k2)
@@ -1075,10 +1077,10 @@ static void skpcx (char  *adr,double x,double y,double k1, double k2)
 
   pcx = (B_PCX*)adr ;
   Scale_Point (k1, k2 ,x, y, pcx->x, pcx->y, &xp, &yp) ;
-  pcx->x = xp ;
-  pcx->y = yp ;
-  pcx->dx *= k1 ;
-  pcx->dy *= k2 ;
+  pcx->x = (float)xp ;
+  pcx->y = (float)yp ;
+  pcx->dx *= (float)k1 ;
+  pcx->dy *= (float)k2 ;
   if ((!pcx->on_front) && ((Check_if_Equal(k1,1.0)==FALSE) || (Check_if_Equal(k2,1.0)==FALSE)))
      regen_ctx=TRUE;
 }
@@ -1090,12 +1092,13 @@ static void sktekst(char  *adr,double x,double y,double k1, double k2)
   double xp,yp;
   t=(TEXT*)adr;
   Scale_Point (k1, k2 ,x,y,t->x,t->y,&xp,&yp);
-  t->x=xp;t->y=yp;
+  t->x=(float)xp;
+  t->y=(float)yp;
   if ((t->obiektt2!=O2BlockDim) || (options1.scale_DIM == 1)) 
    {
-     t->wysokosc*= fabs (k2);  //  zmieniono z uwagi na skalowanie w profilu
+     t->wysokosc*= (float)fabs(k2);  //  zmieniono z uwagi na skalowanie w profilu
      if (k2==0.0) k2=1.0;
-     t->width_factor*= fabs (k1/k2);  //
+     t->width_factor*= (float)fabs(k1/k2);  //
 	 t->width = 0;
 	 t->height = 0;
    }  
@@ -1116,8 +1119,8 @@ void Scale_Arc (LUK *ptrs_arc ,double x, double y, double k1, double k2)
   Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
   Scale_Point (k1, k2, x, y, x2, y2, &x2, &y2) ;
   Scale_Point (k1, k2 ,x,y,ptrs_arc->x,ptrs_arc->y,&xp,&yp) ;
-  ptrs_arc->x = xp;
-  ptrs_arc->y = yp;
+  ptrs_arc->x = (float)xp;
+  ptrs_arc->y = (float)yp;
   if (x1 != x2 || y1 != y2)
   {
     if ( (k1 > 0 && k2 > 0) || (k1 < 0 && k2 < 0) )
@@ -1144,8 +1147,8 @@ void Scale_Arc_Vector (AVECTOR *ptrs_vector ,double x, double y, double k1, doub
     Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
     Scale_Point (k1, k2, x, y, x2, y2, &x2, &y2) ;
     Scale_Point (k1, k2 ,x,y,ptrs_vector->x1,ptrs_vector->y1,&xp,&yp) ;
-    ptrs_vector->x1 = xp;
-    ptrs_vector->y1 = yp;
+    ptrs_vector->x1 = (float)xp;
+    ptrs_vector->y1 = (float)yp;
     if (x1 != x2 || y1 != y2)
     {
         if ( (k1 > 0 && k2 > 0) || (k1 < 0 && k2 < 0) )
@@ -1168,35 +1171,49 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
 {
     double xp,yp, x1, y1, x2, y2 ;
     double l1, k0;
+    float M_PIf2 = (float)(2.*M_PI);
+    float kat2;
+    double arrowsize=2.49194/2.; //2.49;
+    NAGLOWEK *nag;
+    WIELOKAT *arrowhead;
+    POINTF mpoint;
 
     if (FALSE == Check_if_Equal (fabs (k1), fabs (k2)))
     {
         return ;
     }
 
-    //expanding angles
-    /*
-    if (ptrs_arc->kat2<ptrs_arc->kat1) l1=(ptrs_arc->kat2-(PI*2.0-ptrs_arc->kat1))*ptrs_arc->r;
-    else l1=(ptrs_arc->kat2-ptrs_arc->kat1)*ptrs_arc->r;
-    if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
-    ptrs_arc->kat1-=k0;
-    ptrs_arc->kat2+=k0;
-     */
-
-    l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r); //-zmwym.linia_ob);
-    if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
-    //k0=0;
-    //k0=2.49/ptrs_arc->r;
-
-    if (ptrs_arc->kat2<ptrs_arc->kat1)
+    //getting size of following solid
+    nag=(NAGLOWEK*)((char*)ad_transform_global+sizeof(NAGLOWEK)+ad_transform_global->n);
+    int inag=0;
+    while ((nag->obiekt!=Owwielokat) && (inag<3))
     {
-        ptrs_arc->kat1 += (float)k0;
-        ptrs_arc->kat2 -= (float)k0;
+        nag=(NAGLOWEK*)((char*)nag+sizeof(NAGLOWEK)+nag->n);
+        inag++;
     }
-    else {
-        ptrs_arc->kat1 -= (float)k0;
-        ptrs_arc->kat2 += (float)k0;
+    if (nag->obiekt==Owwielokat)
+    {
+        arrowhead=(WIELOKAT*)nag;
+        if (arrowhead->lp==6)
+        {
+            mpoint.x=(arrowhead->xy[0]+arrowhead->xy[4])/2.f;
+            mpoint.y=(arrowhead->xy[1]+arrowhead->xy[5])/2.f;
+            double dx=mpoint.x-arrowhead->xy[2];
+            double dy=mpoint.y-arrowhead->xy[3];
+            arrowsize=sqrt(dx*dx+dy*dy)/2.;
+        }
     }
+
+    if (ptrs_arc->kat2 < ptrs_arc->kat1) ptrs_arc->kat2+=M_PIf2;
+
+    l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r);
+    //changed on 15-08-2026
+    //if (l1>5.0) k0=arrowsize/ptrs_arc->r; else k0=0.0;
+    k0=arrowsize/ptrs_arc->r;
+
+    //moving back to measuring point on tips of arrowheads
+    ptrs_arc->kat1 -= (float)k0;
+    ptrs_arc->kat2 += (float)k0;
 
     Arc_To_Points (ptrs_arc, &x1, &y1, &x2, &y2);
     Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
@@ -1214,28 +1231,36 @@ void Scale_Arc_Dim (LUK *ptrs_arc ,double x, double y, double k1, double k2)
         {
             Points_To_Arc (ptrs_arc, x2, y2, x1, y1) ;
         }
-        //l1=(ptrs_arc->kat2-ptrs_arc->kat1)*ptrs_arc->r;
-        //if (l1>5.0) k0=1.5/ptrs_arc->r; else k0=0.0;
 
+        //added on 15-08-2026
+        ptrs_arc->r=max(ptrs_arc->r, arrowsize);  //!!!! WARNING
 
-        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r); //-zmwym.linia_ob);
-        if (l1>5.0) k0=2.49/ptrs_arc->r; else k0=0.0;
+        if (ptrs_arc->kat2 < ptrs_arc->kat1) ptrs_arc->kat2+=M_PIf2;
+        l1=(ptrs_arc->kat2-ptrs_arc->kat1)*(ptrs_arc->r);
+        //changed on 15-08-2026
+        //if (l1>5.0) k0=arrowsize/ptrs_arc->r; else k0=0.0;
+        k0=arrowsize/ptrs_arc->r;
 
-        if (ptrs_arc->kat2<ptrs_arc->kat1)
-        {
-            ptrs_arc->kat1 -= (float)k0;
-            ptrs_arc->kat2 += (float)k0;
-        }
-        else {
-            ptrs_arc->kat1 += (float)k0;
-            ptrs_arc->kat2 -= (float)k0;
-        }
+        //shifting to ends of arrowheads
+        ptrs_arc->kat1 += (float)k0;
+        ptrs_arc->kat2 -= (float)k0;
+
+        //if (l1<=5.0)
+        //{
+        //    kat2=ptrs_arc->kat2;
+        //    ptrs_arc->kat2=ptrs_arc->kat1;
+        //    ptrs_arc->kat1=kat2;
+        //}
 
     }
     else
     {
         ptrs_arc->r = 0;
     }
+
+    //normalizing
+    ptrs_arc->kat1 = (float)Angle_Normal(ptrs_arc->kat1);
+    ptrs_arc->kat2 = (float)Angle_Normal(ptrs_arc->kat2);
 }
 
 
@@ -1244,8 +1269,39 @@ void Scale_EllipticalArc_Dim(ELLIPTICALARC *ptrs_ea, double x, double y, double 
     double xp, yp, x1, y1, x2, y2;
     double l1, k0, r_avg;
     double rx, ry;
+    float kat1, kat2;
+    double arrowsize=2.49194/2.; //2.49;
+    NAGLOWEK *nag;
+    WIELOKAT *arrowhead;
+    POINTF mpoint;
 
     float M_PIf2 = (float)(2.*M_PI);
+
+    if (FALSE == Check_if_Equal (fabs (k1), fabs (k2)))
+    {
+        return ;
+    }
+
+    //getting size of following solid
+    nag=(NAGLOWEK*)((char*)ad_transform_global+sizeof(NAGLOWEK)+ad_transform_global->n);
+    int inag=0;
+    while ((nag->obiekt!=Owwielokat) && (inag<3))
+    {
+        nag=(NAGLOWEK*)((char*)nag+sizeof(NAGLOWEK)+nag->n);
+        inag++;
+    }
+    if (nag->obiekt==Owwielokat)
+    {
+        arrowhead=(WIELOKAT*)nag;
+        if (arrowhead->lp==6)
+        {
+            mpoint.x=(arrowhead->xy[0]+arrowhead->xy[4])/2.f;
+            mpoint.y=(arrowhead->xy[1]+arrowhead->xy[5])/2.f;
+            double dx=mpoint.x-arrowhead->xy[2];
+            double dy=mpoint.y-arrowhead->xy[3];
+            arrowsize=sqrt(dx*dx+dy*dy);
+        }
+    }
 
     // Compute original average radius for narrowing calculation
     r_avg = (ptrs_ea->rx + ptrs_ea->ry) / 2.0;
@@ -1254,16 +1310,9 @@ void Scale_EllipticalArc_Dim(ELLIPTICALARC *ptrs_ea, double x, double y, double 
 
     l1 = (ptrs_ea->kat2 - ptrs_ea->kat1) * r_avg;
 
-    if (l1 > 5.0) k0 = 2.49 / r_avg; else k0 = 0.0;
-
-    // Expanding angles (add back narrowing)
-    //if (ptrs_ea->kat2 < ptrs_ea->kat1) {
-    //    ptrs_ea->kat1 += (float)k0;
-    //    ptrs_ea->kat2 -= (float)k0;
-    //} else {
-    //    ptrs_ea->kat1 -= (float)k0;
-    //    ptrs_ea->kat2 += (float)k0;
-    //}
+    //changed on 15-08-2026
+    //if (l1 > 5.0) k0 = arrowsize / r_avg; else k0 = 0.0;
+    k0=arrowsize/r_avg;
 
     ptrs_ea->kat1 -= (float)k0;
     ptrs_ea->kat2 += (float)k0;
@@ -1299,18 +1348,17 @@ void Scale_EllipticalArc_Dim(ELLIPTICALARC *ptrs_ea, double x, double y, double 
 
         // Narrow angles again
         r_avg = (ptrs_ea->rx + ptrs_ea->ry) / 2.0;
+
+        //added on 15-08-2026
+        r_avg=max(r_avg, arrowsize);  //!!!! WARNING
+
         l1 = (ptrs_ea->kat2 - ptrs_ea->kat1) * r_avg;
-        if (l1 > 5.0) k0 = 2.49 / r_avg; else k0 = 0.0;
+        //changed on 15-08-2026
+        //if (l1 > 5.0) k0 = arrowsize / r_avg; else k0 = 0.0;
+        k0 = arrowsize / r_avg;
 
         if (ptrs_ea->kat2 < ptrs_ea->kat1) ptrs_ea->kat2+=(float)(2*M_PI);
 
-       // if (ptrs_ea->kat2 < ptrs_ea->kat1) {
-       //     ptrs_ea->kat1 -= (float)k0;
-       //     ptrs_ea->kat2 += (float)k0;
-       // } else {
-       //     ptrs_ea->kat1 += (float)k0;
-       //     ptrs_ea->kat2 -= (float)k0;
-       // }
         ptrs_ea->kat1 += (float)k0;
         ptrs_ea->kat2 -= (float)k0;
 
@@ -1340,8 +1388,8 @@ void Scale_SolidArc (SOLIDARC *ptrs_solidarc ,double x, double y, double k1, dou
     Scale_Point (k1, k2, x, y, x1, y1, &x1, &y1) ;
     Scale_Point (k1, k2, x, y, x2, y2, &x2, &y2) ;
     Scale_Point (k1, k2 ,x,y,ptrs_solidarc->x,ptrs_solidarc->y,&xp,&yp) ;
-    ptrs_solidarc->x = xp;
-    ptrs_solidarc->y = yp;
+    ptrs_solidarc->x = (float)xp;
+    ptrs_solidarc->y = (float)yp;
     if (x1 != x2 || y1 != y2)
     {
         if ( (k1 > 0 && k2 > 0) || (k1 < 0 && k2 < 0) )
@@ -1358,8 +1406,8 @@ void Scale_SolidArc (SOLIDARC *ptrs_solidarc ,double x, double y, double k1, dou
         ptrs_solidarc->r = 0;
     }
 
-    ptrs_solidarc->width1*=k1;
-    ptrs_solidarc->width2*=k1;
+    ptrs_solidarc->width1*=(float)k1;
+    ptrs_solidarc->width2*=(float)k1;
 
 }
 
@@ -1369,7 +1417,7 @@ static void skluk(char  *adr,double x,double y,double k1, double k2)
 
   ptrs_arc = (LUK*)adr ;
 
-    if (ptrs_arc->obiektt2!=O2BlockDim)
+    if ((ptrs_arc->obiektt2!=O2BlockDim) || (options1.scale_DIM == 1))
     {
         Scale_Arc(ptrs_arc, x, y, k1, k2);
     }
@@ -1405,8 +1453,8 @@ static void skokrag(char  *adr,double x,double y,double k1, double k2)
 
   o=(OKRAG*)adr;
   Scale_Point (k1, k2 ,x,y,o->x,o->y,&xp,&yp);
-  o->x=xp;o->y=yp;
-  o->r*=fabs (k1);
+  o->x=(float)xp; o->y=(float)yp;
+  o->r*=(float)fabs (k1);
   o->widoczny=okrag_wybrany(o);
 }
 static void skkolo(char  *adr,double x,double y,double k1, double k2)
@@ -1422,10 +1470,11 @@ static void skkolo(char  *adr,double x,double y,double k1, double k2)
 
   K=(OKRAG*)adr;
   Scale_Point (k1, k2 ,x,y,K->x,K->y,&xp,&yp);
-  K->x=xp;K->y=yp;
+  K->x=(float)xp;
+  K->y=(float)yp;
   if ((K->obiektt2!=O2BlockDim) || (options1.scale_DIM == 1)) 
     {
-      K->r*= fabs(k1);
+      K->r*= (float)fabs(k1);
     }  
   K->widoczny=okrag_wybrany(K);
 }
@@ -1447,8 +1496,8 @@ static void skellipse(char  *adr,double x,double y,double k1, double k2)
         return ;
     }
 
-    kos=sin(e->angle);
-    koc=cos(e->angle);
+    kos=sinf(e->angle);
+    koc=cosf(e->angle);
 
     Rotate_Point(kos,koc,e->x, e->y, e->x+e->rx, e->y, &ex1, &ey1);
     Rotate_Point(kos,koc,e->x, e->y, e->x, e->y+e->ry, &ex2, &ey2);
@@ -1457,12 +1506,13 @@ static void skellipse(char  *adr,double x,double y,double k1, double k2)
     Scale_Point (k1, k2 ,x,y,ex1,ey1,&ex1,&ey1);
     Scale_Point (k1, k2 ,x,y,ex2,ey2,&ex2,&ey2);
 
-    e->x=xp;e->y=yp;
+    e->x=(float)xp;
+    e->y=(float)yp;
 
-    e->angle = Angle_Normal(atan2(ey1 - e->y, ex1 - e->x));  ////
+    e->angle = (float)Angle_Normal(atan2(ey1 - e->y, ex1 - e->x));  ////
 
-    e->rx= sqrt((ex1-e->x)*(ex1-e->x) + (ey1-e->y)*(ey1-e->y));
-    e->ry= sqrt((ex2-e->x)*(ex2-e->x) + (ey2-e->y)*(ey2-e->y));
+    e->rx= (float)sqrt((ex1-e->x)*(ex1-e->x) + (ey1-e->y)*(ey1-e->y));
+    e->ry= (float)sqrt((ex2-e->x)*(ex2-e->x) + (ey2-e->y)*(ey2-e->y));
 
     e->widoczny=elipsa_wybrana_prec(e);
 }
@@ -1485,7 +1535,7 @@ static void skellipticalarc(char  *adr,double x,double y,double k1, double k2)
 
     ea=(ELLIPTICALARC *)adr;
 
-    if (ea->obiektt2!=O2BlockDim)
+    if ((ea->obiektt2!=O2BlockDim) || (options1.scale_DIM == 1))
     {
         //angles
         Get_EllipticalArc_EndPoints(ea->x, ea->y, ea->rx, ea->ry, ea->angle, ea->kat1, ea->kat2, &px, &py, &kx, &ky);
@@ -1495,8 +1545,8 @@ static void skellipticalarc(char  *adr,double x,double y,double k1, double k2)
                 return;
         }
 
-        kos = sin(ea->angle);
-        koc = cos(ea->angle);
+        kos = sinf(ea->angle);
+        koc = cosf(ea->angle);
 
         Rotate_Point(kos, koc, ea->x, ea->y, ea->x + ea->rx, ea->y, &ex1, &ey1);
         Rotate_Point(kos, koc, ea->x, ea->y, ea->x, ea->y + ea->ry, &ex2, &ey2);
@@ -1511,11 +1561,11 @@ static void skellipticalarc(char  *adr,double x,double y,double k1, double k2)
         Scale_Point(k1, k2, x, y, px1, py1, &px1, &py1);
         Scale_Point(k1, k2, x, y, kx1, ky1, &kx1, &ky1);
 
-        ea->x = xp;
-        ea->y = yp;
+        ea->x = (float)xp;
+        ea->y = (float)yp;
 
-        ea->rx = sqrt((ex1 - ea->x) * (ex1 - ea->x) + (ey1 - ea->y) * (ey1 - ea->y));
-        ea->ry = sqrt((ex2 - ea->x) * (ex2 - ea->x) + (ey2 - ea->y) * (ey2 - ea->y));
+        ea->rx = (float)sqrt((ex1 - ea->x) * (ex1 - ea->x) + (ey1 - ea->y) * (ey1 - ea->y));
+        ea->ry = (float)sqrt((ex2 - ea->x) * (ex2 - ea->x) + (ey2 - ea->y) * (ey2 - ea->y));
 
 
         //angles
@@ -1559,7 +1609,7 @@ static void skspline(char  *adr, double x, double y, double k1, double k2)
 	for (i = 0; i < (int)s->lp; i += 2)
 	{
 		Scale_Point(k1, k2, x, y, s->xy[i], s->xy[i + 1], &xp, &yp);
-		s->xy[i] = xp; s->xy[i + 1] = yp;
+		s->xy[i] = (float)xp; s->xy[i + 1] = (float)yp;
 	}
 	
 	s->widoczny = spline_wybrany(s);
@@ -1577,22 +1627,54 @@ static void skwwielokat(char  *adr,double x,double y,double k1, double k2)
    {
      for (i=0;i<(int)w->lp;i+=2)
      { Scale_Point (k1, k2 ,x,y,w->xy[i],w->xy[i+1],&xp,&yp);
-       w->xy[i]=xp;w->xy[i+1]=yp;
+       w->xy[i]=(float)xp; w->xy[i+1]=(float)yp;
      }
    }
    else
     {
+
+       POINTD mpoint;
+       double arrowsize;
+       if (w->lp==6)
+       {
+           mpoint.x=(w->xy[0]+w->xy[4])/2.f;
+           mpoint.y=(w->xy[1]+w->xy[5])/2.f;
+           double dx=mpoint.x-w->xy[2];
+           double dy=mpoint.y-w->xy[3];
+           arrowsize=sqrt(dx*dx+dy*dy);
+       }
+
      del_x1=w->xy[0]-w->xy[2];
      del_y1=w->xy[1]-w->xy[3];
      del_x2=w->xy[4]-w->xy[2];
      del_y2=w->xy[5]-w->xy[3];
      Scale_Point (k1, k2 ,x,y,w->xy[2],w->xy[3],&xp,&yp);
-       w->xy[2]=xp;w->xy[3]=yp;
-       
-       w->xy[0]=w->xy[2]+del_x1;
-       w->xy[1]=w->xy[3]+del_y1;
-       w->xy[4]=w->xy[2]+del_x2;
-       w->xy[5]=w->xy[3]+del_y2;
+       w->xy[2]=(float)xp; w->xy[3]=(float)yp;
+
+       //checking distance from center to w->[2], w->[3]
+       if (w->lp==6)
+       {
+           double arrowdistance;
+           double dx=w->xy[2]-x;
+           double dy=w->xy[3]-y;
+           arrowdistance=sqrt(dx*dx+dy*dy);
+           if (arrowdistance<arrowsize)
+           {
+               double k11, k22;
+               double delta=arrowdistance/arrowsize;
+               if (delta>0.)
+               {
+                   k11=k22=1./delta;
+                   Scale_Point (k11, k22 ,x,y,w->xy[2],w->xy[3],&xp,&yp);
+                   w->xy[2]=(float)xp; w->xy[3]=(float)yp;
+               }
+           }
+       }
+
+       w->xy[0]=(float)(w->xy[2]+del_x1);
+       w->xy[1]=(float)(w->xy[3]+del_y1);
+       w->xy[4]=(float)(w->xy[2]+del_x2);
+       w->xy[5]=(float)(w->xy[3]+del_y2);
        if (w->lp==8)
        {
            w->xy[6]=w->xy[4];
@@ -1618,7 +1700,7 @@ static void skwwielokat3D(char  *adr,double x,double y,double k1, double k2)
        k3=k1;
        z=0;
        Scale_Point3D (k1, k2, k3 ,x,y,z,w->xy[i],w->xy[i+1],w->xy[w->lp+j],&xp,&yp,&zp);
-       w->xy[i]=xp;w->xy[i+1]=yp;w->xy[w->lp+j]=zp;
+       w->xy[i]=(float)xp; w->xy[i+1]=(float)yp; w->xy[w->lp+j]=(float)zp;
      }
    }
    else
@@ -1628,12 +1710,12 @@ static void skwwielokat3D(char  *adr,double x,double y,double k1, double k2)
      del_x2=w->xy[4]-w->xy[2];
      del_y2=w->xy[5]-w->xy[3];
      Scale_Point (k1, k2 ,x,y,w->xy[2],w->xy[3],&xp,&yp);
-       w->xy[2]=xp;w->xy[3]=yp;
+       w->xy[2]=(float)xp; w->xy[3]=(float)yp;
        
-       w->xy[0]=w->xy[2]+del_x1;
-       w->xy[1]=w->xy[3]+del_y1;
-       w->xy[4]=w->xy[2]+del_x2;
-       w->xy[5]=w->xy[3]+del_y2;
+       w->xy[0]=(float)(w->xy[2]+del_x1);
+       w->xy[1]=(float)(w->xy[3]+del_y1);
+       w->xy[4]=(float)(w->xy[2]+del_x2);
+       w->xy[5]=(float)(w->xy[3]+del_y2);
     }  
   w->widoczny=wielokat_wybrany(w);
 }
@@ -1645,9 +1727,9 @@ void Rotate_Line (void *adr, double df_x, double df_y, double df_si, double df_c
   double xp,yp;
   l=(LINIA*)adr;
   Rotate_Point (df_si, df_co, df_x, df_y, l->x1, l->y1, &xp, &yp) ;
-  l->x1=xp;l->y1=yp;
+  l->x1=(float)xp; l->y1=(float)yp;
   Rotate_Point (df_si, df_co, df_x, df_y, l->x2, l->y2, &xp, &yp) ;
-  l->x2=xp;l->y2=yp;
+  l->x2=(float)xp; l->y2=(float)yp;
 }
 
 void Rotate_Line_Vector (void *adr, double df_x, double df_y, double df_si, double df_co)
@@ -1656,9 +1738,9 @@ void Rotate_Line_Vector (void *adr, double df_x, double df_y, double df_si, doub
     double xp,yp;
     v=(AVECTOR*)adr;
     Rotate_Point (df_si, df_co, df_x, df_y, v->x1, v->y1, &xp, &yp) ;
-    v->x1=xp;v->y1=yp;
+    v->x1=(float)xp; v->y1=(float)yp;
     Rotate_Point (df_si, df_co, df_x, df_y, v->x2, v->y2, &xp, &yp) ;
-    v->x2=xp;v->y2=yp;
+    v->x2=(float)xp; v->y2=(float)yp;
 }
 
 void Rotate_Line3D (void *adr, double df_x, double df_y, double df_si, double df_co)
@@ -1667,9 +1749,9 @@ void Rotate_Line3D (void *adr, double df_x, double df_y, double df_si, double df
   double xp,yp;
   l=(LINIA3D*)adr;
   Rotate_Point (df_si, df_co, df_x, df_y, l->x1, l->y1, &xp, &yp) ;
-  l->x1=xp;l->y1=yp;
+  l->x1=(float)xp; l->y1=(float)yp;
   Rotate_Point (df_si, df_co, df_x, df_y, l->x2, l->y2, &xp, &yp) ;
-  l->x2=xp;l->y2=yp;
+  l->x2=(float)xp; l->y2=(float)yp;
 }
 
 void Rotate_Line3DXZ (void *adr, double df_x, double df_y, double df_z, double df_si, double df_co)
@@ -1678,9 +1760,9 @@ void Rotate_Line3DXZ (void *adr, double df_x, double df_y, double df_z, double d
   double xp,zp;
   l=(LINIA3D*)adr;
   Rotate_Point (df_si, df_co, df_x, df_z, l->x1, l->z1, &xp, &zp) ;
-  l->x1=xp;l->z1=zp;
+  l->x1=(float)xp; l->z1=(float)zp;
   Rotate_Point (df_si, df_co, df_x, df_z, l->x2, l->z2, &xp, &zp) ;
-  l->x2=xp;l->z2=zp;
+  l->x2=(float)xp; l->z2=(float)zp;
 }
 
 void Rotate_Line3DYZ (void *adr, double df_x, double df_y, double df_z, double df_si, double df_co)
@@ -1689,9 +1771,9 @@ void Rotate_Line3DYZ (void *adr, double df_x, double df_y, double df_z, double d
   double yp,zp;
   l=(LINIA3D*)adr;
   Rotate_Point (df_si, df_co, df_y, df_z, l->y1, l->z1, &yp, &zp) ;
-  l->y1=yp;l->z1=zp;
+  l->y1=(float)yp; l->z1=(float)zp;
   Rotate_Point (df_si, df_co, df_y, df_z, l->y2, l->z2, &yp, &zp) ;
-  l->y2=yp;l->z2=zp;
+  l->y2=(float)yp; l->z2=(float)zp;
 }
 
 void Rotate_Arc_Vector (void *adr, double df_x, double df_y, double df_si, double df_co)
@@ -1701,18 +1783,18 @@ void Rotate_Arc_Vector (void *adr, double df_x, double df_y, double df_si, doubl
     double xp, yp, xs, ys, xe, ye ;
 
     v = (AVECTOR*)adr ;
-    xs=v->x1+v->r*cos(v->angle1);
-    ys=v->y1+v->r*sin(v->angle1);
-    xe=v->x1+v->r*cos(v->angle2);
-    ye=v->y1+v->r*sin(v->angle2);
+    xs=v->x1+v->r*cosf(v->angle1);
+    ys=v->y1+v->r*sinf(v->angle1);
+    xe=v->x1+v->r*cosf(v->angle2);
+    ye=v->y1+v->r*sinf(v->angle2);
     Rotate_Point (df_si, df_co, df_x,df_y,v->x1,v->y1,&xp,&yp);
-    v->x1=xp;v->y1=yp;
+    v->x1=(float)xp; v->y1=(float)yp;
     Rotate_Point (df_si, df_co, df_x,df_y,xs,ys,&xs,&ys);
     Rotate_Point (df_si, df_co, df_x,df_y,xe,ye,&xe,&ye);
     xs-=v->x1;  xe-=v->x1;
     ys-=v->y1;  ye-=v->y1;
-    v->angle1 = Angle_Normal (Atan2 (ys,xs)) ;
-    v->angle2 = Angle_Normal (Atan2 (ye, xe)) ;
+    v->angle1 = (float)Angle_Normal (Atan2 (ys,xs)) ;
+    v->angle2 = (float)Angle_Normal (Atan2 (ye, xe)) ;
 }
 
 static void oblinia(char  *adr,double x,double y,double k1,double k2)
@@ -2844,6 +2926,7 @@ void transformacja_blok2 (char  *adr,char  *adrk,double x,double y,double k1,dou
   {
      if (nag->atrybut==Ablok)
     {
+      ad_transform_global=(NAGLOWEK*)adr;
       transformacja_obiekt ((void*)adr,x,y,k1,k2, xa, ya, ka1, ka2, trans, 0) ;
     }
     if (nag->obiekt==OdBLOK)
@@ -3021,10 +3104,15 @@ static void rysuj_tekst_(TEXT *ad,int mode,int kolor)
     return ;
   }
   if(mode==COPY_PUT)
-   { if(!kolor) { setcolor(kolory.paper); outtextxy_w_(ad,COPY_PUT); }
-     else {
-         outtextxy_w(ad,COPY_PUT);
-         }
+   { if(!kolor)
+       {
+           setcolor(kolory.paper);
+           outtextxy_w_(ad,XOR_PUT);
+       }
+         else
+             {
+                outtextxy_w(ad,COPY_PUT);
+             }
    }
   else
    { setcolor(kolory.blok);
@@ -3693,8 +3781,8 @@ void rysuj_solidarc_(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL enf
         Get_oknoS(&rectd);
         //setting view rectangle
         oknoS(Xp, Yp, Xk, Yk);  //TYMCZASOWO for solidarc_wybrany()
-
-        if(!(sa->widoczny=(solidarc_wybrany(sa) | enforce)))
+        sa->widoczny = solidarc_wybrany(sa) | enforce;
+        if(!sa->widoczny)
         {
             xs = (Xp + Xk) / 2 ;
             ys = (Yp + Yk) / 2 ;
@@ -3765,7 +3853,8 @@ void rysuj_solidarc___(SOLIDARC *sa, int mode, int kolor, BOOL as_redraw, BOOL e
     //setting view rectangle
     oknoS(Xp, Yp, Xk, Yk);  //TYMCZASOWO for solidarc_wybrany()
 
-    if(!(sa->widoczny=(solidarc_wybrany(sa) | enforce)))
+    sa->widoczny = solidarc_wybrany(sa) | enforce;
+    if(!sa->widoczny)
     {
         xs = (Xp + Xk) / 2 ;
         ys = (Yp + Yk) / 2 ;
@@ -5961,21 +6050,18 @@ void blokzap_deep(char  *adp,char  *adk,int atrybut,int mode, int kolor)
                 {
                     adk_b=(char*)b + sizeof(NAGLOWEK) + b->n;
                     blokzap((char*)b,adk_b,ANieOkreslony,mode,kolor);
-                    //adp=adk_b;
-                    //obiekt_tok((char*)adp,adk,(char **) &ad,ONieOkreslony);
-                    //goto shortcut;
                     ad=(NAGLOWEK*)adk_b;
                 }
                 else
                 {
                     trace_block=FALSE;
+                    rysuj_obiekt_((char *) ad, mode, kolor);
                 }
             }
             else rysuj_obiekt_((char *) ad, mode, kolor);
         }
         obiekt_tok(NULL,adk,(char **) &ad,ONieOkreslony);
 
-        shortcut:
         if ((get_pattern_count() == TRUE) && (pattern_add_limit > 0) && ((long_long)ad > pattern_add_limit))
         {
             set_pattern_count(FALSE);
@@ -6323,6 +6409,7 @@ void out_blok2 (double x,double y,double k1,double k2,
                 }
             }
 
+            ad_transform_global=ad;
 	        transformacja_obiekt(buf,x,y,k1,k2,xa, ya, ka1, ka2, trans,z);
 
              if (get_dragging_quad()) {

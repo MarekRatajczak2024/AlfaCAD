@@ -417,7 +417,9 @@ static int set_list_block (int only_dxf_block, char prefix, BOOL set_adr)
           (ptrs_block->kod_obiektu == B_ODWIERT) ||
           (ptrs_block->kod_obiektu == B_INSTALACJE) ||
           (ptrs_block->kod_obiektu == B_HEKTOMETRY) ||
-          (ptrs_block->kod_obiektu == B_SEKTORY)
+          (ptrs_block->kod_obiektu == B_SEKTORY) ||
+
+          (ptrs_block->kod_obiektu == B_VERTEX)
           )
        && ptrs_block->dlugosc_opisu_obiektu > 1)
     { 

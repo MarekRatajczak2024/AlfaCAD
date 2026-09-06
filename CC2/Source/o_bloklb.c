@@ -1969,8 +1969,8 @@ int Block_Proc_Wez_w (int (*DZI)(void *), int (*ODZI)(void *),
        if( ev->What == evCommandP &&
            TRUE == (*COMND[ev->Number]) ())
        {
-	 redcr (1, REDROWd) ;
-	 return 1 ;
+	     redcr (1, REDROWd) ;
+	     return 2 ;  //existing connection was selected to amend/continue
        }
      }
    }

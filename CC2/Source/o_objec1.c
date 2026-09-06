@@ -2281,7 +2281,7 @@ void Usun_bloki_DXF_old (void)
     }
     else
     {
-      if ((L->atrybut != Abad) && (L->atrybut != Ausuniety) && (L->obiektt2=O2BlockDXF) && (L->warstwa==255))
+      if ((L->atrybut != Abad) && (L->atrybut != Ausuniety) && (L->obiektt2==O2BlockDXF) && (L->warstwa==255))
       { 
         L->atrybut = Ausuniety;
         if (L->blok==ElemBlok)
@@ -2785,5 +2785,134 @@ void delete_all_pattern_blocks_from_layer (int layer_no, char *pattern)
 
     return;
 }
+
+BOOL get_hektometr_blocks0 (char  **adp_l,char  **adk_l)
+/*----------------------------------------------------------*/
+{
+  BOOL b_retval;
+  LINIA *L, *L1;
+  BLOK  *b;
+  char  *adp, *adp1, *adk, *adk1;
+  int b_warstwa;
+
+  b_retval = TRUE;
+  *adp_l = dane + dane_size ;
+  *adk_l = dane ;
+  adp = dane ;
+  adk = dane + dane_size ;
+  L = (LINIA*)adp;
+  while (L->obiekt != Okoniec && adp < adk)
+  {
+    if (L->obiekt == OdBLOK)
+    {
+     b=(BLOK *)adp;
+     b_warstwa=get_block_layer(b);
+     if (b_warstwa==Current_Layer)
+     {
+      if ((Layers[b_warstwa].edit==1) &&
+          (Layers[b_warstwa].on==1))
+      {
+      if (b->kod_obiektu==B_HEKTOMETRY)
+       {
+       //sprawdzenie, czy blok nie jest nieedytowalny
+       // L1=(LINIA *)(adp + sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu);
+       // if ((L1->blok==ElemBlok) && (Layers[L1->warstwa].on==TRUE) &&
+       //     (Layers[L1->warstwa].edit==TRUE))
+       // {
+         //sprawdzenie czy blok hektometrow lezy na biezacej warstwie
+       //  if (L1->warstwa==Current_Layer)
+       //   {
+           b->atrybut = Ablok;
+           adp1=adp+sizeof(NAGLOWEK)+B3+b->dlugosc_opisu_obiektu;
+           adk1=adp+sizeof(NAGLOWEK)+b->n - 1;
+           zmien_atrybut(adp1,adk1,ANieOkreslony,Ablok);
+
+           if (*adp_l > adp)
+ 	         {
+	          *adp_l = adp ;
+	         }
+  	        if (*adk_l < adk1)
+	         {
+	          *adk_l = adk1;
+	         }
+       //   }
+       // }
+	     adp+=sizeof(NAGLOWEK)+b->n;
+       }
+       else
+        {
+      	 b=(BLOK *)adp;
+	       adp+=sizeof(NAGLOWEK)+B3+b->dlugosc_opisu_obiektu;
+        }
+      }
+       else adp+=sizeof(NAGLOWEK)+b->n;
+     }
+      else adp+=sizeof(NAGLOWEK)+b->n;
+    }
+    else
+    {
+      adp += L->n + sizeof(NAGLOWEK) ;
+    }
+    L = (LINIA*)adp;
+  }
+
+  if (*adp_l == dane + dane_size)
+  {
+    *adp_l = NULL;
+    *adk_l = NULL;
+  }
+  return b_retval;
+}
+
+
+BOOL get_hektometr_blocks (void)  //nieaktywny
+/*----------------------------*/
+{
+  BOOL b_retval;
+  LINIA *L, *L1;
+  BLOK  *b;
+  char  *adp,  *adk;
+  int b_warstwa;
+
+  b_retval = FALSE;
+  adp = dane ;
+  adk = dane + dane_size ;
+  L = (LINIA*)adp;
+  while (L->obiekt != Okoniec && adp < adk)
+  {
+    if (L->obiekt == OdBLOK)
+    {
+     b=(BLOK *)adp;
+     b_warstwa=get_block_layer(b);
+     if (b_warstwa==Current_Layer)
+     {
+      if ((Layers[b_warstwa].edit==1) &&
+          (Layers[b_warstwa].on==1))
+      {
+      if (b->kod_obiektu==B_HEKTOMETRY)
+       {
+        b->atrybut = Ablok;
+        b_retval=TRUE;
+	     adp+=sizeof(NAGLOWEK)+b->n;
+       }
+       else
+        {
+      	 b=(BLOK *)adp;
+	       adp+=sizeof(NAGLOWEK)+B3+b->dlugosc_opisu_obiektu;
+        }
+      }
+       else adp+=sizeof(NAGLOWEK)+b->n;
+     }
+      else adp+=sizeof(NAGLOWEK)+b->n;
+    }
+    else
+    {
+      adp += L->n + sizeof(NAGLOWEK) ;
+    }
+    L = (LINIA*)adp;
+  }
+  return b_retval;
+}
+
 
 #undef __O_OBJECT1__

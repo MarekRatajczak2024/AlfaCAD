@@ -414,6 +414,8 @@ extern void setbkcolor(int color);
 extern int demo(int Alf_window_number);
 extern int ReadTextStyleDXF (void);
 extern BOOL get_config_profil (void);
+extern BOOL copy_profil_files(void);
+void zeroing_My_Dane(void);
 extern int demo_out(int Alf_window_number);
 extern void InitImages(void);
 extern void setrgbpalette(int color, int red, int green, int blue);
@@ -1350,7 +1352,10 @@ static double Ds,y_pikseleY0, temp_X0, temp_Y0 ;
 #define r23 23
 static int skokBW(BOOL);
 ESTR e={0,ESTR_Y, 0, -1, 0,r23 ,NULL, NULL, 0, 2, GV_POINT, NULL, skokBW, NULL};
-static char  *dane0_Data[MAX_NUMBER_OF_WINDOWS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static char  *dane0_Data[MAX_NUMBER_OF_WINDOWS+1] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,NULL,
+};
 static void  nooop(void)
 {
  return;
@@ -1428,6 +1433,9 @@ void orto_l(LINIA *L, int *Orto_Dir)
     float Lx3, Ly3, Lx4, Ly4;
 
     angle_l=get_angle_l();
+
+	if (fabs(angle_l)<1e-9) angle_l=0.;
+
     if (angle_l<0) angle_l+=360;
     if (angle_l!=0)
     {
@@ -1579,9 +1587,14 @@ long pikseleDY (double jednostki)
 { return Double_to_Long (floor (0.5+jednostki*Ds));}
 
 
+double pikseleFDX(double jednostki)
+{
+    return (jednostki * Ds_x);
+}
+
 double pikseleFDY(double jednostki)
 {
-	return (float)(jednostki * Ds);
+	return (jednostki * Ds);
 }
 
 double jednostkiX(long piksele)
@@ -1723,7 +1736,11 @@ return 1;
 }
 
 void set_angle_l(double angle)
-{ angle_l=angle; }
+{
+	angle_l=angle;
+	if (fabs(angle_l)<1e-9)
+		angle_l=0.;
+}
 
 double get_angle_l(void)
 { return angle_l; }
@@ -5414,11 +5431,11 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
   
   switch (ptrs_point->typ)
    {
-   case 0:
+   case 0:  //simple
     lineC (x1, y1, x2, y2) ;
     lineC (x1, y2, x2, y1) ;
     break;
-   case 1:
+   case 1:  //base point
     lineC (x1, y1, x2, y2) ;
     lineC (x1, y2, x2, y1) ;
     if (mode==COPY_PUT)
@@ -5440,21 +5457,21 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
     DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
-     else lineC (x1, y2, x2, y1) ;
+    else lineC (x1, y2, x2, y1) ;
     break;
    case 9: /*pin_g*/
     lineC (x12, y12, x12, y2) ;
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
     DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
-     else lineC (x1, y2, x2, y1) ;
+    else lineC (x1, y2, x2, y1) ;
     break; 
    case 10: /*pin_d*/
     lineC (x12, y12, x12, y1) ;
     lineC (x1, y1, x2, y2) ;
     if (mode==COPY_PUT)
     DrawCircle(pikseleX0 (ptrs_point->x), pikseleY0 (ptrs_point->y), abs((int)(x2-x1))/3, mode);
-     else lineC (x1, y2, x2, y1) ;
+    else lineC (x1, y2, x2, y1) ;
     break;
    case 11: /*pin_s*/
     lineC (x1, y12, x2, y12) ;
@@ -7773,6 +7790,12 @@ void Draw_Vector (AVECTOR *ptrs_vector, int mode, int kolor, int redraw_obj)
     double perpendicular_iso_angle;
     int flipped=0;
     double iso_angle;
+
+	if (ptrs_vector->n!=48)
+	{
+		int a=0;
+		return;
+	}
 
 #define arrowf 1.0
 
@@ -13120,6 +13143,8 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
         switch (L->obiektt2) {
             case 4:
                 memmove(&V, L, sizeof(LINIA));
+        		V.obiekt=Ovector;
+        	    V.n=48;
                 if (L->obiektt3==0)  V.style = V_EDGE_ROLL;
                 else V.style = V_EDGE_ROLL_INV;
                 if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
@@ -13127,6 +13152,8 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                 break;
            case 6:
                memmove(&V, L, sizeof(LINIA));
+        		V.obiekt=Ovector;
+        		V.n=48;
                 if (L->obiektt3==0)  V.style = V_EDGE_SIMPLE;
                 else V.style = V_EDGE_SIMPLE_INV;
                if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
@@ -13134,6 +13161,8 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
                break;
            case 7:
                memmove(&V, L, sizeof(LINIA));
+        	   V.obiekt=Ovector;
+        	   V.n=48;
                 if (L->obiektt3==0)  V.style = V_EDGE_FIXED;
                 else V.style = V_EDGE_FIXED_INV;
                if ((L->widoczny=(linia_wybrana(L)) ? 1:0))
@@ -14113,14 +14142,28 @@ void set_st_jedn(void)
 void view_scale(void)
 {
   static char st_scale[20];
-  int i;
+  double skala_p_x_d;
 
 
   if (SkalaF>1) sprintf(st_scale,u8"1:%d %s",(int)SkalaF,st_jedn);
-    else sprintf(st_scale,u8"1:%4.2f %s",SkalaF,st_jedn);
+  else sprintf(st_scale,u8"1:%4.2f %s",SkalaF,st_jedn);
 
+#ifdef PROFILE
+	skala_p_x_d=get_skala_profilu_x();
+	if (skala_p_x_d==1)
+	{
+		if (SkalaF>1) sprintf(st_scale,"1:%d %s",(int)SkalaF,st_jedn);
+		else sprintf(st_scale,"1:%4.2f %s",SkalaF,st_jedn);
+	}
+	else
+	{
+		if (SkalaF>1) sprintf(st_scale,"1:%d/%d %s",(int)SkalaF,(int)(SkalaF*skala_p_x_d),st_jedn);
+		else sprintf(st_scale,"1:%4.2f/%4.2f %s",SkalaF,SkalaF*skala_p_x_d,st_jedn);
+	}
+#else
   if (SkalaF>1) sprintf(st_scale,u8"1:%d %s",(int)SkalaF,st_jedn);
-    else sprintf(st_scale,u8"1:%4.2f %s",SkalaF,st_jedn);
+  else sprintf(st_scale,u8"1:%4.2f %s",SkalaF,st_jedn);
+#endif
 
   setfillstyle_(SOLID_FILL, BKCOLOR);
   bar(maxX - (int)strlen(st_scale)*WIDTH - 2, ED_INF_HEIGHT + 1, maxX, 2 * ED_INF_HEIGHT); // +1);
@@ -15453,7 +15496,7 @@ void near uaktualnij_pola(void)
 #define mpini ( void (*) (int n)) nooop
 
 int read_c(int _f, void *buf, int l_char)
-/*------------------------------------------*/
+/*----------------------------------------------*/
 {
 char buf_c[512];
 if (read(_f,&buf_c,l_char)!=l_char) return l_char;
@@ -15528,7 +15571,7 @@ static int param_conf_aster(void)
 }
 
 static int param_conf_profile(void)
-/*------------------------*/
+/*--------------------------------*/
 {
 	int f, f1;
   long roz;
@@ -15734,17 +15777,24 @@ re_read_zb:
    }
   bitmap_view=TRUE;
   re_read=FALSE;
-  kk = stricmp(rys, RYSUJ$1);
-  if (kk==0)
-  {
-  }
-   else
-    {
-     rpp=1;
-     typ_profilu=0;
-     skala_p_x=0.2;
-     znacznik_aplikacji=0;
-    }
+
+	/*
+	  kk = stricmp(rys, RYSUJ$1);
+	  if (kk==0)
+	  {
+	  }
+	   else
+	    {
+	     rpp=1;
+	     typ_profilu=0;
+	     skala_p_x=0.2;
+	     znacznik_aplikacji=0;
+	    }
+    */
+	rpp=0.;
+	typ_profilu=0;
+	skala_p_x=1.;
+	znacznik_aplikacji=0;
 
   if (rys [0] != '\0')
   {
@@ -16615,6 +16665,10 @@ void reset_cursor(void)
   Change = FALSE;
   monitor_parametry(Driver);
   ignoruj_aktywacja=1;
+
+#ifdef PROFILE
+	int retp = param_conf_profile ();
+#endif
  
   Ini_Place_Marker ();
   for (i = 0 ; i < SVMAX ; i++)
@@ -16641,6 +16695,14 @@ void reset_cursor(void)
   Ini_String_List () ;
 
   Ini_Color_Table();
+
+#ifdef PROFILE
+	BOOL ret_prof=get_config_profil();
+	BOOL ret_copy=copy_profil_files();
+	unlink(PROFIL_TEMP_FILE_BAK);
+	unlink(PROFIL_TEMP_FILE);
+	zeroing_My_Dane();
+#endif
 
   get_config_sectors();
   

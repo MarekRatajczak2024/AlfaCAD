@@ -1430,7 +1430,8 @@ static int sprawdz_obiekt (NAGLOWEK *ad,int typL, int info)
      case   Opoint : if ((typL & Bpoint)  &&
 			 ((Layers [((T_Point*)ad)->warstwa].point ) || (info==1)))
 		      { ws = Point_Selected ((T_Point*)ad);
-			    if(ws) typ = Bpoint ;
+			    if(ws)
+			    	typ = Bpoint ;
 		      }
 		     break;
        case   Ovector :

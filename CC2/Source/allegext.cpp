@@ -3785,7 +3785,7 @@ void trim_trailing_new_row(char *str) {
 		return; // Handle null or empty strings
 	}
 
-	int i = strlen(str) - 1; // Start from the end of the string
+	int i = (int)strlen(str) - 1; // Start from the end of the string
 
 	// Iterate backwards, identifying trailing new row characters
 	while (i >= 0 && ((unsigned char)str[i])=='\n') {

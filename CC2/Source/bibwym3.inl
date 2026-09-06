@@ -183,7 +183,9 @@ void get_dim_round_text(double l, char *text)
     strcpy(text, T.text);
 }
 
-static int wyznacz_tekst(BOOL draw)
+//#define EX_R 0.75  //1.5
+
+static int wyznacz_tekst_factory(BOOL draw, double EX_R)
 { double l,l1;
   double x1,x2,y1,y2,x,y,wysokosc,kat2_1,sin_kat2_1,cos_kat2_1;
   int lx,z;
@@ -282,7 +284,7 @@ static int wyznacz_tekst(BOOL draw)
   if (((wym_luku==1)&&(typ_wymiar==Oluk)) ||
       (kat_w_now==1))
   {
-      if (zmwym.collinear == 0) ex_r=1.5;
+      if (zmwym.collinear == 0) ex_r=EX_R; //1.5;
       else ex_r=0.0;
       if (zmwym.linia_ob > 0) {
           x1 = wl.x + (cos(kat2_kat1) * (wl.r + ex_r));
@@ -384,6 +386,19 @@ static int wyznacz_tekst(BOOL draw)
   return 1;
 }
 
+static int wyznacz_tekst(BOOL draw)
+{
+    wyznacz_tekst_factory(draw, 1.5);
+    return 1;
+}
+
+static int wyznacz_tekst_clock(BOOL draw)
+{
+    wyznacz_tekst_factory(draw, 0.75);
+    return 1;
+}
+
+/*
 static int wyznacz_tekst_clock(void)
 { double l,l1;
   double x1,x2,y1,y2,x,y,wysokosc,kat2_1,sin_kat2_1,cos_kat2_1;
@@ -525,6 +540,7 @@ static int wyznacz_tekst_clock(void)
   }
   return 1;
 }
+*/
 
 static int s0(void)
 { void *ad;
@@ -845,16 +861,16 @@ static int s_ll(void)
   return 1;
 }
 
-
+/*
 static int s_ll_clock(void)
-/*-----------------------*/
+//-------------------------
 { int Wst0;
   double kat1,n,l,xp,yp,r1,dkat;
   double dl_st=1.75;
 
   kat1=Llw.kat2-(Pi*0.5);
 
-  /* sprawdzic dlugosc luku */
+  /// sprawdzic dlugosc luku
   Wst0=1;
 
   r1=Llw.r;
@@ -903,6 +919,7 @@ static int s_ll_clock(void)
 
   return 1;
 }
+*/
 
 static int s_o(void)
 /*-----------------------*/
@@ -1153,30 +1170,36 @@ static int outs(BOOL draw)
 static int outss(void)
 /*---------------------*/
 {
-  int ret ;
-  double x1p,y1p,x1k,y1k,x2p,y2p,x2k,y2k;
-  double r1;
-  double k1, l1;
-  //ELLIPTICALARC ea0=eldef, ea=eldef;
-  LUK Llw0=ldef;
+    int ret ;
+    double x1p,y1p,x1k,y1k,x2p,y2p,x2k,y2k;
+    double r1;
+    double k1, l1;
+    //ELLIPTICALARC ea0=eldef, ea=eldef;
+    LUK Llw0=ldef;
+    double arrowsize=2.49194/2.; //2.49;
 
-  Llw.typ=Lw.typ;
-  Llw.warstwa=Current_Layer;
-  Llw.obiektt2=1;
-  Llw.blok=1;
-  Llw.x=(float)wl.x;
-  Llw.y=(float)wl.y;
+    Llw.typ=Lw.typ;
+    Llw.warstwa=Current_Layer;
+    Llw.obiektt2=1;
+    Llw.blok=1;
+    Llw.x=(float)wl.x;
+    Llw.y=(float)wl.y;
 
     Llw0.x=(float)wl.x;
     Llw0.y=(float)wl.y;
 
-  if (wl.kat2<wl.kat1)
-  {
-    //wl.kat1=wl.kat1-(2*Pi);
-    wl.kat2+=(float)(2*Pi);
-  }
-  l1=(wl.kat2-wl.kat1)*(wl.r); //-zmwym.linia_ob);
-  if (l1>5.0) k1=2.49/wl.r; else k1=0.0;    //1.5
+    if (wl.kat2<wl.kat1)
+    {
+        //wl.kat1=wl.kat1-(2*Pi);
+        wl.kat2+=(float)(2*Pi);
+    }
+    l1=(wl.kat2-wl.kat1)*(wl.r); //-zmwym.linia_ob);
+
+    //changed on 15-08-2026
+    ////if (l1>5.0) k1=arrowsize/wl.r; else k1=0.0;    //1.5
+    wl.r=max(wl.r, arrowsize);  //!!!! WARNING
+    k1=arrowsize/wl.r;
+    ////
 
     Llw0.kat1=(float)(wl.kat1);
     Llw0.kat2=(float)(wl.kat2);
@@ -1184,93 +1207,94 @@ static int outss(void)
 
     if (wl.kat2 < wl.kat1) wl.kat2+=(float)2*M_PI;
 
-  Llw.kat1=(float)(wl.kat1+k1);
-  Llw.kat2=(float)(wl.kat2-k1);
+    Llw.kat1=(float)(wl.kat1+k1);
+    Llw.kat2=(float)(wl.kat2-k1);
 
     if (Llw.kat1 > (float)2*M_PI) Llw.kat1-=(float)2*M_PI;
     if (Llw.kat2 > (float)2*M_PI) Llw.kat2-=(float)2*M_PI;
 
     Llw.r=(float)wl.r;
 
-  if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
-  {
-      if (!options1.uklad_izometryczny)
-      {
-          if (dodaj_obiekt((BLOK *) dane, &Llw) == NULL) return 0;
-          else if (WymInter) rysuj_obiekt((char *) &Llw, COPY_PUT, 1);
-      }
-      else
-      {
-          ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw0, &ea0);
-          Get_EllipticalArc_EndPoints (ea0.x, ea0.y, ea0.rx, ea0.ry, ea0.angle, ea0.kat1, ea0.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+    if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
+    {
+        if (!options1.uklad_izometryczny)
+        {
+            if (dodaj_obiekt((BLOK *) dane, &Llw) == NULL) return 0;
+            if (WymInter) rysuj_obiekt((char *) &Llw, COPY_PUT, 1);
+        }
+        else
+        {
+            ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw0, &ea0);
+            Get_EllipticalArc_EndPoints (ea0.x, ea0.y, ea0.rx, ea0.ry, ea0.angle, ea0.kat1, ea0.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
 
-          ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw, &ea);
-          //Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+            ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw, &ea);
+            //Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
 
-          ea.typ=Lw.typ;
-          ea.warstwa=Current_Layer;
-          ea.obiektt2=1;
-          ea.blok=1;
-          if (dodaj_obiekt((BLOK *) dane, &ea) == NULL) return 0;
-          else if (WymInter) rysuj_obiekt((char *) &ea, COPY_PUT, 1);
-      }
-  }
+            ea.typ=Lw.typ;
+            ea.warstwa=Current_Layer;
+            ea.obiektt2=1;
+            ea.blok=1;
+            if (dodaj_obiekt((BLOK *) dane, &ea) == NULL) return 0;
+            else if (WymInter) rysuj_obiekt((char *) &ea, COPY_PUT, 1);
+        }
+    }
 
-  Llw.kat1=(float)wl.kat1;
-  Llw.kat2=(float)wl.kat2;
+    Llw.kat1=(float)wl.kat1;
+    Llw.kat2=(float)wl.kat2;
 
-  r1=wl.r-zmwym.linia_ob;
-  x1p=Llw.x+r1*cos(Llw.kat1);
-  y1p=Llw.y+r1*sin(Llw.kat1);
-  x1k=Llw.x+r1*cos(Llw.kat2);
-  y1k=Llw.y+r1*sin(Llw.kat2);
-  if (zmwym.linia_ob>0) r1=wl.r+1.5; else r1=wl.r-1.5;
-  x2p=Llw.x+r1*cos(Llw.kat1);
-  y2p=Llw.y+r1*sin(Llw.kat1);
-  x2k=Llw.x+r1*cos(Llw.kat2);
-  y2k=Llw.y+r1*sin(Llw.kat2);
+    r1=wl.r-zmwym.linia_ob;
+    x1p=Llw.x+r1*cos(Llw.kat1);
+    y1p=Llw.y+r1*sin(Llw.kat1);
+    x1k=Llw.x+r1*cos(Llw.kat2);
+    y1k=Llw.y+r1*sin(Llw.kat2);
+    if (zmwym.linia_ob>0) r1=wl.r+1.5; else r1=wl.r-1.5;
+    x2p=Llw.x+r1*cos(Llw.kat1);
+    y2p=Llw.y+r1*sin(Llw.kat1);
+    x2k=Llw.x+r1*cos(Llw.kat2);
+    y2k=Llw.y+r1*sin(Llw.kat2);
 
-  Lw.warstwa=Current_Layer;
-  Lw.x1=(float)x1p;
-  Lw.y1=(float)y1p;
-  Lw.x2=(float)x2p;
-  Lw.y2=(float)y2p;
-  Lw.obiektt2 = O2BlockDim;
-  Lw.obiektt3 = O3WymRoz;
-  if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
-   if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
-   if(WymInter)
-   {
-       rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
-   }
+    Lw.warstwa=Current_Layer;
+    Lw.x1=(float)x1p;
+    Lw.y1=(float)y1p;
+    Lw.x2=(float)x2p;
+    Lw.y2=(float)y2p;
+    Lw.obiektt2 = O2BlockDim;
+    Lw.obiektt3 = O3WymRoz;
+    if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
+        if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
+    if(WymInter)
+    {
+        rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+    }
 
-/*  Lw.warstwa=Current_Layer; */
-  Lw.x1=(float)x1k;
-  Lw.y1=(float)y1k;
-  Lw.x2=(float)x2k;
-  Lw.y2=(float)y2k;
-  if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
-   if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
-   if(WymInter)
-   {
-       rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
-   }
+    /*  Lw.warstwa=Current_Layer; */
+    Lw.x1=(float)x1k;
+    Lw.y1=(float)y1k;
+    Lw.x2=(float)x2k;
+    Lw.y2=(float)y2k;
+    if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
+        if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
+    if(WymInter)
+    {
+        rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+    }
 
 
-  if(!wyznacz_tekst(TRUE)) return 0;
+    if(!wyznacz_tekst(TRUE)) return 0;
 
     return s_ll();
 
-  switch(zmwym.strzalka)
-  {  case 0 : ret=s0();break;
-     case 1 : ret=s1();break;
-     case 2 : ret=s2();break;
-   }
-  return ret;
+    switch(zmwym.strzalka)
+    {  case 0 : ret=s0();break;
+    case 1 : ret=s1();break;
+    case 2 : ret=s2();break;
+    }
+    return ret;
 }
 
-static int outss_clock(void)
-/*------------------------*/
+/*
+static int outss_clock_(void)
+//---------------------------
 {
   int ret ;
   double x1p,y1p,x1k,y1k,x2p,y2p,x2k,y2k;
@@ -1313,4 +1337,136 @@ static int outss_clock(void)
    }
   return ret;
 }
+*/
 
+static int outss_clock(void)
+/*------------------------*/
+{
+    int ret ;
+    double x1p,y1p,x1k,y1k,x2p,y2p,x2k,y2k;
+    double r1;
+    double k1, l1;
+    //ELLIPTICALARC ea0=eldef, ea=eldef;
+    LUK Llw0=ldef;
+    double arrowsize=2.49194/2.; //2.49;
+
+    Llw.typ=Lw.typ;
+    Llw.warstwa=Current_Layer;
+    Llw.obiektt2=1;
+    Llw.blok=1;
+    Llw.x=(float)wl.x;
+    Llw.y=(float)wl.y;
+
+    Llw0.x=(float)wl.x;
+    Llw0.y=(float)wl.y;
+
+    if (wl.kat2<wl.kat1)
+    {
+        //wl.kat1=wl.kat1-(2*Pi);
+        wl.kat2+=(float)(2*Pi);
+    }
+    l1=(wl.kat2-wl.kat1)*(wl.r); //-zmwym.linia_ob);
+
+    //changed on 15-08-2026
+    ////if (l1>5.0) k1=arrowsize/wl.r; else k1=0.0;    //1.5
+    wl.r=max(wl.r, arrowsize);  //!!!! WARNING
+    k1=arrowsize/wl.r;
+    ////
+
+    ////k1=arrowsize/wl.r;
+    ////k1=0.0;
+
+    Llw0.kat1=(float)(wl.kat1);
+    Llw0.kat2=(float)(wl.kat2);
+    Llw0.r=(float)wl.r;
+
+    if (wl.kat2 < wl.kat1) wl.kat2+=(float)2*M_PI;
+
+    Llw.kat1=(float)(wl.kat1+k1);
+    Llw.kat2=(float)(wl.kat2-k1);
+
+    if (Llw.kat1 > (float)2*M_PI) Llw.kat1-=(float)2*M_PI;
+    if (Llw.kat2 > (float)2*M_PI) Llw.kat2-=(float)2*M_PI;
+
+    Llw.r=(float)wl.r;
+
+    if(Llw.kat1!=Llw.kat2 || Llw.r!=0)
+    {
+        if (!options1.uklad_izometryczny)
+        {
+            if (dodaj_obiekt((BLOK *) dane, &Llw) == NULL) return 0;
+            else if (WymInter) rysuj_obiekt((char *) &Llw, COPY_PUT, 1);
+        }
+        else
+        {
+            ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw0, &ea0);
+            Get_EllipticalArc_EndPoints (ea0.x, ea0.y, ea0.rx, ea0.ry, ea0.angle, ea0.kat1, ea0.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+            ret = arc_to_isometric_ellipticalarc_a_ea(XY_PLANE, &Llw, &ea);
+            //Get_EllipticalArc_EndPoints (ea.x, ea.y, ea.rx, ea.ry, ea.angle, ea.kat1, ea.kat2, &ea_start_x, &ea_start_y, &ea_end_x, &ea_end_y);
+
+            ea.typ=Lw.typ;
+            ea.warstwa=Current_Layer;
+            ea.obiektt2=1;
+            ea.blok=1;
+            if (dodaj_obiekt((BLOK *) dane, &ea) == NULL) return 0;
+            else if (WymInter) rysuj_obiekt((char *) &ea, COPY_PUT, 1);
+        }
+    }
+
+    Llw.kat1=(float)wl.kat1;
+    Llw.kat2=(float)wl.kat2;
+
+    r1=wl.r-zmwym.linia_ob;
+    x1p=Llw.x+r1*cos(Llw.kat1);
+    y1p=Llw.y+r1*sin(Llw.kat1);
+    x1k=Llw.x+r1*cos(Llw.kat2);
+    y1k=Llw.y+r1*sin(Llw.kat2);
+    if (zmwym.linia_ob>0) r1=wl.r+1.5; else r1=wl.r-1.5;
+    x2p=Llw.x+r1*cos(Llw.kat1);
+    y2p=Llw.y+r1*sin(Llw.kat1);
+    x2k=Llw.x+r1*cos(Llw.kat2);
+    y2k=Llw.y+r1*sin(Llw.kat2);
+
+    /*
+  Lw.warstwa=Current_Layer;
+  Lw.x1=(float)x1p;
+  Lw.y1=(float)y1p;
+  Lw.x2=(float)x2p;
+  Lw.y2=(float)y2p;
+  Lw.obiektt2 = O2BlockDim;
+  Lw.obiektt3 = O3WymRoz;
+  if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
+   if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
+   if(WymInter)
+   {
+       rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+   }
+   */
+
+    /*
+    Lw.x1=(float)x1k;
+    Lw.y1=(float)y1k;
+    Lw.x2=(float)x2k;
+    Lw.y2=(float)y2k;
+    if(Lw.x1!=Lw.x2 || Lw.y1!=Lw.y2)
+     if(dodaj_obiekt((BLOK*)dane,&Lw)==NULL) return 0;
+     if(WymInter)
+     {
+         rysuj_obiekt((char*)&Lw, COPY_PUT, 1);
+     }
+     */
+
+    ///if(!wyznacz_tekst(TRUE)) return 0;
+    if(!wyznacz_tekst_clock(TRUE)) return 0;
+
+    return s_ll();
+    ////return s_ll_clock();
+
+    switch(zmwym.strzalka)
+    {  case 0 : ret=s0();break;
+    case 1 : ret=s1();break;
+    case 2 : ret=s2();break;
+    }
+    return ret;
+}

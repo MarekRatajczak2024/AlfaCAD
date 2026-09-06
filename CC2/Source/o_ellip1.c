@@ -1415,18 +1415,18 @@ elipse_seg (double X0, double Y0,
   switch (i_type)
   {
     case DE_Draw :
-       *x1=pikseleX0 (X1);
-       *y1=pikseleY0 (Y1);
-       *x2=pikseleX0 (X2);
-       *y2=pikseleY0 (Y2);
+       *x1=(int)pikseleX0 (X1);
+       *y1=(int)pikseleY0 (Y1);
+       *x2=(int)pikseleX0 (X2);
+       *y2=(int)pikseleY0 (Y2);
 
        if (type==0) linen (*x1, *y1, *x2, *y2, i_mode) ;
        break ;
     case DE_Add :
-       LiniaG.x1 = X1 ;
-       LiniaG.y1 = Y1 ;
-       LiniaG.x2 = X2 ;
-       LiniaG.y2 = Y2 ;
+       LiniaG.x1 = (float)X1 ;
+       LiniaG.y1 = (float)Y1 ;
+       LiniaG.x2 = (float)X2 ;
+       LiniaG.y2 = (float)Y2 ;
        if (dodaj_obiekt (*ptrptr_adb, (void*)&LiniaG) == NULL)
        {
 	 b_ret = FALSE ;
@@ -1453,10 +1453,10 @@ elipse_seg (double X0, double Y0,
        }
        s_line.blok = 1 ;
        s_line.obiektt2 = obiektt2 ;//O2BlockPline ;
-       s_line.x1 = X1 ;
-       s_line.y1 = Y1 ;
-       s_line.x2 = X2 ;
-       s_line.y2 = Y2 ;
+       s_line.x1 = (float)X1 ;
+       s_line.y1 = (float)Y1 ;
+       s_line.x2 = (float)X2 ;
+       s_line.y2 = (float)Y2 ;
        if(linia_wybrana(&s_line))
 	 s_line.widoczny = 1 ;
        else
@@ -1471,12 +1471,12 @@ elipse_seg (double X0, double Y0,
        s_solid.atrybut = ptrs_circle->atrybut ;
        s_solid.blok = 1 ;
        s_solid.lp = 6 ;
-       s_solid.xy [0] = X0 ;
-       s_solid.xy [1] = Y0 ;
-       s_solid.xy [2] = X1 ;
-       s_solid.xy [3] = Y1 ;
-       s_solid.xy [4] = X2 ;
-       s_solid.xy [5] = Y2 ;
+       s_solid.xy [0] = (float)X0 ;
+       s_solid.xy [1] = (float)Y0 ;
+       s_solid.xy [2] = (float)X1 ;
+       s_solid.xy [3] = (float)Y1 ;
+       s_solid.xy [4] = (float)X2 ;
+       s_solid.xy [5] = (float)Y2 ;
        s_solid.warstwa = ptrs_circle->warstwa ;
        s_solid.kolor = ptrs_circle->kolor ;
        if (translucency<255)

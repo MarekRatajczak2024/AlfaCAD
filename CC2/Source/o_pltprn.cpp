@@ -296,6 +296,8 @@ extern "C" {
                                 double *px, double *py, double *pdx, double *pdy);
     extern int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float ypp);
 
+    extern BOOL known3b(int letter);
+
 extern char *load_symbol[];
 extern int MAX_ARROWS_NO;
 
@@ -7506,11 +7508,9 @@ BOOL Draw_pcx_8_To_Drive(B_PCX *pcx,int t_drive)
 						DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy, key_ii, pcx->warstwa);
 				}
 			}
-		    
-           
+
             pcx_x=pcx_x0;
             pcx_y-=pcx_dy;
-
 
             if (print_inversion == TRUE)
              {
@@ -7587,27 +7587,24 @@ BOOL Draw_pcx_8_To_Drive(B_PCX *pcx,int t_drive)
 				     DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy, key_ii, pcx->warstwa);
 			 }
 		 }
-	  
 
-	  byte_x += 1;
-           
- 
- 
-      if (byte_x>=width )
-       {
-        pcx_x=pcx_x0;
-        pcx_y-=pcx_dy;
-		
-        if (print_inversion == TRUE)
-             {
-               if (pcx_y>Yy2) return 1;
-             }
-              else
-               {
-                if (pcx_y<Yy1) return 1;
-               }
+          byte_x += 1;
 
-        byte_x=0;
+          if (byte_x>=width )
+           {
+            pcx_x=pcx_x0;
+            pcx_y-=pcx_dy;
+
+            if (print_inversion == TRUE)
+                 {
+                   if (pcx_y>Yy2) return 1;
+                 }
+                  else
+                   {
+                    if (pcx_y<Yy1) return 1;
+                   }
+
+            byte_x=0;
        }
       }
       count++;
@@ -7744,8 +7741,535 @@ static int fix_color_d1(B_PCX *pcx, unsigned char kolor0, int iii, int t_drive)
 }
 
 
-
 BOOL Draw_pcx_1_To_Drive(B_PCX *pcx, int t_drive)
+{
+    unsigned char key_i;
+    int key_ii;
+    int i;
+    int  aa = 0, bb = 0;
+    double cc=0,dd=0,ee=0;
+    REAL_PCX *rpcx;
+    int width, width1, height;
+    double pcx_x,pcx_y,pcx_x0,pcx_y0;
+    int byte_x;
+    unsigned char key0;
+    int count=0;          // current pixel number in the image
+    int total;
+    char *key_rr;
+    int num_bytes;        // number of bytes in a "run"
+    BOOL empty_line = TRUE;
+    long nr_byte;
+    double pcx_dx, pcx_dy, pcx_x1, pcx_x2; // pcx_y1;
+    int n8;
+    int nn;
+    double width_d;
+    int width_r;
+    int iii;
+    double kos,koc,pcx_xx,pcx_yy;
+    BOOL kat0;
+    double kos1, koc1;
+    double mmxd[4],mmyd[4];
+    double x_[4], y_[4];
+    double Xx1,Yy1,Xx2,Yy2;
+    double pcx_xxx[4],pcx_yyy[4],pcx_xmin,pcx_ymin,pcx_xmax,pcx_ymax;
+    double width11,height11;
+    BOOL bw, grey;
+
+    bw = Layers[pcx->warstwa].bw;
+    grey = Layers[pcx->warstwa].grey;
+
+    nr_pola++;
+
+    rpcx = (REAL_PCX*) pcx->pcx;
+    key0 = 0;
+
+    //width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5; // image dimensions...
+    width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
+
+    width_r = (rpcx->header.xmax - rpcx->header.xmin)+1;
+    width = (int)width_d;
+    height = rpcx->header.ymax - rpcx->header.ymin + 1; //+ 1; addad on 31-08-2026
+
+    if(rpcx->header.manufacturer   != 10         // check for errors
+       ||rpcx->header.version         <  5
+       ||rpcx->header.encoding       !=  1
+       ||rpcx->header.bits_per_pixel !=  1
+       ||rpcx->header.xmin  >=  rpcx->header.xmax
+       ||rpcx->header.ymin  >=  rpcx->header.ymax)
+    {
+        return 0;
+    }
+
+    if(width%2 && width != rpcx->header.bytes_per_line)
+    {
+        width1=width+1;
+        total = (width+1) * height;
+    }
+    else
+    {
+        width1=width;
+        total = width * height;
+    }
+
+    pcx_x0 = pcx->x; // - pcx_dx;
+    byte_x = 0;
+    pcx_y0 = pcx->y; // + pcx_dy;
+
+    pcx_dx=pcx->dx;
+    pcx_dy=pcx->dy;
+
+    if (print_inversion == TRUE)
+    {
+        if (print_rotation == TRUE)
+        {
+            pcx_y0 = FormatY_S - pcx_y0;// +FormatY_S0;
+            pcx_x0 = FormatX_S - pcx_x0;// +FormatX_S0;
+            pcx_dx *= -1;
+            pcx_dy *= -1;
+        }
+        else
+        {
+            pcx_y0 = FormatY_S - pcx_y0 + FormatY_S0;
+            pcx_x0 = FormatX_S - pcx_x0 + FormatX_S0;
+            pcx_dx *= -1;
+            pcx_dy *= -1;
+        }
+    }
+
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        //obrot ekranu o kat pcx->kat wzgledem punktu pcx->x, pcx->y
+        kos1=sin(-(pcx->kat));
+        koc1=cos(-(pcx->kat));
+
+        x_[0]=X1; y_[0]=Y1;
+        x_[1]=X2; y_[1]=Y1;
+        x_[2]=X2; y_[2]=Y2;
+        x_[3]=X1; y_[3]=Y2;
+
+        for (i=0; i<4; i++)
+        {
+            mmxd[i] =  pcx_x0 + (x_[i]-pcx_x0) * koc1 - (y_[i]-pcx_y0) * kos1;
+            mmyd[i] =  pcx_y0 + (x_[i]-pcx_x0) * kos1 + (y_[i]-pcx_y0) * koc1;
+        }
+
+        qsort(mmxd,4,sizeof(double),qsort_by_val);
+        qsort(mmyd,4,sizeof(double),qsort_by_val);
+
+        if (print_inversion == TRUE)
+        {
+            Xx1=mmxd[0];
+            Yy1=mmyd[0];
+            Xx2=mmxd[3];
+            Yy2=mmyd[3];
+        }
+        else
+        {
+            Xx1=mmxd[0];
+            Yy1=mmyd[0];
+            Xx2=mmxd[3];
+            Yy2=mmyd[3];
+        }
+
+        width11  = (((rpcx->header.xmax - rpcx->header.xmin)+8)/8)*8;         // image dimensions...
+        height11 = (rpcx->header.ymax - rpcx->header.ymin)+1;
+
+        width11 *= pcx->dx;
+        height11 *= pcx->dy;
+
+        pcx_xxx[0] = pcx->x;
+        pcx_yyy[0] = pcx->y;
+
+        pcx_xxx[1] = pcx->x - (height11) * kos1 ;
+        pcx_yyy[1] = pcx->y - (height11) * koc1 ;
+
+        pcx_xxx[2] = pcx->x + width11 * koc1 - height11 * kos1 ;
+        pcx_yyy[2] = pcx->y - width11 * kos1 - height11 * koc1 ;
+
+        pcx_xxx[3] = pcx->x + width11 * koc1;
+        pcx_yyy[3] = pcx->y - width11 * kos1;
+
+        x_[0] = pcx->x ;
+        y_[0] = pcx->y ;
+
+        x_[1] = pcx->x - height * kos1 ;
+        y_[1] = pcx->y - height * koc1 ;
+
+        x_[2] = pcx->x + width * koc1 - height * kos1 ;
+        y_[2] = pcx->y - width * kos1 - height * koc1 ;
+
+        x_[3] = pcx->x + width * koc1 ;
+        y_[3] = pcx->y - width * kos1 ;
+
+        qsort(pcx_xxx,4,sizeof(double),qsort_by_val);
+        qsort(pcx_yyy,4,sizeof(double),qsort_by_val);
+
+        pcx_xmin=pcx_xxx[0];
+        pcx_ymin=pcx_yyy[0];
+        pcx_xmax=pcx_xxx[3];
+        pcx_ymax=pcx_yyy[3];
+    }
+    else
+    {
+        Xx1=X1;
+        Yy1=Y1;
+        Xx2=X2;
+        Yy2=Y2;
+        pcx_xmin=pcx_x0;
+        pcx_xmax=pcx_x0+((rpcx->header.xmax - rpcx->header.xmin)*pcx_dx);
+        pcx_ymax=pcx_y0;
+        pcx_ymin=pcx_y0-(height*pcx_dy);
+    }
+
+    if (pcx_xmax < pcx_xmin)
+    {
+        double pcx_xmin_ = pcx_xmin;
+        pcx_xmin = pcx_xmax;
+        pcx_xmax = pcx_xmin_;
+    }
+    if (pcx_ymax < pcx_ymin)
+    {
+        double pcx_ymin_ = pcx_ymin;
+        pcx_ymin = pcx_ymax;
+        pcx_ymax = pcx_ymin_;
+    }
+
+    if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!!!!!  ????????????
+
+
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        kos=sin(pcx->kat);
+        koc=cos(pcx->kat);
+        kat0=FALSE;
+    }
+    else
+    {
+        kos=0.0;
+        koc=1.0;
+        kat0=TRUE;
+    }
+
+    pcx_x = pcx_x0;
+    pcx_y = pcx_y0;
+
+    nr_byte = 128;
+
+    key_rr =  pcx->pcx + sizeof(PCXheader);
+    i=-1;
+
+    bb=0;
+
+    while(count<total)
+    {
+        i++;
+        key_i=*key_rr;
+        nr_byte++;
+
+        if(key_i>191)                 // if > 191, it is a run-length code.
+        {
+            num_bytes = key_i - 192;    // pixels in this "run" can be up to 63
+            i++;
+            key_rr++;
+            key_i=*key_rr;
+            nr_byte++;
+
+            //The next line of code shouldn't be needed.  It prevents the image
+            //from "running" past the end of the buffer we put it into...
+            //if(num_bytes + count > total) num_bytes = total-count;
+
+            while(num_bytes>0)        // ... and place the color several times
+            {
+                // write the pixel value unless is is a "filler" byte
+                if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
+                {
+                    //wstawienie punktu w kolorze key
+
+                    byte_x+=1;
+                    if (byte_x>=width)
+                    {
+                        nn=((byte_x-1)*8.0)-width_r;
+                        if (nn<8)
+                        {
+                            n8=nn;
+                        }
+                        else n8=8;
+
+                        for (iii=0; iii<n8; iii++)
+                        {
+
+                            pcx_x1=pcx_x+(iii*pcx_dx);
+                            pcx_x2=pcx_x+((iii+1)*pcx_dx);
+
+                            if (kat0==TRUE)
+                            {
+                                pcx_xx = pcx_x1;
+                                pcx_yy = pcx_y;
+                            }
+                            else
+                            {
+                                pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                                pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                            }
+
+                            if ((pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2))
+                            {
+                                key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                                if (type__drive == PRN_DRIVE)
+                                {
+                                    solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                    //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                                }
+                                else
+                                {
+                                    if (key_ii > 0)
+                                        DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                                }
+
+                            }
+
+                        }
+
+                        pcx_x=pcx_x0;
+                        pcx_y-=pcx_dy;
+
+                        if (print_inversion == TRUE)
+                        {
+                            if (pcx_y>Yy2) return 1;
+                        }
+                        else
+                        {
+                            if (pcx_y<Yy1) return 1;
+                        }
+                        byte_x=0;
+                    }
+                    num_bytes--;
+                }
+                count++;
+                if (byte_x>0)
+                {
+                    for (iii=0; iii<8; iii++)
+                    {
+
+                        pcx_x1=pcx_x+(iii*pcx_dx);
+                        pcx_x2=pcx_x+((iii+1)*pcx_dx);
+                        if (kat0==TRUE)
+                        {
+                            pcx_xx = pcx_x1;
+                            pcx_yy = pcx_y;
+                        }
+                        else
+                        {
+                            pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                            pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                        }
+
+                        if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
+                        {
+
+                            key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                            if (type__drive == PRN_DRIVE)
+                            {
+                                solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                            }
+                            else
+                            {
+                                if (key_ii > 0)
+                                    DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                            }
+
+                        }
+                    }
+
+                    pcx_x+=(pcx_dx*8.0);
+                }
+
+                if (kat0==TRUE)
+                {
+                    pcx_xx = pcx_x;
+                    pcx_yy = pcx_y;
+                }
+                else
+                {
+                    pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                    pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                }
+
+                if (print_inversion == TRUE)
+                {
+                    if (pcx_y>Yy2) return 1;
+                }
+                else
+                {
+                    if (pcx_y<Yy1) return 1;
+                }
+            }
+        }
+        else
+        {
+
+            // write the pixel value unless is is a "filler" byte
+
+            if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
+            {
+
+                byte_x+=1;
+                if (byte_x>=width )
+                {
+
+
+                    nn=((byte_x-1)*8.0)-width_r;
+                    if (nn<8)
+                    {
+                        n8=nn;
+                    }
+                    else n8=8;
+
+                    for (iii=0; iii<n8; iii++)
+                    {
+
+                        pcx_x1=pcx_x+(iii*pcx_dx);
+                        pcx_x2=pcx_x+((iii+1)*pcx_dx);
+
+                        if (kat0==TRUE)
+                        {
+                            pcx_xx = pcx_x1;
+                            pcx_yy = pcx_y;
+                        }
+                        else
+                        {
+                            pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                            pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                        }
+
+                        if ((pcx_xx <= X2 && pcx_xx >= X1 && pcx_yy >= Y1 && pcx_yy <= Y2))
+                        {
+                            key_ii = fix_color_d1(pcx, key_i, iii, t_drive);
+
+                            if (type__drive == PRN_DRIVE)
+                            {
+                                solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, key_ii, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                            }
+                            else
+                            {
+                                if (key_ii > 0)
+                                    DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                            }
+
+                        }
+
+                    }
+
+                    pcx_x=pcx_x0;
+                    pcx_y-=pcx_dy;
+
+                    if (kat0==TRUE)
+                    {
+                        pcx_xx = pcx_x;
+                        pcx_yy = pcx_y;
+                    }
+                    else
+                    {
+                        pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                        pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                    }
+
+                    if (print_inversion == TRUE)
+                    {
+                        if (pcx_y>Yy2) return 1;
+                    }
+                    else
+                    {
+                        if (pcx_y<Yy1) return 1;
+                    }
+                    byte_x=0;
+                }
+            }
+            count++;
+
+            if (byte_x>0)
+            {
+                for (iii=0; iii<8; iii++)
+                {
+
+                    pcx_x1=pcx_x+(iii*pcx_dx);
+                    pcx_x2=pcx_x+((iii+1)*pcx_dx);
+                    if (kat0==TRUE)
+                    {
+                        pcx_xx = pcx_x1;
+                        pcx_yy = pcx_y;
+                    }
+                    else
+                    {
+                        pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                        pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                    }
+
+                    if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
+                    {
+                        key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                        if (type__drive == PRN_DRIVE)
+                        {
+                            solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                            //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                        }
+                        else
+                        {
+                            if (key_ii > 0)
+                                DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                        }
+                    }
+                }
+                pcx_x+=(pcx_dx*8.0);
+            }
+
+            if ( my_kbhit() )
+            {
+                if (my_getch() == ESC)
+                {
+                    while (my_kbhit ())
+                    {
+                        my_getch();
+                    }
+                    return 1;  //or 0
+                }
+            }
+
+            if (kat0==TRUE)
+            {
+                pcx_xx = pcx_x;
+                pcx_yy = pcx_y;
+            }
+            else
+            {
+                pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+            }
+
+            if (print_inversion == TRUE)
+            {
+                if (pcx_y>Yy2) return 1;
+            }
+            else
+            {
+                if (pcx_y<Yy1) return 1;
+            }
+        }
+        key_rr++;
+    }
+
+    return 1;
+}
+
+/*
+BOOL Draw_pcx_1_To_Drive_newer(B_PCX *pcx, int t_drive)  //but not really ready
 {
  unsigned char key_i;
  int key_ii;
@@ -7778,16 +8302,25 @@ BOOL Draw_pcx_1_To_Drive(B_PCX *pcx, int t_drive)
   double pcx_xxx[4],pcx_yyy[4],pcx_xmin,pcx_ymin,pcx_xmax,pcx_ymax;
   double width11,height11;
   BOOL bw, grey;
+  COLOR_ pcxcolor;
+  PCX_SOLID pcx_s;
+  PCX_MM pcx_mm;
 
   bw = Layers[pcx->warstwa].bw;
   grey = Layers[pcx->warstwa].grey;
+
+    pcxcolor.red = 0;
+    pcxcolor.gre = 0;
+    pcxcolor.blu = 0;
 
   nr_pola++;
 
   rpcx = (REAL_PCX*) pcx->pcx;
   key0 = 0;
  
-  width_d = ((rpcx->header.xmax - rpcx->header.xmin)+8)/8;         // image dimensions...
+  //width_d = ((rpcx->header.xmax - rpcx->header.xmin)+8)/8;         // image dimensions...
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
+
   width_r = (rpcx->header.xmax - rpcx->header.xmin)+1;
   width = (int)width_d;
   height = rpcx->header.ymax - rpcx->header.ymin; //+ 1;
@@ -7983,134 +8516,59 @@ if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!
       //if(num_bytes + count > total) num_bytes = total-count;
 
       while(num_bytes>0)        // ... and place the color several times
-       {
-       // write the pixel value unless is is a "filler" byte
-        if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
-        {
-        //wstawienie punktu w kolorze key
+      {
+          // write the pixel value unless is is a "filler" byte
+          if (width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line) {
+              //wstawienie punktu w kolorze key
 
-          byte_x+=1;
-          if (byte_x>=width)
-           {
-             nn=((byte_x-1)*8.0)-width_r;
-             if (nn<8)
-              {
-               n8=nn;
-              }
-               else n8=8;
+              byte_x += 1;
+              if (byte_x >= width) {
+                  get_pcx_solid(pcx_x0, pcx_y0, pcx_x, pcx_y, pcx_dx, pcx_dy, kos, koc, kat0, &pcx_s);
+                  get_pcx_solid_mm(&pcx_s, &pcx_mm);
 
-             for (iii=0; iii<n8; iii++)
-             {
-              
-             pcx_x1=pcx_x+(iii*pcx_dx);
-             pcx_x2=pcx_x+((iii+1)*pcx_dx);
 
-             if (kat0==TRUE)
-               {
-                pcx_xx = pcx_x1;
-                pcx_yy = pcx_y;
-               }
-                else
-                  {
-                   pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-                   pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                  if ((pcx_mm.xmin <= X2 && pcx_mm.xmax >= X1 && pcx_mm.ymin <= Y2 && pcx_mm.ymax >= Y1)) {
+                      if (type__drive == PRN_DRIVE) {
+                          solid04_prn(&pcx_s, pcxcolor, kos, koc, bw, grey);
+                      } else {
+                          if (key_ii > 0)
+                              DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy,
+                                                   key_ii, pcx->warstwa);
+                      }
                   }
-            
-              if ((pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2))
-               {
-                 key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
-                 
-				 if (type__drive == PRN_DRIVE)
-				 {
-					 solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
-					 //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
-				 }
-				 else
-				 {
-					 if (key_ii > 0)
-					     DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
-				 }
-                
-               }
-          
-             }
 
-            pcx_x=pcx_x0;
-            pcx_y-=pcx_dy;
+                  pcx_x = pcx_x0;
+                  pcx_y -= pcx_dy;
 
-            if (print_inversion == TRUE)
-             {
-               if (pcx_y>Yy2) return 1;
-             }
-              else
-               {
-                  if (pcx_y<Yy1) return 1;
-               }
-            byte_x=0;
-           }
-          num_bytes--;
-        }
-        count++;
-             if (byte_x>0)
-              {
-               for (iii=0; iii<8; iii++)
-                {
-               
-                pcx_x1=pcx_x+(iii*pcx_dx);
-                pcx_x2=pcx_x+((iii+1)*pcx_dx);
-                if (kat0==TRUE)
-				   {
-					pcx_xx = pcx_x1;
-					pcx_yy = pcx_y;
-				   }
-                  else
-                  {
-                   pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-                   pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                  if (print_inversion == TRUE) {
+                      if (pcx_y > Yy2) return 1;
+                  } else {
+                      if (pcx_y < Yy1) return 1;
                   }
-             
-                if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
-                 {
-
-					 key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
-                 
-					 if (type__drive == PRN_DRIVE)
-					 {
-						 solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
-						 //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
-					 }
-					 else
-					 {
-						 if (key_ii > 0)
-						     DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
-					 }
-					 
-                 }
-                }
-             
-                pcx_x+=(pcx_dx*8.0);
+                  byte_x = 0;
               }
-
-         if (kat0==TRUE)
-           {
-            pcx_xx = pcx_x;
-            pcx_yy = pcx_y;
-           }
-            else
-              {
-               pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-               pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
-              }
-
-        if (print_inversion == TRUE)
-          {
-            if (pcx_y>Yy2) return 1;
+              num_bytes--;
           }
-           else
-            {
-              if (pcx_y<Yy1) return 1;
-            }
-       }
+          count++;
+          get_pcx_solid(pcx_x0, pcx_y0, pcx_x, pcx_y, pcx_dx, pcx_dy, kos, koc, kat0, &pcx_s);
+          get_pcx_solid_mm(&pcx_s, &pcx_mm);
+
+
+          if (byte_x <= width && byte_x > 0) {
+
+              if ((pcx_mm.xmin <= X2 && pcx_mm.xmax >= X1 && pcx_mm.ymin <= Y2 && pcx_mm.ymax >= Y1)) {
+                  if (type__drive == PRN_DRIVE) {
+                      solid04_prn(&pcx_s, pcxcolor, kos, koc, bw, grey);
+                  } else {
+                      if (key_ii > 0)
+                          DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy,
+                                               key_ii, pcx->warstwa);
+                  }
+              }
+              pcx_x += pcx_dx;  // 1
+          }
+
+      }
     }
     else
     {
@@ -8119,68 +8577,29 @@ if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!
 
       if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
       {
-      
-      byte_x+=1;
-      if (byte_x>=width )
-       {
+           get_pcx_solid(pcx_x0, pcx_y0, pcx_x, pcx_y, pcx_dx, pcx_dy, kos, koc, kat0, &pcx_s);
+           get_pcx_solid_mm(&pcx_s, &pcx_mm);
 
-       
-        nn=((byte_x-1)*8.0)-width_r;
-             if (nn<8)
-              {
-               n8=nn;
-              }
-               else n8=8;
 
-             for (iii=0; iii<n8; iii++)
-             {
-            
-             pcx_x1=pcx_x+(iii*pcx_dx);
-             pcx_x2=pcx_x+((iii+1)*pcx_dx);
-
-             if (kat0==TRUE)
+           if ((pcx_mm.xmin <= X2 && pcx_mm.xmax >= X1 && pcx_mm.ymin <= Y2 && pcx_mm.ymax >= Y1))
+           {
+               if (type__drive == PRN_DRIVE)
                {
-                pcx_xx = pcx_x1;
-                pcx_yy = pcx_y;
+                   solid04_prn(&pcx_s, pcxcolor, kos, koc, bw, grey);
                }
-                else
-                  {
-                   pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-                   pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
-                  }
-            
-			 if ((pcx_xx <= X2 && pcx_xx >= X1 && pcx_yy >= Y1 && pcx_yy <= Y2))
-			 {
-				 key_ii = fix_color_d1(pcx, key_i, iii, t_drive);
-
-				 if (type__drive == PRN_DRIVE)
-				 {
-					 solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
-					 //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, key_ii, pcx_x0, pcx_y0, kos, koc, bw, grey);
-				 }
-				 else
-				 {
-					 if (key_ii > 0)
-					     DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
-				 }
-                 
+               else
+               {
+                   if (key_ii > 0)
+                       DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy, key_ii, pcx->warstwa);
                }
-         
-             }
+           }
 
+           byte_x += 1;
+
+      if (byte_x>=width )
+      {
         pcx_x=pcx_x0;
         pcx_y-=pcx_dy;
-
-        if (kat0==TRUE)
-         {
-           pcx_xx = pcx_x;
-           pcx_yy = pcx_y;
-         }
-          else
-           {
-            pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-            pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
-           }
 
         if (print_inversion == TRUE)
              {
@@ -8195,65 +8614,38 @@ if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!
       }
       count++;
 
-        if (byte_x>0)
-         {
-          for (iii=0; iii<8; iii++)
+      if ( my_kbhit() )
+      {
+          if (my_getch() == ESC)
           {
-          
-             pcx_x1=pcx_x+(iii*pcx_dx);
-             pcx_x2=pcx_x+((iii+1)*pcx_dx);
-             if (kat0==TRUE)
-               {
-                pcx_xx = pcx_x1;
-                pcx_yy = pcx_y;
-               }
-                else
-                  {
-                   pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-                   pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
-                  }
-             
-          if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
-           {
-             key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
-
-			 if (type__drive == PRN_DRIVE)
-			 {
-				 solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
-				 //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
-			 }
-			 else
-			 {
-				 if (key_ii > 0)
-				     DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
-			 }
-           }
+              while (my_kbhit ())
+              {
+                  my_getch();
+              }
+              return 0;
           }
-          pcx_x+=(pcx_dx*8.0);
-         }
+      }
 
-       if ( my_kbhit() )
-       {
-	     if (my_getch() == ESC)
-	      {
-  	       while (my_kbhit ())
-	        {
-	          my_getch();
-	        }
-           return 0;
-  	      }
-       }
+      get_pcx_solid(pcx_x0, pcx_y0, pcx_x, pcx_y, pcx_dx, pcx_dy, kos, koc, kat0, &pcx_s);
+      get_pcx_solid_mm(&pcx_s, &pcx_mm);
 
-       if (kat0==TRUE)
-         {
-           pcx_xx = pcx_x;
-           pcx_yy = pcx_y;
+      if ((byte_x > 0) && (byte_x <= width))
+      {
+
+          if ((pcx_mm.xmin <= X2 && pcx_mm.xmax >= X1 && pcx_mm.ymin <= Y2 && pcx_mm.ymax >= Y1))
+          {
+              if (type__drive == PRN_DRIVE)
+              {
+                  solid04_prn(&pcx_s, pcxcolor, kos, koc, bw, grey);
+              }
+              else
+              {
+                  if (key_ii > 0)
+                      DrawSolid04_To_Drive(pcx_s.xy[0], pcx_s.xy[1], pcx_s.xy[0] + pcx_dx, pcx_s.xy[1] - pcx_dy, key_ii, pcx->warstwa);
+              }
           }
-           else
-             {
-               pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
-               pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
-             }
+          pcx_x += pcx_dx;
+      }
 
        if (print_inversion == TRUE)
              {
@@ -8270,6 +8662,615 @@ if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!
 return 1;
 }
 
+BOOL Draw_pcx_1_To_Drive_older(B_PCX *pcx, int t_drive)
+{
+    unsigned char key_i;
+    int key_ii;
+    int fp;
+    int     dh,i, j ,aa=0,bb=0;
+    double cc=0,dd=0,ee=0;
+    double SkalaX,SkalaY;
+    REAL_PCX *rpcx;
+    int width, width1, height;
+    double pcx_x,pcx_y,pcx_x0,pcx_y0;
+// long mxx,mxy,mmx,mmy;
+    int byte_x;
+    unsigned char key0;
+    int count=0;          // current pixel number in the image
+    int total;
+    char *key_rr;
+    int num_bytes;        // number of bytes in a "run"
+    BOOL empty_line = TRUE;
+    long size_of_file;
+    long nr_byte;
+// double SkalaXX, SkalaYY;
+    char st[30];
+    double pcx_dx, pcx_dy, pcx_x1, pcx_x2, pcx_y1;
+    int n8;
+    int nn;
+    double width_d;
+    int width_r;
+    int iii;
+    double kos,koc,pcx_xx,pcx_yy;
+    BOOL kat0;
+    double kos1, koc1;
+    double mmxd[4],mmyd[4];
+    double x_[4], y_[4];
+    double Xx1,Yy1,Xx2,Yy2;
+    double pcx_xxx[4],pcx_yyy[4],pcx_xmin,pcx_ymin,pcx_xmax,pcx_ymax;
+    double width11,height11;
+
+    BOOL bw, grey;
+
+    bw = Layers[pcx->warstwa].bw;
+    grey = Layers[pcx->warstwa].grey;
+
+    nr_pola++;
+//  sprintf(st,"%d",nr_pola);
+//  komunikat_str(st);
+
+    rpcx = (REAL_PCX*) pcx->pcx;
+    key0 = 0;
+    // width  = rpcx->header.xmax - rpcx->header.xmin + 1;         // image dimensions...
+    // height = rpcx->header.ymax - rpcx->header.ymin + 1;
+
+    //width_d = ((rpcx->header.xmax - rpcx->header.xmin)+8)/8;         // image dimensions...
+    width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
+
+    width_r = (rpcx->header.xmax - rpcx->header.xmin)+1;
+    //width_d+=0.5;
+    width = (int)width_d;
+    height = rpcx->header.ymax - rpcx->header.ymin; //+ 1;
+
+//  if (opcja==0)
+//   {
+//     DrawSolid4(pcx->x, pcx->y, pcx->x + (width * pcx->dx), pcx->y - (height * pcx->dy), 0);
+//     return 1;
+//   }
+
+
+    if(rpcx->header.manufacturer   != 10         // check for errors
+       ||rpcx->header.version         <  5
+       ||rpcx->header.encoding       !=  1
+       ||rpcx->header.bits_per_pixel !=  1
+       ||rpcx->header.xmin  >=  rpcx->header.xmax
+       ||rpcx->header.ymin  >=  rpcx->header.ymax)
+    {
+        // close(fp);
+        return 0;
+    }
+
+    if(width%2 && width != rpcx->header.bytes_per_line)
+    {
+        width1=width+1;
+        total = (width+1) * height;
+    }
+    else
+    {
+        width1=width;
+        total = width * height;
+    }
+
+//  mmx=Wyslij_par_ekranu(0);
+//  mxx=Wyslij_par_ekranu(1);
+//  mxy=Wyslij_par_ekranu(2);
+//  mmy=Wyslij_par_ekranu(3);
+
+//  pcx_dx=floor(pcx->dx*100000.0)/100000;
+//  pcx_dy=floor(pcx->dy*100000.0)/100000;
+
+//  pcx_dx=ceil(pcx->dx*100000.0)/100000;
+//  pcx_dy=ceil(pcx->dy*100000.0)/100000;
+
+
+    pcx_x0 = pcx->x; // - pcx_dx;
+    byte_x = 0;
+    pcx_y0 = pcx->y; // + pcx_dy;
+
+    pcx_dx=pcx->dx;
+    pcx_dy=pcx->dy;
+
+    if (print_inversion == TRUE)
+    {
+        pcx_y0 = FormatY - pcx_y0;
+        pcx_x0 = FormatX - pcx_x0;
+        pcx_dx *= -1;
+        pcx_dy *= -1;
+    }
+
+///////////////////////
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        //obrot ekranu o kat pcx->kat wzgledem punktu pcx->x, pcx->y
+        kos1=sin(-(pcx->kat));
+        koc1=cos(-(pcx->kat));
+
+        x_[0]=X1; y_[0]=Y1;
+        x_[1]=X2; y_[1]=Y1;
+        x_[2]=X2; y_[2]=Y2;
+        x_[3]=X1; y_[3]=Y2;
+
+        for (i=0; i<4; i++)
+        {
+            mmxd[i] =  pcx_x0 + (x_[i]-pcx_x0) * koc1 - (y_[i]-pcx_y0) * kos1;
+            mmyd[i] =  pcx_y0 + (x_[i]-pcx_x0) * kos1 + (y_[i]-pcx_y0) * koc1;
+        }
+
+        qsort(mmxd,4,sizeof(double),qsort_by_val);
+        qsort(mmyd,4,sizeof(double),qsort_by_val);
+
+        if (print_inversion == TRUE)
+        {
+            Xx1=mmxd[0];
+            Yy1=mmyd[0];
+            Xx2=mmxd[3];
+            Yy2=mmyd[3];
+        }
+        else
+        {
+            Xx1=mmxd[0];
+            Yy1=mmyd[0];
+            Xx2=mmxd[3];
+            Yy2=mmyd[3];
+        }
+
+        width11  = (((rpcx->header.xmax - rpcx->header.xmin)+8)/8)*8;         // image dimensions...
+        height11 = (rpcx->header.ymax - rpcx->header.ymin)+1;
+
+        width11 *= pcx->dx;
+        height11 *= pcx->dy;
+
+        pcx_xxx[0] = pcx->x;
+        pcx_yyy[0] = pcx->y;
+
+        pcx_xxx[1] = pcx->x - (height11) * kos1 ;
+        pcx_yyy[1] = pcx->y - (height11) * koc1 ;
+
+        pcx_xxx[2] = pcx->x + width11 * koc1 - height11 * kos1 ;
+        pcx_yyy[2] = pcx->y - width11 * kos1 - height11 * koc1 ;
+
+        pcx_xxx[3] = pcx->x + width11 * koc1;
+        pcx_yyy[3] = pcx->y - width11 * kos1;
+
+
+        //x_[0] = pcx_x ;
+        x_[0] = pcx->x ;
+        y_[0] = pcx->y ;
+
+        //x_[1] = pcx_x - height * kos ;
+        x_[1] = pcx->x - height * kos1 ;
+        y_[1] = pcx->y - height * koc1 ;
+
+        //x_[2] = pcx_x + width * koc - height * kos ;
+        x_[2] = pcx->x + width * koc1 - height * kos1 ;
+        y_[2] = pcx->y - width * kos1 - height * koc1 ;
+
+        //x_[3] = pcx_x + width * koc ;
+        x_[3] = pcx->x + width * koc1 ;
+        y_[3] = pcx->y - width * kos1 ;
+
+
+        qsort(pcx_xxx,4,sizeof(double),qsort_by_val);
+        qsort(pcx_yyy,4,sizeof(double),qsort_by_val);
+
+        pcx_xmin=pcx_xxx[0];
+        pcx_ymin=pcx_yyy[0];
+        pcx_xmax=pcx_xxx[3];
+        pcx_ymax=pcx_yyy[3];
+    }
+    else
+    {
+        Xx1=X1;
+        Yy1=Y1;
+        Xx2=X2;
+        Yy2=Y2;
+        pcx_xmin=pcx_x0;
+        pcx_xmax=pcx_x0+((rpcx->header.xmax - rpcx->header.xmin)*pcx_dx);
+        pcx_ymax=pcx_y0;
+        pcx_ymin=pcx_y0-(height*pcx_dy);
+    }
+
+/////////////////////////
+
+//if ((pcx_xmin>X2 || pcx_xmax<X1 || pcx_ymin>Y2 || pcx_ymax<Y1)) return 1;  //!!!!!!!
+
+/////////////////////////
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        kos=sin(pcx->kat);
+        koc=cos(pcx->kat);
+        kat0=FALSE;
+    }
+    else
+    {
+        kos=0.0;
+        koc=1.0;
+        kat0=TRUE;
+    }
+
+    pcx_x = pcx_x0;
+    pcx_y = pcx_y0;
+
+
+    nr_byte = 128;
+    //Procent_0();
+
+    key_rr =  pcx->pcx + sizeof(PCXheader);
+    i=-1;
+
+//  SkalaXX=pcx->dx*width;
+//  SkalaX=pcx->dx;
+//  SkalaYY=pcx->dy*height;
+//  SkalaY=pcx->dy;
+
+    bb=0;
+    ///////
+
+    while(count<total)
+    {
+        i++;
+        key_i=*key_rr;
+        nr_byte++;
+
+        if(key_i>191)                 // if > 191, it is a run-length code.
+        {
+            num_bytes = key_i - 192;    // pixels in this "run" can be up to 63
+            i++;
+            key_rr++;
+            key_i=*key_rr;
+            nr_byte++;
+
+            //  key_ii=fix_color_d(pcx,pcx->color_key[key_i],t_drive);
+
+            //The next line of code shouldn't be needed.  It prevents the image
+            //from "running" past the end of the buffer we put it into...
+            //if(num_bytes + count > total) num_bytes = total-count;
+
+            while(num_bytes>0)        // ... and place the color several times
+            {
+                // write the pixel value unless is is a "filler" byte
+                if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
+                {
+                    //wstawienie punktu w kolorze key
+
+                    //   pcx_x+=(pcx_dx*8.0);
+                    byte_x+=1;
+                    if (byte_x>=width)
+                    {
+//            if (key_i>0)
+//            {
+                        nn=((byte_x-1)*8.0)-width_r;
+                        if (nn<8)
+                        {
+                            n8=nn;
+                        }
+                        else n8=8;
+
+                        for (iii=0; iii<n8; iii++)
+                        {
+                            ///////
+                            pcx_x1=pcx_x+(iii*pcx_dx);
+                            pcx_x2=pcx_x+((iii+1)*pcx_dx);
+
+                            if (kat0==TRUE)
+                            {
+                                pcx_xx = pcx_x1;
+                                pcx_yy = pcx_y;
+                            }
+                            else
+                            {
+                                pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                                pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                            }
+                            ///////
+                            if ((pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2))
+                            {
+                                key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                                if (((key_ii>0) && (t_drive!=0)) || ((key_ii>=0) && (t_drive==0)))
+                                {
+
+                                    //if ( type__drive == PRN_DRIVE) solid04_prn(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii,kos,koc);
+                                    //else DrawSolid04_To_Drive(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii, pcx->warstwa);
+                                    if (type__drive == PRN_DRIVE)
+                                    {
+                                        solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                        //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                                    }
+                                    else
+                                    {
+                                        if (key_ii > 0)
+                                            DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                                    }
+                                }
+                            }
+                            //     pcx_x+=pcx_dx;
+                        }
+//            }
+//              else pcx_x+=8;
+
+                        pcx_x=pcx_x0;
+                        pcx_y-=pcx_dy;
+
+                        if (print_inversion == TRUE)
+                        {
+                            //    if (pcx_yy>Yy2) return 1;
+                            if (pcx_y>Yy2) return 1;
+                        }
+                        else
+                        {
+                            //   if (pcx_yy<Yy1) return 1;
+                            if (pcx_y<Yy1) return 1;
+                        }
+                        byte_x=0;
+                    }
+                    num_bytes--;
+                }
+                count++;
+//            if (key_i>0)
+//             {
+                if (byte_x>0)
+                {
+                    for (iii=0; iii<8; iii++)
+                    {
+                        ///////
+                        pcx_x1=pcx_x+(iii*pcx_dx);
+                        pcx_x2=pcx_x+((iii+1)*pcx_dx);
+                        if (kat0==TRUE)
+                        {
+                            pcx_xx = pcx_x1;
+                            pcx_yy = pcx_y;
+                        }
+                        else
+                        {
+                            pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                            pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                        }
+                        ///////
+                        if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
+                        {
+                            key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                            if (((key_ii>0) && (t_drive!=0)) || ((key_ii>=0) && (t_drive==0)))
+                            {
+
+                                //if ( type__drive == PRN_DRIVE)
+                                //    solid04_prn(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii,kos,koc);
+                                //else DrawSolid04_To_Drive(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii, pcx->warstwa);
+                                if (type__drive == PRN_DRIVE)
+                                {
+                                    solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                    //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                                }
+                                else
+                                {
+                                    if (key_ii > 0)
+                                        DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                                }
+                            }
+                        }
+                    }
+                    //   pcx_x+=pcx_dx;
+                    pcx_x+=(pcx_dx*8.0);
+                }
+
+                if (kat0==TRUE)
+                {
+                    pcx_xx = pcx_x;
+                    pcx_yy = pcx_y;
+                }
+                else
+                {
+                    pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                    pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                }
+
+//             }
+//              else pcx_x+=8;
+                if (print_inversion == TRUE)
+                {
+                    // if (pcx_yy>Yy2) return 1;
+                    if (pcx_y>Yy2) return 1;
+                }
+                else
+                {
+                    //  if (pcx_yy<Yy1) return 1;
+                    if (pcx_y<Yy1) return 1;
+                }
+            }
+        }
+        else
+        {
+            // key_ii=fix_color_d(pcx,pcx->color_key[key_i],t_drive);
+            // write the pixel value unless is is a "filler" byte
+
+
+            if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
+            {
+                //wstawienie punktu w kolorze key
+
+                // pcx_x+=(pcx_dx*8.0);
+
+                byte_x+=1;
+                if (byte_x>=width )
+                {
+
+                    ///////////////////////
+                    nn=((byte_x-1)*8.0)-width_r;
+                    if (nn<8)
+                    {
+                        n8=nn;
+                    }
+                    else n8=8;
+
+                    for (iii=0; iii<n8; iii++)
+                    {
+                        ///////
+                        pcx_x1=pcx_x+(iii*pcx_dx);
+                        pcx_x2=pcx_x+((iii+1)*pcx_dx);
+
+                        if (kat0==TRUE)
+                        {
+                            pcx_xx = pcx_x1;
+                            pcx_yy = pcx_y;
+                        }
+                        else
+                        {
+                            pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                            pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                        }
+                        ///////
+                        if ((pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2))
+                        {
+                            key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                            if (((key_ii>0) && (t_drive!=0)) || ((key_ii>=0) && (t_drive==0)))
+                            {
+                                //if ( type__drive == PRN_DRIVE) solid04_prn(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii,kos,koc);
+                                //else DrawSolid04_To_Drive(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii, pcx->warstwa);
+                                if (type__drive == PRN_DRIVE)
+                                {
+                                    solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                    //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, key_ii, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                                }
+                                else
+                                {
+                                    if (key_ii > 0)
+                                        DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                                }
+                            }
+                        }
+                        //     pcx_x+=pcx_dx;
+                    }
+//            }
+//              else pcx_x+=8;
+
+
+
+
+                    ///////////////////////
+
+
+
+                    pcx_x=pcx_x0;
+                    pcx_y-=pcx_dy;
+
+                    if (kat0==TRUE)
+                    {
+                        pcx_xx = pcx_x;
+                        pcx_yy = pcx_y;
+                    }
+                    else
+                    {
+                        pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                        pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                    }
+
+                    if (print_inversion == TRUE)
+                    {
+                        //  if (pcx_yy>Yy2) return 1;
+                        if (pcx_y>Yy2) return 1;
+                    }
+                    else
+                    {
+                        //  if (pcx_yy<Yy1) return 1;
+                        if (pcx_y<Yy1) return 1;
+                    }
+                    byte_x=0;
+                }
+            }
+            count++;
+
+//     if (key_i>0)
+//       {
+            if (byte_x>0)
+            {
+                for (iii=0; iii<8; iii++)
+                {
+                    ///////
+                    pcx_x1=pcx_x+(iii*pcx_dx);
+                    pcx_x2=pcx_x+((iii+1)*pcx_dx);
+                    if (kat0==TRUE)
+                    {
+                        pcx_xx = pcx_x1;
+                        pcx_yy = pcx_y;
+                    }
+                    else
+                    {
+                        pcx_xx = pcx_x0 + (pcx_x1 - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                        pcx_yy = pcx_y0 + (pcx_x1 - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+                    }
+                    ///////
+                    if (pcx_xx<=X2 && pcx_xx>=X1 && pcx_yy>=Y1 && pcx_yy<=Y2)
+                    {
+                        key_ii=fix_color_d1(pcx,key_i,iii,t_drive);
+
+                        if (((key_ii>0) && (t_drive!=0)) || ((key_ii>=0) && (t_drive==0)))
+                        {
+                            //if ( type__drive == PRN_DRIVE) solid04_prn(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii,kos,koc);
+                            //else DrawSolid04_To_Drive(pcx_xx,pcx_yy,pcx_xx+pcx_dx,pcx_yy-pcx_dy,key_ii, pcx->warstwa);
+                            if (type__drive == PRN_DRIVE)
+                            {
+                                solid04_prn_old(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, kos, koc, bw, grey);
+                                //solid04N_prn(pcx_xx, pcx_yy, pcx_dx, pcx_dy, pcxcolor, pcx_x0, pcx_y0, kos, koc, bw, grey);
+                            }
+                            else
+                            {
+                                if (key_ii > 0)
+                                    DrawSolid04_To_Drive(pcx_xx, pcx_yy, pcx_xx + pcx_dx, pcx_yy - pcx_dy, key_ii, pcx->warstwa);
+                            }
+                        }
+                    }
+                }
+                //   pcx_x+=pcx_dx;
+                pcx_x+=(pcx_dx*8.0);
+            }
+//       }
+//         else pcx_x+=8;
+            //   pcx_x-=(pcx_dx*8.0);
+
+            if ( my_kbhit() )
+            {
+                if (my_getch() == ESC)
+                {
+                    while (my_kbhit ())
+                    {
+                        my_getch();
+                    }
+                    return 0;
+                }
+            }
+
+
+            if (kat0==TRUE)
+            {
+                pcx_xx = pcx_x;
+                pcx_yy = pcx_y;
+            }
+            else
+            {
+                pcx_xx = pcx_x0 + (pcx_x - pcx_x0) * koc - (pcx_y - pcx_y0) * kos ;
+                pcx_yy = pcx_y0 + (pcx_x - pcx_x0) * kos + (pcx_y - pcx_y0) * koc ;
+            }
+
+            if (print_inversion == TRUE)
+            {
+                //  if (pcx_yy>Yy2) return 1;
+                if (pcx_y>Yy2) return 1;
+            }
+            else
+            {
+                // if (pcx_yy<Yy1) return 1;
+                if (pcx_y<Yy1) return 1;
+            }
+        }
+        key_rr++;
+    }
+
+    return 1;
+}
+*/
 
 BOOL Draw_Pcx_To_Drive(B_PCX *adr_pcx,int t_drive)
 { REAL_PCX *rpcx;
@@ -9597,6 +10598,7 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 		  }
 		  else
 		  {
+		  		/*
 				if (*zn >= 127)
 				{
 					//convert to UNICODE and shift index
@@ -9610,6 +10612,30 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
                     }
 				}
 				else u8zn = (unsigned int)zn[0];
+				*/
+		  	if (*zn >= 127)
+		  	{
+		  		//convert to UNICODE and shift index
+		  		u8zn = utf8_to_ucs2(zn, (const uint8_t **) &end_ptr);
+
+		  		if (u8zn > 1920)
+		  		{
+		  			if (known3b(u8zn)) zn++;  //⁴ e.g. m⁴
+		  			else
+		  			{
+		  				u8zn = 32;
+		  			}
+		  		}
+		  		else {
+		  			if (f_type == 0)
+		  			{
+		  				//conver to Mazovia
+		  				u8zn = u8toMazovia(u8zn);
+		  			}
+		  		}
+		  		zn++;
+		  	}
+		  	else u8zn = (unsigned int)zn[0];
 
 				if (u8zn < 32)
 				{

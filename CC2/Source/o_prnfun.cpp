@@ -1661,19 +1661,19 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
 
   if (ptrs__prn_ini_date->prn_type != PRN_PDF)
   {
-      max_x_clip = allegro_prn_bmp->w - matrix_head.right_margin;
-      max_x_clip_sheet = allegro_prn_bmp->w - matrix_head.right_margin;
+      max_x_clip = (int)((double)allegro_prn_bmp->w - matrix_head.right_margin);
+      max_x_clip_sheet = (int)((double)allegro_prn_bmp->w - matrix_head.right_margin);
       max_y_clip = allegro_prn_bmp->h;
       max_y_clip_sheet = allegro_prn_bmp->h;
   }
   else
   {
-      max_x_clip = pdf_page_width - matrix_head.right_margin;
-      max_x_clip_sheet = pdf_page_width - matrix_head.right_margin;
-      max_y_clip = pdf_page_height - matrix_head.top_margin;
-      max_y_clip_sheet = pdf_page_height - matrix_head.top_margin;
+      max_x_clip = (int)((double)pdf_page_width - matrix_head.right_margin);
+      max_x_clip_sheet = (int)((double)pdf_page_width - matrix_head.right_margin);
+      max_y_clip = (int)((double)pdf_page_height - matrix_head.top_margin);
+      max_y_clip_sheet = (int)((double)pdf_page_height - matrix_head.top_margin);
 
-      top_clip_pdf = pdf_page_height -  matrix_head.top_margin;
+      top_clip_pdf = (int)((double)pdf_page_height -  matrix_head.top_margin);
 
       extra_off_top = jednostki_w_to_byte_prn(5);
       extra_off_left = jednostki_w_to_byte_prn(-1);
@@ -1696,28 +1696,28 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
                 right_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ptrs__prn_ini_date->yk_w) * matrix_head.condensed_wsp);
 				right_clip_pdf = jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ptrs__prn_ini_date->yk_w) * matrix_head.condensed_wsp);
 
-				max_x_clip = jednostki_w_to_bit_prn(matrix_head.width) - matrix_head.right_margin;
+				max_x_clip = (int)((double)jednostki_w_to_bit_prn(matrix_head.width) - (matrix_head.right_margin));
 
 
-                max_x_clip_sheet = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk) * matrix_head.condensed_wsp);
+                max_x_clip_sheet = (int)(matrix_head.left_margin + (double)jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk) * matrix_head.condensed_wsp));
 
-                max_y_clip_sheet = pdf_page_height - matrix_head.top_margin;
+                max_y_clip_sheet = (int)((double)pdf_page_height - matrix_head.top_margin);
 
 				//max_x_clip cannot exceed the window boundaries
 				max_x_clip1 = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk_w - ymin) * matrix_head.condensed_wsp);
-				if (max_x_clip1 < max_x_clip) max_x_clip = max_x_clip1;
+				if (max_x_clip1 < max_x_clip) max_x_clip = (int)lround(max_x_clip1);
 
 				top_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xp_w - xmin) * matrix_head.condensed_wsp);
 				if (top_clip > 0) min_y_clip = top_clip;
 
-                bottom_clip_pdf = pdf_page_height - jednostki_to_prn_y(ptrs__prn_ini_date->xk_w, 0) - matrix_head.bottom_margin - matrix_head.top_margin ;
+                bottom_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(ptrs__prn_ini_date->xk_w, 0) - matrix_head.bottom_margin - matrix_head.top_margin);
                 if (bottom_clip_pdf<0)
                     bottom_clip_pdf=0;
 
 				bottom_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk_w -  xmin) * matrix_head.condensed_wsp);
 				if (bottom_clip > 0) max_y_clip = bottom_clip;
 
-                top_clip_pdf = pdf_page_height - jednostki_to_prn_y(ptrs__prn_ini_date->xp_w, 0) - matrix_head.top_margin;
+                top_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(ptrs__prn_ini_date->xp_w, 0) - matrix_head.top_margin);
                 ////if (top_clip_pdf>(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin))    ////???????
                 ////    top_clip_pdf=(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin);
 
@@ -1734,10 +1734,10 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
                 right_clip_pdf = jednostki_w_to_bit_prn((xmax -xmin - (ptrs__prn_ini_date->xp_w - ptrs__prn_ini_date->xp)) * matrix_head.condensed_wsp);
 
 
-				max_x_clip = matrix_head.left_margin + jednostki_w_to_bit_prn((xmax  - (ptrs__prn_ini_date->xp_w - ptrs__prn_ini_date->xp) - xmin) * matrix_head.condensed_wsp);
+				max_x_clip = (int)((double)matrix_head.left_margin + (double)jednostki_w_to_bit_prn((xmax  - (ptrs__prn_ini_date->xp_w - ptrs__prn_ini_date->xp) - xmin) * matrix_head.condensed_wsp));
 
-                max_x_clip_sheet = matrix_head.left_margin + jednostki_w_to_bit_prn((xmax /*- ptrs__prn_ini_date->xp*/ - xmin) * matrix_head.condensed_wsp);
-                max_y_clip_sheet = pdf_page_height - matrix_head.top_margin;
+                max_x_clip_sheet = (int)(matrix_head.left_margin + (double)jednostki_w_to_bit_prn((xmax /*- ptrs__prn_ini_date->xp*/ - xmin) * matrix_head.condensed_wsp));
+                max_y_clip_sheet = (int)((double)pdf_page_height - matrix_head.top_margin);
 
 
 				top_clip = jednostki_w_to_bit_prn((ymax - ptrs__prn_ini_date->yk_w) * matrix_head.condensed_wsp);
@@ -1745,7 +1745,7 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
 
 
                 float alpha = ptrs__prn_ini_date->yp + ptrs__prn_ini_date->yk - ptrs__prn_ini_date->yk_w;
-                bottom_clip_pdf = pdf_page_height - jednostki_to_prn_y(0, alpha /*ptrs__prn_ini_date->yp_w*/) - matrix_head.bottom_margin - matrix_head.top_margin ;
+                bottom_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(0, alpha /*ptrs__prn_ini_date->yp_w*/) - matrix_head.bottom_margin - matrix_head.top_margin);
                 if (bottom_clip_pdf<0)
                     bottom_clip_pdf=0;
 
@@ -1753,7 +1753,7 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
 				if (bottom_clip > 0) max_y_clip = bottom_clip;
 
                 alpha = - ptrs__prn_ini_date->yp_w + ptrs__prn_ini_date->yp + ptrs__prn_ini_date->yk;
-                top_clip_pdf = pdf_page_height - jednostki_to_prn_y(0, alpha /*ptrs__prn_ini_date->yk_w*/) - matrix_head.top_margin;
+                top_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(0, alpha /*ptrs__prn_ini_date->yk_w*/) - matrix_head.top_margin);
                 ////if (top_clip_pdf>(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin))   ////????????
                 ////    top_clip_pdf=(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin);
 			}
@@ -1770,27 +1770,27 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
                 right_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ptrs__prn_ini_date->yk_w) * matrix_head.condensed_wsp);
 				right_clip_pdf = jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ptrs__prn_ini_date->yk_w) * matrix_head.condensed_wsp);
 
-				max_x_clip = jednostki_w_to_bit_prn(matrix_head.width) - matrix_head.right_margin;
+				max_x_clip = (int)((double)jednostki_w_to_bit_prn(matrix_head.width) - matrix_head.right_margin);
 
 				//max_x_clip cannot exceed the window boundaries
 				max_x_clip1 = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk_w - ymin) * matrix_head.condensed_wsp);
 				if (max_x_clip1 < max_x_clip) max_x_clip = max_x_clip1;
 
-                max_x_clip_sheet = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ymin) * matrix_head.condensed_wsp);
+                max_x_clip_sheet = (int)(matrix_head.left_margin + (double)jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ymin) * matrix_head.condensed_wsp));
 
-                max_y_clip_sheet = pdf_page_height - matrix_head.top_margin;
+                max_y_clip_sheet = (int)((double)pdf_page_height - matrix_head.top_margin);
 
 				top_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xp_w - xmin) * matrix_head.condensed_wsp);
 				if (top_clip > 0) min_y_clip = top_clip;
 
-                bottom_clip_pdf = pdf_page_height - jednostki_to_prn_y(ptrs__prn_ini_date->xk_w, 0) - matrix_head.bottom_margin - matrix_head.top_margin ;
+                bottom_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(ptrs__prn_ini_date->xk_w, 0) - matrix_head.bottom_margin - matrix_head.top_margin);
                 if (bottom_clip_pdf<0)
                     bottom_clip_pdf=0;
 
 				bottom_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk_w - xmin) * matrix_head.condensed_wsp);
 				if (bottom_clip > 0) max_y_clip = bottom_clip;
 
-                top_clip_pdf = pdf_page_height - jednostki_to_prn_y(ptrs__prn_ini_date->xp_w, 0) - matrix_head.top_margin;
+                top_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(ptrs__prn_ini_date->xp_w, 0) - matrix_head.top_margin);
                 ////if (top_clip_pdf>(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin))   ////????????
                 ////    top_clip_pdf=(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin);
 			}
@@ -1804,26 +1804,26 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
                 right_clip = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk - ptrs__prn_ini_date->xk_w)*matrix_head.condensed_wsp);
 				right_clip_pdf = jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk - ptrs__prn_ini_date->xk_w)*matrix_head.condensed_wsp);
 				  
-				max_x_clip = jednostki_w_to_bit_prn(matrix_head.width) - matrix_head.right_margin;
+				max_x_clip = (int)((double)jednostki_w_to_bit_prn(matrix_head.width) - matrix_head.right_margin);
 				//max_x_clip cannot exceed the window boundaries
 				max_x_clip1 = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk_w - xmin) * matrix_head.condensed_wsp);
 				if (max_x_clip1 < max_x_clip) max_x_clip = max_x_clip1;
 
-                max_x_clip_sheet = matrix_head.left_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk - xmin) * matrix_head.condensed_wsp);
-                max_y_clip_sheet = matrix_head.bottom_margin + jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ymin) * matrix_head.condensed_wsp);
+                max_x_clip_sheet = (int)(matrix_head.left_margin + (double)jednostki_w_to_bit_prn((ptrs__prn_ini_date->xk - xmin) * matrix_head.condensed_wsp));
+                max_y_clip_sheet = (int)(matrix_head.bottom_margin + (double)jednostki_w_to_bit_prn((ptrs__prn_ini_date->yk - ymin) * matrix_head.condensed_wsp));
 
 
 				top_clip = jednostki_w_to_bit_prn((ymax - ptrs__prn_ini_date->yk_w)*matrix_head.condensed_wsp);
 				if (top_clip > 0) min_y_clip = top_clip;
 
-                bottom_clip_pdf = pdf_page_height - jednostki_to_prn_y(0, ptrs__prn_ini_date->yp_w) - matrix_head.bottom_margin - matrix_head.top_margin ;
+                bottom_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(0, ptrs__prn_ini_date->yp_w) - matrix_head.bottom_margin - matrix_head.top_margin);
                 if (bottom_clip_pdf<0)
                     bottom_clip_pdf=0;
 
 				bottom_clip = jednostki_w_to_bit_prn((ymax - ptrs__prn_ini_date->yp_w) * matrix_head.condensed_wsp);
 				if (bottom_clip > 0) max_y_clip = bottom_clip;
 
-                top_clip_pdf = pdf_page_height - jednostki_to_prn_y(0, ptrs__prn_ini_date->yk_w) - matrix_head.top_margin;
+                top_clip_pdf = (int)((double)pdf_page_height - (double)jednostki_to_prn_y(0, ptrs__prn_ini_date->yk_w) - matrix_head.top_margin);
                 ////if (top_clip_pdf>(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin))  ////????????
                 ////    top_clip_pdf=(jednostki_w_to_bit_prn(matrix_head.height_max) - matrix_head.top_margin);
 				  
@@ -1838,17 +1838,17 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
                     allegro_prn_bmp->w, allegro_prn_bmp->h);
       clear_matrix(FALSE);
 
-      max_right=jednostki_to_prn_x(xmax-xmin, ymax-ymin) + matrix_head.left_margin;
+      max_right=(int)((double)jednostki_to_prn_x(xmax-xmin, ymax-ymin) + matrix_head.left_margin);
       if (max_x_clip<max_right) max_right=max_x_clip;
       max_bottom=jednostki_to_prn_y(xmax-xmin, ymin);
       if (max_y_clip<max_bottom) max_bottom=max_y_clip;
 
 	  if (ptrs__prn_ini_date->prn_type != PRN_PDF) {
           if ((ptrs__prn_ini_date->print_window == TRUE) || (ptrs__prn_ini_date->print_sheet == TRUE))
-              set_clip_rect(allegro_prn_bmp, matrix_head.left_margin + left_clip_sheet, min_y_clip_sheet,
+              set_clip_rect(allegro_prn_bmp, (int)matrix_head.left_margin + left_clip_sheet, min_y_clip_sheet,
                             max_x_clip_sheet, max_y_clip_sheet);
           else
-              set_clip_rect(allegro_prn_bmp, matrix_head.left_margin + left_clip, min_y_clip, max_right /*max_x_clip*/, max_bottom /*max_y_clip*/);
+              set_clip_rect(allegro_prn_bmp, (int)matrix_head.left_margin + left_clip, min_y_clip, max_right /*max_x_clip*/, max_bottom /*max_y_clip*/);
       }
 	  //clear_matrix(TRUE);
       get_clip_rect(allegro_prn_bmp, &x1, &y1, &x2, &y2);
@@ -1873,7 +1873,7 @@ BOOL Draw_Window (double xmin, double ymin, double xmax, double ymax,
           {
               intensity = 0.2989 * tmpR + 0.5870 * tmpG + 0.1140 * tmpB;
 
-              if (intensity < 252) intensity *= intensity_tab[ptrs__prn_ini_date->gray_saturation];
+              if (intensity < 252) intensity = (unsigned char)((float)intensity*intensity_tab[ptrs__prn_ini_date->gray_saturation]);
 
               int_intensity = (byte_)intensity;
               b_color24 = makecol(int_intensity, int_intensity, int_intensity);
@@ -7195,6 +7195,8 @@ static void solid_(int x1, int y1, int x2, int y2, COLOR_ kolor)
 
   if ((x2-x1<0) || (y2-y1<0)) return;
 
+ if	(ptrs__prn_ini_date->thin_point_PCX<2) ptrs__prn_ini_date->thin_point_PCX=2;   //it must be for solid saturation - to be assesed one day
+
  if (ptrs__prn_ini_date->thin_point_PCX==0)
  {
   x2--;
@@ -7248,7 +7250,7 @@ static void solid_(int x1, int y1, int x2, int y2, COLOR_ kolor)
  }
 }
 
-static void solid___(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, COLOR_ kolor)
+static void solid_a(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int y4, COLOR_ kolor)
 { //int x0 ;
   int xx, yy;
   int xi,yj,yi,xii;
@@ -7256,7 +7258,6 @@ static void solid___(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int
   int min_x, min_y, max_x, max_y;
   double yj_d;
   double aa, aaa;
-  //tymczasowo rysowanie punktu
 
   aa=(x1+x3)/2+0.5;
   xx=(int)aa;
@@ -7270,8 +7271,6 @@ static void solid___(int x1, int y1, int x2, int y2, int x3, int y3, int x4, int
   if (yi==0) yi=1;
 
   point_(xx, yy, xi, yi, kolor);
-
-  return;
 
   //rysowanie obszaru nieortogonalnego
   //wyznaczamy rownanie prostej dla odcinka <x1,y1>,<x2,y2>
@@ -7359,7 +7358,6 @@ void solid04_prn_old(double x01, double y01, double x02, double y02, int kolor25
 	byte_ intensity;
 	COLOR_ kolor;
 
-
 	if (ptrs__prn_ini_date->prn_type == PRN_PCX)
 	{
 
@@ -7422,7 +7420,7 @@ void solid04_prn_old(double x01, double y01, double x02, double y02, int kolor25
 		x4 = jednostki_to_prn_x(x44, y44);
 		y4 = jednostki_to_prn_y(x44, y44);
 
-		solid___(x1, y1, x2, y2, x3, y3, x4, y4, kolor);
+		solid_a(x1, y1, x2, y2, x3, y3, x4, y4, kolor);
 	}
 }
 

@@ -1041,7 +1041,7 @@ void obiekt_tok(char  *adr,char  *adrk,char  **ad,int obiekt)
  if ((adr>((char*)dane+dane_size)) && (adr==adrk))
  {
      nag=(NAGLOWEK*)adr;
-     if ((obiekt == ONieOkreslony) || (obiekt == ONoInBlock) || (nag->obiekt=obiekt))
+     if ((obiekt == ONieOkreslony) || (obiekt == ONoInBlock) || (nag->obiekt==obiekt))
          *ad=(char*)adr;
      else *ad=NULL;
          return;

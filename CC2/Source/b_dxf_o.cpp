@@ -3436,7 +3436,7 @@ int PISZ_OBJECTS::RysujPoint(T_Point *p, int *p_block_sufix)
 
                     o.x = p->x;
                     o.y = p->y;
-                    o.r = 2 * df_psize / 3.0;
+                    o.r = (float)(2. * df_psize / 3.0);
                     RysujOkrag(&o);
                     break;
                 case 12:
@@ -5377,7 +5377,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if (l.kat2 < l.kat1)
             {
-                l.kat2 += 2.*Pi_;
+                l.kat2 += (float)(2.*Pi_);
             }
 
             if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
@@ -5480,7 +5480,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             if (l.kat2 < l.kat1)
             {
-                l.kat2 += 2.*Pi_;
+                l.kat2 += (float)(2.*Pi_);
             }
 
             if (Check_if_Equal(ptrs_vector->angle1, ptrs_vector->angle2))
@@ -6855,10 +6855,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 sa.kat2 = ptrs_vector->angle2;
                 if (sa.kat2 < sa.kat1)
                 {
-                    sa.kat2 += 2.*Pi_;
+                    sa.kat2 += (float)(2.*Pi_);
                 }
-                sa.width1 = (float)ra / 4;
-                sa.width2 = (float)ra / 4;
+                sa.width1 = (float)(ra / 4.);
+                sa.width2 = (float)(ra / 4.);
 
                 if(RysujSolidArc(&sa)==ErrorWeWy) return ErrorWeWy;
             }
@@ -6881,10 +6881,10 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
                 sa.kat2 = ptrs_vector->angle2;
                 if (sa.kat2 < sa.kat1)
                 {
-                    sa.kat2 += 2.*Pi_;
+                    sa.kat2 += (float)(2.*Pi_);
                 }
-                sa.width1 = (float)ra / 4;
-                sa.width2 = (float)ra / 4;
+                sa.width1 = (float)(ra / 4.);
+                sa.width2 = (float)(ra / 4.);
 
                 if(RysujSolidArc(&sa)==ErrorWeWy) return ErrorWeWy;
             }
@@ -7001,7 +7001,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
                 if (l.kat2 < l.kat1)
                 {
-                    l.kat2 += 2.*Pi_;
+                    l.kat2 += (float)(2.*Pi_);
                 }
 
                 l.typ = grubosc * 32 + 1;
@@ -7028,7 +7028,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
                 if (l.kat2 < l.kat1)
                 {
-                    l.kat2 += 2.*Pi_;
+                    l.kat2 += (float)(2.*Pi_);
                 }
 
                 l.typ = grubosc * 32 + 1;
@@ -7155,7 +7155,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
                 if (l.kat2 < l.kat1)
                 {
-                    l.kat2 += 2.*Pi_;
+                    l.kat2 += (float)(2.*Pi_);
                 }
 
                 l.typ=ptrs_vector->typ;
@@ -7870,7 +7870,7 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             l.y=ptrs_vector->y1;
             l.r=ptrs_vector->r;
             l.kat1 = 0;
-            l.kat2 = Pi2;
+            l.kat2 = (float)Pi2;
 
             if(RysujLuk(&l)==ErrorWeWy) return ErrorWeWy;
 

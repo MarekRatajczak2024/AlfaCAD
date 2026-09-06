@@ -38,15 +38,17 @@ extern BOOL	use_getopenfilename;
 extern BOOL	window_was_resized;
 extern BOOL sleep_state;
 extern BOOL mouse_out;
-extern char	HATCH_TEMP_FILE[13];
-extern char RYSUJ$1[13];
+extern char	HATCH_TEMP_FILE[16];
+extern char RYSUJ$1[16];
+extern char PROFIL_TEMP_FILE[16];
+extern char PROFIL_TEMP_FILE_BAK[16];
 extern int Number_of_clients;
 extern int Client_number;
 extern int Alf_window_number;
 extern BOOL	original_color_print;
 extern BOOL normalize_text;
 extern char background_pcx_file[MAXPATH];
-extern WARSTWY_ON_PCX  Warstwy_On_PCX[256], Warstwy_On_Solids[256];
+extern WARSTWY_ON_PCX  Warstwy_On_PCX[MAX_NUMBER_OF_LAYERS], Warstwy_On_Solids[MAX_NUMBER_OF_LAYERS];
 extern int aspect_ratio;
 extern int start_disk;
 extern int gfx_gd;
@@ -87,6 +89,8 @@ extern double rzedna_ti_prec;
 extern double rzedna_tp_prec;
 extern double spadek_prec;
 extern double zaglebienie_prec;
+extern double srednica_punktu_zalamania;
+extern double skala_bloku_hm_km;
 extern int odleglosc_poz;
 extern int rzedna_i_poz;
 extern int rzedna_p_poz;
@@ -212,7 +216,7 @@ extern char TracePatternName[MAXPATH];
 extern BOOL change_color_wsp;
 extern BOOL auto_pan_block;
 extern BOOL auto_zoom_block;
-extern char global_kom [100];
+extern char global_kom [256];
 extern char EXPLORER_EXE [MAXPATH];
 extern BOOL auto_tekst;
 extern int tekst_interwal;
@@ -239,6 +243,7 @@ extern BOOL b_first_open;
 extern int killpline;
 extern int killblock;
 extern OPTIONS1 options1;
+extern OPTIONS2 options2;
 extern BOOL undo_avail;
 extern UNDO_TAB_REC UNDO_TAB [4];
 extern UNDO_TAB_REC UNDO_REC;
@@ -404,6 +409,7 @@ extern int HOLE; //hole in plate
 extern int WALL;
 extern int ZONE;
 extern int SIEC_P; //siec na mapie
+extern int SIEC_PC; //siec connection na mapie
 extern double L50; //dlugosc osi pomocniczej podzialu plyty
 extern WARSTWY_STROPU Warstwy_Stropu;
 extern WARSTWY_PREFABRYKATU Warstwy_Prefabrykatu;
@@ -906,11 +912,6 @@ extern long atol_(const char *st);
 extern BOOL RETINA;
 extern void get_isometric_thermal_gradient(AVECTOR *ptrs_vector, double n, LINIA *Lth, LINIA *Lt, LINIA *Lth1, LINIA *Lt1, PLINIA *PLth, PLINIA *PLth1, double *perp_iso_angle);
 extern double h_factor_iso;
-/*
-extern void position_mouse_xy_r(int x, int y);
-extern void position_mouse_r(int x, int y);
-extern void position_mouse_r_(int x, int y);
-*/
 
 #ifdef __cplusplus
 }

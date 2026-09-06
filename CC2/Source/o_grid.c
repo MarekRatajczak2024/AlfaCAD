@@ -857,6 +857,7 @@ BOOL get_static_param (T_Fstring key_name, T_Fstring ret_string)
     return TRUE;
 }
 
+/*
 static int copy(const char* in_path, const char* out_path){
     size_t n;
     FILE* in=NULL, * out=NULL;
@@ -868,6 +869,41 @@ static int copy(const char* in_path, const char* out_path){
     if(out) fclose(out);
     return EXIT_SUCCESS;
 }
+*/
+
+static int copy(const char* in_path, const char* out_path) {
+    size_t n;
+    FILE* in = NULL;
+    FILE* out = NULL;
+
+    // Allocate buffer
+    char* buf = calloc(BUF_SIZE, 1);
+    if (!buf) return EXIT_FAILURE;
+
+    // Open files safely on separate lines
+    in = fopen(in_path, "rb");
+    out = fopen(out_path, "wb");
+
+    // Only proceed if both files opened successfully
+    if (in && out) {
+        // Double parentheses () around assignment tell CLion this is intentional
+        while ((n = fread(buf, 1, BUF_SIZE, in)) > 0) {
+            size_t written = fwrite(buf, 1, n, out);
+            if (written < n) {
+                // Handle write error (disk full, etc.)
+                break;
+            }
+        }
+    }
+
+    // Clean up resources safely
+    free(buf);
+    if (in) fclose(in);
+    if (out) fclose(out);
+
+    return EXIT_SUCCESS;
+}
+
 
 static BOOL add_block_in_block (char kod_obiektu, char c_pltype0)
 /*--------------------------------------------------------------*/
@@ -3114,9 +3150,9 @@ static BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float
 }
 
 static int qsort_by_number(const void *e1, const void *e2)
-{ int delta;
-    delta=(*(unsigned char *)e1) - (*(unsigned char *)e2);
-    return delta;
+{
+    // Subtracting e2 from e1 naturally returns < 0, 0, or > 0
+    return (*(const unsigned char *)e1) - (*(const unsigned char *)e2);
 }
 
 static double find_node_size(float x, float y)

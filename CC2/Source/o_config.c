@@ -174,7 +174,7 @@ static TDIALOG Config={ 10,1, 420, 145,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_N
 	config_title,
 			1, (DARK_LIGHT_LINE(*)[])&line_d_l,
 			nof_lab, (LABEL(*)[])&pdLab,
-			2, (GROUP_BOX(*)[])& gr_box1,
+			2, (GROUP_BOX(*)[])&gr_box1,
 			0, NULL, /*1, &pdLin, */
 			2, (IMAGE(*)[])&images_conf,
 			nof_but,(BUTTON(*)[])&pdBut,
@@ -461,7 +461,7 @@ aa:
 	memmove(kolory_pulpitu,&kolor_pola_tmp, sizeof(KOLORY));
 	return 1;
   }
-    else return 0;
+    return 0;
 }
 
 #undef __O_CONFIG__

@@ -14,7 +14,7 @@
 *
 */
 
-#define __LOADF__
+#define __O_LOADF__
 #include <forwin.h>
 #ifndef LINUX
 #include <dos.h>
@@ -3555,4 +3555,4 @@ BOOL Load_File (char * f_name, int type, BOOL cur)
   return ret;
 }
 
-#undef __LOADF__
+#undef __O_LOADF__

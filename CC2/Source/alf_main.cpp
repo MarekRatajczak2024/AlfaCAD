@@ -323,6 +323,9 @@ int dHeight = 60;
 #define DEGREESIGN 176
 
 #define SUPERSCRIPT4 0x2074
+#define DIAMETER 0x2300
+#define EMPTYSET 0x2205
+#define PROMILLE 0x2030
 #define ROOTSIGN 0x221A
 #define ROOT3SIGN 0x221B
 #define EUROSIGN 0x20AC
@@ -594,9 +597,11 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					break;
 				case '1': wParam = ONEHALF;
 					break;
-				case '5': wParam = ONEQUARTER;
+				case '5': wParam = PROMILLE;
 					break;
 				case '6': wParam = THREEQUARTERS;
+					break;
+				case '7': wParam = ONEQUARTER;
 					break;
 				case '0': wParam = DIAMETERSIGN;
 					break;
@@ -719,9 +724,11 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				break;
 			case '1': wParam = ONEHALF;
 				break;
-			case '5': wParam = ONEQUARTER;
+			case '5': wParam = PROMILLE;
 				break;
 			case '6': wParam = THREEQUARTERS;
+				break;
+			case '7': wParam = ONEQUARTER;
 				break;
 			case '0': wParam = DIAMETERSIGN;
 				break;

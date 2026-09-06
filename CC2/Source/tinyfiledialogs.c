@@ -1647,7 +1647,7 @@ wchar_t * tinyfd_saveFileDialogW(
                         wcscpy(lDialogString, lFilterPatterns);
                         wcscat(lFilterPatterns, lDialogString);
                 }
-                wcscat(lFilterPatterns, L"All Files\n*.*\n");
+                //wcscat(lFilterPatterns, L"All Files\n*.*\n");
                 p = lFilterPatterns;
                 while ((p = wcschr(p, L'\n')) != NULL)
                 {
@@ -1804,6 +1804,7 @@ wchar_t * tinyfd_openFileDialogW(
     /* ====================================================================== */
         ofn.hInstance = 0;
         ofn.lpstrFilter = wcslen(lFilterPatterns) ? lFilterPatterns : NULL;
+        ////ofn.lpstrFilter = L"Font Files (*.ttf;*.otf)\0*.ttf;*.otf\0All Files (*.*)\0*.*\0";
         ofn.lpstrCustomFilter = NULL;
         ofn.nMaxCustFilter = 0;
         ofn.nFilterIndex = 1;

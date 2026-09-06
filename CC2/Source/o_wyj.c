@@ -108,7 +108,7 @@ extern void Check_XNextEvent(void);
 extern BOOL hibernate;
 
 extern int DRAWING_NUMBER;
-extern BOOL  Change ;
+//extern BOOL  Change ;
 static  OKNO O;
 extern BOOL no_break;
 extern void Exec(char *patch0, char *params);
@@ -204,6 +204,7 @@ extern void Test_App(int doit, char *file_name);
 extern void Open_Backgrounds(void);
 
 extern T_Prototype  s__prot;
+extern T_Prototype  s__prot_p;
 
 extern int TRANSLUCENCY;
 extern int GTRANSLUCENCY;
@@ -375,6 +376,7 @@ extern void position_mouse_xy(int x, int y);
 #endif
 
 extern void Reset_Pointer(void);
+extern BOOL get_sketchbook_exists(void);
 
 extern double depth_magnitude; //units per mm  default 1 mm of section depth per 1 mm on drawing paper
 extern double thermal_magnitude;
@@ -412,8 +414,8 @@ void Koniec(void);
 void Restart(void);
 void DxfInExe(char* sk, DXF_Header* head);
 void Desktop(void);
-int Restore_params(void);
-int Deposit_params(void);
+int Restore_params(int sketch);
+int Deposit_params(int sketch);
 void standard_func(void);
 void view_scale(void);
 
@@ -426,20 +428,32 @@ extern void Check_ConfigureNotify(void);
 extern int get_tier(void);
 extern int what_tier(int font_size);
 extern void Destroy_Bitmaps(void);
+extern void Destroy_BufVar(void);
 extern void Load_Bitmaps(int HEIGHT_);
 extern void reload_client_bitmaps(void);
 extern void Set_Mem_Bitmaps(int tier_);
 extern void Set_Mem_Cursors(int tier_);
 extern void save_mouse_wheel(void);
 
-extern BOOL Semaphore;
 extern BOOL check_file_buffer(void);
 
 extern BOOL rescaling_menu_mode;
 
+#ifdef PROFILE
+extern MyDaneTabl dane_profil;
+extern MyDane dane_profs1;
+extern double data_odwiert[29];
+extern char comments_geo[17][61];
+extern double data_instal_last[20];
+extern double data_instal_tab[20][6];
+extern double reference_angle;
+#endif
+
 static BITMAP *second_screen_bak_=NULL;
 
-static DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];
+static DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS+1];  //+1 for sketch
+
+static DRAWING_PARAMS Drawing_Params_P;
 
 BITMAP *qmark;
 char *qmark_p;
@@ -718,6 +732,7 @@ BITMAP *icon_point_origin;
 BITMAP *icon_axis_angle;
 BITMAP *icon_rotation_angle;
 BITMAP *icon_colorwheel;
+BITMAP *icon_profile_color;
 BITMAP *icon_panoramic;
 BITMAP *icon_font_type;
 
@@ -744,6 +759,7 @@ char *icon_point_origin_p;
 char *icon_axis_angle_p;
 char *icon_rotation_angle_p;
 char *icon_colorwheel_p;
+char *icon_profile_color_p;
 char *icon_panoramic_p;
 char *icon_font_type_p;
 
@@ -1156,6 +1172,9 @@ BITMAP *icon_trace_extra_thick;
 BITMAP *icon_point_simple;
 BITMAP *icon_point_base;
 BITMAP *icon_point_pin;
+BITMAP *icon_point_pin_g;
+BITMAP *icon_point_pin_d;
+BITMAP *icon_point_pin_s;
 
 char *icon_trace_filled_p;
 char *icon_trace_very_thin_p;
@@ -1166,6 +1185,9 @@ char *icon_trace_extra_thick_p;
 char *icon_point_simple_p;
 char *icon_point_base_p;
 char *icon_point_pin_p;
+char *icon_point_pin_g_p;
+char *icon_point_pin_d_p;
+char *icon_point_pin_s_p;
 
 BITMAP *icon_RAM_for_drawing;
 BITMAP *icon_RAM_virtual_image;
@@ -2582,16 +2604,135 @@ char *icon_menu_choice_p;
 BITMAP *icon_autoplay;
 char *icon_autoplay_p;
 
+BITMAP *icon_network_profile;
+BITMAP *icon_installation;
+char *icon_network_profile_p;
+char *icon_installation_p;
 
-BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,*/
+BITMAP *icon_next_measurement;
+BITMAP *icon_first_measurement;
+BITMAP *icon_installations;
+BITMAP *icon_borehole;
+BITMAP *icon_select_profile;
+BITMAP *icon_profile_parameters;
+BITMAP *icon_select_measurement;
+BITMAP *icon_channel_depth_description;
+BITMAP *icon_channel_facing;
+BITMAP *icon_profile_length;
+BITMAP *icon_profile_slope;
+BITMAP *icon_channel_depth_change;
+BITMAP *icon_channel_d_material;
+BITMAP *icon_refresh_profile;
+BITMAP *icon_profile_lock;
+BITMAP *icon_filler;
+
+char *icon_next_measurement_p;
+char *icon_first_measurement_p;
+char *icon_installations_p;
+char *icon_borehole_p;
+char *icon_select_profile_p;
+char *icon_profile_parameters_p;
+char *icon_select_measurement_p;
+char *icon_channel_depth_description_p;
+char *icon_channel_facing_p;
+char *icon_profile_length_p;
+char *icon_profile_slope_p;
+char *icon_channel_depth_change_p;
+char *icon_channel_d_material_p;
+char *icon_refresh_profile_p;
+char *icon_profile_lock_p;
+char *icon_filler_p;
+
+BITMAP *icon_draw_installation;
+BITMAP *icon_service_connection;
+BITMAP *icon_collision;
+BITMAP *icon_benchmark;
+BITMAP *icon_merge_networks;
+BITMAP *icon_refresh_installation;
+BITMAP *icon_align_km_hm;
+BITMAP *icon_export_coordinates;
+BITMAP *icon_import_network;
+BITMAP *icon_export_network;
+BITMAP *icon_import_profile;
+BITMAP *icon_manhole;
+
+char *icon_draw_installation_p;
+char *icon_service_connection_p;
+char *icon_collision_p;
+char *icon_benchmark_p;
+char *icon_merge_networks_p;
+char *icon_refresh_installation_p;
+char *icon_align_km_hm_p;
+char *icon_export_coordinates_p;
+char *icon_import_network_p;
+char *icon_export_network_p;
+char *icon_import_profile_p;
+char *icon_manhole_p;
+
+BITMAP *icon_mew_profile;
+BITMAP *icon_sel_existing_profile;
+BITMAP *icon_distorted_scale;
+BITMAP *icon_ok;
+BITMAP *icon_edit_par;
+BITMAP *icon_verify;
+BITMAP *icon_previous;
+BITMAP *icon_next;
+BITMAP *icon_escape;
+BITMAP *icon_ceiling_facing;
+BITMAP *icon_bottom_facing;
+BITMAP *icon_axis_facing;
+BITMAP *icon_diameter;
+BITMAP *icon_material;
+BITMAP *icon_ground_type;
+BITMAP *icon_hm;
+BITMAP *icon_km;
+
+char *icon_mew_profile_p;
+char *icon_sel_existing_profile_p;
+char *icon_distorted_scale_p;
+char *icon_ok_p;
+char *icon_edit_par_p;
+char *icon_verify_p;
+char *icon_previous_p;
+char *icon_next_p;
+char *icon_escape_p;
+char *icon_ceiling_facing_p;
+char *icon_bottom_facing_p;
+char *icon_axis_facing_p;
+char *icon_diameter_p;
+char *icon_material_p;
+char *icon_ground_type_p;
+char *icon_hm_p;
+char *icon_km_p;
+
+BITMAP *icon_designed_canal;
+BITMAP *icon_existing_canal;
+BITMAP *icon_designed_terrain;
+BITMAP *icon_uniform_slope;
+BITMAP *icon_change_slope;
+BITMAP *icon_set_slope;
+BITMAP *icon_from_existing_terrain;
+BITMAP *icon_from_designed_terrain;
+
+char *icon_designed_canal_p;
+char *icon_existing_canal_p;
+char *icon_designed_terrain_p;
+char *icon_uniform_slope_p;
+char *icon_change_slope_p;
+char *icon_set_slope_p;
+char *icon_from_existing_terrain_p;
+char *icon_from_designed_terrain_p;
+
+BITMAP *icon_reference_angle;
+char *icon_reference_angle_p;
+BITMAP *icon_change_ref_angle;
+char *icon_change_ref_angle_p;
+
+BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS+1] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							};
-char *dump_bitmap_p[MAX_NUMBER_OF_WINDOWS]= { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							/*NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,*/
+char *dump_bitmap_p[MAX_NUMBER_OF_WINDOWS+1]= { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 };
 
 void out_file_name (void) ;
@@ -2649,9 +2790,11 @@ static POLE pmCzcionkaEkran[]={
 
 TMENU mCzcionkaEkran={36,18,18,13,20,7,0,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmCzcionkaEkran,NULL,NULL};
 
-
+#ifdef PROFILE
+TMENU mOpcje = {13, 0, 0, 42, 1, 3, ICONS | TADD, CMNU, CMBR, CMTX, 0, 0, 0, 0,0,(POLE(*)[]) &pmOpcje, NULL, NULL};
+#else
 TMENU mOpcje = {12, 0, 0, 42, 1, 3, ICONS | TADD, CMNU, CMBR, CMTX, 0, 0, 0, 0,0,(POLE(*)[]) &pmOpcje, NULL, NULL};
-
+#endif
 typedef enum DWG_ERROR
 {
 	DWG_NOERR = 0,
@@ -2677,6 +2820,12 @@ typedef enum DWG_ERROR
 char* DwgErrorList[] = { "NOERR",/* sorted by severity */"WRONG CRC","NOT YET SUPPORTED","UNHANDLED CLASS","INVALID TYPE","INVALID HANDLE","INVALIDEED","VALUE OUT OF BOUNDS",
 /* -------- critical errors ------- */"CLASSES NOT FOUND","SECTION NOT FOUND","PAGE NOT FOUND","INTERNAL ERROR","INVALID DWG","IO ERROR","OUT OF MEM" };
 
+#ifdef PROFILE
+#define O1 1
+#else
+#define O1 0
+#endif
+
 BOOL get_close_button_pressed(void)
 {  int ret=close_button_pressed;
     close_button_pressed=FALSE;
@@ -2686,7 +2835,7 @@ BOOL get_close_button_pressed(void)
 void set_background_menu(char *background)
 {
 	strncpy((char *) &background_name, background, 31);
-	menu_par_new((*mOpcje.pola)[5].txt, background_name);
+	menu_par_new((*mOpcje.pola)[5+O1].txt, background_name);
 }
 
 void load_file_to_history(char *sk)
@@ -3096,8 +3245,8 @@ BOOL DrawToPrn0 (int serial_mode, int init_prn_dlg)
   ENABLE_FOUND=FALSE;
   normalize_text_back=normalize_text;
   normalize_text=FALSE;
-  float prn_width_paper=210.0;
-  float prn_height_paper=297.0;
+  float prn_width_paper=210.0f;
+  float prn_height_paper=297.0f;
 
  kk = Print2Page(1);
 
@@ -3307,11 +3456,17 @@ return_to_dialog:
             return 0;
           }
 
+         PTR__GTMPBLOCK=adp_F;
+
          k=wszystkie_warstwy1();
          kos = sin (-optimal_angle);
          koc = cos (-optimal_angle);
          transformacja_blok (ADP, ADK, 0, 0, kos, koc, Tobrot,0);
 		 zmien_atrybut(ADP, ADK, Ablok, Anormalny);
+
+            //k=pisz_zbior("TEST.alf", FALSE, 1) ; //for test purpose
+
+         adp_F=PTR__GTMPBLOCK;  //just for a case
 
         }
 
@@ -3334,7 +3489,6 @@ return_to_dialog:
        ptrs_ini_date->yp_w=ymin;
        ptrs_ini_date->xk_w=xmax;
        ptrs_ini_date->yk_w=ymax;
-
 
      }
      else if (ret_prn_param==2)
@@ -4144,6 +4298,10 @@ void DxfInExe(char *sk, DXF_Header *head)
 
   bitmap_view=TRUE;
 
+#ifdef PROFILE
+ delete_instal_tab();
+#endif
+
   strcpy (zbior_danych, "") ;
   out_file_name () ;
   Clear_View () ;
@@ -4248,6 +4406,10 @@ void Inicjacja(void)
   strcpy(zbior_danych_2,""); /*kasowanie rysunku dolaczonego*/
   bitmap_view=TRUE;
 
+#ifdef PROFILE
+ delete_instal_tab();
+#endif
+
   /*pobranie sciezki*/
   flags=fnsplit (sk, drive__, dir__, file__, ext__);
   strcpy(Current_File_Directory,drive__);
@@ -4308,6 +4470,10 @@ void Nowy_rysunek(void)
 
   strcpy(zbior_danych_2,""); /*kasowanie rysunku dolaczonego*/
   bitmap_view=TRUE;
+
+#ifdef PROFILE
+ delete_instal_tab();
+#endif
 
   if (bitmap_pattern_exist) DonePatternBitmapScaled();
 
@@ -4402,7 +4568,7 @@ void New_from_template(void)
 
 }
 
-int Restore_params(void)
+int Restore_params(int sketch)
 {
 	int l_kr;
 	int i;
@@ -4531,6 +4697,27 @@ int Restore_params(void)
     memmove(&static_stress_colors, &Drawing_Params[DRAWING_NUMBER].static_stress_colors, sizeof(STATIC_STRESS_COLORS));
 
     rescaling_menu_mode=Drawing_Params[DRAWING_NUMBER].rescaling_menu_mode;
+
+#ifdef PROFILE
+ if (!sketch)
+ {
+  memmove(&dane_profil, &Drawing_Params[DRAWING_NUMBER].dane_profil, sizeof(MyDaneTabl));
+  memmove(&dane_profs1, &Drawing_Params[DRAWING_NUMBER].dane_profs1, sizeof(MyDane));
+  put_typ_profilu(Drawing_Params[DRAWING_NUMBER].typ_profilu);
+  put_hektometr(Drawing_Params[DRAWING_NUMBER].hektometr_p,0);
+  put_hektometr(Drawing_Params[DRAWING_NUMBER].hektometr_k,1);
+  put_znacznik_aplikacji(Drawing_Params[DRAWING_NUMBER].znacznik_aplikacji);
+  put_dynamic_block(Drawing_Params[DRAWING_NUMBER].dynamic_block);
+  put_skala_profilu_x(Drawing_Params[DRAWING_NUMBER].skala_p_x);
+  put_poziom_pp(Drawing_Params[DRAWING_NUMBER].rpp);
+  memmove(&data_odwiert, &Drawing_Params[DRAWING_NUMBER].data_odwiert, sizeof(data_odwiert));
+  memmove(&comments_geo, &Drawing_Params[DRAWING_NUMBER].comments_geo, sizeof(comments_geo));
+  memmove(&data_instal_last, &Drawing_Params[DRAWING_NUMBER].data_instal_last, sizeof(data_instal_last));
+  memmove(&data_instal_tab, &Drawing_Params[DRAWING_NUMBER].data_instal_tab, sizeof(data_instal_tab));
+  reference_angle=Drawing_Params[DRAWING_NUMBER].reference_angle;
+ }
+#endif
+
     //zeroing
     for (i=0; i<32; i++) put_ctx_bitmap(i, NULL);
 
@@ -4561,9 +4748,24 @@ int Restore_params(void)
 	return 1;
 }
 
+void Restore_profil_params(void)
+{
+ memmove(&dane_profil, &Drawing_Params_P.dane_profil, sizeof(MyDaneTabl));
+ memmove(&dane_profs1, &Drawing_Params_P.dane_profs1, sizeof(MyDane));
+ put_typ_profilu(Drawing_Params_P.typ_profilu);
+ put_hektometr(Drawing_Params_P.hektometr_p,0);
+ put_hektometr(Drawing_Params_P.hektometr_k,1);
+ put_znacznik_aplikacji(Drawing_Params_P.znacznik_aplikacji);
+ put_dynamic_block(Drawing_Params_P.dynamic_block);
+ put_skala_profilu_x(Drawing_Params_P.skala_p_x);
+ put_poziom_pp(Drawing_Params_P.rpp);
+ memmove(&data_odwiert, &Drawing_Params_P.data_odwiert, sizeof(data_odwiert));
+ memmove(&comments_geo, &Drawing_Params_P.comments_geo, sizeof(comments_geo));
+ memmove(&data_instal_last, &Drawing_Params_P.data_instal_last, sizeof(data_instal_last));
+ memmove(&data_instal_tab, &Drawing_Params_P.data_instal_tab, sizeof(data_instal_tab));
+}
 
-
-int Deposit_params(void)
+int Deposit_params(int sketch)
 {
 	int i;
 	Ctx_Par_copy ctx_par;
@@ -4699,7 +4901,44 @@ int Deposit_params(void)
 
     Drawing_Params[DRAWING_NUMBER].rescaling_menu_mode=rescaling_menu_mode;
 
+#ifdef PROFILE
+if (!sketch)
+{
+ memmove(&Drawing_Params[DRAWING_NUMBER].dane_profil, &dane_profil, sizeof(MyDaneTabl));
+ memmove(&Drawing_Params[DRAWING_NUMBER].dane_profs1, &dane_profs1, sizeof(MyDane));
+ Drawing_Params[DRAWING_NUMBER].typ_profilu = get_typ_profilu();
+ Drawing_Params[DRAWING_NUMBER].hektometr_p = get_hektometr_p();
+ Drawing_Params[DRAWING_NUMBER].hektometr_k = get_hektometr_k();
+ Drawing_Params[DRAWING_NUMBER].znacznik_aplikacji = get_znacznik_aplikacji();
+ Drawing_Params[DRAWING_NUMBER].dynamic_block=get_dynamic_block();
+ Drawing_Params[DRAWING_NUMBER].skala_p_x=get_skala_profilu_x();
+ Drawing_Params[DRAWING_NUMBER].rpp=get_poziom_pp();
+ memmove(&Drawing_Params[DRAWING_NUMBER].data_odwiert, &data_odwiert, sizeof(data_odwiert));
+ memmove(&Drawing_Params[DRAWING_NUMBER].comments_geo, &comments_geo, sizeof(comments_geo));
+ memmove(&Drawing_Params[DRAWING_NUMBER].data_instal_last, &data_instal_last, sizeof(data_instal_last));
+ memmove(&Drawing_Params[DRAWING_NUMBER].data_instal_tab, &data_instal_tab, sizeof(data_instal_tab));
+ Drawing_Params[DRAWING_NUMBER].reference_angle=reference_angle;
+}
+#endif
+
 	return 1;
+}
+
+void Deposit_profil_params(void)
+{
+ memmove(&Drawing_Params_P.dane_profil, &dane_profil, sizeof(MyDaneTabl));
+ memmove(&Drawing_Params_P.dane_profs1, &dane_profs1, sizeof(MyDane));
+ Drawing_Params_P.typ_profilu = get_typ_profilu();
+ Drawing_Params_P.hektometr_p = get_hektometr_p();
+ Drawing_Params_P.hektometr_k = get_hektometr_k();
+ Drawing_Params_P.znacznik_aplikacji = get_znacznik_aplikacji();
+ Drawing_Params_P.dynamic_block=get_dynamic_block();
+ Drawing_Params_P.skala_p_x=get_skala_profilu_x();
+ Drawing_Params_P.rpp=get_poziom_pp();
+ memmove(&Drawing_Params_P.data_odwiert, &data_odwiert, sizeof(data_odwiert));
+ memmove(&Drawing_Params_P.comments_geo, &comments_geo, sizeof(comments_geo));
+ memmove(&Drawing_Params_P.data_instal_last, &data_instal_last, sizeof(data_instal_last));
+ memmove(&Drawing_Params_P.data_instal_tab, &data_instal_tab, sizeof(data_instal_tab));
 }
 
 void New_window_factory(int NEW_DRAWING_NUMBER, char *sk) //open another drawing in another window factory
@@ -4715,7 +4954,7 @@ void New_window_factory(int NEW_DRAWING_NUMBER, char *sk) //open another drawing
 	bitmap_view = TRUE;
 
 	CopyPreview(0, 0, 320, 320, DRAWING_NUMBER);
-	ret = Deposit_params();
+	ret = Deposit_params(0);
 
 	Reset_change_dlg();
 
@@ -4855,7 +5094,7 @@ void New_window_from_template(void) //open another drawing in another window
 	bitmap_view = TRUE;
 
 	CopyPreview(0, 0, 320, 320, DRAWING_NUMBER);
-	ret = Deposit_params();
+	ret = Deposit_params(0);
 
 	Reset_change_dlg();
 
@@ -4914,7 +5153,7 @@ void New_window_empty(void) //open another drawing in another window
 	bitmap_view = TRUE;
 
 	CopyPreview(0, 0, 320, 320, DRAWING_NUMBER);
-	ret = Deposit_params();
+	ret = Deposit_params(0);
 
 	Reset_change_dlg();
 
@@ -4935,6 +5174,68 @@ void New_window_empty(void) //open another drawing in another window
 	Change = FALSE;
 	Set_Auto_Backup(FALSE);
 }
+
+int New_window_sketchbook(void) //open sketchbook in another window
+{
+ char sk[MAXPATH] = "";
+ int i;
+ int ret;
+ int NEW_DRAWING_NUMBER;
+
+ /*
+ //finding empty buffer
+ i = 0;
+ while (i < MAX_NUMBER_OF_WINDOWS)
+ {
+  if (Get_dane0_DATA(i) == NULL)
+  {
+   NEW_DRAWING_NUMBER = i;
+   break;
+  }
+  i++;
+ }
+
+ if (i == MAX_NUMBER_OF_WINDOWS) //to many
+ {
+  ret = ask_question(1, "", "OK", "", _TO_MANY_WIN_, 12, "", 11, 1, 0);
+  return 0;
+ }
+ */
+ NEW_DRAWING_NUMBER=MAX_NUMBER_OF_WINDOWS;  //the very last buffer, beyond all drawings
+
+ //strcpy(sk, "");
+
+ strcpy(zbior_danych_2, ""); /*kasowanie rysunku dolaczonego*/
+ bitmap_view = TRUE;
+
+ CopyPreview(0, 0, 320, 320, DRAWING_NUMBER);
+ ret = Deposit_params(0);  //saving drawing
+
+ Reset_change_dlg();
+
+ DRAWING_NUMBER = NEW_DRAWING_NUMBER;
+
+ InitBuffers();
+ null_all_ctx_pointers();
+
+ zwolnienie_pamieci();
+
+ strcpy(zbior_danych, "");
+ out_file_name();
+ Clear_View();
+ 
+ Deposit_profil_params();
+ czytaj_rysunek(s__prot_p.sz_prot, TRUE);
+ Restore_profil_params();
+
+ Ini_Place_Marker();
+ Ini_Layers_Dlg();
+ Change = FALSE;
+ Set_Auto_Backup(FALSE);
+
+ return 1;
+}
+
 
 
 void Load_P_File1234(char *previous_file)
@@ -5270,7 +5571,7 @@ void Close_window(void)
 	DoneBuffers(DRAWING_NUMBER);
 
 	DRAWING_NUMBER = i;
-	ret = Restore_params();
+	ret = Restore_params(0);
 	out_file_name();
 	Clear_View();  //TEMPORARY
 
@@ -5312,7 +5613,10 @@ void Koniec(void)
   FILE *f;
   int i, j;
   char exit_str[72];
-  BOOL changes[MAX_NUMBER_OF_WINDOWS] = {FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
+  BOOL changes[MAX_NUMBER_OF_WINDOWS+1] = {
+   FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+   FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE
+  };
   int i_changes = 0;
   char win_no[4];
   char byebye[80];
@@ -5383,7 +5687,7 @@ void Koniec(void)
 			  if (changes[i] == TRUE)
 			  {
 				  DRAWING_NUMBER = i;
-				  ret = Restore_params();
+				  ret = Restore_params(0);
 				  out_file_name();
 				  Clear_View();  //TEMPORARY
 
@@ -5511,6 +5815,12 @@ void Koniec(void)
 		   DoneBuffers(i);
    }
 
+
+   if (get_sketchbook_exists())
+   {
+     DoneBuffers(MAX_NUMBER_OF_WINDOWS);  //the very last buffer;
+   }
+
    //strcat(byebye, "!");  //See you soon! Na razie! Hasta luego!!
    //komunikat_str(byebye);
    //strcat(byebye, "!");  //See you soon!Na razie!Hasta luego!!!
@@ -5544,6 +5854,8 @@ void Koniec(void)
    DoneBuffers3();   //PTRS__Text_Style
 
    Destroy_Bitmaps(); ////
+
+   Destroy_BufVar();
 
    Destroy_Hatch_Patterns();
 
@@ -5733,6 +6045,10 @@ void Powrot(void)
     zwolnienie_pamieci();
     bitmap_view=TRUE;
 
+#ifdef PROFILE
+   delete_instal_tab();
+#endif
+
     strcpy(zbior_danych,sk);
     Clear_View () ;
     czytaj_rysunek(sk, TRUE);
@@ -5776,28 +6092,34 @@ static double ColourDistance(RGBA e1, RGBA e2)
 
 void Konfig(void)
 {
-	int k1;
+	   int k1;
     int kolor_tla;
-    RGBA c1, c2;
-    double cdistance;
 
     kolor_tla=kolory.paper;
 
     k1=konfig(&kolory);
 
-	Kolory_Paper=kolory.paper;  //TO BEDZIE UZYWANE PRZY NOWYCH RYSUNKACH
+	   Kolory_Paper=kolory.paper;  //TO BEDZIE UZYWANE PRZY NOWYCH RYSUNKACH  // it will be used with new drawings
 
-	if (kolory.paper!=kolor_tla)
-	{
-		regen_ctx=TRUE;
-		redraw();
+	 if (kolory.paper!=kolor_tla)
+	 {
+		 regen_ctx=TRUE;
+		 redraw();
+ #ifdef ALLEGRO5
+         flip_screen();
+ #endif
+	 }
+}
+
+static void P_Konfig(void)
+{ int k, k1;
+
+ k1=pkonfig(&koloryp);
+
+ redraw();
 #ifdef ALLEGRO5
-        flip_screen();
+ flip_screen();
 #endif
-	}
-
-  return;
-
 }
 
 void ClearWholeScreen(void)
@@ -5886,7 +6208,7 @@ void Wsp_Autopan (void)
   d_2d () ;
   sprintf (sk, "%6.2lf", d) ;
   if (strlen (sk) > 6) sk [6] = '\0' ;
-  menu_par_new ((*mOpcje.pola)[2].txt, sk) ;
+  menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
 }
 
 void Expand_hor(void)
@@ -6231,7 +6553,7 @@ void Translucency(void)
     }
 
     sprintf(sk, "%d%%/%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5), (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
-    menu_par_new((*mOpcje.pola)[3].txt, sk);
+    menu_par_new((*mOpcje.pola)[3+O1].txt, sk);
 
 	redraw();
 }
@@ -6243,7 +6565,7 @@ void DemoModeOn(void)
 
 	DEMO_RECORDING = TRUE;
 	set_demo_scale(2.0f);
-	menu_par_new((*mOpcje.pola)[9].txt, _YES__);
+	menu_par_new((*mOpcje.pola)[9+O1].txt, _YES__);
 	ret = ask_question(1, "", "OK", "", _DEMO_MODE_, 1, _DEMO_MODE1_, 1, 1, 61);
 }
 
@@ -6253,7 +6575,7 @@ void DemoModeOff(void)
 
 	DEMO_RECORDING = FALSE;
 	set_demo_scale(1.0f);
-	menu_par_new((*mOpcje.pola)[9].txt, _NO__);
+	menu_par_new((*mOpcje.pola)[9+O1].txt, _NO__);
 
 }
 
@@ -6523,7 +6845,7 @@ static void auto_pan_on(void)
 {
 	if (Auto_Pan) return;
 	Auto_Pan = TRUE;
-	menu_par_new((*mOpcje.pola)[1].txt, YES);
+	menu_par_new((*mOpcje.pola)[1+O1].txt, YES);
 }
 
 static  void auto_pan_off(void)
@@ -6531,14 +6853,14 @@ static  void auto_pan_off(void)
 {
 	if (!Auto_Pan) return;
 	Auto_Pan = FALSE;
-	menu_par_new((*mOpcje.pola)[1].txt, NO);
+	menu_par_new((*mOpcje.pola)[1+O1].txt, NO);
 }
 
 static void WheelNatural(void)
 {
     if (Get_Mouse_Wheel()==1) return;
     Set_Mouse_Wheel(0);
-    menu_par_new((*mOpcje.pola)[8].txt, _NATURAL__);
+    menu_par_new((*mOpcje.pola)[8+O1].txt, _NATURAL__);
     save_mouse_wheel();
 }
 
@@ -6546,13 +6868,13 @@ static void WheelRegular(void)
 {
     if (Get_Mouse_Wheel()==-1) return;
     Set_Mouse_Wheel(1);
-    menu_par_new((*mOpcje.pola)[8].txt, _REGULAR__);
+    menu_par_new((*mOpcje.pola)[8+O1].txt, _REGULAR__);
     save_mouse_wheel();
 }
 
 static void (*COMNDO[])(void)=
 {
-  Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
+  Konfig, P_Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
   Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, Translucency,Translucency, DialogCursorS, DialogCursorB, DialogCursorEB,
   DemoModeOn, DemoModeOff,
   nooop, wysokosc_znaku_TTF, width_factor_TTF,
@@ -6672,44 +6994,44 @@ void Opcje(void)
 
   Semaphore = FALSE;
 
-  if (Auto_Pan) menu_par_new((*mOpcje.pola)[1].txt, YES);
-  else menu_par_new((*mOpcje.pola)[1].txt, NO);
+  if (Auto_Pan) menu_par_new((*mOpcje.pola)[1+O1].txt, YES);
+  else menu_par_new((*mOpcje.pola)[1+O1].txt, NO);
 
   sprintf (sk, "%#6.2lf", pan_dxy) ;
   if (strlen (sk) > 6) sk [6] = '\0' ;
-  menu_par_new ((*mOpcje.pola)[2].txt, sk) ;
+  menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
 
 
   sprintf(sk, "%d%%/%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5), (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
-  menu_par_new((*mOpcje.pola)[3].txt, sk);
+  menu_par_new((*mOpcje.pola)[3+O1].txt, sk);
     sprintf(sk, "%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5));
     menu_par_new((*mOpacity.pola)[0].txt, sk);
     sprintf(sk, "%d%%", (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
     menu_par_new((*mOpacity.pola)[1].txt, sk);
 
   sprintf(sk, "%s", Czcionka_Pulpitu);
-  menu_par_new((*mOpcje.pola)[4].txt, sk);
+  menu_par_new((*mOpcje.pola)[4+O1].txt, sk);
   menu_par_new((*mCzcionkaEkranTTF.pola)[0].txt, sk);
 
   flags = fnsplit(background_pcx_file, drive, dir, file, ext);
 
   sprintf(sk, "%s", file);
-  menu_par_new((*mOpcje.pola)[5].txt, sk);
+  menu_par_new((*mOpcje.pola)[5+O1].txt, sk);
 
   if (BIGCURSOR==2) strcpy(sk, hugecursor);
   else if (BIGCURSOR==1) strcpy(sk, bigcursor);
   else strcpy(sk, smallcursor);
-  menu_par_new((*mOpcje.pola)[6].txt, sk);
+  menu_par_new((*mOpcje.pola)[6+O1].txt, sk);
 
   if (!BAR_POINTER) strcpy(sk, barstyle);
   else strcpy(sk, cursorstyle);
-  menu_par_new((*mOpcje.pola)[7].txt, sk);
+  menu_par_new((*mOpcje.pola)[7+O1].txt, sk);
 
-  if (Get_Mouse_Wheel() == 1) menu_par_new((*mOpcje.pola)[8].txt, _NATURAL__);
-  else menu_par_new((*mOpcje.pola)[8].txt, _REGULAR__);
+  if (Get_Mouse_Wheel() == 1) menu_par_new((*mOpcje.pola)[8+O1].txt, _NATURAL__);
+  else menu_par_new((*mOpcje.pola)[8+O1].txt, _REGULAR__);
 
-  if (DEMO_RECORDING == TRUE) menu_par_new((*mOpcje.pola)[9].txt, _YES__);
-  else menu_par_new((*mOpcje.pola)[9].txt, _NO__);
+  if (DEMO_RECORDING == TRUE) menu_par_new((*mOpcje.pola)[9+O1].txt, _YES__);
+  else menu_par_new((*mOpcje.pola)[9+O1].txt, _NO__);
 
   sprintf(sk, "%d", HEIGHT);
   menu_par_new((*mCzcionkaEkranTTF.pola)[1].txt, sk);
@@ -6821,7 +7143,7 @@ void Desktop(void)
 	int i;
 	char dir__[MAXPATH]="";
 	char drive__[MAXDRIVE]="";
-	char file__[MAX_NUMBER_OF_WINDOWS][MAXFILE]={""};
+	char file__[MAX_NUMBER_OF_WINDOWS+1][MAXFILE]={""};
 	char ext__[MAXEXT]="";
 	int flags;
 	int client_no[64];
@@ -6832,7 +7154,7 @@ void Desktop(void)
     static int curr_h, curr_v;
 
 	CopyPreview(0, 0, 320, 320, DRAWING_NUMBER);
-	ret = Deposit_params();
+	ret = Deposit_params(0);
 
 	Save_View_Preview();
 
@@ -6965,7 +7287,7 @@ void Desktop(void)
 	{
 		NEW_DRAWING_NUMBER = Ret_Val - Dlg_Ret_Val_IMPORT_BLOCK;
 		DRAWING_NUMBER = NEW_DRAWING_NUMBER;
-		ret = Restore_params();
+		ret = Restore_params(0);
 		out_file_name();
 		Clear_View();
 
@@ -6999,6 +7321,46 @@ void Desktop(void)
 	}
 
 	return;
+}
+
+void Restore_drawing(int drawing_number, int sketch)
+{
+  int ret;
+
+  ret = Deposit_params(sketch);
+
+  DRAWING_NUMBER = drawing_number;
+  ret = Restore_params(sketch);
+  out_file_name();
+  Clear_View();
+
+  setaspectratio(10000, min(32000., 10000. / sk_x));
+  d_2d();
+  if (Xp + X2d > Xmax) Xp = Xmax - X2d;	//na wypadek zmiany rozdzielczosci monitora
+  if (Xp < Xmin) Xp = Xmin;
+  if (Yp + Y2d > Ymax) Yp = Ymax - Y2d;
+  if (Yp < Ymin) Yp = Ymin;
+  Xk_Yk();
+  pXp = pikseleX(Xp);
+  pYp = pikseleY(Yp);
+
+  reset_background();
+
+  if (!snap_)krok_s = jednostkiY(1);
+  uaktualnij_pola();
+
+  setfillstyle_(EMPTY_FILL, 0);
+  bar(xp, yp, maxX - xk, maxY - yk);
+
+  Ini_Global_Object();
+
+  redraw();
+
+  Ini_Place_Marker();
+  Ini_Layers_Dlg();
+ #ifdef ALLEGRO5
+  flip_screen();
+ #endif
 }
 
 PRIV_PRN_WINDOW *get_priv_prn_window(void)

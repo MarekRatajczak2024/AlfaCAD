@@ -60,7 +60,6 @@
 
 */
 
-
 ////#include <forwin.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,10 +93,6 @@ typedef uint16_t fixed_point_t;
 
 extern BITMAP *screenplay;
 
-
-//extern BITMAP *_fixup_loaded_bitmap(BITMAP *bmp, PALETTE pal, int bpp);
-
-//extern int qsort_by_val(double *e1, double *e2);
 extern int qsort_by_val(const void *e1, const void *e2);
 extern double pikseleX0d (double jednostki);
 extern double pikseleY0d (double jednostki);
@@ -120,11 +115,13 @@ extern long int Wyslij_par_ekranu(int x);
 int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh);
 int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh);
 extern void getviewsettings(struct viewporttype  *viewport);
-extern void destroy_sprite_bmp(int nr);
+////extern void destroy_sprite_bmp(int nr);
 extern int my_kbhit(void);
 extern unsigned char my_getch(void);
 extern long pikseleX00 (double jednostki);
 extern long pikseleY00 (double jednostki);
+extern double pikseleFDX(double jednostki);
+extern double pikseleFDY(double jednostki);
 extern void getviewsettings(struct viewporttype  *viewport);
 extern void getimage(int left, int top, int right, int bottom, void  *bitmap);
 extern void setviewport(int left, int top, int right, int bottom, int clip);
@@ -1356,7 +1353,7 @@ void Procent_0(void)
 int Draw_pcx(B_PCX *pcx)
 { REAL_PCX *rpcx;
   int kk;
-  long dscalex, dscaley;
+  double dscalex, dscaley;
   long nx, ny;
 
   if (pcx->kod_obiektu == 1) //PCX
@@ -1364,13 +1361,14 @@ int Draw_pcx(B_PCX *pcx)
 	  rpcx = (REAL_PCX*)pcx->pcx;
 	  if (rpcx->header.bits_per_pixel == 8)
 	  {
-		  dscalex = pikseleX00(pcx->dx);
-		  nx = dscalex * (abs(rpcx->header.xmax - rpcx->header.xmin));
-		  dscaley = pikseleY00(pcx->dy);
-		  ny = dscaley * (abs(rpcx->header.ymax - rpcx->header.ymin));
-		  if (((nx>32000) || (ny > 32000)) && (rpcx->header.num_color_planes==1)) //32000
-	          kk = Draw_pcx_8(pcx, 1);
-	      else kk = Draw_png(pcx, 1);
+		  dscalex = pikseleFDX(pcx->dx);
+		  nx = (long)(dscalex * (abs(rpcx->header.xmax - rpcx->header.xmin)));
+		  dscaley = pikseleFDY(pcx->dy);
+		  ny = (long)(dscaley * (abs(rpcx->header.ymax - rpcx->header.ymin)));
+		  if (((nx>32000) || (ny > 32000)) && (rpcx->header.num_color_planes==1))
+            kk = Draw_pcx_8(pcx, 1);
+          else
+            kk = Draw_png(pcx, 1);
       }
 	  else kk = Draw_pcx_1(pcx);
   }
@@ -1390,12 +1388,23 @@ int Draw_pcx(B_PCX *pcx)
 int Draw_pcx_virtual(B_PCX *pcx, int opcje, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh)
 { REAL_PCX *rpcx;
   int kk;
+  double dscalex, dscaley;
+  long nx, ny;
 
   if (pcx->kod_obiektu == 1) //PCX
   {
 	  rpcx = (REAL_PCX*)pcx->pcx;
 	  if (rpcx->header.bits_per_pixel == 8)
-	      kk = Draw_png_virtual(pcx, 1, ctx_x0, ctx_y0, ctx_ww, ctx_wh, 1);
+      {
+          dscalex = pikseleFDX(pcx->dx);
+          nx = (long)(dscalex * (abs(rpcx->header.xmax - rpcx->header.xmin)));
+          dscaley = pikseleFDY(pcx->dy);
+          ny = (long)(dscaley * (abs(rpcx->header.ymax - rpcx->header.ymin)));
+          if (((nx>32000) || (ny > 32000)) && (rpcx->header.num_color_planes==1))
+              kk = Draw_pcx_8_virtual(pcx, 0, ctx_x0, ctx_y0, ctx_ww, ctx_wh);
+          else
+              kk = Draw_png_virtual(pcx, 1, ctx_x0, ctx_y0, ctx_ww, ctx_wh, 1);
+      }
 	  else kk = Draw_pcx_1_virtual(pcx, ctx_x0, ctx_y0, ctx_ww, ctx_wh);
   }
   else if (pcx->kod_obiektu == 2) //PNG
@@ -1824,7 +1833,8 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 		}
 	}
 
-	if (bpp == 8) {                  /* look for a 256 color palette */
+    /*
+	if (bpp == 8) {                  // look for a 256 color palette
 		marker = *pcx;
 		pcx++;
 		if (marker == 12) {
@@ -1844,8 +1854,71 @@ BITMAP *load_memory_pcx(AL_CONST void *buffer, PALETTE *pal)
 			pcx += (256 * 3);
 		}
 	}
+     */
+    /*
+    if (bpp == 8) {                  // look for a 256 color palette
+        marker = *pcx;
+        pcx++;
+        if (marker == 12) {
 
-	if (*allegro_errno) {
+            for (c = 0; c < 256; c++) {
+                // Cast to unsigned char explicitly to prevent sign-extension bugs
+                tmppal[c].r = ((unsigned char)*pcx) / 4;
+                pcx++;
+                tmppal[c].g = ((unsigned char)*pcx) / 4;
+                pcx++;
+                tmppal[c].b = ((unsigned char)*pcx) / 4;
+                pcx++;
+            }
+
+            // FIX 1: If the caller provided a destination palette pointer,
+            // copy the local tmppal array contents directly into it.
+            if (want_palette) {
+                for (c = 0; c < 256; c++) {
+                    (*pal)[c] = tmppal[c];
+                }
+            }
+        }
+    }
+     */
+    if (bpp == 8) {                  // look for a 256 color palette
+        marker = *pcx;
+        pcx++;
+        if (marker == 12) {
+
+            for (c = 0; c < 256; c++) {
+                unsigned char r_val = ((unsigned char)*pcx) / 4; pcx++;
+                unsigned char g_val = ((unsigned char)*pcx) / 4; pcx++;
+                unsigned char b_val = ((unsigned char)*pcx) / 4; pcx++;
+
+                // FORCE OVERRIDE: If this is index 0 (common background)
+                // or matches your specific background criteria, force it to white (63, 63, 63)
+                // INVERTED FIX: Index 0 is your foreground; leaving it alone.
+                // Index 1 is your background sheet; forcing it to full white (63, 63, 63).
+                ////if (c == 0)
+                if (c == 255)
+                {
+                    tmppal[c].r = 63;
+                    tmppal[c].g = 63;
+                    tmppal[c].b = 63;
+                } else
+                {
+                    tmppal[c].r = r_val;
+                    tmppal[c].g = g_val;
+                    tmppal[c].b = b_val;
+                }
+            }
+
+            if (want_palette) {
+                for (c = 0; c < 256; c++) {
+                    (*pal)[c] = tmppal[c];
+                }
+            }
+        }
+    }
+
+
+    if (*allegro_errno) {
 		destroy_bitmap(b);
 		return NULL;
 	}
@@ -1998,24 +2071,9 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 				mmxd[i] = pcx_x + (x_[i] - pcx_x)* koc - (y_[i] - pcx_y) * kos;
 				mmyd[i] = pcx_y + (x_[i] - pcx_x)* kos + (y_[i] - pcx_y) * koc;
 			}
-#ifdef LINUX
-#ifndef MACOS
-            qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-            qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
+
 			qsort(mmxd, 4, sizeof(double), qsort_by_val);
 			qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-			//good for Clion
-			qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-			qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-
-			//good for VS
-			//qsort(mmxd, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
-			//qsort(mmyd, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
-#endif
-
 
 			mmx = (int)mmxd[0] - dx_scr;    //dodano dx_scr z uwagi na aspect ratio
 			mmy = (int)mmyd[0] - dy_scr;
@@ -2151,6 +2209,12 @@ int Draw_png(B_PCX *pcx, int kod_obiektu)
 	else return 1;
 }
 
+void get_PCX_colors(B_PCX *pcx, byte_ key_i, byte_ **red, byte_ **gre, byte_ **blu)
+{
+    *red = (byte_ *)(pcx->pcx + pcx->len_pcx - 768 + key_i * 3);
+    *gre = (byte_ *)(pcx->pcx + pcx->len_pcx - 768 + key_i * 3 + 1);
+    *blu = (byte_ *)(pcx->pcx + pcx->len_pcx - 768 + key_i * 3 + 2);
+}
 
 int Draw_pcx_8(B_PCX *pcx, int opcja)
 {
@@ -2234,34 +2298,34 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
 
-  dx_scr=(mxx-mmx)*aspect1;
-  dy_scr=(mxy-mmy)*aspect1;
+  dx_scr=(long)((double)(mxx-mmx)*aspect1);
+  dy_scr=(long)((double)(mxy-mmy)*aspect1);
 
   getviewsettings(&view_port);
 
   mmy -= view_port.top;
   mxy -= view_port.top;
 
-  pcx_x0 = pikseleX0(pcx->x);
+  pcx_x0 = (int)pikseleX0(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY0(pcx->y)+mmy;
-  pcx_x_max=pikseleX0(pcx->x+(pcx->dx*width1));
-  pcx_y_max=pikseleY0(pcx->y-(pcx->dy*height))+mmy;
+  pcx_y0 = (int)(pikseleY0(pcx->y)+mmy);
+  pcx_x_max=(int)(pikseleX0(pcx->x+(pcx->dx*(float)width1)));
+  pcx_y_max=(int)(pikseleY0(pcx->y-(pcx->dy*(float)height))+mmy);
 
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
   if (Check_if_Equal(pcx->kat,0.0)==FALSE)
    {
-    kos1=sin(-(pcx->kat));
-    koc1=cos(-(pcx->kat));
+    kos1=sinf(-(pcx->kat));
+    koc1=cosf(-(pcx->kat));
 
-    x_[0]=mmx; y_[0]=mmy;
-    x_[1]=mmx; y_[1]=mxy;
-    x_[2]=mxx; y_[2]=mxy;
-    x_[3]=mxx; y_[3]=mmy;
+    x_[0]=(int)mmx; y_[0]=(int)mmy;
+    x_[1]=(int)mmx; y_[1]=(int)mxy;
+    x_[2]=(int)mxx; y_[2]=(int)mxy;
+    x_[3]=(int)mxx; y_[3]=(int)mmy;
 
     for (i=0; i<4; i++)
      {
@@ -2270,26 +2334,10 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
        mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
      }
 
-#ifdef LINUX
-#ifndef MACOS
-      qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-      qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
   	qsort(mmxd, 4, sizeof(double), qsort_by_val);
   	qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-  	//good for Clion
-  	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-  	qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
 
-  	//good for VS
-    //qsort(mmxd, 4, sizeof(double),(int(*)(const double*, const double*)) qsort_by_val);
-    //qsort(mmyd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-#endif
-
-	
-	mmx=(int)mmxd[0]-dx_scr;    //dodano dx_scr z uwagi na aspect ratio
+	mmx=(int)mmxd[0]-dx_scr;    //added dx_scr due to aspect ratio
     mmy=(int)mmyd[0]-dy_scr;
     mxx=(int)mmxd[3]+dx_scr;
     mxy=(int)mmyd[3]+dy_scr;
@@ -2320,9 +2368,9 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
   key_rr = pcx->pcx + sizeof(PCXheader);
   i=-1;
 
-  SkalaXX=pikseleX0d(pcx->dx*width)-pikseleX0d(0.0);
+  SkalaXX=pikseleX0d(pcx->dx*(float)width)-pikseleX0d(0.0);
   SkalaX=fabs(SkalaXX/width)*1000000.0;
-  SkalaYY=pikseleY0d(pcx->dy*height)-pikseleY0d(0.0);
+  SkalaYY=pikseleY0d(pcx->dy*(float)height)-pikseleY0d(0.0);
   SkalaY=fabs(SkalaYY/height)*1000000.0;
 
   SSkalaX=(int)SkalaX;
@@ -2332,7 +2380,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
   bb=ee/1000000;
   ee-=bb*1000000;
 
-  //odszukanie najblizszego paska obrazu
+  //searching for nearest image strap
   stripping=TRUE;  // FALSE;  //!!!!!!!!!!!!!
 
    if ((pcx->markers==1) && (pcx->stripped==1) && (stripping==TRUE))
@@ -2350,7 +2398,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
       }
      if (numer_wiersza>0)
       {
-        //poszukiwanie najblizszego paska
+        //searching for nearest strap
         no_strip=0;
         find_strip=FALSE;
         while (no_strip<100)
@@ -2362,12 +2410,10 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
               numer_wiersza1=strips->strip[no_strip-1].wiersz;
               key_rr+=strips->strip[no_strip-1].adr;
               count+=strips->strip[no_strip-1].count+1;
-              ///////
               ee=0;
               ee+=SSkalaY;
               bb=ee/1000000;
               ee-=bb*1000000;
-              ///////
               numer_wiersza2=0;
               while (numer_wiersza2<numer_wiersza1)
                {
@@ -2385,35 +2431,27 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
          }
         if (find_strip==FALSE)
          {
-          ///////
           ee=0;
           ee+=SSkalaY;
           bb=ee/1000000;
           ee-=bb*1000000;
-          ///////
          }
       }
       else
        {
-        ///////
         ee=0;
         ee+=SSkalaY;
         bb=ee/1000000;
         ee-=bb*1000000;
-        ///////
        }
     }
      else
       {
-       ///////
        ee=0;
        ee+=SSkalaY;
        bb=ee/1000000;
        ee-=bb*1000000;
-       ///////
       }
-
-  //////////////////
 
   while(count<total && pcx_y<mxy)
   {
@@ -2430,19 +2468,21 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
       nr_byte++;
 
 
-	  red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
-	  gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
-	  blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+      get_PCX_colors(pcx, key_i, &red, &gre, &blu);
+      //red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+	  //gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
+	  //blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
+
       //The next line of code shouldn't be needed.  It prevents the image
       //from "running" past the end of the buffer we put it into...
       //if(num_bytes + count > total) num_bytes = total-count;
 
       while(num_bytes>0)        // ... and place the color several times
        {
-       // write the pixel value unless is is a "filler" byte
+       // write the pixel value unless it is  a "filler" byte
         if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
         {
-        //wstawienie punktu w kolorze key
+        //setting point in key's color
 
           dd+=SSkalaX;
           aa=dd/1000000;
@@ -2460,7 +2500,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
             pcx_y+=bb;
             if (pcx_y>mxy)
 			{
-				for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+				////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
                 nr_i=0;
                 return 0;
 			}
@@ -2488,13 +2528,15 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
     }
     else
     {
-      red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
-	  gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
-	  blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
-     // write the pixel value unless is is a "filler" byte
+      get_PCX_colors(pcx, key_i, &red, &gre, &blu);
+      //red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+	  //gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
+	  //blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
+
+     // write the pixel value unless it is a "filler" byte
       if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
       {
-      //wstawienie punktu w kolorze key
+      //insert point in key's color
 
       dd+=SSkalaX;
       aa=dd/1000000;
@@ -2511,7 +2553,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
         pcx_y+=bb;
         if (pcx_y>mxy)
 		{
-			for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+			////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
             nr_i=0;
             return 0;
 		}
@@ -2534,7 +2576,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
 	        {
 	          my_getch();
 	        }
-		   for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+		   ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
            nr_i=0;
            return 1;
   	      }
@@ -2552,7 +2594,7 @@ int Draw_pcx_8(B_PCX *pcx, int opcja)
    key_rr++;
   }
 
-for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
 nr_i=0;
 return 1;
 }
@@ -2594,13 +2636,13 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 	height = (head->ymax - head->ymin);
 	png_data = pcx->pcx + sizeof(PCXheader);
 	png_mem = width * height * 4 + 100;  //4 BYTES per pixel , 100 is reserve
-	if (kod_obiektu==2) png1 = load_memory_png(png_data, png_mem, pal);
+	if (kod_obiektu==2) png1 = load_memory_png(png_data, (int)png_mem, pal);
 	else if (kod_obiektu == 1) png1 = load_memory_pcx(pcx->pcx, &pal);
-    else if (kod_obiektu == 3) png1 = load_memory_jpg(png_data, png_mem, pal);
+    else if (kod_obiektu == 3) png1 = load_memory_jpg(png_data, (int)png_mem, pal);
 
     if (pcx->v_flip == 1)
     {
-        png = create_bitmap_ex(32, png1->w * (pcx->dx / pcx->dy), png1->h);
+        png = create_bitmap_ex(32, (int)((float)png1->w * (pcx->dx / pcx->dy)), png1->h);
         if (png == NULL) return 1;
         draw_sprite_v_flip(png, png1, 0, 0);
         destroy_bitmap(png1);
@@ -2609,7 +2651,7 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 
     if (pcx->h_flip == 1)
     {
-        png = create_bitmap_ex(32, png1->w * (pcx->dx / pcx->dy), png1->h);
+        png = create_bitmap_ex(32, (int)((float)png1->w * (pcx->dx / pcx->dy)), png1->h);
         if (png == NULL) return 1;
         draw_sprite_h_flip(png, png1, 0, 0);
         destroy_bitmap(png1);
@@ -2620,7 +2662,7 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 
 	if (Check_if_Equal(pcx->dx, pcx->dy) == FALSE)
 	{
-		png = create_bitmap(png1->w*(pcx->dx / pcx->dy), png1->h);
+		png = create_bitmap((int)((float)png1->w*(pcx->dx / pcx->dy)), png1->h);
 		stretch_blit(png1, png, 0, 0, png1->w, png1->h, 0, 0, png->w, png->h);
 		destroy_bitmap(png1);
 	}
@@ -2638,14 +2680,14 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 		mxy = mmy + ctx_wh;
 
 
-		dx_scr = (mxx - mmx)*aspect1;
-		dy_scr = (mxy - mmy)*aspect1;
+		dx_scr = (long)((double)(mxx - mmx)*aspect1);
+		dy_scr = (long)((double)(mxy - mmy)*aspect1);
 
-		pcx_x0 = pikseleX00(pcx->x);
-		pcx_y0 = pikseleY00((double)FormatY) - pikseleY00(pcx->y);
+		pcx_x0 = (int)pikseleX00(pcx->x);
+		pcx_y0 = (int)(pikseleY00((double)FormatY) - pikseleY00(pcx->y));
 
-		pcx_x_max = pikseleX00(pcx->x + (pcx->dx*width));
-		pcx_y_max = pikseleY00(pcx->y - (pcx->dy*height));
+		pcx_x_max = (int)pikseleX00(pcx->x + (pcx->dx*(float)width));
+		pcx_y_max = (int)pikseleY00(pcx->y - (pcx->dy*(float)height));
 
 		byte_x = 0;
 
@@ -2658,13 +2700,13 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 		if (Check_if_Equal(pcx->kat, 0.0) == FALSE)
 		{
 
-			kos1 = sin(-(pcx->kat));
-			koc1 = cos(-(pcx->kat));
+			kos1 = sinf(-(pcx->kat));
+			koc1 = cosf(-(pcx->kat));
 
-			x_[0] = mmx; y_[0] = mmy;
-			x_[1] = mmx; y_[1] = mxy;
-			x_[2] = mxx; y_[2] = mxy;
-			x_[3] = mxx; y_[3] = mmy;
+			x_[0] = (int)mmx; y_[0] = (int)mmy;
+			x_[1] = (int)mmx; y_[1] = (int)mxy;
+			x_[2] = (int)mxx; y_[2] = (int)mxy;
+			x_[3] = (int)mxx; y_[3] = (int)mmy;
 
 			for (i = 0; i < 4; i++)
 			{
@@ -2673,30 +2715,13 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 				mmyd[i] = pcx_y + (x_[i] - pcx_x)* kos + (y_[i] - pcx_y) * koc;
 			}
 
-#ifdef LINUX
-#ifndef MACOS
-            qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-            qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
 			qsort(mmxd, 4, sizeof(double), qsort_by_val);
 			qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-			//good for Clion
-			qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-			qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-
-			//good for VS
-			//qsort(mmxd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-			//qsort(mmyd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-#endif
-
 
 			mmx = (int)mmxd[0] - dx_scr;    //dodano dx_scr z uwagi na aspect ratio
 			mmy = (int)mmyd[0] - dy_scr;
 			mxx = (int)mmxd[3] + dx_scr;
 			mxy = (int)mmyd[3] + dy_scr;
-
 		}
 
 		mmx1 = pcx_x0;
@@ -2719,15 +2744,15 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
 		fixed scale = ftofix(dscale);
 
 		//rotation is around central point, so point origin must be moved
-		half_width = pikseleX00(pcx->dx*width) / 2.0;
-		half_height = pikseleY00(pcx->dy*height) / 2.0;
+		half_width = (double)pikseleX00(pcx->dx*(float)width) / 2.0;
+		half_height = (double)pikseleY00(pcx->dy*(float)height) / 2.0;
 		x0 = (double)(pcx_x0 + half_width);
 		y0 = (double)pcx_y0 + half_height;
 
 		Rotate_Point(kos, koc, x0, y0, (double)pcx_x0, (double)pcx_y0, &pcx_x1, &pcx_y1);
 
-		pcx_x01 = pcx_x0 + (pcx_x0 - pcx_x1);
-		pcx_y01 = pcx_y0 - (pcx_y1 - pcx_y0);
+		pcx_x01 = pcx_x0 + (int)(pcx_x0 - pcx_x1);
+		pcx_y01 = pcx_y0 - (int)(pcx_y1 - pcx_y0);
 
         if (head->bits_per_pixel == 32)
         {
@@ -2761,10 +2786,10 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
             miny = pcx_y0 + miny;
             maxy = pcx_y0 + maxy;
 
-            int sizew_0 = maxx - minx;
-            int sizeh_0 = maxy - miny;
+            int sizew_0 = (int)(maxx - minx);
+            int sizeh_0 = (int)(maxy - miny);
 
-            long X1 = ctx_x0, Y1 = ctx_y0, X2 = ctx_x0+ctx_ww, Y2 = ctx_y0+ctx_wh;
+            double X1 = (double)ctx_x0, Y1 = (double)ctx_y0, X2 = (double)ctx_x0+ctx_ww, Y2 = (double)ctx_y0+ctx_wh;
 
             if (maxx < X1) return 0;
             if (minx > X2) return 0;
@@ -2789,8 +2814,8 @@ int Draw_png_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww, 
             }
             if (maxy > X2) maxy = Y2;
 
-            int sizew_ = maxx - minx;
-            int sizeh_ = maxy - miny;
+            int sizew_ = (int)(maxx - minx);
+            int sizeh_ = (int)(maxy - miny);
 
             sizew = sizew_;
             del_x = (int)((float)((sizew_0 - dsizew) / 2.0 + 0.5 - ddelx));
@@ -2912,28 +2937,28 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
   mxx=mmx + ctx_ww;
   mxy=mmy + ctx_wh;
   
-  dx_scr=(mxx-mmx)*aspect1;
-  dy_scr=(mxy-mmy)*aspect1;
+  dx_scr=(long)((double)(mxx-mmx)*aspect1);
+  dy_scr=(long)((double)(mxy-mmy)*aspect1);
 
-  pcx_x0 = pikseleX00(pcx->x);
-  pcx_y0 = pikseleY00((double)FormatY) - pikseleY00(pcx->y);
+  pcx_x0 = (int)pikseleX00((double)pcx->x);
+  pcx_y0 = (int)(pikseleY00((double)FormatY) - pikseleY00((double)pcx->y));
 
   byte_x = 0;
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
   if (Check_if_Equal(pcx->kat,0.0)==FALSE)
    {
 
-    kos1=sin(-(pcx->kat));
-    koc1=cos(-(pcx->kat));
+    kos1=sinf(-(pcx->kat));
+    koc1=cosf(-(pcx->kat));
 
-    x_[0]=mmx; y_[0]=mmy;
-    x_[1]=mmx; y_[1]=mxy;
-    x_[2]=mxx; y_[2]=mxy;
-    x_[3]=mxx; y_[3]=mmy;
+    x_[0]=(int)mmx; y_[0]=(int)mmy;
+    x_[1]=(int)mmx; y_[1]=(int)mxy;
+    x_[2]=(int)mxx; y_[2]=(int)mxy;
+    x_[3]=(int)mxx; y_[3]=(int)mmy;
 
     for (i=0; i<4; i++)
      {
@@ -2941,36 +2966,19 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
        mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
      }
 
-#ifdef LINUX
-#ifndef MACOS
-      qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-      qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
   	qsort(mmxd, 4, sizeof(double), qsort_by_val);
   	qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-  	//good for Clion
-  	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-  	qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-
-  	//good for VS
-    //qsort(mmxd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-    //qsort(mmyd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-#endif
-
 
  	mmx=(int)mmxd[0]-dx_scr;
     mmy=(int)mmyd[0]-dy_scr;
     mxx=(int)mmxd[3]+dx_scr;
     mxy=(int)mmyd[3]+dy_scr;
-
    }
 
    mmx1=pcx_x0;
    mmy1=pcx_y0;
-   mxx1=pikseleX00(pcx->x+(pcx->dx*width1));
-   mxy1=mmy1 + pikseleY00(pcx->y+(pcx->dy*height));
+   mxx1=pikseleX00(pcx->x+(pcx->dx*(float)width1));
+   mxy1=mmy1 + pikseleY00(pcx->y+(pcx->dy*(float)height));
 
    x_min=mmx1;
    if (mxx1<x_min) x_min=mxx1;
@@ -2991,14 +2999,13 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
   key_rr = pcx->pcx + sizeof(PCXheader);
   i=-1;
 
-  SkalaXX=pikseleX0d(pcx->dx*width)-pikseleX0d(0.0);
+  SkalaXX=pikseleX0d(pcx->dx*(float)width)-pikseleX0d(0.0);
   SkalaX=fabs(SkalaXX/width)*1000000.0;
-  SkalaYY=pikseleY0d(pcx->dy*height)-pikseleY0d(0.0);
+  SkalaYY=pikseleY0d(pcx->dy*(float)height)-pikseleY0d(0.0);
   SkalaY=fabs(SkalaYY/height)*1000000.0;
 
   SSkalaX=(int)SkalaX;
   SSkalaY=(int)SkalaY;
-
 
   ee+=SSkalaY;
   bb=ee/1000000;
@@ -3035,12 +3042,10 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
               key_rr+=strips->strip[no_strip-1].adr;
 
               count+=strips->strip[no_strip-1].count+1;
-              ///////
               ee=0;
               ee+=SSkalaY;
               bb=ee/1000000;
               ee-=bb*1000000;
-              ///////
               numer_wiersza2=0;
               while (numer_wiersza2<numer_wiersza1)
                {
@@ -3058,32 +3063,26 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
          }
         if (find_strip==FALSE)
          {
-          ///////
           ee=0;
           ee+=SSkalaY;
           bb=ee/1000000;
           ee-=bb*1000000;
-          ///////
          }
       }
       else
        {
-        ///////
         ee=0;
         ee+=SSkalaY;
         bb=ee/1000000;
         ee-=bb*1000000;
-        ///////
        }
     }
      else
       {
-       ///////
        ee=0;
        ee+=SSkalaY;
        bb=ee/1000000;
        ee-=bb*1000000;
-       ///////
       }
 
   while(count<total && pcx_y<=mxy)
@@ -3100,12 +3099,11 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
       key_i=*key_rr;
       nr_byte++;
 
+      get_PCX_colors(pcx, key_i, &red, &gre, &blu);
+	  //red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+	  //gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
+	  //blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
 
-	  red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
-	  gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
-	  blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
-
-	  
       //The next line of code shouldn't be needed.  It prevents the image
       //from "running" past the end of the buffer we put it into...
       //if(num_bytes + count > total) num_bytes = total-count;
@@ -3133,7 +3131,7 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
             pcx_y+=bb;
             if (pcx_y>mxy)
 			{
-				for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+				////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
                 nr_i=0;
                 return 0;
 			}
@@ -3161,9 +3159,10 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
     }
     else
     {
-      red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
-	  gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
-	  blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+      get_PCX_colors(pcx, key_i, &red, &gre, &blu);
+      //red=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3);
+	  //gre=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+1);
+	  //blu=(byte_ *)(pcx->pcx+pcx->len_pcx-768+key_i*3+2);
 
      // write the pixel value unless is is a "filler" byte
       if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
@@ -3185,7 +3184,7 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
         pcx_y+=bb;
         if (pcx_y>mxy)
 		{
-			for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+			////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
             nr_i=0;
             return 0;
 		}
@@ -3208,7 +3207,7 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
 	        {
 	          my_getch();
 	        }
-		   for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+		   ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
            nr_i=0;
            return -1;   //przerwano rysowanie
   	      }
@@ -3225,7 +3224,7 @@ int Draw_pcx_8_virtual(B_PCX *pcx, int opcja, int ctx_x0, int ctx_y0, int ctx_ww
     }
    key_rr++;
   }
-for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
 nr_i=0;
 return 1;
 }
@@ -3260,7 +3259,8 @@ int Draw_pcx_1_0(B_PCX *pcx)
   rpcx = (REAL_PCX*) pcx->pcx;
   key0 = 0;
 
-  width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+  //width_d  = (double)(((rpcx->header.xmax - rpcx->header.xmin)/8.)+1.5);         // image dimensions...
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
   width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
   width=(int)width_d;
   height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
@@ -3293,13 +3293,13 @@ int Draw_pcx_1_0(B_PCX *pcx)
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
 
-  pcx_x0 = pikseleX0(pcx->x);
+  pcx_x0 = (int)pikseleX0(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY0(pcx->y)+mmy;
+  pcx_y0 = (int)pikseleY0(pcx->y)+mmy;
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;//50;//pYp-pYk;
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
   dlugosc_bloku_pcx=0;
 
@@ -3456,7 +3456,7 @@ int scan_pcx_strips_1(B_PCX *pcx)
   unsigned char key0;
   int count=0;          // current pixel number in the image
   int total;
-  char *key_rr, *key_rr0;
+  static char *key_rr, *key_rr0;
   int num_bytes;        // number of bytes in a "run"
   BOOL empty_line = TRUE;
   long nr_byte;
@@ -3472,14 +3472,20 @@ int scan_pcx_strips_1(B_PCX *pcx)
   int height_100;
 
   rpcx = (REAL_PCX*) pcx->pcx;
+
+  int s_of_strip= sizeof(STRIP);
+  int s_of_strips= sizeof(STRIPS);
+
   strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS)+2);
 
   key0 = 0;
 
-  width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+  //width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
+
   width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
   width=(int)width_d;
-  height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
+  height_d = rpcx->header.ymax - rpcx->header.ymin + 1; //  + 1; addad on 31-08-2026
   height=(int)height_d;
 
   height_100=height/100;
@@ -3512,9 +3518,9 @@ int scan_pcx_strips_1(B_PCX *pcx)
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
 
-  pcx_x0 = pikseleX0(pcx->x);
+  pcx_x0 = (int)pikseleX0(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY0(pcx->y)+mmy;
+  pcx_y0 = (int)pikseleY0(pcx->y)+mmy;
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
 
@@ -3527,7 +3533,6 @@ int scan_pcx_strips_1(B_PCX *pcx)
    kolor_tla=pcx->color_key[1];
    if (pcx->set_foreground==1) kolor_punktu=pcx->foreground; else kolor_punktu=pcx->color_key[0];
 
-   
   nr_byte = 128;
 
   key_rr = pcx->pcx + sizeof(PCXheader);
@@ -3681,7 +3686,7 @@ int Draw_pcx_1(B_PCX *pcx)
  unsigned char key0;
  int count=0;          // current pixel number in the image
  int total;
- char *key_rr;
+ static char *key_rr;
  int num_bytes;        // number of bytes in a "run"
   BOOL empty_line = TRUE;
   long nr_byte;
@@ -3702,9 +3707,7 @@ int Draw_pcx_1(B_PCX *pcx)
   BOOL stripping;
   long dx_scr, dy_scr;
   double aspect1;
-
   struct viewporttype view_port;
-
   int iii;
 
   aspect1=fabs(1-sk_x);
@@ -3725,10 +3728,11 @@ int Draw_pcx_1(B_PCX *pcx)
 
   key0 = 0;
 
-  width_d = ((rpcx->header.xmax - rpcx->header.xmin) / 8) + 1.5;         // image dimensions...  +1.5
+  //width_d = ((rpcx->header.xmax - rpcx->header.xmin) / 8) + 1.5;         // image dimensions...  +1.5
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
   width_r = (rpcx->header.xmax - rpcx->header.xmin) + 1;
   width=(int)width_d;
-  height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
+  height_d = rpcx->header.ymax - rpcx->header.ymin + 1; //  + 1;  addad on 31-08-2026
   height=(int)height_d;
 
 
@@ -3757,8 +3761,10 @@ int Draw_pcx_1(B_PCX *pcx)
   mxx=Wyslij_par_ekranu(1);
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
-  dx_scr=(mxx-mmx)*aspect1;
-  dy_scr=(mxy-mmy)*aspect1;
+  //dx_scr=(long)((double)(mxx-mmx)*aspect1);
+  //dy_scr=(long)((double)(mxy-mmy)*aspect1);
+    dx_scr=(mxx-mmx)*aspect1;  //older
+    dy_scr=(mxy-mmy)*aspect1;
 
   getviewsettings(&view_port);
 
@@ -3770,23 +3776,23 @@ int Draw_pcx_1(B_PCX *pcx)
   pcx_y0 = pikseleY0(pcx->y)+mmy;
 
   pcx_x_max=pikseleX0(pcx->x+(pcx->dx*width_d*8));
-  pcx_y_max=pikseleY0(pcx->y-(pcx->dy*height_d))+mmy;
+  pcx_y_max=(pikseleY0(pcx->y-pcx->dy*height_d))+mmy;
 
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
   if (Check_if_Equal(pcx->kat,0.0)==FALSE)
    {
 
-    kos1=sin(-(pcx->kat));
-    koc1=cos(-(pcx->kat));
+    kos1=sinf(-(pcx->kat));
+    koc1=cosf(-(pcx->kat));
 
-    x_[0]=mmx; y_[0]=mmy;
-    x_[1]=mmx; y_[1]=mxy;
-    x_[2]=mxx; y_[2]=mxy;
-    x_[3]=mxx; y_[3]=mmy;
+    x_[0]=(int)mmx; y_[0]=(int)mmy;
+    x_[1]=(int)mmx; y_[1]=(int)mxy;
+    x_[2]=(int)mxx; y_[2]=(int)mxy;
+    x_[3]=(int)mxx; y_[3]=(int)mmy;
 
 	
     for (i=0; i<4; i++)
@@ -3795,23 +3801,8 @@ int Draw_pcx_1(B_PCX *pcx)
        mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
      }
 
-#ifdef LINUX
-#ifndef MACOS
-      qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-      qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
   	qsort(mmxd, 4, sizeof(double), qsort_by_val);
   	qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-  	//good for Clion
-  	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-  	qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-
-  	//good for VS
-    //qsort(mmxd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-    //qsort(mmyd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-#endif
 
     mmx=(int)mmxd[0]-dx_scr;
     mmy=(int)mmyd[0]-dy_scr;
@@ -3869,12 +3860,12 @@ int Draw_pcx_1(B_PCX *pcx)
    if ((pcx->markers==1) && (pcx->stripped==1) && (stripping==TRUE))
     {
      strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
-     //TEST
-     if (strips->strip[0].wiersz<0)
-     {
-         pcx->stripped=0;
-         return 0;
-     }
+     //TEST  to solve
+     //if (strips->strip[0].wiersz<0)
+     //{
+     //    pcx->stripped=0;
+     //    return 0;
+     //}
 
      numer_wiersza=0;
      pcx_yyy=pcx_y0;
@@ -3984,11 +3975,12 @@ int Draw_pcx_1(B_PCX *pcx)
           if (byte_x >= width)
            {
             prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb, 8-((byte_x/*-1*/)*8-width_r) ,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
-               
+            //prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
             pcx_x=pcx_x0;
             pcx_y+=bb;
             if (pcx_y>mxy) 
-			{ for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+			{ ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
               nr_i=0;
 			  return 0;
 			}
@@ -4026,12 +4018,13 @@ int Draw_pcx_1(B_PCX *pcx)
       if (byte_x >= width )
        {
         prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8-((byte_x/*-1*/) * 8 - width_r), key_i, kolor_tla0, kolor_tla, kolor_punktu, ignore_bk, pcx_x0, pcx_y0, kos, koc);
+        ////prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
 
         pcx_x=pcx_x0;
         pcx_y+=bb;
         if (pcx_y>mxy) 
 		{
-			for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+			////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
             nr_i=0;
 			return 0;
 		}
@@ -4054,7 +4047,7 @@ int Draw_pcx_1(B_PCX *pcx)
 	        {
 	          my_getch();
 	        }
-		   for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+		   ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
            nr_i=0;
            return 1;
   	      }
@@ -4067,13 +4060,832 @@ int Draw_pcx_1(B_PCX *pcx)
     }
    key_rr++;
   }
-for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
 nr_i=0;
 return 1;
 }
 
+int Draw_pcx_1__(B_PCX *pcx)
+{
+    unsigned char key_i;
+    int fp;
+    int dh,i,j,aa=0,bb=0;
+    int cc=0,dd=0,ee=0;
+    double SkalaX,SkalaY;
+    REAL_PCX *rpcx;
+    int width, width1, height;
+    int /*double*/ pcx_x,pcx_y,pcx_yyy,pcx_x0,pcx_y0,pcx_x_max,pcx_y_max;
+    //long mxx,mxy,mmx,mmy;
+    int byte_x;
+    unsigned char key0;
+    int count=0;          // current pixel number in the image
+    int total;
+    static char *key_rr;
+    int num_bytes;        // number of bytes in a "run"
+    BOOL empty_line = TRUE;
+    long size_of_file;
+    long nr_byte;
+    COLOR palette;
+    double SkalaXX, SkalaYY;
+    int SSkalaX, SSkalaY;
+    double width_d;
+    double height_d;
+    int kolor_tla0, kolor_tla, kolor_punktu, ignore_bk;
+    int width_r;
+    int numer_wiersza, numer_wiersza1, numer_wiersza2;
+    STRIPS *strips;
+    int no_strip;
+    BOOL find_strip;
+    double kos, koc, kos1, koc1;
+    double mmxd[4],mmyd[4];
+    long mxx1,mxy1,mmx1,mmy1,x_min,x_max,y_min,y_max;
+    int x_[4], y_[4];
+    BOOL stripping;
+    long dx_scr, dy_scr;
+    double aspect1;
+    struct viewporttype view_port;
+    int iii;
 
-int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh)
+    aspect1=fabs(1-sk_x);
+    rpcx = (REAL_PCX*) pcx->pcx;
+
+    if (pcx->markers==1)
+    {
+        if (pcx->stripped==0)
+        {
+            if (scan_pcx_strips_1(pcx)==1)
+            {
+                pcx->stripped=1;
+                strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+            }
+        }
+    }
+
+
+    key0 = 0;
+
+    width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+    width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
+    width=(int)width_d;
+    height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
+    height=(int)height_d;
+
+
+    if(rpcx->header.manufacturer   != 10         // check for errors
+       ||rpcx->header.version         <  5
+       ||rpcx->header.encoding       !=  1
+       ||rpcx->header.bits_per_pixel !=  1
+       ||rpcx->header.xmin  >=  rpcx->header.xmax
+       ||rpcx->header.ymin  >=  rpcx->header.ymax)
+    {
+        return 0;
+    }
+
+    if(width%2 && width != rpcx->header.bytes_per_line)
+    {
+        width1=width+1;
+        total = (width+1) * height;
+    }
+    else
+    {
+        width1=width;
+        total = width * height;
+    }
+
+    mmx=Wyslij_par_ekranu(0);
+    mxx=Wyslij_par_ekranu(1);
+    mxy=Wyslij_par_ekranu(2);
+    mmy=Wyslij_par_ekranu(3);
+    dx_scr=(mxx-mmx)*aspect1;
+    dy_scr=(mxy-mmy)*aspect1;
+
+    getviewsettings(&view_port);
+
+    mmy -= view_port.top;
+    mxy -= view_port.top;
+
+    pcx_x0 = pikseleX0(pcx->x);
+    byte_x = 0;
+    pcx_y0 = pikseleY0(pcx->y)+mmy;
+
+    pcx_x_max=pikseleX0(pcx->x+(pcx->dx*width_d*8));
+    pcx_y_max=pikseleY0(pcx->y-(pcx->dy*height_d))+mmy;
+
+    pcx_x = pcx_x0;
+    pcx_y = pcx_y0;
+    kos=sin(pcx->kat);
+    koc=cos(pcx->kat);
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        // mmx=-MAXINT;
+        // mxx=MAXINT;
+        // mxy=MAXINT;
+        // mmy=-MAXINT;
+        //obrot ekranu o kat pcx->kat wzgledem punktu pcx->x, pcx->y
+        kos1=sin(-(pcx->kat));
+        koc1=cos(-(pcx->kat));
+
+        x_[0]=mmx; y_[0]=mmy;
+        x_[1]=mmx; y_[1]=mxy;
+        x_[2]=mxx; y_[2]=mxy;
+        x_[3]=mxx; y_[3]=mmy;
+
+
+        for (i=0; i<4; i++)
+        {
+            mmxd[i] =  pcx_x + (x_[i]-pcx_x)* koc - (y_[i]-pcx_y) * kos;
+            mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
+        }
+
+        qsort(mmxd,4,sizeof(double),qsort_by_val);
+        qsort(mmyd,4,sizeof(double),qsort_by_val);
+
+        mmx=(int)mmxd[0]-dx_scr;
+        mmy=(int)mmyd[0]-dy_scr;
+        mxx=(int)mmxd[3]+dx_scr;
+        mxy=(int)mmyd[3]+dy_scr;
+    }
+
+    mmx1=pcx_x0;
+    mmy1=pcx_y0;
+    mxx1=pcx_x_max;
+    mxy1=pcx_y_max;
+
+    x_min=mmx1;
+    if (mxx1<x_min) x_min=mxx1;
+    x_max=mmx1;
+    if (mxx1>x_max) x_max=mxx1;
+
+    y_min=mmy1;
+    if (mxy1<y_min) y_min=mxy1;
+    y_max=mmy1;
+    if (mxy1>y_max) y_max=mxy1;
+
+    if ((mmx>x_max) || (mxx<x_min) || (mmy>y_max) || (mxy<y_min)) return 0;
+
+    dlugosc_bloku_pcx=0;
+
+    if (pcx->ignore_background==1) ignore_bk=1; else ignore_bk=0;
+    kolor_tla0=pcx->background;
+    kolor_tla=pcx->color_key[1];
+    if (pcx->set_foreground==1) kolor_punktu=pcx->foreground; else kolor_punktu=pcx->color_key[0];
+
+    nr_byte = 128;
+
+    key_rr = pcx->pcx + sizeof(PCXheader);// + 28;
+
+    i=-1;
+
+    SkalaXX=pikseleX0d(pcx->dx*width_d)-pikseleX0d(0.0);
+    SkalaX=fabs(SkalaXX/width_d)*1000000.0;
+    SkalaYY=pikseleY0d(pcx->dy*height_d)-pikseleY0d(0.0);
+    SkalaY=fabs(SkalaYY/height_d)*1000000.0;
+
+    SSkalaX=(int)SkalaX;
+    SSkalaY=(int)SkalaY;
+
+    ///////
+    ee+=SSkalaY;
+    bb=ee/1000000;
+    ee-=bb*1000000;
+    ///////
+
+    //odszukanie najblizszego paska obrazu
+    stripping=TRUE;  //!!!!!!!!!!!!!
+
+    if ((pcx->markers==1) && (pcx->stripped==1) && (stripping==TRUE))
+    {
+        strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+        numer_wiersza=0;
+        pcx_yyy=pcx_y0;
+        while (pcx_yyy<mmy)
+        {
+            pcx_yyy+=bb;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            numer_wiersza++;
+        }
+        if (numer_wiersza>0)
+        {
+            //poszukiwanie najblizszego paska
+            no_strip=0;
+            find_strip=FALSE;
+            while (no_strip<100)
+            {
+                if (strips->strip[no_strip].wiersz>numer_wiersza)
+                {
+                    if (no_strip>0)
+                    {
+                        numer_wiersza1=strips->strip[no_strip-1].wiersz;
+                        key_rr+=strips->strip[no_strip-1].adr;
+                        //key_rr++;
+                        count+=strips->strip[no_strip-1].count+1;
+                        ///////
+                        ee=0;
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+                        ///////
+                        numer_wiersza2=0;
+                        while (numer_wiersza2<numer_wiersza1)
+                        {
+                            pcx_y+=bb;
+                            ee+=SSkalaY;
+                            bb=ee/1000000;
+                            ee-=bb*1000000;
+                            numer_wiersza2++;
+                        }
+                        find_strip=TRUE;
+                    }
+                    break;
+                }
+                no_strip++;
+            }
+            if (find_strip==FALSE)
+            {
+                ///////
+                ee=0;
+                ee+=SSkalaY;
+                bb=ee/1000000;
+                ee-=bb*1000000;
+                ///////
+            }
+        }
+        else
+        {
+            ///////
+            ee=0;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            ///////
+        }
+    }
+    else
+    {
+        ///////
+        ee=0;
+        ee+=SSkalaY;
+        bb=ee/1000000;
+        ee-=bb*1000000;
+        ///////
+    }
+
+    while(count<total && pcx_y<mxy)
+    {
+        i++;
+        key_i=*key_rr;
+        nr_byte++;
+
+        if(key_i>191)                 // if > 191, it is a run-length code.
+        {
+            num_bytes = key_i - 192;    // pixels in this "run" can be up to 63
+            i++;
+            key_rr++;
+            key_i=*key_rr;
+            nr_byte++;
+
+            //The next line of code shouldn't be needed.  It prevents the image
+            //from "running" past the end of the buffer we put it into...
+            //if(num_bytes + count > total) num_bytes = total-count;
+
+            while(num_bytes>0)        // ... and place the color several times
+            {
+                // write the pixel value unless is is a "filler" byte
+                if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
+                {
+                    //wstawienie punktu w kolorze key
+
+                    dd+=(SSkalaX*8);
+                    aa=dd/1000000;
+                    dd-=(aa*1000000);
+
+                    byte_x+=1;
+                    if (byte_x >= width)
+                    {
+                        prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                        //prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                        pcx_x=pcx_x0;
+                        pcx_y+=bb;
+                        //  pcx_y_=pcx_y;
+//            numer_wiersza++;
+                        if (pcx_y>mxy)
+                        { ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                            nr_i=0;
+                            return 0;
+                        }
+                        dd=0;
+
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+
+                        byte_x=0;
+                    }
+                    num_bytes--;
+                }
+
+                count++;
+                if (byte_x<width && byte_x>0)
+                {
+                    prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                    pcx_x+=aa;
+                }
+            }
+        }
+        else
+        {
+            // write the pixel value unless is is a "filler" byte
+            if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
+            {
+                //wstawienie punktu w kolorze key
+
+                dd+=(SSkalaX*8);
+                aa=dd/1000000;
+                dd-=aa*1000000;
+
+                // prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                byte_x+=1;
+                if (byte_x >= width )
+                {
+                    prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                    pcx_x=pcx_x0;
+                    pcx_y+=bb;
+                    //    pcx_y_=pcx_y;
+//        numer_wiersza++;
+                    if (pcx_y>mxy)
+                    {
+                        ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                        nr_i=0;
+                        return 0;
+                    }
+
+                    dd=0;
+                    //aa=0;
+                    byte_x=0;
+
+                    ee+=SSkalaY;
+                    bb=ee/1000000;
+                    ee-=bb*1000000;
+
+                }
+            }
+            count++;
+            if ( my_kbhit() )
+            {
+                if (my_getch() == ESC)
+                {
+                    while (my_kbhit ())
+                    {
+                        my_getch();
+                    }
+                    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                    nr_i=0;
+                    return 1;
+                }
+            }
+            if (byte_x<width && byte_x>0)
+            {
+                prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                pcx_x+=aa;
+            }
+        }
+        key_rr++;
+    }
+    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+    nr_i=0;
+    return 1;
+}
+
+
+int Draw_pcx_1_(B_PCX *pcx)
+{
+    unsigned char key_i;
+    int fp;
+    int dh,i,j,aa=0,bb=0;
+    int cc=0,dd=0,ee=0;
+    double SkalaX,SkalaY;
+    REAL_PCX *rpcx;
+    int width, width1, height;
+    int /*double*/ pcx_x,pcx_y,pcx_yyy,pcx_x0,pcx_y0,pcx_x_max,pcx_y_max;
+    //long mxx,mxy,mmx,mmy;
+    int byte_x;
+    unsigned char key0;
+    int count=0;          // current pixel number in the image
+    int total;
+    static char *key_rr;
+    int num_bytes;        // number of bytes in a "run"
+    BOOL empty_line = TRUE;
+    long size_of_file;
+    long nr_byte;
+    COLOR palette;
+    double SkalaXX, SkalaYY;
+    int SSkalaX, SSkalaY;
+    double width_d;
+    double height_d;
+    int kolor_tla0, kolor_tla, kolor_punktu, ignore_bk;
+    int width_r;
+    int numer_wiersza, numer_wiersza1, numer_wiersza2;
+    STRIPS *strips;
+    int no_strip;
+    BOOL find_strip;
+    double kos, koc, kos1, koc1;
+    double mmxd[4],mmyd[4];
+    long mxx1,mxy1,mmx1,mmy1,x_min,x_max,y_min,y_max;
+    int x_[4], y_[4];
+    BOOL stripping;
+    long dx_scr, dy_scr;
+    double aspect1;
+#ifdef ALLEGWIN
+    struct viewporttype view_port;
+#endif
+    int abcdef, abcdefgh;
+    int iii;
+
+
+    aspect1=fabs(1-sk_x);
+    rpcx = (REAL_PCX*) pcx->pcx;
+
+    if (pcx->markers==1)
+    {
+        if (pcx->stripped==0)
+        {
+            if (scan_pcx_strips_1(pcx)==1)
+            {
+                pcx->stripped=1;
+                strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+            }
+        }
+    }
+
+
+    key0 = 0;
+
+//  width  = rpcx->header.xmax - rpcx->header.xmin + 1;         // image dimensions...
+
+    width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+    width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
+    width=(int)width_d;
+    height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
+    height=(int)height_d;
+
+
+    if(rpcx->header.manufacturer   != 10         // check for errors
+       ||rpcx->header.version         <  5
+       ||rpcx->header.encoding       !=  1
+       ||rpcx->header.bits_per_pixel !=  1
+       ||rpcx->header.xmin  >=  rpcx->header.xmax
+       ||rpcx->header.ymin  >=  rpcx->header.ymax)
+    {
+        return 0;
+    }
+
+    if(width%2 && width != rpcx->header.bytes_per_line)
+    {
+        width1=width+1;
+        total = (width+1) * height;
+    }
+    else
+    {
+        width1=width;
+        total = width * height;
+    }
+
+    mmx=Wyslij_par_ekranu(0);
+    mxx=Wyslij_par_ekranu(1);
+    mxy=Wyslij_par_ekranu(2);
+    mmy=Wyslij_par_ekranu(3);
+    dx_scr=(mxx-mmx)*aspect1;
+    dy_scr=(mxy-mmy)*aspect1;
+
+#ifdef ALLEGWIN
+    getviewsettings(&view_port);
+
+    mmy -= view_port.top;
+    mxy -= view_port.top;
+#endif
+
+
+    pcx_x0 = pikseleX0(pcx->x);
+    byte_x = 0;
+    pcx_y0 = pikseleY0(pcx->y)+mmy;
+
+    pcx_x_max=pikseleX0(pcx->x+(pcx->dx*width_d*8));
+    pcx_y_max=pikseleY0(pcx->y-(pcx->dy*height_d))+mmy;
+
+    pcx_x = pcx_x0;
+    pcx_y = pcx_y0;
+    kos=sin(pcx->kat);
+    koc=cos(pcx->kat);
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        // mmx=-MAXINT;
+        // mxx=MAXINT;
+        // mxy=MAXINT;
+        // mmy=-MAXINT;
+        //obrot ekranu o kat pcx->kat wzgledem punktu pcx->x, pcx->y
+        kos1=sin(-(pcx->kat));
+        koc1=cos(-(pcx->kat));
+
+        x_[0]=mmx; y_[0]=mmy;
+        x_[1]=mmx; y_[1]=mxy;
+        x_[2]=mxx; y_[2]=mxy;
+        x_[3]=mxx; y_[3]=mmy;
+
+
+        for (i=0; i<4; i++)
+        {
+            mmxd[i] =  pcx_x + (x_[i]-pcx_x)* koc - (y_[i]-pcx_y) * kos;
+            mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
+        }
+
+        qsort(mmxd,4,sizeof(double),qsort_by_val);
+        qsort(mmyd,4,sizeof(double),qsort_by_val);
+
+        mmx=(int)mmxd[0]-dx_scr;
+        mmy=(int)mmyd[0]-dy_scr;
+        mxx=(int)mmxd[3]+dx_scr;
+        mxy=(int)mmyd[3]+dy_scr;
+    }
+
+    mmx1=pcx_x0;
+    mmy1=pcx_y0;
+    mxx1=pcx_x_max;
+    mxy1=pcx_y_max;
+
+    x_min=mmx1;
+    if (mxx1<x_min) x_min=mxx1;
+    x_max=mmx1;
+    if (mxx1>x_max) x_max=mxx1;
+
+    y_min=mmy1;
+    if (mxy1<y_min) y_min=mxy1;
+    y_max=mmy1;
+    if (mxy1>y_max) y_max=mxy1;
+
+    if ((mmx>x_max) || (mxx<x_min) || (mmy>y_max) || (mxy<y_min)) return 0;
+
+    dlugosc_bloku_pcx=0;
+
+    if (pcx->ignore_background==1) ignore_bk=1; else ignore_bk=0;
+    kolor_tla0=pcx->background;
+    kolor_tla=pcx->color_key[1];
+    if (pcx->set_foreground==1) kolor_punktu=pcx->foreground; else kolor_punktu=pcx->color_key[0];
+
+    nr_byte = 128;
+
+    key_rr = pcx->pcx + sizeof(PCXheader);// + 28;
+
+    i=-1;
+
+    SkalaXX=pikseleX0d(pcx->dx*width_d)-pikseleX0d(0.0);
+    SkalaX=fabs(SkalaXX/width_d)*1000000.0;
+    SkalaYY=pikseleY0d(pcx->dy*height_d)-pikseleY0d(0.0);
+    SkalaY=fabs(SkalaYY/height_d)*1000000.0;
+
+    SSkalaX=(int)SkalaX;
+    SSkalaY=(int)SkalaY;
+
+    ///////
+    ee+=SSkalaY;
+    bb=ee/1000000;
+    ee-=bb*1000000;
+    ///////
+
+    //odszukanie najblizszego paska obrazu
+    stripping=TRUE;  //!!!!!!!!!!!!!
+
+    if ((pcx->markers==1) && (pcx->stripped==1) && (stripping==TRUE))
+    {
+        strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+        numer_wiersza=0;
+        pcx_yyy=pcx_y0;
+        while (pcx_yyy<mmy)
+        {
+            pcx_yyy+=bb;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            numer_wiersza++;
+        }
+        if (numer_wiersza>0)
+        {
+            //poszukiwanie najblizszego paska
+            no_strip=0;
+            find_strip=FALSE;
+            while (no_strip<100)
+            {
+                if (strips->strip[no_strip].wiersz>numer_wiersza)
+                {
+                    if (no_strip>0)
+                    {
+                        numer_wiersza1=strips->strip[no_strip-1].wiersz;
+                        key_rr+=strips->strip[no_strip-1].adr;
+                        //key_rr++;
+                        count+=strips->strip[no_strip-1].count+1;
+                        ///////
+                        ee=0;
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+                        ///////
+                        numer_wiersza2=0;
+                        while (numer_wiersza2<numer_wiersza1)
+                        {
+                            pcx_y+=bb;
+                            ee+=SSkalaY;
+                            bb=ee/1000000;
+                            ee-=bb*1000000;
+                            numer_wiersza2++;
+                        }
+                        find_strip=TRUE;
+                    }
+                    break;
+                }
+                no_strip++;
+            }
+            if (find_strip==FALSE)
+            {
+                ///////
+                ee=0;
+                ee+=SSkalaY;
+                bb=ee/1000000;
+                ee-=bb*1000000;
+                ///////
+            }
+        }
+        else
+        {
+            ///////
+            ee=0;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            ///////
+        }
+    }
+    else
+    {
+        ///////
+        ee=0;
+        ee+=SSkalaY;
+        bb=ee/1000000;
+        ee-=bb*1000000;
+        ///////
+    }
+
+    abcdef=0;
+
+    while(count<total && pcx_y<mxy)
+    {
+        i++;
+        key_i=*key_rr;
+        nr_byte++;
+
+        if (abcdef>4586)
+        {
+
+            abcdefgh=1;
+
+        }
+
+        if(key_i>191)                 // if > 191, it is a run-length code.
+        {
+            num_bytes = key_i - 192;    // pixels in this "run" can be up to 63
+            i++;
+            key_rr++;
+            key_i=*key_rr;
+            nr_byte++;
+
+            //The next line of code shouldn't be needed.  It prevents the image
+            //from "running" past the end of the buffer we put it into...
+            //if(num_bytes + count > total) num_bytes = total-count;
+
+            while(num_bytes>0)        // ... and place the color several times
+            {
+                // write the pixel value unless is is a "filler" byte
+                if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
+                {
+                    //wstawienie punktu w kolorze key
+
+                    dd+=(SSkalaX*8);
+                    aa=dd/1000000;
+                    dd-=(aa*1000000);
+
+                    byte_x+=1;
+                    if (byte_x >= width)
+                    {
+                        prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                        //prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                        pcx_x=pcx_x0;
+                        pcx_y+=bb;
+                        //  pcx_y_=pcx_y;
+//            numer_wiersza++;
+                        if (pcx_y>mxy)
+                        {
+                            ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                            nr_i=0;
+                            return 0;
+                        }
+                        dd=0;
+
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+
+                        byte_x=0;
+                        abcdef++;
+                    }
+                    num_bytes--;
+                }
+
+                count++;
+                if (byte_x<width && byte_x>0)
+                {
+                    prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                    pcx_x+=aa;
+                }
+            }
+        }
+        else
+        {
+            // write the pixel value unless is is a "filler" byte
+            if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
+            {
+                //wstawienie punktu w kolorze key
+
+                dd+=(SSkalaX*8);
+                aa=dd/1000000;
+                dd-=aa*1000000;
+
+                // prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                byte_x+=1;
+                if (byte_x >= width )
+                {
+                    prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+
+                    pcx_x=pcx_x0;
+                    pcx_y+=bb;
+                    //    pcx_y_=pcx_y;
+//        numer_wiersza++;
+                    if (pcx_y>mxy)
+                    {
+                        ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                        nr_i=0;
+                        return 0;
+                    }
+
+                    dd=0;
+                    //aa=0;
+                    byte_x=0;
+
+                    ee+=SSkalaY;
+                    bb=ee/1000000;
+                    ee-=bb*1000000;
+
+                    abcdef++;
+
+                }
+            }
+            count++;
+            if ( my_kbhit() )
+            {
+                if (my_getch() == ESC)
+                {
+                    while (my_kbhit ())
+                    {
+                        my_getch();
+                    }
+                    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                    nr_i=0;
+                    return 1;
+                }
+            }
+            if (byte_x<width && byte_x>0)
+            {
+                prostokat2(pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                pcx_x+=aa;
+            }
+        }
+        key_rr++;
+    }
+    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+    nr_i=0;
+    return 1;
+}
+
+/*
+
+int Draw_pcx_1_virtual_(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh)
 {
  unsigned char key_i;
  int  i;
@@ -4127,7 +4939,8 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
 
   key0 = 0;
 
-  width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+  //width_d  = (double)(((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5);         // image dimensions...
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
   width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
   width=(int)width_d;
   height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
@@ -4160,29 +4973,31 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
   mxx=mmx + ctx_ww;
   mxy=mmy + ctx_wh;
 
-  dx_scr=(mxx-mmx)*aspect1;
-  dy_scr=(mxy-mmy)*aspect1;
+  dx_scr=(long)((double)(mxx-mmx)*aspect1);
+  dy_scr=(long)((double)(mxy-mmy)*aspect1);
 
-  pcx_x0 = pikseleX00(pcx->x);
+  pcx_x0 = (int)pikseleX00(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY00((double)FormatY) - pikseleY00(pcx->y);
+  pcx_y0 = (int)pikseleY00((double)FormatY) - pikseleY00(pcx->y);
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
-  fixkat=pcx->kat*256/360;
+  //fixkat=pcx->kat*256/360;
+  // Convert the float degrees to Allegro fixed-point directly
+  fixkat = ftofix((pcx->kat * 256.0f) / 360.0f);
 
   if (Check_if_Equal(pcx->kat,0.0)==FALSE)
    {
 
-    kos1=sin(-(pcx->kat));
-    koc1=cos(-(pcx->kat));
+    kos1=sinf(-(pcx->kat));
+    koc1=cosf(-(pcx->kat));
 
-    x_[0]=mmx; y_[0]=mmy;
-    x_[1]=mmx; y_[1]=mxy;
-    x_[2]=mxx; y_[2]=mxy;
-    x_[3]=mxx; y_[3]=mmy;
+    x_[0]=(int)mmx; y_[0]=(int)mmy;
+    x_[1]=(int)mmx; y_[1]=(int)mxy;
+    x_[2]=(int)mxx; y_[2]=(int)mxy;
+    x_[3]=(int)mxx; y_[3]=(int)mmy;
 
     for (i=0; i<4; i++)
      {
@@ -4190,23 +5005,8 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
        mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
      }
 
-#ifdef LINUX
-#ifndef MACOS
-      qsort(mmxd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-      qsort(mmyd, 4, sizeof(double), (__compar_fn_t) qsort_by_val);
-#else
   	qsort(mmxd, 4, sizeof(double), qsort_by_val);
   	qsort(mmyd, 4, sizeof(double), qsort_by_val);
-#endif
-#else
-  	//good for Clion
-  	qsort(mmxd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-  	qsort(mmyd, 4, sizeof(double), (_CoreCrtNonSecureSearchSortCompareFunction)qsort_by_val);
-
-  	//good for VS
-    //qsort(mmxd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-    //qsort(mmyd, 4, sizeof(double), (int(*)(const double*, const double*)) qsort_by_val);
-#endif
 
 	mmx=(int)mmxd[0]-dx_scr;
     mmy=(int)mmyd[0]-dy_scr;
@@ -4216,8 +5016,8 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
 
    mmx1=pcx_x0;
    mmy1=pcx_y0;
-   mxx1=pikseleX00(pcx->x+(pcx->dx*width*8));
-   mxy1=mmy1 + pikseleY00(pcx->dy*height);
+   mxx1=pikseleX00(pcx->x+(pcx->dx*(float)width*8));
+   mxy1=mmy1 + pikseleY00(pcx->dy*(float)height);
 
    x_min=mmx1;
    if (mxx1<x_min) x_min=mxx1;
@@ -4377,7 +5177,7 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
             pcx_y+=bb;
             if (pcx_y>mxy) 
 			{
-				for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+				////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
                 nr_i=0;
 				return 0;
 			}
@@ -4416,13 +5216,13 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
       if (byte_x >= width )
        {
 
-        prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,8-((byte_x/*-1*/)*8-width_r),key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+        prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y,aa,bb,8-((byte_x)*8-width_r),key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
            
         pcx_x=pcx_x0;
         pcx_y+=bb;
         if (pcx_y>mxy) 
 		{
-			for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+			////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
             nr_i=0;
 			return 0;
 		}
@@ -4445,14 +5245,14 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
 	        {
 	          my_getch();
 	        }
-		   for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+		   ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
            nr_i=0;
            return -1;  //przerwano rysowanie
   	      }
        }
               if (byte_x<width && byte_x>0)
                {
-                 prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,byte_x*8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                 prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y,aa,bb,byte_x*8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
                  pcx_x+=aa;
                }
     }
@@ -4460,10 +5260,437 @@ int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_w
   }
 
 
-for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
 nr_i=0;
 return 1;
 }
+
+ */
+
+int Draw_pcx_1_virtual(B_PCX *pcx, int ctx_x0, int ctx_y0, int ctx_ww, int ctx_wh)
+{
+    unsigned char key_i;
+    int fp;
+    int dh,i,j,aa=0,bb=0;
+    int cc=0,dd=0,ee=0;
+    double SkalaX,SkalaY;
+    REAL_PCX *rpcx;
+    int width, width1, height;
+    int /*double*/ pcx_x,pcx_y,pcx_yyy,pcx_x0,pcx_y0;
+    //long mxx,mxy,mmx,mmy;
+    int byte_x;
+    unsigned char key0;
+    int count=0;          // current pixel number in the image
+    int total;
+    char *key_rr;
+    int num_bytes;        // number of bytes in a "run"
+    BOOL empty_line = TRUE;
+    long size_of_file;
+    long nr_byte;
+    COLOR palette;
+    double SkalaXX, SkalaYY;
+    int SSkalaX, SSkalaY;
+    double width_d;
+    double height_d;
+    int kolor_tla0, kolor_tla, kolor_punktu, ignore_bk;
+    int width_r;
+    int numer_wiersza, numer_wiersza1, numer_wiersza2;
+    STRIPS *strips;
+    int no_strip;
+    BOOL find_strip;
+    double kos, koc, kos1, koc1;
+    double mmxd[4],mmyd[4];
+    long mxx1,mxy1,mmx1,mmy1,x_min,x_max,y_min,y_max;
+    int x_[4], y_[4];
+    BOOL stripping;
+    long dx_scr, dy_scr;
+    double aspect1;
+    int a;
+    int iii;
+
+
+
+    aspect1=fabs(1-sk_x);
+
+
+    rpcx = (REAL_PCX*) pcx->pcx;
+
+    if (pcx->markers==1)
+    {
+        if (pcx->stripped==0)
+        {
+            if (scan_pcx_strips_1(pcx)==1)
+            {
+                pcx->stripped=1;
+                strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+            }
+        }
+    }
+
+
+    key0 = 0;
+
+//  width  = rpcx->header.xmax - rpcx->header.xmin + 1;         // image dimensions...
+
+    width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+    width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
+    width=(int)width_d;
+    height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
+    height=(int)height_d;
+
+
+    if(rpcx->header.manufacturer   != 10         // check for errors
+       ||rpcx->header.version         <  5
+       ||rpcx->header.encoding       !=  1
+       ||rpcx->header.bits_per_pixel !=  1
+       ||rpcx->header.xmin  >=  rpcx->header.xmax
+       ||rpcx->header.ymin  >=  rpcx->header.ymax)
+    {
+        return 0;
+    }
+
+    if(width%2 && width != rpcx->header.bytes_per_line)
+    {
+        width1=width+1;
+        total = (width+1) * height;
+    }
+    else
+    {
+        width1=width;
+        total = width * height;
+    }
+
+/*
+  mmx=Wyslij_par_ekranu(0);
+  mxx=Wyslij_par_ekranu(1);
+  mxy=Wyslij_par_ekranu(2);
+  mmy=Wyslij_par_ekranu(3);
+*/
+//  mmx=0;
+    mmx=ctx_x0;
+//  mmy=ctx_y0;  //  0;
+    mmy=ctx_y0;
+//  mxx=pikseleX00((double)FormatX);
+//  mxy=pikseleY00((double)FormatY);
+    mxx=mmx + ctx_ww;
+    mxy=mmy + ctx_wh;
+
+
+    dx_scr=(mxx-mmx)*aspect1;
+    dy_scr=(mxy-mmy)*aspect1;
+
+
+    pcx_x0 = pikseleX00(pcx->x);
+    byte_x = 0;
+//  pcx_y0 = mxy - pikseleY00(pcx->y);
+    pcx_y0 = pikseleY00((double)FormatY) - pikseleY00(pcx->y);
+    pcx_x = pcx_x0;
+    pcx_y = pcx_y0;
+    kos=sin(pcx->kat);
+    koc=cos(pcx->kat);
+
+    fixkat=pcx->kat*256/360;
+
+    if (Check_if_Equal(pcx->kat,0.0)==FALSE)
+    {
+        // mmx=-MAXINT;
+        // mxx=MAXINT;
+        // mxy=MAXINT;
+        // mmy=-MAXINT;
+        //obrot ekranu o kat pcx->kat wzgledem punktu pcx->x, pcx->y
+        kos1=sin(-(pcx->kat));
+        koc1=cos(-(pcx->kat));
+
+        x_[0]=mmx; y_[0]=mmy;
+        x_[1]=mmx; y_[1]=mxy;
+        x_[2]=mxx; y_[2]=mxy;
+        x_[3]=mxx; y_[3]=mmy;
+
+        for (i=0; i<4; i++)
+        {
+            mmxd[i] =  pcx_x + (x_[i]-pcx_x)* koc - (y_[i]-pcx_y) * kos;
+            mmyd[i] =  pcx_y + (x_[i]-pcx_x)* kos + (y_[i]-pcx_y) * koc;
+        }
+
+        qsort(mmxd,4,sizeof(double),qsort_by_val);
+        qsort(mmyd,4,sizeof(double),qsort_by_val);
+
+        //mmx=(int)mmxd[0];
+        //mmy=(int)mmyd[0];
+        //mxx=(int)mmxd[3];
+        //mxy=(int)mmyd[3];
+        mmx=(int)mmxd[0]-dx_scr;
+        mmy=(int)mmyd[0]-dy_scr;
+        mxx=(int)mmxd[3]+dx_scr;
+        mxy=(int)mmyd[3]+dy_scr;
+    }
+
+    mmx1=pcx_x0;
+    mmy1=pcx_y0;
+    mxx1=pikseleX00(pcx->x+(pcx->dx*width_d*8));
+//   mxy1=mxy - pikseleY00(pcx->y+(pcx->dy*height_d));
+    mxy1=mmy1 + pikseleY00(pcx->dy*height_d);
+
+    x_min=mmx1;
+    if (mxx1<x_min) x_min=mxx1;
+    x_max=mmx1;
+    if (mxx1>x_max) x_max=mxx1;
+
+    y_min=mmy1;
+    if (mxy1<y_min) y_min=mxy1;
+    y_max=mmy1;
+    if (mxy1>y_max) y_max=mxy1;
+
+    if ((mmx>x_max) || (mxx<x_min) || (mmy>y_max) || (mxy<y_min)) return 0;
+
+
+    dlugosc_bloku_pcx=0;
+
+    if (pcx->ignore_background==1) ignore_bk=1; else ignore_bk=0;
+    kolor_tla0=pcx->background;
+    kolor_tla=pcx->color_key[1];
+    if (pcx->set_foreground==1) kolor_punktu=pcx->foreground; else kolor_punktu=pcx->color_key[0];
+
+    nr_byte = 128;
+
+    key_rr = pcx->pcx + sizeof(PCXheader);// + 28;
+
+    i=-1;
+
+    SkalaXX=pikseleX0d(pcx->dx*width_d)-pikseleX0d(0.0);
+    SkalaX=fabs(SkalaXX/width_d)*1000000.0;
+    SkalaYY=pikseleY0d(pcx->dy*height_d)-pikseleY0d(0.0);
+    SkalaY=fabs(SkalaYY/height_d)*1000000.0;
+
+    SSkalaX=(int)SkalaX;
+    SSkalaY=(int)SkalaY;
+
+    ///////
+    ee+=SSkalaY;
+    bb=ee/1000000;
+    ee-=bb*1000000;
+    ///////
+
+    //odszukanie najblizszego paska obrazu
+    stripping=TRUE;  // FALSE;  //!!!!!!!!!!!!!
+
+    if ((pcx->markers==1) && (pcx->stripped==1) && (stripping==TRUE))
+    {
+        strips=(STRIPS *) ((char *)pcx + sizeof(NAGLOWEK) + pcx->n - sizeof(STRIPS) + 2);
+        numer_wiersza=0;
+        pcx_yyy=pcx_y0;
+        while (pcx_yyy<mmy)
+        {
+            pcx_yyy+=bb;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            numer_wiersza++;
+        }
+        if (numer_wiersza>0)
+        {
+            //poszukiwanie najblizszego paska
+            no_strip=0;
+            find_strip=FALSE;
+            while (no_strip<100)
+            {
+                if (strips->strip[no_strip].wiersz>numer_wiersza)
+                {
+                    if (no_strip>0)
+                    {
+                        numer_wiersza1=strips->strip[no_strip-1].wiersz;
+                        key_rr+=strips->strip[no_strip-1].adr;
+                        //key_rr++;
+                        count+=strips->strip[no_strip-1].count+1;
+                        ///////
+                        ee=0;
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+                        ///////
+                        numer_wiersza2=0;
+                        while (numer_wiersza2<numer_wiersza1)
+                        {
+                            pcx_y+=bb;
+                            ee+=SSkalaY;
+                            bb=ee/1000000;
+                            ee-=bb*1000000;
+                            numer_wiersza2++;
+                        }
+                        find_strip=TRUE;
+                    }
+                    break;
+                }
+                no_strip++;
+            }
+            if (find_strip==FALSE)
+            {
+                ///////
+                ee=0;
+                ee+=SSkalaY;
+                bb=ee/1000000;
+                ee-=bb*1000000;
+                ///////
+            }
+        }
+        else
+        {
+            ///////
+            ee=0;
+            ee+=SSkalaY;
+            bb=ee/1000000;
+            ee-=bb*1000000;
+            ///////
+        }
+    }
+    else
+    {
+        ///////
+        ee=0;
+        ee+=SSkalaY;
+        bb=ee/1000000;
+        ee-=bb*1000000;
+        ///////
+    }
+
+    while(count<total && pcx_y<mxy)
+    {
+        i++;
+        key_i=*key_rr;
+        nr_byte++;
+
+/*
+	if (count>=(total-4))
+	{
+		a=1;
+	}
+*/
+
+        if(key_i>191)                 // if > 191, it is a run-length code.
+        {
+            num_bytes = key_i - 192;    // pixels in this "run" can be up to 63
+            i++;
+            key_rr++;
+            key_i=*key_rr;
+            nr_byte++;
+
+            //The next line of code shouldn't be needed.  It prevents the image
+            //from "running" past the end of the buffer we put it into...
+            //if(num_bytes + count > total) num_bytes = total-count;
+
+            while(num_bytes>0)        // ... and place the color several times
+            {
+                // write the pixel value unless is is a "filler" byte
+                if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
+                {
+                    //wstawienie punktu w kolorze key
+
+                    dd+=(SSkalaX*8);
+                    aa=dd/1000000;
+                    dd-=(aa*1000000);
+
+                    byte_x+=1;
+                    if (byte_x >= width)
+                    {
+                        ////prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                        prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y,aa,bb,8-((byte_x)*8-width_r),key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                        pcx_x=pcx_x0;
+                        pcx_y+=bb;
+//            numer_wiersza++;
+                        if (pcx_y>mxy)
+                        {
+                            ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                            nr_i=0;
+                            return 0;
+                        }
+
+                        dd=0;
+
+                        ee+=SSkalaY;
+                        bb=ee/1000000;
+                        ee-=bb*1000000;
+
+                        byte_x=0;
+                    }
+                    num_bytes--;
+                }
+
+                count++;
+                if (byte_x<width && byte_x>0)
+                {
+                    prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                    pcx_x+=aa;
+                }
+            }
+        }
+        else
+        {
+            // write the pixel value unless is is a "filler" byte
+            if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
+            {
+                //wstawienie punktu w kolorze key
+
+                dd+=(SSkalaX*8);
+                aa=dd/1000000;
+                dd-=aa*1000000;
+
+                //            prostokat2_(ctx_x0,pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                byte_x+=1;
+                if (byte_x >= width )
+                {
+
+                    ////prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,(byte_x/*-1*/)*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                    prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,8-((byte_x/*-1*/)*8-width_r),key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+
+                    pcx_x=pcx_x0;
+                    pcx_y+=bb;
+//        numer_wiersza++;
+                    if (pcx_y>mxy)
+                    {
+                        ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                        nr_i=0;
+                        return 0;
+                    }
+
+                    dd=0;
+                    //aa=0;
+                    byte_x=0;
+
+                    ee+=SSkalaY;
+                    bb=ee/1000000;
+                    ee-=bb*1000000;
+
+                }
+            }
+            count++;
+            if ( my_kbhit() )
+            {
+                if (my_getch() == ESC)
+                {
+                    while (my_kbhit ())
+                    {
+                        my_getch();
+                    }
+                    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+                    nr_i=0;
+                    return -1;  //przerwano rysowanie
+                }
+            }
+            if (byte_x<width && byte_x>0)
+            {
+                prostokat2_(ctx_x0,ctx_y0,pcx_x,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                pcx_x+=aa;
+            }
+        }
+        key_rr++;
+    }
+
+    ////for (iii=0; iii<16; iii++) destroy_sprite_bmp(iii);
+    nr_i=0;
+    return 1;
+}
+
 
 int Draw_pcx_1_file(B_PCX *pcx)
 {
@@ -4494,7 +5721,8 @@ int Draw_pcx_1_file(B_PCX *pcx)
   rpcx = (REAL_PCX*) pcx->pcx;
   key0 = 0;
 
-  width_d  = ((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5;         // image dimensions...
+  //width_d  = (double)(((rpcx->header.xmax - rpcx->header.xmin)/8)+1.5);         // image dimensions...
+  width_d = (double)rpcx->header.bytes_per_line; // Safely reads the exact pre-padded byte width!
   width_r= (rpcx->header.xmax - rpcx->header.xmin)+1;
   width=(int)width_d;
   height_d = rpcx->header.ymax - rpcx->header.ymin; //  + 1;
@@ -4527,14 +5755,14 @@ int Draw_pcx_1_file(B_PCX *pcx)
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
 
-  pcx_x0 = pikseleX0(pcx->x);
+  pcx_x0 = (int)pikseleX0(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY0(pcx->y)+mmy;
+  pcx_y0 = (int)pikseleY0(pcx->y)+mmy;
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
 
-  kos=sin(pcx->kat);
-  koc=cos(pcx->kat);
+  kos=sinf(pcx->kat);
+  koc=cosf(pcx->kat);
 
   dlugosc_bloku_pcx=0;
 
@@ -4549,9 +5777,9 @@ int Draw_pcx_1_file(B_PCX *pcx)
 
   i=-1;
 
-  SkalaXX=pikseleX0d(pcx->dx*width_d)-pikseleX0(0.0);
+  SkalaXX=pikseleX0d(pcx->dx*width_d)-(double)pikseleX0(0.0);
   SkalaX=fabs(SkalaXX/width_d)*1000000.0;
-  SkalaYY=pikseleY0d(pcx->dy*height_d)-pikseleY0(0.0);
+  SkalaYY=pikseleY0d(pcx->dy*height_d)-(double)pikseleY0(0.0);
   SkalaY=fabs(SkalaYY/height_d)*1000000.0;
 
   SSkalaX=(int)SkalaX;
@@ -4593,7 +5821,7 @@ int Draw_pcx_1_file(B_PCX *pcx)
           byte_x+=1;
           if (byte_x >= width)
            {
-             prostokat2(pcx_x-mmx,pcx_y/*+mmy*/,aa,bb,byte_x*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+             prostokat2(pcx_x-(int)mmx,pcx_y/*+mmy*/,aa,bb,byte_x*8-width_r,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
             pcx_x=pcx_x0;
             pcx_y+=bb;
             if (pcx_y>mxy) return 0;
@@ -4612,7 +5840,7 @@ int Draw_pcx_1_file(B_PCX *pcx)
 
               if (byte_x<width && byte_x>0)
                {
-                 prostokat2(pcx_x-mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+                 prostokat2(pcx_x-(int)mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
                  pcx_x+=aa;
                }
 
@@ -4630,7 +5858,7 @@ int Draw_pcx_1_file(B_PCX *pcx)
       dd-=aa*1000000;
 
 
-      prostokat2(pcx_x-mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+      prostokat2(pcx_x-(int)mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
 
       byte_x+=1;
       if (byte_x >= width )
@@ -4663,7 +5891,7 @@ int Draw_pcx_1_file(B_PCX *pcx)
 
           if (byte_x<width && byte_x>0)
            {
-             prostokat2(pcx_x-mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
+             prostokat2(pcx_x-(int)mmx,pcx_y/*+mmy*/,aa,bb,8,key_i,kolor_tla0,kolor_tla,kolor_punktu,ignore_bk,pcx_x0,pcx_y0,kos,koc);
              pcx_x+=aa;
            }
 
@@ -4728,9 +5956,9 @@ int Draw_pcx_0(B_PCX *pcx)
   mxy=Wyslij_par_ekranu(2);
   mmy=Wyslij_par_ekranu(3);
 
-  pcx_x0 = pikseleX0(pcx->x);
+  pcx_x0 = (int)pikseleX0(pcx->x);
   byte_x = 0;
-  pcx_y0 = pikseleY0(pcx->y)+mmy;
+  pcx_y0 = (int)pikseleY0(pcx->y)+mmy;
   pcx_x = pcx_x0;
   pcx_y = pcx_y0;
 
@@ -4772,7 +6000,7 @@ int Draw_pcx_0(B_PCX *pcx)
         if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line)
         {
         //wstawienie punktu w kolorze key
-          dd+=SkalaX;
+          dd+=(float)SkalaX;
           aa=(int)dd;
           dd=dd-aa;
 
@@ -4780,15 +6008,15 @@ int Draw_pcx_0(B_PCX *pcx)
           byte_x+=1;
           if (byte_x>=width)
            {
-            if (pcx_x<=mxx && pcx_x>=mmx && pcx_y>=mmy && pcx_y<=mxy) prostokat1(pcx_x,pcx_y/*+mmy*/,aa,bb,key_i);
+            if (pcx_x<=(double)mxx && pcx_x>=(double)mmx && pcx_y>=(double)mmy && pcx_y<=(double)mxy) prostokat1((int)pcx_x,(int)pcx_y/*+mmy*/,aa,bb,key_i);
             pcx_x=pcx_x0;
             pcx_y+=bb;
-            if (pcx_y>mxy) return 0;
+            if (pcx_y>(double)mxy) return 0;
             dd=0;
 
-            ee+=SkalaY;
+            ee+=(float)SkalaY;
             bb=(int)ee;
-            ee=ee-bb;
+            ee=ee-(float)bb;
             byte_x=0;
            }
           num_bytes--;
@@ -4803,23 +6031,23 @@ int Draw_pcx_0(B_PCX *pcx)
       if(width == rpcx->header.bytes_per_line || count % rpcx->header.bytes_per_line )
       {
       //wstawienie punktu w kolorze key
-      dd+=SkalaX;
+      dd+=(float)SkalaX;
       aa=(int)dd;
-      dd=dd-aa;
+      dd=dd-(float)aa;
 
-      if (pcx_x<=mxx  && pcx_x>=mmx && pcx_y>=mmy && pcx_y<=mxy) prostokat1(pcx_x,pcx_y/*+mmy*/,aa,bb,key_i);
+      if (pcx_x<=(double)mxx  && pcx_x>=(double)mmx && pcx_y>=(double)mmy && pcx_y<=(double)mxy) prostokat1((int)pcx_x,(int)pcx_y/*+mmy*/,aa,bb,key_i);
       pcx_x+=aa*8;
       byte_x+=1;
       if (byte_x>=width )
        {
         pcx_x=pcx_x0;
         pcx_y+=bb;
-        if (pcx_y>mxy) return 0;
+        if (pcx_y>(double)mxy) return 0;
         dd=0;
         byte_x=0;
-        ee+=SkalaY;
+        ee+=(float)SkalaY;
         bb=(int)ee;
-        ee=ee-bb;
+        ee=ee-(float)bb;
        }
       }
       count++;
@@ -4834,7 +6062,7 @@ int Draw_pcx_0(B_PCX *pcx)
            return 1;
   	      }
        }
-      if (byte_x<width && byte_x>0 && pcx_x<=mxx && pcx_x>=mmx && pcx_y>=mmy && pcx_y<=mxy) prostokat1(pcx_x,pcx_y/*+mmy*/,aa,bb,key_i);
+      if (byte_x<width && byte_x>0 && pcx_x<=(double)mxx && pcx_x>=(double)mmx && pcx_y>=(double)mmy && pcx_y<=(double)mxy) prostokat1((int)pcx_x,(int)pcx_y/*+mmy*/,aa,bb,key_i);
     }
    key_rr++;
   }

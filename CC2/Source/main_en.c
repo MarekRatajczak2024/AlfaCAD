@@ -144,7 +144,15 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN  //34
 };
 
-TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+#ifdef PROFILE
+#define O3 6
+#define O7 10
+#else
+#define O3 4
+#define O7 8
+#endif
+
+TMENU mRegion = { 6, 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, O7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmStatic[] = {
         {u8"Frame and truss",L'F',733, NULL},  //25
@@ -153,16 +161,24 @@ POLE pmStatic[] = {
         {u8"Grid",L'G',897, NULL},  //28
 };
 
-TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
+TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, O3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Static and dynamic analysis",L'S',854, &mStatic},
-        {u8"Result forces in cross sections",L'R',824, NULL},
-        {u8"Animate the dynamics",L'A',817, NULL},
-        {u8"Element cross-section selection",L'E',775, &mRegion},
+        {u8"Static and dynamic analysis\0",L'S',854, &mStatic},
+        {u8"Result forces in cross sections\0",L'R',824, NULL},
+        {u8"Animate the dynamics\0",L'A',817, NULL},
+        {u8"Element cross-section selection\0",L'E',775, &mRegion},
+#ifdef PROFILE
+		{u8"utility Profile\0",'P',914, NULL},
+		{u8"utility Map\0",'M',915, NULL},
+#endif
 };
 
+#ifdef PROFILE
+TMENU mApplications = { 6, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#else
 TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#endif
 
 POLE pmenug[] = {
 	{u8"Draw\0",'D',57,NULL},

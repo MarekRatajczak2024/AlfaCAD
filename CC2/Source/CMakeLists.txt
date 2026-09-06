@@ -8,6 +8,10 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "GNU")
     ## add_compile_options(-Wno-incompatible-pointer-types)
 endif()
 
+if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    add_compile_definitions(CLANG_TIDY_PARSING_MODE)
+endif()
+
 set(CMAKE_SYSTEM_VERSION 10.0.22000.0 CACHE STRING "" FORCE)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -222,8 +226,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 
 
-#set(PROJECT_NAME AlfaCAD)
+set(PROJECT_NAME AlfaCAD)
 
+#for all versions
+add_compile_definitions("PROFILE")
 
 #if ($<CMAKE_BUILD_TYPE:Debug>)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -252,7 +258,6 @@ elseif (CMAKE_BUILD_TYPE STREQUAL "Debug_ES")
 else()
     set(PROJECT_NAME AlfaCAD)
 endif()
-
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions("ENGLISH")
@@ -515,6 +520,10 @@ set(Source_Files
     "../../../CC2/Source/o_shield.c"
     "../../../CC2/Source/o_shield_reactions.c"
     "../../../CC2/Source/o_shield.h"
+
+    "../../../CC2/Source/a_profil.c"
+    "../../../CC2/Source/o_tabwsp.c"
+    "../../../CC2/Source/o_pconfig.c"
 
     "../../../allegro5-4.4.3/addons/jpgalleg/src/jpgalleg.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/decode.c"

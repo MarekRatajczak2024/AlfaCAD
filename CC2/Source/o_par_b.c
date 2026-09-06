@@ -84,7 +84,7 @@ static double FormatX_= 0.0 ;
 static double FormatY_= 0.0 ;
 static int formatx0, formaty0;
 #define TADD 0x04	   /*teksty dodatkowe*/
-extern BOOL Edit_File (char * f_name, int type, BOOL cur);
+//extern BOOL Edit_File (char * f_name, int type, BOOL cur);
 extern void menu_par_new(char * pole, const char * par);  
 extern void Point_Origin (void) ;
 extern void Local_Angle (void) ;
@@ -1780,9 +1780,9 @@ static int usuwanie_ramki_sektorow(void)   //wraz z opisami numerow
 int Lin0(double x1, double y1, double x2, double y2, int typ, int kolor)
 {
 	LINIA L = Ldef;
-	L.warstwa = 254; //Current_Layer;
-	L.x1 = x1; L.y1 = y1;
-	L.x2 = x2; L.y2 = y2;
+	L.warstwa = MAX_NUMBER_OF_LAYERS - 2; //Current_Layer;  //254
+	L.x1 = (float)x1; L.y1 = (float)y1;
+	L.x2 = (float)x2; L.y2 = (float)y2;
 	L.typ = typ;
 	L.kolor = kolor;
 	L.blok = 1;
@@ -1817,7 +1817,7 @@ int generowanie_ramki_sektorow()
 	T.obiektt2 = O2BlockPline;
 	T.wysokosc = (float)(sektory_arkusza_ext.margin_width  * 0.75); //t_sektor_h;
 	T.czcionka = sektory_arkusza_ext.font;  //t_sektor_czcionka;
-	T.warstwa = 254;
+	T.warstwa = MAX_NUMBER_OF_LAYERS - 2; //254;
 	T.blok = 1;
 	T.kolor = sektory_arkusza_ext.sector_color;
 	T.justowanie = j_centralnie;
@@ -1861,7 +1861,7 @@ int generowanie_ramki_sektorow()
 			//linie sektorow
 			i_sektor = 0;
 
-			max_wspx = (double)FormatX - del_sektor;
+			max_wspx = (float)FormatX - del_sektor;
 			min_wspx = del_sektor;
 			if (sektory_arkusza.styl == 3)  //also vertical zones
 			{
@@ -1896,7 +1896,7 @@ int generowanie_ramki_sektorow()
 				if (sektory_arkusza.prefix > 0) sprintf(tekst_p, "%d.%d", sektory_arkusza.prefix, sektory_arkusza.first_number + i_sektor);
 				else sprintf(tekst_p, "%d", sektory_arkusza.first_number + i_sektor);
 				strcpy(&T.text[0], tekst_p);
-				LengthT = strlen(T.text);
+				LengthT = (int)strlen(T.text);
 				T.dl = LengthT;
 				T.n = T18 + T.dl;
                 GetTextLen(&T, &del_text);
@@ -1904,7 +1904,7 @@ int generowanie_ramki_sektorow()
 
 				if ((T.x < (max_wspx - ((del_text - del_char) / 2))) && (T.x > min_wspx + ((del_text - del_char) / 2)))
 				{
-					T.y = FormatY - del_sektor - 0.5 * h_sektor;
+					T.y = (float)(FormatY - del_sektor - 0.5 * h_sektor);
 
 					if (dodaj_obiekt((BLOK*)dane, (void*)&T) == NULL) return 0;
 				}
@@ -1916,22 +1916,22 @@ int generowanie_ramki_sektorow()
 		{
 			if (sektory_arkusza.ramka == 0)
 			{
-				if (!Lin0(del_sektor, del_sektor, FormatX - del_sektor, del_sektor, linia_sektor, kolor_sektor)) return 0;
+				if (!Lin0(del_sektor, del_sektor, FormatX - (double)del_sektor, del_sektor, linia_sektor, kolor_sektor)) return 0;
 				if (!Lin0(del_sektor, del_sektor, del_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
-				if (!Lin0(FormatX - del_sektor, del_sektor, FormatX - del_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
+				if (!Lin0(FormatX - (double)del_sektor, del_sektor, FormatX - (double)del_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
 			}
 			if (sektory_arkusza.styl == 3)
 			{
-				if (!Lin0(del_sektor + h_sektor, del_sektor + h_sektor, FormatX - del_sektor - h_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
+				if (!Lin0(del_sektor + h_sektor, del_sektor + h_sektor, FormatX - (double)del_sektor - h_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
 			}
 			else
 			{
-				if (!Lin0(del_sektor, del_sektor + h_sektor, FormatX - del_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
+				if (!Lin0(del_sektor, del_sektor + h_sektor, FormatX - (double)del_sektor, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
 			}
 			//linie sektorow
 			
 			i_sektor = 0;
-			max_wspx = FormatX - del_sektor;
+			max_wspx = (float)FormatX - del_sektor;
 			min_wspx = del_sektor;
 			if (sektory_arkusza.styl == 3)  //also vertical zones
 			{
@@ -1942,7 +1942,7 @@ int generowanie_ramki_sektorow()
 			if (sektory_arkusza_ext.reversed)
 			{
 				sektory_arkusza_dx = -sektory_arkusza.dx;
-				odl = FormatX - del_sektor;
+				odl = (float)FormatX - del_sektor;
 				if (sektory_arkusza.styl == 3)
 					odl -= h_sektor;
 			}
@@ -1961,11 +1961,11 @@ int generowanie_ramki_sektorow()
 				if ((odl < max_wspx) && (odl > min_wspx))
 					if (!Lin0(odl, del_sektor, odl, del_sektor + h_sektor, linia_sektor, kolor_sektor)) return 0;
 				//tekst
-				T.x = odl - (sektory_arkusza_dx / 2);
+				T.x = (float)(odl - (sektory_arkusza_dx / 2.));
 				if (sektory_arkusza.prefix > 0) sprintf(tekst_p, "%d.%d", sektory_arkusza.prefix, sektory_arkusza.first_number + i_sektor);
 				else sprintf(tekst_p, "%d", sektory_arkusza.first_number + i_sektor);
 				strcpy(&T.text[0], tekst_p);
-				LengthT = strlen(T.text);
+				LengthT = (int)strlen(T.text);
 				T.dl = LengthT;
 				T.n = T18 + T.dl;
 				GetTextLen(&T, &del_text);
@@ -1973,7 +1973,7 @@ int generowanie_ramki_sektorow()
 
 				if ((T.x < (max_wspx - ((del_text - del_char) / 2))) && (T.x > min_wspx + ((del_text - del_char) / 2)))
 				{
-					T.y = del_sektor + 0.5 * h_sektor;
+					T.y = (float)(del_sektor + 0.5 * h_sektor);
 
 					if (dodaj_obiekt((BLOK*)dane, (void*)&T) == NULL) return 0;
 				}
@@ -2032,8 +2032,8 @@ int generowanie_ramki_sektorow()
 				T.y = (float)(odl - (sektory_arkusza_ext.dy / 2.));
 				if (T.y < ((double)FormatY - h_sektor - del_sektor - 2))
 				{
-					if (Get_PTRS__Text_Style_type(T.czcionka) == 2) T.x = (float)FormatX - del_sektor - (h_sektor * 0.5);
-					else T.x = (float)FormatX - del_sektor - (h_sektor * 0.375);
+					if (Get_PTRS__Text_Style_type(T.czcionka) == 2) T.x = (float)FormatX - del_sektor - (float)(h_sektor * 0.5);
+					else T.x = (float)FormatX - del_sektor - (float)(h_sektor * 0.375);
 					if (i_sektor < 52) strcpy(&T.text[0], tab_char_ASCII[i_sektor]);
 					else strcpy(&T.text[0], "*");
 					T.text[1]='\0';
@@ -2051,7 +2051,7 @@ int generowanie_ramki_sektorow()
 		}
 	}
 
-	Layers[254].edit = FALSE;
+	Layers[MAX_NUMBER_OF_LAYERS - 2].edit = FALSE;  //254
 	return 1;
 }
 

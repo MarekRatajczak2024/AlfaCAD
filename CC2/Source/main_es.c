@@ -143,7 +143,15 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6 , 0, 0, 12, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+#ifdef PROFILE
+#define O3 6
+#define O7 10
+#else
+#define O3 4
+#define O7 8
+#endif
+
+TMENU mRegion = { 6 , 0, 0, 12, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, O7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmStatic[] = {
         {u8"Pórtico y cercha",L'P',733, NULL},
@@ -152,16 +160,24 @@ POLE pmStatic[] = {
         {u8"Emparrillado de vigas",L'E',897, NULL},
 };
 
-TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
+TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, O3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Análisis estático y dinámico",L'A',854, &mStatic},
-        {u8"Fuerzas resultantes en secciones transversales",L'F',824, NULL},
-        {u8"animar la Dinámica",L'D',817, NULL},
-        {u8"Selección de sección transversal del elemento",L'S',775, &mRegion},
+        {u8"Análisis estático y dinámico\0",L'A',854, &mStatic},
+        {u8"Fuerzas resultantes en secciones transversales\0",L'F',824, NULL},
+        {u8"animar la Dinámica\0",L'D',817, NULL},
+        {u8"selección de sección transversal del Elemento\0",L'E',775, &mRegion},
+#ifdef PROFILE
+		{u8"Perfil de red\0",L'P',914, NULL},
+		{u8"Mapa de red\0",L'M',915, NULL},
+#endif
 };
 
-TMENU mApplications = { 4, 0, 0, 46, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#ifdef PROFILE
+TMENU mApplications = { 6, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#else
+TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#endif
 
 POLE pmenug[] = {
 	{u8"Dibujar\0",'D',57,NULL},

@@ -109,7 +109,7 @@ extern BOOL Check_if_Equal2(double x, double y);
 extern void delay(int time);
 extern void KopiujM(void);
 extern int kreowanie_profilu(char *plik_profilu);
-extern int kreowanie_zegarow(char *plik_profilu);
+extern int Kreowanie_Studni(char *plik_profilu);
 extern int ReadPCX_real(char *fn,double *Px,double *Py,RYSPOZ *adp,RYSPOZ *adk, char *buf, int lenmax, int *object_no, BOOL b_current_ver);
 extern void getimage(int left, int top, int right, int bottom, void  *bitmap);
 extern void putimage(int left, int top, void  *bitmap, int op);
@@ -591,8 +591,10 @@ void obrot_import (void)
   block_angle += kat_obrotu;
   block_angle = Angle_Normal(block_angle);
 
-    sprintf(eA.st, "%#8.4f", block_angle*180/Pi);
-    Out_Edited_Draw_Param ((ESTR *)&eA, TRUE) ;
+  if (eA.st != NULL) {
+      sprintf(eA.st, "%#8.4f", block_angle * 180 / Pi);
+      Out_Edited_Draw_Param((ESTR *) &eA, TRUE);
+  }
 
   Cur_ond (X, Y) ;
 }
@@ -621,8 +623,10 @@ void obrot_import_K(void)
 	block_angle = kat_obrotu;
 	block_angle = Angle_Normal(block_angle);
 
-    sprintf(eA.st, "%#8.4f", block_angle*180/Pi);
-    Out_Edited_Draw_Param ((ESTR *)&eA, TRUE) ;
+    if (eA.st != NULL) {
+        sprintf(eA.st, "%#8.4f", block_angle * 180 / Pi);
+        Out_Edited_Draw_Param((ESTR *) &eA, TRUE);
+    }
 
 	Cur_ond(X, Y);
 }
@@ -717,8 +721,10 @@ void	obrot_kopiuj_paral(double kat)
 	block_angle = kat_linii;
 	block_angle = Angle_Normal(block_angle);
 
+    if (eA.st != NULL) {
     sprintf(eA.st, "%#8.4f", block_angle*180/Pi);
     Out_Edited_Draw_Param ((ESTR *)&eA, TRUE) ;
+    }
 
 	Cur_ond(X, Y);
 
@@ -3519,7 +3525,7 @@ static int PrzesunI_GEO(void)
 	  }
 	  else if (ev->Number == 14)
 	  {
-		  obrot_kopiuj_paral(90);
+		  obrot_kopiuj_paral(Pi/2.0);
 	  }
 	  else if (ev->Number == 15)
 	  {
@@ -4235,7 +4241,8 @@ void Place_Import_Block (int opcja, char *blockfile)
      delay (2000) ;  // ReadBlock_ moze komunikowac obledzie,
 		     // komunikat_str wyswietlany jest w tym samym miejscu,
 		     // przeniesc docelowo do b_message
-     Error = 0;		     
+     Error = 0;
+  	return;
   }  
   if (blok_name [0] != 0)
   {
@@ -4850,6 +4857,84 @@ int Write_Block_PCX (char *adr)
 
     return 1;
 }
+
+
+#ifdef PROFILE
+
+void Wstaw_Profil (void)
+/*--------------------*/
+{
+	double X0,Y0;
+	int status;
+	char st[MaxTextLen];
+	char fn[MaxLen]="";
+	int l_kr;
+	static int ( *SW[3])() ;
+	double XX, YY;
+	int k;
+
+	Error=0;
+	redcrI(0);
+	if(!FileNamePRO(fn,MaxLen))
+	{ redcrI(1);
+		Cur_ond(X,Y);
+		if (sel.gor == 1)
+		{
+			////out_sel(X,Y);
+		}
+		sel.akt = 0;
+		return;
+	}
+
+	redcrI(1);
+	Cur_ond(X,Y);
+	if (sel.gor == 1)
+	{
+		////out_sel(X,Y);
+	}
+	sel.akt = 0;
+	k=kreowanie_profilu(fn);
+
+}
+
+
+void Wstaw_Studnie (void)
+/*--------------------*/
+{
+	double X0,Y0;
+	int status;
+	char st[MaxTextLen];
+	char fn[MaxLen]="";
+	int l_kr;
+	static int ( *SW[3])() ;
+	double XX, YY;
+	int k;
+
+	Error=0;
+	redcrI(0);
+	if(!FileNamePRO(fn,MaxLen))
+	{ redcrI(1);
+		Cur_ond(X,Y);
+		if (sel.gor == 1)
+		{
+			////out_sel(X,Y);
+		}
+		sel.akt = 0;
+		return;
+	}
+
+	redcrI(1);
+	Cur_ond(X,Y);
+	if (sel.gor == 1)
+	{
+		////out_sel(X,Y);
+	}
+	sel.akt = 0;
+	k=Kreowanie_Studni(fn);
+
+}
+
+#endif
 
 void komunikat_null(void)
 {

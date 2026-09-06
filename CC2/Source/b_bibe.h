@@ -142,11 +142,24 @@ typedef struct DRAWING_PARAMS
     STATIC_STRESS_COLORS static_stress_colors;
 
     BOOL rescaling_menu_mode;
-
+#ifdef PROFILE
+	MyDaneTabl dane_profil;
+	MyDane dane_profs1;
+	double typ_profilu;
+	double hektometr_p;
+	double hektometr_k;
+	int znacznik_aplikacji;
+	double dynamic_block;
+	double skala_p_x;
+	double rpp;
+	double data_odwiert[29];
+	char comments_geo[17][61];
+	double data_instal_last[20];
+	double data_instal_tab[20][6];
+    double reference_angle;
+#endif
 } DRAWING_PARAMS;
 
-
-////DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];  //TO CHECK
 
 #ifdef __cplusplus
 extern "C" {

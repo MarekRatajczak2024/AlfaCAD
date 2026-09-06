@@ -109,16 +109,16 @@ typedef struct		/*dane ustawiane przed drukowaniem*/
 	int density;	/*gestosc drukowania*/
 	BOOL all_sheet;	/*caly rysunek, okno*/
 
-	float xp; /* okno do plotowania*/
+	float xp; // okno do plotowania
 	float yp;
 	float xk;
 	float yk;
-	float yk0; /* for TTF use in inversion*/
+	float yk0; // for TTF use in inversion
 	float xp_w;
 	float yp_w;
 	float xk_w;
-	float yk_w; /* wewnetrzne okno do plotowania*/
-
+	float yk_w; // wewnetrzne okno do plotowania
+    
 	BOOL rotation;       /*obrot rysunku 1 - tak, 0 - nie*/
 	BOOL inversion;
 	BOOL reflection;
@@ -139,7 +139,7 @@ typedef struct		/*dane ustawiane przed drukowaniem*/
 	float prn_width_paper;        /*szerokosc wydruku drukarki*/
 	float prn_height_paper;       /*wysokosc wydruku drukarki*/
 	float scale;              /*skala dla wydruku w skali*/
-	BOOL actual_size;
+	BOOL actual_size;         /*actual scale*/
 	BOOL print_pause;         /*pauza na zmiane arkusza*/
 	BOOL change_page;         /*zmiana strony*/
 	BOOL color_print;         /*wydruk w kolorze*/

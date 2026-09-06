@@ -16,6 +16,10 @@ set(CMAKE_SYSTEM_VERSION 10.0.22621.0 CACHE STRING "" FORCE)
 SET(CMAKE_CXX_FLAGS "-O0")
 SET(CMAKE_C_FLAGS "-O0")
 
+if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    add_compile_definitions(CLANG_TIDY_PARSING_MODE)
+endif()
+
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -215,6 +219,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 
 
+#for all versions
+add_compile_definitions("PROFILE")
+
 #set(PROJECT_NAME AlfaCAD)
 
 
@@ -246,6 +253,11 @@ else()
     set(PROJECT_NAME AlfaCAD)
 endif()
 
+
+if(MSVC)
+    # Appends the Map flag to the Release linker flags specifically
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /MAP")
+endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions("ENGLISH")
@@ -459,6 +471,9 @@ set(Source_Files
     "../../../CC2/Source/o_grid.c"
     "../../../CC2/Source/o_grid.h"
     "../../../CC2/Source/o_upgrade_stiffness.cpp"
+    "../../../CC2/Source/a_profil.c"
+    "../../../CC2/Source/o_tabwsp.c"
+    "../../../CC2/Source/o_pconfig.c"
     "../../../CC2/Source/2L_section_US_si.c"
     "../../../CC2/Source/U_section_EU_si.c"
     "../../../CC2/Source/U_section_UK_si.c"
@@ -738,13 +753,13 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             MultiThreadedDebugDLL
         >
         $<$<CONFIG:Release_ES>:
-            MultiThreadedDebugDLL
+            MultiThreadedDLL
         >
         $<$<CONFIG:Release_PL>:
-            MultiThreadedDebugDLL
+            MultiThreadedDLL
         >
         $<$<CONFIG:Release_UA>:
-            MultiThreadedDebugDLL
+            MultiThreadedDLL
         >
         $<$<CONFIG:Release>:
             MultiThreadedDLL
@@ -1526,6 +1541,9 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "ENGLISH;"
             "SPANISH;"
             "BIT64;"
+            "_AFXDLL;"
+            "__ALLEGRO_MSVC;"
+            "__ALLEGRO_SRC;"
             "_MBCS;"
             "QT_NO_DEBUG"
             "QT_NO_EXCEPTIONS"
@@ -1535,6 +1553,9 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "ALF_MAIN;"
             "alfpro;"
             "BIT64;"
+            "_AFXDLL;"
+            "__ALLEGRO_MSVC;"
+            "__ALLEGRO_SRC;"
             "_MBCS;"
             "QT_NO_DEBUG"
             "QT_NO_EXCEPTIONS"
@@ -1546,6 +1567,9 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "ENGLISH;"
             "UKRAINIAN;"
             "BIT64;"
+            "_AFXDLL;"
+            "__ALLEGRO_MSVC;"
+            "__ALLEGRO_SRC;"
             "_MBCS;"
             "QT_NO_DEBUG"
             "QT_NO_EXCEPTIONS"
@@ -1571,6 +1595,8 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "ENGLISH;"
             "SPANISH;"
             "BIT64;"
+            "__ALLEGRO_MSVC;"
+            "__ALLEGRO_SRC;"
             "_MBCS;"
             "QT_NO_DEBUG"
             "QT_NO_EXCEPTIONS"

@@ -502,7 +502,7 @@ static void Change_Params_PCX(void)
 
  if (b_pcx.dx != b_pcx.dy) preserve_aspect = FALSE;
 
- dlg_ret = GetPCXParams(head, &b_pcx, scale_xf, scale_yf, angle_f, b_pcx.background, preserve_aspect, b_pcx.on_front, b_pcx.h_flip, b_pcx.v_flip);
+ dlg_ret = GetPCXParams(head, &b_pcx, scale_xf, scale_yf, angle_f, b_pcx.ignore_background, preserve_aspect, b_pcx.on_front, b_pcx.h_flip, b_pcx.v_flip);
 
  if (dlg_ret == 0)
  {

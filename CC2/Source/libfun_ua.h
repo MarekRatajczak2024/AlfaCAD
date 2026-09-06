@@ -27,8 +27,8 @@
 #define IC_OBIEKTY u8"OBJECTS"      /*Стандартний каталог об'єктів*/
 #define IC_AUTOBACKUP u8"АВТОЗБЕРЕЖЕННЯ"
 #define IC_SCRSAVE u8"SCREEN SAVER"
-#define IC_AUTOPANBLOCK u8"DIALOGS AUTOPANORAMA"  /*панорамування діалогових блоків у програмах*/
-#define IC_AUTOZOOMBLOCK u8"DIALOGS AUTOZOOM"     /*налаштування SCREEN-ALL у діалогових блоках*/
+#define IC_AUTOPANBLOCK u8"АВТОПАНОРАМУВАННЯ БЛОКІВ"  /*Панорамування діалогових блоків у програмах*/
+#define IC_AUTOZOOMBLOCK u8"АВТОМАСШТАБУВАННЯ БЛОКІВ"     /*Налаштування «Перегляд усіх» у діалогових блоках*/
 #define IC_BUFMAKSIZE u8"БУФЕР МАКРОСУ"
 #define IC_BUFMEMSIZE u8"РОЗМІР ПАМ'ЯТІ ДЛЯ КРЕСЛЕНЬ"
 #define IC_PCXBUFFERSIZE u8"БУФЕР ІМІДЖУ"

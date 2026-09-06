@@ -101,6 +101,7 @@ extern int mwspline_(double* x, double* y, void* adr, int(*fun)(double*, double*
 extern int najblizszyLx_(double* x, double* y, void* adr);
 double get_angle_tangent_to_object_ (void *ptr_ob, double df_x, double df_y);
 extern void DonePatternBitmapScaled(void);
+extern void set_text_types(int ver);
 
 /*-----------------------------------------------------------------------*/
 
@@ -1493,8 +1494,9 @@ void Multitekst(void)
     int single=0;
 	int tab = 0;
 
-	edit_functions = TRUE;
+	set_text_types(1);
 
+	edit_functions = TRUE;
 
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
 	strcpy(&TextG.text[0], "");
@@ -1607,6 +1609,8 @@ int Tekst_factory(char *prefix, BOOL repeat)
 	int tab = 0;
 
     if (aktmakro!=NULL) return 0; //TEMPORARY due to makro
+
+	set_text_types(1);
 
 	edit_functions = TRUE;
 	setlinestyle1(SOLID_LINE, 0, NORM_WIDTH);
@@ -2225,6 +2229,10 @@ BOOL Wejscie_Text(void *ad)
 
   bitmap_view=TRUE;
 
+#ifdef PROFILE
+  	delete_instal_tab();
+#endif
+
   /*katalog biezacy*/
   strcpy(zbior_danych,sk);
   Clear_View () ;
@@ -2562,6 +2570,1329 @@ void TEXT_TEST(void)
 
 }
 
+#ifdef PROFILE
+
+void *korekta_dokladnosci(void *ad, int n_dokl)
+/*-------------------------------------------*/
+{ double rzedna_r;
+  int l_kr;
+  TEXT Tp;
+  char tekst_p[MaxTextLen];
+  char *bp;
+  char *comma=NULL;
+  char *dot=NULL;
+  BOOL used_comma=0;
+
+//  memmove(&Tp, ad, sizeof(NAGLOWEK) + ((TEXT*)ad)->n);
+  if ((strlen(((TEXT *)ad)->text)==0) && ((((TEXT *)ad)->typ)==n_rzedna_ulicy))
+   {
+     return ad;
+   }
+  memmove(&Tp, ad, sizeof(NAGLOWEK) + ((TEXT*)ad)->n);
+  //if precision correction is performed, it is assumed the text creates the level value, so comma can be simply replaced by decimal dot
+  comma=strchr(((TEXT*)ad)->text,',');
+  if (comma!=NULL)
+  {
+      *comma='.';
+      used_comma=1;
+  }
+  rzedna_r=strtod(((TEXT*)ad)->text,&bp);   //atof(((TEXT*)ad)->text);
+
+  /*
+  if (n_dokl==2)
+   {
+    sprintf(tekst_p,"%.2f",rzedna_r);
+    l_kr=add_000(tekst_p,2);
+   }
+    else
+      {
+       sprintf(tekst_p,"%.3f",rzedna_r);
+       l_kr=add_000(tekst_p,3);
+      }
+  */
+  switch (Tp.typ)
+   {
+     case 0:
+     case 3:
+     case 5:
+     case 8:
+     case 10:
+             { sprintf(tekst_p,"%.3f",rzedna_r);
+               l_kr=add_000(tekst_p,3);
+             }
+             break;
+     case 1:
+     case 12:
+     case 13:{sprintf_prec(tekst_p,odleglosc_prec,rzedna_r);
+              l_kr=add_000(tekst_p,odleglosc_poz);
+             }
+             break;
+     case 2: {sprintf_prec(tekst_p,rzedna_i_prec,rzedna_r);
+              l_kr=add_000(tekst_p,rzedna_i_poz);
+             }
+             break;
+     case 4: {sprintf_prec(tekst_p,rzedna_p_prec,rzedna_r);
+              l_kr=add_000(tekst_p,rzedna_p_poz);
+             }
+             break;
+     case 6: {sprintf_prec(tekst_p,rzedna_ti_prec,rzedna_r);
+              l_kr=add_000(tekst_p,rzedna_ti_poz);
+             }
+             break;
+     case 7: {sprintf_prec(tekst_p,rzedna_tp_prec,rzedna_r);
+              l_kr=add_000(tekst_p,rzedna_tp_poz);
+             }
+             break;
+
+     case 14:
+     case 15:{sprintf_prec(tekst_p,zaglebienie_prec,rzedna_r);
+              l_kr=add_000(tekst_p,zaglebienie_poz);
+             }
+             break;
+     case 9:
+     case 11:{sprintf_prec(tekst_p,spadek_prec,rzedna_r);
+              l_kr=add_000(tekst_p,spadek_poz);
+             }
+             break;
+   }
+
+    if (used_comma==1)
+    {
+        dot=strchr(tekst_p,'.');
+        if (dot!=NULL) {
+            *dot = ',';
+        }
+    }
+
+  strcpy(&Tp.text[0],tekst_p);
+  Tp.dl = strlen(tekst_p);
+  Tp.n = T18 + Tp.dl;
+  return korekta_obiekt(ad, (void *)&Tp);
+}
+
+#ifdef PROFILE
+void  Edit_Text(void  *ad)
+/*----------------------*/
+{
+	EVENT *ev;
+	BLOK *ptrs_block, *ptrs_block1, *ptrs_block2 ;
+	LINIA *L1;
+	double X0, Y0;
+	int font_no;
+	TEXT *ad_text, *T, *T1, *t, Tp;
+	T_Point *P, *P1, *P2;
+	int typ_edyt_tekst;
+	int special_text;
+	int text_in_block;
+	double krok_s0;
+	double xt,yt;
+	int snap_0;
+	char *ad1, *ad2, *adp1, *adp2, *adp3, *adp4, *adp5, *adp6, *adp7, *adp8;
+	double wsp_sk, orig_x, orig_y;
+	double old_var, old_var1, new_var, new_var1, del_var;
+	char o_text[MaxTextLen];
+	long ad0;
+	double skala_profilu;
+	char *bp, *bp1, *bp2;
+	int typ_tekstu, typ_punktu1, typ_punktu2;
+	double srednica, zaglebienie;
+	BOOL was_changes;
+	char *srednica_t;
+	char srednica_tt[60];
+	double srednica_s;
+	char *zaglebienie_t;
+	char zaglebienie_tt[60];
+	double zaglebienie_s;
+	double poziom_z;
+	int l_kr;
+	//  BOOL bp_, bp1_;
+	double Y_os;
+	unsigned char multiline;
+	int(*MEDITFUN_BAK)(void) = MEDITFUN;
+	static int sel_akt, sel_cur;
+	BOOL edit_profile=0;
+
+	krok_s0 = krok_s;
+	snap_0 = snap_;
+
+#ifdef PROFILE
+	l_kr=get_znacznik_aplikacji();
+	if ((l_kr==100) || (l_kr==101) || (l_kr==102) || (l_kr==103))  //100 is a map
+	{
+		edit_profile=1;
+	}
+#endif
+
+	ad_text=ad;
+	multiline = ad_text->multiline;
+
+	redcrET(0, (TEXT*)ad, 1, multiline);
+
+	Break_Edit_Text=FALSE;
+
+	xt=ad_text->x;
+	yt=ad_text->y;
+
+	view_font_name(ad);
+	typ_edyt_tekst = get_typ_tekstu(ad);
+	special_text = (int)get_normal_special_text(ad);
+	text_in_block = get_text_in_block(ad);
+
+	if (multiline == 1)
+	{
+		strcpy(GMultiText, ad_text->text);
+		GMultiParams = ad_text->bold * 2 + ad_text->italics * 4 + ad_text->underline * 8 + ad_text->justowanie * 16 + ad_text->ukryty * 64;
+		MEDITFUN = GoEditText;
+		edit_functions = TRUE;
+		komunikat0(121);
+	}
+
+	if ((((typ_edyt_tekst==n_typ_pin_name) ||
+		(typ_edyt_tekst== n_typ_port) ||
+		(typ_edyt_tekst== n_typ_zasilanie) ||
+		(typ_edyt_tekst== n_typ_zmienna) ||
+		(typ_edyt_tekst== n_typ_symbol_drabinki) ||
+		(typ_edyt_tekst== n_typ_opis_drabinki)) && (swobodny_tekst==FALSE) && (!edit_profile))
+		||
+		(((typ_edyt_tekst!= n_typ_normal) &&
+		(typ_edyt_tekst!= n_typ_atrybut) &&
+		(typ_edyt_tekst!= n_typ_plik)) && (swobodny_tekst==FALSE) && (edit_profile)))
+	{
+		if (edit_profile)
+		{
+			strcpy(o_text, ((TEXT*)ad)->text);
+			ad0 = (char *)ad -dane;
+		}
+		//TABFUN();
+		if (edycjastr()==0)
+		{
+			redcrET(2, (TEXT*)ad, 1, multiline);
+			MEDITFUN = MEDITFUN_BAK;
+			edit_functions = FALSE;
+			return;
+		}
+		// else redcrET(2, (TEXT*)ad, 1, multiline);
+		if (edit_profile)
+		{
+			if ((text_in_block==1) && (get_lock_prof_aktual()==0))
+			{
+				//////////////////////// Instalacje
+				if (typ_edyt_tekst==n_rzedna_kanalu_i)
+				{
+					ad=dane+ad0;
+					////  rysuj_obiekt((TEXT *)ad,COPY_PUT,0);
+					////  ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+					////  redcrET(2, (TEXT*)ad, 1, multiline);
+					////  rysuj_obiekt((TEXT *)ad,COPY_PUT,1);
+
+					old_var = strtod(o_text, &bp);
+
+					if (*bp=='\0')
+					{
+						//   ad=dane+ad0;
+						strcpy(o_text, ((TEXT*)ad)->text);
+
+						new_var = strtod(o_text, &bp1);
+
+						if (*bp1=='\0')
+						{
+							del_var=jednostkiOb(new_var-old_var);
+							if (del_var!=0)
+							{
+								//odszukanie poczatku bloku najblizszego
+								if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+								{
+									if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+									{
+										if (NULL != (ptrs_block1 = (BLOK  *)FIRSTB ((char*)ptrs_block-1)))
+										{
+											if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+											{
+												//przesuniecie bloku
+												ADP=(char *)ptrs_block1;
+												ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n - 1 ;
+												zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+												blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+												transformacja_blok(ADP,ADK,0,del_var,0,0,Tprzesuw,1);
+												blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+												zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+												Break_Edit_Text=TRUE;
+												//  Cur_offd (X, Y) ;
+												//  regeneracja_profilu();
+												//  Cur_ond (X, Y) ;
+												return;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				if (typ_edyt_tekst==n_srednica_kanalu_i)
+				{
+					ad=dane+ad0;
+					//   rysuj_obiekt((TEXT *)ad,COPY_PUT,0);
+					//   ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+					//   redcrET(2, (TEXT*)ad, 1, multiline);
+					//   rysuj_obiekt((TEXT *)ad,COPY_PUT,1);
+					old_var=0;
+
+					srednica_t = strpbrk(o_text, "-1234567890.");
+					if (srednica_t != NULL)
+					{
+						strcpy(srednica_tt, srednica_t);
+						srednica=0;
+						old_var = strtod(srednica_tt, &bp);
+					}
+
+					//   ad=dane+ad0;
+					strcpy(o_text, ((TEXT*)ad)->text);
+
+					new_var=0;
+
+					srednica_t = strpbrk(o_text, "-1234567890.");
+					if (srednica_t != NULL)
+					{
+						strcpy(srednica_tt, srednica_t);
+						srednica=0;
+						new_var = strtod(srednica_tt, &bp1);
+					}
+
+					if (Check_if_Equal(old_var,0.)==FALSE) wsp_sk=new_var/old_var;
+					else wsp_sk=1;
+
+					if (wsp_sk!=1)
+					{
+						//odszukanie poczatku bloku najblizszego
+						if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+						{
+							if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+							{
+								if (NULL != (ptrs_block1 = (BLOK  *)FIRSTB ((char*)ptrs_block-1)))
+								{
+									if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+									{
+										//odszukanie bloku symbolu
+										ADP=(char *)ptrs_block1+sizeof(NAGLOWEK)+B3+ptrs_block1->dlugosc_opisu_obiektu;
+										ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n -1;
+										adp7=find_block(ADP, ADK, B_PLINE, "");
+										if (adp7!=NULL)
+										{
+											//odszukanie linii odnosnika
+											ADP=(char *)ptrs_block+sizeof(NAGLOWEK)+B3+ptrs_block->dlugosc_opisu_obiektu;
+											ADK=adp7 -1;
+											adp8=find_obj1(ADP, ADK, Olinia, 32, O2BlockPline);
+											if (adp8!=NULL)
+											{
+												//ustalenie punktu izometrii
+												L1=(LINIA *) adp8;
+												orig_x=L1->x1;
+												orig_y=L1->y1;
+												//przesuniecie bloku
+												ptrs_block2=(BLOK *)adp7;
+												ADP=(char *)ptrs_block2;
+												ADK=(char *)ptrs_block2+sizeof(NAGLOWEK)+ptrs_block2->n - 1 ;
+												zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+												blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+												transformacja_blok(ADP,ADK,orig_x,orig_y,wsp_sk,wsp_sk,Tskala,1);
+												blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+												zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+												//  Cur_offd (X, Y) ;
+												//  regeneracja_profilu();
+												//  Cur_ond (X, Y) ;
+												Break_Edit_Text=TRUE;
+												return;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				////////////////////////
+				if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+				   (typ_edyt_tekst==n_rzedna_kanalu_p) ||
+				   (typ_edyt_tekst==n_rzedna_ulicy) ||
+				   ((typ_edyt_tekst==n_rzedna_terenu) && (special_text==O3NormalText)))
+				{
+					ad=dane+ad0;
+
+					rysuj_obiekt(ad,COPY_PUT,0);
+					ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+					redcrET(2, ad, 1, multiline);
+					rysuj_obiekt(ad,COPY_PUT,1);
+					//sprawdzenie zmiany tekstu
+
+					old_var = 0;
+					old_var = strtod(o_text, &bp);
+
+					if ((old_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+					{
+						//poszukiwanie tekstu rzednej terenu istniejacego
+						if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+						{
+							//znaleziono blok
+							adp2=(char *)ptrs_block;
+							adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+							adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+							if (adp4 != NULL)
+							{
+								T1=(TEXT *) adp4;
+								old_var1 = strtod(T1->text, &bp1);
+								if (Check_if_Equal(old_var1, 0.)==FALSE)
+								{
+									old_var=old_var1;
+								}
+							}
+						}
+					}
+
+					if (*bp=='\0')
+					{
+						strcpy(o_text, ((TEXT*)ad)->text);
+
+						new_var=0;
+						new_var = strtod(o_text, &bp1);
+						if ((new_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+						{
+							//poszukiwanie tekstu rzednej terenu istniejacego
+							if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+							{
+								//znaleziono blok
+								adp2=(char *)ptrs_block;
+								adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+								adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+								if (adp4 != NULL)
+								{
+									T1=(TEXT *) adp4;
+									new_var1 = strtod(T1->text, &bp2);
+									if (Check_if_Equal(new_var1, 0.)==FALSE)
+									{
+										new_var=new_var1;
+									}
+								}
+							}
+						}
+
+						if (*bp1=='\0')
+						{
+							del_var=jednostkiOb(new_var-old_var);
+							if (del_var!=0)
+							{
+								//sprawdzenie czy nastepuje punktu
+								ad1=(char*)ad+sizeof(NAGLOWEK)+((TEXT*)ad)->n;  //win32
+								if (((T_Point*)ad1)->obiekt==Opoint)
+								{
+									((T_Point*)ad1)->y += del_var;
+								}
+
+								if (typ_edyt_tekst==n_rzedna_terenu) //rzedna terenu istniejacego
+								{
+									//poszukiwanie tekstu rzednej terenu projektowanego
+									if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+									{
+										//znaleziono blok
+										adp2=(char *)ptrs_block;
+										adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+										adp4=find_obj(adp2, adp3, Otekst, n_rzedna_ulicy, 0);
+										if (adp4 != NULL)
+										{
+											T1=(TEXT *) adp4;
+											old_var1=0;
+											old_var1 = strtod(T1->text, &bp1);
+											if (Check_if_Equal(old_var1, 0.)==TRUE) //rzedna tp = ti
+											{
+												adp5=find_obj(adp2, adp3, Opoint, 5, 0);
+												if (adp5 != NULL)
+												{((T_Point*)adp5)->y += del_var;
+												}
+											}
+										}
+									}
+								}
+
+								if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+									(typ_edyt_tekst==n_rzedna_kanalu_p))
+								{
+									ad2=ad1+sizeof(NAGLOWEK)+((T_Point*)ad1)->n;
+									if (((T_Point*)ad2)->obiekt==Opoint)
+									{
+										((T_Point*)ad2)->y += del_var;
+									}
+								}
+
+								Cur_offd (X, Y) ;
+								regeneracja_profilu();
+								Cur_ond (X, Y) ;
+							}
+						}
+					}
+				}
+				else if (typ_edyt_tekst==n_odleglosc)
+				{
+					ad=dane+ad0;
+
+					//     rysuj_obiekt((TEXT *)ad,COPY_PUT,0);
+					ad=korekta_dokladnosci(ad, tab_dokladnosc[typ_edyt_tekst]);
+					redcrET(2, ad, 1, multiline);
+					//     rysuj_obiekt(ad,COPY_PUT,1);
+
+					skala_profilu=get_skala_profilu_x();
+
+					old_var = strtod(o_text, &bp);
+
+					if (*bp=='\0')
+					{
+						strcpy(o_text, ((TEXT*)ad)->text);
+
+						new_var = strtod(o_text, &bp1);
+
+						if (*bp1=='\0')
+						{
+							if (skala_profilu!=0) del_var=jednostkiOb(new_var-old_var)/skala_profilu;
+							else del_var=0;
+							if (del_var!=0)
+							{
+								//odszukanie poczatku bloku
+								if (NULL != (ptrs_block = (BLOK  *)LASTB (ad)))
+								{
+									//przesuniecie bloku
+									ADP=(char *)ptrs_block;
+									ADK=(char *)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n - 1 ;
+									zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+									transformacja_blok(ADP,ADK,del_var,0,0,0,Tprzesuw,0);
+									zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+									Cur_offd (X, Y) ;
+									regeneracja_profilu();
+									Cur_ond (X, Y) ;
+								}
+							}
+						}
+					}
+				}
+				else if ((typ_edyt_tekst==n_rzedna_terenu) && (special_text==O3SpecialText))
+				{
+					ad=dane+ad0;
+
+					rysuj_obiekt(ad,COPY_PUT,0);
+					ad=korekta_dokladnosci(ad, tab_dokladnosc[typ_edyt_tekst]);
+					redcrET(2, ad, 1, multiline);
+					rysuj_obiekt(ad,COPY_PUT,1);
+
+					old_var = strtod(o_text, &bp);
+
+					if (*bp=='\0')
+					{
+						strcpy(o_text, ((TEXT*)ad)->text);
+
+						new_var = strtod(o_text, &bp1);
+
+						if (*bp1=='\0')
+						{
+							del_var=jednostkiOb(new_var-old_var);
+							if (del_var!=0)
+							{
+								//odszukanie poczatku bloku
+								if (NULL != (ptrs_block = (BLOK  *)LASTB (ad)))
+								{
+									//przesuniecie bloku
+									ADP=(char *)ptrs_block;
+									ADK=(char *)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n - 1 ;
+									zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+									transformacja_blok(ADP,ADK,0,del_var,0,0,Tprzesuw,0);
+									zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+									Cur_offd (X, Y) ;
+									regeneracja_profilu();
+									Cur_ond (X, Y) ;
+								}
+							}
+						}
+					}
+				}
+				else if ((typ_edyt_tekst==n_srednica_kanalu_i) ||
+						 (typ_edyt_tekst==n_srednica_kanalu_p))
+				{
+					ad=dane+ad0;
+					rysuj_obiekt(ad,COPY_PUT,0);
+					redcrET(2, ad, 1, multiline);
+					rysuj_obiekt(ad,COPY_PUT,1);
+					//+++++++++++++++++
+					was_changes=FALSE;
+					T=(TEXT *)ad;
+					srednica_t = strpbrk(T->text, "-1234567890.");
+					if (srednica_t != NULL)
+					{
+						strcpy(srednica_tt, srednica_t);
+						srednica=0;
+						srednica = strtod(srednica_tt, &bp1);
+
+						if (srednica >= 0)
+						{
+							//Odszukanie punktow, oraz rozstawienie
+							// punktow wzgledem dna lub osi
+							//jezeli srednica>10 to ustawienie w punktach
+							//flagi obiektt2=O3Os
+							if (typ_edyt_tekst==n_srednica_kanalu_p) //kanal projektowany
+							{
+								typ_tekstu=n_rzedna_kanalu_p;
+								typ_punktu1=3;
+								typ_punktu2=4;
+							}
+							else
+							{
+								typ_tekstu=n_rzedna_kanalu_i;
+								typ_punktu1=1;
+								typ_punktu2=2;
+							}
+							if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+							{
+								adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+								adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->n - 1;
+
+								adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+								adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+
+								if ((adp3 != NULL) && (adp4 != NULL))
+								{
+									P=(T_Point *) adp3;
+									P1=(T_Point *) adp4;
+
+									if (srednica>10)
+									{
+										P->obiektt3=O3Os;
+										P1->obiektt3=O3Os;
+										srednica_s=jednostkiOb(srednica/1000);
+									}
+									else  //wymiarowanie do dna
+									{
+										P->obiektt3=O3Dno;
+										P1->obiektt3=O3Dno;
+										srednica_s=jednostkiOb(srednica);
+									}
+									//jezeli licowanie jest do dna
+									if (P->obiektt2==O2BlockHatch25)
+									{
+										P1->y=(float)(P->y+srednica_s);
+										//P->y bez zmian
+									}
+									//jezeli licowanie jest do osi
+									else if (P->obiektt2==O2BlockHatch50)
+									{
+										Y_os=(P->y + P1->y)/2;
+										P->y=(float)(Y_os-(srednica_s/2.));
+										P1->y=(float)(Y_os+(srednica_s/2.));
+									}
+									//jezeli do stropu
+									else
+									{
+										//P1->y bez zmian
+										P->y=(float)(P1->y-srednica_s);
+									}
+									was_changes=TRUE;
+								}
+
+							}
+						}
+						//+++++++++++++++++
+						if (was_changes==TRUE)
+						{
+							Cur_offd (X, Y) ;
+							przesuniecie_profilu_();
+							regeneracja_profilu();
+							Cur_ond (X, Y) ;
+						}
+					}
+				}
+
+				else if ((typ_edyt_tekst==n_zaglebienie_kanalu_i) ||
+					   (typ_edyt_tekst==n_zaglebienie_kanalu_p))
+				{
+					ad=dane+ad0;
+					redcrET(2, (TEXT*)ad, 1, multiline);
+					//+++++++++++++++++
+					was_changes=FALSE;
+
+					skala_profilu=get_skala_profilu_x();
+
+					T=(TEXT *)ad;
+					zaglebienie_t = strpbrk(T->text, "-1234567890.");
+					if (zaglebienie_t != NULL)
+					{
+						strcpy(zaglebienie_tt, zaglebienie_t);
+						zaglebienie = strtod(zaglebienie_tt, &bp1);
+						zaglebienie_s=jednostkiOb(zaglebienie);
+
+
+						if (*bp1=='\0')
+						{
+							//Odszukanie punktow, oraz ustawienie
+							// punktow wzgledem terenu projektowanego lub istniejaceg
+							//jezeli flagi punktow obiektt2=O3Os, punkty nalezy
+							//rozmiescic ponizej i powyzej punktu srodkowego
+							if (typ_edyt_tekst==n_zaglebienie_kanalu_p) //kanal projektowany
+							{
+								typ_tekstu=n_rzedna_kanalu_p;
+								typ_punktu1=3;
+								typ_punktu2=4;
+							}
+							else
+							{
+								typ_tekstu=n_zaglebienie_kanalu_i;
+								typ_punktu1=1;
+								typ_punktu2=2;
+							}
+							if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+							{
+								adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+								adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->n - 1;
+
+								adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+								adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+								adp5=find_obj(adp1, adp2, Opoint, 5,0);   //teren projektwany lub ulica
+								adp6=find_obj(adp1, adp2, Opoint, 6,0);   //teren istniejacy
+								if (adp3 != NULL)
+								{
+									//okreslenie poziomu odniesienia
+									if (T->obiektt3==O3Teren_p)
+									{
+										if (adp5 == NULL)  //teren projektowany nie istnieje
+										{
+											komunikat(133);
+											delay(1500);
+											return;
+										}
+										P2=(T_Point *) adp5;
+										poziom_z=P2->y;
+									}
+									else
+									{
+										if (adp6 == NULL)  //teren istniejacy nie istnieje
+										{
+											komunikat(134);
+											delay(1500);
+											return;
+										}
+										P2=(T_Point *) adp6;
+										poziom_z=P2->y;
+									}
+									P=(T_Point *) adp3;
+									if (P->obiektt3==O3Os)  //do osi
+									{
+										srednica=0;
+										if (adp4 != NULL)
+										{
+											P1=(T_Point *) adp4;
+											//wyznaczenie srednicy
+											srednica=fabs(P1->y-P->y);
+											P1->y=P2->y-zaglebienie_s+(srednica * 0.5);
+										}
+										P->y=P2->y-zaglebienie_s-(srednica * 0.5);
+									}
+									else  //do dna
+									{
+										if (adp4 != NULL)
+										{
+											P1=(T_Point *) adp4;
+											//wyznaczenie srednicy
+											srednica=fabs(P1->y-P->y);
+											P1->y=P2->y-zaglebienie_s+srednica;
+										}
+										P->y=P2->y-zaglebienie_s;
+									}
+									was_changes=TRUE;
+								}
+							}
+						}
+						//+++++++++++++++++
+						if (was_changes==TRUE)
+						{
+							Cur_offd (X, Y) ;
+							przesuniecie_profilu_();
+							regeneracja_profilu();
+							Cur_ond (X, Y) ;
+						}
+					}
+				}
+				else
+				{
+					ad=dane+ad0;
+					redcrET(2, (TEXT*)ad, 1, multiline);
+				}
+			}
+		}
+		else
+		{
+			ad=dane+ad0;
+			redcrET(2, (TEXT*)ad, 1, multiline);
+			MEDITFUN = MEDITFUN_BAK;
+			edit_functions = FALSE;
+			return;
+		}
+	}
+	else
+	{
+		krok_s0 = krok_s;
+		snap_0 = snap_;
+		if ((typ_edyt_tekst== n_typ_symbol) ||
+		   (typ_edyt_tekst== n_typ_typ) ||
+		   (typ_edyt_tekst== n_typ_komentarz) ||
+		   (typ_edyt_tekst== n_typ_zasilanie) ||
+		   (typ_edyt_tekst== n_typ_port) ||
+		   (typ_edyt_tekst== n_typ_pin_name) ||
+		   (typ_edyt_tekst== n_typ_zasilanie) ||
+		   (typ_edyt_tekst== n_typ_symbol_drabinki) ||
+		   (typ_edyt_tekst== n_typ_opis_drabinki))
+		{
+			kasowanie_licznikow=TRUE;
+		}
+		CUR_ON(X,Y);
+		while(1)
+		{
+			if (edit_profile)
+			{
+				strcpy(o_text, ((TEXT*)ad)->text);
+				ad0 = (char *)ad -dane;
+			}
+			ev=Get_Event_Point(NULL, &X0, &Y0);
+			if (ev->What == evKeyDown && ev->Number == 0)
+			{
+				redcrET(1, (TEXT*)ad, 1, multiline);
+				TTF_redraw = FALSE;
+				krok_s = krok_s0;
+				snap_ = snap_0;
+				kasowanie_licznikow=TRUE;
+				MEDITFUN = MEDITFUN_BAK;
+				edit_functions = FALSE;
+				sel.akt = sel_akt;
+				return;
+			}
+			if ((ev->What == evKeyDown && ev->Number == ENTER) || strwyj == TRUE)
+			{
+				if (edit_profile)
+				{
+					if ((text_in_block==1) && (get_lock_prof_aktual()==0))
+					{
+						//////////////////////// Instalacje
+						if (typ_edyt_tekst==n_rzedna_kanalu_i)
+						{
+							ad=dane+ad0;
+							///////     rysuj_obiekt((TEXT *)ad,COPY_PUT,0);
+							///////     ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+							///////     redcrET(2, (TEXT*)ad, 1, multiline);
+							///////     rysuj_obiekt((TEXT *)ad,COPY_PUT,1);
+
+							old_var = strtod(o_text, &bp);
+
+							if (*bp=='\0')
+							{
+								strcpy(o_text, ((TEXT*)ad)->text);
+
+								new_var = strtod(o_text, &bp1);
+
+								if (*bp1=='\0')
+								{
+									del_var=jednostkiOb(new_var-old_var);
+									if (del_var!=0)
+									{
+										//odszukanie poczatku bloku najblizszego
+										if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+										{
+											if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+											{
+												if (NULL != (ptrs_block1 = (BLOK  *)FIRSTB ((char*)ptrs_block-1)))
+												{
+													if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+													{
+														//przesuniecie bloku
+														ADP=(char *)ptrs_block1;
+														ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n - 1 ;
+														zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+														blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+														transformacja_blok(ADP,ADK,0,del_var,0,0,Tprzesuw,1);
+														blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+														zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+														Break_Edit_Text=TRUE;
+														return;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+						if (typ_edyt_tekst==n_srednica_kanalu_i)
+						{
+							ad=dane+ad0;
+							old_var=0;
+
+							srednica_t = strpbrk(o_text, "-1234567890.");
+							if (srednica_t != NULL)
+							{
+								strcpy(srednica_tt, srednica_t);
+								srednica=0;
+								old_var = strtod(srednica_tt, &bp);
+							}
+
+							strcpy(o_text, ((TEXT*)ad)->text);
+
+							new_var=0;
+
+							srednica_t = strpbrk(o_text, "-1234567890.");
+							if (srednica_t != NULL)
+							{
+								strcpy(srednica_tt, srednica_t);
+								srednica=0;
+								new_var = strtod(srednica_tt, &bp1);
+							}
+
+							if (Check_if_Equal(old_var,0.)==FALSE) wsp_sk=new_var/old_var;
+							else wsp_sk=1;
+
+							if (wsp_sk!=1)
+							{
+								//odszukanie poczatku bloku najblizszego
+								if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+								{
+									if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+									{
+										if (NULL != (ptrs_block1 = (BLOK  *)FIRSTB ((char*)ptrs_block-1)))
+										{
+											if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+											{
+												//odszukanie bloku symbolu
+												ADP=(char *)ptrs_block1+sizeof(NAGLOWEK)+B3+ptrs_block1->dlugosc_opisu_obiektu;
+												ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n -1;
+												adp7=find_block(ADP, ADK, B_PLINE, "");
+												if (adp7!=NULL)
+												{
+													//odszukanie linii odnosnika
+													ADP=(char *)ptrs_block+sizeof(NAGLOWEK)+B3+ptrs_block->dlugosc_opisu_obiektu;
+													ADK=adp7 -1;
+													adp8=find_obj1(ADP, ADK, Olinia, 32, O2BlockPline);
+													if (adp8!=NULL)
+													{
+														//ustalenie punktu izometrii
+														L1=(LINIA *) adp8;
+														orig_x=L1->x1;
+														orig_y=L1->y1;
+														//przesuniecie bloku
+														ptrs_block2=(BLOK *)adp7;
+														ADP=(char *)ptrs_block2;
+														ADK=(char *)ptrs_block2+sizeof(NAGLOWEK)+ptrs_block2->n - 1 ;
+														zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+														blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+														transformacja_blok(ADP,ADK,orig_x,orig_y,wsp_sk,wsp_sk,Tskala,1);
+														blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+														zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+														Break_Edit_Text=TRUE;
+														return;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+
+						////////////////////////
+						if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+						   (typ_edyt_tekst==n_rzedna_kanalu_p) ||
+						   (typ_edyt_tekst==n_rzedna_ulicy) ||
+						   ((typ_edyt_tekst==n_rzedna_terenu) && (special_text==O3NormalText)))
+						{
+							ad=dane+ad0;
+
+							rysuj_obiekt(ad,COPY_PUT,0);
+							if (strwyj!=0) ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+							redcrET(2, ad, 1, multiline);
+							rysuj_obiekt(ad,COPY_PUT,1);
+
+							//sprawdzenie zmiany tekstu
+							old_var=0;
+							old_var = strtod(o_text, &bp);
+							if ((old_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+							{
+								//poszukiwanie tekstu rzednej terenu istniejacego
+								if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+								{
+									//znaleziono blok
+									adp2=(char *)ptrs_block;
+									adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+									adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+									if (adp4 != NULL)
+									{
+										T1=(TEXT *) adp4;
+										old_var1 = strtod(T1->text, &bp1);
+										if (Check_if_Equal(old_var1, 0.)==FALSE)
+										{
+											old_var=old_var1;
+										}
+									}
+								}
+							}
+
+							if (*bp=='\0')
+							{
+								//   ad=dane+ad0;
+								strcpy(o_text, ((TEXT*)ad)->text);
+
+								new_var=0;
+								new_var = strtod(o_text, &bp1);
+								if ((new_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+								{
+									//poszukiwanie tekstu rzednej terenu istniejacego
+									if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+									{
+										//znaleziono blok
+										adp2=(char *)ptrs_block;
+										adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+										adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+										if (adp4 != NULL)
+										{
+											T1=(TEXT *) adp4;
+											new_var1 = strtod(T1->text, &bp2);
+											if (Check_if_Equal(new_var1, 0.)==FALSE)
+											{
+												new_var=new_var1;
+											}
+										}
+									}
+
+								}
+
+								if (*bp1=='\0')
+								{
+									del_var=jednostkiOb(new_var-old_var);
+									if (del_var!=0)
+									{
+										//sprawdzenie czy nastepuje punktu
+										ad1=(char*)ad+sizeof(NAGLOWEK)+((TEXT*)ad)->n;    //win32
+										if (((T_Point*)ad1)->obiekt==Opoint)
+										{
+											((T_Point*)ad1)->y += del_var;
+										}
+
+										if (typ_edyt_tekst==n_rzedna_terenu) //rzedna terenu istniejacego
+										{
+											//poszukiwanie tekstu rzednej terenu projektowanego
+											if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+											{
+												//znaleziono blok
+												adp2=(char *)ptrs_block;
+												adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+												adp4=find_obj(adp2, adp3, Otekst, n_rzedna_ulicy, 0);
+												if (adp4 != NULL)
+												{
+													T1=(TEXT *) adp4;
+													old_var1=0;
+													old_var1 = strtod(T1->text, &bp1);
+													if (Check_if_Equal(old_var1, 0.)==TRUE) //rzedna tp = ti
+													{
+														adp5=find_obj(adp2, adp3, Opoint, 5, 0);
+														if (adp5 != NULL)
+														{((T_Point*)adp5)->y += del_var;
+														}
+													}
+												}
+											}
+										}
+
+										if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+											(typ_edyt_tekst==n_rzedna_kanalu_p))
+										{
+											ad2=ad1+sizeof(NAGLOWEK)+((T_Point*)ad1)->n;
+											if (((T_Point*)ad2)->obiekt==Opoint)
+											{
+												((T_Point*)ad2)->y += (float)del_var;
+											}
+										}
+										Cur_offd (X, Y) ;
+										regeneracja_profilu();
+										Cur_ond (X, Y) ;
+									}
+								}
+							}
+						}
+						else if (typ_edyt_tekst==n_odleglosc)
+						{
+							ad=dane+ad0;
+
+							ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+							redcrET(2, (TEXT*)ad, 1, multiline);
+
+
+							skala_profilu=get_skala_profilu_x();
+
+							old_var = strtod(o_text, &bp);
+
+							if (*bp=='\0')
+							{
+								strcpy(o_text, ((TEXT*)ad)->text);
+
+								new_var = strtod(o_text, &bp1);
+
+								if (*bp1=='\0')
+								{
+									if (skala_profilu!=0) del_var=jednostkiOb(new_var-old_var)/skala_profilu;
+									else del_var=0;
+									if (del_var!=0)
+									{
+										//odszukanie poczatku bloku
+										if (NULL != (ptrs_block = (BLOK  *)LASTB (ad)))
+										{
+											//przesuniecie bloku
+											ADP=(char *)ptrs_block;
+											ADK=(char *)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n - 1 ;
+											zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+											transformacja_blok(ADP,ADK,del_var,0,0,0,Tprzesuw,0);
+											zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+											Cur_offd (X, Y) ;
+											regeneracja_profilu();
+											Cur_ond (X, Y) ;
+										}
+									}
+								}
+							}
+						}
+						else if ((typ_edyt_tekst==n_srednica_kanalu_i) ||
+								 (typ_edyt_tekst==n_srednica_kanalu_p))
+						{
+							ad=dane+ad0;
+							rysuj_obiekt(ad,COPY_PUT,0);
+							redcrET(2, ad, 1, multiline);
+							rysuj_obiekt(ad,COPY_PUT,1);
+							was_changes=FALSE;
+							T=(TEXT *)ad;
+							srednica_t = strpbrk(T->text, "-1234567890.");
+							if (srednica_t != NULL)
+							{
+								strcpy(srednica_tt, srednica_t);
+								srednica=0;
+								srednica = strtod(srednica_tt, &bp1);
+
+								if (srednica >= 0)
+								{
+									//Odszukanie punktow, oraz rozstawienie
+									// punktow wzgledem dna lub osi
+									//jezeli srednica>10 to ustawienie w punktach
+									//flagi obiektt2=O3Os
+									if (typ_edyt_tekst==n_srednica_kanalu_p) //kanal projektowany
+									{
+										typ_tekstu=n_rzedna_kanalu_p;
+										typ_punktu1=3;
+										typ_punktu2=4;
+									}
+									else
+									{
+										typ_tekstu=n_rzedna_kanalu_i;
+										typ_punktu1=1;
+										typ_punktu2=2;
+									}
+									if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+									{
+										adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+										adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->n - 1;
+
+										adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+										adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+
+										if ((adp3 != NULL) && (adp4 != NULL))
+										{
+											P=(T_Point *) adp3;
+											P1=(T_Point *) adp4;
+
+											if (srednica>10)
+											{
+												P->obiektt3=O3Os;
+												P1->obiektt3=O3Os;
+												srednica_s=jednostkiOb(srednica/1000);
+											}
+											else  //wymiarowanie do dna
+											{
+												P->obiektt3=O3Dno;
+												P1->obiektt3=O3Dno;
+												srednica_s=jednostkiOb(srednica);
+											}
+											//jezeli licowanie jest do dna
+											if (P->obiektt2==O2BlockHatch25)
+											{
+												P1->y=(float)(P->y+srednica_s);
+											}
+											//jezeli licowanie jest do osi
+											else if (P->obiektt2==O2BlockHatch50)
+											{
+												Y_os=(P->y + P1->y)/2;
+												P->y=(float)(Y_os-(srednica_s/2.));
+												P1->y=(float)(Y_os+(srednica_s/2.));
+											}
+											//jezeli do stropu
+											else
+											{
+												P->y=(float)(P1->y-srednica_s);
+											}
+											was_changes=TRUE;
+										}
+
+									}
+								}
+
+								if (was_changes==TRUE)
+								{
+									Cur_offd (X, Y) ;
+									przesuniecie_profilu_();
+									regeneracja_profilu();
+									Cur_ond (X, Y) ;
+								}
+							}
+						}
+						else if ((typ_edyt_tekst==n_zaglebienie_kanalu_i) ||
+							   (typ_edyt_tekst==n_zaglebienie_kanalu_p))
+						{
+							ad=dane+ad0;
+							redcrET(2, (TEXT*)ad, 1, multiline);
+
+							was_changes=FALSE;
+
+							skala_profilu=get_skala_profilu_x();
+
+							T=(TEXT *)ad;
+							zaglebienie_t = strpbrk(T->text, "-1234567890.");
+							if (zaglebienie_t != NULL)
+							{
+								strcpy(zaglebienie_tt, zaglebienie_t);
+								zaglebienie = strtod(zaglebienie_tt, &bp1);
+								zaglebienie_s=jednostkiOb(zaglebienie);
+
+								if (*bp1=='\0')
+								{
+									//Odszukanie punktow, oraz ustawienie
+									// punktow wzgledem terenu projektowanego lub istniejaceg
+									//jezeli flagi punktow obiektt2=O3Os, punkty nalezy
+									//rozmiescic ponizej i powyzej punktu srodkowego
+									if (typ_edyt_tekst==n_zaglebienie_kanalu_p) //kanal projektowany
+									{
+										typ_tekstu=n_rzedna_kanalu_p;
+										typ_punktu1=3;
+										typ_punktu2=4;
+									}
+									else
+									{
+										typ_tekstu=n_zaglebienie_kanalu_i;
+										typ_punktu1=1;
+										typ_punktu2=2;
+									}
+									if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+									{
+										adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+										adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->n - 1;
+
+										adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+										adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+										adp5=find_obj(adp1, adp2, Opoint, 5,0);   //teren projektwany lub ulica
+										adp6=find_obj(adp1, adp2, Opoint, 6,0);   //teren istniejacy
+										if (adp3 != NULL)
+										{
+											//okreslenie poziomu odniesienia
+											if (T->obiektt3==O3Teren_p)
+											{
+												if (adp5 == NULL)  //teren projektowany nie istnieje
+												{
+													komunikat(133);
+													delay(1500);
+													return;
+												}
+												P2=(T_Point *) adp5;
+												poziom_z=P2->y;
+											}
+											else
+											{
+												if (adp6 == NULL)  //teren istniejacy nie istnieje
+												{
+													komunikat(134);
+													delay(1500);
+													return;
+												}
+												P2=(T_Point *) adp6;
+												poziom_z=P2->y;
+											}
+											P=(T_Point *) adp3;
+											if (P->obiektt3==O3Os)  //do osi
+											{
+												srednica=0;
+												if (adp4 != NULL)
+												{
+													P1=(T_Point *) adp4;
+													//wyznaczenie srednicy
+													srednica=fabs(P1->y-P->y);
+													P1->y=P2->y-zaglebienie_s+(srednica * 0.5);
+												}
+												P->y=P2->y-zaglebienie_s-(srednica * 0.5);
+											}
+											else  //do dna
+											{
+												if (adp4 != NULL)
+												{
+													P1=(T_Point *) adp4;
+													//wyznaczenie srednicy
+													srednica=fabs(P1->y-P->y);
+													P1->y=P2->y-zaglebienie_s+srednica;
+												}
+												P->y=P2->y-zaglebienie_s;
+											}
+											was_changes=TRUE;
+										}
+									}
+								}
+								//+++++++++++++++++
+								if (was_changes==TRUE)
+								{
+									Cur_offd (X, Y) ;
+									przesuniecie_profilu_();
+									regeneracja_profilu();
+									Cur_ond (X, Y) ;
+								}
+							}
+						}
+						else  redcrET(2, (TEXT*)ad, 1, multiline);
+					}
+				}
+				redcrET(2, (TEXT*)ad, 1, multiline);
+				krok_s = krok_s0;
+				snap_ = snap_0;
+				kasowanie_licznikow=TRUE;
+				MEDITFUN = MEDITFUN_BAK;
+				edit_functions = FALSE;
+				sel.akt = sel_akt;
+				return;
+			}
+			if (ev->What == evCommandP)
+			{
+				(*COMNDmt[ev->Number])();
+				if (ev->Number == 0)
+				{
+					if (multiline) simulate_ukeypress(_EDIT_, _EDIT_SC_);
+					else simulate_keypress(9);
+				}
+			}
+		}
+	}
+	krok_s = krok_s0;
+	snap_ = snap_0;
+	kasowanie_licznikow=TRUE;
+	MEDITFUN = MEDITFUN_BAK;
+	edit_functions = FALSE;
+	sel.akt = sel_akt;
+}
+
+#endif
+#else
 void  Edit_Text(void  *ad)
 /*----------------------*/
 {
@@ -2615,10 +3946,10 @@ void  Edit_Text(void  *ad)
   xt=ad_text->x;
   yt=ad_text->y;
   
-  view_font_name((TEXT*)ad);
-  typ_edyt_tekst = get_typ_tekstu((TEXT*)ad);
-  special_text = get_normal_special_text((TEXT*)ad);
-  text_in_block = get_text_in_block((TEXT*)ad);
+  view_font_name(ad);
+  typ_edyt_tekst = get_typ_tekstu(ad);
+  special_text = (int)get_normal_special_text(ad);
+  text_in_block = get_text_in_block(ad);
 
   if (multiline == 1)
   {
@@ -2715,7 +4046,619 @@ void  Edit_Text(void  *ad)
   edit_functions = FALSE;
   sel.akt = sel_akt;
 }
+#endif
+#ifdef PROFILE
+void  edit_text_tab_f2(void  *ad)
+/*-----------------------------*/
+{
+	EVENT *ev;
+	BLOK *ptrs_block, *ptrs_block1, *ptrs_block2 ;
+	LINIA *L1;
+	double X0, Y0;
+	int font_no;
+	TEXT Tp, *T, *T1;
+	TEXT *ad_text;
+	T_Point *P, *P1, *P2;
+	int typ_edyt_tekst;
+	int special_text;
+	int text_in_block;
+	double krok_s0;
+	double xt,yt;
+	int snap_0;
+	char *ad1, *ad2, *adp1, *adp2, *adp3, *adp4, *adp5, *adp6, *adp7, *adp8;
+	double wsp_sk, orig_x, orig_y;
+	double old_var, old_var1, new_var, new_var1, del_var;
+	char o_text[MaxTextLen];
+	long ad0;
+	double skala_profilu;
+	char *bp, *bp1, *bp2;
+	int typ_tekstu, typ_punktu1, typ_punktu2;
+	double srednica, zaglebienie;
+	BOOL was_changes;
+	char *srednica_t;
+	char srednica_tt[60];
+	double srednica_s;
+	char *zaglebienie_t;
+	char zaglebienie_tt[60];
+	double zaglebienie_s;
+	double poziom_z;
+	int l_kr;
+	double Y_os;
+	int ret;
+	unsigned char multiline;
+	BOOL edit_profile=0;
 
+#ifdef PROFILE
+	l_kr=get_znacznik_aplikacji();
+	if ((l_kr==100) || (l_kr==101) || (l_kr==102) || (l_kr==103))
+	{
+		edit_profile=1;
+	}
+#endif
+
+	set_text_types(1);
+
+	ad_text=ad;
+	multiline = ad_text->multiline;
+	redcrET(0, (TEXT*)ad, 1, multiline);
+
+	xt=ad_text->x;
+	yt=ad_text->y;
+
+	view_font_name(ad);
+	typ_edyt_tekst = get_typ_tekstu(ad);
+	special_text = (int)get_normal_special_text(ad);
+	text_in_block = get_text_in_block(ad);
+
+	if (edit_profile)
+	{
+		strcpy(o_text, ((TEXT*)ad)->text);
+		ad0 = (char *)ad -dane;
+	}
+
+	if (ad_text->multiline)
+	{
+		memmove(&TextG, ad_text, sizeof(NAGLOWEK) + ad_text->n);
+		strcpy(GMultiText, ad_text->text);
+		GMultiParams = ad_text->bold * 2 + ad_text->italics * 4 + ad_text->underline * 8 + ad_text->justowanie * 16  + ad_text->ukryty * 64;
+		edit_functions = TRUE;
+		komunikat0(39);
+		ret=GoEditText();
+	}
+	else
+		if (edycjastr()==0)
+		{
+			redcrET(2, (TEXT*)ad, 1, multiline);
+			return;
+		}
+	if (edit_profile)
+	{
+		if ((text_in_block==1) && (get_lock_prof_aktual()==0))
+		{
+			//////////////////////// Instalacje
+			if (typ_edyt_tekst==n_rzedna_kanalu_i)
+			{
+				ad=dane+ad0;
+
+				old_var = strtod(o_text, &bp);
+
+				if (*bp=='\0')
+				{
+					strcpy(o_text, ((TEXT*)ad)->text);
+
+					new_var = strtod(o_text, &bp1);
+
+					if (*bp1=='\0')
+					{
+						del_var=jednostkiOb(new_var-old_var);
+						if (del_var!=0)
+						{
+							//odszukanie poczatku bloku najblizszego
+							if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+							{
+								if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+								{
+									if (NULL != (ptrs_block1 = FIRSTB ((char*)ptrs_block-1)))
+									{
+										if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+										{
+											//przesuniecie bloku
+											ADP=(char *)ptrs_block1;
+											ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n - 1 ;
+											zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+											blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+											transformacja_blok(ADP,ADK,0,del_var,0,0,Tprzesuw,1);
+											blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+											zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+											return;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (typ_edyt_tekst==n_srednica_kanalu_i)
+			{
+				ad=dane+ad0;
+				old_var=0;
+
+				srednica_t = strpbrk(o_text, "-1234567890.");
+				if (srednica_t != NULL)
+				{
+					strcpy(srednica_tt, srednica_t);
+					srednica=0;
+					old_var = strtod(srednica_tt, &bp);
+				}
+
+				strcpy(o_text, ((TEXT*)ad)->text);
+
+				new_var=0;
+
+				srednica_t = strpbrk(o_text, "-1234567890.");
+				if (srednica_t != NULL)
+				{
+					strcpy(srednica_tt, srednica_t);
+					srednica=0;
+					new_var = strtod(srednica_tt, &bp1);
+				}
+
+				if (Check_if_Equal(old_var,0)==FALSE) wsp_sk=new_var/old_var;
+				else wsp_sk=1;
+
+				if (wsp_sk!=1)
+				{
+					//odszukanie poczatku bloku najblizszego
+					if (NULL != (ptrs_block = FIRSTB (ad)))
+					{
+						if (ptrs_block->kod_obiektu==B_INSTALACJE_K)
+						{
+							if (NULL != (ptrs_block1 = FIRSTB ((char*)ptrs_block-1)))
+							{
+								if (ptrs_block1->kod_obiektu==B_INSTALACJE_K)
+								{
+									//odszukanie bloku symbolu
+									ADP=(char *)ptrs_block1+sizeof(NAGLOWEK)+B3+ptrs_block1->dlugosc_opisu_obiektu;
+									ADK=(char *)ptrs_block1+sizeof(NAGLOWEK)+ptrs_block1->n -1;
+									adp7=find_block(ADP, ADK, B_PLINE, "");
+									if (adp7!=NULL)
+									{
+										//odszukanie linii odnosnika
+										ADP=(char *)ptrs_block+sizeof(NAGLOWEK)+B3+ptrs_block->dlugosc_opisu_obiektu;
+										ADK=adp7 -1;
+										adp8=find_obj1(ADP, ADK, Olinia, 32, O2BlockPline);
+										if (adp8!=NULL)
+										{
+											//ustalenie punktu izometrii
+											L1=(LINIA *) adp8;
+											orig_x=L1->x1;
+											orig_y=L1->y1;
+											//przesuniecie bloku
+											ptrs_block2=(BLOK *)adp7;
+											ADP=(char *)ptrs_block2;
+											ADK=(char *)ptrs_block2+sizeof(NAGLOWEK)+ptrs_block2->n - 1 ;
+											zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+											blokzap(ADP,ADK,Ablok,COPY_PUT,0);
+											transformacja_blok(ADP,ADK,orig_x,orig_y,wsp_sk,wsp_sk,Tskala,1);
+											blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+											zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+											return;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+			 (typ_edyt_tekst==n_rzedna_kanalu_p) ||
+			 (typ_edyt_tekst==n_rzedna_ulicy) ||
+			 ((typ_edyt_tekst==n_rzedna_terenu) && (special_text==O3NormalText)))
+			{
+
+				ad=dane+ad0;
+
+				rysuj_obiekt(ad,COPY_PUT,0);
+
+				ad=korekta_dokladnosci(ad, tab_dokladnosc[typ_edyt_tekst]);
+
+				redcrET(2, ad, 1, multiline);
+
+				rysuj_obiekt(ad,COPY_PUT,1);
+
+				//sprawdzenie zmiany tekstu
+				old_var = 0;
+				old_var = strtod(o_text, &bp);
+
+				//bp_=TRUE;
+				if ((old_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+				{
+					//poszukiwanie tekstu rzednej terenu istniejacego
+					if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+					{
+						//znaleziono blok
+						adp2=(char *)ptrs_block;
+						adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+						adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+						if (adp4 != NULL)
+						{
+							T1=(TEXT *) adp4;
+							old_var1 = strtod(T1->text, &bp1);
+							if (Check_if_Equal(old_var1, 0)==FALSE)
+							{
+								old_var=old_var1;
+							}
+						}
+					}
+				}
+
+				if (*bp=='\0')
+				{
+					strcpy(o_text, ((TEXT*)ad)->text);
+
+					new_var=0;
+					new_var = strtod(o_text, &bp1);
+					if ((new_var==0) && (typ_edyt_tekst==n_rzedna_ulicy))
+					{
+						//poszukiwanie tekstu rzednej terenu istniejacego
+						if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+						{
+							//znaleziono blok
+							adp2=(char *)ptrs_block;
+							adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+							adp4=find_obj(adp2, adp3, Otekst, n_rzedna_terenu, 0);
+							if (adp4 != NULL)
+							{
+								T1=(TEXT *) adp4;
+								new_var1 = strtod(T1->text, &bp2);
+								if (Check_if_Equal(new_var1, 0)==FALSE)
+								{
+									new_var=new_var1;
+								}
+							}
+						}
+					}
+
+					if (*bp1=='\0')
+					{
+						del_var=jednostkiOb(new_var-old_var);
+						if (del_var!=0)
+						{
+							//sprawdzenie czy nastepuje punktu
+							ad1=(char*)ad+sizeof(NAGLOWEK)+((TEXT*)ad)->n;   //win32
+							if (((T_Point*)ad1)->obiekt==Opoint)
+							{
+								((T_Point*)ad1)->y += (float)del_var;
+							}
+
+							if (typ_edyt_tekst==n_rzedna_terenu) //rzedna terenu istniejacego
+							{
+								//poszukiwanie tekstu rzednej terenu projektowanego
+								if (NULL != (ptrs_block=(BLOK *)FIRSTB(ad)))
+								{
+									//znaleziono blok
+									adp2=(char *)ptrs_block;
+									adp3=adp2 + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+									adp4=find_obj(adp2, adp3, Otekst, n_rzedna_ulicy, 0);
+									if (adp4 != NULL)
+									{
+										T1=(TEXT *) adp4;
+										old_var1=0;
+										old_var1 = strtod(T1->text, &bp1);
+										if (Check_if_Equal(old_var1, 0)==TRUE) //rzedna tp = ti
+										{
+											adp5=find_obj(adp2, adp3, Opoint, 5, 0);
+											if (adp5 != NULL)
+											{((T_Point*)adp5)->y += (float)del_var;
+											}
+										}
+									}
+								}
+							}
+
+							if ((typ_edyt_tekst==n_rzedna_kanalu_i) ||
+								(typ_edyt_tekst==n_rzedna_kanalu_p))
+							{
+								ad2=ad1+sizeof(NAGLOWEK)+((T_Point*)ad1)->n;
+								if (((T_Point*)ad2)->obiekt==Opoint)
+								{
+									((T_Point*)ad2)->y += del_var;
+								}
+							}
+							Cur_offd (X, Y) ;
+							regeneracja_profilu();
+							Cur_ond (X, Y) ;
+						}
+					}
+				}
+			}
+			else if (typ_edyt_tekst==n_odleglosc)
+			{
+				ad=dane+ad0;
+
+				ad=korekta_dokladnosci((void *)ad, tab_dokladnosc[typ_edyt_tekst]);
+				redcrET(2, (TEXT*)ad, 1, multiline);
+
+				skala_profilu=get_skala_profilu_x();
+
+				old_var = strtod(o_text, &bp);
+
+				if (*bp=='\0')
+				{
+					strcpy(o_text, ((TEXT*)ad)->text);
+
+					new_var = strtod(o_text, &bp1);
+
+					if (*bp1=='\0')
+					{
+						if (skala_profilu!=0) del_var=jednostkiOb(new_var-old_var)/skala_profilu;
+						else del_var=0;
+						if (del_var!=0)
+						{
+							//odszukanie poczatku bloku
+							if (NULL != (ptrs_block = (BLOK  *)LASTB (ad)))
+							{
+								//przesuniecie bloku
+								ADP=(char *)ptrs_block;
+								ADK=(char *)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n - 1 ;
+								zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+								transformacja_blok(ADP,ADK,del_var,0,0,0,Tprzesuw,0);
+								zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+								Cur_offd (X, Y) ;
+								regeneracja_profilu();
+								Cur_ond (X, Y) ;
+							}
+						}
+					}
+				}
+			}
+			else if ((typ_edyt_tekst==n_rzedna_terenu) && (special_text==O3SpecialText))
+			{
+				ad=dane+ad0;
+
+				rysuj_obiekt(ad,COPY_PUT,0);
+				ad=korekta_dokladnosci(ad, tab_dokladnosc[typ_edyt_tekst]);
+				redcrET(2, ad, 1, multiline);
+				rysuj_obiekt(ad,COPY_PUT,1);
+
+				old_var = strtod(o_text, &bp);
+
+				if (*bp=='\0')
+				{
+					strcpy(o_text, ((TEXT*)ad)->text);
+
+					new_var = strtod(o_text, &bp1);
+
+					if (*bp1=='\0')
+					{
+						del_var=jednostkiOb(new_var-old_var);
+						if (del_var!=0)
+						{
+							//odszukanie poczatku bloku
+							if (NULL != (ptrs_block = (BLOK  *)LASTB (ad)))
+							{
+								//przesuniecie bloku
+								ADP=(char *)ptrs_block;
+								ADK=(char *)ptrs_block+sizeof(NAGLOWEK)+ptrs_block->n - 1 ;
+								zmien_atrybut(ADP,ADK,Anormalny,Ablok);
+								transformacja_blok(ADP,ADK,0,del_var,0,0,Tprzesuw,0);
+								zmien_atrybut(ADP,ADK,Ablok,Anormalny);
+								Cur_offd (X, Y) ;
+								regeneracja_profilu();
+								Cur_ond (X, Y) ;
+							}
+						}
+					}
+				}
+			}
+			else if ((typ_edyt_tekst==n_srednica_kanalu_i) ||
+					 (typ_edyt_tekst==n_srednica_kanalu_p))
+			{
+				ad=dane+ad0;
+				rysuj_obiekt(ad,COPY_PUT,0);
+				redcrET(2, ad, 1, multiline);
+				rysuj_obiekt(ad,COPY_PUT,1);
+				//+++++++++++++++++
+				was_changes=FALSE;
+				T=(TEXT *)ad;
+				srednica_t = strpbrk(T->text, "-1234567890.");
+				if (srednica_t != NULL)
+				{
+					strcpy(srednica_tt, srednica_t);
+					srednica=0;
+					srednica = strtod(srednica_tt, &bp1);
+
+					if (srednica >= 0)
+					{
+						//Odszukanie punktow, oraz rozstawienie
+						// punktow wzgledem dna lub osi
+						//jezeli srednica>10 to ustawienie w punktach
+						//flagi obiektt2=O3Os
+						if (typ_edyt_tekst==n_srednica_kanalu_p) //kanal projektowany
+						{
+							typ_tekstu=n_rzedna_kanalu_p;
+							typ_punktu1=3;
+							typ_punktu2=4;
+						}
+						else
+						{
+							typ_tekstu=n_rzedna_kanalu_i;
+							typ_punktu1=1;
+							typ_punktu2=2;
+						}
+						if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+						{
+							adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+							adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + ptrs_block->n - 1;
+
+							adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+							adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+							if ((adp3 != NULL) && (adp4 != NULL))
+							{
+								P=(T_Point *) adp3;
+								P1=(T_Point *) adp4;
+
+								if (srednica>10)
+								{
+									P->obiektt3=O3Os;
+									P1->obiektt3=O3Os;
+									srednica_s=jednostkiOb(srednica/1000);
+								}
+								else  //wymiarowanie do dna
+								{
+									P->obiektt3=O3Dno;
+									P1->obiektt3=O3Dno;
+									srednica_s=jednostkiOb(srednica);
+								}
+								//jezeli licowanie jest do dna
+								if (P->obiektt2==O2BlockHatch25)
+								{
+									P1->y=(float)(P->y+srednica_s);
+								}
+								//jezeli licowanie jest do osi
+								else if (P->obiektt2==O2BlockHatch50)
+								{
+									Y_os=(P->y + P1->y)/2;
+									P->y=(float)(Y_os-(srednica_s/2.));
+									P1->y=(float)(Y_os+(srednica_s/2.));
+								}
+								//jezeli do stropu
+								else
+								{
+									P->y=P1->y-srednica_s;
+								}
+								was_changes=TRUE;
+							}
+						}
+					}
+					//+++++++++++++++++
+
+					if (was_changes==TRUE)
+					{
+						Cur_offd (X, Y) ;
+						przesuniecie_profilu_();
+						regeneracja_profilu();
+						Cur_ond (X, Y) ;
+					}
+				}
+			}
+			else if ((typ_edyt_tekst==n_zaglebienie_kanalu_i) ||
+					 (typ_edyt_tekst==n_zaglebienie_kanalu_p))
+			{
+				ad=dane+ad0;
+				redcrET(2, (TEXT*)ad, 1, multiline);
+				was_changes=FALSE;
+
+				skala_profilu=get_skala_profilu_x();
+
+				T=(TEXT *)ad;
+				zaglebienie_t = strpbrk(T->text, "-1234567890.");
+				if (zaglebienie_t != NULL)
+				{
+					strcpy(zaglebienie_tt, zaglebienie_t);
+					zaglebienie = strtod(zaglebienie_tt, &bp1);
+					zaglebienie_s=jednostkiOb(zaglebienie);
+
+
+					if (*bp1=='\0')
+					{
+						//Odszukanie punktow, oraz ustawienie
+						// punktow wzgledem terenu projektowanego lub istniejaceg
+						//jezeli flagi punktow obiektt2=O3Os, punkty nalezy
+						//rozmiescic ponizej i powyzej punktu srodkowego
+						if (typ_edyt_tekst==n_zaglebienie_kanalu_p) //kanal projektowany
+						{
+							typ_tekstu=n_rzedna_kanalu_p;
+							typ_punktu1=3;
+							typ_punktu2=4;
+						}
+						else
+						{
+							typ_tekstu=n_zaglebienie_kanalu_i;
+							typ_punktu1=1;
+							typ_punktu2=2;
+						}
+						if (NULL != (ptrs_block = (BLOK  *)FIRSTB (ad)))
+						{
+							adp1=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->dlugosc_opisu_obiektu;
+							adp2=(char *)ptrs_block + sizeof(NAGLOWEK) + B3 + ptrs_block->n - 1;
+
+							adp3=find_obj(adp1, adp2, Opoint, typ_punktu1,0);
+							adp4=find_obj(adp1, adp2, Opoint, typ_punktu2,0);
+							adp5=find_obj(adp1, adp2, Opoint, 5,0);   //teren projektwany lub ulica
+							adp6=find_obj(adp1, adp2, Opoint, 6,0);   //teren istniejacy
+							if (adp3 != NULL)
+							{
+								//okreslenie poziomu odniesienia
+								if (T->obiektt3==O3Teren_p)
+								{
+									if (adp5 == NULL)  //teren projektowany nie istnieje
+									{
+										komunikat(133);
+										delay(1500);
+										return;
+									}
+									P2=(T_Point *) adp5;
+									poziom_z=P2->y;
+								}
+								else
+								{
+									if (adp6 == NULL)  //teren istniejacy nie istnieje
+									{
+										komunikat(134);
+										delay(1500);
+										return;
+									}
+									P2=(T_Point *) adp6;
+									poziom_z=P2->y;
+								}
+								P=(T_Point *) adp3;
+								if (P->obiektt3==O3Os)  //do osi
+								{
+									srednica=0;
+									if (adp4 != NULL)
+									{
+										P1=(T_Point *) adp4;
+										//wyznaczenie srednicy
+										srednica=fabs((double)(P1->y-P->y));
+										P1->y=(float)(P2->y-zaglebienie_s+(srednica * 0.5));
+									}
+									P->y=P2->y-zaglebienie_s-(srednica * 0.5);
+								}
+								else  //do dna
+								{
+									if (adp4 != NULL)
+									{
+										P1=(T_Point *) adp4;
+										//wyznaczenie srednicy
+										srednica=fabs((double)(P1->y-P->y));
+										P1->y=(float)(P2->y-zaglebienie_s+srednica);
+									}
+									P->y=(float)(P2->y-zaglebienie_s);
+								}
+								was_changes=TRUE;
+							}
+						}
+					}
+					if (was_changes==TRUE)
+					{
+						Cur_offd (X, Y) ;
+						przesuniecie_profilu_();
+						regeneracja_profilu();
+						Cur_ond (X, Y) ;
+					}
+				}
+			}
+			else redcrET(2, (TEXT*)ad, 1, multiline);
+		}
+	}
+	redcrET(2, (TEXT*)ad, 1, multiline);
+}
+#else
 void  edit_text_tab_f2(void  *ad)
 /*-----------------------------*/
 {
@@ -2761,10 +4704,10 @@ void  edit_text_tab_f2(void  *ad)
   xt=ad_text->x;
   yt=ad_text->y;
   
-  view_font_name((TEXT*)ad);
-  typ_edyt_tekst = get_typ_tekstu((TEXT*)ad);
-  special_text = get_normal_special_text((TEXT*)ad);
-  text_in_block = get_text_in_block((TEXT*)ad);
+  view_font_name(ad);
+  typ_edyt_tekst = get_typ_tekstu(ad);
+  special_text = get_normal_special_text(ad);
+  text_in_block = get_text_in_block(ad);
 
 
   if (ad_text->multiline)
@@ -2783,10 +4726,9 @@ void  edit_text_tab_f2(void  *ad)
       return;
     }
     redcrET(2, (TEXT*)ad, 1, multiline);
-	
-   return;
 
 }
+#endif
 
 void  edit_text_f3(void  *ad)
 /*-----------------------------*/
@@ -2807,6 +4749,17 @@ void  edit_text_f3(void  *ad)
   int n_nag_ext;
   unsigned char multiline;
   static int sel_akt, sel_cur;
+  BOOL edit_profile=0;
+
+#ifdef PROFILE
+	int l_kr=get_znacznik_aplikacji();
+	if ((l_kr==100) || (l_kr==101) || (l_kr==102) || (l_kr==103))
+	{
+		edit_profile=1;
+	}
+#endif
+
+  set_text_types(1);
 
   n_text = sizeof(TEXT);
   n_line = sizeof(LINIA);
@@ -2841,20 +4794,23 @@ void  edit_text_f3(void  *ad)
 
   krok_s0 = krok_s;
   snap_0 = snap_;
-  if ((typ_edyt_tekst== n_typ_symbol) ||
-     (typ_edyt_tekst== n_typ_typ) ||
-     (typ_edyt_tekst== n_typ_komentarz) ||
-     (typ_edyt_tekst== n_typ_zasilanie) ||
-     (typ_edyt_tekst== n_typ_port) ||
-     (typ_edyt_tekst== n_typ_pin_name) ||
-     (typ_edyt_tekst== n_typ_zasilanie) ||
-     (typ_edyt_tekst== n_typ_symbol_drabinki) ||
-     (typ_edyt_tekst== n_typ_opis_drabinki))
-     {
-      krok_s = jednostkiY(1);
-      snap_ = 0;
-      kasowanie_licznikow=TRUE;
-     }
+  if (!edit_profile)
+  {
+	  if ((typ_edyt_tekst== n_typ_symbol) ||
+		 (typ_edyt_tekst== n_typ_typ) ||
+		 (typ_edyt_tekst== n_typ_komentarz) ||
+		 (typ_edyt_tekst== n_typ_zasilanie) ||
+		 (typ_edyt_tekst== n_typ_port) ||
+		 (typ_edyt_tekst== n_typ_pin_name) ||
+		 (typ_edyt_tekst== n_typ_zasilanie) ||
+		 (typ_edyt_tekst== n_typ_symbol_drabinki) ||
+		 (typ_edyt_tekst== n_typ_opis_drabinki))
+	  {
+	  	krok_s = jednostkiY(1);
+	  	snap_ = 0;
+	  	kasowanie_licznikow=TRUE;
+	  }
+  }
    CUR_ON(X,Y);
    while(1)
    { ev=Get_Event_Point(NULL, &X0, &Y0);
@@ -2896,5 +4852,32 @@ void  edit_text_f3(void  *ad)
   sel.akt = sel_akt;
 }
 
+void set_text_types(int ver)
+{
+#ifdef PROFILE
+	if (ver==0)
+	{
+		t_t=t_tN;
+		pmTekstm[5].menu=&mTypTekstu;
+	}
+	else
+	{
+		int l_kr=get_znacznik_aplikacji();
+		if ((l_kr==100) || (l_kr==101) || (l_kr==102) || (l_kr==103))
+		{
+			t_t=t_tP;
+			pmTekstm[5].menu=&mTypTekstuP;
+		}
+		else
+		{
+			t_t=t_tN;
+			pmTekstm[5].menu=&mTypTekstu;
+		}
+	}
+
+#else
+	t_t=t_tN;
+#endif
+}
 
 #undef __O_TEXT_B__

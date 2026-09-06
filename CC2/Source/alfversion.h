@@ -6,10 +6,10 @@
 #define _ALFACAD_ u8"AlfaCAD (x64)  v. 3.0"
 #endif
 #else
-#define _ALFACAD_ u8"AlfaCAD (x64)  v. 2.9 "
+#define _ALFACAD_ u8"AlfaCAD (x64)  v. 3.0 "
 #endif
 #else 
-#define _ALFACAD_ u8"AlfaCAD  v. 2.9 "
+#define _ALFACAD_ u8"AlfaCAD  v. 3.0 "
 #endif
 
 #ifdef MACOS

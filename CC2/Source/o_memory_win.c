@@ -75,30 +75,78 @@ unsigned long long Get_Free_Physical_Memory(void)
 
 	return intTotalPhys;
 }
-
+/*
 unsigned long_long Get_Free_Virtual_Memory(void)
 { MEMORYSTATUS stat;
 
   GlobalMemoryStatus (&stat);
   return stat.dwAvailVirtual;
 }
+ */
 #else
 
-unsigned long_long Get_Free_Physical_Memory(void)
+unsigned long_long Get_Physical_Memory(void)
 {
     long pages = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGE_SIZE);
     return pages * page_size;
 }
 
+#ifdef MACOS
 
+#include <stdio.h>
+#include <mach/mach.h>
+#include <mach/host_info.h>
+
+unsigned long long Get_Free_Physical_Memory(void) {
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+    vm_statistics64_data_t vm_stats;
+
+    mach_port_t host_port = mach_host_self();
+    if (host_statistics64(host_port, HOST_VM_INFO64, (host_info64_t)&vm_stats, &count) != KERN_SUCCESS) {
+        return 0;
+    }
+
+    long page_size = sysconf(_SC_PAGE_SIZE);
+
+    // "Available" memory in macOS is typically Free + Inactive pages
+    unsigned long long free_pages = vm_stats.free_count + vm_stats.inactive_count;
+
+    return free_pages * (unsigned long long)page_size;
+}
+
+
+#else
+#include <stdio.h>
+
+unsigned long long Get_Free_Physical_Memory(void) {
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (!fp) return 0;
+
+    char buf[256];
+    unsigned long long kb_available = 0;
+
+    while (fgets(buf, sizeof(buf), fp)) {
+        // MemAvailable is the most accurate metric for "free to use" memory
+        if (sscanf(buf, "MemAvailable: %llu kB", &kb_available) == 1) {
+            break;
+        }
+    }
+    fclose(fp);
+    return kb_available * 1024; // Convert KiB to Bytes
+}
+
+
+#endif
+
+/*
 unsigned long_long Get_Free_Virtual_Memory(void)
 {
     long pages = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGE_SIZE);
     return pages * page_size;
 }
-
+*/
 
 #endif
 

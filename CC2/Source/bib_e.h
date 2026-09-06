@@ -226,25 +226,25 @@ typedef struct
      double s;
    } MyDaneL;
 
-typedef struct
-   { int n;
-     double odl; //odleglosci                     1
-     double rki; //rzedne kanalu istn.            2
-     double rkp;//rzedne kanalu proj.             3
-     double ru; //rzedne ulicy                    4
-     double rt;//rzedne terenu                    5
-     double si1; //srednica kanalu istniejacego   6
-     double si2; //material ki                    7
-     double si3; //srednica kp                    8
-     double oi1; //material kp                    9
-     double oi2; //spadek ki                      10
-     double oi3; //dlugosc ki                     11
-     double sp1; //spadek kp                      12
-     double sp2; //dlugosc kp                     13
-     double sp3; //zaglebienie ki                 14
-     double op1; //zaglebienie kp                 15
-     double op2; //rodzaj nawierzchni             16
-     double op3; //                               17
+typedef struct		//pomiar								//odwiert
+   { int n;													//17
+     double odl; //odleglosci                     1			//odległość np. 720
+     double rki; //rzedne kanalu istn.            2			//rzedna terenu np. 75
+     double rkp;//rzedne kanalu proj.             3			//zwierciadło ustabilizowane np. 70.75
+     double ru; //rzedne ulicy                    4			//zwierciadło napięte np. 70.25
+     double rt;//rzedne terenu                    5			//zwierciadło swobodne np. 68.5
+     double si1; //srednica kanalu istniejacego   6			//sączenie np. 73.5
+     double si2; //material ki                    7			//warstwa 1 np. 74
+     double si3; //srednica kp                    8			//warstwa 2 np. 73
+     double oi1; //material kp                    9			//warstwa 3 np. 72
+     double oi2; //spadek ki                      10		//warstwa 4 np. 71
+     double oi3; //dlugosc ki                     11		//warstwa 5 np. 70
+     double sp1; //spadek kp                      12		//warstwa 6 np. 69
+     double sp2; //dlugosc kp                     13		//warstwa 7 np. 68
+     double sp3; //zaglebienie ki                 14		//warstwa 8 np. 67
+     double op1; //zaglebienie kp                 15		//warstwa 9 np. 66
+     double op2; //rodzaj nawierzchni             16		//warstwa 10 np. 65
+     double op3; //                               17		//przesunięcie
      double spi1; //  zarezerwowane dla 1 hektometru      18
      double spi2; //  zarezerwowane dla ostatniego        19
      double spi3; /* archiwalna wartosc odleglosci dla ki 20  */
@@ -256,6 +256,13 @@ typedef struct
      double param1; //                              25
      
    } MyDane;
+
+typedef struct
+{
+	int n;
+	double var[24];
+	double param1;
+} MyDaneTabl;
    
 typedef struct
    { int n;
@@ -514,7 +521,7 @@ enum OBIEKTT1BL { OB1NOCHANGE = 0 , OB1CHANGE_SCALE= 1, OB1CHANGE_DRAG = 2,
           (dyskusyjna jest sprawa ostatniego elementu galezi)*/
 
 /*----------------------------------------------------------------------------------------------------------------------------------*/
-enum OBIEKTT2        { O2NieOkreslony=-1, O2NoBlockS,O2BlockDim, O2BlockPline, O2BlockAparat, O2BlockDXF, O2BlockSpecial, O2BlockHatch25 /*, O2BlockHatch50*/} ;
+enum OBIEKTT2        { O2NieOkreslony=-1, O2NoBlockS,O2BlockDim, O2BlockPline, O2BlockAparat, O2BlockDXF, O2BlockSpecial, O2BlockHatch25, O2BlockHatch50} ;  //the last one is for Profile use
 enum OBIEKTT2_PLATE  { O2ROLL_EDGE=4, O2FREE_EDGE=5, O2HINGED_EDGE=6, O2FIXED_EDGE=7};
 
 enum OBIEKTT3_PLATE  {O3REGULAR_EDGE=0, O3INVERTED_EDGE=1};
@@ -700,8 +707,9 @@ struct
 	unsigned widoczny : 1;
 	unsigned przec : 1;  /* wyznaczanie pzeciec, ciagnij (po uzyciu zerowane)*/
 	unsigned blok : 1;  /*obiekt jest elementem bloku typu OdBLOK*/
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
 	unsigned int n; //   : 32 /*16*/;
-	unsigned warstwa : 8;
+	unsigned warstwa_shd : 8;
 	unsigned kolor : 8 /*4*/;
 	unsigned czcionka : 7 /*4*/;
 	unsigned bold : 1;
@@ -785,8 +793,9 @@ struct
 	unsigned widoczny : 1;
 	unsigned przec : 1;  /* wyznaczanie pzeciec, ciagnij (po uzyciu zerowane)*/
 	unsigned blok : 1;  /*obiekt jest elementem bloku typu OdBLOK*/
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
 	unsigned int n; //   : 32 /*16*/;
-	unsigned warstwa : 8;
+	unsigned warstwa_shd : 8;
 	unsigned kolor : 8 /*4*/;
 	unsigned czcionka : 7 /*4*/;
 	unsigned bold : 1;
@@ -847,7 +856,8 @@ typedef
  struct
    {
      int wiersz;  //numer wiersz liczac od 0
-     long adr;
+     //long adr;
+     unsigned int adr;
      int count;
    } STRIP;
 
@@ -867,8 +877,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
-       unsigned warstwa      : 8;
+       unsigned warstwa_shd      : 8;
        unsigned kod_obiektu  : 6;
        unsigned v_flip : 1;
        unsigned h_flip : 1;
@@ -1003,8 +1014,9 @@ struct
 	unsigned widoczny : 1;
 	unsigned przec : 1;  /* wyznaczanie pzeciec, ciagnij (po uzyciu zerowane)*/
 	unsigned blok : 1;  /*obiekt jest elementem bloku typu OdBLOK*/
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
 	unsigned int n; //    : 32;
-	unsigned warstwa : 8;
+	unsigned warstwa_shd : 8;
 	unsigned kolor : 8;
 	unsigned czcionka : 7;
 	unsigned bold : 1;
@@ -1078,8 +1090,9 @@ struct
 	unsigned widoczny : 1;
 	unsigned przec : 1;  /* wyznaczanie pzeciec, ciagnij (po uzyciu zerowane)*/
 	unsigned blok : 1;  /*obiekt jest elementem bloku typu OdBLOK*/
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
 	unsigned int n; //    : 32;
-	unsigned warstwa : 8;
+	unsigned warstwa_shd : 8;
 	unsigned kolor : 8;
 	unsigned czcionka : 7;
 	unsigned bold : 1;
@@ -1154,8 +1167,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n; //    :32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
 
@@ -1177,8 +1191,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;     //   _____ 2
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned pattern  : 1;  //0-color  1-patter
     //unsigned temp1    : 1;
@@ -1211,8 +1226,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n; //    :32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
 
@@ -1230,8 +1246,9 @@ typedef
        unsigned widoczny_ : 1;
        unsigned przec_    : 1;
        unsigned blok_     : 1;
+	   unsigned warstwa_ : 16;  ////WARNING WARSTWA_EXT
        unsigned int n_ ; //   :32;
-       unsigned warstwa_  : 8;
+       unsigned warstwa_shd_  : 8;
        unsigned kolor_    : 8;
        unsigned typ_      : 8;
 
@@ -1252,8 +1269,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned shadowed : 1;
@@ -1269,8 +1287,9 @@ struct
     unsigned widoczny_ : 1;
     unsigned przec_    : 1;
     unsigned blok_     : 1;
+	unsigned warstwa_ : 16;  ////WARNING WARSTWA_EXT
     unsigned int n_ ; //   :32;
-    unsigned warstwa_  : 8;
+    unsigned warstwa_shd_  : 8;
     unsigned kolor_    : 8;
     unsigned typ_      : 8;
     unsigned shadowed_ : 1;
@@ -1289,8 +1308,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n; //    :32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
 /*       unsigned rezerwa1 : 1;*/
@@ -1340,8 +1360,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
-       unsigned int n ; //    :32;
-       unsigned warstwa  : 8;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
+       unsigned int n ;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
        float x,y,r;
@@ -1358,8 +1379,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
-       unsigned int n; //    :32;
-       unsigned warstwa  : 8;
+       unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
+       unsigned int n;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
 /*       unsigned rezerwa1 : 1;*/
@@ -1379,8 +1401,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
-    unsigned int n ; //    :32;
-    unsigned warstwa  : 8;
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
+    unsigned int n ;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned translucency:8;
@@ -1397,8 +1420,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned shadowed : 1;
@@ -1468,6 +1492,8 @@ typedef  VERTEX81_1  * VERTEX8_1_1;
 #pragma pack( )  //TO DO
 #endif
 
+////#pragma pack()   ////WARNING 4
+
 typedef
   struct
      { unsigned atrybut  : 3;
@@ -1478,8 +1504,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa :16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //    : 32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned pattern  : 1;  //0-color  1-patter
        unsigned temp1    : 1;
@@ -1504,8 +1531,9 @@ struct
 	unsigned widoczny : 1;
 	unsigned przec : 1;
 	unsigned blok : 1;
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
 	unsigned int n; //    : 32;
-	unsigned warstwa : 8;
+	unsigned warstwa_shd : 8;
 	unsigned kolor : 8;
 	unsigned typ : 8;
 	unsigned temp1 : 1;  //OT3W_Move=0, OT3W_Drag=1    //temp1
@@ -1698,6 +1726,34 @@ struct
 
 #pragma pack( 4 )
 
+typedef struct
+{
+	// Bytes 0-1: Keeps original bitfields intact
+	unsigned atrybut  : 3;
+	unsigned obiekt   : 4;
+	unsigned obiektt1 : 2;
+	unsigned obiektt2 : 3;
+	unsigned obiektt3 : 1;
+	unsigned widoczny : 1;
+	unsigned przec    : 1;
+	unsigned blok     : 1;
+	unsigned padding  : 16; // Bytes 2-3: Forces the compiler to leave old padding alone
+
+	// Bytes 4-11: Flat, safe layout matching the old file exactly
+	unsigned short n;        // Bytes 4-5: Maps perfectly to old 'n'
+	unsigned short warstwa;  // Bytes 6-7: Steals the old zero-bytes of 'n' for a 16-bit layer!
+	unsigned char  warstwa_shd;// Byte 8: Where the old 8-bit layer is stored in old files
+	unsigned char  kolor;    // Byte 9: Maps perfectly to old kolor
+	unsigned char  typ;      // Byte 10: Maps perfectly to old typ
+	unsigned char  pad_end;  // Byte 11: Keeps alignment clean before floats
+
+	// Bytes 12-27: Floats stay perfectly aligned
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+} LINIA_VARIANT;
+
 typedef
   struct
      { unsigned atrybut  : 3;
@@ -1708,7 +1764,7 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
-       unsigned int n ; //    : 32;
+       unsigned int n ;
        unsigned warstwa  : 8;
        unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
        unsigned typ      : 8;
@@ -1716,7 +1772,29 @@ typedef
        float y1          ;  //32
        float x2          ;  //32
        float y2          ;  //32   -> 20
-    } LINIA;
+    } LINIA_OLD;
+
+typedef
+struct
+{ unsigned atrybut  : 3;
+	unsigned obiekt   : 4;
+	unsigned obiektt1 : 2;
+	unsigned obiektt2 : 3;
+	unsigned obiektt3 : 1;
+	unsigned widoczny : 1;
+	unsigned przec    : 1;
+	unsigned blok     : 1;
+	unsigned warstwa :16;  ////WARNING WARSTWA_EXT
+	unsigned int n ; //    : 32;
+	unsigned warstwa_shd  : 8;
+	unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
+	unsigned typ      : 8;
+	float x1          ;  //32
+	float y1          ;  //32
+	float x2          ;  //32
+	float y2          ;  //32   -> 20
+} LINIA;
+
 typedef  LINIA  * LINIA_;
 
 #define MAXGRAPHDATANUMBER 256
@@ -1730,8 +1808,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+	unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;   // 0 - 255
     unsigned typ      : 8;
     //unsigned reserve  : 8;
@@ -1785,8 +1864,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
        unsigned typ      : 8;
        float x1          ;  //32
@@ -1802,8 +1882,9 @@ typedef
        unsigned widoczny_ : 1;
        unsigned przec_    : 1;
        unsigned blok_     : 1;
+	   unsigned warstwa_ : 16;  ////WARNING WARSTWA_EXT
        unsigned int n_ ; //   : 32;
-       unsigned warstwa_  : 8;
+       unsigned warstwa_shd_  : 8;
        unsigned kolor_    : 8;   //255 - przezroczysty - dla potrzeb stropu
        unsigned typ_      : 8;
        float x1_          ;  //32
@@ -1822,8 +1903,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //    : 32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;
        float x1          ;  //32
@@ -1871,8 +1953,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 6;    //8 /*0 normal, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
       //Simple=0,Base point=1,Junction=7,pin point=8, pin_g 9, pin_d 10, pin_s=11, Fixed=12,fixed L,fixed R,fixed U,Pinned,pinned L,pinned R,pinned U,fixed Roller,fixed roller L,fixed roller R,fixed roller U,
@@ -1893,8 +1976,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
-       unsigned warstwa  : 8;
+       unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 8;     /*0 normalny, 1,2,3,4,5,6,7 inne, 8 pin*/
        float x           ; 
@@ -1943,10 +2027,11 @@ typedef
 typedef  BLOK1_1FFF  * BLOK_1_1FFF;
 
 #ifndef LINUX
-#pragma pack( 1 )
+#pragma pack( 1 )  //was 1 WARNING 4
 #else
-#pragma pack()
+#pragma pack(4)
 #endif
+//#pragma pack( 4 )  //WARNING 4
 
 typedef
   struct
@@ -1958,6 +2043,7 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+       unsigned warstwa_blk : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
        char kod_obiektu ; // : 8;
        unsigned char flag ; //     : 8;  //rezerwa
@@ -1982,7 +2068,14 @@ typedef
        unsigned short dlugosc_opisu_obiektu :16;
     } BLOKD1_1;
 typedef  BLOKD1_1  * BLOKD_1_1;
+
+//#pragma pack( 1 )
+//#pragma pack( 4 )  //WARNING 4
+#ifndef LINUX
 #pragma pack( 1 )
+#else
+#pragma pack(4)
+#endif
 
 typedef
   struct
@@ -1994,6 +2087,7 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+       unsigned warstwa_blk: 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;
        char kod_obiektu ; // : 8;
        char flag; // rezerwa; //    : 8;
@@ -2078,6 +2172,7 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32;   
      } NAGLOWEK;    
 
@@ -2091,8 +2186,9 @@ typedef
        unsigned widoczny : 1;
        unsigned przec    : 1;
        unsigned blok     : 1;
+	   unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
        unsigned int n ; //   : 32; 
-	   unsigned warstwa  : 8;
+	   unsigned warstwa_shd  : 8;
 	   
      } NAGLOWEK_EXT;    
 
@@ -2126,8 +2222,8 @@ enum WARZAM   { NoWarZam=0,WarZam=1};
 
 
 
-#define MAX_NUMBER_OF_LAYERS 256
-#define MAX_NUMBER_OF_LAYERS_DXF 256 //1024
+#define MAX_NUMBER_OF_LAYERS 2048 ////256
+#define MAX_NUMBER_OF_LAYERS_DXF 2048 ////256 //1024
 #define MAX_OLD_NUMBER_OF_LAYERS 16
 
 #pragma pack(1)
@@ -2676,13 +2772,13 @@ typedef struct tagRECT {
 
 
 #define B3 4
-#define Bdef   {Anormalny,OdBLOK,0,0,0,1,0,0,  B3, '\0', 0, 0,'\0'}
-#define BDdef  {Anormalny,OdBLOK,0,0,0,1,0,0,  B3, '\0', 0, 0} ///TO CHECK
-#define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
-#define L2def {Anormalny,Olinia,0,0,0,1,0,0,  48, 0,7,64, 0,0,0,0, Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
+#define Bdef   {Anormalny,OdBLOK,0,0,0,1,0,0,  0,B3, '\0', 0, 0,'\0'}
+#define BDdef  {Anormalny,OdBLOK,0,0,0,1,0,0,  0,B3, '\0', 0, 0} ///TO CHECK
+#define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,   0,20, 0,7,64, 0,0,0,0}
+#define L2def {Anormalny,Olinia,0,0,0,1,0,0,   0,48, 0,7,64, 0,0,0,0, Anormalny,Olinia,0,0,0,1,0,0,   0,20, 0,7,64, 0,0,0,0}
 
 ////#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
-#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,  48, 0,7,64, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
+#define Vdef  {Anormalny,Ovector,0,0,0,1,0,0,   0,48, 0,7,64, 0,0,0,0, 0, 0,0,0,0, 0,0, 0,0, 0, 0, 0, 0}
 /*
  unsigned atrybut  : 3;
     unsigned obiekt   : 4;
@@ -2692,8 +2788,9 @@ typedef struct tagRECT {
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;                     //2
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    : 32;               //6
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;   //255 - przezroczysty - dla potrzeb stropu
     unsigned typ      : 8;
     unsigned reserve  : 8;                     //10
@@ -2723,33 +2820,33 @@ typedef struct tagRECT {
 #define T39 47
 #define T25 25
 #define T294 294
-#define T3def  {Anormalny,Otekst,0,0,0,1,0,0, T18_3, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,""}  //win32todo
-#define Tdef {Anormalny,Otekst,0,0,0,1,0,0, T18, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,0,0,""}  //win32todo
-#define T3D3def  {Anormalny,Otekst3D,0,0,0,1,0,0, T39_3, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,""}
+#define T3def  {Anormalny,Otekst,0,0,0,1,0,0,   T18_3, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,""}  //win32todo
+#define Tdef {Anormalny,Otekst,0,0,0,1,0,0,   0,T18, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,0,0,""}  //win32todo
+#define T3D3def  {Anormalny,Otekst3D,0,0,0,1,0,0,   T39_3, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,6,""}
 
-#define PCXdef {Anormalny,Opcx,0,0,0,1,0,0, T294, 0,0,0,0,0,0,0,0,0,0,0,0,0,41,1,0,0,0}
-#define Kdef  {Anormalny,Okolo, 0,0,0,1,0,0, 16, 0,7,64,  0,0,0}
-#define Odef  {Anormalny,Ookrag,0,0,0,1,0,0, 16, 0,7,64,  0,0,0}
+#define PCXdef {Anormalny,Opcx,0,0,0,1,0,0,   0,T294, 0,0,0,0,0,0,0,0,0,0,0,0,0,41,1,0,0,0}  ////
+#define Kdef  {Anormalny,Okolo, 0,0,0,1,0,0,   0,16, 0,7,64,  0,0,0}
+#define Odef  {Anormalny,Ookrag,0,0,0,1,0,0,   0,16, 0,7,64,  0,0,0}
 
-#define Edef  {Anormalny,Oellipse,0,0,0,1,0,0, 24, 0,7,64,  255, 0,0,0,0,0}
-#define FEdef  {Anormalny,Ofilledellipse,0,0,0,1,0,0, 24, 0,7,64,  255, 0,0,0,0,0}
-#define eldef  {Anormalny,Oellipticalarc,0,0,0,1,0,0, 32, 0,7,64,  0,0, 0,0,0,0,0,0,0}
+#define Edef  {Anormalny,Oellipse,0,0,0,1,0,0,   0,24, 0,7,64,  255, 0,0,0,0,0}
+#define FEdef  {Anormalny,Ofilledellipse,0,0,0,1,0,0,   0,24, 0,7,64,  255, 0,0,0,0,0}
+#define eldef  {Anormalny,Oellipticalarc,0,0,0,1,0,0,   0,32, 0,7,64,  0,0, 0,0,0,0,0,0,0}
 
-#define PointDef {Anormalny,Opoint,0,0,0,1,0,0, 12, 0,7,0, 0, 0,0}
-#define ldef  {Anormalny,Oluk,0,0,0,1,0,0, 24, 0,7,64, 0,0, 0,0,0, 0,0}
-#define l2def  {Anormalny,Oluk,0,0,0,1,0,0, 56, 0,7,64, 0,0,0, 0,0,  Anormalny,Oluk,0,0,0,1,0,0, 24, 0,7,64, 0,0,0, 0,0}
+#define PointDef {Anormalny,Opoint,0,0,0,1,0,0,   0,12, 0,7,0, 0, 0,0}
+#define ldef  {Anormalny,Oluk,0,0,0,1,0,0,   0,24, 0,7,64, 0,0, 0,0,0, 0,0}
+#define l2def  {Anormalny,Oluk,0,0,0,1,0,0, 0,56, 0,7,64, 0,0,0, 0,0,  Anormalny,Oluk,0,0,0,1,0,0, 0,24, 0,7,64, 0,0,0, 0,0}
 
 #define SOLIDARC_N 60
-#define sadef {Anormalny,Osolidarc,0,0,0,1,0,0, SOLIDARC_N /*52*/,  0,7,0, 0, 0, 0,0,0, 255,0,0,0,0,0,0,0,0,0,1,0,0,0,""};
+#define sadef {Anormalny,Osolidarc,0,0,0,1,0,0,   0,SOLIDARC_N /*52*/,  0,7,0, 0, 0, 0,0,0, 255,0,0,0,0,0,0,0,0,0,1,0,0,0,""};
 
 //SOLIDARC solidarc=sadef;
 
-#define Stdef {Anormalny,Owwielokat,0,0,0,1,0,0, 32, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0}
-#define St3Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 44, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0,0,0,0}
-#define S4def {Anormalny,Owwielokat,0,0,0,1,0,0, 40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/
-#define S43Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 56, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0,0,0,0,0} /*czworokat 3D*/
-//#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0, 8,0,0,0,0,0,0,0,0} /*Bezier spline 4 points*/
-#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
+#define Stdef {Anormalny,Owwielokat,0,0,0,1,0,0,  0,32, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0}  ////
+#define St3Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 0,44, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0,0,0,0}
+#define S4def {Anormalny,Owwielokat,0,0,0,1,0,0,  0,40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/  /////
+#define S43Ddef {Anormalny,Owwielokat,0,0,0,1,0,0, 0,56, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0,0,0,0,0} /*czworokat 3D*/
+//#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0,  0,40, 0,7,0,0,4,0, 8,0,0,0,0,0,0,0,0} /*Bezier spline 4 points*/
+#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0,  0,40, 0,7,0,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
 #define Defzmwym {7,7,3,1,.01,10,0,0,1,0,0,0,0 }
 #define Defzvector {3,1,0,0,0,0,0,0,0,0.01,0.01,0.01,0.001}
 #define Defsel {0,0,0,0,0,0,0,0,7}  //5
@@ -2892,12 +2989,14 @@ typedef enum { PRN_DRIVE = 0, PLT_DRIVE } DRAW_DRIVE;
 #define VER4_1	        "ALFACAD4.1"
 #define VER4_2	        "ALFACAD4.2"
 
+
 #define ver2_1 21
 #define ver3_0 30
 #define ver3_1 31
 #define ver4_0 40
 #define ver4_1 41
 #define ver4_2 42
+
 
 #define VER_ASTER       "ASTER-CAD "
 
@@ -3088,6 +3187,7 @@ typedef struct {
                } PRECTANGLE;   
 
 #pragma pack(1)
+
 typedef struct {
    unsigned scale_DIM : 1;
    unsigned save_original_layer : 1;
@@ -3098,7 +3198,11 @@ typedef struct {
    unsigned view_only_current_layer : 1;
    unsigned ignore_buffering_pcx : 1;
    unsigned normalize_text : 1;   
-   }  OPTIONS1 ; 
+   }  OPTIONS1 ;
+
+typedef struct {
+	unsigned lock_prof_aktual : 1;
+}  OPTIONS2 ;
  
 #pragma pack(4)
 
@@ -3374,78 +3478,6 @@ typedef struct
 
 //char *Solid_Pattern_Library[SOLID_PATTERN_LIBRARY_MAX_ITEMS];
 
-/*
-#include "o_spec.h"
-
-typedef struct
-{
-	double Xp;
-	double Yp;
-	double Xmin;
-	double Ymin;
-	double skala;
-	double X_max;
-	double Y_max;
-	double X;
-	double Y;
-	double krok_s;
-	double krok_g;
-	int	grid_;
-	int	snap_;
-	int	Current_Layer;
-	int	No_Layers;
-	LAYER Layers[MAX_NUMBER_OF_LAYERS];
-	int	FormatX;
-	int	FormatY;
-	double SkalaF;
-	double DokladnoscF;
-	double Jednostki;
-	ZMIENNE	zmwym;
-	int	orto;
-	double df__Point_Size;
-	int	b__Point_View;
-	double df__Trace_Width;
-	double df__Sketch_Dist_Max;
-		//l_kr=put_skala_profilu_x(skala_p_x_f);
-		//l_kr=put_poziom_pp(rpp_f);
-		//local_x=0;
-		//local_y=0;
-		//angle_l=0;
-		//l_kr=put_angle_l(angle_l);
-	double local_x;
-	double local_y;
-	double angle_l;
-	int TRANSLUCENCY;
-		//if ((TRANSLUCENCY < 77) || (TRANSLUCENCY > 255))  TRANSLUCENCY = 179;
-		//set_trans_blender(0, 0, 0, TRANSLUCENCY);
-	SEKTORY_EXT sektory_arkusza_ext;
-		//l_kr=put_angle_l(angle_l);
-	int KursorS;
-	BOOL ciagniecie_linii;
-	BOOL rozcinanie_linii;
-	BOOL ukrywanie_typu;
-	BOOL type_view;
-	BOOL swobodny_blok;
-	BOOL swobodny_tekst;
-	OPTIONS1 options1;
-	SEL	sel;
-	
-	//l_kr=put_localx(local_x);
-	//l_kr=put_localy(local_y);
-	char *dane;
-	long dane_size;
-	T_spec_name	s__table_spec;
-	int	kolory_paper;
-	TEXT TextG;
-	BOOL Change;
-	
-	BOOL ctx_created;
-    int i_ctx_created;
-    BITMAP *ctx_bitmap[32];
-} DRAWING_PARAMS;
-
-DRAWING_PARAMS Drawing_Params[MAX_NUMBER_OF_WINDOWS];
-*/
 
 #ifdef ARM64
 #pragma pack(8) // Legally forces 8 downstream for Mac

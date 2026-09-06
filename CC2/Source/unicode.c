@@ -278,7 +278,7 @@ utf8_no_checks (const uint8_t * input, const uint8_t ** end_ptr)
    UNICODE_SURROGATE_PAIR is returned. 
 */
 
-int32_t utf8_to_ucs2 (const uint8_t * input, const uint8_t ** end_ptr)
+int32_t utf8_to_ucs2_old (const uint8_t * input, const uint8_t ** end_ptr)
 {
     uint8_t c;
     uint8_t l;
@@ -297,7 +297,9 @@ int32_t utf8_to_ucs2 (const uint8_t * input, const uint8_t ** end_ptr)
 	uint8_t d;
 	d = input[1];
 	/* Two byte case. */
-        if (d < 0x80 || d > 0xBF) {
+        //if (d < 0x80 || d > 0xBF)
+        if ((d & 0xC0) != 0x80)
+    {
             return UTF8_BAD_CONTINUATION_BYTE;
 	}
 	if (c <= 0xC1) {
@@ -377,6 +379,92 @@ int32_t utf8_to_ucs2 (const uint8_t * input, const uint8_t ** end_ptr)
     }
     return UTF8_BAD_LEADING_BYTE;
 }
+
+int32_t utf8_to_ucs2 (const uint8_t * input, const uint8_t ** end_ptr)
+{
+    uint8_t c;
+    uint8_t l;
+
+    *end_ptr = input;
+    c = input[0];
+    if (c == 0) {
+        return UNICODE_EMPTY_INPUT;
+    }
+    l = utf8_sequence_len[c];
+    if (l == 1) {
+        * end_ptr = input + 1;
+        return (int32_t) c;
+    }
+    if (l == 2) {
+        uint8_t d;
+        d = input[1];
+        /* Robust bitmask check: ensures byte starts with binary 10xxxxxx */
+        if ((d & 0xC0) != 0x80) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+        if (c <= 0xC1) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+        * end_ptr = input + 2;
+        return
+            ((int32_t) (c & 0x1F) << 6)  |
+            ((int32_t) (d & 0x3F));
+    }
+    if (l == 3) {
+        uint8_t d;
+        uint8_t e;
+        int32_t r;
+
+        d = input[1];
+        e = input[2];
+        /* Robust bitmask check for both continuation bytes */
+        if ((d & 0xC0) != 0x80 || (e & 0xC0) != 0x80) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+        if (c == 0xe0 && d < 0xa0) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+        r = ((int32_t) (c & 0x0F)) << 12 |
+            ((int32_t) (d & 0x3F)) << 6  |
+            ((int32_t) (e & 0x3F));
+        REJECT_SURROGATE(r);
+        REJECT_FFFF(r);
+        REJECT_NOT_CHAR(r);
+        * end_ptr = input + 3;
+        return r;
+    }
+    else if (l == 4) {
+        /* Four byte case. */
+        uint8_t d;
+        uint8_t e;
+        uint8_t f;
+        int32_t v;
+
+        d = input[1];
+        e = input[2];
+        f = input[3];
+
+        if (c >= 0xf8 ||
+            (d & 0xC0) != 0x80 ||
+            (e & 0xC0) != 0x80 ||
+            (f & 0xC0) != 0x80) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+
+        if (c == 0xf0 && d < 0x90) {
+            return UTF8_BAD_CONTINUATION_BYTE;
+        }
+        v = FOUR (input);
+        if (v > UNICODE_MAXIMUM) {
+            return UNICODE_TOO_BIG;
+        }
+        REJECT_FFFF(v);
+        * end_ptr = input + 4;
+        return v;
+    }
+    return UTF8_BAD_LEADING_BYTE;
+}
+
 
 
 /* Input: a Unicode code point, "ucs2". 

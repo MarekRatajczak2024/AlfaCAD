@@ -144,7 +144,15 @@ POLE pmRegion[] = {
         {u8"P.R.C", 'P',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6 , 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+#ifdef PROFILE
+#define O3 6
+#define O7 10
+#else
+#define O3 4
+#define O7 8
+#endif
+
+TMENU mRegion = { 6 , 0, 0, 8, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, O7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmStatic[] = {
         {u8"Rama i kratownica",L'R',733, NULL},
@@ -153,17 +161,24 @@ POLE pmStatic[] = {
         {u8"ruszt Belkowy",L'B',897, NULL},
 };
 
-TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
+TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, O3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Statyka i dynamika",L'S',854, &mStatic},
-        {u8"siły wynikowe w Przekrojach poprzecznych",L'P',824, NULL},
-        {u8"Animuj dynamikę",L'A',817, NULL},
-        {u8"Wybór przekrojów elementów",L'W',775, &mRegion},
+        {u8"Statyka i dynamika\0",L'S',854, &mStatic},
+        {u8"siły Wynikowe w przekrojach poprzecznych\0",L'W',824, NULL},
+        {u8"Animuj dynamikę\0",L'A',817, NULL},
+        {u8"wybór przekrojów Elementów\0",L'E',775, &mRegion},
+#ifdef PROFILE
+		{u8"Profil sieci\0",L'P',914, NULL},
+		{u8"Mapa sieci\0",L'M',915, NULL},
+#endif
 };
 
-TMENU mApplications = { 4, 0, 0, 22, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
-
+#ifdef PROFILE
+TMENU mApplications = { 6, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#else
+TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#endif
 
 POLE pmenug[] = {
 	{u8"Rysuj\0",'R',57,NULL},

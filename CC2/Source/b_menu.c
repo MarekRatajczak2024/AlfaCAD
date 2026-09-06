@@ -251,7 +251,6 @@ extern void return_menu_par0 (char *pole, char * par);
 extern void get_global_coords (double *x0, double *y0, int cartflags);
 
 extern BOOL TTF_redraw;
-extern char* tab_typ_tekstu[];
 extern char* typ_punktu_tab[];
 //extern char* vector_style_tab[];
 extern char*Vector_txt[];
@@ -368,6 +367,10 @@ static int mouse_x_l[Max_Menu_Level], mouse_y_l[Max_Menu_Level];
 extern void move_pointer(int x, int y);
 #endif
 #endif
+
+extern POLE pmTypTekstu[];
+extern POLE pmTypTekstuP[];
+extern char **t_t;
 
 extern double thermal_precision;
 extern double force_precision;
@@ -513,6 +516,7 @@ extern char *icon_point_origin_p;
 extern char *icon_axis_angle_p;
 extern char *icon_rotation_angle_p;
 extern char *icon_colorwheel_p;
+extern char *icon_profile_color_p;
 extern char *icon_panoramic_p;
 extern char *icon_font_type_p;
 
@@ -723,6 +727,9 @@ extern char *icon_trace_extra_thick_p;
 extern char *icon_point_simple_p;
 extern char *icon_point_base_p;
 extern char *icon_point_pin_p;
+extern char *icon_point_pin_g_p;
+extern char *icon_point_pin_d_p;
+extern char *icon_point_pin_s_p;
 
 extern char *icon_RAM_for_drawing_p;
 extern char *icon_RAM_virtual_image_p;
@@ -1442,6 +1449,69 @@ extern char *icon_menu_auto_choice_p;
 extern char *icon_menu_choice_p;
 extern char *icon_autoplay_p;
 
+extern char *icon_network_profile_p;
+extern char *icon_installation_p;
+
+extern char *icon_next_measurement_p;
+extern char *icon_first_measurement_p;
+extern char *icon_installations_p;
+extern char *icon_borehole_p;
+extern char *icon_select_profile_p;
+extern char *icon_profile_parameters_p;
+extern char *icon_select_measurement_p;
+extern char *icon_channel_depth_description_p;
+extern char *icon_channel_facing_p;
+extern char *icon_profile_length_p;
+extern char *icon_profile_slope_p;
+extern char *icon_channel_depth_change_p;
+extern char *icon_channel_d_material_p;
+extern char *icon_refresh_profile_p;
+extern char *icon_profile_lock_p;
+extern char *icon_filler_p;
+
+extern char *icon_draw_installation_p;
+extern char *icon_service_connection_p;
+extern char *icon_collision_p;
+extern char *icon_benchmark_p;
+extern char *icon_merge_networks_p;
+extern char *icon_refresh_installation_p;
+extern char *icon_align_km_hm_p;
+extern char *icon_export_coordinates_p;
+extern char *icon_import_network_p;
+extern char *icon_export_network_p;
+extern char *icon_import_profile_p;
+extern char *icon_manhole_p;
+
+extern char *icon_mew_profile_p;
+extern char *icon_sel_existing_profile_p;
+extern char *icon_distorted_scale_p;
+extern char *icon_ok_p;
+extern char *icon_edit_par_p;
+extern char *icon_verify_p;
+extern char *icon_previous_p;
+extern char *icon_next_p;
+extern char *icon_escape_p;
+extern char *icon_ceiling_facing_p;
+extern char *icon_bottom_facing_p;
+extern char *icon_axis_facing_p;
+extern char *icon_diameter_p;
+extern char *icon_material_p;
+extern char *icon_ground_type_p;
+extern char *icon_hm_p;
+extern char *icon_km_p;
+
+extern char  *icon_designed_canal_p;
+extern char  *icon_existing_canal_p;
+extern char  *icon_designed_terrain_p;
+extern char  *icon_uniform_slope_p;
+extern char  *icon_change_slope_p;
+extern char  *icon_set_slope_p;
+extern char  *icon_from_existing_terrain_p;
+extern char  *icon_from_designed_terrain_p;
+extern char *icon_change_ref_angle_p;
+
+extern char *icon_reference_angle_p;
+
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
 extern TMENU mInfoAboutA;
@@ -1598,26 +1668,9 @@ POLE pmJustowanieI[] = {
 
 TMENU mJustowanieI = { 4,0,0,13,74,6,ICONS,CMNU,CMBR,CMTX,0,31,0,0,0,(POLE(*)[]) &pmJustowanieI,NULL,NULL };
 
-POLE pmTypTekstuI[] = {
-        {u8"Normal",'N',0,NULL},
-        {u8"Internal label",'I',0,NULL},
-        {u8"component Label",'L',0,NULL},
-        {u8"Symbol",'S',0,NULL},
-        {u8"Type",'T',0,NULL},
-        {u8"*pin name",'*',0,NULL},
-        {u8"power supply",'V',0,NULL},
-        {u8"Port",'P',0,NULL},
-        {u8"Attribute",'A',0,NULL},
-        {u8"+Scheme",'+',0,NULL},
-        {u8"File name",'F',0,NULL},
-        {u8"netWork",'W',0,NULL},
-        {u8"Comment",'C',0,NULL},
-        {u8"%variable",'%',0,NULL},
-        {u8"aUx.symbol",'U',0,NULL},
-        {u8"auX.description",'X',0,NULL},
-};
 
-TMENU mTypTekstuI = { 16,0,0,16,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstuI,NULL,NULL };
+TMENU mTypTekstuI = { 16,0,0,TypTekstuI_n,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstu,NULL,NULL };
+TMENU mTypTekstuIP = { 16,0,0,TypTekstuP_n,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstuP,NULL,NULL };
 
 extern TMENU mTyp_punktu;
 extern TMENU mEdgeType;
@@ -3557,6 +3610,15 @@ static char *get_icons_p(int number)
         /*895*/   icon_vector_member_style_d_p, icon_rigid_springs_nosprings_d_p, icon_beam_grid_p,
         /*898*/   icon_menu_auto_choice_p, icon_autoplay_p, icon_menu_choice_p, icon_stress_steel_wood_p, icon_stress_RC_p, icon_shear_stress_steel_wood_p, icon_concrete_p,
 	    /*905*/   icon_R_section_p, icon_I_section_p, icon_T_section_p, icon_CT_section_p, icon_ST_section_p, icon_RT_section_p, icon_plate_section_p, icon_shield_section_p,
+	    /*913*/   icon_profile_color_p, icon_network_profile_p, icon_installation_p,
+	    /*916*/   icon_next_measurement_p, icon_first_measurement_p, icon_installations_p, icon_borehole_p,icon_select_profile_p, icon_profile_parameters_p, icon_select_measurement_p, icon_channel_depth_description_p,
+	    /*924*/   icon_channel_facing_p, icon_profile_length_p, icon_profile_slope_p, icon_channel_depth_change_p, icon_channel_d_material_p, icon_refresh_profile_p, icon_profile_lock_p,
+	    /*931*/   icon_filler_p, icon_draw_installation_p, icon_service_connection_p, icon_collision_p,icon_benchmark_p, icon_merge_networks_p, icon_refresh_installation_p,icon_align_km_hm_p,
+	    /*939*/   icon_export_coordinates_p, icon_import_network_p, icon_export_network_p, icon_import_profile_p, icon_manhole_p,
+	    /*944*/   icon_mew_profile_p, icon_sel_existing_profile_p, icon_distorted_scale_p, icon_ok_p, icon_edit_par_p, icon_verify_p, icon_previous_p, icon_next_p,
+	    /*952*/   icon_escape_p, icon_ceiling_facing_p, icon_bottom_facing_p, icon_axis_facing_p, icon_diameter_p, icon_material_p, icon_ground_type_p, icon_hm_p, icon_km_p,
+	    /*961*/   icon_designed_canal_p, icon_existing_canal_p, icon_designed_terrain_p, icon_uniform_slope_p,  icon_change_slope_p, icon_set_slope_p, icon_from_existing_terrain_p, icon_from_designed_terrain_p,
+	    /*969*/   icon_point_pin_g_p, icon_point_pin_d_p, icon_point_pin_s_p, icon_reference_angle_p,icon_change_ref_angle_p,
     };
    
 	if (number>1999)
@@ -9960,10 +10022,9 @@ void ch_edge (void)
     }
     baronoff_(&mInfoAboutA);
     baronoff(&mInfoAboutA);
-    return;
 }
 
-int point_type[]={0, 1, 8, 7, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
+int point_type[]={0, 1, 8, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 
 void ch_ptype (void) {
     int n;
@@ -10000,7 +10061,6 @@ void ch_ptype (void) {
     }
     baronoff_(&mInfoAboutA);
     baronoff(&mInfoAboutA);
-    return;
 }
 
 void ch_stype (void) {
@@ -10303,7 +10363,7 @@ int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 7
                    880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891, 893, 894};
 
 int edge_icon[]={0, 0, 0, 0, 849, 851, 850, 852};
-int point_icon[]={294, 295, 0, 0, 0, 0, 0, 529, 296, 0, 0, 0, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818, 870, 871, 872, 873, 874, 875, 876, 877};
+int point_icon[]={294, 295, 294, 294, 294, 294, 294, 529, 296, 969, 970, 971, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818, 870, 871, 872, 873, 874, 875, 876, 877};
 extern char *vector_txt[];
 extern char *point_txt[];
 
@@ -12450,25 +12510,36 @@ void ch_font_t (void)
 void ch_type_t (void)
 {
     int n;
+    int l_kr;
 
     frame_off(&mInfoAboutA);
 
     menu_level++;
-    menu_address[menu_level-1]=(char*)&mTypTekstuI;
-    n = Simple_Menu_Proc(&mTypTekstuI);
+
+    l_kr=get_znacznik_aplikacji();
+    if ((l_kr==101) || (l_kr==102) || (l_kr==103))
+    {
+        menu_address[menu_level-1]=(char*)&mTypTekstuIP;
+        n = Simple_Menu_Proc(&mTypTekstuIP);
+    }
+    else
+    {
+        menu_address[menu_level-1]=(char*)&mTypTekstuI;
+        n = Simple_Menu_Proc(&mTypTekstuI);
+    }
     if (n)
     {
         rysuj_obiekt(object_info_ad, COPY_PUT, 0);
         ((TEXT *) object_info_ad)->typ = n-1;
         rysuj_obiekt(object_info_ad, COPY_PUT, 1);
         //menu update
-        menu_par_new((*mInfoAboutA.pola)[menu_n].txt, tab_typ_tekstu[((TEXT *)object_info_ad)->typ]);
+        //menu_par_new((*mInfoAboutA.pola)[menu_n].txt, tab_typ_tekstu[((TEXT *)object_info_ad)->typ]);
+        menu_par_new((*mInfoAboutA.pola)[menu_n].txt, t_t[((TEXT *)object_info_ad)->typ]);
         Change = TRUE;
         if (PTRS__Text_Style[((TEXT*)object_info_ad)->czcionka]->type == 2) TTF_redraw=TRUE;
     }
     baronoff_(&mInfoAboutA);
     baronoff(&mInfoAboutA);
-    return;
 }
 
 void ch_hidden_t (void)

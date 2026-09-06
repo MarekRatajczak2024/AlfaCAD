@@ -80,6 +80,8 @@ static BOOL b__divide_point ;
 static BOOL b__align_blok = TRUE ;
 static double df__ipx, df__ipy ;
 
+double global_reference_angle_rad=0.0;
+
 TMENU mDivide = {8, 0,0,31, 56,4,TADD | ICONS,CMNU,CMBR,CMTX, 0, COMNDmnr, 0, 0,0,&pmDivide, NULL, NULL} ;
 
 /*-------------------------------------------------------------*/
@@ -2206,7 +2208,14 @@ static BOOL add_divide_block (double df_x, double df_y, long *ptrl_block_size,
   }
   else
   {
-    b_ret = Add_Block (ADP, ADK, ptrl_block_size, df_x - df__ipx, df_y - df__ipy, 0, 0, 0, 0, 0, 0, Tprzesuw) ;
+      if (Check_if_Equal(global_reference_angle_rad, 0.0)==FALSE)
+      {
+          b_ret = Add_Block (ADP, ADK, ptrl_block_size,
+                             df__ipx, df__ipy, sin (global_reference_angle_rad), cos (global_reference_angle_rad),
+                             df_x - df__ipx, df_y - df__ipy, 0, 0, Tobrot | Tprzesuw) ;
+      }
+      else
+         b_ret = Add_Block (ADP, ADK, ptrl_block_size, df_x - df__ipx, df_y - df__ipy, 0, 0, 0, 0, 0, 0, Tprzesuw) ;
   }
   return b_ret ;
 }

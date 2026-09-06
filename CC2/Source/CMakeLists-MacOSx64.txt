@@ -244,9 +244,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 
 
-
 #set(PROJECT_NAME AlfaCAD)
 
+#for all versions
+add_compile_definitions("PROFILE")
 
 #if ($<CMAKE_BUILD_TYPE:Debug>)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -554,6 +555,10 @@ set(Source_Files
     "../../../CC2/Source/o_shield.c"
     "../../../CC2/Source/o_shield_reactions.c"
     "../../../CC2/Source/o_shield.h"
+
+    "../../../CC2/Source/a_profil.c"
+    "../../../CC2/Source/o_tabwsp.c"
+    "../../../CC2/Source/o_pconfig.c"
 
     "../../../allegro5-4.4.3/addons/jpgalleg/src/jpgalleg.c"
     "../../../allegro5-4.4.3/addons/jpgalleg/src/decode.c"

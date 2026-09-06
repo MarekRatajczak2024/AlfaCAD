@@ -14,7 +14,7 @@
 *
 */
 
-#define __INFO__
+#define __O_INFO__
 #include<forwin.h>
 #ifndef LINUX
 #include<stddef.h>
@@ -83,6 +83,9 @@ extern char *load_symbol[];
 extern void alfacad_logo_info(void);
 extern char *Vector_txt[];
 
+extern char **t_t;
+extern void set_text_types(int ver);
+
 static void nooph(void)
 {}
 #define noooph (void ( *)(int x,int y))nooph
@@ -104,44 +107,55 @@ static void uaktualnij_pola (void)
 {
   char sk [32] ;
   char sk1[MAXPATH];
-  unsigned long_long mem_virtual, mem_dos ;
+  //unsigned long_long mem_virtual;
+  //unsigned long_long mem_dos ;
   char * st ;
   int len ;        /*maxlen = 36*/
   char *ptrsz_lab ;
   unsigned long_long imageBMPsize1 ;
   unsigned long_long imageBMPsize_used1;
   unsigned long_long imageBMPsize_total_used1;
+  int kb, mb;
 
-  mem_virtual = Get_Free_Virtual_Memory();
+  //mem_virtual = Get_Free_Virtual_Memory();
+
+#ifdef LINUX
+    kb=1024;
+    mb=1000;
+#else
+    kb=1024;
+    mb=1000;
+#endif
 
 #ifdef BIT64
-  sprintf (sk, "%lld / %lld", Get_Buf_Mem_Size () / 1024, Get_memory_size() / 1024) ;
+  sprintf (sk, "%lld/%lld", Get_Buf_Mem_Size () / kb, Get_memory_size() / kb) ;
 #else
-  sprintf(sk, "%ld / %ld", Get_Buf_Mem_Size() / 1024, Get_memory_size() / 1024);
+  sprintf(sk, "%ld/%ld", Get_Buf_Mem_Size() / kb, Get_memory_size() / kb);
 #endif
 
   menu_par_new((*mInfo.pola)[0].txt, sk) ;
 
-  imageBMPsize1=Get_imageBMPsize() / (1024 * 1000);
-  imageBMPsize_used1 = imageBMPsize_used / (1024 * 1000);
-  imageBMPsize_total_used1 = imageBMPsize_total_used / (1024 * 1000);
+  imageBMPsize1=Get_imageBMPsize() / (kb * mb);
+  imageBMPsize_used1 = imageBMPsize_used / (kb * mb);
+  imageBMPsize_total_used1 = imageBMPsize_total_used / (kb * mb);
  
-//  sprintf (sk, "%ld", imageBMPsize / 1024/*mem_virtual*/) ;
+//  sprintf (sk, "%ld", imageBMPsize / kb/*mem_virtual*/) ;
 
   sprintf (sk, "%lld/%lld (%lld)", imageBMPsize1, imageBMPsize_total_used1, imageBMPsize_used1) ;
 
   menu_par_new((*mInfo.pola)[1].txt, sk) ;
 
+  sprintf (sk, "%lu", dane_size - 8 /*4*/) ;
 
   menu_par_new((*mInfo.pola)[2].txt, sk) ;
 
-  sprintf (sk, "%llu", Bufor_Wydruku / 1024 ) ;
+  sprintf (sk, "%llu", Bufor_Wydruku / kb ) ;
   menu_par_new((*mInfo.pola)[3].txt, sk) ;
 
   sprintf (sk, "%u", Get_Buf_Mak_Size ()) ;
   menu_par_new((*mInfo.pola)[4].txt, sk) ;
 
-  sprintf (sk, "%llu/%llu", Bufor_PCX / 1024, Wielkosc_Plata / 1024) ;
+  sprintf (sk, "%llu/%llu", Bufor_PCX / kb, Wielkosc_Plata / kb) ;
   menu_par_new((*mInfo.pola)[5].txt, sk) ;
 
   strcpy(sk1, Current_File_Directory);
@@ -448,6 +462,8 @@ void Info_about_object(char *ad)
   float d_trans=12.75;
   int p_h_w_z;
 
+  set_text_types(1);
+
   deact();
 
   strcpy(sk,u8"");
@@ -603,6 +619,12 @@ void Info_about_object(char *ad)
                         grubosc_l = (i_typ & 224) / 32;
                         found=TRUE;
                     }
+	            case Oellipse:
+            		grubosc_l = ((ELLIPSE *)adbp)->typ;
+            		typ_l = (i_typ & 31);
+            		grubosc_l = (i_typ & 224) / 32;
+            		found=TRUE;
+            		break;
                 case Owwielokat:
                     grubosc_l = ((WIELOKAT *)adbp)->empty_typ;
                     if (grubosc_l==0) grubosc_l=5;
@@ -722,7 +744,7 @@ void Info_about_object(char *ad)
      menu_par_new((*mInfoAbout.pola)[iFont].txt, sk) ;
 	 act(iFont);
 
-     strcpy(sk, tab_typ_tekstu[((TEXT *)ad)->typ]);
+  	 strcpy(sk, t_t[((TEXT *)ad)->typ]);
      menu_par_new((*mInfoAbout.pola)[iFType].txt, sk) ;     
 	 act(iFType);
 
@@ -1927,4 +1949,4 @@ void Info_about_object(char *ad)
 }
 
 
-#undef __INFO__
+#undef __O_INFO__

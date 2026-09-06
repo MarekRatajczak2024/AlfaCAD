@@ -100,6 +100,8 @@ int LoadPNGinfo(char *filename, unsigned int *width, unsigned int *height, unsig
 
 	fp = open(filename, O_RDWR | O_BINARY);
 
+	if (fp==-1) return 0;
+
     end_position = lseek(fp, 0, SEEK_END);
 
 	lseek(fp, 0, SEEK_SET);
@@ -255,6 +257,7 @@ int LoadJPGinfo(char* filename, unsigned int* width, unsigned int* height, unsig
 
 	FILE* fp = fopen(filename, "rb");
     if (fp==NULL) return 0;
+
 	count = fread(&jpgheader, 1, sizeof(jpgheader), fp);
 	if (count < sizeof(jpgheader)) return 0;
 

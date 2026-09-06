@@ -150,6 +150,7 @@ static VIEW  last_view_preview;
 
 #define MAXPLACEMARKER 5
 static VIEW  tab_place_marker [MAXPLACEMARKER];
+static VIEW  tab_place_marker_force;
 
 static  OKNO O;
 extern BOOL Auto_Pan;
@@ -341,17 +342,16 @@ static void normalizacja_tekstu_on(void)
   menu_par_new((*mParametrym.pola)[22].txt,stT);
  }
 
+////profiles
+int get_lock_prof_aktual(void)
+{
+ return options2.lock_prof_aktual;
+}
 
-
-//int get_lock_prof_aktual(void)
-//{
-// return options1.lock_prof_aktual;
-//}
-
-//void put_lock_prof_aktual(int lock)
-//{
-//  options1.lock_prof_aktual = lock;
-//}
+void put_lock_prof_aktual(int lock)
+{
+  options2.lock_prof_aktual = lock;
+}
  
 static void scale_DIM_off(void)
 {
@@ -1026,7 +1026,6 @@ void Ini_Place_Marker (void)
 
 
 static void set_marker (void)
-/*--------------------------*/
 {
   int poz;
 
@@ -1039,6 +1038,16 @@ static void set_marker (void)
   tab_place_marker [poz].Yp = Yp;
 }
 
+static void set_marker_force(void)
+{
+    tab_place_marker_force.flags = 1;
+    tab_place_marker_force.skala = skala;
+    tab_place_marker_force.X = X;
+    tab_place_marker_force.Y = Y;
+    tab_place_marker_force.Xp = Xp;
+    tab_place_marker_force.Yp = Yp;
+}
+
 static void find_marker (void)
 /*---------------------------*/
 {
@@ -1046,7 +1055,7 @@ static void find_marker (void)
   int poz;
 
   poz = mFindMarker.poz + mFindMarker.foff;
-  if ( tab_place_marker [poz].flags == 0) return;
+  if (tab_place_marker [poz].flags == 0) return;
   skala_fm = tab_place_marker[poz].skala ;
   x_fm =     tab_place_marker[poz].X;
   y_fm =     tab_place_marker[poz].Y;
@@ -1058,6 +1067,23 @@ static void find_marker (void)
   }
 }
 
+static void find_marker_force (void)
+{
+    double xp_fm, yp_fm , x_fm, y_fm, skala_fm;
+    int poz;
+
+    if (tab_place_marker_force.flags == 0) return;
+    skala_fm = tab_place_marker_force.skala ;
+    x_fm =     tab_place_marker_force.X;
+    y_fm =     tab_place_marker_force.Y;
+    xp_fm =    tab_place_marker_force.Xp;
+    yp_fm =    tab_place_marker_force.Yp;
+    if (FALSE == change_view (xp_fm, yp_fm , x_fm, y_fm, skala_fm))
+    {
+        tab_place_marker_force.flags = 0;
+    }
+}
+
 void put_setmarker (int poz)
 /*---------------------------------*/
 {
@@ -1066,12 +1092,24 @@ void put_setmarker (int poz)
   set_marker();
 }
 
+void put_setmarker_force (void)
+/*---------------------------------*/
+{
+    set_marker_force();
+}
+
 void put_findmarker (int poz)
 /*---------------------------------*/
 {
   mFindMarker.poz=poz;
   mFindMarker.foff=0;
   find_marker();
+}
+
+void put_findmarker_force (void)
+/*---------------------------------*/
+{
+    find_marker_force();
 }
 
 
@@ -2399,16 +2437,17 @@ void Get_Limits_PCX (long_long off, long_long offk, int atrybut, double *xmin, d
   return;
 }
 
-void over_limits(double *xmin, double *xmax, double *ymin, double *ymax, int type) {
+BOOL over_limits(double const *xmin, double const *xmax, double const *ymin, double const *ymax, int type) {
     int a;
     if (*xmin < -9999999)
-        a = 0;
+        return 1;
     if (*xmax > 9999999)
-        a = 0;
+        return 1;
     if (*ymin < -9999999)
-        a = 0;
+        return 1;
     if (*ymax > 9999999)
-        a = 0;
+        return 1;
+    return 0;
 }
 
 void Get_Limits (long_long off, long_long offk, int atrybut, double *xmin, double *xmax, double *ymin, double *ymax)
@@ -2418,6 +2457,7 @@ void Get_Limits (long_long off, long_long offk, int atrybut, double *xmin, doubl
   SOLIDARC *sa;
   long_long ad ;
   int a;
+  double xmin_, ymin_, xmax_, ymax_;
  
   *xmin = MAXDOUBLE ;
   *xmax = -MAXDOUBLE ;
@@ -2429,71 +2469,53 @@ void Get_Limits (long_long off, long_long offk, int atrybut, double *xmin, doubl
     nag = (NAGLOWEK*)(dane + ad) ;
     if (atrybut == ANieOkreslony || atrybut == nag->atrybut)
     {
+      xmin_=*xmin;  ymin_=*ymin;  xmax_=*xmax;  xmax_=*xmax;
       switch (nag->obiekt)
       {
 	    case Olinia :
-	    line_place ((LINIA*)nag, xmin, ymin, xmax, ymax) ;
-             over_limits(xmin, xmax, ymin, ymax,0);
+        line_place ((LINIA*)nag, xmin, ymin, xmax, ymax) ;
 	    break ;
 	    case Otekst :
-	    tekst_place ((TEXT*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,2);
+        tekst_place ((TEXT*)nag, xmin, ymin, xmax, ymax) ;
 	    break ;
 	    case Okolo :
         case Ookrag :
 	    okrag_place ((OKRAG*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,3);
 	    break ;
         case Oellipse :
         case Ofilledellipse :
         ellipse_place ((ELLIPSE*)nag, xmin, ymin, xmax, ymax) ;
-                  over_limits(xmin, xmax, ymin, ymax,3);
         break ;
         case Oluk :
 	    luk_place ((LUK*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,4);
 	    break ;
         case Oellipticalarc :
         ellipticalarc_place ((ELLIPTICALARC *)nag, xmin, ymin, xmax, ymax) ;
-                  over_limits(xmin, xmax, ymin, ymax,4);
         break ;
         case Owwielokat :
 	    wielokat_place ((WIELOKAT*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,5);
 	    break ;
         case Osolidarc :
         sa=(SOLIDARC*)nag;
         sa->kat1= (float)Angle_Normal((double)sa->kat1);
         sa->kat2= (float)Angle_Normal((double)sa->kat2);
-        double ymin_back=*ymin;
-        if ((sa->x==510.52002f) && (sa->y==89.8003998f))
-        {
-            int a=0;
-        }
         solidarc_place ((SOLIDARC*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,5);
-              if (ymin_back>*ymin)
-              {
-                  int a=0;
-              }
         break ;
         case Ospline:
 	    spline_place((SPLINE*)nag, xmin, ymin, xmax, ymax);
-              over_limits(xmin, xmax, ymin, ymax,6);
 	    break;
         case Opoint :
 	    point_place ((T_Point*)nag, xmin, ymin, xmax, ymax) ;
-              over_limits(xmin, xmax, ymin, ymax,7);
 	    break ;
         case Ovector :
         vector_place ((AVECTOR*)nag, xmin, ymin, xmax, ymax) ;
-             over_limits(xmin, xmax, ymin, ymax,7);
         break ;
        default :
 	    break ;
       } /*switch*/
+      if (over_limits(xmin, xmax, ymin, ymax,nag->obiekt))
+      {*xmin=xmin_;  *ymin=ymin_;  *xmax=xmax_;  *xmax=xmax_;}
     }
-
     ObiektTok (&off, offk, &ad, ONieOkreslony);
   }
   return;

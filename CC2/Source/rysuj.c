@@ -372,6 +372,8 @@ extern int	getdisk(void);
 
 extern void reset_cursor(void);
 extern BOOL hibernate;
+
+extern void set_text_types(int ver);
 /////////////
 
 
@@ -624,6 +626,7 @@ extern BITMAP *icon_point_origin;
 extern BITMAP *icon_axis_angle;
 extern BITMAP *icon_rotation_angle;
 extern BITMAP *icon_colorwheel;
+extern BITMAP *icon_profile_color;
 extern BITMAP *icon_panoramic;
 extern BITMAP *icon_font_type;
 
@@ -650,6 +653,7 @@ extern char *icon_point_origin_p;
 extern char *icon_axis_angle_p;
 extern char *icon_rotation_angle_p;
 extern char *icon_colorwheel_p;
+extern char *icon_profile_color_p;
 extern char *icon_panoramic_p;
 extern char *icon_font_type_p;
 
@@ -1063,6 +1067,9 @@ extern BITMAP *icon_trace_extra_thick;
 extern BITMAP *icon_point_simple;
 extern BITMAP *icon_point_base;
 extern BITMAP *icon_point_pin;
+extern BITMAP *icon_point_pin_g;
+extern BITMAP *icon_point_pin_d;
+extern BITMAP *icon_point_pin_s;
 
 extern char *icon_trace_filled_p;
 extern char *icon_trace_very_thin_p;
@@ -1073,6 +1080,9 @@ extern char *icon_trace_extra_thick_p;
 extern char *icon_point_simple_p;
 extern char *icon_point_base_p;
 extern char *icon_point_pin_p;
+extern char *icon_point_pin_g_p;
+extern char *icon_point_pin_d_p;
+extern char *icon_point_pin_s_p;
 
 extern BITMAP *icon_RAM_for_drawing;
 extern BITMAP *icon_RAM_virtual_image;
@@ -2469,6 +2479,130 @@ extern char *icon_menu_choice_p;
 extern BITMAP *icon_autoplay;
 extern char *icon_autoplay_p;
 
+extern BITMAP *icon_network_profile;
+extern BITMAP *icon_installation;
+extern char *icon_network_profile_p;
+extern char *icon_installation_p;
+
+extern BITMAP *icon_next_measurement;
+extern BITMAP *icon_first_measurement;
+extern BITMAP *icon_installations;
+extern BITMAP *icon_borehole;
+extern BITMAP *icon_select_profile;
+extern BITMAP *icon_profile_parameters;
+extern BITMAP *icon_select_measurement;
+extern BITMAP *icon_channel_depth_description;
+extern BITMAP *icon_channel_facing;
+extern BITMAP *icon_profile_length;
+extern BITMAP *icon_profile_slope;
+extern BITMAP *icon_channel_depth_change;
+extern BITMAP *icon_channel_d_material;
+extern BITMAP *icon_refresh_profile;
+extern BITMAP *icon_profile_lock;
+extern BITMAP *icon_filler;
+
+extern char *icon_next_measurement_p;
+extern char *icon_first_measurement_p;
+extern char *icon_installations_p;
+extern char *icon_borehole_p;
+extern char *icon_select_profile_p;
+extern char *icon_profile_parameters_p;
+extern char *icon_select_measurement_p;
+extern char *icon_channel_depth_description_p;
+extern char *icon_channel_facing_p;
+extern char *icon_profile_length_p;
+extern char *icon_profile_slope_p;
+extern char *icon_channel_depth_change_p;
+extern char *icon_channel_d_material_p;
+extern char *icon_refresh_profile_p;
+extern char *icon_profile_lock_p;
+extern char *icon_filler_p;
+
+extern BITMAP *icon_draw_installation;
+extern BITMAP *icon_service_connection;
+extern BITMAP *icon_collision;
+extern BITMAP *icon_benchmark;
+extern BITMAP *icon_merge_networks;
+extern BITMAP *icon_refresh_installation;
+extern BITMAP *icon_align_km_hm;
+extern BITMAP *icon_export_coordinates;
+extern BITMAP *icon_import_network;
+extern BITMAP *icon_export_network;
+extern BITMAP *icon_import_profile;
+extern BITMAP *icon_manhole;
+
+extern char *icon_draw_installation_p;
+extern char *icon_service_connection_p;
+extern char *icon_collision_p;
+extern char *icon_benchmark_p;
+extern char *icon_merge_networks_p;
+extern char *icon_refresh_installation_p;
+extern char *icon_align_km_hm_p;
+extern char *icon_export_coordinates_p;
+extern char *icon_import_network_p;
+extern char *icon_export_network_p;
+extern char *icon_import_profile_p;
+extern char *icon_manhole_p;
+
+extern BITMAP *icon_mew_profile;
+extern BITMAP *icon_sel_existing_profile;
+extern BITMAP *icon_distorted_scale;
+extern BITMAP *icon_ok;
+extern BITMAP *icon_edit_par;
+extern BITMAP *icon_verify;
+extern BITMAP *icon_previous;
+extern BITMAP *icon_next;
+extern BITMAP *icon_escape;
+extern BITMAP *icon_ceiling_facing;
+extern BITMAP *icon_bottom_facing;
+extern BITMAP *icon_axis_facing;
+extern BITMAP *icon_diameter;
+extern BITMAP *icon_material;
+extern BITMAP *icon_ground_type;
+extern BITMAP *icon_hm;
+extern BITMAP *icon_km;
+
+extern char *icon_mew_profile_p;
+extern char *icon_sel_existing_profile_p;
+extern char *icon_distorted_scale_p;
+extern char *icon_ok_p;
+extern char *icon_edit_par_p;
+extern char *icon_verify_p;
+extern char *icon_previous_p;
+extern char *icon_next_p;
+extern char *icon_escape_p;
+extern char *icon_ceiling_facing_p;
+extern char *icon_bottom_facing_p;
+extern char *icon_axis_facing_p;
+extern char *icon_diameter_p;
+extern char *icon_material_p;
+extern char *icon_ground_type_p;
+extern char *icon_hm_p;
+extern char *icon_km_p;
+
+extern BITMAP *icon_designed_canal;
+extern BITMAP *icon_existing_canal;
+extern BITMAP *icon_designed_terrain;
+extern BITMAP *icon_uniform_slope;
+extern BITMAP *icon_change_slope;
+extern BITMAP *icon_set_slope;
+extern BITMAP *icon_from_existing_terrain;
+extern BITMAP *icon_from_designed_terrain;
+
+extern char  *icon_designed_canal_p;
+extern char  *icon_existing_canal_p;
+extern char  *icon_designed_terrain_p;
+extern char  *icon_uniform_slope_p;
+extern char  *icon_change_slope_p;
+extern char  *icon_set_slope_p;
+extern char  *icon_from_existing_terrain_p;
+extern char  *icon_from_designed_terrain_p;
+
+extern BITMAP *icon_reference_angle;
+extern char *icon_reference_angle_p;
+extern BITMAP *icon_change_ref_angle;
+extern char *icon_change_ref_angle_p;
+
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
 extern BITMAP *icon_yes_dx2_mem;
@@ -2614,6 +2748,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_axis_angle,"axis_angle",&icon_axis_angle_p},
         {&icon_rotation_angle,"rotation_angle",&icon_rotation_angle_p},
         {&icon_colorwheel,"Colorwheel",&icon_colorwheel_p},
+        {&icon_profile_color,"profile_color",&icon_profile_color_p},
         {&icon_panoramic,"panoramic",&icon_panoramic_p},
         {&icon_font_type,"font_type",&icon_font_type_p},
         {&icon_yes,"yes",&icon_yes_p},
@@ -2810,6 +2945,9 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_point_simple,"point_simple",&icon_point_simple_p},
         {&icon_point_base,"point_base",&icon_point_base_p},
         {&icon_point_pin,"point_pin",&icon_point_pin_p},
+        {&icon_point_pin_g,"point_pin_g",&icon_point_pin_g_p},
+        {&icon_point_pin_d,"point_pin_d",&icon_point_pin_d_p},
+        {&icon_point_pin_s,"point_pin_s",&icon_point_pin_s_p},
         {&icon_RAM_for_drawing,"RAM_for_drawing",&icon_RAM_for_drawing_p},
         {&icon_RAM_virtual_image,"RAM_virtual_image",&icon_RAM_virtual_image_p},
         {&icon_RAM_data_size,"RAM_data_size",&icon_RAM_data_size_p},
@@ -3408,6 +3546,66 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_RT_section, "RT_section", &icon_RT_section_p },
         {&icon_plate_section, "plate_section", &icon_plate_section_p },
         {&icon_shield_section, "shield_section", &icon_shield_section_p },
+#ifdef PROFILE
+    ////those icons will be read only for PROFILE
+        {&icon_network_profile, "network_profile", &icon_network_profile_p },
+        {&icon_installation, "installation", &icon_installation_p },
+        {&icon_next_measurement, "next_measurement", &icon_next_measurement_p },
+        {&icon_first_measurement, "first_measurement", &icon_first_measurement_p },
+        {&icon_installations, "installations", &icon_installations_p },
+        {&icon_borehole, "borehole", &icon_borehole_p },
+        {&icon_select_profile, "select_profile", &icon_select_profile_p },
+        {&icon_profile_parameters, "profile_parameters", &icon_profile_parameters_p },
+        {&icon_select_measurement, "select_measurement", &icon_select_measurement_p },
+        {&icon_channel_depth_description, "channel_depth_description", &icon_channel_depth_description_p },
+        {&icon_channel_facing, "channel_facing", &icon_channel_facing_p },
+        {&icon_profile_length, "profile_length", &icon_profile_length_p },
+        {&icon_profile_slope, "profile_slope", &icon_profile_slope_p },
+        {&icon_channel_depth_change, "channel_depth_change", &icon_channel_depth_change_p},
+        {&icon_channel_d_material, "channel_d_material", &icon_channel_d_material_p},
+        {&icon_refresh_profile, "refresh_profile", &icon_refresh_profile_p},
+        {&icon_profile_lock, "profile_lock", &icon_profile_lock_p},
+        {&icon_filler, "filler", &icon_filler_p},
+        {&icon_draw_installation, "draw_installation", &icon_draw_installation_p},
+        {&icon_service_connection, "service_connection", &icon_service_connection_p},
+        {&icon_collision, "collision", &icon_collision_p},
+        {&icon_benchmark, "benchmark", &icon_benchmark_p},
+        {&icon_merge_networks, "merge_networks", &icon_merge_networks_p},
+        {&icon_refresh_installation, "refresh_installation", &icon_refresh_installation_p},
+        {&icon_align_km_hm, "align_km_hm", &icon_align_km_hm_p},
+        {&icon_export_coordinates, "export_coordinates", &icon_export_coordinates_p},
+        {&icon_import_network, "import_network", &icon_import_network_p},
+        {&icon_export_network, "export_network", &icon_export_network_p},
+        {&icon_import_profile, "import_profile", &icon_import_profile_p},
+        {&icon_manhole, "manhole", &icon_manhole_p},
+        {&icon_mew_profile, "mew_profile", &icon_mew_profile_p},
+        {&icon_sel_existing_profile, "sel_existing_profile", &icon_sel_existing_profile_p},
+        {&icon_distorted_scale, "distorted_scale", &icon_distorted_scale_p},
+        {&icon_ok, "ok", &icon_ok_p},
+        {&icon_edit_par, "edit_par", &icon_edit_par_p},
+        {&icon_verify, "verify", &icon_verify_p},
+        {&icon_previous, "previous", &icon_previous_p},
+        {&icon_next, "next", &icon_next_p},
+        {&icon_escape, "escape", &icon_escape_p},
+        {&icon_ceiling_facing, "ceiling_facing", &icon_ceiling_facing_p},
+        {&icon_bottom_facing, "bottom_facing", &icon_bottom_facing_p},
+        {&icon_axis_facing, "axis_facing", &icon_axis_facing_p},
+        {&icon_diameter, "diameter", &icon_diameter_p},
+        {&icon_material, "material", &icon_material_p},
+        {&icon_ground_type, "ground_type", &icon_ground_type_p},
+        {&icon_hm, "hm", &icon_hm_p},
+        {&icon_km, "km", &icon_km_p},
+        {&icon_designed_canal, "designed_canal", &icon_designed_canal_p},
+        {&icon_existing_canal, "existing_canal", &icon_existing_canal_p},
+        {&icon_designed_terrain, "designed_terrain", &icon_designed_terrain_p},
+        {&icon_uniform_slope, "uniform_slope", &icon_uniform_slope_p},
+        {&icon_change_slope, "change_slope", &icon_change_slope_p},
+        {&icon_set_slope, "set_slope", &icon_set_slope_p},
+        {&icon_from_existing_terrain, "from_existing_terrain", &icon_from_existing_terrain_p},
+        {&icon_from_designed_terrain, "from_designed_terrain", &icon_from_designed_terrain_p},
+        {&icon_reference_angle, "reference_angle", &icon_reference_angle_p},
+        {&icon_change_ref_angle, "change_ref_angle", &icon_change_ref_angle_p},
+#endif
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);
@@ -3478,9 +3676,15 @@ extern void Automatic_numbering(void);
 extern void Find_Text(void);
 extern void Find_and_Change_Text(void);
 
+#ifdef PROFILE
+extern void Profil(void);
+extern void Instalacje(void);
 static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
-			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Information_about, Static_analysis,  Cross_section_forces, /*23*/ Animate_dynamics, Static_analysis, Plate_analysis, Shield_analysis, Grid_analysis,SteelEU, ConcreteEU,SteelUK, nooop, SteelAU, SteelCN,SteelUS,ConcreteUS, SteelCA, TimberUS, TimberCA};
-
+			 Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Information_about, nooop,  Cross_section_forces, /*23*/ Animate_dynamics, nooop, Profil, Instalacje, Static_analysis, Plate_analysis, Shield_analysis, Grid_analysis,SteelEU, ConcreteEU,SteelUK, nooop, SteelAU, SteelCN,SteelUS,ConcreteUS, SteelCA, TimberUS, TimberCA};
+#else
+static void (*COMNDg[])(void)= { Rysuj, Blok, Edycja, nooop, nooop, Wymiarowanie, Hatch, Geometria,
+             Makro,Parametry, Opcje, nooop, Wyjscie, Koniec, Close_window, Find_Text, Find_and_Change_Text, Automatic_numbering, Change_Properties, Spline_Amendment, Change_Vectors,  Information_about, nooop,  Cross_section_forces, /*23*/ Animate_dynamics, nooop, Static_analysis, Plate_analysis, Shield_analysis, Grid_analysis,SteelEU, ConcreteEU,SteelUK, nooop, SteelAU, SteelCN,SteelUS,ConcreteUS, SteelCA, TimberUS, TimberCA};
+#endif
 //#define WOOD 28 //26   //the number of function for wood choice
 int WOOD_CA=sizeof(COMNDg)/sizeof(COMNDg[0]);
 int WOOD_US=sizeof(COMNDg)/sizeof(COMNDg[0])-1;
@@ -5284,27 +5488,46 @@ void Initialize_Desktop_font(char *font_name_)
 	int flags;
 
 #ifndef LINUX
-	getenv_s(&requiredSize, NULL, 0, "WINDIR");
-	if (requiredSize == 0)
-	{
-		winfont = NULL;
-	}
-#else
-    requiredSize=255;
-#endif
+    // 1. Grab environment variables using standard cross-platform getenv
+    char *winDirEnv = getenv("WINDIR");
+    char *tempDirEnv = getenv("TEMP");
 
-	winvar = (char*)malloc(requiredSize + 7 * sizeof(char));
-	if (!winvar) exit(0);
+    // Fallbacks if variables are missing
+    const char *finalWinDir = winDirEnv ? winDirEnv : "C:\\Windows";
 
-#ifndef LINUX
-	getenv_s(&requiredSize, winvar, requiredSize, "WINDIR");
-	strcat(winvar, "\\FONTS\\");
+    // 2. Set up our path lengths
+    // If TEMP exists, we use it. If not, we fall back to root drive (e.g. C:\)
+    char tempPath[512];
+    if (tempDirEnv) {
+        sprintf_s(tempPath, sizeof(tempPath), "%s\\RawFontsLink\\", tempDirEnv);
+    } else {
+        // Extracts the drive letter from WINDIR (e.g. "C:\")
+        sprintf_s(tempPath, sizeof(tempPath), "%.3sRawFontsLink\\", finalWinDir);
+    }
+
+    // 3. Allocate winvar dynamically matching your current architecture
+    winvar = (char*)malloc(strlen(tempPath) + 1);
+    if (!winvar) exit(0);
+    strcpy(winvar, tempPath);
+
+    // 4. Construct the cmd line for mklink
+    // >nul 2>nul keeps it completely silent if the folder junction already exists
+    char cmdBuffer[1024];
+    sprintf_s(cmdBuffer, sizeof(cmdBuffer),
+              "cmd.exe /c mklink /J \"%s\" \"%s\\FONTS\\\" >nul 2>nul",
+              winvar, finalWinDir);
+
+    // Execute silently in the background
+    system(cmdBuffer);
+
 #else
     const char *homedir;
-
     if ((homedir = getenv("HOME")) == NULL) {
         homedir = getpwuid(getuid())->pw_dir;
     }
+    requiredSize = strlen(homedir) + 32;
+    winvar = (char*)malloc(requiredSize);
+    if (!winvar) exit(0);
     sprintf(winvar, "%s/WinFonts/TTF/", homedir);
 #endif
 
@@ -6214,7 +6437,9 @@ StartPrinterWarmer();
 #endif
 
 sprintf(RYSUJ$1,"RYSUJ$.%03d",Client_number);
-sprintf(HATCH_TEMP_FILE,"ALFHATCH.%03d",Client_number);
+sprintf(HATCH_TEMP_FILE,"ALFAHATCH.%03d",Client_number);
+sprintf(PROFIL_TEMP_FILE,"ALFAPROF.%03d",Client_number);
+sprintf(PROFIL_TEMP_FILE,"ALFAPROFBAK.%03d",Client_number);
 
 music_avail=FALSE; 
 
@@ -6663,6 +6888,8 @@ if (child==0)
    */
 
   install_int(Check_ConfigureNotify, 1000);
+
+    set_text_types(0);
 
   _free_mouse();
   lock_mouse();

@@ -211,6 +211,13 @@ static void kat_w (LINIA line_gee, LINIA line_gee1)
                         sqrt(((line_gee.x2-line_gee.x1) * (line_gee.x2-line_gee.x1)) +
                         ((line_gee.y2-line_gee.y1) * (line_gee.y2-line_gee.y1))));
 
+  srodekl_(&x2, &y2, &luk1);
+
+  l.x1=luk1.x;
+  l.y1=luk1.y;
+  l.x2=x2;
+  l.y2=y2;
+
   parametry_lini(&l,&PL);
   katkat(PL.kat);
   wl.x = luk1.x;
@@ -257,6 +264,13 @@ void kat_w_clock (double kat1, double kat2, double x, double y, double r)
 
   luk1.r = r;
 
+  srodekl_(&x2, &y2, &luk1);
+
+  l.x1=luk1.x;
+  l.y1=luk1.y;
+  l.x2=x2;
+  l.y2=y2;
+
   parametry_lini(&l,&PL);
   katkat(PL.kat);
   wl.x = luk1.x;
@@ -276,6 +290,7 @@ void kat_w_clock (double kat1, double kat2, double x, double y, double r)
   kat3=kat.kat;
   memmove(&(nb->opis_obiektu[0]),&kat3,sizeof(kat3));
   outss_clock();
+  ////outss();
   kat_w_now = 0;
   CUR_OFF(X,Y);
   CUR_ON(X,Y);

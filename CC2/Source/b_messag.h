@@ -8,7 +8,7 @@ extern void InfoListStr(int, char *) ;
 extern void ClearErr(void);
 extern void ErrList(int n);
 extern void ErrListStr(char *st);
-extern char *get_komunikat_ptr (int n);
+extern const char *get_komunikat_ptr (int n);
 extern void Get_Current_Pos (int *x, int *y);
 extern void Set_Current_Pos (void);
 extern void komunikat(int n);

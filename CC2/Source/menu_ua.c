@@ -580,6 +580,9 @@ static TMENU mOpacity =  { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(P
 
 POLE pmOpcje[] = {
    {u8"конфігурація Кольорів\0",L'К',109,NULL},
+#ifdef PROFILE
+   {u8"конфігурація кольорів Мережі\0",L'М',913,NULL},
+#endif
    {u8"авто-Панорамування\0Т\0",L'П',145, &mAutoPan},  //PAN
    {u8"приріст Авто-панорами\0",L'А',110,NULL},
    {u8"Непрозорість заливок\0",L'Н',542,&mOpacity},
@@ -1414,7 +1417,7 @@ char* add_new_font_c = u8"додати новий шрифт";
 
 #endif
 
-#ifdef __LOADF__
+#ifdef __O_LOADF__
 
 static char copy_button[] = u8"Скопіюйте\0з файлу";
 static char parametry_p[] = u8"Параметри:";
@@ -1485,9 +1488,9 @@ char* dlg_name[] =
 #define _FILE_EXISTS_ u8"Файл існує"
 #define _OVERWRITE_IT_ u8"Перезаписати це ? "
 
-#endif // __LOADF__
+#endif // __O_LOADF__
 
-#ifdef __INFO__
+#ifdef __O_INFO__
 /*
 char* typ_punktu_tab[] = { u8"Простий",u8"Базова точка",u8"Штифт","?","?","?","?","?","?",
 						"?","?","?","?","?","?","?" };
@@ -1515,78 +1518,72 @@ char* vector_style_tab[] = { u8"жорсткий-жорсткий",u8"жорст
 */
 char* view_width_tab1[] = { u8"дуже тонкий",u8"тонкий",u8"товстий",u8"дуже товстий",u8"супер товстий",u8"заповнення",u8"",u8"невидимий" };
 
-char* tab_typ_tekstu[] = { u8"Нормальний", u8"Внутрішня мітка",u8"мІтка компонента",u8"Символ",u8"Тип",
-u8"*назва контакту",u8"джерело живлення",u8"Порт",u8"Атрибут",u8"+Схема",u8"назва Файлу",u8"Мережа",
-u8"Коментар",u8"%змінна",u8"Допом.символ",u8"дОпом.опис" };
-
 char* tab_justowanie[] = { u8"ліворуч |<",u8"праворуч >|",u8"Середній ><",u8"Центральний _><_" };
 
 static POLE pmInfoAbout[] = {
-	{u8"тип Об'єкта\0",L'О',320,NULL}, //0
-	{u8"Шар\0",L'Ш',305,NULL}, //1
-	{u8"֎Колір\0",L'К',158,NULL}, //2
-	{u8"Тип лінії\0",L'Т',160,NULL}, //3
-	{u8"Ширина Лінії\0",L'Л',159,NULL}, //4
-    {u8"тип опори краю\0",L'Б',850,NULL},      //4
-    {u8"Інверсія опори краю\0",L'І',853,NULL},      //4
-    {u8"тип\0 ",L'.',27,NULL},   //5
-    {u8"тип\0 ",'>',770,NULL},      //6
-	{u8"X1 \0 ",L'1',306,NULL}, //7
-	{u8"Y1 \0 ",L'2',307,NULL}, //8
-	{u8"X2 \0 ",L'3',308,NULL}, //9
+	{u8"тип Об'єкта\0",L'О',320,NULL},
+	{u8"Шар\0",L'Ш',305,NULL},
+	{u8"֎Колір\0",L'К',158,NULL},
+	{u8"Тип лінії\0",L'Т',160,NULL},
+	{u8"Ширина Лінії\0",L'Л',159,NULL},
+    {u8"тип опори краю\0",L'Б',850,NULL},
+    {u8"Інверсія опори краю\0",L'І',853,NULL},
+    {u8"тип\0 ",L'.',27,NULL},
+    {u8"тип\0 ",'>',770,NULL},
+	{u8"X1 \0 ",L'1',306,NULL},
 
-	{u8"Y2 \0 ",L'4',309,NULL}, //10
-	{u8"X3 \0 ",L'5',310,NULL}, //11
-	{u8"Y3 \0 ",L'6',311,NULL}, //12
-	{u8"X4 \0 ",L'7',312,NULL}, //13
-	{u8"Y4 \0 ",L'8',313,NULL}, //14
-	{u8"Радіус \0",L'Р',212,NULL}, //15
-    {u8"Радіус Y \0",L'р',710,NULL}, //16
-    {u8"Кут \0",L'@',107,NULL}, //17
-	{u8"Кут 1 \0",L'(',314,NULL}, //18
-	{u8"Кут 2 \0",L')',315,NULL}, //19
+	{u8"Y1 \0 ",L'2',307,NULL},
+	{u8"X2 \0 ",L'3',308,NULL},
+	{u8"Y2 \0 ",L'4',309,NULL},
+	{u8"X3 \0 ",L'5',310,NULL},
+	{u8"Y3 \0 ",L'6',311,NULL},
+	{u8"X4 \0 ",L'7',312,NULL},
+	{u8"Y4 \0 ",L'8',313,NULL},
+	{u8"Радіус \0",L'Р',212,NULL},
+    {u8"Радіус Y \0",L'р',710,NULL},
+    {u8"Кут \0",L'@',107,NULL},
 
-    {u8"Початкова ширина \0",L'-',249,NULL},      //20
-    {u8"Кінцева ширина \0",L'=',249,NULL},      //21
-    {u8"інтенсивність \0",'^',727,NULL},      //22
-    {u8"Початкова інтенсивність \0",'(',766,NULL},      //23
-    {u8"Кінцева інтенсивність \0",')',767,NULL},      //24
-    {u8"Початкове зміщення осі \0",L'/',250,NULL},      //25
-    {u8"Останнє зміщення осі \0",L'\\',250,NULL},      //26
+	{u8"Кут 1 \0",L'(',314,NULL},
+	{u8"Кут 2 \0",L')',315,NULL},
+    {u8"Початкова ширина \0",L'-',249,NULL},
+    {u8"Кінцева ширина \0",L'=',249,NULL},
+    {u8"інтенсивність \0",'^',727,NULL},
+    {u8"Початкова інтенсивність \0",'(',766,NULL},
+    {u8"Кінцева інтенсивність \0",')',767,NULL},
+    {u8"Початкове зміщення осі \0",L'/',250,NULL},
+    {u8"Останнє зміщення осі \0",L'\\',250,NULL},
+    {u8"Характер і варіант\0 ",'?',798,NULL},
 
-    {u8"Характер і варіант\0 ",'?',798,NULL},     //27
-    //{u8"Варіант навантаження \0 ",'?',799,NULL},     //28
+    {u8"Непрозорість\0",'%',542,NULL},
+	{u8"Довжина/периметр\0",L'Д',210,NULL},
+	{u8"DX\0 ",L'Х',316,NULL},
+	{u8"DY\0 ",L'У',317,NULL},
+	{u8"Площа поверхні\0",L'П',7,NULL},
+	{u8"шриФт\0",L'Ф',111,NULL},
+	{u8"тИп\0",L'И',231,NULL},
+	{u8"приховАний\0",L'А',232,NULL},
+	{u8"вирівнЮвання\0",L'Ю',233,NULL},
+	{u8"Висота \0",L'В',179,NULL},
 
-    {u8"Непрозорість\0",'%',542,NULL},  //29
-	{u8"Довжина/периметр\0",L'Д',210,NULL}, //30
-	{u8"DX\0 ",L'Х',316,NULL}, //31
-	{u8"DY\0 ",L'У',317,NULL}, //32
-	{u8"Площа поверхні\0",L'П',7,NULL},   //33
-	{u8"шриФт\0",L'Ф',111,NULL}, //34
-	{u8"тИп\0",L'И',231,NULL}, //35
-	{u8"приховАний\0",L'А',232,NULL}, //36
-	{u8"вирівнЮвання\0",L'Ю',233,NULL}, //37
-	{u8"Висота \0",L'В',179,NULL}, //38
-	{u8"коефіцієнт ширини \0",L'*',230,NULL}, //39
-	{u8"курСив\0",L'С',181,NULL}, //40
-    {u8"Жирний\0",L'Ж',182,NULL},  //41
-
-	{u8"підкрЕслено\0",L'Е',409,NULL},  //42
-	{u8"Міжрядковий інтервал\0",L'М',410,NULL},  //43
-    {u8"розмір пікселя dx \0",L'Й',689,NULL},   //44
-    {u8"розмір пікселя dy \0",L'Я',690,NULL},   //45
-	{u8"Назва внут. блоку\0",L'Н',318,NULL}, //46
-	{u8"назва Зовн. блоку\0",L'З',319,NULL}, //47
+	{u8"коефіцієнт ширини \0",L'*',230,NULL},
+	{u8"курСив\0",L'С',181,NULL},
+    {u8"Жирний\0",L'Ж',182,NULL},
+	{u8"підкрЕслено\0",L'Е',409,NULL},
+	{u8"Міжрядковий інтервал\0",L'М',410,NULL},
+    {u8"розмір пікселя dx \0",L'Й',689,NULL},
+    {u8"розмір пікселя dy \0",L'Я',690,NULL},
+	{u8"Назва внут. блоку\0",L'Н',318,NULL},
+	{u8"назва Зовн. блоку\0",L'З',319,NULL},
 };
-TMENU mInfoAbout = { 47,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
+TMENU mInfoAbout = { 49,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
 
 static POLE pmInfo[] = {
-	{u8"Розмір креслення КБ\0 ",L'Р',297,NULL},
-	{u8"Пам'ять зображень МБ\0 ",L'В',298,NULL},
-	{u8"розмір даних Креслення Б\0 ",L'К',299,NULL},
-	{u8"буфер Друку КБ\0 ",L'Д',300,NULL},
+	{u8"Розмір креслення [КБ]\0 ",L'Р',297,NULL},
+	{u8"Пам'ять зображень [МБ]\0 ",L'В',298,NULL},
+	{u8"розмір даних Креслення [Б]\0 ",L'К',299,NULL},
+	{u8"буфер Друку [КБ]\0 ",L'Д',300,NULL},
 	{u8"буфер Макросу [Б]\0 ",L'М',301,NULL},
-	{u8"Буфер зображення КБ\0 ",L'Б',302,NULL},
+	{u8"Буфер зображення [КБ]\0 ",L'Б',302,NULL},
 	{u8"каталог \0 ",L'/',303,NULL},
 	{u8"Графічний режим \0 ",L'Г',304,NULL},
 	{u8"Шрифт меню \0 ",L'Ш',111,NULL},
@@ -1617,7 +1614,7 @@ char *vector_txt[]={u8"Вектор: жорсткий-жорсткий",u8"Ве�
 
 unsigned short vector_wcod[]={L'А',L'Б',L'В',L'Г',L'С',L'М',L'-',L'П',L'О',L'Е',L'У',L'Х',L'N',L'Н',L'Ч',L'Т',L'0',L'К',L'Д',L'І',L'Р',L'Й',L'К',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'8',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
 
-unsigned short point_wcod[]={L'П', L'Б', L' ', L' ', L' ', L' ',L' ', L'З', L'Т', ' ', ' ', ' ',L'Ж', L'1', L'2', L'3', L'Ш', L'3', L'4', L'5', L'Г', L'7', L'8', L'9', L'К', L'0', L'-', L'=', L'+',L'А',L'В',L'Д',L'Е',L'И',L'Л',L'М',L'Н'};
+unsigned short point_wcod[]={L'П', L'Б', L'І', L'Х', L'Л', L'У',L'З', L'С', L'Т', L'@', L'#', L'*',L'Ж', L'1', L'2', L'3', L'Ш', L'3', L'4', L'5', L'Г', L'7', L'8', L'9', L'К', L'0', L'-', L'=', L'+',L'А',L'В',L'Д',L'Е',L'И',L'Л',L'М',L' '};
 unsigned short object_wcod[]={L'З', L'Л', L'Т', L'Д', L'К', L'Г', L'П', L'Т', L'*', L'С', L'O', L'Р', L'Е', L'Б', L'В', ' '};
 char *object_txt[]={u8"Зображення",u8"Лінія",u8"Текст",u8"Дуга",u8"Коло",u8"Диск",u8"Площа",u8"Точка",u8"Блок",u8"Суцільна дуга ",u8"Еліптична дуга",u8"Еліпс",u8"Заповнений еліпс",u8"Сплайн Безьє",u8"Вектор",""};
 
@@ -2199,6 +2196,9 @@ static POLE pmPLine_Con_Slab[] = {
 #define __WALL__  u8"СТІНА"
 #define __ZONE__  u8"ЗОНА"
 
+#define __SIEC_P__ u8 "МЕРЕЖА"
+#define __SIEC_PC__ u8 "З'ЄДНАННЯ"
+
 #endif
 
 #ifdef __O_SOLID__
@@ -2478,6 +2478,7 @@ static POLE pmTyp_punktu[] = {
 	 {u8"Базова точка\0", L'Б', 295, NULL},
 	 {u8"Термінал\0", L'Т', 296, NULL},
 	 {u8"З'єднання\0", L'З', 529, NULL},
+     {u8"спеціальний\0",L'*',971,NULL},
      {u8"Жорстке кріплення\0",L'Ж',738,NULL},
      {u8"жорстке кріплення Л\0",L'1',739,NULL},
      {u8"жорстке кріплення П\0",L'2',740,NULL},
@@ -2597,6 +2598,9 @@ static POLE pmGraph[] = {
 #define _CTRL_29_ 29
 #define _CTRL_30_ 30
 #define _CTRL_31_ 31
+
+#define TypTekstuI_n 19
+#define TypTekstuP_n 28
 
 #define _PRINTING__ u8"Друк"
 
@@ -2764,6 +2768,12 @@ static TMENU mAutoc = { 2,0,0,5,72,8,ICONS,CMNU,CMBR,CMTX,0,	5,	0,	0,0,(POLE(*)[
 static TMENU mAuto_dq = { 2,0,0,5,72,7,ICONS,CMNU,CMBR,CMTX,0, 4, 0, 0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 static TMENU mAuto_dn = { 2,0,0,5,72,9,ICONS,CMNU,CMBR,CMTX,0, 9 /*7*/, 0, 0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
+static POLE pmPLine_Con[] = {
+		  {u8"Продовження",L'П',220,NULL} };
+
+#define _POLYLINE_ u8"Полилінія"
+#define _POLYLINE_C_ L'П'
+
 POLE pmBlokm[] = {
 	 {u8"останній Блок\0 ",L'Б',256,NULL},
 	 {u8"Всі\0 ",L'В',257,NULL},
@@ -2844,6 +2854,17 @@ POLE pmBlok_chp[] = {
 	 {u8"Змінити властивості\0",L'З',272,NULL},
 };
 
+POLE pmBlok_cha[] = {
+	 {u8"останній Блок\0 ",L'Б',256,NULL},
+	 {u8"Всі\0 ",L'В',257,NULL},
+	 {u8"всі Шари\0 ",L'Ш',258,NULL},
+	 {u8"все з шару Но:\0 ",L'Н',174,NULL},
+	 {u8"Крос/вікно\0  F9", L'К',259,NULL},
+	 {u8"Додати/видалити\0  F10" ,L'Д', 260,NULL},
+	 {u8"Авто\0 Y", L'А',261,&mAuto},
+	 {u8"Змінити кут\0",L'З',973,NULL},
+};
+
 POLE pmBlok_cht[] = {
 	 {u8"останній Блок\0 ",L'Б',256,NULL},
 	 {u8"всі Тексти\0 ",L'Т',273,NULL},
@@ -2890,6 +2911,7 @@ char Yes[2] = u8"Т";
 
 #define _FROZEN_ u8"заморожений "
 #define _EXPLODE_BLOCKS_ u8"Ви хочете розбити позначені %sблоки?"
+#define _ADJUST_ANGLE_ u8"Ви хочете налаштувати кут опису вузлів мережі?"
 #define _Yes_ u8"Так"
 #define _No_ u8"Ні"
 
@@ -3650,8 +3672,8 @@ static char config_sectors[11][48] =
 
 #ifdef __O_LIBFUN__
 
-char bloki_dir[MAXPATH] = u8"БЛОКИ";
-char katalogi_dir[MAXPATH] = u8"КАТАЛОГИ";
+char bloki_dir[MAXPATH] = u8"Блоки";
+char katalogi_dir[MAXPATH] = u8"Каталоги";
 char bloki_cfg[MAXPATH] = u8"БЛОКИ.CFG";
 char biblioteka_cfg[MAXPATH] = u8"АПАРАТУРА.AXX";
 
@@ -3708,6 +3730,7 @@ char* view_type_tab[] = {
 	u8"" };
 
 T_Prototype      s__prot = { u8"прототип.alf", TRUE };
+T_Prototype      s__prot_p = { u8"прототипп.alf", TRUE };
 
 #define _SYSTEM_MESSAGE_ u8"СИСТЕМНЕ ПОВІДОМЛЕННЯ"
 #define _INTERRAPTED_ u8"Перерваний"
@@ -3716,7 +3739,7 @@ T_Prototype      s__prot = { u8"прототип.alf", TRUE };
 #define _BLOCKS_TESTED_ u8"Все добре. Перевірено %d блоків"
 
 
-char* typ_punktu_inf[] = { u8"Простий",u8"Базова точка","","","","","",u8"Соединение",u8"Штифт","","","",
+char* typ_punktu_inf[] = { u8"Простий",u8"Базова точка",u8"Існуючий рівень",u8"прогнозований рівень н.",u8"прогнозований рівень в.",u8"рівень вулиці",u8"рівень землі",u8"Соединение",u8"Штифт","спеціальний @","спеціальний #","спеціальний *",
                            u8"Жорстке",u8"Жорстке Л",u8"Жорстке П", u8"Жорстке В", u8"Шарнірне", u8"Шарнірне Л", u8"Шарнірне П", u8"Шарнірне В",
                            u8"Жорстке-ковзання", u8"Жорстке-ковзання Л", u8"Жорстке-ковзання П", u8"Жорстке-ковзання В", u8"Шарнірне-ковзання", u8"Шарнірне-ковзання Л", u8"Шарнірне-ковзання П", u8"Шарнірне-ковзання В", u8"немає обертання Z",
                            u8"Жорстке-ковзання X", u8"Жорстке-ковзання X В", u8"Жорстке-ковзання Y", u8"Жорстке-ковзання Y В", u8"Шарнірне-ковзання X", u8"Шарнірне-ковзання X В", u8"Шарнірне-ковзання Y", u8"Шарнірне-ковзання Y В"};
@@ -3803,8 +3826,10 @@ static TMENU mBold = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,37,0,0,0,(POLE(*)[])
 static TMENU mUnderlined = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 static TMENU mAutoInterwal = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,6,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
-POLE pmTypTekstu[] = {
-			   {u8"Звичайний",L'З',0,NULL},
+POLE *pmTypTekstu;
+
+POLE pmTypTekstuN[] = {
+			   {u8"Нормальний",L'Н',0,NULL},
 			   {u8"Внутрішня етикетка",L'В',0,NULL},
 			   {u8"етИкетка компонента",L'И',0,NULL},
 			   {u8"Символ",L'С',0,NULL},
@@ -3822,7 +3847,27 @@ POLE pmTypTekstu[] = {
 			   {u8"допом. Опис",L'О',0,NULL},
 };
 
-TMENU mTypTekstu = { 16,0,0,16,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstu,NULL,NULL };
+POLE pmTypTekstuP[]={
+				{u8"Нормальний",L'Н',0,NULL},
+				{u8"Відстань",L'В',0,NULL},
+				{u8"висота Існуючого каналу",L'І',0,NULL},
+				{u8"Діаметр існуючого каналу",L'Д',0,NULL},
+				{u8"висота Проектованого каналу",L'П',0,NULL},
+				{u8"діаметр проектованого Каналу",L'К',0,NULL},
+				{u8"висота вуЛиці",L'Л',0,NULL},
+				{u8"висота Землі",L'З',0,NULL},
+				{u8"Атрибут",L'А',0,NULL},
+				{u8"Ухил існуючого каналу",L'У',0,NULL},
+				{u8"ім'я Файлу+",L'Ф',0,NULL},
+				{u8"ухил проектованого каналу",L'Р',0,NULL},
+				{u8"довжина існуючого каналу",L'С',0,NULL},
+				{u8"довжина проектованого каналу",L'Т',0,NULL},
+				{u8"глибина існуючого каналу",L'Х',0,NULL},
+				{u8"глибина проектованого каналу",L'Ц',0,NULL},
+};
+
+TMENU mTypTekstu = { 16,0,0,19,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstu,NULL,NULL };
+TMENU mTypTekstuP = { 16,0,0,28,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstuP,NULL,NULL };
 
 POLE pmJustowanie[] = {
 					{u8"Зліва",L'Щ',262,NULL},
@@ -3864,9 +3909,16 @@ static POLE pmTekstm[] = {
 	{u8"Шрифт\0\0", L'Ш', 183,(TMENU*)&mCzcionka},
 };
 
-static char t_t[16][32] = {
+char **t_t;
+static char *t_tN[16] = {
 u8"Звичайний",u8"етикетка",u8"ет.компонента",u8"Символ",u8"Тип","Ім'я шпильки",u8"блок Живлення",u8"Порт",
 u8"Атрибут",u8"+Схема",u8"ім'я Файлу",u8"Мережа",u8"Коментар",u8"%змінна",u8"Допом.символ",u8"допом.Опис" };
+
+static char *t_tP[16] = {
+u8"Нормальний",u8"Відстань",u8"Висота iсн.каналу",u8"Діаметр існ.каналу",
+u8"Висота проект.каналу",u8"Діаметр проект.каналу",u8"Висота вулиці",u8"Висота землі",
+u8"Атрибут",u8"Ухил існ.каналу",u8"Ім'я Файлу+",u8"Ухил проект.каналу",u8"Довжина існ.каналу",
+u8"Довжина проект.каналу",u8"Глибина існ.каналу",u8"Глибина проект.каналу"};
 
 #define _TEXT_ u8"тЕкст"
 #define _TEXT_C_ L'Е'
@@ -4156,4 +4208,322 @@ POLE pmTTF_OTF[] = {
 
 TMENU mTTF_OTF = { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTTF_OTF,NULL,NULL };
 
+#endif
+
+#ifdef __A_PROFILE__
+
+static POLE pmListaSieci[]={
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+};
+
+static TMENU mListaSieci={0,0,256, 64,2, 4, 0, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmListaSieci, NULL, NULL} ;
+
+/*----------------------------------------------------------*/
+/*                    EditParams                            */
+/*----------------------------------------------------------*/
+
+static POLE pmPPar[]={
+	{u8"Малювати / вставити", L'М', 947, NULL},
+	{u8"Редагувати Enter",    L'Р', 948, NULL},
+	{u8"Перевірити",         L'П', 949, NULL},
+	{u8"Попередній F9 ",      L'О', 950, NULL}, // 'П' taken, used second logical letter 'О'
+	{u8"Наступний  F10",     L'Н', 951, NULL},
+	{u8"пЕрервати  Esc",     L'Е', 952, NULL}, // 'П' taken, highlighted 'Е'
+};
+
+static TMENU mPPar={6,0,0,16,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmPPar,NULL,NULL};
+
+static char *tab_name[]={"таблиця1","таблиця2","таблиця3",""};
+static char *BlockName[]= {"$колізія", "$репер", "$гметр", "$кметр"};
+static char *FileNameAll[]= { "вимірювання_1","вимірювання1","вимірювання11","вимірювання_0","вимірювання0","вимірювання00","інстал_1","свердловина_1","гектометр_1","масштаб_1", "новий_профіль"};
+static char *FileName[]= { "вимірювання_1","вимірювання_0","інстал_1","свердловина_1","гектометр_1","масштаб_1", "новий_профіль"};
+static char *FileName1[]= { "вимірювання1","вимірювання0","інстал_1","свердловина_1","гектометр_1","масштаб_1", ""};
+static char *FileName2[]= { "вимірювання11","вимірювання00","інстал_1","свердловина_1","гектометр_1","масштаб_1", ""};
+
+static POLE pmGora_Dno_Os[]={
+	{u8"Склепіння", L'С', 953, NULL},
+	{u8"Вісь",      L'В', 954, NULL},
+	{u8"Дно",       L'Д', 955, NULL},
+};
+
+static TMENU mOpcjeWyrownywania=
+	{3,0,0,19,36,12,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+static TMENU mOpcjeWyrownywania1=
+	{3,0,0,19,36,12,ICONS,CMNU,CMBR,CMTX,0,3,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+
+static TMENU mGora_Dno_Os=
+	{3,0,0,18,36,12,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+
+static POLE pmKanal_P_I[]={
+	{u8"Проектований канал", L'П', 961, NULL}, //24
+	{u8"Існуючий канал",    L'І', 962, NULL}, //25
+};
+
+static POLE pmKanal_P_I_FI[]={
+	{u8"Проектований канал", L'П', 961, NULL}, //24
+	{u8"Існуючий канал",    L'І', 962, NULL}, //25
+};
+
+static POLE pmKanal_P_I_W[]={
+   {u8"Проектований канал", L'П',961, &mOpcjeWyrownywania}, //32,33,34
+	{u8"Існуючий канал",    L'І',962, &mOpcjeWyrownywania1},   //35,36,37
+	  };
+
+static POLE pmKanal_P_I_T[]={
+   {u8"Проектований канал", L'П',961, NULL}, //21
+	{u8"Існуючий канал",    L'І',962, NULL},   //22
+   {u8"Проектована поверхня",L'П',963, NULL}, //23
+	  };
+
+static POLE pmKanal_P_I_S[]={
+   {u8"Проектований канал", L'П',961, NULL},  //18
+	{u8"Існуючий канал",    L'І',962, NULL},    //19
+   {u8"Проектована поверхня",L'П',963,NULL},  //20
+	  };
+
+static TMENU mOpcjeLicowanieKanalu=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,34,0,0,0,(POLE(*)[]) &pmKanal_P_I_W,NULL,NULL};
+
+static TMENU mZmianaSpadku_pi=
+	{3,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmKanal_P_I_S,NULL,NULL};
+
+static TMENU mZmienSpadek_pi=
+	{3,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmKanal_P_I_T,NULL,NULL};
+
+static TMENU mNadajSpadek_pi=
+	{2,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmKanal_P_I,NULL,NULL};
+
+
+static POLE pmZmianaSpadku[]={
+	{u8"Постійний ухил на ділянці", L'П', 964, &mZmianaSpadku_pi},
+	{u8"Змінити ухил на ділянці",   L'З', 965, &mZmienSpadek_pi},
+	{u8"Встановити ухил від ділянки", L'В', 966, &mNadajSpadek_pi},
+};
+
+static TMENU mZmianaSpadku=
+	{3,0,0,23,20,9,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmZmianaSpadku,NULL,NULL};
+
+
+static TMENU mZmienSrednice_pi=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmKanal_P_I_FI,NULL,NULL};
+
+static TMENU mZmienMaterial_pi=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,13,0,0,0,(POLE(*)[]) &pmKanal_P_I_FI,NULL,NULL};
+
+
+static POLE pmZmianaFiMatNaw[]={
+	{u8"змінити Діаметр",   L'Д', 956, &mZmienSrednice_pi},  //17
+	{u8"змінити Матеріал",   L'М', 957, &mZmienMaterial_pi},  //18
+	{u8"змінити Поверхню",  L'П', 958, NULL},                 //19
+};
+
+
+static TMENU mZmianaFiMatNaw=
+	{3,0,0,18,20,11,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmZmianaFiMatNaw,NULL,NULL};
+
+static POLE pmOpcjeZaglebienia[]={
+	{u8"відносно Проектованої поверхні", L'П', 967, NULL},
+	{u8"відносно Існуючої поверхні",    L'І', 968, NULL},
+};
+
+static TMENU mOpcjeZaglebienia=
+	{2,0,0,24,20,8,ICONS,CMNU,CMBR,CMTX,0,32,0,0,0,(POLE(*)[]) &pmOpcjeZaglebienia,NULL,NULL};
+
+//POLE pmTak_Nie[2]={
+//	{"Tak",'T',NULL},
+//	{"Nie",'N',NULL} };
+
+static TMENU mZablokujProfil={2,0,0,7,32,11,ICONS,CMNU,CMBR,CMTX,0,40,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+static POLE pmSkala_Hektometry[]={
+	{u8"Коефіцієнт масштабу профілю", L'К', 946, NULL},
+	{u8"Гектометри",                 L'Г', 959, NULL},
+};
+
+
+static TMENU mSkala_Hektometry={2,0,0,13,20,8,ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmSkala_Hektometry,NULL,NULL};
+
+static TMENU mWyroznij_profil={2,0,0,7,32,11,0,CMNU,CMBR,CMTX,0,5,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+static POLE pmWybierz_profil[]={
+	{u8"Новий профіль",             L'Н', 944, NULL},
+	{u8"Вибрати поточний профіль", L'В', 945, NULL},
+};
+
+static TMENU mWybierz_profil={2,0,0,22,1,3,ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmWybierz_profil,NULL,NULL};
+
+static POLE pmProfil[]={
+	{u8"Наступне вимірювання     \0(4) \0 ", L'Н', 916, NULL},
+	{u8"Перше вимірювання        \0 (3) \0 ", L'П', 917, NULL},
+	{u8"Інженерні мережі\0 \0 ",             L'І', 918, NULL},
+	{u8"Свердловина\0 \0",                   L'С', 919, NULL},
+	{u8"Вибрати профіль          \0(1) \0 ", L'В', 920, &mWybierz_profil},
+	{u8"Параметри профілю        \0(2) \0 ", L'А', 921, &mSkala_Hektometry}, // А from пАраметри
+	{u8"      \0 \0 ",                     L' ', 931, NULL},
+	{u8"Отримати параметри вимірювання\0 \0 ", L'О', 922, NULL},
+	{u8"опЦії опису заглиблення\0 \0 ",        L'Ц', 923, &mOpcjeZaglebienia},
+	{u8"опції Вирівнювання каналу\0 \0 ",      L'В', 924, &mOpcjeLicowanieKanalu},
+	{u8"зміна Довжини профілю\0 \0 ",          L'Д', 925, NULL},
+	{u8"Зміна ухилу\0 \0 ",                    L'З', 926, &mZmianaSpadku},
+	{u8"зміна заГлиблення\0 \0 ",              L'Г', 927, NULL},
+	{u8"зміна Ø/Матеріалу/поверхні\0 \0 ",     L'М', 928, &mZmianaFiMatNaw},
+	{u8"Оновлення профілю\0 \0 ",              L'О', 929, NULL},
+	{u8"      \0 \0 ",                     L' ', 931, NULL},
+	{u8"Блокувати профіль\0N \0 ",             L'Б', 930, &mZablokujProfil},
+};
+
+
+static TMENU mProfil={17,0,0,24,1,3,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmProfil,NULL,NULL};
+///no icons
+////static TMENU mProfil={17,0,0,24,1,3,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmProfil,NULL,NULL};
+
+POLE  pmSieci[]={
+	{"Pz",L'П',0,NULL},  //відправна точка
+	{"Cok",L'Ц',0,NULL}, //низькопараметрична труба опалення (вода)
+	{"Co",L'О',0,NULL},
+	{"T",L'Т',0,NULL},   //t-підземний або наземний телекомунікаційний провід/кабель,
+	{"Tk",L'К',0,NULL},
+    {"e",L'е',0,NULL},   //кабель живлення (загальний)
+	{"E",L'Е',0,NULL},
+	{"S",L'С',0,NULL},
+	{"D",L'Д',0,NULL},
+	{"W",L'В',0,NULL},   //мережа водопостачання
+    {"?",L'?',0,NULL},
+	};
+
+TMENU mSieci={11,0,0,3,10,5,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmSieci,NULL,NULL};
+TMENU mSieci1={11,0,0,3,10,5,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSieci,NULL,NULL};
+
+TMENU mDopasuj_blok={2,0,0,7,32,11,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+POLE pmReference_angle[]={
+{u8"Встановити кут відліку\0",L'В',972,NULL},
+{u8"Оновити блоки вузлів\0",L'О',973,NULL},
+};
+
+TMENU mReference_angle={2,0,0,36,1,3,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmReference_angle,NULL,NULL};
+
+POLE pmInstalacje[]={
+	{u8"малювати Мережу\0   ", L'М', 932, &mSieci},
+	{u8"малювати Підключення\0   ", L'П', 933, NULL},
+	{u8"вставити Колізії\0   ", L'К', 934, NULL},
+	{u8"вставити Репер\0   ", L'Р', 935, NULL},
+	{u8"Об'єднати мережі\0   ", L'О', 936, NULL},
+	{u8"Оновити гметр/кметр\0   ", L'Н', 937, NULL}, // Н from оНовити
+	{u8"Підгонка блока гм/км\0  T", L'І', 938, &mDopasuj_blok}, // І from підгонка
+	{u8"Генерувати таблицю коорд.\0   ", L'Г', 939, NULL},
+	{u8"вставити мережу з файлу\0", L'Т', 940, NULL},
+	{u8"      \0", L' ', 931, NULL},
+	{u8"Зберегти траси мережі\0   ", L'З', 941, NULL},
+	{u8"Вставити профіль мережі\0   ", L'В', 942, NULL},
+	{u8"вставити Колодязі\0   ", L'Л', 943, NULL}, // Л from коЛодязі
+	{u8"кут відліку Блоків вузлів\0",L'Б',972,&mReference_angle},
+	{u8"Позначити як мапу\0", L'П', 140, NULL},
+};
+
+
+//TMENU mInstalacje={15,0,0,30,1,3,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInstalacje,NULL,NULL};
+TMENU mInstalacje={15,0,0,30,1,3,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInstalacje,NULL,NULL};
+
+#define _generate_profile_ u8"Створити профіль ?"
+#define _Yes_ u8"Так"
+#define _No_ u8"Ні"
+
+#define _PROFIL_ u8"ПРОФІЛІ"
+
+char config_profil [][60] =
+{
+	u8"Вирівнювання по дну",              // 37 bytes
+	u8"Приховування ВТін",                // 31 bytes
+	u8"Тип лінії існуючого каналу",       // 50 bytes
+	u8"Тип лінії проектованого каналу",    // 53 bytes
+	u8"Тип лінії проектованої поверхні",  // 53 bytes
+	u8"Тип лінії існуючої поверхні",      // 47 bytes
+	u8"Точність відстані",                // 31 bytes
+	u8"Точність відміток",                // 33 bytes
+	u8"Точність відміток прокт каналу",   // 49 bytes (Abbreviated "проектованого")
+	u8"Точність відміток існ каналу",     // 45 bytes (Abbreviated "існуючого")
+	u8"Точність відміток колізій",        // 43 bytes
+	u8"Точність відміток поверхні",       // 45 bytes
+	u8"Точність відміток проект повер",   // 52 bytes (Abbreviated "проектованої")
+	u8"Точність відміток існуючої пов",   // 50 bytes (Abbreviated "поверхні")
+	u8"Точність заглиблення",             // 39 bytes
+	u8"Точність ухилів",                  // 29 bytes
+	u8"Діаметр точки злому мережі",       // 47 bytes
+	u8"Масштаб блока гметр/кметр",        // 44 bytes
+	u8"Десятковий розділювач",
+};
+
+
+#define _error_opening_file_ u8"Помилка відкриття файлу"
+#define _wrong_real_number_format_ u8"Некоректний формат дійсного числа"
+#define _last_measure_ u8"попереднє вимірювання:"
+#define _no_data_ u8"немає даних"
+#define _last_profile_scale_ u8"попередній масштабний коефіцієнт профілю:"
+#define _comparative_level_ "Рівень репера"
+#define _profile_type_ u8"тип"
+
+#define _PROFILE_ u8"проФіль"
+#define _PROFILE_C L'Ф'
+
+#define _MANHOLE_R_ u8"Колодязі"
+#define _MANHOLE_C_ L'К'
+
+#define _YES_NO_ESC_ u8"ТтНн\033"
+#define _YES_ L'Т'
+#define _yes_ L'т'
+#define _NO_ L'Н'
+#define _no_ L'н'
+#define _YES__ u8"Т"
+#define _NO__ u8"Н"
+
+#define _DATUM_LEVEL_ "Р.Р. "
+#define _m_n_p_m_ " м"
+
+#define _Profil_ "Profil"
+
+#define _ziemna_ u8"ґрунтова"
+#define _asfaltowa_ u8"асфальтова"
+#define _betonowa_ u8"бетонна"
+#define _kostka_ u8"гранітна бруківка"
+#define _brukowa_ u8"бруківка"
+
+#define _beton_ u8"бетон"
+#define _kamionka_ u8"кераміка"
+#define _zeliwo_ u8"чавун"
+#define _PVC_ u8"ПВХ"
+#define _plastic_ u8"пластик"
+#define _steel_ u8"сталь"
+#define _PE_ u8"ПЕ"
+
+#define _SELECT_LINE_ u8"Виберіть лінію (або натисніть BACKSPACE, щоб відновити кут 0)"
+
+#endif
+
+#ifdef __O_TABWSP__
+#define _no_descripted_networks_ u8"Немає описаних мереж"
+#define _networks_saved_ u8"OK. Траси мережі збережено"
+#define _Point_ u8"Точка"
+#define _Network_ u8"Мережа:"
+#define _COORDINATES_ u8"координати:"
+char *CARTESIAN= u8"Декартівський";
+char *GEODETIC= u8"геодезичний";
+#define _SCALE_ u8"масштаб_1:"
+#define _POINT_ORIGIN_ u8"точка_початку_координат:"
+#define _ANGLE_ u8"кут:"
 #endif

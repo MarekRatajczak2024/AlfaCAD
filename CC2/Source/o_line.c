@@ -1295,8 +1295,12 @@ int Pline_Line (double df_xbeg, double df_ybeg, BLOK **blk_adr, int mode)
       df__ybeg = df_ybeg;
   }
   redcr0 (0, mode) ;
- Get_End_Pline (*blk_adr /*(void*)dane*/, &ptr_ob, &b_first_end,
-	df_xbeg, df_ybeg, &df_xend, &df_yend) ;
+ if (!Get_End_Pline (*blk_adr /*(void*)dane*/, &ptr_ob, &b_first_end,
+	df_xbeg, df_ybeg, &df_xend, &df_yend))
+ {
+     df_xend=df__xbeg;
+     df_yend=df__ybeg;
+ }
   ret = poczatekPL (df_xend, df_yend, blk_adr) ;
   redcr0 (1, mode) ;
   redcr(2);

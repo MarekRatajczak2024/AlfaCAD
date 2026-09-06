@@ -895,7 +895,6 @@ char *find_block(char *adrp, char *adrk, unsigned char kod_obiektu, char *opis_o
   return NULL ;
 }
 
-
 char *find_block_sub(char *adrp, char *adrk, unsigned char kod_obiektu, char *opis_obiektu, int l_char)
 { BLOK *b;
   LINIA *L;
@@ -924,16 +923,14 @@ char *find_block_sub(char *adrp, char *adrk, unsigned char kod_obiektu, char *op
               if (strncmp(ptrs_desc_bl->sz_type,opis_obiektu,l_char)==0)
                {
                 return adpp;
-                break;
                }
              }
           }
         }
-         else
-          {
-            return adpp;
-            break;
-          }
+        else
+        {
+           return adpp;
+        }
        }
       adpp+=sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
      }
@@ -943,4 +940,94 @@ char *find_block_sub(char *adrp, char *adrk, unsigned char kod_obiektu, char *op
       }
    }
   return NULL ;
+}
+
+
+char *find_block_sub_on(char *adrp, char *adrk, unsigned char kod_obiektu, char *opis_obiektu, int l_char)  //find visible block
+{
+
+ BLOK *b, *b1;
+ LINIA *L;
+ TEXT *T;
+ T_Point *P;
+ char *adpp, *adpp1;
+ T_Desc_Ex_Block 	*ptrs_desc_bl ;
+
+ adpp=adrp;
+
+ while (adpp<adrk)
+ {
+  L=(LINIA *)adpp;
+  if (L->obiekt==OdBLOK)
+  {
+   b=(BLOK *)adpp;
+   if ((kod_obiektu==B_NIEOKRESLONY) || (b->kod_obiektu==kod_obiektu))
+   {
+    if (strlen(opis_obiektu)>0)
+    {
+     if (b->dlugosc_opisu_obiektu>1)
+     {
+      ptrs_desc_bl = (T_Desc_Ex_Block *)(&b->opis_obiektu [0]) ;
+      if (ptrs_desc_bl->sz_type [0] != '\0')
+      {
+       if (strncmp(ptrs_desc_bl->sz_type,opis_obiektu,l_char)==0)
+       {
+        //let's check visibility of next primitive
+        adpp1=adpp+sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+        while (adpp1<adrk)
+        {
+         L=(LINIA *)adpp1;
+         if (L->obiekt==OdBLOK)
+         {
+          b1=(BLOK *)adpp1;
+          adpp1+=sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu;
+         }
+         else
+         {
+          if  ((L->atrybut!=Ausuniety) && (L->atrybut!=Abad) &&
+              (Layers[L->warstwa].on==TRUE) &&
+              (Layers[L->warstwa].edit==TRUE))
+           return adpp;
+          break;
+         }
+        }
+        adpp+=sizeof(NAGLOWEK)+b->n;
+        continue;
+       }
+      }
+     }
+    }
+    else
+    {
+     //let's check visibility of next primitive
+     adpp1=adpp+sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+     while (adpp1<adrk)
+     {
+      L=(LINIA *)adpp1;
+      if (L->obiekt==OdBLOK)
+      {
+       b1=(BLOK *)adpp1;
+       adpp1+=sizeof(NAGLOWEK) + B3 + b1->dlugosc_opisu_obiektu;
+      }
+      else
+      {
+       if  ((L->atrybut!=Ausuniety) && (L->atrybut!=Abad) &&
+           (Layers[L->warstwa].on==TRUE) &&
+           (Layers[L->warstwa].edit==TRUE))
+        return adpp;
+       break;
+      }
+     }
+     adpp+=sizeof(NAGLOWEK)+b->n;
+     continue;
+    }
+   }
+   adpp+=sizeof(NAGLOWEK) + B3 + b->dlugosc_opisu_obiektu;
+  }
+  else
+  {
+   adpp+=sizeof(NAGLOWEK) + L->n;
+  }
+ }
+ return NULL ;
 }

@@ -66,9 +66,13 @@ typedef enum
 #define EXT_PLT_CFG "Plotter Params Files\n*.kpl"
 #define EXT_CFGK "KPL Files\n*.kpl"
 #define EXT_TXT "BLK Files\n*.blk"
-#define EXT_XYZ "XYZ Files\n*.xyz"
-#define EXT_PXYZ "Text Files\n*.txt"
+#define EXT_XYZ "XYZ Files\n*.xyz.csv"
+#define EXT_PXYZ "XYZ, Text Files\n*.xyz.csv;*.txt"
+#ifdef LINUX
 #define EXT_FONT "Font Files\n*.ttf;*.otf"
+#else
+#define EXT_FONT "Font Files (*.ttf;*.otf)\n*.ttf;*.otf\nAll Files (*.*)\n*.*\n"
+#endif
 
 #define EXT__NO   ""
 #define EXT__FILE "alf"
@@ -94,8 +98,8 @@ typedef enum
 #define EXT__PLT_CFG "kpl"
 #define EXT__CFGK "kpl"
 #define EXT__TXT "blk"
-#define EXT__XYZ "xyz"
-#define EXT__PXYZ "txt"
+#define EXT__XYZ "xyz.cvs"
+#define EXT__PXYZ "txt;xyz.cvs"
 #define EXT__FONT "ttf;otf"
 #define EXT__INI "INI"
 

@@ -27,8 +27,8 @@
 #define IC_OBIEKTY u8"OBJECTS"      /*default folder of Objects*/
 #define IC_AUTOBACKUP u8"GUARDAR AUTOMÁTICAMENTE"
 #define IC_SCRSAVE u8"SCREEN SAVER"
-#define IC_AUTOPANBLOCK u8"DIALOGS AUTOPANORAMA"  /*panorampwanie blokow dialogowych w aplikacjach*/
-#define IC_AUTOZOOMBLOCK u8"DIALOGS AUTOZOOM"     /*ustawianie EKRAN-WSZYSTKO w blokach dialogowych*/
+#define IC_AUTOPANBLOCK u8"PANEO AUTOMÁTICO DE BLOQUES"  /*Desplazamiento de bloques de diálogo en aplicaciones*/
+#define IC_AUTOZOOMBLOCK u8"ZOOM AUTOMÁTICO DE BLOQUES"     /*Configuración de la vista completa en bloques de diálogo*/
 #define IC_BUFMAKSIZE u8"BÚFER DE MACROS"
 #define IC_BUFMEMSIZE u8"TAMAÑO DE MEMORIA PARA DIBUJAR"
 #define IC_PCXBUFFERSIZE u8"BÚFER DE IMAGEN"

@@ -163,14 +163,15 @@ static BOOL get_spec_off (int f,
   block_header [VER_LEN] = 0 ;   /*pisz_zbior nie konczy block_header NULL'em*/
   if ((strcmp (block_header, VER2_0) != 0) && (strcmp (block_header, VER2_1) != 0) &&
 	  (strcmp(block_header, VER3_0) != 0) && (strcmp(block_header, VER3_1) != 0) && 
-	  (strcmp(block_header, VER4_0) != 0) && (strcmp(block_header, VER4_1) != 0)) return b_ret;
+	  (strcmp(block_header, VER4_0) != 0) && (strcmp(block_header, VER4_1) != 0) &&
+      (strcmp(block_header, VER4_2) != 0)) return b_ret;
   
   l_off = sizeof(double) * 11 + sizeof(int) * 3 + VER_LEN ;
   if (l_off != lseek (f, l_off, SEEK_SET)) return b_ret ;
   if (read (f, &i_layersno, sizeof(int)) != sizeof(int)) return FALSE ;
   i_layersno = (i_layersno <= MAX_OLD_NUMBER_OF_LAYERS) ? MAX_OLD_NUMBER_OF_LAYERS : i_layersno ;
   if (strcmp (block_header, VER2_0) == 0) l_off = sizeof(double) * 19 + sizeof(int) * 9 + i_layersno * sizeof(LAYER2_0) + sizeof(ZMIENNE) + VER_LEN ;
-  else if (strcmp(block_header, VER4_1) != 0) l_off = sizeof(double) * 19 + sizeof(int) * 9 + i_layersno * sizeof(LAYER3) + sizeof(ZMIENNE) + VER_LEN;
+  else if ((strcmp(block_header, VER4_1) != 0) && (strcmp(block_header, VER4_2) != 0)) l_off = sizeof(double) * 19 + sizeof(int) * 9 + i_layersno * sizeof(LAYER3) + sizeof(ZMIENNE) + VER_LEN;
   else
   {
       if (read(f, &destLenInt, sizeof(int)) != sizeof(int)) return FALSE;
@@ -197,6 +198,8 @@ static BOOL get_spec_off (int f,
         l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 5 + sizeof(double) * 31 ;
     else if (marker==1234569)
         l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 7 + sizeof(double) * 40 ;
+    else if (marker==1234570)
+        l_off1 = l_off + sizeof(int) * 5 + sizeof(float) * 7 + sizeof(double) * 65 ;
     else
         l_off1 = l_off + sizeof(int) * 4 + sizeof(float) * 2 + sizeof(double) * 31 ;
 
@@ -278,14 +281,15 @@ BOOL Read_Spec_File (char *fn, T_spec_name *ptrs_specs, BOOL b_err)
     block_header [VER_LEN] = 0 ;   /*pisz_zbior nie konczy block_header NULL'em*/
     if ((strcmp (block_header, VER2_0) != 0) && (strcmp (block_header, VER2_1) != 0) &&
 		(strcmp(block_header, VER3_0) != 0) && (strcmp(block_header, VER3_1) != 0) &&
-		(strcmp(block_header, VER4_0) != 0) && (strcmp(block_header, VER4_1) != 0))
+		(strcmp(block_header, VER4_0) != 0) && (strcmp(block_header, VER4_1) != 0) &&
+        (strcmp(block_header, VER4_2) != 0))
       goto error ;  /*VER2_0 i VER2_1 aktualna wersja*/
     if (FALSE == get_spec_off (f, &i_spec_no, &l_spec_no_off, &l_spec_off)) goto error ;
     if (l_spec_off != lseek (f, l_spec_off, SEEK_SET)) goto error ;
 
     if (FALSE == Read_Spec (f, ptrs_specs, i_spec_no)) goto error ;
 
-	if (strcmp(block_header, VER4_1) != 0) ver4_0_to_4_1_Spec(ptrs_specs, i_spec_no);
+	if ((strcmp(block_header, VER4_1) != 0) && (strcmp(block_header, VER4_2) != 0)) ver4_0_to_4_1_Spec(ptrs_specs, i_spec_no);
 
     b_ret = TRUE ;
     close (f) ;
@@ -336,7 +340,8 @@ BOOL Read_Spec_Block (char *fn,
      (strcmp (blok_naglowka, VERB2_1) != 0 ) &&
 	 (strcmp(blok_naglowka, VERB3_0) != 0) &&
 	 (strcmp(blok_naglowka, VERB4_0) != 0) &&
-	 (strcmp(blok_naglowka, VERB4_1) != 0))
+	 (strcmp(blok_naglowka, VERB4_1) != 0) &&
+     (strcmp(blok_naglowka, VERB4_2) != 0))
 	    goto error;
      if (read(f,&Px,sizeof(double))!=sizeof(double)) goto error;
      if (read(f,&Py,sizeof(double))!=sizeof(double)) goto error;

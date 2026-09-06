@@ -399,7 +399,7 @@ static int PrzesunB(double X0, double Y0)
           }
           else if (ev->Number == 11)
           {
-              obrot_kopiuj_paral(90);
+              obrot_kopiuj_paral(Pi/2.0);
           }
           else if (ev->Number == 12)
           {

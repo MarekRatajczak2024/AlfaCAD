@@ -58,8 +58,8 @@ extern char numbers[16];
 #define Yrow1 (Ygroup1 + 10)
 #define Yrow1I Yrow1 
 #define Yrow1L (Yrow1 + 3)
-#define Xunits Xrow + 2 * DXcol -20
-#define Xunits1 Xrow1 + 2 * DXcol -20
+#define Xunits (Xrow + 2 * DXcol -20)
+#define Xunits1 (Xrow1 + 2 * DXcol -20)
 #define DXgroup (Xrow - Xgroup + 2 * (DXcol) + DXunits)
 
 #define XpCANCEL (Xgroup + DXgroup + 5)
@@ -135,7 +135,7 @@ static int proc_dlg_PCX_date(int n)
 	return ret;
 }
 
-static DARK_LIGHT_LINE line_d_l[] =
+static DARK_LIGHT_LINE line_d_l_p[] =
 {
 {10, 10, 20, 10, LINE_NULL, COLOR_NULL},
 };
@@ -156,7 +156,7 @@ static char scale_x[EDITTEXTLEN] = "1.0";
 static char scale_y[EDITTEXTLEN] = "1.0";
 static char angle[EDITTEXTLEN] = "0.0";
 
-static LABEL lab[] =
+static LABEL lab_p[] =
 {   
 	{ Xrow + ddXedit, YrowL, 0, 0, COLOR_NULL,COLOR_NULL, dpi_x, 0, 0,},
 	{ Xrow + DXcol + ddXedit, YrowL, 0, 0, COLOR_NULL,COLOR_NULL, dpi_y, 0, 0,},
@@ -177,7 +177,7 @@ static LABEL lab[] =
 };
 
 
-static GROUP_BOX gr_box[] =
+static GROUP_BOX gr_box_p[] =
 {
  { Xgroup, Ygroup, DXgroup-60, 2 * DYrow + 5,
 	COLOR_NULL ,COLOR_NULL, header_s, 0, NULL,
@@ -201,6 +201,7 @@ static void resize_image(int direction)
 	double scale_xf, scale_yf;
 	BOOL preserve_aspect;
 	char i;
+	char *bp1;
 
 	preserve_aspect = Get_Check_Button(&import_PCX_dlg, ID_PRESERVE_ASPECT);
 	if (preserve_aspect)
@@ -212,13 +213,12 @@ static void resize_image(int direction)
 	}
 
 
-	scale_xf = atof(scale_x);
-	scale_yf = atof(scale_y);
-	horz_res = atoi(dpi_x);
-	vert_res = atoi(dpi_y);
-	pxl_xi = atoi(pxl_x);
-	pxl_yi = atoi(pxl_y);
-
+	scale_xf = strtod(scale_x, &bp1);
+	scale_yf = strtod(scale_y, &bp1);
+	horz_res = (int)strtol(dpi_x, &bp1, 10);
+	vert_res = (int)strtol(dpi_y, &bp1, 10);
+	pxl_xi =  (int)strtol(pxl_x, &bp1, 10);
+	pxl_yi = (int)strtol(pxl_y, &bp1, 10);
 	size_xf = 25.4 / horz_res * pxl_xi * scale_xf;
 	size_yf = 25.4 / vert_res * pxl_yi * scale_yf;
 
@@ -231,7 +231,7 @@ static void resize_image(int direction)
 
 }
 
-static INPUTLINE edit[] =
+static INPUTLINE edit_p[] =
 {
 	{ Xrow1 + ddXedit, Yrow1 + DYrow,  DXedit, 12, COLOR_NULL,COLOR_NULL,
 		COLOR_NULL,COLOR_NULL,COLOR_NULL, 12,0,1, scale_x, ID_SCALE_X,digits,
@@ -271,7 +271,7 @@ static IMAGE images_p[] =
 	
 };
 
-static BUTTON buttons[] =
+static BUTTON buttons_p[] =
 {
 	{ XpOK, YpOK, DXBut0 - 10, DYBut0 - 6, COLOR_NULL,
 	COLOR_NULL, COLOR_NULL, "" /*"OK"*/, 0, B_PUSHBUTTON, 87, 1, 0, ID_OK, 0, 0,
@@ -300,7 +300,7 @@ static BUTTON buttons[] =
 	},
 };
 
-static LISTBOX listbox[] =
+static LISTBOX listbox_p[] =
 {
 {
 	0, 0, 0, 0,
@@ -310,24 +310,24 @@ static LISTBOX listbox[] =
   }
 };
 
-static COMBOBOX combobox[] =
+static COMBOBOX combobox_p[] =
 {
 
- {60, 60, 100, 24, &listbox[0]},
+ {60, 60, 100, 24, &listbox_p[0]},
 };
 
 static TDIALOG import_PCX_dlg =
 {
 	Xdialog, Ydialog, DXdialog, DYdialog+2, COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0,
 	imige_file_params,
-	0 , &line_d_l,
-	13, &lab,
-	4 , &gr_box,
-	3,  &edit,
+	0 , &line_d_l_p,
+	13, &lab_p,
+	4 , &gr_box_p,
+	3,  &edit_p,
 	14, &images_p,
-	7, &buttons,
+	7, &buttons_p,
 	0, NULL,
-	0,&combobox,
+	0,&combobox_p,
     0,NULL, //Sliders
 	NULL,
 	NULL,
@@ -336,7 +336,7 @@ static TDIALOG import_PCX_dlg =
     NULL,
 };
 
-int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf, double angle_f, BOOL background, BOOL preserve_aspect, BOOL on_top, BOOL h_flip, BOOL v_flip)
+int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf, double angle_f, BOOL ignore_background, BOOL preserve_aspect, BOOL on_top, BOOL h_flip, BOOL v_flip)
 {
 	long image_s;
 	int dx_win_dlg, dy_win_dlg, x_win_dlg, y_win_dlg;
@@ -345,6 +345,7 @@ int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf,
 	int pxl_xi, pxl_yi;
 	char i;
     static int curr_h, curr_v;
+	char *bp1;
 	
 	sprintf(dpi_x, "%d", head.horz_res);
 	sprintf(dpi_y, "%d", head.vert_res);
@@ -370,7 +371,7 @@ int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf,
 
 	sprintf(angle, "%.6f", angle_f);
 
-	Set_Check_Button(&import_PCX_dlg, ID_BACKGROUND, background);
+	Set_Check_Button(&import_PCX_dlg, ID_BACKGROUND, !ignore_background);
 
 	Set_Check_Button(&import_PCX_dlg, ID_PRESERVE_ASPECT, preserve_aspect);
 
@@ -396,13 +397,13 @@ int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf,
 
 	if (Ret_Val == Dlg_Ret_Val_OK)
 	{
-		scale_xf = atof(scale_x);
-		scale_yf = atof(scale_y);
+		scale_xf = strtod(scale_x, &bp1);
+		scale_yf = strtod(scale_y, &bp1);
 
-		b_pcx->dx = 25.4 / (double)head.horz_res * scale_xf;
-		b_pcx->dy = 25.4 / (double)head.vert_res * scale_yf;
+		b_pcx->dx = (float)(25.4 / (double)head.horz_res * scale_xf);
+		b_pcx->dy = (float)(25.4 / (double)head.vert_res * scale_yf);
 
-		b_pcx->kat = atof(angle) * Pi / 180.0;
+		b_pcx->kat = (float)(strtod(angle, &bp1) * Pi / 180.0);
 		b_pcx->ignore_background = !Get_Check_Button(&import_PCX_dlg, ID_BACKGROUND);
 		b_pcx->on_front = Get_Check_Button(&import_PCX_dlg, ID_ON_TOP);
 		b_pcx->h_flip = Get_Check_Button(&import_PCX_dlg, ID_H_FLIP);
@@ -410,8 +411,8 @@ int GetPCXParams(PCXheader head, B_PCX *b_pcx, double scale_xf, double scale_yf,
 
 		return 1;  //OK
 	}
-	else if (Ret_Val == Dlg_Ret_Val_Cancel) return 0;  //ESC
-	else return 0;
+	if (Ret_Val == Dlg_Ret_Val_Cancel) return 0;  //ESC
+	return 0;
 }
 
 #undef __PCXDLG__

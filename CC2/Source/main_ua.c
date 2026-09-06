@@ -144,7 +144,15 @@ POLE pmRegion[] = {
         {u8"Китай", L'К',831, NULL}, //&mSteelCN
 };
 
-TMENU mRegion = { 6 , 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
+#ifdef PROFILE
+#define O3 6
+#define O7 10
+#else
+#define O3 4
+#define O7 8
+#endif
+
+TMENU mRegion = { 6 , 0, 0, 16, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, O7, 0, 0,0,(POLE(*)[])&pmRegion, NULL, NULL };
 
 POLE pmStatic[] = {
         {u8"Каркас і ферма",L'К',733, NULL},
@@ -153,16 +161,24 @@ POLE pmStatic[] = {
         {u8"Ростверк",L'Р',897, NULL},
 };
 
-TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
+TMENU mStatic = { 4, 0, 0, 32, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, O3, 0, 0,0,(POLE(*)[])&pmStatic, NULL, NULL };
 
 POLE pmApplications[] = {
-        {u8"Статичний і динамічний аналіз",L'С',854, &mStatic},
-        {u8"Результатні сили в перерізах",L'Р',824, NULL},
-        {u8"Анімувати динаміку",L'А',817, NULL},
-        {u8"Вибір перерізу елемента",L'В',775, &mRegion},
+        {u8"Статичний і динамічний аналіз\0",L'С',854, &mStatic},
+        {u8"Результатні сили в перерізах\0",L'Р',824, NULL},
+        {u8"Анімувати динаміку\0",L'А',817, NULL},
+        {u8"вибір перерізу Елемента\0",L'Е',775, &mRegion},
+#ifdef PROFILE
+		{u8"Профіль мережі\0",L'П',914, NULL},
+		{u8"Карта мережі\0",L'К',915, NULL},
+#endif
 };
 
+#ifdef PROFILE
+TMENU mApplications = { 6, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#else
 TMENU mApplications = { 4, 0, 0, 32, 15, 9, TADD | ICONS, CMNU, CMBR, CMTX, 0, 22, 0, 0,0,(POLE(*)[])&pmApplications, NULL, NULL };
+#endif
 
 POLE pmenug[] = {
 	{u8"Намалюй\0", L'Н',57,NULL},

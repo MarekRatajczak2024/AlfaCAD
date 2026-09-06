@@ -39,14 +39,18 @@ double INDEX_FACTOR = 0.6;
 BOOL TTF_printing = FALSE;
 double INDEX_SHIFT=0.15;
 
-int known_letters[]={8308, 8364, 8730, 8731};
+int known_letters[]={8240, 8308, 8364, 8730, 8709, 8731, 8960};
 int known_letters_no=sizeof(known_letters)/sizeof(known_letters[0]);
 
-int known_bytes[][3]={{226, 129, 180},
-                     {226, 130, 172},
-                     {226, 136, 154},
-                     {226, 136, 155},
-                     };
+int known_bytes[][3]={
+	{226, 128, 176},
+	 {226, 129, 180},
+	{226, 130, 172},
+	{226, 136, 154},
+    {226, 136, 133},
+	{226, 136, 155},
+	{226, 140, 128}};
+
 int known_bytes_no=sizeof(known_bytes)/sizeof(known_bytes[0]);
 
 /*-----------------------------------------------------------------------*/
@@ -79,8 +83,9 @@ extern void getcolor_RGB_char(unsigned char *red, unsigned char *green, unsigned
 extern int Get_TTF_Char_Outline(TEXT *t, unsigned int unicode, char *alf, long *lw, int yMax);
 extern char  readmouse(void);
 
+#if defined(MACOS) || !defined(LINUX)
 extern void gk_text_advance_subpixel_utf8_matrix(GLYPH_REND* const rend,const char* const text,int* const adv_x,int* const adv_y, int *matrix, int *i_matrix, unsigned *l_code);
-
+#endif
 static unsigned w_char_no=0;
 static long w_lw_no=0 ;
 static int w_text_no=0;
@@ -265,9 +270,10 @@ int Get_Char_Matix_Len_TTF(unsigned int chr, int i_font, float height)
 		rend = gk_create_renderer(face, 0);
 		if (!rend) return 0;
 
-		wysokosc_p = pikseleDY(height);  //lets calculate for 10mm height
+		wysokosc_p = (float)pikseleDY(height);  //lets calculate for 10mm height
 
-		gk_rend_set_size_pixels(rend, (int)((wysokosc_p*TTF_width_factor)+0.5), (int)((wysokosc_p*TTF_height_factor)+0.5));
+		//gk_rend_set_size_pixels(rend, (int)((wysokosc_p*TTF_width_factor)+0.5), (int)((wysokosc_p*TTF_height_factor)+0.5));
+		gk_rend_set_size_pixels(rend, lround(wysokosc_p*TTF_width_factor), lround(wysokosc_p*TTF_height_factor));
 		gk_rend_set_bold_strength(rend, 50);
 		gk_rend_set_angle_in_radians(rend, 0.0); // ptrs_text->kat);
 
@@ -276,7 +282,7 @@ int Get_Char_Matix_Len_TTF(unsigned int chr, int i_font, float height)
         memmove(&ptrsz_tmp[0],&chr,4);
         ptrsz_tmp[5] = '\0';
 		gk_text_size_utf8(rend, ptrsz_tmp, &text_h, &text_v);
-		l_len = jednostkiX(text_h);
+		l_len = (long)jednostkiX(text_h);
 		gk_done_renderer(rend);
 	}
 
@@ -357,7 +363,8 @@ double Get_TTF_Char_Left_Top(TEXT *ptrs_text, char *ptrsz_t, double font_scale, 
 
 	wysokosc_p = pikseleFDY(ptrs_text->wysokosc);
 
-	gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64.0) + 0.5));
+	//gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64.0) + 0.5))
+	gk_rend_set_size_subpixel(rend, lround((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0)), lround((wysokosc_p*TTF_height_factor * 64.0)));
 	if (ptrs_text->italics) gk_rend_set_italic_angle_in_degrees(rend, 10.5);
 	if (ptrs_text->bold) gk_rend_set_bold_strength(rend, TTF_bold_factor);
 	gk_rend_set_angle_in_radians(rend, 0.0); // ptrs_text->kat);
@@ -451,7 +458,7 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 		  if (TTF_width != NULL) *TTF_width = (int)(((double)ptrs_text->width*factor)+0.5);
 		  if (TTF_height != NULL) *TTF_height = (int)(((double)ptrs_text->height*factor)+0.5);
 		  if (TTF_printing == TRUE) l_len = ((double)(ptrs_text->width)*factor / 64.0);
-		  else l_len = jednostkiX(((double)(ptrs_text->width))*factor/64.0);
+		  else l_len = jednostkiX((long)((double)(ptrs_text->width)*factor/64.0));
 		  return l_len;
 	  }
 	  
@@ -463,7 +470,9 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 	  //normalizing height to 32 pxl
 	  wysokosc_p = 100.0;
 
-	  gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale)+0.5), (int)((wysokosc_p*TTF_height_factor*64* margin_char_scale)+0.5));
+	  //gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale)+0.5), (int)((wysokosc_p*TTF_height_factor*64* margin_char_scale)+0.5));
+	  gk_rend_set_size_subpixel(rend, lround(wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale), lround(wysokosc_p*TTF_height_factor*64* margin_char_scale));
+
 	  if (ptrs_text->italics) gk_rend_set_italic_angle_in_degrees(rend, 10.5);
 	  if (ptrs_text->bold) gk_rend_set_bold_strength(rend, TTF_bold_factor);
 	  gk_rend_set_angle_in_radians(rend, 0.0); // ptrs_text->kat);
@@ -550,7 +559,9 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 			  if (char_ind == '^') {font_index += 1; index_pos=i_matrix+1; text_h_sum_index=text_h_sum;}
 			  else if (char_ind == '~') {font_index -= 1; index_pos=i_matrix+1;text_h_sum_index=text_h_sum;}
 			  margin_char_scale = margin_char_scale0 * pow(INDEX_FACTOR, abs(font_index));
-			  gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64 * margin_char_scale) + 0.5));
+			  //gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64 * margin_char_scale) + 0.5));
+			  gk_rend_set_size_subpixel(rend, lround(wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale), lround(wysokosc_p*TTF_height_factor * 64 * margin_char_scale));
+
 
 			  ptr_ind1 = strchr(ptrsz_tmp, '^');
 			  ptr_ind2 = strchr(ptrsz_tmp, '~');
@@ -591,11 +602,11 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 	  {
           //recalculating matrix vextor
 		  factor = pikseleFDY(ptrs_text->wysokosc) / 100.0;
-		  l_len = jednostkiX(((double)(text_h))*factor / 64.0);
+		  l_len = jednostkiX((long)(((double)(text_h))*factor / 64.0));
 
           if (matrix_d!=NULL) {
               for (int i = 0; i < i_matrix; i++) {
-                  matrix_d[i] = jednostkiX(((double) (matrix[i])) * factor / 64.0);
+                  matrix_d[i] = jednostkiX((long)(((double) (matrix[i])) * factor / 64.0));
               }
               *i_matrix_d=i_matrix;
           }
@@ -625,7 +636,7 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 		  factor = pikseleFDY(ptrs_text->wysokosc) / 100.0;
 		  if (TTF_width != NULL) *TTF_width = (int)(((double)ptrs_text->width*factor) + 0.5);
 		  if (TTF_height != NULL) *TTF_height = (int)(((double)ptrs_text->height*factor) + 0.5);
-		  l_len = jednostkiX(((double)(ptrs_text->width))*factor / 64.0);
+		  l_len = jednostkiX((long)(((double)(ptrs_text->width))*factor / 64.0));
 		  return l_len;
 	  }
 
@@ -638,7 +649,8 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 	  //normalizing height to 32 pxl
 	  wysokosc_p = 100.0;
 
-	  gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64) + 0.5));
+	  //gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64) + 0.5));
+	  gk_rend_set_size_subpixel(rend, lround(wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0), lround(wysokosc_p*TTF_height_factor * 64));
 	  //getcolor_RGB_char(kolor.red, kolor.gre, kolor.blu, GetColorAC(t->kolor));
 	  if (ptrs_text->italics) gk_rend_set_italic_angle_in_degrees(rend, 10.5);
 	  if (ptrs_text->bold) gk_rend_set_bold_strength(rend, TTF_bold_factor);
@@ -691,7 +703,7 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
               if ((char_ind == '|') && (index_pos>=0))
               {
                   //if (index_pos>=0)
-                  matrix[i_matrix-1]=matrix_index;
+                  matrix[i_matrix-1]=(int)matrix_index;
                   text_h_sum_bar=text_h_sum;
                   //deduction
 				  if (last_code > 0)
@@ -726,9 +738,10 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
               if (char_ind == '^') {font_index += 1; index_pos=i_matrix+1;text_h_sum_index=text_h_sum;}
               else if (char_ind == '~') {font_index -= 1; index_pos=i_matrix+1;text_h_sum_index=text_h_sum;}
               margin_char_scale = margin_char_scale0 * pow(INDEX_FACTOR, abs(font_index));
-              gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64 * margin_char_scale) + 0.5));
+              //gk_rend_set_size_subpixel(rend, (int)((wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale) + 0.5), (int)((wysokosc_p*TTF_height_factor * 64 * margin_char_scale) + 0.5));
+			  gk_rend_set_size_subpixel(rend, lround(wysokosc_p*ptrs_text->width_factor*TTF_width_factor*64.0*margin_char_scale), lround(wysokosc_p*TTF_height_factor * 64 * margin_char_scale));
 
-              ptr_ind1 = strchr(ptrsz_tmp, '^');
+			  ptr_ind1 = strchr(ptrsz_tmp, '^');
               ptr_ind2 = strchr(ptrsz_tmp, '~');
               ptr_ind3 = strchr(ptrsz_tmp, '|');
               if (!ptr_ind1 && !ptr_ind2 && !ptr_ind3)
@@ -767,11 +780,11 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
       {
           //recalculating matrix vextor
           factor = pikseleFDY(ptrs_text->wysokosc) / 100.0;
-          l_len = jednostkiX(((double)(text_h))*factor / 64.0);
+          l_len = jednostkiX((long)(((double)(text_h))*factor / 64.0));
 
           if (matrix_d!=NULL) {
               for (int i = 0; i < i_matrix; i++) {
-                  matrix_d[i] = jednostkiX(((double) (matrix[i])) * factor / 64.0);
+                  matrix_d[i] = jednostkiX((long)(((double) (matrix[i])) * factor / 64.0));
               }
               *i_matrix_d=i_matrix;
           }
@@ -796,7 +809,7 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
   {
       if (PTRS__Text_Style[ptrs_text->czcionka]->type==1)
           letter_spacing = PTRS__Text_Style[ptrs_text->czcionka]->letter_spacing;
-      else letter_spacing=0.0;
+      else letter_spacing=0.0f;
 
       if (PTRS__Text_Style[ptrs_text->czcionka]->type==0) margin_factor=0.5;
       else margin_factor=1.0;
@@ -866,14 +879,14 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
 			  }
 			  else
 			  {
-				  if (*ptrsz_tmp >= 127)
+			  	  if ((unsigned char)*ptrsz_tmp > 127)
 				  {
 					  u8ptrsz_tmp = utf8_to_ucs2(ptrsz_tmp, (const uint8_t **) &end_ptr);
 
                       //if (u8ptrsz_tmp == 8308) //⁴ e.g. m⁴
                       if (u8ptrsz_tmp > 1920)
                       {
-                          if (known3b(u8ptrsz_tmp)) //⁴ e.g. m⁴
+                          if (known3b((int)u8ptrsz_tmp)) //⁴ e.g. m⁴
                               ptrsz_tmp+=2;
                           else
                           {
@@ -891,7 +904,7 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
                       }
 				  }
 				  else
-					  u8ptrsz_tmp = *ptrsz_tmp;
+					  u8ptrsz_tmp = (unsigned int)*ptrsz_tmp;
 
 				  if (deduct)
 				  {
@@ -1299,7 +1312,7 @@ void outlinetext(TEXT *t, QUAD *outline, double margin)
     char *ttf_zn;
     int f_type;
     double df_width_marg, WysokoscT, tdl, tsin, tcos, df_scale_x, df_scale_y, df_scale_x0, df_scale_y0;
-    float wysokosc_p;
+    double wysokosc_p;
     double x01, y01, ttf_x01, ttf_y01, x001, y001, x01__, y01__, x01___, y01___;
     double font_scale = 1.0;
     int font_index = 0;
@@ -1333,8 +1346,8 @@ void outlinetext(TEXT *t, QUAD *outline, double margin)
     ttf_y01 = y01;
 
     tdl = Get_Text_Len(t, t->text, font_scale, font_index, &t_width, &t_height, NULL, NULL);
-    tsin = sin(t->kat);
-    tcos = cos(t->kat);
+    tsin = sinf(t->kat);
+    tcos = cosf(t->kat);
 
     b_hor = FALSE;
     if (TRUE == Check_if_Equal(t->kat, 0))
@@ -1522,7 +1535,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 	df_scale_x = df_scale_x0;
 	df_scale_y = df_scale_y0;
 	WysokoscT = t0->wysokosc;
-	wysokosc_p = pikseleFDY(WysokoscT);
+	wysokosc_p = (float)pikseleFDY(WysokoscT);
 
 	if (f_type < 2)
 	{
@@ -1544,12 +1557,12 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 	if (TRUE == Get_Point_View())
 	{
-
 		if ((strlen(t0->text) == 0) && (t0->typ > 2))
 		{
-			memmove(&t1, t0, sizeof(TEXT));  //TEXT_NAG));
-			t1.text[0] = '\377'; //255;
-			t1.text[1] = '\0';
+			memmove(&t1, t0, sizeof(TEXT));  //MIDDLE DOT
+			t1.text[0] = (char)0xC2;
+			t1.text[1] = (char)0xB7;
+			t1.text[2] = '\0';
 
 			t = &t1;
 		}
@@ -1559,8 +1572,8 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 	//  setwritemode (mode) ;    
 	tdl = Get_Text_Len(t, t->text, font_scale, font_index, &t_width, &t_height, matrix, &i_matrix);
-	tsin = sin(t->kat);
-	tcos = cos(t->kat);
+	tsin = sinf(t->kat);
+	tcos = cosf(t->kat);
 
 	if (t->justowanie > 0)
 	{
@@ -1805,7 +1818,6 @@ void outtextxy_w_(TEXT *t0, int mode)
 
 			if (*zn == '\n')
 			{
-
 				if (t->underline == TRUE)
 				{
 					df_tl1 = df_tl0 - Get_Text_Len(t, (char*)zn0, 1.0 /*font_scale*/, 0, NULL, NULL, NULL, NULL); //_
@@ -1872,7 +1884,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 					kolor.gre = green;
 					kolor.blu = blue;
 
-					Draw_TTF_text(t0, ttf_zn, screenplay, pikseleX0(ttf_x01), pikseleY0(ttf_y01), t0->kat, wysokosc_p, kolor, mode, t_width, t_height);
+					Draw_TTF_text(t0, ttf_zn, screenplay, (int)pikseleX0(ttf_x01), (int)pikseleY0(ttf_y01), t0->kat, wysokosc_p, kolor, mode, t_width, t_height);
 					
 				}
 					
@@ -1964,7 +1976,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 				df_scale_y = df_scale_y0 * font_scale;
 
 				if ((f_type == 2) && (mode == COPY_PUT))
-					Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
+					Amend_Draw_TTF_text(t0, (float)(wysokosc_p*font_scale));
 
 				zn++;
 				////if (*zn == '\40') zn++; //29-04-2026
@@ -1981,7 +1993,7 @@ void outtextxy_w_(TEXT *t0, int mode)
 				df_scale_y = df_scale_y0 * font_scale;
 
 				if ((f_type == 2) && (mode == COPY_PUT))
-					Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
+					Amend_Draw_TTF_text(t0, (float)(wysokosc_p*font_scale));
 
 				zn++;
 				////if (*zn == '\40') zn++;  //29-04-2026
@@ -2193,7 +2205,7 @@ void outtextxy_w_(TEXT *t0, int mode)
                                         df_scale_y = df_scale_y0 * font_scale;
 
                                         if ((f_type == 2) && (mode == COPY_PUT))
-                                            Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
+                                            Amend_Draw_TTF_text(t0, (float)(wysokosc_p*font_scale));
 
                                         zn++;
                                         ////if (*zn == '\40') zn++;  //29-04-2026
@@ -2210,7 +2222,7 @@ void outtextxy_w_(TEXT *t0, int mode)
                                         df_scale_y = df_scale_y0 * font_scale;
 
                                         if ((f_type == 2) && (mode == COPY_PUT))
-                                            Amend_Draw_TTF_text(t0, wysokosc_p*font_scale);
+                                            Amend_Draw_TTF_text(t0, (float)(wysokosc_p*font_scale));
 
                                         zn++;
                                         ////if (*zn == '\40') zn++;  //29-04-2026
@@ -2222,9 +2234,9 @@ void outtextxy_w_(TEXT *t0, int mode)
                                 continue;
                             }
                             else
-                                Draw_TTF_char(t0, u8zn, screenplay, x_char, y_char);
+                                Draw_TTF_char(t0, u8zn, screenplay, (int)x_char, (int)y_char);
                         }
-                        else Draw_TTF_char(t0, u8zn, screenplay, x_char, y_char);
+                        else Draw_TTF_char(t0, u8zn, screenplay, (int)x_char, (int)y_char);
 					}
 
 
@@ -2279,11 +2291,11 @@ void outtextxy_w_(TEXT *t0, int mode)
 			kolor.gre = green;
 			kolor.blu = blue;
 
-			Draw_TTF_text(t0, ttf_zn, screenplay, pikseleX0(ttf_x01), pikseleY0(ttf_y01), t0->kat, wysokosc_p, kolor, mode, t_width, t_height);
+			Draw_TTF_text(t0, ttf_zn, screenplay, (int)pikseleX0(ttf_x01), (int)pikseleY0(ttf_y01), t0->kat, wysokosc_p, kolor, mode, t_width, t_height);
 
 		}
 	}
-	
+
 	if (t->underline == TRUE)
 	{ 
 		df_tl1 = df_tl0 - Get_Text_Len(t, (char*)zn0, 1.0 /*font_scale*/, 0, NULL, NULL, NULL, NULL);  //_

@@ -26,8 +26,8 @@
 #define IC_OBIEKTY "OBJECTS"      /*default folder of Objects*/
 #define IC_AUTOBACKUP "AUTOSAVE"
 #define IC_SCRSAVE "SCREEN SAVER"
-#define IC_AUTOPANBLOCK "DIALOGS AUTOPANORAMA"  /*panorampwanie blokow dialogowych w aplikacjach*/
-#define IC_AUTOZOOMBLOCK "DIALOGS AUTOZOOM"     /*ustawianie EKRAN-WSZYSTKO w blokach dialogowych*/
+#define IC_AUTOPANBLOCK "DIALOG BLOCKS AUTOPANN"  /*Panning dialog blocks in applications*/
+#define IC_AUTOZOOMBLOCK "DIALOG BLOCKS AUTOZOOM"     /*Setting View-ALL in dialog blocks*/
 #define IC_BUFMAKSIZE "MACRO BUFFER"
 #define IC_BUFMEMSIZE "MEMORY SIZE FOR DRAWING"
 #define IC_PCXBUFFERSIZE "IMAGE BUFFER"

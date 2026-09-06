@@ -63,6 +63,7 @@ BOOL global_only_pcx = FALSE;
 BOOL global_only_solid = FALSE;
 BOOL global_point_in_solid = FALSE;
 BOOL global_any_choice = FALSE;
+//BLOK *global_blk=NULL;
 static char *ADP_0, *ADK_0;
 static char *adr_sheet=NULL;
 static char *adr_object=NULL;
@@ -122,7 +123,10 @@ extern double cartesian_vector_length(double i_dx, double i_dy, double *pl_dx, d
 extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
                                 double dx_loc, double dy_loc, double dz_loc,
                                 double *px, double *py, double *pdx, double *pdy);
+
+extern int select_polyline_net(void);
 extern BOOL Semaphore;
+extern void Adjust_Reference_Angle(void);
 
 #ifdef ALLEGRO5
 extern void flip_screen_sd(BITMAP * src_screen, BITMAP * dst_screen);
@@ -285,6 +289,8 @@ extern double moment_magnitude; //units per mm  default 10kNm force per 1 mm rad
 extern double displacement_magnitude; //units per mm  default 1 mm desplacement per 1 mm on drawing paper
 extern double rotation_magnitude;
 
+extern BLOK *global_blk;
+
 AVECTOR VectorC=Vdef;
 
 void set_trace_pattern_name();
@@ -298,6 +304,8 @@ static char *format_float="%#9.4lf";
 static char *format_floatd="%#11.6lf";
 static char *format_float2="%#9.4lf;%#9.4lf";
 static char *format2_float2="%#9.4lf\0%#9.4lf;%#9.4lf";
+
+static TMENU mPLine_Con={1,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr+1,0,0,0,&pmPLine_Con,NULL,NULL} ;
 
 static void	obrot_kopiuj_K(void);
 
@@ -320,6 +328,8 @@ TMENU	mBlock_dn =	{9,0,0,17,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(P
 TMENU	mBlok_ex={7,0,0,17,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmBlok_ex,NULL,NULL};
 
 TMENU	mBlok_chp={9,0,0,17,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmBlok_chp,NULL,NULL};
+
+TMENU	mBlok_cha={9,0,0,17,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmBlok_cha,NULL,NULL};
 
 TMENU	mBlok_cht={5,0,0,17,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmBlok_cht,NULL,NULL};
 
@@ -360,6 +370,15 @@ static void	winf_draw (void)
   }
   return	;
 }
+
+/*
+int select_polyline_net(void)
+{
+  global_blk=select_polyline();
+  if (global_blk!=NULL) return 1;
+  return 0;
+}
+*/
 
 static int winf (void)
 //--------------------
@@ -910,7 +929,7 @@ static int all_from_layer(void)
 
 	if (!get_string(sk, numbers, MaxTextLen, 0, 195)) return 0;
 	sel_layer = atoi_(sk) - 1;
-	if ((sel_layer > 255) || (sel_layer < 0))
+	if ((sel_layer > (MAX_NUMBER_OF_LAYERS-1)) || (sel_layer < 0))
 	{
 		ErrList(214);
 		return 1;
@@ -2120,7 +2139,7 @@ int kopiujkw(void)
 				  obrot_kopiuj_paral(0);
 				  break;
 			case 16:
-				  obrot_kopiuj_paral(90);
+				  obrot_kopiuj_paral(Pi/2.0);
 				  break;
 			case 17:
 				  obrot_kopiuj_paralK();
@@ -2777,6 +2796,12 @@ static /*const*/ int (*COMNDwez_w	[])(void) =
         winf, nooop1, auto_on,
         auto_off
 } ;
+
+static /*const*/ int (*COMNDwez_w_net_c	[])(void) =
+        {
+                nooop1,
+                select_polyline_net
+        } ;
 
 static /*const*/ int (*COMNDwez_info	[])(void) =
 {
@@ -3854,6 +3879,43 @@ static void	redcr_wez_warstwe_kolor_typ (char typ)
       Cur_ond (X,	Y)	;
     }
 
+#ifdef PROFILE
+	else
+		if((typ==15) || (typ==16)|| (typ==17))	/*pobranie danych pomiaru profilu*/
+		{
+			Cur_offd(X, Y);
+			if (typ==15) komunikat	(123);
+			else if (typ==16) komunikat	(130);
+			else if (typ==17) komunikat	(131);
+			//else if (typ==18) komunikat (155);
+			sel_akt=sel.akt;  sel.akt=1;
+			CUR_oFF=CUR_OFF;
+			CUR_oN=CUR_ON;
+			SW[0]=SERV[def67];	 SERV[def67]=winf;
+			*(Block_Proc_Add_Mode_Ptr ()) = ADD_MODE ;			  //konieczne
+			winf_draw	 () ;
+			getmenupini (&menu,st,&cod, &iconno);
+			menupini (&mBlock_wez_w,	_BLOCK_, _BLOCK_C_, 1) ;
+			Cur_ond (X,	Y)	;
+		}
+          else if (typ==18)	/*pobranie sieci*/
+          {
+            Cur_offd(X, Y);
+            komunikat (155);
+            sel_akt=sel.akt;  sel.akt=1;
+            CUR_oFF=CUR_OFF;
+            CUR_oN=CUR_ON;
+            SW[0]=SERV[def67];	 SERV[def67]=winf;
+            *(Block_Proc_Add_Mode_Ptr ()) = ADD_MODE ;			  //konieczne
+            winf_draw	 () ;
+            getmenupini (&menu,st,&cod, &iconno);
+            //menupini (&mBlock_wez_w,	_BLOCK_, _BLOCK_C_, 1) ;
+            menupini (&mPLine_Con, _POLYLINE_, _POLYLINE_C_,20) ;
+            //menupini (&mBlock_wez_w, _BLOCK_, _BLOCK_C_, 1) ;
+            Cur_ond (X,	Y)	;
+          }
+#endif
+
 	else /*1*/
 	{ 
 	  Cur_offd(X, Y);
@@ -4457,7 +4519,7 @@ static void	explode (void)
 	ADP=ADK=NULL;
 	if	(komunikat84==TRUE)
 	 {
-	 ret = ask_question(1, "", "OK", "", get_komunikat_ptr(84), 12, "", 11, 1, 61);
+	 ret = ask_question(1, "", "OK", "", (char*)get_komunikat_ptr(84), 12, "", 11, 1, 61);
 	 }
 	Change =	TRUE;
 	Set_Auto_Backup (TRUE);
@@ -4538,7 +4600,7 @@ static void	explode_aparat	(void)
 	ADP=ADK=NULL;
 	if	(komunikat85==TRUE)
 	 {
-	 ret = ask_question(1, "", "OK", "", get_komunikat_ptr(85), 12, "", 11, 1, 61);
+	 ret = ask_question(1, "", "OK", "", (char*)get_komunikat_ptr(85), 12, "", 11, 1, 61);
 	 }
 	Change =	TRUE;
 	Set_Auto_Backup (TRUE);
@@ -6632,7 +6694,7 @@ int dzic_q(void *ad)
         bl=(LASTB(ad));
         if (bl!=NULL)
         {
-            if ((bl->kod_obiektu=B_PLINE) && (bl->opis_obiektu[0]==PL_RECTANGLE))
+            if ((bl->kod_obiektu==B_PLINE) && (bl->opis_obiektu[0]==PL_RECTANGLE))
                 rectangle=TRUE;
         }
     }
@@ -6768,6 +6830,9 @@ static void	redcrC(char	typ)
 	  case 5	:
 			  if ((ADP!=NULL) && (ADK!=NULL))					 
 			 {
+			  	blokzap(ADP, ADK, Ablok, COPY_PUT, 0);   //XOR_PUT
+			  	blokzap_deep(ADP, ADK, Ablok, COPY_PUT, 1);   //XOR_PUT
+
 				off =	ADP -	dane ;
 				offk = ADK - dane	;
 				if	(typ == 5)
@@ -7488,6 +7553,12 @@ static /*const*/ void	(*COMNDmb_chp [])	(void) =
   (void (*)(void))winf,	(void	(*)(void))addf, nooop, Change_Properties_dlg,
   (void (*)(void))auto_on,	(void	(*)(void))auto_off };
 
+static /*const*/ void	(*COMNDmb_cha [])	(void) =
+        { (void (*)(void))ostatni_blok,(void (*)(void))wszystko,(void (*)(void))wszystkie_warstwy,
+          (void(*)(void))all_from_layer,
+          (void (*)(void))winf,	(void	(*)(void))addf, nooop, Adjust_Reference_Angle,
+          (void (*)(void))auto_on,	(void	(*)(void))auto_off };
+
 
 static void	redcr_chp (char typ)
 {
@@ -7546,6 +7617,52 @@ static void	redcr_chp (char typ)
 		komunikat (0) ;
 		komunikat0 (0)	;
 	}
+}
+
+static void	redcr_cha (char typ)
+{
+  static	void (*CUR_oN)(double ,double);
+  static	void (*CUR_oFF)(double ,double);
+  static	int (	*SW[2])();
+  static	TMENU	*menu;
+  static	char st[POLE_TXT_MAX];
+  static    unsigned short cod = L' ';
+  static	int sel_akt;
+  static    int iconno;
+  switch(typ)
+  { case 0	:
+      Cur_offd(X, Y);
+          komunikat(0);
+          komunikat0(50);
+          sel_akt=sel.akt;	sel.akt=1;
+          CUR_oFF=CUR_OFF;
+          CUR_oN=CUR_ON;
+          SW[0]=SERV[def67];  SERV[def67]=winf;
+          SW[1]=SERV[def68];  SERV[def68]=addf;
+          *(Block_Proc_Add_Mode_Ptr ())	= ADD_MODE ;
+          winf_draw ();
+          addf_draw ();
+          getmenupini(&menu,st,&cod,&iconno);
+
+          menupini(&mBlok_cha, _CHANGE_, _CHANGE_C_, 973);
+
+          Cur_ond(X, Y);
+          break;
+    case 1	:
+          menupini(menu,st,cod, iconno);
+          setfillstyle_(SOLID_FILL, BKCOLOR);
+          bar(maxX/2+1,0,maxX/2+100,11 /*9*/);
+          CUR_OFF=CUR_oFF;
+          CUR_ON=CUR_oN;
+          SERV[def67]= (void*)SW[0];
+          SERV[def68]= (void*)SW[1];
+          sel.akt=sel_akt;
+
+          Cur_offd(X, Y);
+          Cur_ond(X,Y);
+          komunikat (0) ;
+          komunikat0 (0)	;
+  }
 }
 
 static void	redcr_pcx (char typ)
@@ -7631,7 +7748,26 @@ void Change_Properties (void)
   if (check_if_obiekt(dane, dane+dane_size, Ablok, ONieOkreslony)) Change_Properties_dlg();
   redcr_chp	(1);
   if ((TTF_redraw) || (regen_ctx)) redraw();
-  return;
+}
+
+void Change_Reference_Angle (void)
+/*------------------------------*/
+{ int ret;
+  TTF_redraw=FALSE;
+  redcr_cha	(0);
+  blok (dzi, odzi, Redraw_Block, (const int (**)(void))COMNDmb_cha) ;
+  if (check_if_obiekt(dane, dane+dane_size, Ablok, ONieOkreslony)) {
+    ret = ask_question(2, (char*)_No_, (char*)_Yes_, "", _ADJUST_ANGLE_, 12, "", 11, 1, 0);
+    //1 ok; 0 - rezygnuj; 2 - Powrot
+    if (ret==1) Adjust_Reference_Angle();
+    else
+    {
+      blokzap(ADP,ADK,Ablok,COPY_PUT,1);
+      zmien_atrybut(ADP, ADK, Ablok, Aoblok);
+    }
+  }
+  redcr_cha	(1);
+  if (TTF_redraw) redraw();
 }
 
 char * Get_PCX (int option)
@@ -8817,7 +8953,91 @@ void not_still_implemented	(void)
   komunikat	(107);
   key	= Get_Legal_Key ("\033\015");
   komunikat	(0);
-}	
+}
 
+
+//////////profiles
+///
+int dziWez_net(void	*ad)
+{
+	rysuj_obiekt(ad,COPY_PUT,0);
+	flip_screen();
+	delay(50);
+	rysuj_obiekt(ad,COPY_PUT,1);
+	flip_screen();
+	get_net(ad);
+	ADP=ADK=NULL;
+	return	1;
+}
+
+
+int dziWez_pomiar_param(void	*ad)
+{
+	rysuj_obiekt(ad,COPY_PUT,0);
+	flip_screen();
+	delay(50);
+	rysuj_obiekt(ad,COPY_PUT,1);
+	flip_screen();
+	get_pomiar_param(ad);
+	ADP=ADK=NULL;
+	return	1;
+}
+
+static int kanal_pomiar;
+static double x_pomiar;
+static double y_pomiar;
+
+int dziWez_f_s_pomiar_param(void *ad)
+{ int l_kr;
+	rysuj_obiekt(ad,COPY_PUT,0);
+	flip_screen();
+	delay(50);
+	rysuj_obiekt(ad,COPY_PUT,1);
+	flip_screen();
+	l_kr=get_f_s_pomiar_param(ad, kanal_pomiar, &x_pomiar, &y_pomiar);
+	ADP=ADK=NULL;
+	return	l_kr;
+}
+
+
+int Get_Net_Param (BLOK **blk)
+/*--------------------------*/
+{
+	int	i_ret	;
+    global_blk=NULL;
+	redcr_wez_warstwe_kolor_typ	(18);
+	i_ret = Block_Proc_Wez_w	(dziWez_net, odziWez_w, nooop, COMNDwez_w_net_c, 1) ;
+	redcr_wez_warstwe_kolor_typ	(1) ;
+    if ((i_ret==2) && (global_blk!=NULL)) *blk=global_blk;
+	return i_ret;
+}
+
+int Get_Pomiar_Param (void)
+/*-------------------------*/
+{
+	int	i_ret	;
+
+	redcr_wez_warstwe_kolor_typ	(15);
+	i_ret = Block_Proc_Wez_w	(dziWez_pomiar_param, odziWez_w, nooop, COMNDwez_w, 1) ;
+	redcr_wez_warstwe_kolor_typ	(1) ;
+	return i_ret;
+}
+
+int Get_First_Second_Pomiar_Param(int przekroj, int kanal, double *xi, double *yi)
+{ int i_ret;
+	kanal_pomiar = kanal;
+	x_pomiar=0;
+	y_pomiar=0;
+	redcr_wez_warstwe_kolor_typ	(16+przekroj);
+	i_ret = Block_Proc_Wez_w	(dziWez_f_s_pomiar_param, odziWez_w, nooop, COMNDwez_w, 1) ;
+	if (i_ret)
+	{
+		*xi=x_pomiar;
+		*yi=y_pomiar;
+	}
+	if (x_pomiar==0) i_ret=0;
+	redcr_wez_warstwe_kolor_typ	(1) ;
+	return i_ret;
+}
 
 #undef __O_BLOK__

@@ -169,7 +169,7 @@ void InfoList(int n)
   if(n)
    { moveto(vfv(10),ED_INF_HEIGHT + y2);
 	 setcolor(kolory.ink);
-	 outtext_r(komunikaty[n]);
+	 outtext_r((char*)komunikaty[n]);
    }
   setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
 }
@@ -320,7 +320,7 @@ void ErrListStr(char *st)
   setviewport(viewinfo.left, viewinfo.top, viewinfo.right,viewinfo.bottom, 1);
 }
 
-char *get_komunikat_ptr (int n)
+const char *get_komunikat_ptr (int n)
 {
   return komunikaty_kom [n];
 }
@@ -340,7 +340,7 @@ void Set_Current_Pos(void)
 
 void komunikat(int n)
 /*-------------------*/
-{ char *komunikat1;
+{ const char *komunikat1;
   char komunikat01[256];
 
   struct viewporttype viewinfo;
@@ -389,7 +389,7 @@ void komunikat_len(int n)
     Komunikat_R=n;
 
     if (n==255) len_pxl=TTF_text_len(global_kom);
-    else len_pxl=TTF_text_len(get_komunikat_ptr(n));
+    else len_pxl=TTF_text_len((char*)get_komunikat_ptr(n));
 
     getviewsettings (&viewinfo);
     setviewport(0, 0, getmaxx(),getmaxy(), 1);
@@ -407,7 +407,7 @@ void komunikat_len(int n)
         if (n==255) outtext_r (global_kom);
         else
         {
-            komunikat1=get_komunikat_ptr(n);
+            komunikat1=(char*)get_komunikat_ptr(n);
             strcpy(komunikat01,komunikat1);
             outtext_r (komunikat01);
         }
@@ -532,7 +532,6 @@ BOOL get_short_notice(void)
 void komunikat0(int n)
 {
   struct viewporttype viewinfo;
-
   getviewsettings (&viewinfo);
   setviewport(0, 0, getmaxx(),getmaxy(), 1);
   Komunikat_R0=n;
@@ -548,7 +547,7 @@ void komunikat0(int n)
       //moveto(1,1);
       moveto(1,2);
 	 setcolor(kolory.ink);
-	 outtext_r(komunikaty0[n]);
+	 outtext_r((char*)komunikaty0[n]);
    }
 
   if (mkbuf) show_macro();

@@ -55,6 +55,9 @@ extern int ask_question(int n_buttons, char* esc_string, char* ok_string, char* 
 static TMENU mPLine_Con={1,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr+1,0,0,0,&pmPLine_Con,NULL,NULL} ;
 static TMENU mPLine_Con_Slab={2,0,0,20,56,4,ICONS | TADD,CMNU,CMBR,CMTX,0,COMNDmnr+1,0,0,0,&pmPLine_Con_Slab,NULL,NULL} ;
 static BLOK *BLK_ADR;
+extern char *find_obj2(char *adrp, char *adrk, int obiekt1, int obiekt2, int typ_obiektu1, int typ_obiektu2, int info_p);
+extern void color_bar(void);
+extern BLOK *FIRSTB(char *ado);
 
 static int last_plate_property_no=0;
 static int last_plate_property_no_new=0;
@@ -119,7 +122,7 @@ static BOOL add_block (void)
     else if (HOLE==TRUE) c_pltype = PL_HOLE;
      else if (WALL==TRUE) c_pltype = PL_WALL;
       else if (ZONE==TRUE) c_pltype = PL_ZONE;
-      else if (SIEC_P==TRUE) c_pltype = PL_SIEC;
+       else if ((SIEC_P==TRUE) || (SIEC_PC==TRUE)) c_pltype = PL_SIEC;
         else c_pltype = PL_PLINE ;
   memmove ( &(ptrs_block->opis_obiektu [0]), &c_pltype, sizeof(c_pltype)) ;
 
@@ -196,11 +199,14 @@ BLOK *select_polyline(void)
     int ret, ret1;
     BOOL ret2;
     BLOK *blk_adr=NULL;
+    BLOK *blkp_adr=NULL;
     char pline_str[32];
     double X0, Y0;
     void *ptr_ob;
     BOOL b_first_end;
     double df__xbeg, df__ybeg;
+    T_Desc_Ex_Block *ptrs_desc_bl ;
+    BOOL network_b=0;
 
     blk_adr = koniecP(&xsel, &ysel);
     if (blk_adr!=NULL)
@@ -238,12 +244,29 @@ BLOK *select_polyline(void)
             else if (ret == 2) return NULL;
             else return NULL;
         }
+        else if (((SIEC_P==1) && (blk_adr->opis_obiektu[0]==PL_SIEC)) ||
+                ((SIEC_PC==1) && (blk_adr->opis_obiektu[0]==PL_SIEC)))
+        {
+            //searching for parent block
+            if (NULL != (blkp_adr=FIRSTB((char*)blk_adr)))
+            {
+                ptrs_desc_bl = (T_Desc_Ex_Block *) (&blkp_adr->opis_obiektu[0]);
+                if ((ptrs_desc_bl->len > 1) && (strncmp(ptrs_desc_bl->sz_type, "*#", 2) == 0))
+                    network_b = 1;
+
+                if (((SIEC_P == 1) && (network_b == 0)) ||
+                    ((SIEC_PC == 1) && (network_b == 1)))
+                    return NULL;
+            }
+            else return NULL;
+        }
         X=xsel;
         Y=ysel;
         return blk_adr;
     }
     return NULL;
 }
+
 
 static int get_start_pline (double *X0, double *Y0, int m_con)
 /*-----------------------------------------------------------*/
@@ -282,6 +305,21 @@ static int get_start_pline (double *X0, double *Y0, int m_con)
                 erase_pline () ;
                 blk_adr=(BLOK*)PTR__GTMPBLOCK;
                 BOOL ret=Set_Beginning_Pline(blk_adr, X0, Y0);
+
+                //taking layer, line type and color from existing polyline
+                //NAGLOWEK *nag=(NAGLOWEK*)((char*)blk_adr+sizeof(NAGLOWEK)+B3+(blk_adr)->dlugosc_opisu_obiektu);
+                char *adp=(char*)((char*)blk_adr+sizeof(NAGLOWEK)+B3+blk_adr->dlugosc_opisu_obiektu);
+                char *adk=(char*)((char*)blk_adr+sizeof(NAGLOWEK)+blk_adr->n-1);
+                char *adp1=find_obj2(adp, adk, Olinia, Oluk, ONieOkreslony, ONieOkreslony, 1);
+
+                if (adp1!=NULL)
+                {
+                    LiniaG.warstwa=LukG.warstwa=((LINIA*)adp1)->warstwa;
+                    LiniaG.kolor=LukG.kolor=((LINIA*)adp1)->kolor;
+                    LiniaG.typ=LukG.typ=((LINIA*)adp1)->typ;
+                    color_bar();
+                }
+
                 BLK_ADR=blk_adr;
                 return 3;
             }
@@ -360,8 +398,8 @@ void set_pline_param (BOOL b_pline)
            LukG.obiektt3=O3REGULAR_EDGE;
        }
         else
-        if (SIEC_P==TRUE)
-         {
+        if ((SIEC_P==TRUE) || (SIEC_PC==TRUE))
+       {
            LiniaG.obiektt2 = O2BlockAparat ;
            LukG.obiektt2 = O2BlockAparat ;
          }
@@ -416,7 +454,7 @@ int add_property_number(double X0, double Y0)
     sina=get_sina();
     cosa=get_cosa();
     //DESCRIPTION
-    TextGa.kat= (float)((angle_l/360) * Pi2);
+    TextGa.kat= (float)((angle_l/360.) * Pi2);
     TextGa.wysokosc=(float)zmwym.wysokosc;
     TextGa.bold=zmwym.bold;
     TextGa.italics=zmwym.italics;
@@ -449,8 +487,8 @@ int add_property_number(double X0, double Y0)
     return 1;
 }
 
-int Pline_Factory (int mode)
-/*-------------------------*/
+int Pline_Factory_exe (int mode, double *x, double *y, int single, char **blk)
+/*--------------------------------------------------------------- ----------*/
 {
   double X0, Y0, df_xbeg, df_ybeg ;
   int pline_mode ;
@@ -477,6 +515,7 @@ beg:
     return 0;
   }
   BLK_ADR=(BLOK*)dane;
+  *blk=(char*)BLK_ADR;
 start:
   ret = get_start_pline (&X0, &Y0, 1+mode);
  if (ret==0)
@@ -573,6 +612,13 @@ start:
     if (PL_MODE_END == pline_mode)
     {
         last_plate_property_no=last_plate_property_no_new;
+        if (single)
+        {
+            *x=df_xbeg;
+            *y=df_ybeg;
+            *blk=(char*)BLK_ADR;
+            return 1;
+        }
         goto beg ;
     }
     else
@@ -581,7 +627,14 @@ start:
       goto start ;
     }
   }
-  return 1;
+
+}
+
+int Pline_Factory (int mode)
+{
+    double x, y;
+    char *blk=NULL;
+    return Pline_Factory_exe (mode, &x, &y, 0, &blk);
 }
 
 void Pline (void)
@@ -606,7 +659,20 @@ int Pline_Slab (void)
     return ret;
 }
 
-int Pline_single (double *x_begin, double *y_begin)
+char *Pline_single (double *x_begin, double *y_begin)
+/*-----------------------------------------------*/
+{   int ret;
+    char *blk=NULL;
+    int PLATE0=PLATE, HOLE0=HOLE, WALL0=WALL, ZONE0=ZONE;
+
+    PLATE=HOLE=WALL=ZONE=FALSE;
+    ret = Pline_Factory_exe (0, x_begin, y_begin, 1, &blk);
+    PLATE=PLATE0, HOLE=HOLE0, WALL=WALL0, ZONE=ZONE0;
+    if (ret) return blk;
+    else return NULL;
+}
+
+int Pline_single__ (double *x_begin, double *y_begin)
 /*-----------------------------------------------*/
 {
   double X0, Y0, df_xbeg, df_ybeg ;
@@ -633,11 +699,11 @@ start1:
   {
     if (pline_mode == PL_MODE_LINE)
     {
-      pline_mode = Pline_Line (df_xbeg, df_ybeg, (BLOK**)dane, 0) ;
+      pline_mode = Pline_Line (df_xbeg, df_ybeg, (BLOK**)&dane, 0) ;
     }
     else
     {
-      pline_mode = Pline_Arc (df_xbeg, df_ybeg, (BLOK**)dane, 0) ;
+      pline_mode = Pline_Arc (df_xbeg, df_ybeg, (BLOK**)&dane, 0) ;
     }
     if (PL_MODE_END == pline_mode)
     {
@@ -653,20 +719,27 @@ start1:
   }
 }
 
-int Pline_single_xy (double *x_begin, double *y_begin)
-/*--------------------------------------------------*/
+int Pline_single_xy (double *x_begin, double *y_begin, BLOK *blok)
+/*--------------------------------------------------------------*/
 {
   double X0, Y0, df_xbeg, df_ybeg ;
   int pline_mode ;
 
-  set_pline_param (TRUE) ;
-beg2:
-  if (FALSE == add_block ())
+  if (blok==NULL) //new block
   {
-    set_pline_param (FALSE) ;
-    return 0;
+
+      set_pline_param(TRUE);
+      beg2:
+      if (FALSE == add_block()) {
+          set_pline_param(FALSE);
+          return 0;
+      }
+      BLK_ADR = (BLOK *) dane;
   }
-  BLK_ADR=(BLOK*)dane;
+  else  //existing block
+  {
+      BLK_ADR = blok;
+  }
 
   view_line_type(&LiniaG);
   X0=X;
@@ -679,11 +752,15 @@ beg2:
   {
     if (pline_mode == PL_MODE_LINE)
     {
+      PTR__GTMPBLOCK=(char*)BLK_ADR;
       pline_mode = Pline_Line (df_xbeg, df_ybeg, &BLK_ADR, 0) ;
+      BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
     }
     else
     {
+      PTR__GTMPBLOCK=(char*)BLK_ADR;
       pline_mode = Pline_Arc (df_xbeg, df_ybeg, &BLK_ADR, 0) ;
+      BLK_ADR=(BLOK*)PTR__GTMPBLOCK;
     }
     if (PL_MODE_END == pline_mode)
     {

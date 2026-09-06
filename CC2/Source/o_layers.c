@@ -444,7 +444,7 @@ static void set_struct_dialog_control (int erase_flag)
 /*--------------------------------------------------*/
 {
   int i;
-  static char sz_label [4 * 256] ;
+  static char sz_label [4 * MAX_NUMBER_OF_LAYERS] ;    //[4 * 256]
   double wsp_y;
   int dy;
   double alfay=100;

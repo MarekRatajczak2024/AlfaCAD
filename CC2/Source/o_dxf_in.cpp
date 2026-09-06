@@ -72,6 +72,11 @@ extern std::string cp2utf(std::string s);
 
 #define BOX_H_CORRECTION 0.93
 
+typedef
+struct {
+	char name[maxlen_w+2];
+} LAYER_NAME;
+
 
 typedef struct
 {
@@ -110,7 +115,7 @@ typedef struct
     char name[MAXLINE];
 } BLOCK_RECORD;
 
-BLOCK_RECORD *block_record=NULL;
+BLOCK_RECORD *block_record=nullptr;
 
 int block_record_no;
 int block_record_no_max=100;
@@ -195,6 +200,7 @@ extern void unicode2utf8(char *unicodetext, unsigned char *utf8text);
 
 extern char *add_block_hatch(BOOL hatchoutline);
 extern char *add_block_hatch_in_block(BOOL hatchoutline);
+extern int32_t utf8_to_ucs2(const uint8_t * input, const uint8_t ** end_ptr);
 
 void unicode2utf8char(char *unicode, unsigned short *utf8);
 void add_font_DXF(char *fontname);
@@ -206,7 +212,7 @@ T_PTR_Hatch_Line_Def Get_Hatch_Line_Def_Table999 (void);
 
 double df_x[4], df_y[4]; //TEMPORARY, it must be array of variables
 T_Hatch_Def_Param ptrs__hatch_def_param999={"",999,0};
-T_Hatch_Line_Def *s_hatch_line_def999=NULL;
+T_Hatch_Line_Def *s_hatch_line_def999=nullptr;
 
 typedef struct
 {
@@ -220,8 +226,18 @@ typedef struct
                       //b.c.  c.  g.  b.g.  ng.
 Line_Width line_width={0.18,0.25,0.35,0.50,0.70};
 
-char Layers_name[256][maxlen_w+2];
-char Layers_name_DXF[256][maxlen_w+2];
+////char Layers_name[256][maxlen_w+2];
+////char Layers_name_DXF[256][maxlen_w+2];
+
+LAYER_NAME *Layers_name;
+LAYER_NAME *Layers_name_DXF;
+
+int layer_names_no=0;
+int MAX_LAYER_NAMES_NO=100;
+
+int layer_names_no_DXF=0;
+int MAX_LAYER_NAMES_NO_DXF=100;
+
 #define max_pcx_number 64
 int pcx_number = 0;
 B_PCX_DEF *dxf_pcx_def_p[max_pcx_number];
@@ -536,6 +552,130 @@ struct pline {
     pPoint p1, p2;
 };
 
+
+#include <string>
+
+// Correct mapping table for Windows-1250 (Bytes 128 to 255) to explicit UTF-8 bytes
+const char* WIN1250_TO_UTF8[128] = {
+		"\xE2\x82\xAC", "\x00",         "\xE2\x80\x9A", "\x00",         "\xE2\x80\x9E", "\xE2\x80\xA6", "\xE2\x80\xA0", "\xE2\x80\xA1",
+		"\x00",         "\xE2\x80\xB0", "\xC5\xA0",     "\xE2\x80\xB9", "\xC5\x9A",     "\xC5\xA4",     "\xC5\xBD",     "\xC5\xB9",
+		"\x00",         "\xE2\x80\x98", "\xE2\x80\x99", "\xE2\x80\x9C", "\xE2\x80\x9D", "\xE2\x80\xA2", "\xE2\x80\x93", "\xE2\x80\x94",
+		"\x00",         "\xE2\x84\xA2", "\xC5\xA1",     "\xE2\x80\xBA", "\xC5\x9B",     "\xC5\xA5",     "\xC5\xBE",     "\xC5\xBA",
+		"\xC2\xA0",     "\xCB\\x87",    "\xCB\x98",     "\xC5\x81",     "\xC2\xA4",     "\xC4\x84",     "\xC2\xA6",     "\xC2\xA7",
+		"\xC2\xA8",     "\xC2\xA9",     "\xC5\x9E",     "\xC2\xAB",     "\xC2\xAC",     "\xC2\xAD",     "\xC2\xAE",     "\xC5\xBB",
+		"\xC2\xB0",     "\xC2\xB1",     "\xCB\x9B",     "\xC5\x82",     "\xC2\xB4",     "\xC2\xB5",     "\xC2\xB6",     "\xC2\xB7",
+		"\xC2\xB8",     "\xC4\x85",     "\xC5\x9F",     "\xC2\xBB",     "\xC4\xBD",     "\xCB\x9D",     "\xC4\xBE",     "\xC5\xBC",
+		"\xC5\x94",     "\xC3\x81",     "\xC3\x82",     "\xC4\x82",     "\xC3\x84",     "\xC4\xB9",     "\xC4\x86",     "\xC3\x87",
+		"\xC4\x8C",     "\xC3\x89",     "\xC4\x98",     "\xC3\x8B",     "\xC4\x9A",     "\xC3\x8D",     "\xC3\x8E",     "\xC4\x8E",
+		"\xC4\x90",     "\xC5\x83",     "\xC5\x87",     "\xC3\x93",     "\xC3\x94",     "\xC5\x90",     "\xC3\x96",     "\xC3\x97",
+		"\xC5\x98",     "\xC5\xAE",     "\xC3\x9A",     "\xC5\xB0",     "\xC3\x9C",     "\xC3\x9D",     "\xC5\xA2",     "\xC3\x9F",
+		"\xC5\x95",     "\xC3\xA1",     "\xC3\xA2",     "\xC4\x83",     "\xC3\xA4",     "\xC4\xBA",     "\xC4\x87",     "\xC3\xA7",
+		"\xC4\x8D",     "\xC3\xA9",     "\xC4\x99",     "\xC3\xAB",     "\xC4\x9B",     "\xC3\xAD",     "\xC3\xAE",     "\xC4\x8F",
+		"\xC4\x91",     "\xC5\x84",     "\xC5\x88",     "\xC3\xB3",     "\xC3\xB4",     "\xC5\x91",     "\xC3\xB6",     "\xC3\xB7",
+		"\xC5\x99",     "\xC5\xAF",     "\xC3\xBA",     "\xC5\xB1",     "\xC3\xBC",     "\xC3\xBD",     "\xC5\xA3",     "\xCB\x99"
+};
+
+// Correct mapping table for Windows-1251 (Bytes 128 to 255) to explicit UTF-8 bytes
+const char* WIN1251_TO_UTF8[128] = {
+		"\xD0\x82", "\xD0\x83", "\xE2\x80\x9A", "\xD1\x93", "\xE2\x80\x9E", "\xE2\x80\xA6", "\xE2\x80\xA0", "\xE2\x80\xA1",
+		"\xE2\x82\xAC", "\xE2\x80\xB0", "\xD0\x89", "\xE2\x80\xB9", "\xD0\x8A", "\xD0\x8C", "\xD0\x8B", "\xD0\x8F",
+		"\xD1\x92", "\xE2\x80\x98", "\xE2\x80\x99", "\xE2\x80\x9C", "\xE2\x80\x9D", "\xE2\x80\xA2", "\xE2\x80\x93", "\xE2\x80\x94",
+		"\x00",         "\xE2\x84\xA2", "\xD1\x99", "\xE2\x80\xBA", "\xD1\x9A", "\xD1\x9C", "\xD1\x9B", "\xD1\x9F",
+		"\xC2\xA0",     "\xD0\x8E",     "\xD1\x9E",     "\xD0\x87",     "\xC2\xA4",     "\xD2\x90",     "\xC2\xA6",     "\xC2\xA7",
+		"\xD0\x86",     "\xC2\xA9",     "\xD1\x94",     "\xC2\xAB",     "\xC2\xAC",     "\xC2\xAD",     "\xC2\xAE",     "\xD0\x87",
+		"\xC2\xB0",     "\xC2\xB1",     "\xD0\x84",     "\xD1\x96",     "\xD2\x91",     "\xCE\xBC",     "\xC2\xB6",     "\xC2\xB7",
+		"\xD1\x91",     "\xE2\x84\x96", "\xD1\x94",     "\xC2\xBB",     "\xD1\x98",     "\xD0\x85",     "\xD1\x95",     "\xD1\x9F",
+		"\xD0\x90",     "\xD0\x91",     "\xD0\x92",     "\xD0\x93",     "\xD0\x94",     "\xD0\x95",     "\xD0\x96",     "\xD0\x97",
+		"\xD0\x98",     "\xD0\x99",     "\xD0\x9A",     "\xD0\x9B",     "\xD0\x9C",     "\xD0\x9D",     "\xD0\x9E",     "\xD0\x9F",
+		"\xD0\xA0",     "\xD0\xA1",     "\xD0\xA2",     "\xD0\xA3",     "\xD0\xA4",     "\xD0\xA5",     "\xD0\xA6",     "\xD0\xA7",
+		"\xD0\xA8",     "\xD0\xA9",     "\xD0\xAA",     "\xD0\xAB",     "\xD0\xAC",     "\xD0\xAD",     "\xD0\xAE",     "\xD0\xAF",
+		"\xD0\xB0",     "\xD0\xB1",     "\xD0\xB2",     "\xD0\xB3",     "\xD0\xB4",     "\xD0\xB5",     "\xD0\xB6",     "\xD0\xB7",
+		"\xD0\xB8",     "\xD0\xB9",     "\xD0\xBA",     "\xD0\xBB",     "\xD0\xBC",     "\xD0\xBD",     "\xD0\xBE",     "\xD0\xBF",
+		"\xD1\x80",     "\xD1\x81",     "\xD1\x82",     "\xD1\x83",     "\xD1\x84",     "\xD1\x85",     "\xD1\x86",     "\xD1\x87",
+		"\xD1\x88",     "\xD1\x89",     "\xD1\x8A",     "\xD1\x8B",     "\xD1\x8C",     "\xD1\x8D",     "\xD1\x8E",     "\xD1\x8F"
+};
+
+/*
+std::string ConvertWin1250ToUtf8(const char* c_str_buffer) {
+	std::string utf8Result;
+	if (!c_str_buffer) return utf8Result;
+
+	// Optional optimization: reserve space ahead of time to limit memory reallocation
+	// UTF-8 could be longer, so we check character length safely
+	while (*c_str_buffer != '\0') {
+		unsigned char c = static_cast<unsigned char>(*c_str_buffer);
+
+		if (c < 128) {
+			// Standard ASCII maps exactly 1:1
+			utf8Result.push_back(c);
+		} else {
+			// High byte (128-255). Extract corresponding sequence from the 0-indexed lookup table
+			utf8Result.append(WIN1250_TO_UTF8[c - 128]);
+		}
+		c_str_buffer++;
+	}
+
+	return utf8Result;
+}
+*/
+enum class DxfCodePage {
+	NONE, // Already UTF-8 or standard ASCII
+	ANSI_1250,
+	ANSI_1251
+};
+
+DxfCodePage activeEncoding = DxfCodePage::NONE;
+
+std::string ConvertLegacyToUtf8(const char* c_str_buffer, DxfCodePage encoding) {
+	std::string utf8Result;
+	if (!c_str_buffer) return utf8Result;
+
+	while (*c_str_buffer != '\0') {
+		unsigned char c = static_cast<unsigned char>(*c_str_buffer);
+
+		if (c < 128) {
+			utf8Result.push_back(c); // Always maps 1:1 for ASCII control elements like \F or \P
+		} else {
+			if (encoding == DxfCodePage::ANSI_1250) {
+				utf8Result.append(WIN1250_TO_UTF8[c - 128]);
+			} else if (encoding == DxfCodePage::ANSI_1251) {
+				utf8Result.append(WIN1251_TO_UTF8[c - 128]);
+			} else {
+				utf8Result.push_back(c); // Fallback: Don't change if unhandled
+			}
+		}
+		c_str_buffer++;
+	}
+	return utf8Result;
+}
+
+
+void add_layer_name(void)
+{
+	layer_names_no++;
+    if (layer_names_no==MAX_LAYER_NAMES_NO) {
+		MAX_LAYER_NAMES_NO+=100;
+		LAYER_NAME *Layers_name_new = (LAYER_NAME*)realloc(Layers_name, MAX_LAYER_NAMES_NO * sizeof(LAYER_NAME));
+		if (Layers_name_new!=nullptr)
+		{
+			Layers_name=Layers_name_new;
+		}
+    }
+}
+
+void add_layer_name_DXF(void)
+{
+	layer_names_no_DXF++;
+	if (layer_names_no_DXF==MAX_LAYER_NAMES_NO_DXF) {
+		MAX_LAYER_NAMES_NO_DXF+=100;
+		LAYER_NAME *Layers_name_new_DXF = (LAYER_NAME*)realloc(Layers_name_DXF, MAX_LAYER_NAMES_NO * sizeof(LAYER_NAME));
+		if (Layers_name_new_DXF!=nullptr)
+		{
+			Layers_name_DXF=Layers_name_new_DXF;
+		}
+	}
+}
+
 void insertString(char* destination, int pos, char* seed)
 {
     char * strC;
@@ -691,7 +831,7 @@ int GetColorALF(int color, int layer_no)
 }
 
 char *myfgets(char *buf, int maxline, FILE * f) {
-    if (fgets(buf, maxline, f) == NULL) return NULL;
+    if (fgets(buf, maxline, f) == nullptr) return nullptr;
     if (buf[strlen(buf) - 1] == '\n') buf[strlen(buf) - 1] = '\0';
     if (buf[strlen(buf) - 1] == '\r') buf[strlen(buf) - 1] = '\0';
     return buf;
@@ -852,10 +992,98 @@ void decodingwin_true(char *text)
    return; //TEMPORARY
 }
 
-void decodingdxf(char *text)
-{
+/*
+#define UNICODE_EMPTY_INPUT -5
 
-    return; //TEMPORARY
+int32_t auto_convert_cad_to_ucs2(const uint8_t *input, const uint8_t **end_ptr)
+{
+	if (input == nullptr || input[0] == 0) {
+		return UNICODE_EMPTY_INPUT;
+	}
+
+	uint8_t c = input[0];
+
+	// If it's a standard single-byte ASCII character (0 to 127)
+	if (c < 0x80) {
+		*end_ptr = input + 1;
+		return (int32_t)c;
+	}
+
+	// Determine if the string is UTF-8 or Windows-1252 ANSI
+	// Valid UTF-8 sequences for non-ASCII start with bytes >= 0xC2
+	// If the next byte is NOT a valid UTF-8 continuation (10xxxxxx), it's Windows-1252
+	uint8_t d = input[1];
+	if (c >= 0xC2 && (d & 0xC0) == 0x80) {
+		// Fall back to your corrected UTF-8 parser function
+		return utf8_to_ucs2(input, end_ptr);
+	}
+	else {
+		// Handle it as Windows-1252 (Latin-1)
+		// Code points 0x80 - 0xFF directly line up with UCS-2/Unicode code points
+		*end_ptr = input + 1;
+		return (int32_t)c;
+	}
+}
+*/
+//#include <stdint.h>
+//#include <stddef.h>
+
+void convert_ansi_to_utf8_inplace(uint8_t *str)
+{
+	if (str == nullptr || str[0] == 0) {
+		return; // Empty or null string, nothing to do
+	}
+
+	size_t orig_len = 0;
+	size_t new_len = 0;
+
+	// Step 1: Calculate the exact length of the new UTF-8 string
+	while (str[orig_len] != 0) {
+		// ASCII characters (< 128) stay 1 byte. Extended characters (>= 128) become 2 bytes.
+		new_len += (str[orig_len] < 0x80) ? 1 : 2;
+		orig_len++;
+	}
+
+	// If no extended characters were found, the lengths match and no conversion is needed
+	if (orig_len == new_len) {
+		return;
+	}
+
+	// Step 2: Walk backwards and shift/expand characters
+	int32_t src_idx = (int32_t)orig_len - 1;
+	int32_t dest_idx = (int32_t)new_len;
+
+	// Place the null-terminator at the very end of the newly expanded string boundary
+	str[dest_idx--] = 0;
+
+	while (src_idx >= 0) {
+		uint8_t c = str[src_idx];
+
+		if (c < 0x80) {
+			// Standard ASCII character: copy 1:1
+			str[dest_idx--] = c;
+		} else {
+			// Extended Windows-1252 character: expand to 2-byte UTF-8
+			// Example for Ó (211 / 0xD3):
+			str[dest_idx--] = 0x80 | (c & 0x3F);  // Second byte: 0x80 | (0xD3 & 0x3F) = 0x93 (147)
+			str[dest_idx--] = 0xC0 | (c >> 6);   // First byte:  0xC0 | (0xD3 >> 6)  = 0xC3 (195)
+		}
+		src_idx--;
+	}
+}
+
+void decodingdxf(char *text, int len)
+{
+	//convert_ansi_to_utf8_inplace((uint8_t *)text);
+	if (activeEncoding != DxfCodePage::NONE)
+	{
+		std::string buf_utf8 = ConvertLegacyToUtf8(text, activeEncoding);
+		size_t max_capacity = len;
+		size_t copy_length = (buf_utf8.length() < max_capacity) ? buf_utf8.length() : (max_capacity - 1);
+
+		buf_utf8.copy(text, copy_length);
+		text[copy_length] = '\0'; // Properly null terminate
+	}
 }
 
 #else
@@ -879,23 +1107,26 @@ void decodingwin_true(char* text)
 }
 
 
-void decodingdxf(char *text)
+void decodingdxf(char *text, int len)
 {
+	/*
 	int ret;
 	char unicodetext[MaxMultitextLen * 2];
     std::string cp_text(text);
 
-    /*
-    if (strcmp(DWGCODEPAGE,"ANSI_1251")==0)
-    {
-        utfstr=cp2utf(cp_text);
-        const char *cstr = utfstr.c_str();
-        strcpy(text, cstr);
-    }
-    */
-
 	ret = win2unicodedxf(text, (char *)&unicodetext);
 	unicode2utf8(unicodetext, (unsigned char *)text);
+	 */
+
+	if (activeEncoding != DxfCodePage::NONE)
+	{
+		std::string buf_utf8 = ConvertLegacyToUtf8(text, activeEncoding);
+		size_t max_capacity = len; //sizeof(text);
+		size_t copy_length = (buf_utf8.length() < max_capacity) ? buf_utf8.length() : (max_capacity - 1);
+
+		buf_utf8.copy(text, copy_length);
+		text[copy_length] = '\0'; // Properly null terminate
+	}
 
 }
 
@@ -919,17 +1150,18 @@ static BOOL add_block(double x, double y, char kod_obiektu, char *blok_type0, BO
 	float kat;
 
 
-	kat = angle;
+	kat = (float)angle;
 
-	strcpy(blok_type, blok_type0);
+	strncpy(blok_type, blok_type0,60);
+	blok_type[60] = '\0';
 
     len_type = (int) strlen(blok_type) + 1;
     if ((kod_obiektu == B_DIM) || (kod_obiektu == B_DIM1) || (kod_obiektu == B_DIM2) || (kod_obiektu == B_DIM3))
         len_type += sizeof(float);  //added angle float
-    len_desc = sizeof(unsigned) + 2 * sizeof(float) + sizeof(len_type) + len_type;
+    len_desc = (int)sizeof(unsigned) + 2 * sizeof(float) + sizeof(len_type) + len_type;
     size_block += len_desc;
 
-	if (NULL == (buf_block = (BLOK*)malloc /*getmem*/(sizeof(NAGLOWEK) + size_block)))
+	if (nullptr == (buf_block = (BLOK*)malloc /*getmem*/(sizeof(NAGLOWEK) + size_block)))
 	{
 		return FALSE;
 	}
@@ -951,7 +1183,7 @@ static BOOL add_block(double x, double y, char kod_obiektu, char *blok_type0, BO
 		memmove((char *)(buf_block->opis_obiektu + buf_block->dlugosc_opisu_obiektu - sizeof(float)), &kat, sizeof(float));
 	}
 
-	if ((ptrs_block = (BLOK*)dodaj_obiekt(NULL, buf_block)) == NULL)
+	if ((ptrs_block = (BLOK*)dodaj_obiekt(nullptr, buf_block)) == nullptr)
 	{
         free(buf_block);
 		return FALSE;
@@ -975,7 +1207,7 @@ static BOOL add_block_pline (void)
   s_blockd.n = B3 + sizeof (c_pltype) ;
   s_blockd.kod_obiektu = B_PLINE ;
   s_blockd.dlugosc_opisu_obiektu = sizeof(c_pltype) ;
-  if( (ptrs_block = (BLOK*)dodaj_obiekt (NULL, &s_blockd)) == NULL)
+  if( (ptrs_block = (BLOK*)dodaj_obiekt (nullptr, &s_blockd)) == nullptr)
   {
     return FALSE ;
   }
@@ -999,7 +1231,7 @@ static BOOL add_block_in_block (char kod_obiektu, char c_pltype0)
   s_blockd.kod_obiektu = kod_obiektu ;
   s_blockd.dlugosc_opisu_obiektu = sizeof(c_pltype) ;
   s_blockd.blok=1;
-  if( (ptrs_block = (BLOK*)dodaj_obiekt ((BLOK*)dane, &s_blockd)) == NULL)
+  if( (ptrs_block = (BLOK*)dodaj_obiekt ((BLOK*)dane, &s_blockd)) == nullptr)
   {
     return FALSE ;
   }
@@ -1024,7 +1256,7 @@ static BOOL add_block_pline_in_block(void)
 	s_blockd.kod_obiektu = B_PLINE;
 	s_blockd.dlugosc_opisu_obiektu = sizeof(c_pltype);
 	s_blockd.blok = 1;
-	if ((ptrs_block = (BLOK*)dodaj_obiekt((BLOK*)dane, &s_blockd)) == NULL)
+	if ((ptrs_block = (BLOK*)dodaj_obiekt((BLOK*)dane, &s_blockd)) == nullptr)
 	{
 		return FALSE;
 	}
@@ -1144,7 +1376,7 @@ char *unicode2mazovia(char *unicode)
 {
 	int ucode;
 	
-	ucode = (int)strtol(unicode, NULL, 0);
+	ucode = (int)strtol(unicode, nullptr, 0);
 	switch (ucode)
 	{
 	case 0x00b0:
@@ -1281,7 +1513,7 @@ void unicode2utf8char(char *unicode, unsigned short *utf8)
 	unsigned char utf8c[4];
 	int bytes_n;
 	
-	ucode = (int)strtol(unicode, NULL, 0);
+	ucode = (int)strtol(unicode, nullptr, 0);
 
 	bytes_n = ucs2_to_utf8(ucode, utf8c);
 
@@ -1317,7 +1549,7 @@ void special_chars (char * tekst)
 	//polskie znaki
 
 	adr_char=strstr(tekst,"%%165");  //A
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\245';  
        i_char++;
@@ -1325,7 +1557,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%198");  //C
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\306';
        i_char++;
@@ -1333,7 +1565,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%202");  //E
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\312';
        i_char++;
@@ -1341,7 +1573,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%163");  //L
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\243';
        i_char++;
@@ -1349,7 +1581,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%209");  //N
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\321';
        i_char++;
@@ -1357,7 +1589,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%211");  //O
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\323';
        i_char++;
@@ -1365,7 +1597,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%140");  //S
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\314';
        i_char++;
@@ -1373,7 +1605,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%175");  //Z
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\257';
        i_char++;
@@ -1381,7 +1613,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%143");  //Z'
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\217';
        i_char++;
@@ -1390,7 +1622,7 @@ void special_chars (char * tekst)
 	 }
 
 	 adr_char=strstr(tekst,"%%185");  //a
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\271';
        i_char++;
@@ -1398,7 +1630,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%230");  //c
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\346';
        i_char++;
@@ -1406,7 +1638,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%234");  //e
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\352';
        i_char++;
@@ -1414,7 +1646,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%179");  //l
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\263';
        i_char++;
@@ -1422,7 +1654,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%241");  //n
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\361';
        i_char++;
@@ -1430,7 +1662,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%243");  //o
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\363';
        i_char++;
@@ -1438,7 +1670,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%156");  //s
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\234';
        i_char++;
@@ -1446,7 +1678,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%191");  //Z
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\277';
        i_char++;
@@ -1454,7 +1686,7 @@ void special_chars (char * tekst)
        dl_tekst-=4;
 	 }
 	 adr_char=strstr(tekst,"%%159");  //Z'
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        tekst[adr_char-tekst]='\237';
        i_char++;
@@ -1464,7 +1696,7 @@ void special_chars (char * tekst)
 
 	 //////////////////////////////
 	 adr_char=strstr(tekst,"%%177");  //+-'
-	 if (adr_char!=NULL)
+	 if (adr_char!=nullptr)
      {
        //tekst[adr_char-tekst]='\261';
        tekst[adr_char-tekst]=plus_minus[0];
@@ -1476,7 +1708,7 @@ void special_chars (char * tekst)
     //////////////////
     //stopnie
     adr_char=strstr(tekst,"%%d");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        //tekst[adr_char-tekst]='\260';
        tekst[adr_char-tekst]=deg[0];
@@ -1486,7 +1718,7 @@ void special_chars (char * tekst)
        dl_tekst-=1;
      }
 	adr_char = strstr(tekst, "%%D");
-	if (adr_char != NULL)
+	if (adr_char != nullptr)
 	{
 		//tekst[adr_char - tekst] = '\260';
         tekst[adr_char-tekst]=deg[0];
@@ -1497,7 +1729,7 @@ void special_chars (char * tekst)
 	}
     //plus minus
     adr_char=strstr(tekst, "%%p");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        //tekst[adr_char-tekst]='\261';
        tekst[adr_char-tekst]=plus_minus[0];
@@ -1507,7 +1739,7 @@ void special_chars (char * tekst)
        dl_tekst-=1;
      }
      adr_char=strstr(tekst, "%%P");
-     if (adr_char!=NULL)
+     if (adr_char!=nullptr)
      {
          //tekst[adr_char-tekst]='\261';
          tekst[adr_char-tekst]=plus_minus[0];
@@ -1518,7 +1750,7 @@ void special_chars (char * tekst)
      }
     //fi
     adr_char=strstr(tekst, "%%c");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        //tekst[adr_char-tekst]='\330';
        tekst[adr_char-tekst]=fi[0];
@@ -1529,7 +1761,7 @@ void special_chars (char * tekst)
      }
 
     adr_char=strstr(tekst, "%%C");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
     {
        //tekst[adr_char-tekst]='\330';
        tekst[adr_char-tekst]=fi[0];
@@ -1540,7 +1772,7 @@ void special_chars (char * tekst)
     }
     //procent
     adr_char=strstr(tekst, "%%%");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
 	   tekst[adr_char - tekst] = '%';
        i_char++;
@@ -1549,7 +1781,7 @@ void special_chars (char * tekst)
      }
     //nadkreslenie - chwilowo usuniete
     adr_char=strstr(tekst, "%%o");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        i_char++;
        memmove(adr_char,adr_char+3,dl_tekst-(adr_char-tekst)-1);
@@ -1558,7 +1790,7 @@ void special_chars (char * tekst)
      
     //podkreslenie u - chwilowo usuniete
     adr_char=strstr(tekst, "%%u");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        i_char++;
        memmove(adr_char,adr_char+3,dl_tekst-(adr_char-tekst)-1);
@@ -1567,7 +1799,7 @@ void special_chars (char * tekst)
 
      //podkreslenie U - chwilowo usuniete
     adr_char=strstr(tekst, "%%U");
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
      {
        i_char++;
        memmove(adr_char,adr_char+3,dl_tekst-(adr_char-tekst)-1);
@@ -1576,7 +1808,7 @@ void special_chars (char * tekst)
 
     //caret encoded characters:
     adr_char=strstr(tekst, "^I");  // tabulator
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
     {
        //adding tab
        tekst[adr_char-tekst]='\011';
@@ -1586,7 +1818,7 @@ void special_chars (char * tekst)
     }
 
     adr_char=strstr(tekst, "^J");  //  line break LF
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
     {
        //adding tab
        tekst[adr_char-tekst]='\012';
@@ -1596,7 +1828,7 @@ void special_chars (char * tekst)
     }
 
     adr_char=strstr(tekst, "^M");  //  CR
-    if (adr_char!=NULL)
+    if (adr_char!=nullptr)
     {
        //adding tab
        tekst[adr_char-tekst]='\015';
@@ -1681,7 +1913,12 @@ void latin2utf8(char * tekst)  //DOS Latin II
 
 	for (i = 0; i < dl_tekst; i++)
 	{
-		if ((unsigned char)tekst[i] < 127) strncat(ubuf, &tekst[i], sizeof(ubuf) - strlen(ubuf) - 1);
+		if ((unsigned char)tekst[i] < 127)
+		{
+			//strncat(ubuf, &tekst[i], 1);
+			// Appends exactly one character safely while respecting buffer limits
+			snprintf(ubuf + strlen(ubuf), sizeof(ubuf) - strlen(ubuf), "%c", tekst[i]);
+		}
 		else
 		{
 			switch (tekst[i])
@@ -1741,10 +1978,21 @@ void latin2utf8(char * tekst)  //DOS Latin II
 			else
 			{
 
+				/*
 				lo = utf8c[0];
 				hi = utf8c[1];
-				strncat(ubuf, &lo, sizeof(ubuf) - strlen(ubuf) - 1);
-				strncat(ubuf, &hi, sizeof(ubuf) - strlen(ubuf) - 1);
+
+				strncat(ubuf, &lo, 1);
+				strncat(ubuf, &hi, 1);
+				*/
+
+				char temp[3];
+				temp[0] = (char)utf8c[0];
+				temp[1] = (char)utf8c[1];
+				temp[2] = '\0';
+
+				// SAFE: Tells the compiler exactly how much space is left in ubuf
+				strncat(ubuf, temp, sizeof(ubuf) - strlen(ubuf) - 1);
 			}
 		}
 	}
@@ -1767,7 +2015,12 @@ void ISOlatin2utf8(char * tekst)
 	if (dl_tekst == 0) return;
 	for (i = 0; i < dl_tekst; i++)
 	{
-		if ((unsigned char)tekst[i]<127) strncat(ubuf, &tekst[i], sizeof(ubuf) - strlen(ubuf) - 1);
+		if ((unsigned char)tekst[i]<127)
+		{
+			//strncat(ubuf, &tekst[i], 1);
+			// Appends exactly one character safely while respecting buffer limits
+			snprintf(ubuf + strlen(ubuf), sizeof(ubuf) - strlen(ubuf), "%c", tekst[i]);
+		}
 		else
 		{
 			switch (tekst[i])
@@ -1826,10 +2079,22 @@ void ISOlatin2utf8(char * tekst)
 			else
 			{
 
+				/*
 				lo = utf8c[0];
 				hi = utf8c[1];
-				strncat(ubuf, &lo, sizeof(ubuf) - strlen(ubuf) - 1);
-				strncat(ubuf, &hi, sizeof(ubuf) - strlen(ubuf) - 1);
+				strncat(ubuf, &lo, 1);
+				strncat(ubuf, &hi, 1);
+				*/
+
+				char temp[3];
+				temp[0] = (char)utf8c[0];
+				temp[1] = (char)utf8c[1];
+				temp[2] = '\0';
+
+				// SAFE: Tells the compiler exactly how much space is left in ubuf
+				strncat(ubuf, temp, sizeof(ubuf) - strlen(ubuf) - 1);
+
+
 			}
 
 		}
@@ -1912,9 +2177,9 @@ int read_var2_old(FILE *f,int kod1, void *ZMIENNA1, int kod2, void  *ZMIENNA2)
   char dxf_code[MAXLINE];
 
   if (!inc_nr_linii()) return 0;
- if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(dxf_code , MAXLINE , f ) == nullptr ) return 0;
  if (!inc_nr_linii()) return 0;
- if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
 if (((kod1>=0) && (kod1<10)) ||
     ((kod1>=999) && (kod1<1010))) //string
@@ -1939,9 +2204,9 @@ if (((kod1>=0) && (kod1<10)) ||
   }                
  //2
 if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_code , MAXLINE , f ) == nullptr ) return 0;
   if (!inc_nr_linii()) return 0;
- if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
 if (((kod2>=0) && (kod2<10)) ||
     ((kod2>=999) && (kod2<1010))) //string
@@ -2045,9 +2310,9 @@ int read_var3_old(FILE *f,int kod1, void *ZMIENNA1, int kod2, void *ZMIENNA2, in
   char dxf_code[MAXLINE];
 
   if (!inc_nr_linii()) return 0;
- if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(dxf_code , MAXLINE , f ) == nullptr ) return 0;
  if (!inc_nr_linii()) return 0;
- if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
 if (((kod1>=0) && (kod1<10)) ||
     ((kod1>=999) && (kod1<1010))) //string
@@ -2072,9 +2337,9 @@ if (((kod1>=0) && (kod1<10)) ||
   }                
  //2
 if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_code , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_code , MAXLINE , f ) == nullptr ) return 0;
   if (!inc_nr_linii()) return 0;
- if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
 if (((kod2>=0) && (kod2<10)) ||
     ((kod2>=999) && (kod2<1010))) //string
@@ -2183,7 +2448,7 @@ int find_layer(char *buf1)
   if (No_Layers==1) return 0;
   for (ii=0; ii<No_Layers; ii++)
    {
-     if (strcmp(buf1,Layers_name[ii])==0)
+     if (strcmp(buf1,Layers_name[ii].name)==0)
       {
         return ii;
       }
@@ -2198,7 +2463,7 @@ int find_layer_DXF(char *buf1)
 	if (No_Layers_DXF == 1) return 0;
 	for (ii = 0; ii < No_Layers_DXF; ii++)
 	{
-		if (strcmp(buf1, Layers_name_DXF[ii]) == 0)
+		if (strcmp(buf1, Layers_name_DXF[ii].name) == 0)
 		{
 			return ii;
 		}
@@ -2243,7 +2508,7 @@ int find_type(char *buf1, int e_type)
   for (ii=0; ii<quasi_acad_line_nr; ii++)
    {
       ptr=strstr(buf1,quasi_acad_line[ii]);
-      if (ptr!=NULL)
+      if (ptr!=nullptr)
       {
        return_var=grubosc + quasi_acad_ltype[ii]-64;
        return return_var;
@@ -2381,7 +2646,7 @@ unsigned char find_font(char *font_style, double *e_wspx, double *e_wspx0, BOOL 
 fontDXF:
   
 	ptr = strstr(style_file, ".TTF");
-	if (ptr != NULL)
+	if (ptr != nullptr)
 	{
 		flags = fnsplit(font_style, drive, dir, file, ext);
 		font_number0 = find_font_DXF(file, &e_wspx1, 2);
@@ -2471,7 +2736,7 @@ BOOL check_angle(char *p1, double *angle)
 	else return TRUE;
 }
 
-BOOL check_dim_line(char *p1, char *obiektt1, char *obiektt2, char *obiektt3)
+BOOL check_dim_line(char *p1, unsigned char *obiektt1, unsigned char *obiektt2, unsigned char *obiektt3)
 {
 	if (strcmp(p1, code999[0]) == 0) { *obiektt1 = 0; *obiektt2 = 1; *obiektt3 = 0; return TRUE; }
 	else if (strcmp(p1, code999[2]) == 0) { *obiektt1 = 0; *obiektt2 = 1; *obiektt3 = 1; return TRUE; }
@@ -2479,19 +2744,19 @@ BOOL check_dim_line(char *p1, char *obiektt1, char *obiektt2, char *obiektt3)
 	else return FALSE;
 }
 
-BOOL check_dim_arc(char *p1, char *obiektt1, char *obiektt2, char *obiektt3)
+BOOL check_dim_arc(char *p1, unsigned char *obiektt1, unsigned char *obiektt2, unsigned char *obiektt3)
 {
 	if (strcmp(p1, code999[1]) == 0) { *obiektt1 = 0; *obiektt2 = 1; *obiektt3 = 0; return TRUE; }
 	else return FALSE;
 }
 
-BOOL check_dim_head(char *p1, char *obiektt1, char *obiektt2, char *obiektt3)  //kolo/ solid
+BOOL check_dim_head(char *p1, unsigned char *obiektt1, unsigned char *obiektt2, unsigned char *obiektt3)  //kolo/ solid
 {
 	if (strcmp(p1, code999[3]) == 0) { *obiektt1 = 0; *obiektt2 = 1; *obiektt3 = 0; return TRUE; }
 	else return FALSE;
 }
 
-BOOL check_dim_text(char *p1, char *obiektt1, char *obiektt2, char *obiektt3)  //text
+BOOL check_dim_text(char *p1, unsigned char *obiektt1, unsigned char *obiektt2, unsigned char *obiektt3)  //text
 {
 	if (strcmp(p1, code999[4]) == 0) { *obiektt1 = 0; *obiektt2 = 1; *obiektt3 = 0; return TRUE; }
 	else return FALSE;
@@ -2513,17 +2778,17 @@ int get_width370(unsigned char e_type)
 
 	width_l = (e_type & 224) / 32;
 
-	if (width_l == 0) width = int(line_width.thinest*100.0 + 0.5);
-	else if (width_l == 1) width = int(line_width.thin*100.0 + 0.5);
-	else if (width_l == 2) width = int(line_width.normal*100.0 + 0.5);
-	else if (width_l == 3) width = int(line_width.thick*100.0 + 0.5);
-	else if (width_l == 4) width = int(line_width.thickest*100.0 + 0.5);
+	if (width_l == 0) width = (int)(lround(line_width.thinest*100.0));
+	else if (width_l == 1) width = (int)(lround(line_width.thin*100.0));
+	else if (width_l == 2) width = (int)(lround(line_width.normal*100.0));
+	else if (width_l == 3) width = (int)(lround(line_width.thick*100.0));
+	else if (width_l == 4) width = (int)(lround(line_width.thickest*100.0));
 
-	else if (width_l == 5) width = int(line_width.normal * 100.0 + 0.5);
-	else if (width_l == 6) width = int(line_width.normal * 100.0 + 0.5);
-	else if (width_l == 7) width = int(line_width.normal * 100.0 + 0.5);  //invisible with code 999
+	else if (width_l == 5) width = (int)(lround(line_width.normal * 100.0));
+	else if (width_l == 6) width = (int)(lround(line_width.normal * 100.0));
+	else if (width_l == 7) width = (int)(lround(line_width.normal * 100.0));  //invisible with code 999
 
-	else width = int(line_width.normal*100.0 + 0.5);
+	else width = (int)(lround(line_width.normal*100.0));
 
 	return width;
 }
@@ -2554,10 +2819,10 @@ void pisz_line(double e_xp, double e_yp, double e_xk, double e_yk)
     e_xk1=jednostkiOb(e_xk - EXTMIN_X);
     e_yk1=jednostkiOb(e_yk - EXTMIN_Y);
     
-    L.x1=e_xp1;
-    L.y1=e_yp1;
-    L.x2=e_xk1;
-    L.y2=e_yk1;
+    L.x1=(float)e_xp1;
+    L.y1=(float)e_yp1;
+    L.x2=(float)e_xk1;
+    L.y2=(float)e_yk1;
 
     L.typ=get_typ(ep_type, ep_width);
 
@@ -2565,7 +2830,7 @@ void pisz_line(double e_xp, double e_yp, double e_xk, double e_yk)
     L.warstwa=ep_layer;
     L.przec=ep_space;
   
-    if (NULL == dodaj_obiekt ( NULL, &L)) return ;
+    if (nullptr == dodaj_obiekt ( nullptr, &L)) return ;
     
     return;
 
@@ -2664,7 +2929,7 @@ void zaznacz_blok(char *adr)
   while ((adp<adk) && (again==TRUE))
    {
      adp1=find_obj(adp, adk, Otekst, ONieOkreslony, 0);
-     if (adp1!=NULL)
+     if (adp1!=nullptr)
       {
         nag=(NAGLOWEK *)adp1;
         if (nag->atrybut==Ablok) nag->atrybut=Anormalny;
@@ -2755,7 +3020,7 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
      {
       if (s_pline.wypuklosc==0)
        {
-        if (NULL == dodaj_obiekt ((BLOK*)base_adr, &solid_temp)) return 0;
+        if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &solid_temp)) return 0;
        } 
        else
         {
@@ -2848,7 +3113,7 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
             }
             if (sa.r>0.00001)
             {
-                if (NULL == dodaj_obiekt ((BLOK*)base_adr, &sa)) return 0;
+                if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &sa)) return 0;
                 base_adr=dane+base_adr_dane;
             }
          } 
@@ -2867,7 +3132,7 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
          L.typ=get_typ(ep_type, ep_width);
          L.przec=ep_space;
          L.blok=1;
-         if (NULL == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
+         if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
         }
          else
          {
@@ -2878,7 +3143,7 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
           l.typ=get_typ(ep_type, ep_width);
           l.blok=1;
           l.przec=ep_space;
-          if (l.r>0.00001) {if (NULL == dodaj_obiekt ((BLOK*)base_adr, &l)) return 0;}
+          if (l.r>0.00001) {if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &l)) return 0;}
          }
           
       } 
@@ -2939,12 +3204,12 @@ static int add_bspline(double xp[NumSplinePoints], double yp[NumSplinePoints], d
 
     if (to_block==1) {
         bspline.blok = ElemBlok;
-        if (NULL == dodaj_obiekt((BLOK *) dane, &bspline)) return 0;
+        if (nullptr == dodaj_obiekt((BLOK *) dane, &bspline)) return 0;
     }
     else
     {
         bspline.blok = NoElemBlok;
-        if (NULL == dodaj_obiekt(NULL, &bspline)) return 0;
+        if (nullptr == dodaj_obiekt(nullptr, &bspline)) return 0;
     }
 
     return 1;
@@ -3012,7 +3277,7 @@ static int add_bspline___(double xp[NumSplinePoints], double yp[NumSplinePoints]
 	bspline.blok = ElemBlok;
 	bspline.temp1 = 0;
 
-	if (NULL == dodaj_obiekt((BLOK*)base_adr, &bspline)) return 0;
+	if (nullptr == dodaj_obiekt((BLOK*)base_adr, &bspline)) return 0;
 	base_adr = dane + base_adr_dane;
 
 	return 1;
@@ -3098,7 +3363,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
      {
       if (s_pline.wypuklosc==0)
         {
-         if (NULL == dodaj_obiekt ((BLOK*)base_adr, &solid_temp)) return 0;
+         if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &solid_temp)) return 0;
         }
         else
          {
@@ -3190,7 +3455,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
              }
              if ((sa.r>0.00001) && (atrybut!=Ausuniety))
              {
-                 if (NULL == dodaj_obiekt ((BLOK*)base_adr, &sa)) return 0;
+                 if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &sa)) return 0;
                  base_adr=dane+base_adr_dane;
              }
 
@@ -3212,7 +3477,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
          L.przec=ep_space;
          L.blok=1;
          if (atrybut!=Ausuniety) {
-             if (NULL == dodaj_obiekt((BLOK *) base_adr, &L)) return 0;
+             if (nullptr == dodaj_obiekt((BLOK *) base_adr, &L)) return 0;
          }
         }
         else
@@ -3225,7 +3490,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
           l.przec=ep_space;
           l.blok=1;
           if (atrybut!=Ausuniety) {
-                 if (l.r > 0.00001) { if (NULL == dodaj_obiekt((BLOK *) base_adr, &l)) return 0; }
+                 if (l.r > 0.00001) { if (nullptr == dodaj_obiekt((BLOK *) base_adr, &l)) return 0; }
              }
          }
           
@@ -3343,7 +3608,7 @@ int read_lines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return -1;
-		if (myfgets(buf, MAXLINE, f) == NULL) return -1;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
 
 		p = buf;
 
@@ -3356,7 +3621,7 @@ int read_lines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			&& (entitie_code != 79) && (entitie_code != 49))
 		{
 			if (!inc_nr_linii()) return -1;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return -1;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
 
 			p1 = buf1;
 		}
@@ -3441,13 +3706,13 @@ int read_lines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			if (to_block == 1)
 			{
 				L.blok = 1;
-				if (NULL == dodaj_obiekt((BLOK*)dane, &L)) return -1;
+				if (nullptr == dodaj_obiekt((BLOK*)dane, &L)) return -1;
 			}
 			else
 			{
                 //hatch always creates block
                 L.blok = 1;
-                if (NULL == dodaj_obiekt((BLOK*)dane, &L)) return -1;
+                if (nullptr == dodaj_obiekt((BLOK*)dane, &L)) return -1;
 			}
 
             if (object_no==0)
@@ -3514,7 +3779,7 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
     while (endentitie == FALSE)
     {
         if (!inc_nr_linii()) return -1;
-        if (myfgets(buf, MAXLINE, f) == NULL) return -1;
+        if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
 
         p = buf;
 
@@ -3526,7 +3791,7 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
             && (entitie_code != 79) && (entitie_code != 49))
         {
             if (!inc_nr_linii()) return -1;
-            if (myfgets(buf1, MAXLINE, f) == NULL) return -1;
+            if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
 
             p1 = buf1;
         }
@@ -3631,11 +3896,11 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
                 {
                     solid_type=0;
                     if (to_block == 0) {
-                        if (add_block_hatch(TRUE) == NULL) {
+                        if (add_block_hatch(TRUE) == nullptr) {
                             return 0;
                         }
                     } else {
-                        if (add_block_hatch_in_block(TRUE) == NULL) {
+                        if (add_block_hatch_in_block(TRUE) == nullptr) {
                             return 0;
                         }
                     }
@@ -3700,7 +3965,7 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return -1;
-		if (myfgets(buf, MAXLINE, f) == NULL) return -1;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
 
 		p = buf;
 
@@ -3713,7 +3978,7 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			&& (entitie_code != 79) && (entitie_code != 49))
 		{
 			if (!inc_nr_linii()) return -1;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return -1;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
 
 			p1 = buf1;
 		}
@@ -3783,13 +4048,13 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			if (to_block == 1)
 			{
 				l.blok = 1;
-				if (NULL == dodaj_obiekt((BLOK*)dane, &l)) return -1;
+				if (nullptr == dodaj_obiekt((BLOK*)dane, &l)) return -1;
 			}
 			else
 			{
                 //hatch always creates block
                 l.blok = 1;
-                if (NULL == dodaj_obiekt((BLOK*)dane, &l)) return -1;
+                if (nullptr == dodaj_obiekt((BLOK*)dane, &l)) return -1;
 			}
 
             if (object_no==0)
@@ -3852,7 +4117,7 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return -1;
-		if (myfgets(buf, MAXLINE, f) == NULL) return -1;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
 
 		p = buf;
 
@@ -3865,7 +4130,7 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
 			&& (entitie_code != 79) && (entitie_code != 49))
 		{
 			if (!inc_nr_linii()) return -1;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return -1;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
 
 			p1 = buf1;
 		}
@@ -3905,12 +4170,12 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
                     angle=Atan2(ek_y, ek_x);
                     angle=Angle_Normal(angle);
 
-                    e.x = jednostkiOb(e_x - EXTMIN_X);
-                    e.y = jednostkiOb(e_y - EXTMIN_Y);
+                    e.x = (float)(jednostkiOb(e_x - EXTMIN_X));
+                    e.y = (float)(jednostkiOb(e_y - EXTMIN_Y));
 
-                    e.angle = angle;
-                    e.rx = jednostkiOb(pa);
-                    e.ry = jednostkiOb(pb);
+                    e.angle = (float)angle;
+                    e.rx = (float)jednostkiOb(pa);
+                    e.ry = (float)jednostkiOb(pb);
 
                     e.typ = get_typ(e_type, ep_width);
                     e.kolor = e_color;
@@ -3921,12 +4186,12 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
 
                     if (to_block == 1) {
                         e.blok = ElemBlok;
-                        if (NULL == dodaj_obiekt((BLOK*)dane, &e)) return 0;
+                        if (nullptr == dodaj_obiekt((BLOK*)dane, &e)) return 0;
                     }
                     else
                     {
                         e.blok = NoElemBlok;
-                        if (NULL == dodaj_obiekt(NULL, &e)) return 0;
+                        if (nullptr == dodaj_obiekt(nullptr, &e)) return 0;
                     }
 
                     *done=TRUE;
@@ -4002,7 +4267,7 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
 
                     L.blok = 1;
 
-                    if (NULL == dodaj_obiekt((BLOK *) dane, &L)) return -1;
+                    if (nullptr == dodaj_obiekt((BLOK *) dane, &L)) return -1;
 
                     }
                 }
@@ -4122,7 +4387,7 @@ int read_splines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return -1;
-		if (myfgets(buf, MAXLINE, f) == NULL) return -1;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
 
 		p = buf;
 
@@ -4135,7 +4400,7 @@ int read_splines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			&& (entitie_code != 79) && (entitie_code != 49))
 		{
 			if (!inc_nr_linii()) return -1;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return -1;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
 
 			p1 = buf1;
 		}
@@ -4313,7 +4578,7 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
     double kos, koc;
     BOOL is_polyline;
     BOOL seed_points_no=0;
-    POINTD *seed_points=NULL;
+    POINTD *seed_points=nullptr;
     double seed_x, seed_y;
     int number_of_source_boundary_objects;
     double dx0;
@@ -4345,7 +4610,7 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) goto error; //return 0;
-		if (myfgets(buf, MAXLINE, f) == NULL) goto error; //return 0;
+		if (myfgets(buf, MAXLINE, f) == nullptr) goto error; //return 0;
 
 		p = buf;
 
@@ -4354,7 +4619,7 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
 		if (entitie_code != 0)
 		{
 			if (!inc_nr_linii()) goto error; //return 0;
-			if (myfgets(buf1, MAXLINE, f) == NULL) goto error; //return 0;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) goto error; //return 0;
 
 			p1 = buf1;
 		}
@@ -4410,7 +4675,7 @@ go_repeat:
 			if (sscanf(p1, "%lf", &e_zp0) < 1) goto error; //return 0;
 			break;
 		case 2: strcpy(pattern_name, buf1);
-            if (!is_utf8(pattern_name)) decodingdxf(pattern_name);
+            if (!is_utf8(pattern_name)) decodingdxf(pattern_name, sizeof(pattern_name));
             strncpy(ptrs__hatch_def_param999.sz_name, pattern_name,PATERN_NAME_MAXLEN-1);
 			break;
 		case 70:
@@ -4429,11 +4694,11 @@ go_repeat:
             if (number_of_paths>1)//no Polyline
             {
                  if (to_block == 0) {
-                    if (add_block_hatch(TRUE) == NULL) {
+                    if (add_block_hatch(TRUE) == nullptr) {
                         goto error; //return 0;
                     }
                 } else {
-                    if (add_block_hatch_in_block(TRUE) == NULL) {
+                    if (add_block_hatch_in_block(TRUE) == nullptr) {
                         goto error; //return 0;
                     }
                 }
@@ -4459,7 +4724,7 @@ go_repeat:
 				{
 					entitie_code = ret;
 					if (!inc_nr_linii()) goto error; //return 0;
-					if (myfgets(buf1, MAXLINE, f) == NULL) goto error; //return 0;
+					if (myfgets(buf1, MAXLINE, f) == nullptr) goto error; //return 0;
 
                     if (path_no==0)
                     {
@@ -4481,11 +4746,11 @@ go_repeat:
             else
             {
                 if (to_block == 0) {
-                    if (add_block_hatch(TRUE) == NULL) {
+                    if (add_block_hatch(TRUE) == nullptr) {
                         goto error; //return 0;
                     }
                 } else {
-                    if (add_block_hatch_in_block(TRUE) == NULL) {
+                    if (add_block_hatch_in_block(TRUE) == nullptr) {
                         goto error; //return 0;
                     }
                 }
@@ -4551,7 +4816,7 @@ go_repeat:
 			{
 				entitie_code = ret;
 				if (!inc_nr_linii()) goto error; //return 0;
-				if (myfgets(buf1, MAXLINE, f) == NULL) goto error; //return 0;
+				if (myfgets(buf1, MAXLINE, f) == nullptr) goto error; //return 0;
 
 				goto go_repeat;
 			}
@@ -4567,7 +4832,7 @@ go_repeat:
             if (sscanf(p1, "%d", &number_of_pattern_definition_lines) < 1) goto error; //return 0;
 
             ptrs__hatch_def_param999.i_size=number_of_pattern_definition_lines;
-            if  (s_hatch_line_def999!=NULL) free(s_hatch_line_def999);
+            if  (s_hatch_line_def999!=nullptr) free(s_hatch_line_def999);
             s_hatch_line_def999=(T_Hatch_Line_Def*)malloc(sizeof(T_Hatch_Line_Def)*number_of_pattern_definition_lines);
             break;
 		case 98:
@@ -4657,7 +4922,7 @@ go_repeat:
 
     if (to_block==1)
         base_block=(BLOK *)dane;
-    else base_block=NULL;
+    else base_block=nullptr;
 
        glb_silent=TRUE;
 
@@ -4682,12 +4947,12 @@ go_repeat:
                if (to_block == 1)
                {
                    solid_hatch->blok=1;
-                   if (NULL == dodaj_obiekt ((BLOK*)dane, solid_hatch)) goto error; //return 0;
+                   if (nullptr == dodaj_obiekt ((BLOK*)dane, solid_hatch)) goto error; //return 0;
                }
                else
                {
                    solid_hatch->blok=0;
-                   if (NULL == dodaj_obiekt ( NULL, solid_hatch)) goto error; //return 0;
+                   if (nullptr == dodaj_obiekt ( nullptr, solid_hatch)) goto error; //return 0;
                }
 
                go_ahead=FALSE;
@@ -4767,14 +5032,14 @@ go_repeat:
            zmien_atrybut(dane, dane + dane_size, Ablok, Ausuniety); //Ausuniety);
 
 
-    //if (s_hatch_line_def999 != NULL) free(s_hatch_line_def999);
-    if (seed_points!=NULL) free(seed_points);
+    //if (s_hatch_line_def999 != nullptr) free(s_hatch_line_def999);
+    if (seed_points!=nullptr) free(seed_points);
 	return 1;
 
 
  error:
-    if  (s_hatch_line_def999!=NULL) free(s_hatch_line_def999);
-    if (seed_points!=NULL) free(seed_points);
+    if  (s_hatch_line_def999!=nullptr) free(s_hatch_line_def999);
+    if (seed_points!=nullptr) free(seed_points);
     return 0;
 }
 
@@ -4788,7 +5053,7 @@ BOOL read_seqend(FILE *f)  //reading until 0
     endentitie=FALSE;
     while (endentitie==FALSE) {
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+        if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
         p = buf;
 
@@ -4797,7 +5062,7 @@ BOOL read_seqend(FILE *f)  //reading until 0
         if (entitie_code != 0)
         {
             if (!inc_nr_linii()) return 0;
-            if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+            if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
             p1=buf1;
 
@@ -4838,7 +5103,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
   BOOL Vertex_Enable;
   BOOL ret123;
   BOOL ret_seq;
-  char obiektt1=0, obiektt2=0, obiektt3=0;
+  unsigned char obiektt1=0, obiektt2=0, obiektt3=0;
 
   ep_space=0;
   ep_novisibility = 0;
@@ -4877,7 +5142,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   
   p=buf;
 
@@ -4887,7 +5152,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
   
     p1=buf1;
   }  
@@ -5000,7 +5265,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
  vertex=FALSE;
  /*nalezy oczekiwac VERTEX lub SEQEND*/
  if (!inc_nr_linii()) return 0;
- if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+ if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
  
  if (strcmp (buf1, "SEQEND") == 0) 
   {
@@ -5011,7 +5276,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
  while ((vertex==FALSE) && (seqend==FALSE))
   {
 	 if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
     p=buf;
     
@@ -5019,7 +5284,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
     
 	if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
     
     if (entitie_code==0)
      {
@@ -5044,7 +5309,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
   {
  /*VERTEX*/
 	  if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   
   p=buf;
 
@@ -5054,7 +5319,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
     
     p1=buf1;
   }  
@@ -5168,7 +5433,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
   } /*endvertex*/
   
   if (!inc_nr_linii()) return 0;
-   if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
     
    if (strcmp (buf1, "SEQEND") == 0) 
      {
@@ -5180,13 +5445,13 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     while ((vertex==FALSE) && (seqend==FALSE))
     {
 		if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
     p=buf;
     if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
     
 	if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
     
     if (entitie_code==0)
      {
@@ -5203,7 +5468,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
  while (entitie_code!=0)
   {
 	 if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     
     p=buf;
     if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
@@ -5211,7 +5476,7 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
     if (entitie_code!=0)
     {
 		if (!inc_nr_linii()) return 0;
-      if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+      if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
     }  
   }  
  
@@ -5235,12 +5500,12 @@ BOOL read_pline(FILE *f,int to_block, BOOL block)
 		if (to_block1 == 1)
 		{
 			K.blok = 1;
-			if (NULL == dodaj_obiekt((BLOK*)dane, &K)) return 0;
+			if (nullptr == dodaj_obiekt((BLOK*)dane, &K)) return 0;
 		}
 		else
 		{
 			K.blok = 0;
-			if (NULL == dodaj_obiekt(NULL, &K)) return 0;
+			if (nullptr == dodaj_obiekt(nullptr, &K)) return 0;
 		}
 	}
  }
@@ -5305,7 +5570,7 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   
   p=buf;
 
@@ -5315,7 +5580,7 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
   
     p1=buf1;
   }  
@@ -5337,13 +5602,13 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
 
     special_chars(buf1_1);
 
-          if (!is_utf8(buf1_1)) decodingdxf(buf1_1);
+          if (!is_utf8(buf1_1)) decodingdxf(buf1_1, sizeof(buf1_1));
        
     strcpy(t.text,buf1_1);
 
     special_chars(buf1_2);
 
-    if (!is_utf8(buf1_2)) decodingdxf(buf1_2);
+    if (!is_utf8(buf1_2)) decodingdxf(buf1_2, sizeof(buf1_2));
 
     strcpy(attribute_tag,buf1_2);
     
@@ -5356,7 +5621,7 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
     t.warstwa=e_layer;
     t.czcionka=e_font;
     t.blok=1;
-    t.n=T18+strlen(t.text); 
+    t.n=T18+(int)strlen(t.text); 
 	t.multiline=0;
 	t.underline = 0;
 	t.encoding = 0;
@@ -5413,7 +5678,7 @@ BOOL read_attrib_insert(FILE *f, BOOL block)
              t.justowanie=j_do_lewej;
              t.ukryty=0;
              
-    	     if (korekta_obiekt((void *)adp, (void *)&t) == NULL)
+    	     if (korekta_obiekt((void *)adp, (void *)&t) == nullptr)
 	     ErrList (15);
 	     ll1=(long_long)dane-dane0;
 	     ll2=dane_size-dane_size0;
@@ -5576,7 +5841,7 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   
   p=buf;
 
@@ -5586,7 +5851,7 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
   
     p1=buf1;
   }  
@@ -5609,7 +5874,7 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
 
     special_chars(buf1_1);
 
-      if (!is_utf8(buf1_1))  decodingdxf(buf1_1);
+      if (!is_utf8(buf1_1))  decodingdxf(buf1_1, sizeof(buf1_1));
 
     strcpy(t.text,buf1_1);
 
@@ -5636,10 +5901,10 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
 	t.underline = 0;
 	t.encoding = 0;
 	t.spacing=6;
-    t.n=T18+strlen(t.text); 
+    t.n=T18+(int)strlen(t.text); 
     t.justowanie=j_do_lewej;
     t.ukryty=0;
-    t.dl=strlen(t.text);
+    t.dl=(int)strlen(t.text);
     t.przec=ep_space;
     if (e_obk1>0) t.italics=1;
 	del_xt = (e_h1 * sin(e_k1));
@@ -5764,12 +6029,12 @@ BOOL read_attrib(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       t.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
      }
      else
       {
        t.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &t)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &t)) return 0; 
       } 
     
     return 1;
@@ -5905,7 +6170,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -5915,7 +6180,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -5955,7 +6220,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
     /*kopiowanie bloku*/
     Insert_Block (&I,to_block, block);
     /*jezeli flaga 66 == 1 to czytane sa ATTRIB az do SEQEND*/
-    if ((e_attrib_flag==1) && (ADP!=NULL) && (ADK!=NULL))
+    if ((e_attrib_flag==1) && (ADP!=nullptr) && (ADK!=nullptr))
      {
      seqend=FALSE;
      attrib=FALSE;
@@ -5968,20 +6233,20 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
           while (endentitie==FALSE)
           {
 			  if (!inc_nr_linii()) return 0;
-           if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+           if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
            p=buf;
            if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
            if (entitie_code!=0)
             {
 			   if (!inc_nr_linii()) return 0;
-             if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+             if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
              p1=buf1;
             }  
             else endentitie=TRUE;
           }  
         }
 	   if (!inc_nr_linii()) return 0;
-       if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+       if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
        p1=buf1; 
        
        if (strcmp(buf1,"SEQEND")==0)
@@ -5996,7 +6261,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
           goto next_entitie2;
         }
 	   if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
         p=buf;
         if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
         next_entitie2:
@@ -6086,7 +6351,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
   case 2: if (USERI1==211) strcpy(I.block_name,""); 
              else  strcpy(I.block_name," ");
           strcat(I.block_name,buf1);
-          if (!is_utf8(I.block_name))  decodingdxf(I.block_name);
+          if (!is_utf8(I.block_name))  decodingdxf(I.block_name, sizeof(I.block_name));
     break;
   default:  break;  
   } /*switch*/
@@ -6131,7 +6396,7 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -6141,7 +6406,7 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -6275,7 +6540,7 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
   case 2: if (USERI1==211) strcpy(I.block_name,""); 
             else strcpy(I.block_name," ");
             strcat(I.block_name,buf1);
-          if (!is_utf8(I.block_name))  decodingdxf(I.block_name);
+          if (!is_utf8(I.block_name))  decodingdxf(I.block_name, sizeof(I.block_name));
     break;
   default:  break;  
   } /*switch*/
@@ -6299,7 +6564,7 @@ BOOL read_leader(FILE *f,int to_block, BOOL block)
     LINIA L=Ldef;
     TEXT T=Tdef;
     BOOL ret123;
-    char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
+    unsigned char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
     int arrow_flag, path_type, creation_flag, direction_flag, hookline_flag;
     double horizontal_direction_x, horizontal_direction_y, horizontal_direction_z, insert_offset_x, insert_offset_y, insert_offset_z, annotation_offset_x, annotation_offset_y, annotation_offset_z;
 	int vertices_in_leader=0;
@@ -6329,7 +6594,7 @@ BOOL read_leader(FILE *f,int to_block, BOOL block)
     while (endentitie==FALSE)
     {
         if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) goto error_l;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) goto error_l;
 
         p=buf;
 
@@ -6338,7 +6603,7 @@ BOOL read_leader(FILE *f,int to_block, BOOL block)
         if (entitie_code!=0)
         {
             if (!inc_nr_linii()) return 0;
-            if ( myfgets(buf1 , MAXLINE , f ) == NULL ) goto error_l;
+            if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) goto error_l;
 
             p1=buf1;
         }
@@ -6542,14 +6807,14 @@ BOOL read_context_leader_line(FILE *f,int to_block, BOOL block, int line_no, BOO
     endcontextleaderline=FALSE;
     while (endcontextleaderline==FALSE) {
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf, MAXLINE, f) == NULL) goto error_cll;
+        if (myfgets(buf, MAXLINE, f) == nullptr) goto error_cll;
 
         p = buf;
 
         if (sscanf(p, "%d", &context_code) < 1) goto error_cll;
 
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf1, MAXLINE, f) == NULL) goto error_cll;
+        if (myfgets(buf1, MAXLINE, f) == nullptr) goto error_cll;
 
         p1 = buf1;
 
@@ -6623,14 +6888,14 @@ BOOL read_context_leader(FILE *f,int to_block, BOOL block)
     endcontextleader=FALSE;
     while (endcontextleader==FALSE) {
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf, MAXLINE, f) == NULL) goto error_cl;
+        if (myfgets(buf, MAXLINE, f) == nullptr) goto error_cl;
 
         p = buf;
 
         if (sscanf(p, "%d", &context_code) < 1) goto error_cl;
 
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf1, MAXLINE, f) == NULL) goto error_cl;
+        if (myfgets(buf1, MAXLINE, f) == nullptr) goto error_cl;
 
         p1 = buf1;
 
@@ -6686,14 +6951,14 @@ BOOL read_context_data(FILE *f,int to_block, BOOL block)
     endcontext=FALSE;
     while (endcontext==FALSE) {
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf, MAXLINE, f) == NULL) goto error_c;
+        if (myfgets(buf, MAXLINE, f) == nullptr) goto error_c;
 
         p = buf;
 
         if (sscanf(p, "%d", &context_code) < 1) goto error_c;
 
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf1, MAXLINE, f) == NULL) goto error_c;
+        if (myfgets(buf1, MAXLINE, f) == nullptr) goto error_c;
 
         p1 = buf1;
 
@@ -6754,7 +7019,7 @@ BOOL read_multileader(FILE *f,int to_block, BOOL block)
     double e_extrusion_x, e_extrusion_y, e_extrusion_z;
     char buf[MAXLINE], buf1[MAXLINE];
     BOOL ret123;
-    char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
+    unsigned char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
     double vertices_in_leader = 0;
 
     int ret;
@@ -6774,7 +7039,7 @@ BOOL read_multileader(FILE *f,int to_block, BOOL block)
     while (endentitie==FALSE)
     {
         if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) goto error_l;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) goto error_l;
 
         p=buf;
 
@@ -6784,7 +7049,7 @@ BOOL read_multileader(FILE *f,int to_block, BOOL block)
         if (entitie_code!=0)
         {
             if (!inc_nr_linii()) return 0;
-            if ( myfgets(buf1 , MAXLINE , f ) == NULL ) goto error_l;
+            if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) goto error_l;
 
             p1=buf1;
         }
@@ -7032,7 +7297,7 @@ BOOL read_ole2frame(FILE *f,int to_block, BOOL block)
     int ole_object_space;
     BOOL end_of_ole=FALSE;
     char ole_name[MAXLINE];
-    char *ole=NULL;
+    char *ole=nullptr;
     int ole_index=0;
     ssize_t ret;
 
@@ -7042,7 +7307,7 @@ BOOL read_ole2frame(FILE *f,int to_block, BOOL block)
     while ((endentitie==FALSE) && (end_of_ole==FALSE))
     {
         if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
         p=buf;
 
@@ -7052,7 +7317,7 @@ BOOL read_ole2frame(FILE *f,int to_block, BOOL block)
         if (entitie_code!=0)
         {
             if (!inc_nr_linii()) return 0;
-            if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+            if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
             p1=buf1;
         }
@@ -7106,10 +7371,10 @@ BOOL read_ole2frame(FILE *f,int to_block, BOOL block)
         } /*switch*/
     }
 
-    if (ole!=NULL) {
+    if (ole!=nullptr) {
         FILE *fole;
         fole = fopen("ole.xxx", "wb");
-        if (fole!=NULL)
+        if (fole!=nullptr)
         {
             fwrite(ole, binary_length, 1, fole);
             fclose(fole);
@@ -7154,7 +7419,7 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -7163,7 +7428,7 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -7185,7 +7450,7 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
 
     special_chars(buf1_1);
 
-          if (!is_utf8(buf1_1))  decodingdxf(buf1_1);
+          if (!is_utf8(buf1_1))  decodingdxf(buf1_1, sizeof(buf1_1));
 
     strcpy(t.text,buf1_1);
 
@@ -7213,11 +7478,11 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
 	t.underline = 0;
 	t.encoding = 0;
 	t.spacing=6;
-    t.n=T18+strlen(t.text); 
+    t.n=T18+(int)strlen(t.text); 
     t.typ=n_typ_zmienna;
     t.justowanie=j_do_lewej;
     t.ukryty=1;
-    t.dl=strlen(t.text);
+    t.dl=(int)strlen(t.text);
     t.przec=ep_space;
     if (e_obk1>0) t.italics=1;
 	del_xt = (e_h1 * sin(e_k1));
@@ -7342,12 +7607,12 @@ BOOL read_attdef(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       t.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
      }
      else
       {
        t.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &t)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &t)) return 0; 
       } 
     
     return 1;
@@ -7494,7 +7759,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 	char lo, hi;
 	BOOL No_Unicode = TRUE;
 	int ret123;
-	char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
+	unsigned char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
     BOOL e_ax_exists=FALSE;
 
 	e_extrusion_x = 0;
@@ -7512,7 +7777,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
 		p = buf;
 
@@ -7521,7 +7786,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 		if (entitie_code != 0)
 		{
 			if (!inc_nr_linii()) return 0;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 
 			p1 = buf1;
 		}
@@ -7552,7 +7817,21 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 			e_k1 = e_k * Pi2 / 360;
 			e_obk1 = e_obk * Pi2 / 360;
 
-			i_buf1 = strlen(buf1_1);
+			/**************/
+			/*
+			if (activeEncoding != DxfCodePage::NONE)
+			{
+				std::string buf_utf8 = ConvertLegacyToUtf8(buf1_1, activeEncoding);
+				size_t max_capacity = sizeof(buf1_1);
+				size_t copy_length = (buf_utf8.length() < max_capacity) ? buf_utf8.length() : (max_capacity - 1);
+
+				buf_utf8.copy(buf1_1, copy_length);
+				buf1_1[copy_length] = '\0'; // Properly null terminate
+			}
+			 */
+			/**************/
+
+			i_buf1 = (int)strlen(buf1_1);
 			alignment = 0;
 			i = 0;
 			while (i < i_buf1)
@@ -7748,7 +8027,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 						{
 							if (buf1_1[i] != '+')
 							{
-								ulen = strlen(Unicode_);
+								ulen = (int)strlen(Unicode_);
 								Unicode_[ulen] = buf1_1[i];
 								Unicode_[ulen + 1] = '\0';  //0x0080
 							}
@@ -7757,23 +8036,34 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 
 						unicode2utf8char(Unicode_, &utf8char);
 
+						/*
 						lo = utf8char & 0X00FF;
 						hi = (utf8char & 0XFF00) >> 8;
 
-						strncat(buf11, &lo, sizeof(buf11) - strlen(buf11) - 1);
-						strncat(buf11, &hi, sizeof(buf11) - strlen(buf11) - 1);
+						strncat(buf11, &lo, 1);
+						strncat(buf11, &hi, 1);
+						*/
+
+						char temp[3];
+						temp[0] = (char)(utf8char & 0X00FF);
+						temp[1] = (char)((utf8char & 0XFF00) >> 8);
+						temp[2] = '\0';
+
+						// SAFE: Tells the compiler exactly how much space is left in ubuf
+						strncat(buf11, temp, sizeof(buf11) - strlen(buf11) - 1);
 
 						No_Unicode = FALSE;
 					}
 					else if (buf1_1[i] == 'P')   //nowy wiersz
 					{
-						strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);  //"\n\r"
+						strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);
 						t.multiline = 1;
 						i++;
 					}
 					else //dopisanie do bufora
 					{
-						strncat(buf11, &buf1_1[i], sizeof(buf11) - strlen(buf11) - 1);
+						//strncat(buf11, &buf1_1[i], 1);
+						snprintf(buf11 + strlen(buf11), sizeof(buf11) - strlen(buf11), "%c", buf1_1[i]);
 						i++;
 					}
 				}
@@ -7785,7 +8075,8 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 					}
 					else
 					{
-						strncat(buf11, &buf1_1[i], sizeof(buf11) - strlen(buf11) - 1);
+						//strncat(buf11, &buf1_1[i], 1);
+						snprintf(buf11 + strlen(buf11), sizeof(buf11) - strlen(buf11), "%c", buf1_1[i]);
 					}
 					i++;
 				}
@@ -7797,7 +8088,7 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 
 				if (No_Unicode)
                 {
-                    if (!is_utf8(buf11))  decodingdxf(buf11);
+                    if (!is_utf8(buf11))  decodingdxf(buf11, sizeof(buf11));
                 }
 
 				strcpy(t.text, buf11);
@@ -7822,14 +8113,14 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 				t.underline = 0;
 				t.encoding = 0;
 				t.spacing = 6;
-				t.n = T18 + strlen(t.text);
+				t.n = T18 + (int)strlen(t.text);
 				t.typ = n_typ_normal;
 				t.justowanie = j_do_lewej;
 				t.ukryty = 0;
 				t.dl = strlen(t.text);
-				t.obiektt1 = (unsigned)obiektt1;
-				t.obiektt2 = (unsigned)obiektt2;
-				t.obiektt3 = (unsigned)obiektt3;
+				t.obiektt1 = obiektt1;
+				t.obiektt2 = obiektt2;
+				t.obiektt3 = obiektt3;
 				t.przec = ep_space;
 				if (e_obk1 > 0) t.italics = 1;
 
@@ -7955,12 +8246,12 @@ BOOL read_text(FILE *f, int to_block, BOOL block)
 				if (to_block == 1)
 				{
 					t.blok = 1;
-					if (NULL == dodaj_obiekt((BLOK*)dane, &t)) return 0;
+					if (nullptr == dodaj_obiekt((BLOK*)dane, &t)) return 0;
 				}
 				else
 				{
 					t.blok = 0;
-					if (NULL == dodaj_obiekt(NULL, &t)) return 0;
+					if (nullptr == dodaj_obiekt(nullptr, &t)) return 0;
 				}
 
 				return 1;
@@ -8082,7 +8373,7 @@ void scan_text_style_(char *text_style_,char *font_,char *bold_,char *italic_,ch
 	strcpy(codepage_,"");
 	strcpy(points_,"");
 
-	i_buf2=strlen(text_style_);
+	i_buf2=(int)strlen(text_style_);
     i=0;
     while (i<i_buf2)
      {
@@ -8172,8 +8463,8 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
   double e_h1 = -1, e_w1 = -1;
   double e_k1; // , e_obk1; //e_ax1, e_ay1, e_az1;
   BOOL e_wspx_ok=FALSE, e_h_ok=FALSE, e_obk_ok=FALSE;
-  char buf[MAXLINE], buf10[MAXLINE*2], buf1[MAXLINE]; // e_text[MAXLINE];
-  char buf11[MAXLINE*2];
+  char buf[MAXLINE], buf10[MAXLINE*4 + 1000] /*[MAXLINE*2] */ , buf1[MAXLINE]; // e_text[MAXLINE];
+  char buf11[MAXLINE*4 + 1000] /*[MAXLINE*4]*/;
   TEXT t=Tdef;
   double rectangle_width, horizontal_width;
   BOOL  b_rectangle_width=FALSE;
@@ -8222,7 +8513,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -8232,7 +8523,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -8249,7 +8540,20 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
     /*generowanie tekstu/ tekstow*/
 	t.multiline = 0;
     /**************/
-    i_buf1=strlen(buf10);
+    /*
+	  if (activeEncoding != DxfCodePage::NONE)
+	  {
+		  std::string buf_utf8 = ConvertLegacyToUtf8(buf10, activeEncoding);
+		  size_t max_capacity = sizeof(buf10);
+		  size_t copy_length = (buf_utf8.length() < max_capacity) ? buf_utf8.length() : (max_capacity - 1);
+
+		  buf_utf8.copy(buf10, copy_length);
+		  buf10[copy_length] = '\0'; // Properly null terminate
+	  }
+     */
+	  /************/
+
+    i_buf1=(int)strlen(buf10);
 
     alignment=0;
     i=0;
@@ -8455,7 +8759,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 			  {
 				if (buf10[i] != '+')
 				  {
-					  ulen = strlen(Unicode_);
+					  ulen = (int)strlen(Unicode_);
 					  Unicode_[ulen] = buf10[i];
 					  Unicode_[ulen+1] = '\0';  //0x0080
 				  }
@@ -8464,24 +8768,36 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 
 		  unicode2utf8char(Unicode_, &utf8char);
 
-		  lo = utf8char & 0X00FF;
-		  hi = (utf8char & 0XFF00) >> 8;
-		  
-		  strncat(buf11, &lo, sizeof(buf11) - strlen(buf11) - 1);
-		  strncat(buf11, &hi, sizeof(buf11) - strlen(buf11) - 1);
+		  	/*
+			  lo = utf8char & 0X00FF;
+			  hi = (utf8char & 0XFF00) >> 8;
+
+			  strncat(buf11, &lo, 1);
+			  strncat(buf11, &hi, 1);
+		  */
+
+		  	char temp[3];
+		  	temp[0] = (char)(utf8char & 0X00FF);
+		  	temp[1] = (char)((utf8char & 0XFF00) >> 8);
+		  	temp[2] = '\0';
+
+		  	// SAFE: Tells the compiler exactly how much space is left in ubuf
+		  	strncat(buf11, temp, sizeof(buf11) - strlen(buf11) - 1);
 
 		  No_Unicode = FALSE;
 
 		  }
           else if (buf10[i]=='P')   //new line
           {
-           strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);  //"\n\r"
+           strncat(buf11, "\r\n", sizeof(buf11) - strlen(buf11) - 1);
 		   t.multiline = 1;
            i++;
           }
           else //adding to the buffer
            {
-            strncat(buf11,&buf10[i],sizeof(buf11) - strlen(buf11) - 1);
+            //strncat(buf11,&buf10[i],1);
+          	// Appends exactly one character safely while respecting buffer limits
+          	snprintf(buf11 + strlen(buf11), sizeof(buf11) - strlen(buf11), "%c", buf10[i]);
             i++;
            }
        }
@@ -8493,12 +8809,23 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
 		   }
 		    else
 			{
-                strncat(buf11,&buf10[i],sizeof(buf11) - strlen(buf11) - 1);
+                //strncat(buf11,&buf10[i],1);
+		    	snprintf(buf11 + strlen(buf11), sizeof(buf11) - strlen(buf11), "%c", buf10[i]);
 			}
            i++;
         }
      }
 
+  	if (strchr(buf11,'}')!=nullptr)
+  	{
+  		int a=0;
+  	}
+
+  	if (strlen(buf11)>4000)
+  	{
+  		int buflen=strlen(buf11);
+  		int a=0;
+  	}
     /**************/
    if (strlen(buf11)>0)
    {
@@ -8506,7 +8833,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
      
 	 if (No_Unicode)
      {
-         if (!is_utf8(buf11))  decodingdxf(buf11);
+         if (!is_utf8(buf11))  decodingdxf(buf11, sizeof(buf11));
      }
 
     e_k1=e_k;
@@ -8533,7 +8860,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
              if (*ptr_rn=='\0') break;
 
              ptr_rn1=strchr(ptr_rn, '\n');
-             if ((ptr_rn1!=NULL) && (ptr_spc1!=NULL))
+             if ((ptr_rn1!=nullptr) && (ptr_spc1!=nullptr))
              {
                  if (ptr_spc1>ptr_rn1)
                  {
@@ -8543,14 +8870,14 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
                  }
              }
 
-             if (ptr_spc1!=NULL) ptr_spc2 = strchr(ptr_spc1+1, ' ');
-             else ptr_spc2=NULL;
+             if (ptr_spc1!=nullptr) ptr_spc2 = strchr(ptr_spc1+1, ' ');
+             else ptr_spc2=nullptr;
 
-             if (ptr_spc2!=NULL)
+             if (ptr_spc2!=nullptr)
              {
                  //temporary
                  *ptr_spc2 = '\0';
-                 addl = Get_Text_Len(&t, ptr_rn, 1.0, 0, NULL, NULL, NULL, NULL);
+                 addl = Get_Text_Len(&t, ptr_rn, 1.0, 0, nullptr, nullptr, nullptr, nullptr);
                  //return to original value
                  *ptr_spc2 = ' ';
                  if (addl > rectangle_width)
@@ -8565,14 +8892,14 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
                  {
                      ptr_spc1 = strchr(ptr_spc1+1, ' ');
                  }
-                 if (ptr_spc1!=NULL) ptr_spc2 = strchr(ptr_spc1+1, ' ');
-                 else ptr_spc2=NULL;
+                 if (ptr_spc1!=nullptr) ptr_spc2 = strchr(ptr_spc1+1, ' ');
+                 else ptr_spc2=nullptr;
              }
-             else if (ptr_spc1!=NULL)
+             else if (ptr_spc1!=nullptr)
              {
                  //temporary
                  *ptr_spc1 = '\0';
-                 addl = Get_Text_Len(&t, ptr_rn, 1.0, 0, NULL, NULL, NULL, NULL);
+                 addl = Get_Text_Len(&t, ptr_rn, 1.0, 0, nullptr, nullptr, nullptr, nullptr);
                  //return to original value
                  *ptr_spc1 = ' ';
                  if (addl > rectangle_width)
@@ -8587,7 +8914,8 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
          }
      }
 
-    strcpy(t.text,buf11);
+    strncpy(t.text,buf11, MaxMultitextLen);
+   	t.text[MaxMultitextLen]='\0';
 
 	tsin = sin(t.kat);
 	tcos = cos(t.kat);
@@ -8617,7 +8945,7 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
          char *t_text=t.text;
          n_i=0;
          char *ptr_n=strchr(t_text, '\n');
-         while (ptr_n!=NULL)
+         while (ptr_n!=nullptr)
          {
              n_i++;
              t_text=ptr_n+1;
@@ -8699,12 +9027,12 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       t.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &t)) return 0; 
      }
      else
       {
        t.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &t)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &t)) return 0; 
       } 
    }
     return 1;
@@ -8789,12 +9117,12 @@ BOOL read_mtext(FILE *f,int to_block, BOOL block)
     /* f... | b... | c... | p...;*/
     //przepisywanie bufora buf1 do bufora buf11 z poszukiwaniem znaku 134
 	//if (strlen(buf10)==0) strcpy(buf10, buf1);
-	//else 
-	strcat(buf10, buf1);
+	//else
+  	strncat(buf10, buf1, sizeof(buf10) - strlen(buf10) - 1);
 
     break;
   case 3:  /*text value*/
-	  strcat(buf10, buf1);
+  	strncat(buf10, buf1, sizeof(buf10) - strlen(buf10) - 1);
 	  break;
   case 41:  /*relative X-scale factor - double*/
     if ( sscanf ( p1 , "%lf", &rectangle_width)  < 1 ) return 0;
@@ -8860,7 +9188,7 @@ BOOL read_trace(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -8870,7 +9198,7 @@ BOOL read_trace(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }
@@ -8922,12 +9250,12 @@ BOOL read_trace(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       S.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &S)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &S)) return 0; 
      }
      else
       {
        S.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &S)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &S)) return 0; 
       } 
     
     return 1;
@@ -9041,7 +9369,7 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
   char buf[MAXLINE], buf1[MAXLINE];
   WIELOKAT S=S4def;
   int ret123;
-  char obiektt1=0, obiektt2=0, obiektt3=0;
+  unsigned char obiektt1=0, obiektt2=0, obiektt3=0;
   unsigned char translucency;
   char* translucency_ptr;
 
@@ -9058,7 +9386,7 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -9068,7 +9396,7 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -9083,21 +9411,21 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
 	  }
     endentitie=TRUE;
     /*generowanie linii*/
-    S.xy[0]=jednostkiOb(e_x1 - EXTMIN_X);
-    S.xy[1]=jednostkiOb(e_y1 - EXTMIN_Y);
-    S.xy[2]=jednostkiOb(e_x2 - EXTMIN_X);
-    S.xy[3]=jednostkiOb(e_y2 - EXTMIN_Y);
+    S.xy[0]=(float)jednostkiOb(e_x1 - EXTMIN_X);
+    S.xy[1]=(float)jednostkiOb(e_y1 - EXTMIN_Y);
+    S.xy[2]=(float)jednostkiOb(e_x2 - EXTMIN_X);
+    S.xy[3]=(float)jednostkiOb(e_y2 - EXTMIN_Y);
     if (S.lp==8)
      {
-      S.xy[6]=jednostkiOb(e_x3 - EXTMIN_X);
-      S.xy[7]=jednostkiOb(e_y3 - EXTMIN_Y);
-      S.xy[4]=jednostkiOb(e_x4 - EXTMIN_X);
-      S.xy[5]=jednostkiOb(e_y4 - EXTMIN_Y);
+      S.xy[6]=(float)jednostkiOb(e_x3 - EXTMIN_X);
+      S.xy[7]=(float)jednostkiOb(e_y3 - EXTMIN_Y);
+      S.xy[4]=(float)jednostkiOb(e_x4 - EXTMIN_X);
+      S.xy[5]=(float)jednostkiOb(e_y4 - EXTMIN_Y);
      } 
       else
      {
-      S.xy[4]=jednostkiOb(e_x3 - EXTMIN_X);
-      S.xy[5]=jednostkiOb(e_y3 - EXTMIN_Y);
+      S.xy[4]=(float)jednostkiOb(e_x3 - EXTMIN_X);
+      S.xy[5]=(float)jednostkiOb(e_y3 - EXTMIN_Y);
      }
     S.kolor=e_color; 
     S.warstwa=e_layer;
@@ -9126,12 +9454,12 @@ BOOL read_solid(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       S.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &S)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &S)) return 0; 
      }
      else
       {
        S.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &S)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &S)) return 0; 
       }  
     
     return 1;
@@ -9270,7 +9598,7 @@ BOOL read_3dface(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -9279,7 +9607,7 @@ BOOL read_3dface(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -9366,21 +9694,21 @@ BOOL read_3dface(FILE *f,int to_block, BOOL block)
       L.y1=S.xy[1];
       L.x2=S.xy[2];
       L.y2=S.xy[3];
-      if (NULL == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0; 
 	  base_adr=dane+base_adr_dane;
 
       L.x1=S.xy[2];
       L.y1=S.xy[3];
       L.x2=S.xy[4];
       L.y2=S.xy[5];
-      if (NULL == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
+      if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
 	  base_adr=dane+base_adr_dane;
 
       L.x1=S.xy[4];
       L.y1=S.xy[5];
       L.x2=S.xy[6];
       L.y2=S.xy[7];
-      if (NULL == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
+      if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
 	  base_adr=dane+base_adr_dane;
 
     if (S.lp==8 /*&& (e_flags & 8 == 0)*/)
@@ -9389,7 +9717,7 @@ BOOL read_3dface(FILE *f,int to_block, BOOL block)
       L.y1=S.xy[7];
       L.x2=S.xy[0];
       L.y2=S.xy[1];
-      if (NULL == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
+      if (nullptr == dodaj_obiekt ((BLOK*)base_adr, &L)) return 0;
 	  base_adr=dane+base_adr_dane;
     }  
 
@@ -9514,7 +9842,7 @@ BOOL read_arc(FILE *f,int to_block, BOOL block)
   char buf[MAXLINE], buf1[MAXLINE];
   LUK l=ldef;
   int ret123;
-  char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
+  unsigned char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
   int counterclockwise_flag = 1;
   
 
@@ -9528,7 +9856,7 @@ BOOL read_arc(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -9538,7 +9866,7 @@ BOOL read_arc(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -9603,12 +9931,12 @@ BOOL read_arc(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       l.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &l)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &l)) return 0; 
      }
      else
       {
        l.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &l)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &l)) return 0; 
       } 
     
     return 1;
@@ -9735,7 +10063,7 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -9745,7 +10073,7 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -9772,11 +10100,11 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
 
     if (((Check_if_Equal(e_kp, 0.0)) && (Check_if_Equal(e_kk, 2*Pi))) || //ellipse
         (Check_if_Equal((e_kk-e_kp), 2*Pi))) {
-        e.x = jednostkiOb(e_x - EXTMIN_X);
-        e.y = jednostkiOb(e_y - EXTMIN_Y);
-        e.angle = angle;
-        e.rx = jednostkiOb(pa);
-        e.ry = jednostkiOb(pb);
+        e.x = (float)(jednostkiOb(e_x - EXTMIN_X));
+        e.y = (float)(jednostkiOb(e_y - EXTMIN_Y));
+        e.angle = (float)angle;
+        e.rx = (float)jednostkiOb(pa);
+        e.ry = (float)jednostkiOb(pb);
 
         e.typ = get_typ(e_type, ep_width);
         e.kolor = e_color;
@@ -9793,12 +10121,12 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
 
         if (Check_if_Equal(pa, 0.0)) return 1;
 
-        ea.x = jednostkiOb(e_x - EXTMIN_X);
-        ea.y = jednostkiOb(e_y - EXTMIN_Y);
-        ea.angle = angle;
+        ea.x = (float)(jednostkiOb(e_x - EXTMIN_X));
+        ea.y = (float)(jednostkiOb(e_y - EXTMIN_Y));
+        ea.angle = (float)angle;
 
-        ea.rx = jednostkiOb(pa);
-        ea.ry = jednostkiOb(pb);
+        ea.rx = (float)jednostkiOb(pa);
+        ea.ry = (float)jednostkiOb(pb);
 
         //kat1
         if (Check_if_Equal(e_kp, 0.0)) kat1=0.0;
@@ -9840,8 +10168,8 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
             kat2 = -atan2(det, dot);
         }
 
-        ea.kat1=Angle_Normal(kat1);
-        ea.kat2=Angle_Normal(kat2);
+        ea.kat1=(float)Angle_Normal(kat1);
+        ea.kat2=(float)Angle_Normal(kat2);
 
         ea.typ = get_typ(e_type, ep_width);
         ea.kolor = e_color;
@@ -9853,12 +10181,12 @@ BOOL read_ellipse(FILE *f,int to_block, BOOL block)
 
         if (to_block == 1) {
             ((NAGLOWEK*)e_ea)->blok = ElemBlok;
-            if (NULL == dodaj_obiekt((BLOK*)dane, e_ea)) return 0;
+            if (nullptr == dodaj_obiekt((BLOK*)dane, e_ea)) return 0;
         }
         else
         {
             ((NAGLOWEK*)e_ea)->blok = NoElemBlok;
-            if (NULL == dodaj_obiekt(NULL, e_ea)) return 0;
+            if (nullptr == dodaj_obiekt(nullptr, e_ea)) return 0;
         }
 
 
@@ -9974,7 +10302,7 @@ BOOL read_circle(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   
   p=buf;
 
@@ -9986,7 +10314,7 @@ BOOL read_circle(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
   
     p1=buf1;
   }  
@@ -10018,12 +10346,12 @@ BOOL read_circle(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       O.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &O)) return 0;
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &O)) return 0;
      }
      else
       {
        O.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &O)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &O)) return 0; 
       }
     return 1;
     break;
@@ -10125,7 +10453,7 @@ BOOL read_point(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -10135,7 +10463,7 @@ BOOL read_point(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -10160,12 +10488,12 @@ BOOL read_point(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       P.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &P)) return 0;
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &P)) return 0;
      }
      else
       {
        P.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &P)) return 0;
+       if (nullptr == dodaj_obiekt ( nullptr, &P)) return 0;
       } 
     
     return 1;
@@ -10242,7 +10570,7 @@ BOOL read_line(FILE *f,int to_block, BOOL block)
   char buf[MAXLINE], buf1[MAXLINE];
   LINIA L=Ldef;
   BOOL ret123;
-  char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
+  unsigned char obiektt1 = 0, obiektt2 = 0, obiektt3 = 0;
   
 
  e_extrusion_x=0;
@@ -10260,7 +10588,7 @@ BOOL read_line(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -10270,7 +10598,7 @@ BOOL read_line(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -10307,12 +10635,12 @@ BOOL read_line(FILE *f,int to_block, BOOL block)
     if (to_block == 1) 
      {
       L.blok=1;
-      if (NULL == dodaj_obiekt ((BLOK*)dane, &L)) return 0; 
+      if (nullptr == dodaj_obiekt ((BLOK*)dane, &L)) return 0; 
      }
      else
       {
        L.blok=0;
-       if (NULL == dodaj_obiekt ( NULL, &L)) return 0; 
+       if (nullptr == dodaj_obiekt ( nullptr, &L)) return 0; 
       } 
     
     return 1;
@@ -10430,7 +10758,7 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -10440,7 +10768,7 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }  
@@ -10474,12 +10802,12 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
       if (to_block == 1)
        {
         L.blok=1;
-        if (NULL == dodaj_obiekt ((BLOK*)dane, &L)) return 0;
+        if (nullptr == dodaj_obiekt ((BLOK*)dane, &L)) return 0;
        }
        else
         {
          L.blok=0;
-         if (NULL == dodaj_obiekt ( NULL, &L)) return 0;
+         if (nullptr == dodaj_obiekt ( nullptr, &L)) return 0;
         }
     /*generowanie linii zamykajacej*/
 
@@ -10501,12 +10829,12 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
        if (to_block == 1)
         {
          L.blok=1;
-         if (NULL == dodaj_obiekt ((BLOK*)dane, &L)) return 0;
+         if (nullptr == dodaj_obiekt ((BLOK*)dane, &L)) return 0;
         }
         else
          {
           L.blok=0;
-          if (NULL == dodaj_obiekt ( NULL, &L)) return 0;
+          if (nullptr == dodaj_obiekt ( nullptr, &L)) return 0;
          }
       }
      }
@@ -10611,12 +10939,12 @@ BOOL read_mline(FILE *f,int to_block, BOOL block)
 		  if (to_block == 1)
 		  {
 			  L.blok = 1;
-			  if (NULL == dodaj_obiekt((BLOK*)dane, &L)) return 0;
+			  if (nullptr == dodaj_obiekt((BLOK*)dane, &L)) return 0;
 		  }
 		  else
 		  {
 			  L.blok = 0;
-			  if (NULL == dodaj_obiekt(NULL, &L)) return 0;
+			  if (nullptr == dodaj_obiekt(nullptr, &L)) return 0;
 		  }
 	  }
       e_xp=e_xk;
@@ -10697,7 +11025,7 @@ BOOL read_lwpolyline(FILE *f,int to_block, BOOL block)
     while (endentitie==FALSE)
     {
         if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
         p=buf;
 
@@ -10707,7 +11035,7 @@ BOOL read_lwpolyline(FILE *f,int to_block, BOOL block)
         if (entitie_code!=0)
         {
             if (!inc_nr_linii()) return 0;
-            if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+            if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
             p1=buf1;
         }
@@ -10901,7 +11229,7 @@ BOOL read_lwpolyline___old(FILE *f,int to_block, BOOL block)
  while (endentitie==FALSE)
  {
 	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
 
   p=buf;
 
@@ -10911,7 +11239,7 @@ BOOL read_lwpolyline___old(FILE *f,int to_block, BOOL block)
   if (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
     p1=buf1;
   }
@@ -11116,7 +11444,7 @@ BOOL read_spline(FILE *f, int to_block, BOOL block)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
 		p = buf;
 
@@ -11126,7 +11454,7 @@ BOOL read_spline(FILE *f, int to_block, BOOL block)
 		if (entitie_code != 0)
 		{
 			if (!inc_nr_linii()) return 0;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 
 			p1 = buf1;
 		}
@@ -11335,7 +11663,7 @@ BOOL read_image(FILE *f, int to_block, BOOL block)
 	while (endentitie == FALSE)
 	{
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
 		p = buf;
 
@@ -11345,7 +11673,7 @@ BOOL read_image(FILE *f, int to_block, BOOL block)
 		if (entitie_code != 0)
 		{
 			if (!inc_nr_linii()) return 0;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 
 			p1 = buf1;
 		}
@@ -11502,7 +11830,7 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 	while (endobject == FALSE)
 	{
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 
 		p = buf;
 
@@ -11511,7 +11839,7 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 		if (object_code != 0)
 		{
 			if (!inc_nr_linii()) return 0;
-			if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 
 			p1 = buf1;
 		}
@@ -11659,13 +11987,13 @@ BOOL read_entities_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
   ep_width=line_width.normal*100;
   endsec=FALSE;
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_entitie_code , MAXLINE1 , f ) == NULL ) return 0;
+  if ( myfgets(dxf_entitie_code , MAXLINE1 , f ) == nullptr ) return 0;
   p=dxf_entitie_code;
   if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
 
   if (!inc_nr_linii()) return 0;
 
-  if ( myfgets(dxf_entitie , MAXLINE1 , f ) == NULL ) return 0;
+  if ( myfgets(dxf_entitie , MAXLINE1 , f ) == nullptr ) return 0;
   
   while (endsec==FALSE)
   {
@@ -11817,14 +12145,14 @@ BOOL read_entities_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
    }
   }
         if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_entitie_code , MAXLINE1 , f ) == NULL ) return 0;
+   if ( myfgets(dxf_entitie_code , MAXLINE1 , f ) == nullptr ) return 0;
    p=dxf_entitie_code;
    if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
    /*tutaj juz trzeba czytac kody kolejne wartosci*/
    
  next_entitie:
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_entitie , MAXLINE1 , f ) == NULL ) return 0;
+   if ( myfgets(dxf_entitie , MAXLINE1 , f ) == nullptr ) return 0;
   } /*while*/    
  return 1; 
 }  
@@ -11842,14 +12170,14 @@ BOOL read_objects_dxf(FILE *f, char *fn, BOOL block)
 	ep_width = line_width.normal * 100;
 	endsec = FALSE;
 	if (!inc_nr_linii()) return 0;
-	if (myfgets(dxf_object_code, MAXLINE1, f) == NULL) return 0;
+	if (myfgets(dxf_object_code, MAXLINE1, f) == nullptr) return 0;
 	p = dxf_object_code;
 	if (sscanf(p, "%d", &object_code) < 1) return 0;
 
 
 	if (!inc_nr_linii()) return 0;
 
-	if (myfgets(dxf_object, MAXLINE1, f) == NULL) return 0;
+	if (myfgets(dxf_object, MAXLINE1, f) == nullptr) return 0;
 
 	while (endsec == FALSE)
 	{
@@ -11868,14 +12196,14 @@ BOOL read_objects_dxf(FILE *f, char *fn, BOOL block)
 			}
 		}
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(dxf_object_code, MAXLINE1, f) == NULL) return 0;
+		if (myfgets(dxf_object_code, MAXLINE1, f) == nullptr) return 0;
 		p = dxf_object_code;
 		if (sscanf(p, "%d", &object_code) < 1) return 0;
 		/*tutaj juz trzeba czytac kody kolejne wartosci*/
 
 	next_object:
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(dxf_object, MAXLINE1, f) == NULL) return 0;
+		if (myfgets(dxf_object, MAXLINE1, f) == nullptr) return 0;
 	} /*while*/
 	return 1;
 }
@@ -11910,12 +12238,12 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
   strcpy(typ_bloku,""); 
   endblk=FALSE;
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_entitie_code , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_entitie_code , MAXLINE , f ) == nullptr ) return 0;
   p=dxf_entitie_code;
   if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
   
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_entitie , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_entitie , MAXLINE , f ) == nullptr ) return 0;
   p1 = dxf_entitie;
   
   while (endblk==FALSE)
@@ -11942,18 +12270,18 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
 
      e_xp1=jednostkiOb(e_xp - EXTMIN_X);
      e_yp1=jednostkiOb(e_yp - EXTMIN_Y);
-	 if (strstr(typ_bloku, "B_HATCH") != NULL) kod_obiektu = B_HATCH;
-     else if (strstr(typ_bloku, "B_DIM3") != NULL) kod_obiektu = B_DIM3;
-	 else if (strstr(typ_bloku, "B_DIM2") != NULL) kod_obiektu = B_DIM2;
-	 else if (strstr(typ_bloku, "B_DIM1") != NULL) kod_obiektu = B_DIM1;
-	 else if (strstr(typ_bloku, "B_DIM") != NULL) kod_obiektu = B_DIM;
-	 else if (strstr(typ_bloku, "*D") != NULL) kod_obiektu = B_DIM;
-	 else if (strstr(typ_bloku, "B_PLINE") != NULL) kod_obiektu = B_PLINE;
-	 else if (strstr(typ_bloku, "B_EXPORT") != NULL) kod_obiektu = B_EXPORT;
-     else if (strstr(typ_bloku, "B_GRAPH") != NULL) kod_obiektu = B_GRAPH;
+	 if (strstr(typ_bloku, "B_HATCH") != nullptr) kod_obiektu = B_HATCH;
+     else if (strstr(typ_bloku, "B_DIM3") != nullptr) kod_obiektu = B_DIM3;
+	 else if (strstr(typ_bloku, "B_DIM2") != nullptr) kod_obiektu = B_DIM2;
+	 else if (strstr(typ_bloku, "B_DIM1") != nullptr) kod_obiektu = B_DIM1;
+	 else if (strstr(typ_bloku, "B_DIM") != nullptr) kod_obiektu = B_DIM;
+	 else if (strstr(typ_bloku, "*D") != nullptr) kod_obiektu = B_DIM;
+	 else if (strstr(typ_bloku, "B_PLINE") != nullptr) kod_obiektu = B_PLINE;
+	 else if (strstr(typ_bloku, "B_EXPORT") != nullptr) kod_obiektu = B_EXPORT;
+     else if (strstr(typ_bloku, "B_GRAPH") != nullptr) kod_obiektu = B_GRAPH;
 	 else  kod_obiektu = B_EXPORT;
 
-	 if (strstr(typ_bloku, "*Model_Space") != NULL)
+	 if (strstr(typ_bloku, "*Model_Space") != nullptr)
 	 {
 		 if (color_def == TRUE)
 		 {
@@ -12131,7 +12459,7 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
       break;
    case 2:  if (USERI1==211) strcpy(typ_bloku,""); 
              else strcpy(typ_bloku," ");
-            if (!is_utf8(dxf_entitie))  decodingdxf(dxf_entitie);
+            if (!is_utf8(dxf_entitie))  decodingdxf(dxf_entitie, sizeof(dxf_entitie));
             strcat(typ_bloku, dxf_entitie);
       break;
     case 330:
@@ -12148,7 +12476,7 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
                     break;
                 }
             }
-            if (!is_utf8(typ_bloku)) decodingdxf(typ_bloku);
+            if (!is_utf8(typ_bloku)) decodingdxf(typ_bloku, sizeof(typ_bloku));
             break;
    case 70: /*flag - optional 0*/
       if ( sscanf (p1 , "%d", &e_flags) < 1 ) return 0;
@@ -12175,7 +12503,7 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
    case 3:  if (USERI1==211) strcpy(styl_bloku,""); 
              else strcpy(styl_bloku," ");
             strcat(styl_bloku, dxf_entitie);
-            if (!is_utf8(styl_bloku)) decodingdxf(styl_bloku);
+            if (!is_utf8(styl_bloku)) decodingdxf(styl_bloku, sizeof(styl_bloku));
       break;
    case 62:  /*color number - int*/
 	   if (sscanf(p1, "%d", &e_color) < 1) return 0;
@@ -12187,13 +12515,13 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
     } /*switch*/ 
    } 
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_entitie_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_entitie_code , MAXLINE , f ) == nullptr ) return 0;
    p=dxf_entitie_code;
    if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
    
  next_b_entitie:
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_entitie , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_entitie , MAXLINE , f ) == nullptr ) return 0;
    p1 = dxf_entitie;
 
   } /*while*/
@@ -12226,21 +12554,21 @@ BOOL read_layer(FILE *f, BOOL block)
 
   endtab=FALSE;
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   p=buf;
   if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
   
   while (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-     if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+     if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
      if (entitie_code==70)
       {
        p1=buf1;
        if ( sscanf ( p1 , "%d", &liczba_warstw)  < 1 ) return 0;
       } 
 	 if (!inc_nr_linii()) return 0;
-     if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+     if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
      p=buf;
      if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
    }  
@@ -12250,7 +12578,7 @@ BOOL read_layer(FILE *f, BOOL block)
    if (entitie_code==0)
     {
 	   if (!inc_nr_linii()) return 0;
-     if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+     if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
      if (strcmp (buf1, "LAYER") == 0)
       {
       /*czytanie az do kodu 0*/
@@ -12258,23 +12586,25 @@ BOOL read_layer(FILE *f, BOOL block)
 		 {
 			 if (No_Layers < MAX_NUMBER_OF_LAYERS) No_Layers++;
 			 memmove(&(Layers[No_Layers - 1]), &layer, sizeof(LAYER));
+			 add_layer_name();
 		 }
 		 else
 		 {
 			 if (No_Layers_DXF < MAX_NUMBER_OF_LAYERS_DXF) No_Layers_DXF++;
 			 memmove(&(Layers_DXF[No_Layers_DXF - 1]), &layer, sizeof(LAYER));
+			 add_layer_name_DXF();
 		 }
        endlayer=FALSE;
        while (endlayer==FALSE)
         {
 		   if (!inc_nr_linii()) return 0;
-          if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+          if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
           p=buf;
           if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
           if (entitie_code!=0)
             {
 			  if (!inc_nr_linii()) return 0;
-             if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+             if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
 
              p1=buf1;
             }
@@ -12285,19 +12615,21 @@ BOOL read_layer(FILE *f, BOOL block)
            case 2: 
 			   if (!block)
 			   {
-                   if (!is_utf8(buf1)) decodingdxf(buf1);
+                   if (!is_utf8(buf1))
+                   	    decodingdxf(buf1, sizeof(buf1));
 				   strncpy(Layers[No_Layers - 1].name, buf1, maxlen_w); //nazwa
 				   Layers[No_Layers - 1].name[maxlen_w] = '\0';
-				   strncpy(Layers_name[No_Layers - 1], buf1, maxlen_w_AC);
-				   Layers_name[No_Layers - 1][maxlen_w_AC] = '\0';
+				   strncpy(Layers_name[No_Layers - 1].name, buf1, maxlen_w_AC);
+				   Layers_name[No_Layers - 1].name[maxlen_w_AC] = '\0';
 			   }
 			   else
 			   {
-                   if (!is_utf8(buf1)) decodingdxf(buf1);
+                   if (!is_utf8(buf1))
+                   	    decodingdxf(buf1, sizeof(buf1));
 				   strncpy(Layers_DXF[No_Layers_DXF - 1].name, buf1, maxlen_w); //nazwa
 				   Layers[No_Layers - 1].name[maxlen_w] = '\0';
-				   strncpy(Layers_name_DXF[No_Layers_DXF - 1], buf1, maxlen_w_AC);
-				   Layers_name[No_Layers - 1][maxlen_w_AC] = '\0';
+				   strncpy(Layers_name_DXF[No_Layers_DXF - 1].name, buf1, maxlen_w_AC);
+				   Layers_name[No_Layers_DXF - 1].name[maxlen_w_AC] = '\0';
 			   }
                 break;
            case 70:  //standard flag values
@@ -12391,7 +12723,7 @@ BOOL read_layer(FILE *f, BOOL block)
      else
       {
 	  if (!inc_nr_linii()) return 0;
-       if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+       if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
       }
    //next_layer:  ;
   } /*while*/  
@@ -12404,10 +12736,9 @@ BOOL read_layer(FILE *f, BOOL block)
 	  }
   }
 
-  /*dodatkowa warstwa 255 dla potrzeb blokow*/
-  memmove(&(Layers[255]), &layer, sizeof(LAYER));
-  Layers[255].on = 0;
- 
+  /*dodatkowa warstwa MAX_NUMBER_OF_LAYERS-1 dla potrzeb blokow*/
+  memmove(&(Layers[MAX_NUMBER_OF_LAYERS-1]), &layer, sizeof(LAYER));
+  Layers[MAX_NUMBER_OF_LAYERS-1].on = 0;
  
  return 1; 
 }    
@@ -12421,9 +12752,9 @@ BOOL read_appid(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12441,9 +12772,9 @@ BOOL read_dimstyle(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12464,12 +12795,12 @@ BOOL read_block_record(FILE *f)
     endtab=FALSE;
 
     if (!inc_nr_linii()) return 0;
-    if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+    if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
     p=buf;
     if ( sscanf ( p , "%d", &table_code)  < 1 ) return 0;
 
     if (!inc_nr_linii()) return 0;
-    if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+    if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
     p1 = buf1;
 
     while (endtab==FALSE)
@@ -12498,12 +12829,12 @@ BOOL read_block_record(FILE *f)
         }
 
         if (!inc_nr_linii()) return 0;
-        if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+        if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
         p=buf;
         if ( sscanf ( p , "%d", &table_code)  < 1 ) return 0;
 
         if (!inc_nr_linii()) return 0;
-        if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+        if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
         p1 = buf1;
     }
 
@@ -12518,9 +12849,9 @@ BOOL read_ltype(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12552,21 +12883,21 @@ BOOL read_style(FILE *f)
   No_Styles_DXF=0;  
   endtab=FALSE;
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(buf , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(buf , MAXLINE , f ) == nullptr ) return 0;
   p=buf;
   if ( sscanf ( p , "%d", &entitie_code)  < 1 ) return 0;
   
   while (entitie_code!=0)
    {
 	  if (!inc_nr_linii()) return 0;
-     if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+     if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
      if (entitie_code==70)
 	  {
 	  p1 = buf1;
 	  if (sscanf(p1, "%d", &liczba_styli) < 1) return 0;
 	  }
 	  if (!inc_nr_linii()) return 0;
-	  if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+	  if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 	  p = buf;
 	  if (sscanf(p, "%d", &entitie_code) < 1) return 0;
    }
@@ -12576,7 +12907,7 @@ BOOL read_style(FILE *f)
 	   if (entitie_code == 0)
 	   {
 		   if (!inc_nr_linii()) return 0;
-		   if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+		   if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 		   if (strcmp(buf1, "STYLE") == 0)
 		   {
 			   /*czytanie az do kodu 0*/
@@ -12595,13 +12926,13 @@ BOOL read_style(FILE *f)
 			   while (endstyle == FALSE)
 			   {
 				   if (!inc_nr_linii()) return 0;
-				   if (myfgets(buf, MAXLINE, f) == NULL) return 0;
+				   if (myfgets(buf, MAXLINE, f) == nullptr) return 0;
 				   p = buf;
 				   if (sscanf(p, "%d", &entitie_code) < 1) return 0;
 				   if (entitie_code != 0)
 				   {
 					   if (!inc_nr_linii()) return 0;
-					   if (myfgets(buf1, MAXLINE, f) == NULL) return 0;
+					   if (myfgets(buf1, MAXLINE, f) == nullptr) return 0;
 				   }
 
 				   switch (entitie_code)
@@ -12668,7 +12999,7 @@ BOOL read_style(FILE *f)
 					   {
 						   ptr = strstr(style_file_, ".TTF");
                            ptr1 = strstr(style_file_, ".OTF");
-						   if ((ptr != NULL) || (ptr1 != NULL))
+						   if ((ptr != nullptr) || (ptr1 != nullptr))
 						   {
 							   flags = fnsplit(style_file, drive, dir, file, ext);
 							   font_number0 = find_font_DXF(buf1, &e_wspx1, 2);
@@ -12718,7 +13049,7 @@ BOOL read_style(FILE *f)
      else
       {
 	  if (!inc_nr_linii()) return 0;
-       if ( myfgets(buf1 , MAXLINE , f ) == NULL ) return 0;
+       if ( myfgets(buf1 , MAXLINE , f ) == nullptr ) return 0;
       }
   // next_style:  ;
   } /*while*/    
@@ -12735,9 +13066,9 @@ BOOL read_ucs(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12755,9 +13086,9 @@ BOOL read_view(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12775,9 +13106,9 @@ BOOL read_vport(FILE *f)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_table, "ENDTAB") == 0)
     {
      endtab=TRUE;
@@ -12796,9 +13127,9 @@ BOOL read_table_dxf(FILE *f, BOOL block)
   while (endtab==FALSE)
   {
 	  if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_table , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_table , MAXLINE , f ) == nullptr ) return 0;
    dxf_table[32]='\0';
    if (strlen(dxf_table) == 0) return 0;
 
@@ -12874,9 +13205,9 @@ BOOL read_blocks_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
   {
    ret=1;  /*1=O.K.*/
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_blocks_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_blocks_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_blocks , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_blocks , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_blocks, "BLOCK") == 0)
     { 
      ret=read_block_dxf(f, block, block_view, draw_hatch);
@@ -12907,9 +13238,9 @@ BOOL read_tables_dxf(FILE *f, BOOL block)
   {
    ret=1;  /*1=O.K.*/
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_tables_code , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_tables_code , MAXLINE , f ) == nullptr ) return 0;
    if (!inc_nr_linii()) return 0;
-   if ( myfgets(dxf_tables , MAXLINE , f ) == NULL ) return 0;
+   if ( myfgets(dxf_tables , MAXLINE , f ) == nullptr ) return 0;
    if (strcmp (dxf_tables, "TABLE") == 0)
     { 
      ret=read_table_dxf(f, block);
@@ -12938,9 +13269,9 @@ BOOL read_header_dxf(FILE *f)
  {
   ret=1;  /*1=O.K.*/
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_var_code , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_var_code , MAXLINE , f ) == nullptr ) return 0;
   if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_var , MAXLINE , f ) == NULL ) return 0;
+  if ( myfgets(dxf_var , MAXLINE , f ) == nullptr ) return 0;
   if (dxf_var[0]=='$')  /*to jest zmienna*/
    {
     if (strcmp (dxf_var, "$ACADVER") == 0)
@@ -13562,7 +13893,14 @@ if (strcmp (dxf_var, "$TREEDEPTH") == 0)
     }
 if (strcmp (dxf_var, "$DWGCODEPAGE") == 0)
     {ret=read_var1(f,3,&DWGCODEPAGE); //"ascii"
-    goto next_var;
+
+		if (strcmp(DWGCODEPAGE, "ANSI_1250") == 0) {
+			activeEncoding = DxfCodePage::ANSI_1250;
+		} else if (strcmp(DWGCODEPAGE, "ANSI_1251") == 0) {
+			activeEncoding = DxfCodePage::ANSI_1251;
+		} // Note: If it says ANSI_1252, it's already natively identical to ASCII/UTF-8 for your parser, no conversion required.
+
+		goto next_var;
     }
   }
   else 
@@ -13582,7 +13920,7 @@ return 1;
 static void chooselayer(int nr_warstwy)
 { int w_color, w_typ;
 
-  if ((nr_warstwy >= 0) && (nr_warstwy<256)) Current_Layer=nr_warstwy;
+  if ((nr_warstwy >= 0) && (nr_warstwy<MAX_NUMBER_OF_LAYERS)) Current_Layer=nr_warstwy;
    else Current_Layer=0;
   w_color=Layers[Current_Layer].color;
   w_typ=Layers[Current_Layer].line_type;
@@ -13637,7 +13975,7 @@ int czytaj_dxf_header(char *fn, DXF_Header *dxf_header)
 
 
 	f = fopen(fn, "rt");
-	if (f == NULL)
+	if (f == nullptr)
 	{   /*komunikat*/
 		return -1;
 	}
@@ -13649,9 +13987,9 @@ int czytaj_dxf_header(char *fn, DXF_Header *dxf_header)
 	while (endoffile == FALSE)
 	{
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(dxf_section_code, MAXLINE, f) == NULL) return nr_linii;
+		if (myfgets(dxf_section_code, MAXLINE, f) == nullptr) return nr_linii;
 		if (!inc_nr_linii()) return 0;
-		if (myfgets(dxf_section, MAXLINE, f) == NULL)
+		if (myfgets(dxf_section, MAXLINE, f) == nullptr)
 		{
 			if (entities_ok == FALSE) return nr_linii;
 			else
@@ -13743,7 +14081,6 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
   int zmwym_czcionka = 0;
   double Jednostki_in_dxf;
 
-
   last_mtext_h=zmwym.wysokosc;
 
  Jednostki=Jednostki_dxf;
@@ -13762,10 +14099,22 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
   
  
  f = fopen ( fn , "rt" ) ;
-    if ( f == NULL )
+    if ( f == nullptr )
     {   /*komunikat*/
    	return -1;
     }
+
+	strcpy(DWGCODEPAGE,"ascii");
+    activeEncoding = DxfCodePage::NONE;
+
+   //allocating layer names array
+    layer_names_no=0;
+    MAX_LAYER_NAMES_NO=100;
+    Layers_name = (LAYER_NAME*)malloc(MAX_LAYER_NAMES_NO * sizeof(LAYER_NAME));
+
+    layer_names_no_DXF=0;
+	MAX_LAYER_NAMES_NO_DXF=100;
+	Layers_name_DXF = (LAYER_NAME*)malloc(MAX_LAYER_NAMES_NO_DXF * sizeof(LAYER_NAME));	
  
  nr_linii=0;
  show_nr_linii();
@@ -13773,12 +14122,15 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
  endoffile=FALSE;
  while (endoffile==FALSE)
  {    
-	 if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_section_code , MAXLINE , f ) == NULL ) return nr_linii;
-  if (!inc_nr_linii()) return 0;
-  if ( myfgets(dxf_section , MAXLINE , f ) == NULL )
+	 if (!inc_nr_linii())
+	 {
+		 goto error_DXF_0;
+	 }
+  if ( myfgets(dxf_section_code , MAXLINE , f ) == nullptr ) goto error_DXF;
+  if (!inc_nr_linii()) goto error_DXF_0;
+  if ( myfgets(dxf_section , MAXLINE , f ) == nullptr )
     {
-     if (entities_ok==FALSE) return nr_linii;
+     if (entities_ok==FALSE) goto error_DXF;
        else 
          {
            endoffile=TRUE;
@@ -13809,33 +14161,33 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
 			   EXTMAX_Y = EXTMAX_Y0;
 		   }
 	   }
-	   else return nr_linii;
+	   else goto error_DXF;
        goto next_section;
      }
        
   else if (strcmp (dxf_section, "TABLES") == 0)
      {
          if (!glb_silent) komunikat0_str(23,dxf_section);/*delay(50);*/
-       if (!read_tables_dxf(f, FALSE)) return nr_linii;
+       if (!read_tables_dxf(f, FALSE)) goto error_DXF;
        goto next_section;
      }  
   else if (strcmp (dxf_section, "BLOCKS") == 0)
      {
          if (!glb_silent) komunikat0_str(23,dxf_section);/*delay(50);*/
-       if (!read_blocks_dxf(f, FALSE, 0, TRUE)) return nr_linii;
+       if (!read_blocks_dxf(f, FALSE, 0, TRUE)) goto error_DXF;
        goto next_section;
      }    
   else if (strcmp (dxf_section, "ENTITIES") == 0)
      {
          if (!glb_silent) komunikat0_str(23,dxf_section);/*delay(50);*/
-       if (!read_entities_dxf(f, FALSE, 0, TRUE)) return nr_linii;
+       if (!read_entities_dxf(f, FALSE, 0, TRUE)) goto error_DXF;
        entities_ok = TRUE;
        goto next_section;
      }   
   else if (strcmp(dxf_section, "OBJECTS") == 0)
   {
       if (!glb_silent) komunikat0_str(23,dxf_section);/*delay(50);*/
-	  if (!read_objects_dxf(f, fn, FALSE)) return nr_linii;
+	  if (!read_objects_dxf(f, fn, FALSE)) goto error_DXF;
 	  objects_ok = TRUE;
 	  goto next_section;
   }
@@ -13862,7 +14214,7 @@ adr=dane;
 adrk=dane + dane_size;
  
 if (USERI1 == 211) usun_bloki_obiektt2(adr, adrk, O2BlockDXF);
-else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2BlockDXF, 255);
+else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2BlockDXF, MAX_NUMBER_OF_LAYERS-1);  //255
 
 //zmiana skali elementow ep_space
 x_space=-jednostkiOb(EXTMIN_X);
@@ -13870,8 +14222,8 @@ y_space=-jednostkiOb(EXTMIN_Y);
 x_space_factor=milimetryob(1);
 y_space_factor=milimetryob(1);
 
-get_all_ep_space(NULL, NULL, &ADP, &ADK);
-if ((ADP!=NULL) && (ADK!=NULL))
+get_all_ep_space(nullptr, nullptr, &ADP, &ADK);
+if ((ADP!=nullptr) && (ADK!=nullptr))
 {
     transformacja_blok(ADP,ADK,x_space,y_space,0,0,Tprzesuw,0);
     transformacja_blok(ADP,ADK,x_space,y_space,x_space_factor,y_space_factor,Tskala,0);
@@ -13905,7 +14257,7 @@ if (auto_size == TRUE)
     offset_dxf_x -= xmin;
 	offset_dxf_y -= ymin;
 }
-if ((ADP!=NULL) && (ADK!=NULL))
+if ((ADP!=nullptr) && (ADK!=nullptr))
  {
    zmien_atrybut(ADP, ADK, Anormalny, Ablok);
    transformacja_blok(ADP,ADK, offset_dxf_x, offset_dxf_y,0,0,Tprzesuw,0);
@@ -13969,19 +14321,27 @@ else zmwym.Tkolor = GetColorALF(DIMCLRT, 0);
 if (DIMRND == 0.0) zmwym.dokladnosc = 0.01;
 else zmwym.dokladnosc = DIMRND;
 
-if (block_record!=NULL) free(block_record);
 
-int l_no=leaders_no;
-int ml_no=mleaders_no;
+////int l_no=leaders_no;
+////int ml_no=mleaders_no;
 
+error_DXF_0:
+if (block_record!=nullptr) free(block_record);
+if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
 return 0;
 
+error_DXF:
+if (block_record!=nullptr) free(block_record);
+if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
+return nr_linii;
+
+/*
 fclose(f);
 adr=dane;
 adrk=dane + dane_size;
 
 if (USERI1 == 211) usun_bloki_obiektt2(adr, adrk, O2BlockDXF);
-else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, 255);
+else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, MAX_NUMBER_OF_LAYERS-1);  //255
 
 x_space=-jednostkiOb(EXTMIN_X);
 y_space=-jednostkiOb(EXTMIN_Y);
@@ -13990,17 +14350,19 @@ y_space_factor=milimetryob(1);
 offset_dxf_x=0.0;
 offset_dxf_y=0.0;
 
-get_all_ep_space(NULL, NULL, &ADP, &ADK);
+get_all_ep_space(nullptr, nullptr, &ADP, &ADK);
 
-if ((ADP!=NULL) && (ADK!=NULL))
+if ((ADP!=nullptr) && (ADK!=nullptr))
  {
    transformacja_blok(ADP,ADK,x_space,y_space,0,0,Tprzesuw,0);
    transformacja_blok(ADP,ADK,x_space,y_space,x_space_factor,y_space_factor,Tskala,0);
    reset_przec_dxf(ADP,ADK);
  }
 
-if (block_record!=NULL) free(block_record);
+if (block_record!=nullptr) free(block_record);
+if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
 return nr_linii;
+ */
 }
 
 extern "C" {void get_lines_width_dxf_glb(void); }
@@ -14037,8 +14399,11 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 
     leaders_no=0;
 
-	*adp = NULL;
-	*adk = NULL;
+	strcpy(DWGCODEPAGE,"ascii");
+	activeEncoding = DxfCodePage::NONE;
+
+	*adp = nullptr;
+	*adk = nullptr;
 
 	flags = fnsplit(fn, drive, dir, file, ext);
 
@@ -14051,10 +14416,19 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 	objects_ok = FALSE;
 
 	f = fopen(fn, "rt");
-	if (f == NULL)
+	if (f == nullptr)
 	{   /*komunikat*/
 		return -1;
 	}
+
+	//allocating layer names array
+	layer_names_no=0;
+	MAX_LAYER_NAMES_NO=100;
+	Layers_name = (LAYER_NAME*)malloc(MAX_LAYER_NAMES_NO * sizeof(LAYER_NAME));
+
+	layer_names_no_DXF=0;
+	MAX_LAYER_NAMES_NO_DXF=100;
+	Layers_name_DXF = (LAYER_NAME*)malloc(MAX_LAYER_NAMES_NO_DXF * sizeof(LAYER_NAME));
 
 	glb_silent = TRUE;
 
@@ -14064,13 +14438,13 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 	endoffile = FALSE;
 	while (endoffile == FALSE)
 	{
-		if (!glb_silent) { if (!inc_nr_linii()) return 0; }
-		if (myfgets(dxf_section_code, MAXLINE, f) == NULL) return nr_linii;
-		if (!glb_silent) { if (!inc_nr_linii()) return 0; }
-		if (myfgets(dxf_section, MAXLINE, f) == NULL)
+		if (!glb_silent) { if (!inc_nr_linii()) goto error_DXF_0; }
+		if (myfgets(dxf_section_code, MAXLINE, f) == nullptr) goto error_DXF;
+		if (!glb_silent) { if (!inc_nr_linii()) goto error_DXF_0; }
+		if (myfgets(dxf_section, MAXLINE, f) == nullptr)
 		{
 			if (entities_ok == FALSE)
-				return nr_linii;
+				goto error_DXF;
 			else
 			{
 				endoffile = TRUE;
@@ -14101,29 +14475,29 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
                     EXTMAX_Y = EXTMAX_Y0;
                 }
             }
-            else return nr_linii;
+            else goto error_DXF;
 			goto next_section;
 		}
 
 		if (strcmp(dxf_section, "TABLES") == 0)
 		{
-			if (!read_tables_dxf(f, TRUE)) return nr_linii;
+			if (!read_tables_dxf(f, TRUE)) goto error_DXF;
 			goto next_section;
 		}
 		if (strcmp(dxf_section, "BLOCKS") == 0)
 		{
-			if (!read_blocks_dxf(f, FALSE /*TRUE*/, block_view, FALSE)) return nr_linii;
+			if (!read_blocks_dxf(f, FALSE /*TRUE*/, block_view, FALSE)) goto error_DXF;
 			goto next_section;
 		}
 		if (strcmp(dxf_section, "ENTITIES") == 0)
 		{
-			if (!read_entities_dxf(f, TRUE, block_view, FALSE)) return nr_linii;
+			if (!read_entities_dxf(f, TRUE, block_view, FALSE)) goto error_DXF;
 			entities_ok = TRUE;
 			goto next_section;
 		}
 		if (strcmp(dxf_section, "OBJECTS") == 0)
 		{
-			if (!read_objects_dxf(f, fn, TRUE)) return nr_linii;
+			if (!read_objects_dxf(f, fn, TRUE)) goto error_DXF;
 			objects_ok = TRUE;
 			goto next_section;
 		}
@@ -14140,13 +14514,13 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 	cur_layer = Current_Layer;
 
 	chooselayer(cur_layer);
-	/*zmiana atrybutow O2BlockDXF na NoBlockS oraz warstwy na 255*/
+	/*zmiana atrybutow O2BlockDXF na NoBlockS oraz warstwy na MAX_NUMBER_OF_LAYERS-1*/
 	adr = dane;
 	adrk = dane + dane_size - dane_size00 -1;
 
 	//if (USERI1 == 211)
     usun_bloki_obiektt2(adr, adrk, O2BlockDXF);
-	//else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, 255);
+	//else zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, MAX_NUMBER_OF_LAYERS-1);  //255
 
     adr = dane;
     adrk = dane + dane_size - dane_size00 -1;
@@ -14162,7 +14536,7 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
     *adk = adrk;
 
 
-    if ((ADP != NULL) && (ADK != NULL))
+    if ((ADP != nullptr) && (ADK != nullptr))
     {
         zmien_atrybut(ADP, ADK, Anormalny, Ablok);
         transformacja_blok(ADP, ADK, x_space, y_space, x_space_factor, y_space_factor, Tskala, 0);
@@ -14185,10 +14559,17 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 
 	strcpy(buf, file);
 
-    if (block_record!=NULL) free(block_record);
-
+	error_DXF:
+	if (block_record!=nullptr) free(block_record);
+	if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
 	return nr_linii;
 
+	error_DXF_0:
+	if (block_record!=nullptr) free(block_record);
+	if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
+	return 0;
+
+	/*
 	fclose(f);
 
 	//freeing pcx_def
@@ -14198,7 +14579,7 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 	adrk = dane + dane_size - dane_size0 -1;
 
 	if (USERI1 == 211) usun_bloki_obiektt2(adr, adrk, O2BlockDXF);
-	zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, 255);
+	zmien_obiektt2_warstwe(adr, adrk, O2BlockDXF, O2NoBlockS, MAX_NUMBER_OF_LAYERS-1);  //255
 
 
 	x_space = -jednostkiOb(EXTMIN_X);
@@ -14208,11 +14589,11 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 	
 	ADP = adr; ADK = adrk;
 
-	if ((ADP != NULL) && (ADK != NULL))
+	if ((ADP != nullptr) && (ADK != nullptr))
 	{
 		zmien_atrybut(ADP,ADK,Anormalny,Ablok);
 
-		Set_Block_Proc(0, 0, file /*blok_type*/);
+		Set_Block_Proc(0, 0, file );
 
 		((NAGLOWEK *)dane)->atrybut = Ablok;
 
@@ -14231,9 +14612,16 @@ int czytaj_dxf_blok(char *fn, double *X0, double *Y0, RYSPOZ *adp, RYSPOZ *adk, 
 
 	strcpy(buf, file);
 
-    if (block_record!=NULL) free(block_record);
+	error_DXF_0:
+	if (block_record!=nullptr) free(block_record);
+	if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
+	return 0;
 
+	error_DXF:
+	if (block_record!=nullptr) free(block_record);
+	if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
 	return nr_linii;
+	 */
 }
 
 

@@ -565,18 +565,17 @@ int okrag_w_prostokacie(OKRAG *ad)
   return  (X1sel<=x-r && X2sel>=x+r &&
 	   Y1sel<=y-r && Y2sel>=y+r); }
 
-/*
-int qsort_by_val(double *e1, double *e2)
- { int delta;
-  delta=(*e1) - (*e2);
-  return delta;
- }
-*/
-
 int qsort_by_val(const void *e1, const void *e2)
-{ int delta;
-    delta=(*(const double*)e1) - (*(const double*)e2);
-    return delta;
+{
+    const double *p1 = (const double *)e1;
+    const double *p2 = (const double *)e2;
+
+    // Compare float p1 and p2 values safely
+    if (*p1 < *p2) return -1;
+    if (*p1 > *p2) return  1;
+
+    // If p1 and p2 values are identical:
+    return 0;
 }
 
 int pcx_w_prostokacie(B_PCX *ad)
@@ -3771,7 +3770,8 @@ int Point_Selected(T_Point *ptrs_point)
         x2 = jednostkiN (ptrs_point->x + df_psize) ;
         y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-        if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
+        //if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
+        if (ptrs_point->typ <7)  //TUTAJ POINT
         {
             if (prostokat_odcinek(x1, y1, x2, y2)) return 1;
             if (prostokat_odcinek(x1, y2, x2, y1)) return 1;
@@ -4042,7 +4042,8 @@ int Point_Rectangle(T_Point *ptrs_point)
         x2 = jednostkiN (ptrs_point->x + df_psize) ;
         y2 = jednostkiN (ptrs_point->y + df_psize) ;
 
-        if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
+        //if ((ptrs_point->typ ==0) || (ptrs_point->typ ==1))
+        if (ptrs_point->typ < 7)  //TUTAJ POINT
         {
             if (prostokat_odcinek(x1, y1, x2, y2)!=3) return 0;
             if (prostokat_odcinek(x1, y2, x2, y1)!=3) return 0;
@@ -4294,7 +4295,7 @@ int Point_in_Rectangle (T_Point *ptrs_point, int dwc)
     {
         return Point_Rectangle(ptrs_point);
     }
-    else return Point_Selected(ptrs_point);
+    return Point_Selected(ptrs_point);
 
 }
 
@@ -5571,12 +5572,31 @@ int solidarc_w_prostokacie_factory(SOLIDARC *sa)
     p9l.x = sa->x + (sa->r + halfmidwidth - midaxis) * koc ;
     p9l.y = sa->y + (sa->r + halfmidwidth - midaxis) * kos ;
 
-    retl=get_3p_arc(&linner, &p5l, &p6l, &p7l);
-    linner.warstwa=sa->warstwa;
-    if (!luk_w_prostokacie(&linner)) return 0;
-    retl=get_3p_arc(&louter, &p8l, &p9l, &p10l);
-    louter.warstwa=sa->warstwa;
-    if (!luk_w_prostokacie(&louter)) return 0;
+    //situation when points p5l, p6l, p7l are equal, so half moon side 1
+    if (Check_if_Equal(p5l.x, p6l.x) && Check_if_Equal(p5l.y, p6l.y) &&
+        Check_if_Equal(p6l.x, p7l.x) && Check_if_Equal(p6l.y, p7l.y))
+    {
+        if (!punkt_w_prostokacie(p5l.x, p5l.y)) return 0;
+    }
+    else
+    {
+        retl=get_3p_arc(&linner, &p5l, &p6l, &p7l);
+        linner.warstwa=sa->warstwa;
+        if (!luk_w_prostokacie(&linner)) return 0;
+    }
+
+    //situation when points p8l, p9l, p10l are equal, so half moon side 2
+    if (Check_if_Equal(p8l.x, p9l.x) && Check_if_Equal(p8l.y, p9l.y) &&
+        Check_if_Equal(p9l.x, p10l.x) && Check_if_Equal(p9l.y, p10l.y))
+    {
+        if (!punkt_w_prostokacie(p8l.x, p8l.y)) return 0;
+    }
+    else
+    {
+        retl=get_3p_arc(&louter, &p8l, &p9l, &p10l);
+        louter.warstwa=sa->warstwa;
+        if (!luk_w_prostokacie(&louter)) return 0;
+    }
 
     return 1;
 }

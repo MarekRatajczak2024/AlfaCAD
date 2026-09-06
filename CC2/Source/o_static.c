@@ -1865,10 +1865,18 @@ BOOL draw_line_element_number(int element_no, LINIA *Le, float ldf, float ldb, f
     return TRUE;
 }
 
+/*
 int qsort_by_number(const void *e1, const void *e2)
 { int delta;
     delta=(*(unsigned char *)e1) - (*(unsigned char *)e2);
     return delta;
+}
+*/
+
+int qsort_by_number(const void *e1, const void *e2)
+{
+    // Subtracting e2 from e1 naturally returns < 0, 0, or > 0
+    return (*(const unsigned char *)e1) - (*(const unsigned char *)e2);
 }
 
 

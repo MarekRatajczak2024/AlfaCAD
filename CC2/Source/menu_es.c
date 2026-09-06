@@ -584,6 +584,9 @@ static TMENU mOpacity =  { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(P
 
 POLE pmOpcje[] = {
 	{u8"configuración del Tablero de dibujo\0",'T',109,NULL},
+#ifdef PROFILE
+	{u8"configuración de color de Red\0",'R',913,NULL},
+#endif
 	{u8"Panorámica automática\0Sí\0 ",'P',145, &mAutoPan}, //PAN
 	{u8"factor de panoramización Automática\0 ",'A',110,NULL},
 	{u8"Opacidad de los rellenos/degradados\0 ",'O',542,&mOpacity},
@@ -592,7 +595,7 @@ POLE pmOpcje[] = {
 	{u8"fondo de Escritorio\0 ",'E',527,NULL},
 	{u8"Cursor de diálogo\0 ",'C',590,&mDialogCursor},
     {u8"estilo de Menú\0",'M',820,&mMenuCursor},
-    {u8"Rueda de zoom/desplazamiento\0",'R',833,&mMouseWheel},
+    {u8"rueda de Zoom/desplazamiento\0",'Z',833,&mMouseWheel},
 	{u8"modo de Demostración educativo\0 No\0",'D',661,&mDemoSelect},
 	{u8"Guardar configuración de ventana\0",'G',530,NULL},
 	{u8"configuración de Ventana\0",'V',478,&mWindow},
@@ -1414,7 +1417,7 @@ char* add_new_font_c = u8"añadir nueva fuente";
 
 #endif
 
-#ifdef __LOADF__
+#ifdef __O_LOADF__
 
 static char copy_button[] = u8"Copiar\0del archivo";
 static char parametry_p[] = u8"Parámetros:";
@@ -1485,9 +1488,9 @@ char* dlg_name[] =
 #define _FILE_EXISTS_ u8"El archivo existe"
 #define _OVERWRITE_IT_ "¿Sobrescribirlo? "
 
-#endif // __LOADF__
+#endif // __O_LOADF__
 
-#ifdef __INFO__
+#ifdef __O_INFO__
 /*
 char* typ_punktu_tab[] = { u8"Sencillo",u8"Punto base",u8"Pin","?","?","?","?","?","?",
 						"?","?","?","?","?","?","?"};
@@ -1515,71 +1518,67 @@ char* vector_style_tab[] = { u8"rígido-rígido",u8"rígido-con bisagras",u8"con
 */
 char* view_width_tab1[] = { u8"muy delgada", u8"fina", u8"gruesa", u8"muy gruesa", u8"extra gruesa", u8"relleno", u8"", u8"invisible" };
 
-char* tab_typ_tekstu[] = { u8"Normal", u8"Etiqueta interna",u8"Etiqueta de componente",u8"Símbolo",u8"Tipo",
-u8"*nombre pin",u8"fuente de alimentación",u8"Puerto",u8"Atributo",u8"+Esquema",u8"Nombre de archivo",u8"red",
-u8"Comentario",u8"%variable",u8"aUx.símbolo",u8"auX.descripción" };
-
 char* tab_justowanie[] = { u8"a la izquierda |<",u8"a la derecha >|",u8"Medio ><",u8"Central _><_" };
 
 static POLE pmInfoAbout[] = {
-	 {u8"tipo de Objeto\0",'O',320,NULL},      //0
-	 {u8"cApa\0",'A',305,NULL},      //1
-	 {u8"֎Color\0 ",'C',158,NULL},      //2
-	 {u8"Tipo de línea\0 ",'T',160,NULL},      //3
-	 {u8"ancho de Línea\0",'L',159,NULL},      //4
-     {u8"tipo de soporte de borde\0",'K',850,NULL},      //4
-     {u8"inversión del soporte de borde\0",'M',853,NULL},      //4
-     {u8"tipo de Punto\0",'P',27,NULL},       //5
-     {u8"tipe de vector\0 ",'V',770,NULL},      //6
-	 {u8"X1 \0",'1',306,NULL},      //7
-	 {u8"Y1 \0",'2',307,NULL},      //8
-	 {u8"X2 \0",'3',308,NULL},      //9
-	 {u8"Y2 \0",'4',309,NULL},      //10
-	 {u8"X3 \0",'5',310,NULL},      //11
-	 {u8"Y3 \0",'6',311,NULL},      //12
-	 {u8"X4 \0",'7',312,NULL},      //13
-	 {u8"Y4 \0",'8',313,NULL},      //14
-	 {u8"Radio \0 ",'R',212,NULL},      //15
-     {u8"Radio Y \0 ",'r',710,NULL},      //16
-     {u8"ángulo \0",'@',107,NULL},      //17
-	 {u8"ángulo 1 \0",'<',314,NULL},      //18
-	 {u8"ángulo 2 \0",'>',315,NULL},      //19
+	 {u8"tipo de Objeto\0",'O',320,NULL},
+	 {u8"cApa\0",'A',305,NULL},
+	 {u8"֎Color\0 ",'C',158,NULL},
+	 {u8"Tipo de línea\0 ",'T',160,NULL},
+	 {u8"ancho de Línea\0",'L',159,NULL},
+     {u8"tipo de soporte de borde\0",'K',850,NULL},
+     {u8"inversión del soporte de borde\0",'M',853,NULL},
+     {u8"tipo de Punto\0",'P',27,NULL},
+     {u8"tipe de vector\0 ",'V',770,NULL},
+	 {u8"X1 \0",'1',306,NULL},
 
-     {u8"Ancho inicial \0 ",'-',249,NULL},      //20
-     {u8"Ancho final \0 ",'=',249,NULL},      //21
-     {u8"Intensidad \0 ",'^',727,NULL},      //22
-     {u8"Intensidad inicial \0 ",'(',766,NULL},      //23
-     {u8"Intensidad final \0 ",')',767,NULL},      //24
-     {u8"Desplazamiento inicial del eje \0",'/',250,NULL},      //25
-     {u8"Desplazamiento final del eje \0",'\\',250,NULL},      //26
+	 {u8"Y1 \0",'2',307,NULL},
+	 {u8"X2 \0",'3',308,NULL},
+	 {u8"Y2 \0",'4',309,NULL},
+	 {u8"X3 \0",'5',310,NULL},
+	 {u8"Y3 \0",'6',311,NULL},
+	 {u8"X4 \0",'7',312,NULL},
+	 {u8"Y4 \0",'8',313,NULL},
+	 {u8"Radio \0 ",'R',212,NULL},
+     {u8"Radio Y \0 ",'r',710,NULL},
+     {u8"ángulo \0",'@',107,NULL},
 
-     {u8"Cargar carácter y variante\0 ",'?',798,NULL},     //27
-     //{u8"Variante de carga \0 ",'?',799,NULL},     //28
+	 {u8"ángulo 1 \0",'<',314,NULL},
+	 {u8"ángulo 2 \0",'>',315,NULL},
+     {u8"Ancho inicial \0 ",'-',249,NULL},
+     {u8"Ancho final \0 ",'=',249,NULL},
+     {u8"Intensidad \0 ",'^',727,NULL},
+     {u8"Intensidad inicial \0 ",'(',766,NULL},
+     {u8"Intensidad final \0 ",')',767,NULL},
+     {u8"Desplazamiento inicial del eje \0",'/',250,NULL},
+     {u8"Desplazamiento final del eje \0",'\\',250,NULL},
+     {u8"Cargar carácter y variante\0 ",'?',798,NULL},
 
-     {u8"Opacidad\0",'%',542,NULL},      //29
-	 {u8"longitud / perímetro\0",'D',210,NULL},      //30
-	 {u8"DX\0",'X',316,NULL},      //31
-	 {u8"DY\0",'Y',317,NULL},      //32
-	 {u8"área de Superficie\0",'S',7,NULL},        //33
-	 {u8"Fuente\0",'F',111,NULL},      //34
-	 {u8"tipo de tExto\0 ",'E',231,NULL},      //35
-	 {u8"ocUlto\0",'U',232,NULL},      //36
-	 {u8"alineación\0",'J',233,NULL},      //37
-	 {u8"Altura \0",'H',179,NULL},      //38
-	 {u8"Factor de ancho \0 ",'*',230,NULL},      //39
-	 {u8"cursIva\0 ",'I',181,NULL},      //40
-     {u8"Negrita\0 ",'N',182,NULL},      //41
-	 {u8"suBrayada\0 ",'B',409,NULL},      //42
-	 {u8"espaciado entre líneas\0",'#',410,NULL},      //43
-     {u8"tamaño de píxel dx \0",'Q',689,NULL},      //44
-     {u8"tamaño de píxel dy \0",'Z',690,NULL},      //45
-	 {u8"nombre del bloque Interno\0",'I',318,NULL},      //46
-	 {u8"nombre del bloque exterior\0",'G',319,NULL},      //47
+     {u8"Opacidad\0",'%',542,NULL},
+	 {u8"longitud / perímetro\0",'D',210,NULL},
+	 {u8"DX\0",'X',316,NULL},
+	 {u8"DY\0",'Y',317,NULL},
+	 {u8"área de Superficie\0",'S',7,NULL},
+	 {u8"Fuente\0",'F',111,NULL},
+	 {u8"tipo de tExto\0 ",'E',231,NULL},
+	 {u8"ocUlto\0",'U',232,NULL},
+	 {u8"alineación\0",'J',233,NULL},
+	 {u8"Altura \0",'H',179,NULL},
+
+	 {u8"Factor de ancho \0 ",'*',230,NULL},
+	 {u8"cursIva\0 ",'I',181,NULL},
+     {u8"Negrita\0 ",'N',182,NULL},
+	 {u8"suBrayada\0 ",'B',409,NULL},
+	 {u8"espaciado entre líneas\0",'#',410,NULL},
+     {u8"tamaño de píxel dx \0",'Q',689,NULL},
+     {u8"tamaño de píxel dy \0",'Z',690,NULL},
+	 {u8"nombre del bloque Interno\0",'I',318,NULL},
+	 {u8"nombre del bloque exterior\0",'G',319,NULL},
 };
-TMENU mInfoAbout = { 47,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
+TMENU mInfoAbout = { 49,0,0,40,2, 4, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfoAbout, NULL, NULL };
 
 static POLE pmInfo[] = {
-	 {u8"Tamaño de memoria para dibujo / predeterminado[KB] \0 ",'T',297,NULL},
+	 {u8"Tamaño de memoria para dibujo/predeterminado[KB] \0 ",'T',297,NULL},
 	 {u8"memoria Virtual de la imagen/usado [MB] \0 ",'V',298,NULL},
 	 {u8"tamaño de datos de Dibujo [ B] \0 ",'D',299,NULL},
 	 {u8"búfer de Impresión[KB] \0 ",'I',300,NULL},
@@ -1615,7 +1614,7 @@ char *vector_txt[]={u8"Vector: rígido-rígido",u8"Vector: rígido-pasador",u8"V
 
 unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'F',L'M',L'-',L'U',L'R',L'O',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'L',L'E',L'W',L'Z',L'Q',L'S',L'0',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
 
-unsigned short point_wcod[]={L'S', L'B', ' ', ' ', ' ', ' ',' ', L'U', L'P', ' ', ' ', ' ',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+','X', 'N', 'Y', 'M', 'V', 'K', 'N', 'T'};
+unsigned short point_wcod[]={L'S', L'B', L'I', L'K', L'L', L'U',L'T', L'U', L'P', L'@', L'#', L'*',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+','X', 'N', 'Y', 'M', 'V', 'K', 'N', 'T'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', 'B', L'V', ' '};
 char *object_txt[]={u8"Imagen",u8"Línea",u8"Texto",u8"Arco",u8"Círculo",u8"Disco",u8"Sólido",u8"Punto",u8"Bloque",u8"Arco sólido",u8"Arco elíptico",u8"Elipse",u8"Elipse rellena",u8"Bézier Spline",u8"Vector",""};
 
@@ -1642,10 +1641,10 @@ static char* desktop_data_param_comment[] =
 	//";Screen saver delay in min or 0 (off)",
 	(char*)u8";factor de panoramización automática de escritorio",
 	";",
-	(char*)u8"; pequeño 0, grande 1, enorme 2",
+	(char*)u8"; pequeño 0, grande 1",
     (char*)u8"; barra 0, puntero 1",
-    "; 0-natural, 1-regular",
-    "; mostrando instrucciones breves sobre el inicio",
+    (char*)u8"; 0-natural, 1-regular",
+    (char*)u8"; mostrando instrucciones breves sobre el inicio",
 };
 
 
@@ -2193,6 +2192,9 @@ static POLE pmPLine_Con_Slab[] = {
 #define __WALL__  u8"PARED"
 #define __ZONE__  u8"ZONA"
 
+#define __SIEC_P__ u8"RED"
+#define __SIEC_PC__ u8"CONEXIÓN"
+
 #endif
 
 #ifdef __O_SOLID__
@@ -2472,6 +2474,7 @@ static POLE pmTyp_punktu[] = {
 	 {u8"punto Base\0",L'B',295,NULL},
 	 {u8"Pasador\0",L'P',296,NULL},
 	 {u8"Unión\0",L'U',529,NULL},
+     {u8"especial\0",L'*',971,NULL},
      {u8"apoyo Fijo\0",L'F',738,NULL},
      {u8"apoyo fijo I\0",L'1',739,NULL},
      {u8"apoyo fijo D\0",L'2',740,NULL},
@@ -2596,7 +2599,10 @@ static POLE pmGraph[] = {
                          //@,A,B,C,D,E,F,G,H,I,J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 //int CONTROL_KEYS[32] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 }
 
-#define _PRINTING__ u8"Print"
+#define TypTekstuI_n 22
+#define TypTekstuP_n 31
+
+#define _PRINTING__ u8"Imprimir"
 
 #endif
 
@@ -2761,6 +2767,12 @@ static TMENU mAutoc = { 2,0,0,5,72,8,ICONS,CMNU,CMBR,CMTX,0,	5,	0,	0,0,(POLE(*)[
 static TMENU mAuto_dq = { 2,0,0,5,72,7,ICONS,CMNU,CMBR,CMTX,0, 4, 0, 0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 static TMENU mAuto_dn = { 2,0,0,5,72,9,ICONS,CMNU,CMBR,CMTX,0, 9 /*7*/, 0, 0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
+static POLE pmPLine_Con[] = {
+		  {u8"Continuación",L'C',220,NULL} };
+
+#define _POLYLINE_ u8"Polilínea"
+#define _POLYLINE_C_ L'P'
+
 POLE pmBlokm[] = {
 	 {u8"último Bloque\0 ",'B',256,NULL},
 	 {u8"toDos\0 ",'D',257,NULL},
@@ -2840,6 +2852,17 @@ POLE pmBlok_chp[] = {
 	 {u8"cambiar Propiedades\0",'P',272,NULL},
 };
 
+POLE pmBlok_cha[] = {
+	 {u8"último Bloque\0 ",'B',256,NULL},
+	 {u8"toDos\0 ",'D',257,NULL},
+	 {u8"todas Las Capas\0 ",'L',258,NULL},
+	 {u8"todo de la capa N°\0 ",'N',174,NULL},
+	 {u8"Cruz/ventana\0  F9", 'C',259,NULL},
+	 {u8"agregar/Remover\0  F10" ,'R', 260,NULL},
+	 {u8"Instante\0 Y", 'I',261,&mAuto},
+	 {u8"Ajustar el ángulo\0",'A',973,NULL},
+};
+
 POLE pmBlok_cht[] = {
 	 {u8"último Bloque\0 ",'B',256,NULL},
 	 {u8"todos los Textos\0 ",'T',273,NULL},
@@ -2886,6 +2909,7 @@ char Yes[2] = "Y";
 
 #define _FROZEN_ u8"helado "
 #define _EXPLODE_BLOCKS_ u8"¿Quieres explotar los bloques marcados %s?"
+#define _ADJUST_ANGLE_ u8"¿Desea ajustar el ángulo de descripción de los nodos de la red?"
 #define _Yes_ "Sí"
 #define _No_ "No"
 
@@ -3652,8 +3676,8 @@ static char config_sectors[11][32] =
 
 #ifdef __O_LIBFUN__
 
-char bloki_dir[MAXPATH] = "BLOQUES";
-char katalogi_dir[MAXPATH] = "CATÁLOGOS";
+char bloki_dir[MAXPATH] = "Bloques";
+char katalogi_dir[MAXPATH] = "Catálogos";
 char bloki_cfg[MAXPATH] = "BLOQUES.CFG";
 char biblioteka_cfg[MAXPATH] = "APARATOS.AXX";
 
@@ -3710,7 +3734,8 @@ char* view_type_tab[] = {
 			    u8"" };
 
 
-T_Prototype      s__prot = { u8"prototype.alf", TRUE };
+T_Prototype      s__prot = { u8"prototipo.alf", TRUE };
+T_Prototype      s__prot_p = { u8"prototipop.alf", TRUE };
 
 #define _SYSTEM_MESSAGE_ u8"MENSAJE DEL SISTEMA"
 #define _INTERRAPTED_ u8"Interrumpido"
@@ -3718,7 +3743,7 @@ T_Prototype      s__prot = { u8"prototype.alf", TRUE };
 #define _BLOCKS_CORRECTED_ u8"%ld bloques, %ld objetos han sido corregidos"
 #define _BLOCKS_TESTED_ u8"Todo bien. %d bloques probados"
 
-char* typ_punktu_inf[] = { u8"Simple",u8"Punto base","","","","","",u8"Unión",u8"Pasador","","","",
+char* typ_punktu_inf[] = { u8"Simple",u8"Punto base",u8"nivel existente",u8"nivel proyectado i.",u8"nivel proyectado s.",u8"nivel de calle",u8"nivel del terreno",u8"Unión",u8"Pasador","especial @","especial #","especial *"
                            u8"Empotrado",u8"Empotrado I",u8"Empotrado D",u8"Empotrado A", u8"Articulado", u8"Articulado I", u8"Articulado D", u8"Articulado A",
                            u8"Empotrado Deslizadera", u8"Empotrado Deslizadera I", u8"Empotrado Deslizadera D", u8"Empotrado Deslizadera A", u8"Articulado Deslizadera", u8"Articulado Deslizadera I", u8"Articulado Deslizadera D", u8"Articulado Deslizadera A", u8"sin rotación Z",
                            u8"Empotrado Deslizadera X", u8"Empotrado Deslizadera X A", u8"Empotrado Deslizadera Y", u8"Empotrado Deslizadera Y A", u8"Articulado Deslizadera X", u8"Articulado Deslizadera X A", u8"Articulado Deslizadera Y", u8"Articulado Deslizadera Y A"};
@@ -3805,18 +3830,20 @@ static TMENU mBold = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,37,0,0,0,(POLE(*)[])
 static TMENU mUnderlined = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,39,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 static TMENU mAutoInterwal = { 2,0,0,7,79,12,ICONS,CMNU,CMBR,CMTX,0,6,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL };
 
-POLE pmTypTekstu[] = {
+POLE *pmTypTekstu;
+
+POLE pmTypTekstuN[] = {
 			   {u8"Normal",'N',0,NULL},
 			   {u8"etiqueta Interna",'I',0,NULL},
 			   {u8"Etiqueta de componente",'E',0,NULL},
 			   {u8"Símbolo",'S',0,NULL},
 			   {u8"Tipo",'T',0,NULL},
 			   {u8"?nombre del pin",'?',0,NULL},
-			   {u8"Fuente de alimentación",'F',0,NULL},
+			   {u8"fuente de alimentación",'V',0,NULL},
 			   {u8"Puerto",'P',0,NULL},
 			   {u8"Atributo",'A',0,NULL},
 			   {u8"+Esquema",'+',0,NULL},
-			   {u8"nombre De archivo",'D',0,NULL},
+			   {u8"nombre de archivo",'F',0,NULL},
 			   {u8"Red",'R',0,NULL},
 			   {u8"Comentario",'C',0,NULL},
 			   {u8"%variable",'%',0,NULL},
@@ -3824,7 +3851,27 @@ POLE pmTypTekstu[] = {
 			   {u8"auX.descripción",'X',0,NULL},
 };
 
-TMENU mTypTekstu = { 16,0,0,16,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstu,NULL,NULL };
+POLE pmTypTekstuP[]={
+				{u8"Normal",'N',0,NULL},
+				{u8"Distancia",'D',0,NULL},
+				{u8"Elevación del canal existente",'O',0,NULL},
+				{u8"Diámetro del canal existente",'P',0,NULL},
+				{u8"Elevación del canal de diseño",'Q',0,NULL},
+				{u8"Diámetro del canal de diseño",'R',0,NULL},
+				{u8"Elevación de la calle",'S',0,NULL},
+				{u8"Elevación del terreno",'T',0,NULL},
+				{u8"Atributo",'A',0,NULL},
+				{u8"Pendiente del canal existente",'U',0,NULL},
+				{u8"Nombre del archivo+",'F',0,NULL},
+				{u8"Pendiente del canal de diseño",'V',0,NULL},
+				{u8"longitud del canal existente",'W',0,NULL},
+				{u8"longitud del canal de diseño",'X',0,NULL},
+				{u8"profundidad del canal existente",'Y',0,NULL},
+				{u8"profundidad del canal de diseño",'Z',0,NULL},
+};
+
+TMENU mTypTekstu = { 16,0,0,22,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstu,NULL,NULL };
+TMENU mTypTekstuP = { 16,0,0,31,74,6,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmTypTekstuP,NULL,NULL };
 
 POLE pmJustowanie[] = {
 					{u8"a la Izquierda",'I',262,NULL},
@@ -3867,10 +3914,15 @@ static POLE pmTekstm[] = {
 	{u8"Fuente\0 \0             ", 'F', 183,(TMENU*)&mCzcionka},
 };
 
-static char t_t[16][32] = {
+char **t_t;
+static char *t_tN[16] = {
 u8"Normal", u8"Etiqueta interna", u8"Etiqueta de comp.", u8"Símbolo", u8"Tipo",
 u8"nombre pin", u8"fuente de alim.", u8"Puerto", u8"Atributo", u8"+Esquema", u8"nombre de archivo", u8"red",
 u8"Comentario", u8"%variable", u8"aUx.símbolo", u8"auX.descrpción" };
+
+static char *t_tP[16] = {
+	u8"Normal",u8"Distancia",u8"Elev. canal exist.",u8"Diám. canal exist.",u8"Elev. canal dis.",u8"Elev. calle",u8"Elev. terreno",u8"Atributo",u8"Pend. canal exist.",
+	u8"Nombre de archivo+",u8"Pend. canal dis.",u8"Long. canal exist.",u8"Long. canal dis.",u8"Prof. canal exist.",u8"Prof. canal dis."};
 
 #define _TEXT_ u8"Texto"
 #define _TEXT_C_ L'T'
@@ -4160,4 +4212,323 @@ POLE pmTTF_OTF[] = {
 
 TMENU mTTF_OTF = { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmTTF_OTF,NULL,NULL };
 
+#endif
+
+#ifdef __A_PROFILE__
+
+static POLE pmListaSieci[]={
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},{u8"",' ',0, NULL},
+};
+
+static TMENU mListaSieci={0,0,256, 64,2, 4, 0, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmListaSieci, NULL, NULL} ;
+
+/*----------------------------------------------------------*/
+/*                    EditParams                            */
+/*----------------------------------------------------------*/
+
+static POLE pmPPar[]={
+	{u8"Dibujar / insertar", 'D', 947, NULL},
+	{u8"Editar    Enter",    'E', 948, NULL},
+	{u8"Verificar",           'V', 949, NULL},
+	{u8"Anterior  F9 ",      'A', 950, NULL},
+	{u8"Siguiente F10",      'S', 951, NULL},
+	{u8"Cancelar  Esc",      'C', 952, NULL},
+};
+
+static TMENU mPPar={6,0,0,16,56,4,ICONS,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0,(POLE(*)[]) &pmPPar,NULL,NULL};
+
+static char *tab_name[]={"tabla1","tabla2","tabla3",""};
+static char *BlockName[]= {"$colision", "$referencia", "$hmetro", "$kmetro"};
+static char *FileNameAll[]= { "medicion_1","medicion1","medicion11","medicion_0","medicion0","medicion00","instal_1","sondeo_1","hectometro_1","escala_1", "nuevo_perfil"};
+static char *FileName[]= { "medicion_1","medicion_0","instal_1","sondeo_1","hectometro_1","escala_1", "nuevo_perfil"};
+static char *FileName1[]= { "medicion1","medicion0","instal_1","sondeo_1","hectometro_1","escala_1", ""};
+static char *FileName2[]= { "medicion11","medicion00","instal_1","sondeo_1","hectometro_1","escala_1", ""};
+
+static POLE pmGora_Dno_Os[]={
+	{u8"Corona", 'C', 953, NULL},
+	{u8"Eje",    'A', 954, NULL}, // Using 'A' for Axis/Eje alignment to maintain intuitive feel
+	{u8"Invert", 'I', 955, NULL},
+};
+
+
+static TMENU mOpcjeWyrownywania=
+	{3,0,0,19,36,12,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+static TMENU mOpcjeWyrownywania1=
+	{3,0,0,19,36,12,ICONS,CMNU,CMBR,CMTX,0,3,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+
+static TMENU mGora_Dno_Os=
+	{3,0,0,18,36,12,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmGora_Dno_Os,NULL,NULL};
+
+static POLE pmKanal_P_I[]={
+	{u8"canal Proyectado", 'P', 961, NULL}, //24
+	{u8"canal Existente",  'E', 962, NULL}, //25
+};
+
+static POLE pmKanal_P_I_FI[]={
+	{u8"canal Proyectado", 'P', 961, NULL}, //24
+	{u8"canal Existente",  'E', 962, NULL}, //25
+};
+
+
+static POLE pmKanal_P_I_W[]={
+   {u8"canal Proyectado",'P',961, &mOpcjeWyrownywania}, //32,33,34
+	{u8"canal Existente",'I',962, &mOpcjeWyrownywania1},   //35,36,37
+	  };
+
+static POLE pmKanal_P_I_T[]={
+   {u8"canal Proyectado",'P',961, NULL}, //21
+	{u8"canal Existente",'I',962, NULL},   //22
+   {u8"Rasante proyectada",'R',963, NULL}, //23
+	  };
+
+static POLE pmKanal_P_I_S[]={
+   {u8"canal Proyectado",'P',961, NULL},  //18
+	{u8"canal Existente",'E',962, NULL},    //19
+   {u8"Rasante proyectada",'R',963,NULL},  //20
+	  };
+
+static TMENU mOpcjeLicowanieKanalu=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,34,0,0,0,(POLE(*)[]) &pmKanal_P_I_W,NULL,NULL};
+
+static TMENU mZmianaSpadku_pi=
+	{3,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmKanal_P_I_S,NULL,NULL};
+
+static TMENU mZmienSpadek_pi=
+	{3,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmKanal_P_I_T,NULL,NULL};
+
+static TMENU mNadajSpadek_pi=
+	{2,0,0,18,32,11,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmKanal_P_I,NULL,NULL};
+
+
+static POLE pmZmianaSpadku[]={
+	{u8"pendiente Constante en el tramo", 'C', 964, &mZmianaSpadku_pi},
+	{u8"Modificar pendiente en el tramo",   'M', 965, &mZmienSpadek_pi},
+	{u8"Asignar pendiente desde el tramo", 'A', 966, &mNadajSpadek_pi},
+};
+
+
+static TMENU mZmianaSpadku=
+	{3,0,0,23,20,9,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmZmianaSpadku,NULL,NULL};
+
+
+static TMENU mZmienSrednice_pi=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,11,0,0,0,(POLE(*)[]) &pmKanal_P_I_FI,NULL,NULL};
+
+static TMENU mZmienMaterial_pi=
+	{2,0,0,18,30,10,ICONS,CMNU,CMBR,CMTX,0,13,0,0,0,(POLE(*)[]) &pmKanal_P_I_FI,NULL,NULL};
+
+
+static POLE pmZmianaFiMatNaw[]={
+	{u8"Cambiar diámetro",   'D', 956, &mZmienSrednice_pi},  //17
+	{u8"Cambiar material",   'M', 957, &mZmienMaterial_pi},  //18
+	{u8"Cambiar superficie", 'S', 958, NULL},                 //19
+};
+
+
+static TMENU mZmianaFiMatNaw=
+	{3,0,0,18,20,11,ICONS,CMNU,CMBR,CMTX,0,17,0,0,0,(POLE(*)[]) &pmZmianaFiMatNaw,NULL,NULL};
+
+static POLE pmOpcjeZaglebienia[]={
+	{u8"respecto al terreno Proyectado", 'P', 967, NULL},
+	{u8"respecto al terreno Existente",  'E', 968, NULL},
+};
+
+static TMENU mOpcjeZaglebienia=
+	{2,0,0,24,20,8,ICONS,CMNU,CMBR,CMTX,0,32,0,0,0,(POLE(*)[]) &pmOpcjeZaglebienia,NULL,NULL};
+
+//POLE pmTak_Nie[2]={
+//	{"Tak",'T',NULL},
+//	{"Nie",'N',NULL} };
+
+static TMENU mZablokujProfil={2,0,0,7,32,11,ICONS,CMNU,CMBR,CMTX,0,40,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+static POLE pmSkala_Hektometry[]={
+	{u8"Factor de escala del perfil", 'F', 946, NULL},
+	{u8"Hectómetros",                 'H', 959, NULL},
+};
+
+
+static TMENU mSkala_Hektometry={2,0,0,13,20,8,ICONS,CMNU,CMBR,CMTX,0,44,0,0,0,(POLE(*)[]) &pmSkala_Hektometry,NULL,NULL};
+
+static TMENU mWyroznij_profil={2,0,0,7,32,11,0,CMNU,CMBR,CMTX,0,5,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+static POLE pmWybierz_profil[]={
+	{u8"Nuevo perfil",               'N', 944, NULL},
+	{u8"Seleccionar perfil actual", 'S', 945, NULL},
+};
+
+static TMENU mWybierz_profil={2,0,0,22,1,3,ICONS,CMNU,CMBR,CMTX,0,42,0,0,0,(POLE(*)[]) &pmWybierz_profil,NULL,NULL};
+
+static POLE pmProfil[]={
+	{u8"Siguiente medición     \0(4) \0 ", 'S', 916, NULL},
+	{u8"Primera medición       \0 (3) \0 ", 'P', 917, NULL},
+	{u8"Instalaciones\0 \0 ",             'I', 918, NULL},
+	{u8"Sondeo\0 \0",                      'O', 919, NULL}, // O from sOndeo
+	{u8"Seleccionar perfil     \0(1) \0 ", 'E', 920, &mWybierz_profil}, // E from sEleccionar
+	{u8"Parámetros del perfil  \0(2) \0 ", 'R', 921, &mSkala_Hektometry}, // R from paRámetros
+	{u8"      \0 \0 ",                    ' ', 931, NULL},
+	{u8"Obtener datos de medición\0 \0 ",  'G', 922, NULL}, // G from obteNer/get data
+	{u8"Opciones de descripción de profundidad\0 \0 ", 'C', 923, &mOpcjeZaglebienia}, // C from opCiones
+	{u8"opciones de Alineación del canal\0 \0 ",        'A', 924, &mOpcjeLicowanieKanalu},
+	{u8"cambiar Longitud del perfil\0 \0 ",             'L', 925, NULL},
+	{u8"cambiar Pendiente\0 \0 ",                       'N', 926, &mZmianaSpadku}, // N from peNdiente
+	{u8"cambiar Profundidad\0 \0 ",                     'F', 927, NULL}, // F from proFundidad
+	{u8"cambiar Ø/Material/superficie\0 \0 ",           'M', 928, &mZmianaFiMatNaw},
+	{u8"Actualizar perfil\0 \0 ",                       'U', 929, NULL}, // U from ActUalizar/Update
+	{u8"      \0 \0 ",                    ' ', 931, NULL},
+	{u8"Bloquear perfil\0N \0 ",                        'B', 930, &mZablokujProfil},
+};
+
+static TMENU mProfil={17,0,0,24,1,3,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmProfil,NULL,NULL};
+///no icons
+////static TMENU mProfil={17,0,0,24,1,3,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmProfil,NULL,NULL};
+
+POLE  pmSieci[]={
+	{"Pz",'P',0,NULL},  //ppunto de partida
+	{"Cok",'C',0,NULL}, //tubería de calefacción de bajo parámetro (agua)
+	{"Co",'O',0,NULL},
+	{"T",'T',0,NULL},   //cable/alambre de telecomunicaciones subterráneo o aéreo,
+	{"Tk",'K',0,NULL},
+    {"e",'e',0,NULL},   //cable de alimentación (general)
+	{"E",'E',0,NULL},
+	{"S",'S',0,NULL},
+	{"D",'D',0,NULL},
+	{"W",'W',0,NULL},   //red de suministro de agua
+    {"?",'?',0,NULL},
+	};
+
+TMENU mSieci={11,0,0,3,10,5,0,CMNU,CMBR,CMTX,0,15,0,0,0,(POLE(*)[]) &pmSieci,NULL,NULL};
+TMENU mSieci1={11,0,0,3,10,5,0,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmSieci,NULL,NULL};
+
+TMENU mDopasuj_blok={2,0,0,7,32,11,ICONS,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmTak_Nie,NULL,NULL};
+
+POLE pmReference_angle[]={
+{u8"Introduzca un ángulo de referencia\0",'I',972,NULL},
+{u8"Actualizar bloques de nodos\0",'A',973,NULL},
+};
+
+TMENU mReference_angle={2,0,0,36,1,3,ICONS,CMNU,CMBR,CMTX,0,28,0,0,0,(POLE(*)[]) &pmReference_angle,NULL,NULL};
+
+POLE pmInstalacje[]={
+	{u8"dibujar Red\0   ", 'R', 932, &mSieci},
+	{u8"dibujar Conexión\0   ", 'C', 933, NULL},
+	{u8"Insertar colisiones\0   ", 'I', 934, NULL},
+	{u8"insertar Punto de control\0   ", 'P', 935, NULL},
+	{u8"Fusión de redes\0   ", 'F', 936, NULL},
+	{u8"Actualizar hm/km\0   ", 'A', 937, NULL},
+	{u8"aJustar bloque hm/km\0  T", 'J', 938, &mDopasuj_blok},
+	{u8"Generar tabla de coordenadas\0   ", 'G', 939, NULL},
+	{u8"insertar red desde archivo xyz/Txt\0        ", 'T', 940, NULL},
+	{u8"      \0", ' ', 931, NULL},
+	{u8"Guardar trazas de red\0   ", 'G', 941, NULL}, // U from gUardar
+	{u8"insertar perfil de red\0   ", 'E', 942, NULL}, // E from pErfil
+	{u8"insertar Buzones de recolección\0   ", 'B', 943, NULL},
+	{u8"ángulo de referencia de los bloques de nodos\0",'Q',972,&mReference_angle},
+	{u8"Marcar dibujo como mapa\0", 'M', 140, NULL},
+};
+
+
+//TMENU mInstalacje={15,0,0,30,1,3,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInstalacje,NULL,NULL};
+TMENU mInstalacje={15,0,0,30,1,3,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInstalacje,NULL,NULL};
+
+#define _generate_profile_ u8"¿Generar un perfil?"
+#define _Yes_ u8"Sí"
+#define _No_ u8"No"
+
+#define _PROFIL_ "PERFILES"
+
+char config_profil [][60] =
+{
+	"Alineacion al invert",
+	"Ocultar GEin",
+	"Tipo de linea canal existente",
+	"Tipo de linea canal proyectado",
+	"Tipo de linea terreno proyectado",
+	"Tipo de linea terreno existente",
+	"Precision de distancia",
+	"Precision de cota",
+	"Precision de cota canal proyectado",
+	"Precision de cota canal existente",
+	"Precision de cota de colision",
+	"Precision de cota de terreno",
+	"Precision de cota terreno proyectado",
+	"Precision de cota terreno existente",
+	"Precision de profundidad",
+	"Precision de pendiente",
+	"Diametro de punto de quiebre de red",
+	"Escala de bloque hm/km",
+	"Separador decimal",
+};
+
+#define _error_opening_file_ u8"Error al abrir el archivo"
+#define _wrong_real_number_format_ u8"Formato de número real incorrecto"
+#define _last_measure_ u8"medición anterior:"
+#define _no_data_ u8"sin datos"
+#define _last_profile_scale_ u8"factor de escala del perfil anterior:"
+#define _comparative_level_ "Nivel de referencia D.L."
+#define _profile_type_ u8"tipo"
+
+#define _PROFILE_ u8"perFil"
+#define _PROFILE_C L'F'
+
+#define _MANHOLE_R_ u8"Buzones"
+#define _MANHOLE_C_ L'B'
+
+#define _YES_NO_ESC_ u8"SNsn\033"
+#define _YES_ 'S'
+#define _yes_ 's'
+#define _NO_ 'N'
+#define _no_ 'n'
+#define _YES__ "S"
+#define _NO__ "N"
+
+#define _DATUM_LEVEL_ "D.L. "
+#define _m_n_p_m_ " m"
+
+#define _Profil_ "Profil"
+
+#define _ziemna_ u8"tierra/no pavimentada"
+#define _asfaltowa_ u8"asfalto"
+#define _betonowa_ u8"hormigón"
+#define _kostka_ u8"adoquín gran."
+#define _brukowa_ u8"empedrado"
+
+#define _beton_ u8"hormigón"
+#define _kamionka_ u8"gres/arcilla vitrificada"
+#define _zeliwo_ u8"hierro fundido/dúctil"
+#define _PVC_ u8"PVC"
+#define _plastic_ u8"plástico"
+#define _steel_ u8"acero"
+#define _PE_ u8"PE"
+
+#define _SELECT_LINE_ u8"Seleccione una línea (o presione BACKSPACE para restaurar el ángulo 0)"
+
+#endif
+
+#ifdef __O_TABWSP__
+#define _no_descripted_networks_ u8"No hay redes descritas"
+#define _networks_saved_ u8"OK. Trazas de red guardadas"
+#define _Point_ "Punto"
+#define _Network_ "Red:"
+#define _COORDINATES_ "coordenadas:"
+char *CARTESIAN = u8"cartesiano";
+char *GEODETIC = u8"geodésico";
+#define _SCALE_ "escala_1:"
+#define _POINT_ORIGIN_ u8"punto_de_origen:"
+#define _ANGLE_ u8"ángulo:"
 #endif

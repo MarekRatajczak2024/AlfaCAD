@@ -40,6 +40,7 @@ extern void setwritemode( int mode );
 extern BOOL TTF_redraw;
 extern T_Font_Header *PTRS__Text_Style [MaxNumberTextStyle] ;
 extern void DF_to_String (char *, char *, double, int) ;
+extern void set_text_types(int ver);
 
 extern BOOL Semaphore;
 
@@ -246,6 +247,8 @@ void Edit_Obiekt(void)
   TEXT *T, t=Tdef;
   AVECTOR *V;
   int prop_no_bak, prop_no;
+
+  set_text_types(1);
 
   TTF_redraw=FALSE;
   redcr(0);

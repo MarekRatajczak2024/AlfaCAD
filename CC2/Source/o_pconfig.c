@@ -14,17 +14,21 @@
 *
 */
 
+#define __O_PCONFIG__
+
 #include<forwin.h>
 #ifndef LINUX
 #include<io.h>
 #include<dos.h>
-#else
-#include <unistd.h>
 #endif
 #include<fcntl.h>
 #include <string.h>
+
 #include<stdlib.h>
 #include <stdio.h>
+#ifdef LINUX
+#include <unistd.h>
+#endif
 #include<sys/stat.h>
 
 #include "bib_e.h"
@@ -34,6 +38,8 @@
 #include "o_pltprn.h"
 #include "o_libfun.h"
 #include "o_inicnf.h"
+
+#include "message.h"
 
 
 extern double Aspect(TDIALOG *dlg, BOOL m, double asp0);
@@ -57,11 +63,11 @@ extern int my_getch(void);
 #define nof_lin  0
 
 #define XpLabC 5
-#define XpButC 150
+#define XpButC 140 //150
 #define YpLabCCol 5
-#define DYBut (DYLab -3)
-#define DXBut (DYBut - 5)
-#define DYROW (DYLab - 10)
+#define DYBut 10 //(DYLab -3)
+#define DXBut 10 //(DYBut - 5)
+#define DYROW 10 //(DYLab - 10)
 
 #define DXB 6
 #define DYB 6
@@ -83,68 +89,66 @@ static int kolor_pola_profil_tmp[25]={7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
 static BOOL mouse;
 static DLG_COLOR color_dlg;
 static LABEL pdLab[nof_lab]={
-         {XpLabC, YpLabCCol + 1 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"o� pomiaru"},
-		   {XpLabC, YpLabCCol + 2 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"linia terenu istn."},
-		   {XpLabC, YpLabCCol + 3 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"linia terenu proj."},
-		   {XpLabC, YpLabCCol + 4 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"linia ulicy"},
-		   {XpLabC, YpLabCCol + 5 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"linia kana�u istn."},
-		   {XpLabC, YpLabCCol + 6 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"linia kana�u proj."},
-		   {XpLabC, YpLabCCol + 7 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"warto�ci rz�dnych"},
-		   {XpLabC, YpLabCCol + 8 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"�, l, �, materia�"},
-		   {XpLabC, YpLabCCol + 9 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"odleg�o�ci"},
-		   {XpLabC, YpLabCCol + 10 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"hektometry"},
-		   {XpLabC, YpLabCCol + 11 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"opis instalacji"},
-		   {XpLabC, YpLabCCol + 12 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol 'T'"},
-		   {XpLabC, YpLabCCol + 13 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol 'e'"},
-		   {XpLabC, YpLabCCol + 14 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol 'G'"},
-		   {XpLabC, YpLabCCol + 15 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol 'W'"},
-		   {XpLabC, YpLabCCol + 16 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol 'K'"},
-		   {XpLabC, YpLabCCol + 17 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"o� otworu"},
-		   {XpLabC, YpLabCCol + 18 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"numer otworu"},
-		   {XpLabC, YpLabCCol + 19 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"opis otworu"},
-		   {XpLabC, YpLabCCol + 20 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"opis warstw"},
-		   {XpLabC, YpLabCCol + 21 * DYROW + DYIL +3, 0, 0, COLOR_NULL, COLOR_NULL,"symbol wody"},
-		   {433,7, 0, 0, COLOR_NULL, COLOR_NULL,"inny"},
+         {XpLabC, YpLabCCol + 1 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_measurement_axis_},
+		   {XpLabC, YpLabCCol + 2 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_existing_ground_line_},
+		   {XpLabC, YpLabCCol + 3 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_designed_ground_line_},
+		   {XpLabC, YpLabCCol + 4 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_street_line_},
+		   {XpLabC, YpLabCCol + 5 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_existing_canal_line_},
+		   {XpLabC, YpLabCCol + 6 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_designed_canal_line_},
+		   {XpLabC, YpLabCCol + 7 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_elevation_values_},
+		   {XpLabC, YpLabCCol + 8 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_l_material_},
+		   {XpLabC, YpLabCCol + 9 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_distances_},
+		   {XpLabC, YpLabCCol + 10 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_hectometers_},
+		   {XpLabC, YpLabCCol + 11 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_installation_description_},
+		   {XpLabC, YpLabCCol + 12 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_T_symbol_},
+		   {XpLabC, YpLabCCol + 13 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_e_symbol_},
+		   {XpLabC, YpLabCCol + 14 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_G_symbol_},
+		   {XpLabC, YpLabCCol + 15 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_W_symbol_},
+		   {XpLabC, YpLabCCol + 16 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_K_symbol_},
+		   {XpLabC, YpLabCCol + 17 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_hole_axis_},
+		   {XpLabC, YpLabCCol + 18 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_hole_number_},
+		   {XpLabC, YpLabCCol + 19 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_hole_description_},
+		   {XpLabC, YpLabCCol + 20 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_layers_description_},
+		   {XpLabC, YpLabCCol + 21 * DYROW +1, 0, 0, COLOR_NULL, COLOR_NULL,_water_symbol_},
+		   {350,6, 0, 0, COLOR_NULL, COLOR_NULL,_other_},
 		   };
 
 
 static GROUP_BOX gr_box1 []=
 {
       { XpLabC, YpLabCCol ,
-	470/*450*/, 22/*19*/ * DYROW + 2 * DYIL,
+	380/*450*/, 22/*19*/ * DYROW + 2 * DYIL,
 	COLOR_NULL ,COLOR_NULL,     	
-	"KOLORY OBIEKT�W", 0, NULL,
+	_OBJECT_COLORS_, 0, NULL,
       },
 };
 
-#define DIST_LIN 3
-static DARK_LIGHT_LINE line_d_l [] =
-{
-	{ 472, DIST_LIN, 1, HEIGHT_WORLD - 20 - 2 * DIST_LIN , COLOR_NULL, COLOR_NULL},
-	{ 472 + 2 + DIST_LIN, 107, 110, 1, COLOR_NULL, COLOR_NULL},
-};
-
 static BUTTON But_OK = {
-			485, YpLabCCol, DXBut0, DYBut0,
-			COLOR_NULL, COLOR_NULL, COLOR_NULL, "OK",
-			0,B_PUSHBUTTON, 0, 1,0, ID_OK, 0, 0};
+			390, YpLabCCol, DXBut0, DYBut0,
+			COLOR_NULL, COLOR_NULL, COLOR_NULL, "",
+			0,B_PUSHBUTTON, 87, 1,0, ID_OK, 0, 0};
 
 static BUTTON But_Cancel = {
-	485, 60, DXBut0, DYBut0,
-	COLOR_NULL, COLOR_NULL, COLOR_NULL, "Esc",
-	0,B_PUSHBUTTON, 0, 1,0,ID_CANCEL, 0, 0};
+	390, 60, DXBut0, DYBut0,
+	COLOR_NULL, COLOR_NULL, COLOR_NULL, "",
+	0,B_PUSHBUTTON, 83, 1,0,ID_CANCEL, 0, 0};
 
 
-static BUTTON pdBut[nof_but]=Button_def;
+static BUTTON pdBut[nof_but];
 
-static TDIALOG Config_profil={ 10,1, WIDTH_WORLD-40,HEIGHT_WORLD-3,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0,0,0,
-	"KONFIGURACJA KOLOR�W ELEMENT�W PROFILU",
+static IMAGE images_pconf[] =
+{
+	{  WIDTH_WORLD-210, HEIGHT_WORLD-90, 48, 48, 112,_PROFILE_COLORS_},
+};
+
+static TDIALOG Config_profil={ 10,1, WIDTH_WORLD-143,HEIGHT_WORLD - 62,COLOR_NULL,COLOR_NULL,COLOR_NULL, COLOR_NULL, 0x40,0,0,
+	_PROFILE_ELEMENT_COLOR_CONFIGURATION_,
 			0, NULL,
-			nof_lab, &pdLab,
-			1, &gr_box1,
+			nof_lab, (LABEL(*)[])&pdLab,
+			1, (GROUP_BOX(*)[])&gr_box1,
 			0, NULL,
-			0,NULL,
-			nof_but,&pdBut,
+	       1, (IMAGE(*)[])&images_pconf,
+			nof_but,(BUTTON(*)[])&pdBut,
 			0, NULL,
 			0,NULL,
             0,NULL, //Sliders
@@ -244,47 +248,47 @@ void init_button_config_dialog_profil(void)
   int nb;
 /*kolory*/
   nb = nrButtonCol;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+1 * DYROW, DXBut, DYBut); /*ramka*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+1 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+2 * DYROW, DXBut, DYBut); /*tlo*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+2 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+3 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+3 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+4 * DYROW, DXBut, DYBut); /*ramka*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+4 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+5 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+5 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+6 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+6 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+7 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+7 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+8 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+8 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+9 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+9 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+10 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+10 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+11 * DYROW, DXBut, DYBut); /*tlo*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+11 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+12 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+12 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+13 * DYROW, DXBut, DYBut); /*ramka*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+13 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+14 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+14 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+15 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+15 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+16 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+16 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+17 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+17 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+18 * DYROW, DXBut, DYBut); /*tekst*/;
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+18 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+19 * DYROW, DXBut, DYBut); /*tekst*/;  
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+19 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+20 * DYROW, DXBut, DYBut); /*tekst*/; 
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+20 * DYROW, DXBut, DYBut);
   nb += 17;
-  init_button_profil( nb,pdBut, XpButC, YpLabCCol+21 * DYROW, DXBut, DYBut); /*tekst*/;   
+  init_button_profil( nb,pdBut, XpButC, YpLabCCol+21 * DYROW, DXBut, DYBut);
 }
 
 
@@ -312,17 +316,17 @@ static int config_profil( int n)
 	   nrBat = nrButtonCol  + wiersz*17 + col_state[wiersz];
 	   if (nrBat != n)
 		{
+	   	  GrMouseEraseCursor();
 		  pdBut [nrBat].check = 0;
 		  Draw_Button (&pdBut [nrBat] );
 		  pdBut [n].check = 1;
-		  GrMouseEraseCursor();
 		  Draw_Button (&pdBut [n] );
           GrMouseDisplayCursor();
 		}
 	   col_state [(n - nrButtonCol  ) / 17] = (n - nrButtonCol ) % 17 ;
 	   if ((n - nrButtonCol) % 17==16)
 	    {
-	     ret = Dlg_Ret_Val_Cancel;
+	     ret = Dlg_Ret_Val_Return;
 	     colors256 = 1;
 	     old_color = kolor_pola_profil [wiersz];
 	     numer_wiersza = wiersz;
@@ -408,7 +412,7 @@ _Reset1_ :
   init_button_config_dialog_profil();
   conf_ini_profil(1);
   Save_Update_flex(0, &curr_h, &curr_v);
-  ret = Dialog(&Config_profil, &color_dlg, config_profil, mouse);
+  ret = Dialog(&Config_profil, &color_dlg, config_profil, bMouse);
   Save_Update_flex(1, &curr_h, &curr_v);
 aa:
   if (colors256 > 0) 
@@ -424,7 +428,7 @@ aa:
 	memmove(kolory_profil,&kolor_pola_profil, sizeof(KOLORY_PROFILI));
 	return 1;
   }
-    else return 0;
-
+	return 0;
 }
 
+#undef __O_PCONFIG__
