@@ -410,6 +410,10 @@ extern void my_sleep(int sleepMs);
 	extern int dynamic_menu;
     extern int desktop_instruction;
 	extern float pan_dxy;
+    extern float zoom_dxy;
+    extern float wheelzoom_dxy;
+	extern BOOL auto_pan_block;
+    extern BOOL auto_zoom_block;
 
 	extern void CopyPreview(int x01, int y01, int x02, int y02, int client_number);
 #ifndef LINUX
@@ -2120,6 +2124,10 @@ typedef enum
 {
 	Dtp_wallpaper = 0,
 	Dtp_autopanorama,
+	Dtp_zoom_factor,
+	Dtp_wheelzoom_factor,
+	Dtp_block_panning,
+	Dtp_block_zooming,
 	Dtp_dynamic_menu,
 	Dtp_desktop_cursor,
     Dtp_menu_cursor,
@@ -2159,6 +2167,26 @@ static BOOL add_desktop(FILE *stru)
 				key_name, pan_dxy, comment))
 				return FALSE;
 			break;
+		case Dtp_zoom_factor:
+				if (EOF == fprintf(stru, "%s=%g\t\t%s\n",
+				                   key_name, zoom_dxy, comment))
+					return FALSE;
+				break;
+		case Dtp_wheelzoom_factor:
+				if (EOF == fprintf(stru, "%s=%g\t\t%s\n",
+				                   key_name, wheelzoom_dxy, comment))
+					return FALSE;
+				break;
+		case Dtp_block_panning:
+				if (EOF == fprintf(stru, "%s=%d\t\t%s\n",
+				                   key_name, auto_pan_block, comment))
+					return FALSE;
+				break;
+		case Dtp_block_zooming:
+				if (EOF == fprintf(stru, "%s=%d\t\t%s\n",
+				                   key_name, auto_zoom_block, comment))
+					return FALSE;
+				break;
 		case Dtp_dynamic_menu:
 			if (EOF == fprintf(stru, "%s=%d\t\t%s\n",
 				key_name, dynamic_menu, comment))

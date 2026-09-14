@@ -500,6 +500,8 @@ static const char* komunikaty_kom[] =
 	/*232*/u8"El dibujo ya está marcado como perfil de red",
 /*233*/u8"¡PERFIL BLOQUEADO!",
 /*234*/u8"",
+/*235*/u8"Introduzca el incremento de zoom con la rueda del ratón (0,01...1): ",
+/*236*/u8"Introduzca el incremento de zoom con las teclas (0,01...1): ",
 };
 
 

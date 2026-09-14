@@ -18026,7 +18026,7 @@ void Grid_analysis(void) {
             }
 
             //Rx  (rotation about X axis) positive
-            Ldsp.kolor = static_colors.moment_color;
+            Ldsp.kolor = static_colors.deformation_color; //static_colors.moment_color;
 
             for (i = 0; i < combinations_number; i++)   //st_layer_no
             {
@@ -18357,6 +18357,11 @@ void Grid_analysis(void) {
 
                                             RxGr.f1=(float)Rx;
 
+                                            if ((RxGr.f1==0) && (RxGr.f2==0)) Ldsp_.kolor=7;
+                                            else if ((RxGr.f1>=0) && (RxGr.f2>=0)) Ldsp_.kolor=5;
+                                            else if ((RxGr.f1<=0) && (RxGr.f2<=0)) Ldsp_.kolor=1;
+                                            else Ldsp_.kolor=7;
+
                                             if (st_element[rep_element_no - 1].flags==1)  //Winkler beam
                                             {
                                                 go_winkler(rep_element_no, &Le, &Ldsp, &Ldsp2, &Ldsp_, x_iso, Rx, &RxGr, rotation_precision, FALSE, "", "", 0);
@@ -18393,6 +18398,11 @@ void Grid_analysis(void) {
                                             Ldsp_.blok = 1;
 
                                             RxGr.f2=(float)Rx;
+
+                                            if ((RxGr.f1==0) && (RxGr.f2==0)) Ldsp_.kolor=7;
+                                            else if ((RxGr.f1>=0) && (RxGr.f2>=0)) Ldsp_.kolor=5;
+                                            else if ((RxGr.f1<=0) && (RxGr.f2<=0)) Ldsp_.kolor=1;
+                                            else Ldsp_.kolor=7;
 
                                             if (st_element[rep_element_no - 1].flags==1)  //Winkler beam
                                             {
@@ -18486,6 +18496,11 @@ void Grid_analysis(void) {
 
                                                 RxGr1.f1=(float)Rx;
 
+                                                if ((RxGr.f1==0) && (RxGr.f2==0)) Ldsp_.kolor=7;
+                                                else if ((RxGr.f1>=0) && (RxGr.f2>=0)) Ldsp_.kolor=5;
+                                                else if ((RxGr.f1<=0) && (RxGr.f2<=0)) Ldsp_.kolor=1;
+                                                else Ldsp_.kolor=7;
+
                                                 if (st_element[rep_element_no - 1].flags==1)  //Winkler beam
                                                 {
                                                     go_winkler(rep_element_no, &Le, &Ldsp1, &Ldsp3, &Ldsp_, xd_iso, Rx, &RxGr1, rotation_precision, FALSE, "", "", 1);
@@ -18522,6 +18537,11 @@ void Grid_analysis(void) {
                                                 Ldsp_.blok = 1;
 
                                                 RxGr1.f2=(float)Rx;
+
+                                                if ((RxGr.f1==0) && (RxGr.f2==0)) Ldsp_.kolor=7;
+                                                else if ((RxGr.f1>=0) && (RxGr.f2>=0)) Ldsp_.kolor=5;
+                                                else if ((RxGr.f1<=0) && (RxGr.f2<=0)) Ldsp_.kolor=1;
+                                                else Ldsp_.kolor=7;
 
                                                 if (st_element[rep_element_no - 1].flags==1)  //Winkler beam
                                                 {

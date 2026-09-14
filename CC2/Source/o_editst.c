@@ -43,6 +43,7 @@ extern void Odczyt_licznikow(void);
 extern char *get_komunikat_ptr (int n) ;
 extern void Add_String_To_List (char *) ;
 extern BOOL Get_Str_From_List (char *, int, int, int, int) ;
+extern BOOL Get_Func_From_List (char *, int, int, int, int) ;
 extern void Get_Current_Pos (int *, int *) ;
 extern void Set_Current_Pos (void);
 extern void myline(int x1, int y1, int x2, int y2);
@@ -1133,6 +1134,7 @@ do
 	switch (c)
 	{
 	case PGDNKEY:
+        strcpy(back_s, s);
         get_clip_rect(screen,&x1, &y1, &x2, &y2);
         set_clip_rect(screen, 0,0, getmaxx(), getmaxy());
 		if (TRUE == Get_Str_From_List((char*)s, pos, maxlength, x0, y0))
@@ -1152,6 +1154,7 @@ do
             _free_mouse();
             set_cursor_edit();
             set_clip_rect(screen,x1, y1, x2, y2);
+            last_edit=0;
 			goto aa;
 		}
         else
@@ -1160,9 +1163,46 @@ do
             _free_mouse();
             set_cursor_edit();
             set_clip_rect(screen,x1, y1, x2, y2);
+            last_edit=0;
             goto aa;
         }
 		break;
+        /////////////////
+        case PGUPKEY:
+            strcpy(back_s, s);
+            get_clip_rect(screen,&x1, &y1, &x2, &y2);
+            set_clip_rect(screen, 0,0, getmaxx(), getmaxy());
+            if (TRUE == Get_Func_From_List((char*)s, pos, maxlength, x0, y0))
+            {
+                setfillstyle_(SOLID_FILL, kolory.paperk);
+                len_ttf = TTF_text_len_pos((char*)&s[fpos], len - fpos);
+
+                x = x0 + len_ttf;
+#ifndef LINUX
+                my_show_mouse(NULL);
+#endif
+                bar(x0 - 1, y0 - 2, x, y0 + ED_INF_HEIGHT - y_3);
+#ifndef LINUX
+                my_show_mouse(screen);
+#endif
+
+                _free_mouse();
+                set_cursor_edit();
+                set_clip_rect(screen,x1, y1, x2, y2);
+                last_edit=0;
+                goto aa;
+            }
+            else
+            {
+                strcpy((char*)s, (char*)back_s);
+                _free_mouse();
+                set_cursor_edit();
+                set_clip_rect(screen,x1, y1, x2, y2);
+                last_edit=0;
+                goto aa;
+            }
+            break;
+            /////////////////
 	case PASTECLIP:
         if ((pos1>=0) && (pos2>=0))
         {

@@ -5,6 +5,8 @@
 #define IC_WHEEL_STYLE  u8"СТИЛЬ КОЛЕСА"
 #define IC_INSTRUCTION u8"ІНСТРУКЦІЯ"
 #define IC_PAN u8"ПАНОРАМА" //"Панорама"
+#define IC_ZOOM "ЗУМ"
+#define IC_WHEELZOOM "ЗУМ КОЛЕСА"
 #define IC_TOOLS u8"TOOLS"
 #define IC_DIRECTORY u8"ДОВІДНИК"
 #define IC_DESKTOP u8"БЮВАР"

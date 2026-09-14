@@ -502,6 +502,8 @@ static const char* komunikaty_kom[] =
 /*232*/u8"Rysunek jest już oznaczony jako profil sieci",
 /*233*/u8"PROFIL ZABLOKOWANY!",
 /*234*/u8"",
+/*235*/u8"Wprowadź współczynnik przyrostu zoomu kółkiem myszy (0,01...1): ",
+/*236*/u8"Wprowadź współczynnik przyrostu zoomu klawiszami (0,01...1): ",
 };
 
 static const char* komunikaty0[] =
@@ -717,8 +719,8 @@ static const char* messages_str[] =
 #define _E_ u8"E"
 #define _P_ u8"P"
 
-static char gg[10][16] = { u8"Koniec", u8"Bliższy koniec", u8"Środek", u8"Przecięcie", u8"Centrum", u8"pRostopadle",
-						  u8"Stycznie", u8"Najbliższy", u8"punkt", u8"----" };
+static char gg[10][16] = { u8"Koniec", u8"Bliższy koniec", u8"Środek", u8"Przecięcie", u8"Centrum", u8"prOstopadle",
+						  u8"Stycznie", u8"Najbliższy", u8"pUnkt", u8"----" };
 
 #endif
 

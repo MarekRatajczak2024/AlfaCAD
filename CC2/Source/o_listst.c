@@ -73,6 +73,17 @@ t_string_list ;
 
 t_string_list s_string_list = { 0, 0, 0, NULL } ;
 
+
+const char funct_list_EN[]= "max3\0max2\0max\0min3\0min2\0min\0atanr\0atan\0acosr\0acos\0asinr\0asin\0pow\0log10\0log\0tan\0cos\0sin\0sqrt";
+
+const char funct_list_UA[]=u8"макс3\0макс2\0макс\0мін3\0мін2\0мін\0арктг_рад\0арктг\0арккос_рад\0арккос\0арксин_рад\0арксин\0степінь\0лг\0лог\0тг\0кос\0син\0корінь";
+
+#ifdef UKRAINIAN
+t_string_list s_function_list = { 19, 0, 0, (char *)funct_list_UA};
+#else
+t_string_list s_function_list = { 19, 0, 0, (char *)funct_list_EN};
+#endif
+
 void DoneBuffers7(void)
 {
   if (s_string_list.ptrsz_list != NULL)  free (s_string_list.ptrsz_list);
@@ -161,8 +172,8 @@ void Add_String_To_List (char *ptr_string)
 }
 
 
-static BOOL check_mem_list (void)
-/*------------------------------*/
+static BOOL check_mem_list (int string_no)
+/*--------------------------------------*/
 {
     unsigned long_long l_free;
     unsigned int l_size;
@@ -170,13 +181,13 @@ static BOOL check_mem_list (void)
 
   b_ret = FALSE ;
   l_free = get_free_mem_size (0) ;
-  l_size = s_string_list.string_no * sizeof(POLE) ;
+  l_size = string_no * sizeof(POLE) ;
   mList_String.maxw = MaxMenuWin ;
   mList_String.max = MaxMenuWin ;
   l_size += Get_Menu_Image_Size (&mList_String) ;
   if (l_size < l_free - 500) /*500 - rezerwa na dalsze alokacje */
   {
-    pmList_String = (POLE*) malloc /*getmem*/ (s_string_list.string_no * sizeof(POLE));
+    pmList_String = (POLE*) malloc /*getmem*/ (string_no * sizeof(POLE));
     b_ret = TRUE ;
   }
   return b_ret ;
@@ -195,8 +206,8 @@ void get_strings_list(int *string_no, long_long *ptrsz_long)
 	*ptrsz_long = (long_long)s_string_list.ptrsz_list;  //MODIFIED!!!
 }
 
-static void set_list_string (void)
-/*------------------------------*/
+static void set_list_string (t_string_list *string_list)
+/*----------------------------------------------------*/
 {
   int k, max_len, len, i, len_str ;
   char *ptr_s ;
@@ -204,12 +215,12 @@ static void set_list_string (void)
 
   int maxtextlength=0;
 
-  k = s_string_list.string_no - 1 ;
+  k = string_list->string_no - 1 ;
   max_len = 0 ;
   len_str = 0 ;
-  for (i = 0 ; i < s_string_list.string_no ; i++, k--)
+  for (i = 0 ; i < string_list->string_no ; i++, k--)
   {
-    ptr_s = s_string_list.ptrsz_list + len_str ;
+    ptr_s = string_list->ptrsz_list + len_str ;
 
     l=sizeof(pmList_String[k].txt);
 
@@ -234,9 +245,9 @@ static void set_list_string (void)
   }
   mList_String.poz = 0 ;
   mList_String.foff = 0 ;
-  mList_String.max = s_string_list.string_no ;
+  mList_String.max = string_list->string_no ;
   mList_String.xdl = maxtextlength  ;
-  if (s_string_list.string_no < mList_String.maxw)
+  if (string_list->string_no < mList_String.maxw)
   {
     mList_String.maxw = 0 ;
   }
@@ -259,11 +270,11 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
 	{
 		return FALSE ;
 	}
-	if (FALSE == check_mem_list ())
+	if (FALSE == check_mem_list (s_string_list.string_no))
 	{
 		 return FALSE ;
 	}
-	set_list_string () ;
+	set_list_string (&s_string_list) ;
     //mList_String.xpcz = xpcz / (8 * SKALA) ;
     //mList_String.ypcz = 2 + ypcz / (8 * SKALA) ;
 	mList_String.xpcz = xpcz;
@@ -294,6 +305,58 @@ BOOL Get_Str_From_List (char *ptrsz_buf,
     Y=Y__;
   free_mem_list () ;  
   return b_ret ;
+}
+
+BOOL Get_Func_From_List (char *ptrsz_buf,
+                        int i_poz,
+                        int i_buflen,
+                        int xpcz,
+                        int ypcz)
+/*---------------------------------*/
+{
+    BOOL b_ret = FALSE;
+    char sz_tmp [MaxMultitextLen] ;  //MaxTextLen
+    double X__, Y__;
+
+    if (NULL == s_function_list.ptrsz_list || s_function_list.string_no == 0)
+    {
+        return FALSE ;
+    }
+    if (FALSE == check_mem_list (s_function_list.string_no))
+    {
+        return FALSE ;
+    }
+    set_list_string (&s_function_list) ;
+    //mList_String.xpcz = xpcz / (8 * SKALA) ;
+    //mList_String.ypcz = 2 + ypcz / (8 * SKALA) ;
+    mList_String.xpcz = xpcz;
+    mList_String.ypcz = ypcz;
+    X__=X;
+    Y__=Y;
+    X=jednostkiX0_(xpcz);
+    Y=jednostkiY0_(ypcz);
+
+    int menu_level=get_menu_level();
+    set_menu_level(menu_level+1);
+    menu_address[menu_level-1]=(char*)&mList_String;
+    int n = Simple_Menu_Proc (&mList_String) - 1;
+    menu_level=get_menu_level();  //just for test, if level was automatically decreased
+
+    if (n >= 0)
+    {
+        b_ret = TRUE ;
+        char *ptrsz_tmp = (*mList_String.pola)[n].txt ;
+        int i_len = (int)strlen (ptrsz_tmp) ;
+        strcpy (sz_tmp, &ptrsz_buf [i_poz]) ;
+        ptrsz_buf [i_poz] = '\0' ;
+        strncat (ptrsz_buf, ptrsz_tmp, i_buflen - i_poz) ;
+        strncat (ptrsz_buf, sz_tmp, i_buflen - i_poz - i_len) ;
+        ptrsz_buf [i_buflen - 1] = '\0' ;
+    }
+    X=X__;
+    Y=Y__;
+    free_mem_list () ;
+    return b_ret ;
 }
 
 #ifndef LINUX

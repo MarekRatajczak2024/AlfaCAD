@@ -709,7 +709,28 @@ static BOOL insert_function (void)
         {"cir",    1, do_CIR},
         {"elp",    3, do_ELP},
         {"elpa",   5, do_ELPA},
-        {"lint",   1, do_lint}
+        {"lint",   1, do_lint},
+
+        // --- Ukrainian Mappings (UTF-8 multibyte) ---
+        {u8"корінь",    1, do_sqrt},
+        {u8"син",       1, do_sin},
+        {u8"кос",       1, do_cos},
+        {u8"тг",        1, do_tan},       // "tg" in Cyrillic
+        {u8"лог",       1, do_log},
+        {u8"лг",        1, do_log10},     // Standard Ukrainian base-10 log notation
+        {u8"степінь",   2, do_pow},
+        {u8"арксин",    1, do_asin},
+        {u8"арксин_рад",1, do_asinr},
+        {u8"арккос",    1, do_acos},
+        {u8"арккос_рад",1, do_acosr},
+        {u8"арктг",     1, do_atan},      // "arctg" in Cyrillic
+        {u8"арктг_рад", 1, do_atanr},
+        {u8"мін",       2, do_min},
+        {u8"мін2",      2, do_min},
+        {u8"мін3",      3, do_min3},
+        {u8"макс",      2, do_max},
+        {u8"макс2",     2, do_max},
+        {u8"макс3",     3, do_max3}
     };
 
     // 3. Loop through the table and register them

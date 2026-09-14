@@ -574,12 +574,20 @@ static POLE pmMouseWheel[] = {
 
 static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,41 /*39*/,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };
 
+static POLE pmWheelKeysRate[] = {
+   {u8"Auto-panning increment\0",'A',110, NULL},
+   {u8"Wheel zoom interwal\0",'W',974,NULL},
+   {u8"Zoom keys interval\0",'Z',975,NULL},
+};
+
+static TMENU mWheelKeysRate = { 3,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,43 /*39*/,0,0,0,(POLE(*)[]) &pmWheelKeysRate,NULL,NULL };
+
 static POLE pmOpacity[] = {
    {u8"Fills",'F',866,&mTranslucency},
    {u8"Gradients",'G',867,&mGTranslucency},
 };
 
-static TMENU mOpacity =  { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmOpacity,NULL,NULL };
+static TMENU mOpacity =  { 2,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,43,0,0,0,0,(POLE(*)[]) &pmOpacity,NULL,NULL };
 
 POLE pmOpcje[] = {
 {u8"Drawing board configuration\0",'D',109,NULL},
@@ -587,7 +595,7 @@ POLE pmOpcje[] = {
 {u8"Utility colors configuration\0",'U',913,NULL},
 #endif
 {u8"auto Pan\0Yes\0 ",'P',145, &mAutoPan},  //PAN
-{u8"Auto-panning increment\0",'A',110,NULL},
+{u8"Auto-panning & zoom increment\0",'A',976, &mWheelKeysRate},
 //{u8"Opacity of fills\0",'O',542,&mTranslucency},
 {u8"Opacity of fills/gradients\0",'O',542,&mOpacity},
 {u8"desktop Font\0 ",'F',111,&mCzcionkaEkranTTF},
@@ -1636,6 +1644,10 @@ static char* desktop_data_param[] =
 {
   "Wallpaper",
   "Panorama",
+  "Zoom",
+  "Wheel zoom",
+  "Dialog blocks autopann",
+  "Dialog blocks autozoom",
   "Dynamic menu",
   "Desktop cursor",
   "Menu style",
@@ -1648,9 +1660,12 @@ static int no_desktop_data_param = sizeof(desktop_data_param) / sizeof(desktop_d
 static char* desktop_data_param_comment[] =
 {
 	";",
-	//";Screen saver delay in min or 0 (off)",
 	";desktop autopanning factor",
-	";",
+	";desktop zooming factor for Ctrl-Z and Ctrl-X keys",
+    ";desktop zooming factor for mouse wheel",
+    ";Panning dialog blocks in applications",
+    ";Setting View-ALL in dialog blocks",
+    ";",
 	"; small 0, big 1, huge 2",
     "; bar 0, pointer 1",
     "; 0-natural, 1-regular",
@@ -2568,13 +2583,15 @@ static POLE pmGraph[] = {
 #define _edit_ L'e'
 #define _CTRL_EDIT_ 1925 //5
 
-#define _CTRL_NOPE_ 1944 //24
+#define _CTRL_NOPE_ 1924 //1944 //24  Ctrl-D
+
+#define _CTRL_COPY_ 18
 
 #define _CTRL_0_ 0    //SPC
 #define _CTRL_1_ _CTRL_ADJACENT_  //A
 #define _CTRL_2_ 2  //B
 #define _CTRL_3_ _CTRL_CENTER_  //C
-#define _CTRL_4_ 4  //D
+#define _CTRL_4_ _CTRL_NOPE_ //D
 #define _CTRL_5_ _CTRL_ENDPOINT_  //E
 #define _CTRL_6_ 6  //F
 #define _CTRL_7_ 7  //G
@@ -2594,9 +2611,9 @@ static POLE pmGraph[] = {
 #define _CTRL_21_ 21  //U
 #define _CTRL_22_ 22  //V
 #define _CTRL_23_ 23  //W
-#define _CTRL_24_ _CTRL_NOPE_    //X  or 24 scale down
+#define _CTRL_24_ 24  //X
 #define _CTRL_25_ 25  //Y
-#define _CTRL_26_ 26             //Z  scale up
+#define _CTRL_26_ 26  //Z  scale up
 #define _CTRL_27_ 27  //0
 #define _CTRL_28_ 28  //1
 #define _CTRL_29_ 29  //2
@@ -3225,7 +3242,7 @@ POLE pmHelp[] = {
 	 {u8"View full drawing",21,353,NULL},
 
      {u8"Zoom in",574 + _1920_,353,NULL},
-     {u8"Zoom out",567 + _1920_,353,NULL},
+     {u8"Zoom out",572 + _1920_,353,NULL},
 
 	 {u8"FEATURES",31,352,NULL},
 	 {u8"Color",12,354,NULL},
@@ -3281,7 +3298,7 @@ POLE pmHelp[] = {
 	 {u8"Tangential mode",568+1920,353,NULL},
 	 {u8"Adjacent mode",549+1920,353,NULL},
 	 {u8"Point mode",563+1920,353,NULL},
-	 {u8"None mode",572 + 1920,353,NULL},
+	 {u8"None mode",552 + 1920,353,NULL},
 
      {u8"Copy object under cursor",566 + _1920_,353,NULL},
      {u8"Layers setting",560 + _1920_,353,NULL},

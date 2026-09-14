@@ -2020,7 +2020,46 @@ char* icon_folder_bd24_p;
  BITMAP* icon_UA_I;
  BITMAP* icon_UA_O;
 
- char* icon_UA_B_p;
+/*
+Ю.png
+Щ.png
+Ш.png
+Ч.png
+Х.png
+Ф.png
+У.png
+М.png
+Л.png
+Ї.png
+И.png
+З.png
+Ж.png
+Є.png
+Ґ.png
+Г.png
+В.png
+А.png
+*/
+BITMAP* icon_UA_A;
+BITMAP* icon_UA_VE;
+BITMAP* icon_UA_HE;
+BITMAP* icon_UA_GE;
+BITMAP* icon_UA_JE;
+BITMAP* icon_UA_ZHE;
+BITMAP* icon_UA_ZE;
+BITMAP* icon_UA_Y;
+BITMAP* icon_UA_JI;
+BITMAP* icon_UA_EL;
+BITMAP* icon_UA_EM;
+BITMAP* icon_UA_U;
+BITMAP* icon_UA_EF;
+BITMAP* icon_UA_KHA;
+BITMAP* icon_UA_CHE;
+BITMAP* icon_UA_SHA;
+BITMAP* icon_UA_SHCHA;
+BITMAP* icon_UA_JU;
+
+char* icon_UA_B_p;
  char* icon_UA_D_p;
  char* icon_UA_E_p;
  char* icon_UA_J_p;
@@ -2034,6 +2073,25 @@ char* icon_folder_bd24_p;
  char* icon_UA_JA_p;
  char* icon_UA_I_p;
  char* icon_UA_O_p;
+
+ char* icon_UA_A_p;
+ char* icon_UA_VE_p;
+ char* icon_UA_HE_p;
+ char* icon_UA_GE_p;
+ char* icon_UA_JE_p;
+ char* icon_UA_ZHE_p;
+ char* icon_UA_ZE_p;
+ char* icon_UA_Y_p;
+ char* icon_UA_JI_p;
+ char* icon_UA_EL_p;
+ char* icon_UA_EM_p;
+ char* icon_UA_U_p;
+ char* icon_UA_EF_p;
+ char* icon_UA_KHA_p;
+ char* icon_UA_CHE_p;
+ char* icon_UA_SHA_p;
+ char* icon_UA_SHCHA_p;
+ char* icon_UA_JU_p;
 
  BITMAP* icon_spline_points;
  char* icon_spline_points_p;
@@ -2727,6 +2785,13 @@ BITMAP *icon_reference_angle;
 char *icon_reference_angle_p;
 BITMAP *icon_change_ref_angle;
 char *icon_change_ref_angle_p;
+
+BITMAP *icon_wheel_zoom_rate;
+BITMAP *icon_keys_zoom_rate;
+BITMAP *icon_pan_and_zoom;
+char *icon_wheel_zoom_rate_p;
+char *icon_keys_zoom_rate_p;
+char *icon_pan_and_zoom_p;
 
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS+1] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -6204,11 +6269,17 @@ void Wsp_Autopan (void)
   d = buf_ret [0] ;
   if (d > 1) d = 1;
   if (d < 0.01) d=0.01;
-  pan_dxy=d;
+  pan_dxy=(float)d;
   d_2d () ;
-  sprintf (sk, "%6.2lf", d) ;
-  if (strlen (sk) > 6) sk [6] = '\0' ;
+  sprintf (sk, "%#6.2f/%#6.2f", pan_dxy, zoom_dxy) ;
+  if (strlen (sk) > 13) sk [13] = '\0' ;
   menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
+
+  sprintf (sk, "%#6.2f", pan_dxy) ;
+  if (strlen (sk) > 6) sk [6] = '\0' ;
+  menu_par_new ((*mWheelKeysRate.pola)[0].txt, sk) ;
+
+  save_mouse_wheel();
 }
 
 void Expand_hor(void)
@@ -6872,13 +6943,79 @@ static void WheelRegular(void)
     save_mouse_wheel();
 }
 
+static void WheelZoomInterval(void)
+{
+    char sk[MaxTextLen] = "";
+    int retval_no = 1 ;
+    double buf_ret [1] ;
+    double d ;
+
+
+    sk [0] = '\0' ;
+    DF_to_String (sk, "%-6.2f", wheelzoom_dxy, 0) ;
+
+    if (!read_esc(sk,60,235))  return;
+
+    if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
+    {
+        return ;
+    }
+    d = buf_ret [0] ;
+    if (d > 1) d = 1;
+    if (d < 0.01) d=0.01;
+    wheelzoom_dxy=(float)d;
+    d_2d () ;
+    //sprintf (sk, "%#6.2f/%#6.2f", pan_dxy, zoom_dxy) ;
+    //if (strlen (sk) > 13) sk [13] = '\0' ;
+    //menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
+
+    sprintf (sk, "%#6.2f", wheelzoom_dxy) ;
+    if (strlen (sk) > 6) sk [6] = '\0' ;
+    menu_par_new ((*mWheelKeysRate.pola)[1].txt, sk) ;
+
+    save_mouse_wheel();
+}
+
+static void ZoomInterval(void)
+{
+    char sk[MaxTextLen] = "";
+    int retval_no = 1 ;
+    double buf_ret [1] ;
+    double d ;
+
+
+    sk [0] = '\0' ;
+    DF_to_String (sk, "%-6.2f", zoom_dxy, 0) ;
+
+    if (!read_esc(sk,60,236))  return;
+
+    if (FALSE == calculator (sk, &retval_no, buf_ret)  || retval_no < 1)
+    {
+        return ;
+    }
+    d = buf_ret [0] ;
+    if (d > 1) d = 1;
+    if (d < 0.01) d=0.01;
+    zoom_dxy=(float)d;
+    d_2d () ;
+    sprintf (sk, "%#6.2f/%#6.2f", pan_dxy, zoom_dxy) ;
+    if (strlen (sk) > 13) sk [13] = '\0' ;
+    menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
+
+    sprintf (sk, "%#6.2f", zoom_dxy) ;
+    if (strlen (sk) > 6) sk [6] = '\0' ;
+    menu_par_new ((*mWheelKeysRate.pola)[2].txt, sk) ;
+
+    save_mouse_wheel();
+}
+
 static void (*COMNDO[])(void)=
 {
-  Konfig, P_Konfig, nooop, Wsp_Autopan, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
+  Konfig, P_Konfig, nooop, nooop, nooop, nooop, Open_Backgrounds, nooop, nooop, nooop, Save_Last_Window_Settings, nooop, Expand_hor, Expand_ver, Expand_diag, Expand_flex0, Expand_last,
   Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency,Translucency, Translucency,Translucency, DialogCursorS, DialogCursorB, DialogCursorEB,
   DemoModeOn, DemoModeOff,
   nooop, wysokosc_znaku_TTF, width_factor_TTF,
-  auto_pan_on, auto_pan_off, MenuCursorB, MenuCursorP, DesktopFontTTF,DesktopFontOTF, WheelNatural, WheelRegular
+  auto_pan_on, auto_pan_off, MenuCursorB, MenuCursorP, DesktopFontTTF,DesktopFontOTF, WheelNatural, WheelRegular, Wsp_Autopan, WheelZoomInterval, ZoomInterval,
 } ;
 
 void uaktualnij_pola_file (void)
@@ -6997,16 +7134,27 @@ void Opcje(void)
   if (Auto_Pan) menu_par_new((*mOpcje.pola)[1+O1].txt, YES);
   else menu_par_new((*mOpcje.pola)[1+O1].txt, NO);
 
-  sprintf (sk, "%#6.2lf", pan_dxy) ;
-  if (strlen (sk) > 6) sk [6] = '\0' ;
+  sprintf (sk, "%#6.2f/%#6.2f", pan_dxy, zoom_dxy) ;
+  if (strlen (sk) > 13) sk [13] = '\0' ;
   menu_par_new ((*mOpcje.pola)[2+O1].txt, sk) ;
 
+  sprintf (sk, "%#6.2f", pan_dxy) ;
+  if (strlen (sk) > 6) sk [6] = '\0' ;
+  menu_par_new ((*mWheelKeysRate.pola)[0].txt, sk) ;
 
-  sprintf(sk, "%d%%/%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5), (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
+  sprintf (sk, "%#6.2f", wheelzoom_dxy) ;
+  if (strlen (sk) > 6) sk [6] = '\0' ;
+  menu_par_new ((*mWheelKeysRate.pola)[1].txt, sk) ;
+
+  sprintf (sk, "%#6.2f", zoom_dxy) ;
+  if (strlen (sk) > 6) sk [6] = '\0' ;
+  menu_par_new ((*mWheelKeysRate.pola)[2].txt, sk) ;
+
+  sprintf(sk, "%d%%/%d%%", (int) (((float)TRANSLUCENCY * 100 / 255) + 0.5), (int) (((float)GTRANSLUCENCY * 100 / 255) + 0.5));
   menu_par_new((*mOpcje.pola)[3+O1].txt, sk);
-    sprintf(sk, "%d%%", (int) ((TRANSLUCENCY * 100 / 255) + 0.5));
+    sprintf(sk, "%d%%", (int) (((float)TRANSLUCENCY * 100 / 255) + 0.5));
     menu_par_new((*mOpacity.pola)[0].txt, sk);
-    sprintf(sk, "%d%%", (int) ((GTRANSLUCENCY * 100 / 255) + 0.5));
+    sprintf(sk, "%d%%", (int) (((float)GTRANSLUCENCY * 100 / 255) + 0.5));
     menu_par_new((*mOpacity.pola)[1].txt, sk);
 
   sprintf(sk, "%s", Czcionka_Pulpitu);

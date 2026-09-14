@@ -5,6 +5,8 @@
 #define IC_WHEEL_STYLE  "WHEEL STYLE"
 #define IC_INSTRUCTION "INSTRUCTION"
 #define IC_PAN "PANORAMA"
+#define IC_ZOOM "ZOOM"
+#define IC_WHEELZOOM "WHEEL ZOOM"
 #define IC_DIRECTORY "DIRECTORY"
 #define IC_DESKTOP "DESKTOP"
 #define IC_SHEET "DRAWINGS"        /*default folder of drawings*/

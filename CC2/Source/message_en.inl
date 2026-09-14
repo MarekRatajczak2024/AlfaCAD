@@ -501,6 +501,8 @@ static const char* komunikaty_kom[] =
 	/*232*/u8"The drawing is already marked as a utility profile",
 /*233*/u8"PROFILE BLOCKED!",
 /*234*/u8"",
+/*235*/u8"Enter the mouse wheel zoom increment factor 0.01...1 : ",
+/*236*/u8"Enter the keys zoom increment factor 0.01...1 : ",
 };
 
 

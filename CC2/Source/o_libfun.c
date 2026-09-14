@@ -1572,6 +1572,22 @@ static BOOL get_desktop(T_Fstring key_name, T_Fstring ret_string)
 				pan_dxy = val_float;
 			}
 		}
+        else
+        if (stricmp(key_name, IC_ZOOM) == 0)
+        {
+            if (sscanf(ret_string, "%f", &val_float) == 1 && (val_float > 0) && (val_float <= 1))
+            {
+                zoom_dxy = val_float;
+            }
+        }
+        else
+        if (stricmp(key_name, IC_WHEELZOOM) == 0)
+        {
+            if (sscanf(ret_string, "%f", &val_float) == 1 && (val_float > 0) && (val_float <= 1))
+            {
+                wheelzoom_dxy = val_float;
+            }
+        }
 		else
 			if (stricmp(key_name, IC_AUTOPANBLOCK) == 0)
 			{

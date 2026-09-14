@@ -575,6 +575,15 @@ static POLE pmMouseWheel[] = {
 
 static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };  //22
 
+static POLE pmWheelKeysRate[] = {
+   {u8"Auto-panning increment\0",'A',110, NULL},
+   {u8"Wheel speed\0",'W',974,NULL},
+   {u8"Zoom interval\0",'Z',975,NULL},
+};
+
+static TMENU mWheelKeysRate = { 3,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmWheelKeysRate,NULL,NULL };
+
+
 static POLE pmOpacity[] = {
    {u8"Rellenos",'R',866,&mTranslucency},
    {u8"Degradados",'D',867,&mGTranslucency},
@@ -588,7 +597,7 @@ POLE pmOpcje[] = {
 	{u8"configuración de color de Red\0",'R',913,NULL},
 #endif
 	{u8"Panorámica automática\0Sí\0 ",'P',145, &mAutoPan}, //PAN
-	{u8"factor de panoramización Automática\0 ",'A',110,NULL},
+	{u8"factor de panoramización & zoom\0 ",'A',976,&mWheelKeysRate},
 	{u8"Opacidad de los rellenos/degradados\0 ",'O',542,&mOpacity},
 	{u8"Fuente de escritorio\0 ",'F',111,&mCzcionkaEkranTTF},
 	//{u8"fuente de Escritorio\0 ",'E',111,NULL},
@@ -1626,6 +1635,10 @@ static char* desktop_data_param[] =
 {
    (char*)u8"Fondo de pantalla",
    (char*)u8"Panorama",
+   (char*)u8"Zoom",
+   (char*)u8"Zoom de rueda",
+   (char*)u8"Paneo automático de bloques",
+   (char*)u8"Zoom automático de bloques",
    (char*)u8"Menú dinámico",
    (char*)u8"Cursor de escritorio",
    (char*)u8"Estilo de menú",
@@ -1638,9 +1651,12 @@ static int no_desktop_data_param = sizeof(desktop_data_param) / sizeof(desktop_d
 static char* desktop_data_param_comment[] =
 {
 	";",
-	//";Screen saver delay in min or 0 (off)",
 	(char*)u8";factor de panoramización automática de escritorio",
-	";",
+    (char*)u8";Incremento del factor de zoom para las combinaciones Ctrl-Z y Ctrl-X",
+    (char*)u8";factor de zoom del escritorio para la rueda del ratón",
+    (char*)u8";Desplazamiento de bloques de diálogo en aplicaciones",
+    (char*)u8";Configuración de la vista completa en bloques de diálogo",
+	(char*)u8";",
 	(char*)u8"; pequeño 0, grande 1",
     (char*)u8"; barra 0, puntero 1",
     (char*)u8"; 0-natural, 1-regular",
@@ -2560,13 +2576,13 @@ static POLE pmGraph[] = {
 #define _edit_ L'e'
 #define _CTRL_EDIT_ 1925 //5
 
-#define _CTRL_NOPE_ 1944 //24
+#define _CTRL_NOPE_ 1924 //1944 //24
 
 #define _CTRL_0_ 0
 #define _CTRL_1_ _CTRL_ADJACENT_
 #define _CTRL_2_ 2
 #define _CTRL_3_ _CTRL_CENTER_
-#define _CTRL_4_ 4
+#define _CTRL_4_ _CTRL_NOPE_
 #define _CTRL_5_ _CTRL_ENDPOINT_
 #define _CTRL_6_ 6
 #define _CTRL_7_ 7
@@ -2586,7 +2602,7 @@ static POLE pmGraph[] = {
 #define _CTRL_21_ 21
 #define _CTRL_22_ 22
 #define _CTRL_23_ 23  //W Warstwy-layers
-#define _CTRL_24_ _CTRL_NOPE_
+#define _CTRL_24_ 24  //X
 #define _CTRL_25_ 25
 #define _CTRL_26_ 26  //Z  scale up
 #define _CTRL_27_ 27
@@ -3210,7 +3226,7 @@ POLE pmHelp[] = {
 	 {u8"Vista: dibujo completo",21,353,NULL},
 
      {u8"Acercar",574 + _1920_,353,NULL},
-     {u8"Reducir",567 + _1920_,353,NULL},
+     {u8"Reducir",572 + _1920_,353,NULL},
 
 	 {u8"CARACTERÍSTICAS",31,352,NULL},
 	 {u8"Color",12,354,NULL},
@@ -3266,7 +3282,7 @@ POLE pmHelp[] = {
 	 {u8"Modo tangencial",568+1920,353,NULL},
 	 {u8"Modo adyacente",549+1920,353,NULL},
 	 {u8"Mode punto",563+1920,353,NULL},
-	 {u8"Modo ninguno",572 + 1920,353,NULL},
+	 {u8"Modo ninguno",552 + 1920,353,NULL},
 
      {u8"Copiar objeto bajo el cursor",566 + _1920_,353,NULL},
      {u8"Ajuste de capas",560 + _1920_,353,NULL},

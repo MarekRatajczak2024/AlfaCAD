@@ -1211,14 +1211,14 @@ void SkalaZ(void)
 }
 
 int Skala_In_(void)
-{ skala*=1.1;
+{ skala*=1+zoom_dxy;
   SkalaZC();
   skala_menup();
   return 0;
 }
 
 int Skala_Out_(void)
-{ skala*=0.9;
+{ skala*=1-zoom_dxy;
   SkalaZC();
   skala_menup();
   return 0;
@@ -1256,7 +1256,7 @@ int SkalaZ_Plus(int sclfct)
 { double dsc;
   double skala1;
   dsc=sclfct;
-  dsc*=0.1;
+  dsc*=wheelzoom_dxy; //0.1;
   dsc=min(99,dsc);
   skala1=skala*(1.0+dsc);
   if (skala1>9999) skala1=9999;
@@ -1273,7 +1273,7 @@ int SkalaZ_Minus(int sclfct)
 { double dsc;
   double skala1;
   dsc=sclfct;
-  dsc*=0.1;
+  dsc*=wheelzoom_dxy; //0.1;
   dsc=min(0.99,dsc);
   skala1=skala*(1.0-dsc);
   if (skala1<0.001) skala1=0.001;

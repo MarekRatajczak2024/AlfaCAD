@@ -1915,6 +1915,65 @@ extern char* icon_UA_JA_p;
 extern char* icon_UA_I_p;
 extern char* icon_UA_O_p;
 
+/*
+Ю.png
+Щ.png
+Ш.png
+Ч.png
+Х.png
+Ф.png
+У.png
+М.png
+Л.png
+Ї.png
+И.png
+З.png
+Ж.png
+Є.png
+Ґ.png
+Г.png
+В.png
+А.png
+*/
+extern BITMAP* icon_UA_A;
+extern BITMAP* icon_UA_VE;
+extern BITMAP* icon_UA_HE;
+extern BITMAP* icon_UA_GE;
+extern BITMAP* icon_UA_JE;
+extern BITMAP* icon_UA_ZHE;
+extern BITMAP* icon_UA_ZE;
+extern BITMAP* icon_UA_Y;
+extern BITMAP* icon_UA_JI;
+extern BITMAP* icon_UA_EL;
+extern BITMAP* icon_UA_EM;
+extern BITMAP* icon_UA_U;
+extern BITMAP* icon_UA_EF;
+extern BITMAP* icon_UA_KHA;
+extern BITMAP* icon_UA_CHE;
+extern BITMAP* icon_UA_SHA;
+extern BITMAP* icon_UA_SHCHA;
+extern BITMAP* icon_UA_JU;
+
+extern char* icon_UA_A_p;
+extern char* icon_UA_VE_p;
+extern char* icon_UA_HE_p;
+extern char* icon_UA_GE_p;
+extern char* icon_UA_JE_p;
+extern char* icon_UA_ZHE_p;
+extern char* icon_UA_ZE_p;
+extern char* icon_UA_Y_p;
+extern char* icon_UA_JI_p;
+extern char* icon_UA_EL_p;
+extern char* icon_UA_EM_p;
+extern char* icon_UA_U_p;
+extern char* icon_UA_EF_p;
+extern char* icon_UA_KHA_p;
+extern char* icon_UA_CHE_p;
+extern char* icon_UA_SHA_p;
+extern char* icon_UA_SHCHA_p;
+extern char* icon_UA_JU_p;
+
+
 extern BITMAP* icon_spline_points;
 extern char* icon_spline_points_p;
 extern BITMAP* icon_spline_control_points;
@@ -2602,6 +2661,13 @@ extern BITMAP *icon_reference_angle;
 extern char *icon_reference_angle_p;
 extern BITMAP *icon_change_ref_angle;
 extern char *icon_change_ref_angle_p;
+
+extern BITMAP *icon_wheel_zoom_rate;
+extern BITMAP *icon_keys_zoom_rate;
+extern BITMAP *icon_pan_and_zoom;
+extern char *icon_wheel_zoom_rate_p;
+extern char *icon_keys_zoom_rate_p;
+extern char *icon_pan_and_zoom_p;
 
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
@@ -3313,6 +3379,26 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_UA_JA,u8"Я",&icon_UA_JA_p},
         {&icon_UA_I,u8"І",&icon_UA_I_p},
         {&icon_UA_O,u8"О",&icon_UA_O_p},
+
+        {&icon_UA_A,u8"А",&icon_UA_A_p},
+        {&icon_UA_VE,u8"В",&icon_UA_VE_p},
+        {&icon_UA_HE,u8"Г",&icon_UA_HE_p},
+        {&icon_UA_GE,u8"Ґ",&icon_UA_GE_p},
+        {&icon_UA_JE,u8"Є",&icon_UA_JE_p},
+        {&icon_UA_ZHE,u8"Ж",&icon_UA_ZHE_p},
+        {&icon_UA_ZE,u8"З",&icon_UA_ZE_p},
+        {&icon_UA_Y,u8"И",&icon_UA_Y_p},
+        {&icon_UA_JI,u8"Ї",&icon_UA_JI_p},
+        {&icon_UA_EL,u8"Л",&icon_UA_EL_p},
+        {&icon_UA_EM,u8"М",&icon_UA_EM_p},
+        {&icon_UA_U,u8"У",&icon_UA_U_p},
+        {&icon_UA_EF,u8"Ф",&icon_UA_EF_p},
+        {&icon_UA_KHA,u8"Х",&icon_UA_KHA_p},
+        {&icon_UA_CHE,u8"Ч",&icon_UA_CHE_p},
+        {&icon_UA_SHA,u8"Ш",&icon_UA_SHA_p},
+        {&icon_UA_SHCHA,u8"Щ",&icon_UA_SHCHA_p},
+        {&icon_UA_JU,u8"Ю",&icon_UA_JU_p},
+
         {&icon_spline_points,"spline_points",&icon_spline_points_p},
         {&icon_spline_control_points,"spline_control_points",&icon_spline_control_points_p },
         {&icon_spline_points_close,"spline_points_close",&icon_spline_points_close_p },
@@ -3605,6 +3691,9 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_from_designed_terrain, "from_designed_terrain", &icon_from_designed_terrain_p},
         {&icon_reference_angle, "reference_angle", &icon_reference_angle_p},
         {&icon_change_ref_angle, "change_ref_angle", &icon_change_ref_angle_p},
+        {&icon_wheel_zoom_rate, "wheel_zoom_rate", &icon_wheel_zoom_rate_p},
+        {&icon_keys_zoom_rate, "keys_zoom_rate", &icon_keys_zoom_rate_p},
+        {&icon_pan_and_zoom, "pan_and_zoom", &icon_pan_and_zoom_p},
 #endif
 };
 

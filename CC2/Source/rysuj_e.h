@@ -150,6 +150,8 @@ extern BOOL force_dim_text;
 extern char *Dim_Text_Adr;
 extern BOOL do_not_dim_DIM;
 extern float pan_dxy;
+extern float zoom_dxy;
+extern float wheelzoom_dxy;
 extern int OBRYS_line_typ; //typ linii obrysu stropu
 
 extern BOOL wymiarowanie_ok;

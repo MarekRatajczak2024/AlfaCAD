@@ -137,7 +137,9 @@ BOOL out_pole_ignore=FALSE;
 BOOL force_dim_text=FALSE;
 char *Dim_Text_Adr=NULL;
 BOOL do_not_dim_DIM = 0;
-float pan_dxy = 0.1;
+float pan_dxy = 0.1f;
+float zoom_dxy = 0.1f;
+float wheelzoom_dxy = 0.1f;
 int OBRYS_line_typ=96; //domyslny typ linii obrysu stropu
 
 BOOL wymiarowanie_ok=FALSE;

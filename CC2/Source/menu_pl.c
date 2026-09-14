@@ -572,6 +572,14 @@ static POLE pmMouseWheel[] = {
 
 static TMENU mMouseWheel = { 2,0,0,8,22,9,ICONS,CMNU,CMBR,CMTX,0,41,0,0,0,(POLE(*)[]) &pmMouseWheel,NULL,NULL };  //22
 
+static POLE pmWheelKeysRate[] = {
+   {u8"interwał Autopanoramy\0",'A',110, NULL},
+   {u8"interwał zoomu Kółka\0",'K',974,NULL},
+   {u8"interwał Zoomu klawiszy\0",'Z',975,NULL},
+};
+
+static TMENU mWheelKeysRate = { 3,0,0,8,22,9,ICONS | TADD,CMNU,CMBR,CMTX,0,43,0,0,0,(POLE(*)[]) &pmWheelKeysRate,NULL,NULL };
+
 static POLE pmOpacity[] = {
    {u8"Wypełnienia",'W',866,&mTranslucency},
    {u8"Gradienty",'G',867,&mGTranslucency},
@@ -585,7 +593,7 @@ POLE pmOpcje[] = {
 	{u8"konfiguracja kolorów Sieci\0",'S',913,NULL},
 #endif
 	{u8"Auto panoramowanie \0Yes\0 ",'A',145, &mAutoPan},  //PAN
-	{u8"Interwał auto-panoramy \0 ",'I',110,NULL},
+	{u8"Interwał autopanoramy i zoomu \0 ",'I',976,&mWheelKeysRate},
 	{u8"Nieprzezroczystość wypełnień/gradientów\0",'N',542,&mOpacity},
 	{u8"Czcionka pulpitu \0 ",'C',111,&mCzcionkaEkranTTF},
 	//{u8"Czcionka pulpitu \0 ",'C',111,&mCzcionkaEkran},
@@ -773,7 +781,7 @@ char stay_string[64]=u8"Nie pokazuj tego więcej";
 #define _YES_ "T"
 #define _NO_ "N"
 
-static char ggsel[10][16] = { u8"Koniec", u8"Bliższy koniec", u8"śrOdek", u8"Przecięcie", u8"Centrum", u8"pRostopadle",
+static char ggsel[10][16] = { u8"Koniec", u8"Bliższy koniec", u8"śrOdek", u8"Przecięcie", u8"Centrum", u8"prOstopadle",
 						 u8"stycznie", u8"Najbliższy", u8"punkt", u8"----" };
 
 POLE pmKolor[] = {
@@ -1031,7 +1039,7 @@ static POLE pmTryb[] = {
 	{u8"Środek\0",'S',122,NULL},
 	{u8"Przecięcie\0",'P',123,NULL},
 	{u8"Centrum\0",'C',124,NULL},
-	{u8"pRostopadle\0",'R',125,NULL},
+	{u8"prOstopadle\0",'O',125,NULL},
 	{u8"sTycznie\0",'T',126,NULL},
 	{u8"Najbliższy\0",'N',127,NULL},
 	{u8"pUnkt\0",'U',128,NULL},
@@ -1046,7 +1054,7 @@ static POLE pmPunkt[] = {
 	{u8"Środek\0",'S',122,NULL},
 	{u8"Przecięcie\0",'P',123,NULL},
 	{u8"Centrum\0",'C',124,NULL},
-	{u8"pRostopadle\0",'R',125,NULL},
+	{u8"prOstopadle\0",'O',125,NULL},
 	{u8"sTycznie\0",'T',126,NULL},
 	{u8"Najbliższy\0",'N',127,NULL},
 	{u8"pUnkt\0",'U',128,NULL},
@@ -1630,6 +1638,10 @@ static char* desktop_data_param[] =
 {
   "Tapeta",
   "Panorama",
+  "Zoom",
+  "Zoom kolka"
+  "Autopanorama blokow",
+  "Autozoom blokow",
   "Dynamiczne menu",
   "Kursor",
   "Styl menu",
@@ -1641,10 +1653,13 @@ static int no_desktop_data_param = sizeof(desktop_data_param) / sizeof(desktop_d
 
 static char* desktop_data_param_comment[] =
 {
-	";",
-	//";min or 0 (off)",
-	";inkrement autopanoramy",
-	";",
+	(char*)u8";",
+	(char*)u8";inkrement autopanoramy",
+    (char*)u8";inkrement współczynnika zoomingu dla kombinacji Ctrl-Z and Ctrl-X",
+    (char*)u8";inkrement współczynnika zoomingu dla kółka myszki",
+    (char*)u8";panoramowanie blokow dialogowych w aplikacjach",
+    (char*)u8";ustawianie EKRAN-WSZYSTKO w blokach dialogowych",
+	(char*)u8";",
 	(char*)u8"; mały 0, duży 1, wielki 2",
     (char*)u8"; ramka 0, wskaźnik 1",
     (char*)u8"; 0-naturalny, 1-regularny",
@@ -2565,13 +2580,13 @@ static POLE pmGraph[] = {
 #define _edit_ L'e'
 #define _CTRL_EDIT_ 1925 //5
 
-#define _CTRL_NOPE_ 1944 //24
+#define _CTRL_NOPE_ 1924 //1944 //24  Ctrl-D
 
 #define _CTRL_0_ 0   //SPC
 #define _CTRL_1_ 19   //A   Scale Down
 #define _CTRL_2_ _CTRL_NEAREST_  //B
 #define _CTRL_3_ _CTRL_CENTER_  //C
-#define _CTRL_4_ 18  //4  //Duplikuj
+#define _CTRL_4_ _CTRL_NOPE_   //
 #define _CTRL_5_ _CTRL_ENDPOINT_  //E
 #define _CTRL_6_ 6  //F
 #define _CTRL_7_ 7  //G
@@ -2582,16 +2597,16 @@ static POLE pmGraph[] = {
 #define _CTRL_12_ 23  //Layers
 #define _CTRL_13_ 13  //M
 #define _CTRL_14_ _CTRL_ADJACENT_  //N
-#define _CTRL_15_ 15  //O
+#define _CTRL_15_ _CTRL_PERPENDICULAR_ //O
 #define _CTRL_16_ _CTRL_INTERSECTION_  //P
 #define _CTRL_17_ 17  //Q
-#define _CTRL_18_ _CTRL_PERPENDICULAR_  //R
+#define _CTRL_18_ 18  //_CTRL_PERPENDICULAR_  //R
 #define _CTRL_19_ _CTRL_MIDDLE_  //S
 #define _CTRL_20_ _CTRL_TANGENTIAL_  //T
 #define _CTRL_21_ _CTRL_POINT_  //U
 #define _CTRL_22_ 22  //V
 #define _CTRL_23_ 23  //W  Warstwy - Layers
-#define _CTRL_24_ _CTRL_NOPE_    //X
+#define _CTRL_24_ 24  //CTRL X  Down Scale
 #define _CTRL_25_ 25  //Y
 #define _CTRL_26_ 26  //CTRL Z  Scale Up
 #define _CTRL_27_ 27  //0
@@ -3212,7 +3227,7 @@ POLE pmHelp[] = {
 	 {u8"Cały rysunek",21,353,NULL},
 
      {u8"Powiększ",574 + _1920_,353,NULL},
-     {u8"Zmniejsz",549 + _1920_,353,NULL},
+     {u8"Zmniejsz",572 + _1920_,353,NULL},
 
 	 {u8"CECHY",' ',352,NULL},
 	 {u8"Kolor",12,354,NULL},
@@ -3244,7 +3259,7 @@ POLE pmHelp[] = {
 	 {u8"Środek",15,355,NULL},
 	 {u8"Przecięcie",16,355,NULL},
 	 {u8"Centrum",17,355,NULL},
-	 {u8"pRostopadle",18,355,NULL},
+	 {u8"prOstopadle",18,355,NULL},
 	 {u8"Stycznie",19,355,NULL},
 	 {u8"Najbliższy",20,355,NULL},
 	 {u8"pUnkt",21,355,NULL},
@@ -3254,7 +3269,7 @@ POLE pmHelp[] = {
 	 {u8"Środek",' ',567,NULL},
 	 {u8"Przecięcie",' ',564,NULL},
 	 {u8"Centrum",' ',551,NULL},
-	 {u8"pRostopadle",' ',566,NULL},
+	 {u8"prOstopadle",' ',563,NULL},
 	 {u8"Stycznie",' ' ,568,NULL},
 	 {u8"Najbliższy",' ',562,NULL},
 	 {u8"pUnkt",' ',569,NULL},
@@ -3264,13 +3279,13 @@ POLE pmHelp[] = {
 	 {u8"Tryb Środek",567+1920,353,NULL},
 	 {u8"Tryb Przecięcie",564+1920,353,NULL},
 	 {u8"Tryb Centrum",551+1920,353,NULL},
-	 {u8"Tryb pRostopadle",566+1920,353,NULL},
+	 {u8"Tryb prOstopadle",563+1920,353,NULL},
 	 {u8"Tryb Stycznie",568+1920,353,NULL},
 	 {u8"Tryb Najbliższy",562+1920,353,NULL},
 	 {u8"Tryb pUnkt",569+1920,353,NULL},
-	 {u8"Tryb żaden",572+1920,353,NULL},
+	 {u8"Tryb żaden",552+1920,353,NULL},
 
-     {u8"Kopiuj obiekt pod kursorem",552 + _1920_,353,NULL},
+     {u8"Kopiuj obiekt pod kursorem",566 + _1920_,353,NULL},
      {u8"Ustawienia warst",571 + _1920_,353,NULL},
      {u8"Ustawienia warst (opcionalnie)",560 + _1920_,353,NULL},
 

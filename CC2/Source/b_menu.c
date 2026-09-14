@@ -121,6 +121,7 @@ static char *object_info_ad=NULL;
 static char sk_info [128], *sk1_info;
 static char sk0_info [64];
 static int menu_n=0;
+static BOOL release_shift=FALSE;
 
 #define Max_Menu_Level 6
 
@@ -136,6 +137,7 @@ int CONTROL_KEYS[32] = { _CTRL_0_,_CTRL_1_,_CTRL_2_,_CTRL_3_,_CTRL_4_,_CTRL_5_,_
 _CTRL_10_,_CTRL_11_,_CTRL_12_,_CTRL_13_,_CTRL_14_,_CTRL_15_,_CTRL_16_,_CTRL_17_,_CTRL_18_,_CTRL_19_,
 _CTRL_20_,_CTRL_21_,_CTRL_22_,_CTRL_23_,_CTRL_24_,_CTRL_25_,_CTRL_26_,_CTRL_27_,_CTRL_28_,_CTRL_29_,
 _CTRL_30_,_CTRL_31_ };
+
 
 
 char  readmouse(void);
@@ -1509,8 +1511,51 @@ extern char  *icon_set_slope_p;
 extern char  *icon_from_existing_terrain_p;
 extern char  *icon_from_designed_terrain_p;
 extern char *icon_change_ref_angle_p;
+extern char *icon_pan_and_zoom_p;
+
+extern char *icon_wheel_zoom_rate_p;
+extern char *icon_keys_zoom_rate_p;
 
 extern char *icon_reference_angle_p;
+
+/*
+Ю.png
+Щ.png
+Ш.png
+Ч.png
+Х.png
+Ф.png
+У.png
+М.png
+Л.png
+Ї.png
+И.png
+З.png
+Ж.png
+Є.png
+Ґ.png
+Г.png
+В.png
+А.png
+*/
+extern char* icon_UA_A_p;
+extern char* icon_UA_VE_p;
+extern char* icon_UA_HE_p;
+extern char* icon_UA_GE_p;
+extern char* icon_UA_JE_p;
+extern char* icon_UA_ZHE_p;
+extern char* icon_UA_ZE_p;
+extern char* icon_UA_Y_p;
+extern char* icon_UA_JI_p;
+extern char* icon_UA_EL_p;
+extern char* icon_UA_EM_p;
+extern char* icon_UA_U_p;
+extern char* icon_UA_EF_p;
+extern char* icon_UA_KHA_p;
+extern char* icon_UA_CHE_p;
+extern char* icon_UA_SHA_p;
+extern char* icon_UA_SHCHA_p;
+extern char* icon_UA_JU_p;
 
 extern TMENU mInfo;
 extern TMENU mInfoAbout;
@@ -3618,7 +3663,10 @@ static char *get_icons_p(int number)
 	    /*944*/   icon_mew_profile_p, icon_sel_existing_profile_p, icon_distorted_scale_p, icon_ok_p, icon_edit_par_p, icon_verify_p, icon_previous_p, icon_next_p,
 	    /*952*/   icon_escape_p, icon_ceiling_facing_p, icon_bottom_facing_p, icon_axis_facing_p, icon_diameter_p, icon_material_p, icon_ground_type_p, icon_hm_p, icon_km_p,
 	    /*961*/   icon_designed_canal_p, icon_existing_canal_p, icon_designed_terrain_p, icon_uniform_slope_p,  icon_change_slope_p, icon_set_slope_p, icon_from_existing_terrain_p, icon_from_designed_terrain_p,
-	    /*969*/   icon_point_pin_g_p, icon_point_pin_d_p, icon_point_pin_s_p, icon_reference_angle_p,icon_change_ref_angle_p,
+	    /*969*/   icon_point_pin_g_p, icon_point_pin_d_p, icon_point_pin_s_p, icon_reference_angle_p, icon_change_ref_angle_p,
+        /*974*/   icon_wheel_zoom_rate_p, icon_keys_zoom_rate_p, icon_pan_and_zoom_p,
+        /*977*/   icon_UA_A_p, icon_UA_VE_p, icon_UA_HE_p, icon_UA_GE_p, icon_UA_JE_p, icon_UA_ZHE_p, icon_UA_ZE_p, icon_UA_Y_p, icon_UA_JI_p,
+        /*986*/   icon_UA_EL_p, icon_UA_EM_p, icon_UA_U_p, icon_UA_EF_p, icon_UA_KHA_p, icon_UA_CHE_p, icon_UA_SHA_p, icon_UA_SHCHA_p, icon_UA_JU_p,
     };
    
 	if (number>1999)
@@ -7560,7 +7608,11 @@ char get_shifts(int key2)  //alt=1, ctrl=2, shift=4
 			withdraw_keyimage_permit = TRUE;
 		}
 	}
-	while (((key_shifts & KB_ALT_FLAG) || (key_shifts & KB_CTRL_FLAG) || (key_shifts & KB_SHIFT_FLAG)) && (!keypressed())) my_sleep(0); // Sleep(0);
+	////while (((key_shifts & KB_ALT_FLAG) || (key_shifts & KB_CTRL_FLAG) || (key_shifts & KB_SHIFT_FLAG)) && (!keypressed())) my_sleep(0); // Sleep(0);
+    if (((key_shifts & KB_ALT_FLAG) || (key_shifts & KB_CTRL_FLAG) || (key_shifts & KB_SHIFT_FLAG)) && (!keypressed()))
+    {
+        release_shift=TRUE;
+    }
 	return ret;
 }
 
@@ -7603,8 +7655,15 @@ void move_cursor(void)
 ///*549*/   icon_A_p, icon_B_p, icon_C_p, icon_D_p, icon_E_p, icon_F_p, icon_G_p, icon_H_p, icon_I_p, icon_J_p, icon_K_p, icon_L_p,
 ///*561*/   icon_M_p, icon_N_p, icon_O_p, icon_P_p, icon_Q_p, icon_R_p, icon_S_p, icon_T_p, icon_U_p, icon_V_p,
 ///*571*/	  icon_W_p, icon_X_p, icon_Y_p, icon_Z_p,
-///                        A																								   Z
-int keydemoimages[] = {-1,549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,566,567,568,569,570,571,572,573,574,
+///                        A
+
+int keydemoimages[] = {-1,
+  #ifdef UKRAINIAN
+                       //Ф И С В У А П Р Ш О Л Д Ь Т Щ З Й К І Е Г М Ц Ч Н Я
+                       989,984,643,978,988,977,641,642,992,839,986,636,561,644,993,983,638,639,838,637,979,987,645,991,640,837,
+  #else
+                       549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,566,567,568,569,570,571,572,573,574,
+  #endif
 364,365,366,367,368,369,370,371,372,373,  //KEY_0....KEY_9
 364,365,366,367,368,369,370,371,372,373, //KEY_0_PAD....KEY_9_PAD
 376,377,378,379,380,381,382,383,384,385,386,387, //KEY_F1...KEY_F12
@@ -7614,15 +7673,30 @@ int keydemoimages[] = {-1,549,550,551,552,553,554,555,556,557,558,559,560,561,56
 -1, //KEY_EQUALS
 547, // + 548  //KEY_BACKSPACE
 363,//KEY_TAB
--1,//KEY_OPENBRACE
--1,//KEY_CLOSEBRACE
+#ifdef UKRAINIAN
+   990,
+   985,
+#else
+-1,//KEY_OPENBRACE  [
+-1,//KEY_CLOSEBRACE  ]
+#endif
 651,//KEY_ENTER
+#ifdef UKRAINIAN
+   982,
+   981,
+#else
 -1,//KEY_COLON 
 -1,//KEY_QUOTE
+#endif
 -1,//KEY_BACKSLASH 
 -1,//KEY_BACKSLASH2
+#ifdef UKRAINIAN
+  635,
+  994,
+#else
 -1,//KEY_COMMA
 -1,//KEY_STOP
+#endif
 -1,//KEY_SLASH
 391,//KEY_SPACE
 359, //KEY_INSERT
@@ -7683,6 +7757,30 @@ int inkeys(TMENU *menu, BOOL search_ok)
   int key_p=0;
   time_t ctrl_time1, ctrl_time2;
 
+
+    if (release_shift==TRUE)
+    {
+        char ret = 0;
+        if (altkey_) ret += 1;
+        if (altgrkey_) ret += 2;
+        if (ctrlkey_) ret += 4;
+        if (shiftkey_) ret += 8;
+
+        if (!(key_shifts))
+        {
+            release_shift=FALSE;
+            altkey_ = altgrkey_ = shiftkey_ = ctrlkey_ = FALSE;
+            //now icon has to be removed
+            if ((!DEMO_RECORDING) && (ret)) draw_keyimage(-1, FALSE, FALSE, TRUE); //FALSE);
+            else
+            {
+                shiftkeytimestamp = time(NULL);
+                withdraw_keyimage_permit = TRUE;
+            }
+            return 0;
+        }
+    }
+
   menu_ = (PTMENU*)menu;
 
     if (menu!=NULL) {
@@ -7726,6 +7824,30 @@ int inkeys(TMENU *menu, BOOL search_ok)
    msx=0;msy=0;
    while (1)
    {
+       if (release_shift==TRUE)
+       {
+           char ret = 0;
+           if (altkey_) ret += 1;
+           if (altgrkey_) ret += 2;
+           if (ctrlkey_) ret += 4;
+           if (shiftkey_) ret += 8;
+
+           if (!(key_shifts))
+           {
+               release_shift=FALSE;
+               altkey_ = altgrkey_ = shiftkey_ = ctrlkey_ = FALSE;
+               //now icon has to be removed
+               if ((!DEMO_RECORDING) && (ret)) draw_keyimage(-1, FALSE, FALSE, TRUE); //FALSE);
+               else
+               {
+                   shiftkeytimestamp = time(NULL);
+                   withdraw_keyimage_permit = TRUE;
+               }
+               return 0;
+           }
+       }
+
+
        if (Get_Shm_private_mflag()) return ESC;
        if (Get_Shm_mflag()) return ESC;
 
@@ -8251,6 +8373,7 @@ int inukeys(TMENU *menu)
 #define RIGHTKEY 2125 //333
 #define HOMEKEY 2119 //327
 #define ENDKEY 2127 //335
+#define PGUPKEY 2121 //329
 #define PGDNKEY 2129 //337
 #define DELKEY 2131 //339
 #define F2 2108 //316
@@ -8383,6 +8506,7 @@ int inukeys(TMENU *menu)
 			if (key[KEY_END]) {clear_keybuff(); return ucatch(ENDKEY);}
 
 			if (key[KEY_PGDN]) { clear_keybuff(); return ucatch(PGDNKEY); }
+            if (key[KEY_PGUP]) { clear_keybuff(); return ucatch(PGUPKEY); }
 			if (key[KEY_INSERT]) { clear_keybuff(); return ucatch(INSKEY1); }
 
 			if (key[KEY_DEL]) { clear_keybuff(); return  ucatch(DELKEY); }
@@ -8616,8 +8740,8 @@ int  getcom(TMENU *menu)
 	{
 	case '\0': if ((zn = inkeys(NULL, FALSE)) >= 0 && zn < SVMAX)
 		KeyFun = (int(*)(TMENU *))SERV[zn];
-		if (KeyFun != NULL) 
-			n = KeyFun(menu);
+		if (KeyFun != NULL)
+            n = KeyFun(menu);
 		else if (zn==1) {
             if (KLS == menupoz)
             {
@@ -8711,7 +8835,7 @@ int  getcom(TMENU *menu)
                 break;
             } else continue;
         }
-	case '\22':  //Ctrl-R
+        case '\22':  //Ctrl-R
         if ((menu_level == 0) && (Get_Global_Dialog_Flag() == 0))
         {
             KeyFun = (int (*)(TMENU *)) Kopiuj_Ctrl_R;
@@ -8851,14 +8975,15 @@ int  getcom(TMENU *menu)
 	case '\56':  //.
 		if ((lock_functions == FALSE) && (opwin == 0) && (opwin_s == 0) && (0 != (n = TABFUN1(zn)))) break;
 	case '\32':  //Ctrl-Z
-	//case '\30':  //Ctrl-X
+	case '\30':  //Ctrl-X
 	case '\23':  //Ctrl-S
 		if (zn == '\32')
 		{
 			if ((lock_functions == FALSE) && (opwin == 0) && (opwin_s == 0) && (0 != (n = Skala_In_()))) break;
 		}
 		else { if ((lock_functions == FALSE) && (opwin == 0) && (opwin_s == 0) && (0 != (n = Skala_Out_()))) break; }
-		
+		//zn = 0;
+        //clean_kbd();
 	case _EDIT_:
 	case _edit_: 
 	

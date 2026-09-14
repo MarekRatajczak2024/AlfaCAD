@@ -501,6 +501,8 @@ static const char* komunikaty_kom[] =
 	/*232*/u8"Креслення вже позначено як профіль мережі",
 /*233*/u8"ПРОФІЛЬ ЗАБЛОКОВАНО!",
 /*234*/u8"",
+/*235*/u8"Введіть крок зума за допомогою коліщатка миші (0,01...1): ",
+/*236*/u8"Введіть крок зума за допомогою клавіш (0,01...1): ",
 };
 
 static const char* komunikaty0[] =
@@ -1377,7 +1379,7 @@ POLE pmSelect_State[] = {
 static TMENU mSelect_State = { 3,0,0,32,20,7, 0,CMNU,CMBR,CMTX,0,COMNDmnr,0,0,0, (POLE(*)[]) &pmSelect_State,NULL,NULL };
 */
 
-#define _PROCEED_GRID_ u8"Продовжити статичний розрахунок зазначеної стіни-балки?"
+#define _PROCEED_GRID_ u8"Продовжити статичний розрахунок зазначеного ростверку?"
 
 #define _incorrectly_defined_ u8"неправильно визначено"
 #define _property_not_defined_ u8"властивість не визначена або визначена неправильно"
@@ -1776,7 +1778,7 @@ static char confirm[] = u8"Підтвердьте";
 #define _CANNOT_CREATE_STRAIN_BLOCK_ u8"Неможливо створити блок зсувних деформацій"
 #define _CANNOT_CREATE_REACTIONS_BLOCK_ u8"Неможливо створити блок реакцій"
 
-#define _PROCEED_SHIELD_FEM_ u8"Продовжити статичний розрахунок зазначеної плити?"
+#define _PROCEED_SHIELD_FEM_ u8"Продовжити статичний розрахунок зазначеної стіни-балки?"
 
 #define _POLYLINE_IS_NOT_CLOSED_ u8"полілінія не замкнута"
 #define _THE_SHIELD_ u8"Плита"
