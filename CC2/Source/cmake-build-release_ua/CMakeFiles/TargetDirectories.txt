@@ -1,3 +1,0 @@
-/home/marek/CC2/Source/cmake-build-release_ua/CMakeFiles/AlfaCADUA.dir
-/home/marek/CC2/Source/cmake-build-release_ua/CMakeFiles/edit_cache.dir
-/home/marek/CC2/Source/cmake-build-release_ua/CMakeFiles/rebuild_cache.dir

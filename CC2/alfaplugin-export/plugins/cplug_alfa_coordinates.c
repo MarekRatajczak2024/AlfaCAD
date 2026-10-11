@@ -8,7 +8,8 @@
 
 static int language=-1;
 static int iconno_plugin=0;
-void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+//void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+void *(*plugin_ptr)(int plugin_function, void *param1, void *param2, void *param3);
 double coords_angle=0.0;
 double local_angle=0.0;
 
@@ -90,8 +91,8 @@ static void restore_coordinates(void)
 {
     int ret;
     int key=ESC;
-    ret=VOID_TO_INT(plugin_ptr(SET_LCSANGLE, &coords_angle, NULL, NULL));
-    ret=VOID_TO_INT(plugin_ptr(SIMULATE_KEYPRESSED, &key, NULL, NULL));
+    ret=VOID_TO_INT(plugin_ptr(SET_LCSANGLE, (char*)&coords_angle, NULL, NULL));
+    ret=VOID_TO_INT(plugin_ptr(SIMULATE_KEYPRESSED, (char*)&key, NULL, NULL));
 
     return;
 }

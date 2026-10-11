@@ -1,0 +1,68 @@
+[
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/alfaplugin_manager.c.o -c /home/marek/CC2/alfaplugin-export/alfaplugin_manager.c",
+  "file": "/home/marek/CC2/alfaplugin-export/alfaplugin_manager.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/alfaplugin_manager.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/ds/list.c.o -c /home/marek/CC2/alfaplugin-export/ds/list.c",
+  "file": "/home/marek/CC2/alfaplugin-export/ds/list.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/ds/list.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/ds/list_str.c.o -c /home/marek/CC2/alfaplugin-export/ds/list_str.c",
+  "file": "/home/marek/CC2/alfaplugin-export/ds/list_str.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/ds/list_str.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/ds/htable.c.o -c /home/marek/CC2/alfaplugin-export/ds/htable.c",
+  "file": "/home/marek/CC2/alfaplugin-export/ds/htable.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/ds/htable.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/str/str_builder.c.o -c /home/marek/CC2/alfaplugin-export/str/str_builder.c",
+  "file": "/home/marek/CC2/alfaplugin-export/str/str_builder.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/str/str_builder.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfaplugin_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fdiagnostics-color=always -o CMakeFiles/alfaplugin.dir/main.c.o -c /home/marek/CC2/alfaplugin-export/main.c",
+  "file": "/home/marek/CC2/alfaplugin-export/main.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfaplugin.dir/main.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfa_redraw_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fPIC -fdiagnostics-color=always -o CMakeFiles/alfa_redraw.dir/plugins/cplug_alfa_redraw.c.o -c /home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_redraw.c",
+  "file": "/home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_redraw.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_redraw.dir/plugins/cplug_alfa_redraw.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfa_stirrup_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fPIC -fdiagnostics-color=always -o CMakeFiles/alfa_stirrup.dir/plugins/cplug_alfa_stirrup.c.o -c /home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_stirrup.c",
+  "file": "/home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_stirrup.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_stirrup.dir/plugins/cplug_alfa_stirrup.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfa_rebar_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fPIC -fdiagnostics-color=always -o CMakeFiles/alfa_rebar.dir/plugins/cplug_alfa_rebar.c.o -c /home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_rebar.c",
+  "file": "/home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_rebar.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_rebar.dir/plugins/cplug_alfa_rebar.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfa_fillet_polyline_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fPIC -fdiagnostics-color=always -o CMakeFiles/alfa_fillet_polyline.dir/plugins/cplug_alfa_fillet_polyline.c.o -c /home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_fillet_polyline.c",
+  "file": "/home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_fillet_polyline.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_fillet_polyline.dir/plugins/cplug_alfa_fillet_polyline.c.o"
+},
+{
+  "directory": "/home/marek/CC2/alfaplugin-export/cmake-build-debug",
+  "command": "/usr/bin/cc -DBIT64 -DLINUX -Dalfa_coordinates_EXPORTS -I/home/marek/CC2/alfaplugin-export/cmake-build-debug -I/home/marek/CC2/alfaplugin-export -I/home/marek/CC2/alfaplugin-export/include -I/home/marek/CC2/alfaplugin-export/../../str -I/home/marek/CC2/alfaplugin-export/../../ds -g -fPIC -fdiagnostics-color=always -o CMakeFiles/alfa_coordinates.dir/plugins/cplug_alfa_coordinates.c.o -c /home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_coordinates.c",
+  "file": "/home/marek/CC2/alfaplugin-export/plugins/cplug_alfa_coordinates.c",
+  "output": "/home/marek/CC2/alfaplugin-export/cmake-build-debug/CMakeFiles/alfa_coordinates.dir/plugins/cplug_alfa_coordinates.c.o"
+}
+]

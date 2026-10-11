@@ -6,6 +6,8 @@
 
 #include "str_builder.h"
 
+//#include "leak_detector_c.h"
+
 /* - - - - */
 
 static const size_t str_builder_min_size = 32;

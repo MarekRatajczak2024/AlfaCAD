@@ -29,51 +29,54 @@
 #define MaxNumPoints 96
 #define NumSplinePoints 256
 #define MaxTextLen  254
-#define MaxMultitextLen  2048
+#define MaxMultitextLen  4096
 
 #define maxlen_w 64
 
-#define MAX_NUMBER_OF_LAYERS 256
+#define MAX_NUMBER_OF_LAYERS 2048  ////256
 
 #define B3 4
 #define T18   37
 
-#define Bdef   {Anormalny,OdBLOK,0,0,0,1,0,0,  B3, '\0', 0, 0,'\0'}
-#define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,  20, 0,7,64, 0,0,0,0}
-#define ldef  {Anormalny,Oluk,0,0,0,1,0,0, 24, 0,7,64, 0,0, 0,0,0, 0,0}
-#define Tdef {Anormalny,Otekst,0,0,0,1,0,0, T18, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,0,0,""}
-#define PointDef {Anormalny,Opoint,0,0,0,1,0,0, 12, 0,7,0, 0,0}
-#define Edef  {Anormalny,Oellipse,0,0,0,1,0,0, 24, 0,7,64,  255, 0,0,0,0,0}
-#define FEdef  {Anormalny,Ofilledellipse,0,0,0,1,0,0, 24, 0,7,64,  255, 0,0,0,0,0}
-#define eldef  {Anormalny,Oellipticalarc,0,0,0,1,0,0, 32, 0,7,64,  0,0, 0,0,0,0,0,0,0}
-#define PCXdef {Anormalny,Opcx,0,0,0,1,0,0, T294, 0,0,0,0,0,0,0,0,0,0,0,0,0,41,1,0,0,0}
-#define Kdef  {Anormalny,Okolo, 0,0,0,1,0,0, 16, 0,7,64,  0,0,0}
-#define Odef  {Anormalny,Ookrag,0,0,0,1,0,0, 16, 0,7,64,  0,0,0}
-#define Stdef {Anormalny,Owwielokat,0,0,0,1,0,0, 32, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0}
-#define S4def {Anormalny,Owwielokat,0,0,0,1,0,0, 40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/
-#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0, 40, 0,7,0,0,4,0, 8,0,0,0,0,0,0,0,0} /*Bezier spline 4 points*/
+#define Bdef   {Anormalny,OdBLOK,0,0,0,1,0,0,  0,B3, '\0', 0, 0,'\0'}
+#define Ldef  {Anormalny,Olinia,0,0,0,1,0,0,   0,20, 0,7,64, 0,0,0,0}
+#define ldef  {Anormalny,Oluk,0,0,0,1,0,0,   0,24, 0,7,64, 0,0, 0,0,0, 0,0}
+#define Tdef {Anormalny,Otekst,0,0,0,1,0,0,   0,T18, 0,7,0,0,0,3,1,0,0,0,0,0,0,0,0,0,0,6,0,0,""}  //win32todo
+#define PointDef {Anormalny,Opoint,0,0,0,1,0,0,   0,12, 0,7,0, 0, 0,0}
+#define Edef  {Anormalny,Oellipse,0,0,0,1,0,0,   0,24, 0,7,64,  255, 0,0,0,0,0}
+#define FEdef  {Anormalny,Ofilledellipse,0,0,0,1,0,0,   0,24, 0,7,64,  255, 0,0,0,0,0}
+#define eldef  {Anormalny,Oellipticalarc,0,0,0,1,0,0,   0,32, 0,7,64,  0,0, 0,0,0,0,0,0,0}
+#define PCXdef {Anormalny,Opcx,0,0,0,1,0,0,   0,T294, 0,0,0,0,0,0,0,0,0,0,0,0,0,41,1,0,0,0}  ////
+#define Kdef  {Anormalny,Okolo, 0,0,0,1,0,0,   0,16, 0,7,64,  0,0,0}
+#define Odef  {Anormalny,Ookrag,0,0,0,1,0,0,   0,16, 0,7,64,  0,0,0}
+#define Stdef {Anormalny,Owwielokat,0,0,0,1,0,0,  0,32, 0,7,0,0,0,0,0,0, 6,0,0,0,0,0,0}  ////
+#define S4def {Anormalny,Owwielokat,0,0,0,1,0,0,  0,40, 0,7,0,0,0,0,0,0, 8,0,0,0,0,0,0,0,0} /*czworokat*/  /////
+#define Splinedef {Anormalny,Ospline,0,0,0,1,0,0,  0,40, 0,7,0,0,0,4,0,0, 8,0,0,0,0,0,0,0,0} /*0 no multiple, Bezier spline 4 points*/
 #define SOLIDARC_N 60
-#define sadef {Anormalny,Osolidarc,0,0,0,1,0,0, SOLIDARC_N /*52*/,  0,7,0, 0, 0, 0,0,0, 255,0,0,0,0,0,0,0,0,0,1,0,0,0,""};
+#define sadef {Anormalny,Osolidarc,0,0,0,1,0,0,   0,SOLIDARC_N /*52*/,  0,7,0, 0, 0, 0,0,0, 255,0,0,0,0,0,0,0,0,0,1,0,0,0,""};
 
 
-#define Bnic             0
-#define Blinia           1
-#define Bluk             2
-#define Bokrag           4
-#define Bkolo            8
-#define Bwwielokat      16
-#define Btekst          32
-#define Bpoint          64
-#define Bspline        128
-#define Bellipse       256
-#define Bfilledellipse 512
-#define Bellipticalarc 1024
-#define Bsolidarc      2048
-#define Bprzeciecie    4096
-#define Bwymiarowanie  8192
-#define Bblok         16384
-#define Bpolygon      32768
-#define Bpcx          65536
+#define Bnic                0
+#define Blinia              1
+#define Bluk                2
+#define Bokrag              4
+#define Bkolo               8
+#define Bwwielokat          16
+#define Btekst              32
+#define Bpoint              64
+#define Bspline             128
+#define Bellipse            256
+#define Bfilledellipse      512
+#define Bellipticalarc      1024
+#define Bsolidarc           2048
+#define Bvector             4096
+#define Bprzeciecie         8192
+#define Bwymiarowanie       16384
+#define Bblok               32768
+#define Bpolygon            65536
+#define Bpcx                131072
+#define BtekstNoType15      262144
+#define BwwielokatGradient  524288
 
 #define j_do_lewej 0
 #define j_do_prawej 1
@@ -125,6 +128,13 @@ typedef struct {
     struct tmn *menu;      /*address sub-menu*/
 } POLE;
 
+typedef struct {
+    char *txt;             /*adres lancucha tresci pozycji*/
+    unsigned short  wcod;                 /*kod znakowy pozycji*/
+    int iconno;
+    struct tmn *menu;      /*adres opisu pod-menu*/
+} PPOLE;
+
 typedef struct tmn {
     int max;                   /*number of positions in menu*/
     int maxw;                  /*size of the menu ( 0 for not scrollable)*/
@@ -143,6 +153,25 @@ typedef struct tmn {
     void  *tip_back;          /*tip background content*/
 } TMENU;
 
+typedef struct ptmn {
+    int max;                   /*liczba pozycji menu*/
+    int maxw;                  /*rozmiar okna ( 0 dla nie scrolowanych )*/
+    int maxw0;               /*oryginalny rozmiar okna ( 0 dla nie scrolowanych )*/
+    int xdl;                   /*wymiary menu*/
+    int xpcz, ypcz;            /*pozycja menu*/
+    unsigned short flags;         //unsigned char       /*rozne opcje*/
+    char border,ink,paper;     /*kolory w menu*/
+    int poz,off;               /*pozycja kursora i offset*/
+    int foff;                  /*pierwsza pozycja w okienku*/
+    int xtip;
+    int ytip;
+    PPOLE (*pola)[];        /*tablica opisow pozycji w menu*/
+    void  *back;            /*zawartosc tla*/
+    struct tmn  *next;      /*kolejne menu aktywne-lista*/
+    void  *tip_back;  /*zawartosc tla tip*/
+} PTMENU;
+
+
 #pragma pack( 4 )
 
 typedef struct
@@ -154,6 +183,7 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ;
 } NAGLOWEK;
 
@@ -166,8 +196,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //   : 32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
 } NAGLOWEK_EXT;
 
 typedef struct
@@ -186,8 +217,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa :16;  ////WARNING WARSTWA_EXT
     unsigned int n ;  //32
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;   //255 - transparent - dla potrzeb stropu
     unsigned typ      : 8;
     float x1          ;  //32
@@ -207,8 +239,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned shadowed : 1;
@@ -227,8 +260,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;     //   _____ 2
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned pattern  : 1;  //0-color  1-patter
     //unsigned temp1    : 1;
@@ -262,8 +296,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec : 1;  /* determining intersections, pull (zeroed after use)*/
     unsigned blok : 1;  /*the object is an element of a block of the OdBLOK type*/
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n;   //32
-    unsigned warstwa : 8;
+    unsigned warstwa_shd : 8;
     unsigned kolor : 8;
     unsigned czcionka : 7;
     unsigned bold : 1;
@@ -363,8 +398,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //   : 32;
-    unsigned warstwa      : 8;
+    unsigned warstwa_shd      : 8;
     unsigned kod_obiektu  : 6;
     unsigned v_flip : 1;
     unsigned h_flip : 1;
@@ -418,8 +454,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     float x,y,r;
@@ -435,8 +472,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned transulcency:8;
@@ -453,8 +491,9 @@ typedef struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    :32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;
     unsigned shadowed : 1;
@@ -473,8 +512,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //   : 32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned typ      : 8;     /*0 normalny, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
     float x           ;
@@ -497,8 +537,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa :16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //    : 32;
-    unsigned warstwa  : 8;
+    unsigned warstwa_shd  : 8;
     unsigned kolor    : 8;
     unsigned pattern  : 1;  //0-color  1-patter
     unsigned temp1    : 1;
@@ -522,8 +563,9 @@ struct
     unsigned widoczny : 1;
     unsigned przec : 1;
     unsigned blok : 1;
+    unsigned warstwa : 16;  ////WARNING WARSTWA_EXT
     unsigned int n; //    : 32;
-    unsigned warstwa : 8;
+    unsigned warstwa_shd : 8;
     unsigned kolor : 8;
     unsigned typ : 8;
     unsigned temp1 : 1;  //OT3W_Move=0, OT3W_Drag=1
@@ -541,7 +583,7 @@ typedef  SPLINE  * SPLINE_;
 #pragma pack( 1 )
 ////#pragma pack()
 #else
-#pragma pack()
+#pragma pack(4)
 #endif
 
 typedef
@@ -554,6 +596,7 @@ struct
     unsigned widoczny : 1;
     unsigned przec    : 1;
     unsigned blok     : 1;
+    unsigned warstwa_blk : 16;  ////WARNING WARSTWA_EXT
     unsigned int n ; //   : 32;
     char kod_obiektu ; // : 8;
     char rezerwa ; //     : 8;

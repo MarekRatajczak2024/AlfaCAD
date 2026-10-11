@@ -18,8 +18,9 @@ double radius = 0.0;  //[units]
 static int language=-1;
 static int iconno_plugin=0;
 double SkalaF, Jednostki;
-char Units[6];
-void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+char Units[12];
+//void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+void *(*plugin_ptr)(int plugin_function, void *param1, void *param2, void *param3);
 
 static POLE pmNets0[]={
         {u8"Ø6",' ',0,NULL},
@@ -565,20 +566,20 @@ void fill_polyline(char *dane000, double radius_)
     while (1)
     {
         nag = (NAGLOWEK *) adr;
-        if ((nag>adrk) || (nag->obiekt==Okoniec)) break;
+        if (((char*)nag>adrk) || (nag->obiekt==Okoniec)) break;
         if (nag->obiekt==Olinia) {
             line=TRUE;
             if (l_no==0)
             {
                 L_x1=(double)((LINIA*)nag)->x1;
                 L_y1=(double)((LINIA*)nag)->y1;
-                first=nag;
+                first=(char*)nag;
             }
             else
             {
                 L_x2=(double)((LINIA*)nag)->x2;
                 L_y2=(double)((LINIA*)nag)->y2;
-                last=nag;
+                last=(char*)nag;
             }
             l_no++;
             if (e_no==0) first_line=TRUE;
@@ -622,7 +623,7 @@ void fill_polyline(char *dane000, double radius_)
                 continue;
             }
 
-            adr1 = (char *) (plugin_ptr(FILLET_LINE_TO_LINE, (char*)&radius_, (char*)line1, (char*)line2));
+           adr1 = (char *) (plugin_ptr(FILLET_LINE_TO_LINE, (char*)&radius_, (char*)line1, (char*)line2));
             if (adr1!=NULL) adr=adr1 + (sizeof(NAGLOWEK) + ((NAGLOWEK *) adr1)->n);
 
             i_no--;
@@ -692,7 +693,7 @@ void alfa_func(int a) {
             break;
     }
 
-    mRebar.pola=pmRebar_L[language];
+    mRebar.pola=(POLE (*)[])pmRebar_L[language];
 
     mNets0.off=0;
     n = VOID_TO_INT(plugin_ptr(GETWSP1, &mNets0, NULL, NULL))-1;

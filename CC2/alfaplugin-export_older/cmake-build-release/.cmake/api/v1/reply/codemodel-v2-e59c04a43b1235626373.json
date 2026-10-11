@@ -1,0 +1,106 @@
+{
+	"configurations" : 
+	[
+		{
+			"abstractTargets" : [],
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Release-b23a0b23c080df4d29ba.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "alfaplugin",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "alfa_coordinates::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfa_coordinates-Release-f4ae6db774b544b8430f.json",
+					"name" : "alfa_coordinates",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alfa_fillet_polyline::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfa_fillet_polyline-Release-a92b1c5b886943110c28.json",
+					"name" : "alfa_fillet_polyline",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alfa_rebar::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfa_rebar-Release-415807ea02bed0d84aec.json",
+					"name" : "alfa_rebar",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alfa_redraw::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfa_redraw-Release-d2c4cc36050d7d07638c.json",
+					"name" : "alfa_redraw",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alfa_stirrup::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfa_stirrup-Release-15d3704fc76287cab63e.json",
+					"name" : "alfa_stirrup",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alfaplugin::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alfaplugin-Release-c0ed8454fb1606d4fade.json",
+					"name" : "alfaplugin",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/marek/CC2/alfaplugin-export/cmake-build-release",
+		"source" : "/home/marek/CC2/alfaplugin-export"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 11
+	}
+}

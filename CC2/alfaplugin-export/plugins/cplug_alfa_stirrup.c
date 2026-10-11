@@ -16,9 +16,6 @@
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 
-#define SOLIDARC_N 60
-#define sadef {Anormalny,Osolidarc,0,0,0,1,0,0, SOLIDARC_N /*52*/,  0,7,0, 0, 0, 0,0,0, 255,0,0,0,0,0,0,0,0,0,1,0,0,0,""};
-
 char main_reinforcement[30];
 char reinforcement[64];
 float diameter = 8;
@@ -32,8 +29,9 @@ double anchorage;
 static int language=-1;
 static int iconno_plugin=0;
 double SkalaF, Jednostki;
-char Units[6];
-void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+char Units[12];
+//void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+void *(*plugin_ptr)(int plugin_function, void *param1, void *param2, void *param3);
 
 float open_arm_angle=Pi_/8;
 
@@ -1207,7 +1205,7 @@ void alfa_func(int a) {
             break;
     }
 
-    mRebar.pola=pmRebar_L[language];
+    mRebar.pola=(POLE (*)[])pmRebar_L[language];
 
     mNets0.off=0;
     n = VOID_TO_INT(plugin_ptr(GETWSP1, &mNets0, NULL, NULL))-1;

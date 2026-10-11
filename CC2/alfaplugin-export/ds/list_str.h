@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+// Declaration of safe custom version
+char* custom_strdup(const char* s);
+
 struct list_str;
 typedef struct list_str list_str_t;
 

@@ -1,0 +1,23 @@
+# ninja log v7
+1	5	1787495215946286339	clean	b2cd88fe0a85eff5
+9	51	1787495216843173675	CMakeFiles/alfaplugin.dir/main.c.o	47416ec624995a05
+6	55	1787495216840229471	CMakeFiles/alfaplugin.dir/ds/list_str.c.o	76d73a14095ab45b
+8	68	1787495216841705510	CMakeFiles/alfaplugin.dir/str/str_builder.c.o	59990bd7260946aa
+5	75	1787495216838858014	CMakeFiles/alfaplugin.dir/ds/list.c.o	8b6ec5b41dd5fcc3
+7	61	1787495216840515588	CMakeFiles/alfaplugin.dir/ds/htable.c.o	41cd16eda05b95b1
+1	75	1787495216836257367	CMakeFiles/alfaplugin.dir/alfaplugin_manager.c.o	7a3b514d4a678f0c
+75	116	1787495216906255088	alfaplugin	52362ec93d30f61d
+116	147	1787495216946906541	CMakeFiles/alfa_redraw.dir/plugins/cplug_alfa_redraw.c.o	fbedbb442f92c9fb
+125	155	1787495216958682127	CMakeFiles/alfa_coordinates.dir/plugins/cplug_alfa_coordinates.c.o	b9e7ad5cd13606ff
+147	195	1787495216979724858	plugins/libalfa_redraw.so	2f2009147c97766f
+155	195	1787495216987634341	plugins/libalfa_coordinates.so	ce915aa3c4b499e9
+125	195	1787495216956253460	CMakeFiles/alfa_fillet_polyline.dir/plugins/cplug_alfa_fillet_polyline.c.o	e75fb9648b078b3
+119	211	1787495216952606463	CMakeFiles/alfa_rebar.dir/plugins/cplug_alfa_rebar.c.o	f9a52bba13df88e
+195	221	1787495217027450692	plugins/libalfa_fillet_polyline.so	27e3cf494f1748e9
+211	251	1787495217042917304	plugins/libalfa_rebar.so	4d7bb18b3dc8b365
+118	285	1787495216949587009	CMakeFiles/alfa_stirrup.dir/plugins/cplug_alfa_stirrup.c.o	d57a26c5b3f09e50
+285	319	1787495217116248251	plugins/libalfa_stirrup.so	90b2f4466d3bb5eb
+1	36	1787495441674735866	build.ninja	35203985ed4a89d0
+1	36	1787495441674735866	/home/marek/CC2/alfaplugin-export/cmake-build-debug/cmake_install.cmake	35203985ed4a89d0
+2	27	1787495476547660522	CMakeFiles/alfaplugin.dir/main.c.o	47416ec624995a05
+27	42	1787495476574041884	alfaplugin	52362ec93d30f61d

@@ -5,7 +5,7 @@
 #ifndef LIBFUN_PL_H_ALFAPLUGIN_SYS_H
 #define LIBFUN_PL_H_ALFAPLUGIN_SYS_H
 
-typedef enum {ENGLISH = 0, POLISH, UKRAINIAN, SPANISH};
+typedef enum {ENGLISH = 0, POLISH, UKRAINIAN, SPANISH} languages;
 
 #define MAXPATH   260
 #define MAXDIR	  256

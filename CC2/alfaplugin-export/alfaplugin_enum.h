@@ -5,7 +5,7 @@
 #ifndef LIBFUN_PL_H_ALFAPLUGIN_ENUM_H
 #define LIBFUN_PL_H_ALFAPLUGIN_ENUM_H
 
-typedef enum {
+enum {
     REDRAW = 0,
     GETLANGUAGE,
     GETWSP1,

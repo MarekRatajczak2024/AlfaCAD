@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
+#ifdef LINUX
+#include <strings.h>
+#endif
 
 #include "list.h"
 #include "list_str.h"
@@ -9,8 +12,8 @@
 //not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define strdup      _strdup
 #endif
-
 
 int str_eq_int(const char *a, const char *b, bool casecmp)
 {
@@ -32,6 +35,28 @@ int str_caseeq(const void *a, const void *b)
     return str_eq_int(a, b, true);
 }
 
+//added on 14.04.2026
+static char* strdup__(const char* s) {
+    size_t len = strlen(s) + 1;
+    char* new_str = malloc(len);
+    if (new_str) {
+        memcpy(new_str, s, len);
+    }
+    return new_str;
+}
+/*
+#if !defined(MACOS) && !defined(_WIN32)
+static char* strdup(const char* s) {
+    if (s == NULL) return NULL;
+    size_t len = strlen(s) + 1;
+    char* new_str = malloc(len);
+    if (new_str) {
+        memcpy(new_str, s, len); // Your memcpy is also safe and efficient
+    }
+    return new_str;
+}
+#endif
+*/
 
 list_str_t *list_str_create(list_str_flags_t flags)
 {
@@ -44,7 +69,7 @@ list_str_t *list_str_create(list_str_flags_t flags)
     if (flags & LIST_STR_CASECMP)
         cbs.leq = str_eq;
     if (flags & LIST_STR_SORT)
-        lflags != LIST_SORT;
+        lflags |= LIST_SORT;
     return (list_str_t *)list_create(&cbs, lflags);
 }
 

@@ -1,3 +1,0 @@
-/home/marek/CC2/Source/cmake-build-debug_pl/CMakeFiles/AlfaCADPL.dir
-/home/marek/CC2/Source/cmake-build-debug_pl/CMakeFiles/edit_cache.dir
-/home/marek/CC2/Source/cmake-build-debug_pl/CMakeFiles/rebuild_cache.dir

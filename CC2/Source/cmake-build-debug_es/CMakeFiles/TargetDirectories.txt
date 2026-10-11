@@ -1,3 +1,0 @@
-/home/marek/CC2/Source/cmake-build-debug_es/CMakeFiles/AlfaCADES.dir
-/home/marek/CC2/Source/cmake-build-debug_es/CMakeFiles/edit_cache.dir
-/home/marek/CC2/Source/cmake-build-debug_es/CMakeFiles/rebuild_cache.dir

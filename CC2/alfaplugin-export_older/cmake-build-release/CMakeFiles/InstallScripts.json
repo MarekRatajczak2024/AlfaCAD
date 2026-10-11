@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/marek/CC2/alfaplugin-export/cmake-build-release/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

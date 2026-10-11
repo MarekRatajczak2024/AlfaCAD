@@ -19,12 +19,13 @@ double radius = 0.0;  //[units]
 static int language=-1;
 static int iconno_plugin=0;
 double SkalaF, Jednostki;
-char Units[6];
+char Units[12];
 static BLOK *block_bak=NULL;
 
 BOOL edit_str_exists=FALSE;
 
-void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+//void *(*plugin_ptr)(int plugin_function, char *param1, char *param2, char *param3);
+void *(*plugin_ptr)(int plugin_function, void *param1, void *param2, void *param3);
 
 static POLE pmFPolylineEN[] =
         {
@@ -84,7 +85,7 @@ plugin_part_t plugin_part(void)
 
 bool init(char *plug_ptr)
 {
-    plugin_ptr=plug_ptr;
+    plugin_ptr=(void*)plug_ptr;
     language = VOID_TO_INT(plugin_ptr(GETLANGUAGE, NULL, NULL, NULL));
     return true;
 }
@@ -273,20 +274,20 @@ void fill_polyline(char *dane000, double radius)
     while (1)
     {
         nag = (NAGLOWEK *) adr;
-        if ((nag>adrk) || (nag->obiekt==Okoniec)) break;
+        if (((char*)nag>adrk) || (nag->obiekt==Okoniec)) break;
         if (nag->obiekt==Olinia) {
             line=TRUE;
             if (l_no==0)
             {
                 L_x1=(double)((LINIA*)nag)->x1;
                 L_y1=(double)((LINIA*)nag)->y1;
-                first=nag;
+                first=(char*)nag;
             }
             else
             {
                 L_x2=(double)((LINIA*)nag)->x2;
                 L_y2=(double)((LINIA*)nag)->y2;
-                last=nag;
+                last=(char*)nag;
             }
             l_no++;
             if (e_no==0) first_line=TRUE;
@@ -361,7 +362,7 @@ void alfa_func(int a) {
 
     SkalaF = *(double*)plugin_ptr(GET_SCALE, NULL, NULL, NULL);
     Jednostki = *(double*)plugin_ptr(GET_UNITS, NULL, NULL, NULL);
-    strcpy(&Units,(char*)plugin_ptr(GET_UNITS_STR, NULL, NULL, NULL));
+    strcpy(Units,(char*)plugin_ptr(GET_UNITS_STR, NULL, NULL, NULL));
 
     switch (language) {
         case ENGLISH:
@@ -391,7 +392,7 @@ void alfa_func(int a) {
             break;
     }
 
-    mFPolyline.pola=pmFPolyline_L[language];
+    mFPolyline.pola=(POLE (*)[])pmFPolyline_L[language];
 
     ret = VOID_TO_INT(plugin_ptr(NOTICE, 0, NULL, NULL));
     ret = VOID_TO_INT(plugin_ptr(NOTICE0, 0, NULL, NULL));
@@ -415,7 +416,7 @@ void alfa_func(int a) {
     iconno_radius = VOID_TO_INT(plugin_ptr(LOAD_CLIENT_BITMAP, u8"dim_arc_radial.png", NULL, NULL));
     iconno_undo = VOID_TO_INT(plugin_ptr(LOAD_CLIENT_BITMAP, u8"return.png", NULL, NULL));
 
-    menup_plugin.menu=&mFPolyline;
+    menup_plugin.menu=(char*)&mFPolyline;
     strcpy(menup_plugin.st, filletpolyline);
     menup_plugin.cod=filletpolyline_c;
     menup_plugin.iconno=iconno_aux;
@@ -462,7 +463,7 @@ void alfa_func(int a) {
                 //making the copy of entire polyline block
                 ret=VOID_TO_INT(plugin_ptr(SET_PTR__GTMPBLOCK, block_ptr, NULL, NULL));
                 block_size=sizeof(NAGLOWEK)+((BLOK*)block_ptr)->n;
-                block_bak=(char*)malloc(block_size);
+                block_bak=(BLOK*)malloc(block_size);
                 memmove(block_bak, block_ptr, block_size);
 
                 if (radius > 0.0) fill_polyline(block_ptr, radius_sk);
