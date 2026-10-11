@@ -124,6 +124,7 @@ extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
                                 double dx_loc, double dy_loc, double dz_loc,
                                 double *px, double *py, double *pdx, double *pdy);
 extern int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float ypp);
+extern int getParallelLinesCircleIntersection(long xc, long yc, long r, long dd1, double angle_deg, Pixel out_points[4]);
 
 extern double dim_precision;
 extern double force_precision;
@@ -3745,6 +3746,7 @@ int Point_Selected(T_Point *ptrs_point)
     long x1, y1, x2, y2, x12, y12;
     double df_psize;
     OKRAG Okr;
+    long r,R;
     double dxy, dd, dd1, dl ;
     double x1i, y1i, x2i, y2i;
     double kos30=-0.5, koc30=-0.866025404, kos210=0.5, koc210=0.866025404, kos150=0.5, koc150=-0.866025404, kos330=-0.5, koc330=0.866025404;
@@ -3881,8 +3883,33 @@ int Point_Selected(T_Point *ptrs_point)
 
                 dxy= jednostkiN(df_psize*2.325);
                 dd = jednostkiN(2*df_psize*0.25);
-                dd1= jednostkiN(2*df_psize*0.618);
+                dd1= jednostkiN(2*df_psize*0.625);
                 break;
+            case 37: /*pin X*/
+            case 38: /*pin Y*/
+            case 39: /*pin Z*/
+            case 40: /*rigid X*/
+            case 41: /*rigid Y*/
+            case 42: /*rigid Z*/
+                df_psize = Get_Point_Size() / 4.;
+                Okr.r = 2.*df_psize;
+
+                r=jednostkiN(Okr.r);
+                R=jednostkiN(Okr.r*2.);
+
+                x1 = jednostkiN (ptrs_point->x - df_psize) ;
+                y1 = jednostkiN (ptrs_point->y - df_psize) ;
+                x2 = jednostkiN (ptrs_point->x + df_psize) ;
+                y2 = jednostkiN (ptrs_point->y + df_psize) ;
+
+                x12 = (x1 + x2)/2;
+                y12 = (y1 + y2)/2;
+
+                dxy= jednostkiN(df_psize*3);
+                dd = jednostkiN(df_psize*2);
+                dd1= jednostkiN(2*df_psize*0.625);
+
+            break;
         }
 
         if (test_circle_sel(&Okr) == 1) return 1;
@@ -4006,6 +4033,41 @@ int Point_Selected(T_Point *ptrs_point)
                 y2i = y2i + dl * kos330;
                 if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)) return 1;
                 break;
+            case 37: /*pin X*/
+            case 38: /*pin Y*/
+            case 39: /*pin Z*/
+            case 40: /*rigid X*/
+            case 41: /*rigid Y*/
+            case 42: /*rigid Z*/
+            {
+                Pixel out_points[4];
+                Pixel out_points1[4];
+                double angle_deg = 30;
+                long ddl1=(long)dd1;
+
+                int ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                int ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
+
+                for (int i=0; i<4; i++)
+                   if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)) return 1 ;
+
+                angle_deg=90;
+
+                ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
+
+                for (int i=0; i<4; i++)
+                    if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)) return 1 ;
+
+                angle_deg=150;
+
+                ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
+
+                for (int i=0; i<4; i++)
+                    if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)) return 1 ;
+            }
+            break;
         }
     }
     return 0 ;
@@ -4017,6 +4079,7 @@ int Point_Rectangle(T_Point *ptrs_point)
     long x1, y1, x2, y2, x12, y12;
     double df_psize;
     OKRAG Okr;
+    long r,R;
     double dxy, dd, dd1, dl ;
     int w;
     double x1i, y1i, x2i, y2i;
@@ -4153,7 +4216,32 @@ int Point_Rectangle(T_Point *ptrs_point)
 
                 dxy=(x2 - x1)*2.325*0.5;
                 dd = (x2 - x1) *0.25;  //2
-                dd1=(x2-x1)*0.618;
+                dd1=(x2-x1)*0.625;
+                break;
+            case 37: /*pin X*/
+            case 38: /*pin Y*/
+            case 39: /*pin Z*/
+            case 40: /*rigid X*/
+            case 41: /*rigid Y*/
+            case 42: /*rigid Z*/
+                df_psize = Get_Point_Size() / 4.;
+                Okr.r = 2.*df_psize;
+
+                r=jednostkiN(Okr.r);
+                R=jednostkiN(Okr.r*2.);
+
+                x1 = jednostkiN (ptrs_point->x - df_psize) ;
+                y1 = jednostkiN (ptrs_point->y - df_psize) ;
+                x2 = jednostkiN (ptrs_point->x + df_psize) ;
+                y2 = jednostkiN (ptrs_point->y + df_psize) ;
+
+                x12 = (x1 + x2)/2;
+                y12 = (y1 + y2)/2;
+
+                dxy= jednostkiN(df_psize*3);
+                dd = jednostkiN(df_psize*2);
+                dd1= jednostkiN(2*df_psize*0.625);
+
                 break;
         }
 
@@ -4278,8 +4366,41 @@ int Point_Rectangle(T_Point *ptrs_point)
                 y2i = y2i + dl * kos330;
                 if (prostokat_odcinek((long)x1i, (long)y1i, (long)x2i, (long)y2i)!=3) return 0;
                 break;
+            case 37: /*pin X*/
+            case 38: /*pin Y*/
+            case 39: /*pin Z*/
+            case 40: /*rigid X*/
+            case 41: /*rigid Y*/
+            case 42: /*rigid Z*/
+            {
+                Pixel out_points[4];
+                Pixel out_points1[4];
+                double angle_deg = 30;
+                long ddl1=(long)dd1;
 
+                int ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                int ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
 
+                for (int i=0; i<4; i++)
+                    if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)!=3) return 0 ;
+
+                angle_deg=90;
+
+                ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
+
+                for (int i=0; i<4; i++)
+                    if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)!=3) return 0 ;
+
+                angle_deg=150;
+
+                ret1 = getParallelLinesCircleIntersection(x12, y12, r, ddl1, angle_deg, out_points);
+                ret2 = getParallelLinesCircleIntersection(x12, y12, R, ddl1, angle_deg, out_points1);
+
+                for (int i=0; i<4; i++)
+                    if (prostokat_odcinek(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y)!=3) return 0 ;
+            }
+            break;
         }
     }
     return 1 ;

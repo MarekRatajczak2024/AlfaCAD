@@ -6001,6 +6001,11 @@ void blokzap(char  *adp,char  *adk,int atrybut,int mode, int kolor)
    return;
  }
 
+ if (adp<dane)
+     adp=dane;
+ if (adk>(dane+dane_size))
+     adk=dane+dane_size;
+
   Set_Second_Screen();
 
   setwritemode(COPY_PUT);

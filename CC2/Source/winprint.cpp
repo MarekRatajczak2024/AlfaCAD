@@ -809,13 +809,20 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
     if (!in_out)
 #ifdef LINUX
 #ifndef MACOS
+    {
+        if (strlen(f_name) > 0) {
+            strcat(sz__current_path_file, "/");
+            strcat(sz__current_path_file, f_name);
+        }
+
         lTheOpenFileName = tinyfd_FileNameDialog(       //tinyfd_FileNameDialog
-            dlg_name,
-            sz__current_path_file,
-            numoffilters,
-            sz__current_mask,
-            NULL,
-            0);
+                dlg_name,
+                sz__current_path_file,
+                numoffilters,
+                sz__current_mask,
+                NULL,
+                0);
+    }
 #else
 
 	    //char const * aTitle , /* NULL or "" */
@@ -871,12 +878,18 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
     else
 #ifdef LINUX
     #ifndef MACOS
+    {
+        if (strlen(f_name) > 0) {
+            strcat(sz__current_path_file, "/");
+            strcat(sz__current_path_file, f_name);
+        }
         lTheOpenFileName = tinyfd_saveFileDialog(
                 dlg_name,
                 sz__current_path_file,
                 numoffilters,
                 sz__current_mask,
                 NULL);
+    }
 #else
 	//char const * aTitle , /* NULL or "" */
 	//char const * aDefaultPathAndFile , /* NULL or "" */
@@ -894,8 +907,13 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
 
 		char *ptr=strchr(sz__current_mask,'*');
 		if (ptr==NULL) ptr=sz__current_mask;
-		//strcpy(sz__current_mask,"*.alf");
+
 		strcat(sz__current_path_file,"/");
+
+		if (strlen(f_name) > 0) {
+			strcat(sz__current_path_file, f_name);
+		}
+
 		show_os_cursor(MOUSE_CURSOR_ARROW);
 		lTheOpenFileName = al_FileNameDialog(dlg_name, sz__current_path_file, numoffilters, sz__current_mask, NULL, 0, 1);
 		show_os_cursor(MOUSE_CURSOR_NONE);
@@ -909,6 +927,11 @@ int My_GetOpenFileName(char* f_name, char* sz__current_path_file, char* sz__curr
 #else
     {
         char const* lFilterPatterns[2];
+
+    	if (strlen(f_name) > 0) {
+    		//strcat(sz__current_path_file, "\\");
+    		strcat(sz__current_path_file, f_name);
+    	}
 
         numoffilters = 1;
         lFilterPatterns[0] = sz__current_mask;

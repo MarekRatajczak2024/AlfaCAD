@@ -44,6 +44,8 @@ extern void srodekea_(double *x,double *y, double *tangent, void *adr);  //fast 
 
 extern int isometric_polar_to_cartesian(double x1, double y1, double length, double angle_deg, double *x2, double *y2);
 extern void make_dim_line_isometric_solid(double kat1, double l_end_x, double l_end_y, double Kps, double katS, int n, WIELOKAT *w);
+extern int get_lp(void);
+extern void redraw_str(int no_);
 
 static int Continue=0,Wst;
 static char *ADLr;  /* adres ostatniej linii */
@@ -708,6 +710,12 @@ void  wymiarowanie(void)
       if (wym_kata==1) Komunikat_R0=168;
       else Komunikat_R0=6;
       komunikat0(Komunikat_R0);
+
+      int lp_=get_lp();
+      if (lp_>1)
+      {
+          for (int i=1; i<lp_; i++) redraw_str(i);
+      }
 
       ev = Get_Event_Point(NULL, &X0, &Y0);
       CUR_OFF_ON();

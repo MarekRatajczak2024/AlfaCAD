@@ -195,6 +195,8 @@ extern unsigned char get_client_flag(void);
 extern void startup(LPCSTR lpApplicationName, LPSTR lpParams);
 extern int get_rotation_inversion(void);
 
+extern int get_random_quote_index(int max_quote);
+
 extern BOOL get_editor_on(void);
 extern char *get_eTitle(void);
 
@@ -1500,10 +1502,57 @@ void     my_fillpoly(int numpoints, AL_CONST int* polypoints, int translucency, 
 
     if ((screenplay->w < 0) || (screenplay->w > 9999)) return;  //????????
 
-	//polygon(screenplay, numpoints, polypoints, cur_fillstyle_color);  //this version can be used everywhere but not in hatching solids and trace solids
-	my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
+	/*
+	if (numpoints==4)
+	{
+		//checking if line
+		if (((polypoints[0]==polypoints[2]) && (polypoints[1]==polypoints[3]) &&
+			(polypoints[4]==polypoints[6]) && (polypoints[5]==polypoints[7])) ||
 
-    //if (TRANSLUCENCY!=translucency) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
+			((polypoints[2]==polypoints[4]) && (polypoints[3]==polypoints[5]) &&
+			 (polypoints[6]==polypoints[0]) && (polypoints[7]==polypoints[1])))
+        polygon(screenplay, numpoints, polypoints,cur_fillstyle_color);  //this version can be used everywhere but not in hatching solids and trace solids
+		else my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
+    }
+	else my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
+	*/
+	if (numpoints == 4)
+	{
+		// Extract coordinates for readability
+		int x0 = polypoints[0], y0 = polypoints[1];
+		int x1 = polypoints[2], y1 = polypoints[3];
+		int x2 = polypoints[4], y2 = polypoints[5];
+		int x3 = polypoints[6], y3 = polypoints[7];
+
+		// Calculate vectors from vertex 0
+		int dx1 = x1 - x0;
+		int dy1 = y1 - y0;
+		int dx2 = x2 - x0;
+		int dy2 = y2 - y0;
+		int dx3 = x3 - x0;
+		int dy3 = y3 - y0;
+
+		// Cross products (twice the area of triangle 0-1-2 and triangle 0-1-3)
+		int area1 = dx1 * dy2 - dy1 * dx2;
+		int area2 = dx1 * dy3 - dy1 * dx3;
+
+		// If both areas are 0, all 4 points are collinear (form a line)
+		if (area1 == 0 && area2 == 0)
+		{
+			polygon(screenplay, numpoints, polypoints,cur_fillstyle_color);  //this version can be used everywhere but not in hatching solids and trace solids
+		}
+		else
+		{
+			my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
+		}
+	}
+	else
+	{
+		my_soft_polygon(screenplay, numpoints, polypoints, cur_fillstyle_color, translucency, colorB);  //this version has to be always used in hatching solids and trace solids
+	}
+
+
+	//if (TRANSLUCENCY!=translucency) set_trans_blender(0, 0, 0, (int)TRANSLUCENCY);  //coming back
 	return;
 }
 
@@ -5770,6 +5819,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
     struct stat file_info;
     struct timeval stop, start;
     int delta_t;
+	char *row_file_upgds_p;
 
 #define MaxTextLen  254  //512
 
@@ -5816,7 +5866,9 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
     {
         int rand_result;
 
-        rand_result = (rand() % n_list);
+        //rand_result = (rand() % n_list);
+    	rand_result = get_random_quote_index(n_list);
+
         if (strstr(strarray[rand_result], ".<DIR>") != NULL)
             rand_result = (rand_result + 1) % n_list;
         if (strstr(strarray[rand_result], ".<DIR>") != NULL)
@@ -6617,8 +6669,12 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                 //checking if file exists
 
                                 row_file_name_upgds[0] = '\0';
-                                const size_t len = strlen(row_file_upgds);
-                                it = uri_decode(row_file_upgds, len, row_file_name_upgds);
+                            	row_file_upgds_p=strrchr(row_file_upgds,'/');
+                            	if (row_file_upgds_p==NULL) row_file_upgds_p=row_file_upgds;
+                            	else row_file_upgds_p++;
+
+                                const size_t len = strlen(row_file_upgds_p);
+                                it = uri_decode(row_file_upgds_p, len, row_file_name_upgds);
 
                                 go_download_upgds = FALSE;
                                 if (strcmp(ad_name_zip, row_file_name_upgds) == 0) //new file potentially exists
@@ -6681,7 +6737,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             flip_full_screen(second_screen);
                             extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name_upgds);
                             snprintf(params, sizeof(params), "--connect-timeout 5 -m 120 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
-                                    cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds, cloud_upgrade0,
+                                    cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds_p, cloud_upgrade0,
                                     row_file_name_upgds);
 #ifdef LINUX
                             runcode = (int)SystemSilent((char*)"curl", params);
@@ -6898,21 +6954,29 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 							quick_exit(0);
 							*/   //it's the same as below'
 
+
+                        	/*
                         	FILE* gotar;
                         	gotar = fopen("gotar.bat", "wt");
                         	if (gotar != NULL)
                         	{
                         		fprintf(gotar, "@echo off\n");
-                        		fprintf(gotar, "echo %%1\n");
-                        		fprintf(gotar, "echo %%2\n");
-                        		fprintf(gotar, "echo %%3\n");
-                        		fprintf(gotar, "echo %%4\n");
-                        		fprintf(gotar, "echo %%5\n");
+                        		fprintf(gotar, "echo Archive: %%1\n");
+                        		fprintf(gotar, "echo Target Executable: %%2\n");
+                        		fprintf(gotar, "echo App Name: %%3\n");
+                        		fprintf(gotar, "echo Param 1: %%4\n");
+                        		fprintf(gotar, "echo Param 2: %%5\n");
 
+                        		fprintf(gotar,"set /a retry_count=0\n");
                         		// The Active-Wait Execution Loop
                         		fprintf(gotar, ":loop\n");
-                        		fprintf(gotar, "del \"%%2\" 2>nul\n"); // Escape quotes with \ and double the %%
+                        		fprintf(gotar, "del /f \"%%2\" 2>nul\n"); // Escape quotes with \ and double the %%
                         		fprintf(gotar, "if exist \"%%2\" (\n"); // Fixed syntax error at end of string
+                        		fprintf(gotar,"set /a retry_count+=1\n");
+								fprintf(gotar,"if %%retry_count%% gtr 30 (\n");
+								fprintf(gotar,"echo Error: Previous version process is stuck. Exiting upgrade.\n");
+								fprintf(gotar,"exit\n");
+								fprintf(gotar,")\n");
                         		fprintf(gotar, "    timeout /t 1 /nobreak >nul\n");
                         		fprintf(gotar, "    goto loop\n");
                         		fprintf(gotar, ")\n");
@@ -6929,6 +6993,167 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                         	sprintf(params, "gotar.bat %s", row_file_name_upgds);
                         	_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, *(argv_), *(argv_+1), *(argv_+2), nullptr);
                         	quick_exit(0);
+
+                        	*/
+                        	FILE* gotar;
+                        	/*
+                        	gotar = fopen("gotar.bat", "wt");
+                        	if (gotar != NULL)
+                        	{
+                        		fprintf(gotar, "@echo off\n");
+                        		fprintf(gotar, "echo Archive: %%1\n");
+                        		fprintf(gotar, "echo Target Executable: %%2\n");
+                        		fprintf(gotar, "echo App Name: %%3\n");
+                        		fprintf(gotar, "echo Param 1: %%4\n");
+                        		fprintf(gotar, "echo Param 2: %%5\n");
+
+                        		fprintf(gotar, "set /a retry_count=0\n");
+
+                        		// The Active-Wait Execution Loop
+                        		fprintf(gotar, ":loop\n");
+                        		fprintf(gotar, "del /f \"%%2\" 2>nul\n");
+
+                        		// Check if file was successfully deleted
+                        		fprintf(gotar, "if not exist \"%%2\" goto do_extract\n");
+
+                        		// If it still exists, increment and check counter safely outside parentheses
+                        		fprintf(gotar, "set /a retry_count+=1\n");
+                        		fprintf(gotar, "if %%retry_count%% gtr 30 (\n");
+                        		fprintf(gotar, "    echo Error: Previous version process is stuck. Exiting upgrade.\n");
+                        		fprintf(gotar, "    exit\n");
+                        		fprintf(gotar, ")\n");
+
+                        		fprintf(gotar, "timeout /t 1 /nobreak >nul\n");
+                        		fprintf(gotar, "goto loop\n");
+
+                        		// Unpacking and Relaunching
+                        		fprintf(gotar, ":do_extract\n");
+                        		fprintf(gotar, "tar -xf upgds\\%%1\n");
+
+                        		// Added "" so start doesn't treat %%2 as a window title if paths have spaces
+                        		//fprintf(gotar, "start \"\" \"%%2\" \"%%4\" \"%%5\"\n");
+
+
+                        		// Check if %4 (first drawing param) is empty
+                        		fprintf(gotar, "if \"%%~4\"==\"\" (\n");
+                        		// Case 1: No drawing arguments exist. Call start safely with only the executable.
+                        		fprintf(gotar, "    start \"\" \"%%2\"\n");
+                        		fprintf(gotar, ") else (\n");
+                        		// Case 2: At least %4 exists. Let's see if %5 exists.
+                        		fprintf(gotar, "    if \"%%~5\"==\"\" (\n");
+                        		// Only %4 exists. Pass %4 without extra quotes so it behaves naturally,
+                        		// but use %%4 instead of %%~4 to keep any quotes it originally came with!
+                        		fprintf(gotar, "        start \"\" \"%%2\" %%4\n");
+                        		fprintf(gotar, "    ) else (\n");
+                        		// Both %4 and %5 exist. Pass them naturally.
+                        		fprintf(gotar, "        start \"\" \"%%2\" %%4 %%5\n");
+                        		fprintf(gotar, "    )\n");
+                        		fprintf(gotar, ")\n");
+
+                        		// The Self-Destruct Line
+                        		fprintf(gotar, "del \"%%~f0\" & exit\n");
+                        		fclose(gotar);
+                        	}
+
+                        	// Ensure row_file_name_upgds, ad_name, and argv parameters are fully valid
+                        	_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, *(argv_), *(argv_+1), *(argv_+2), nullptr);
+                        	quick_exit(0);
+                        	*/
+
+                        	gotar = fopen("gotar.bat", "wt");
+							if (gotar != NULL)
+							{
+							    fprintf(gotar, "@echo off\n");
+							    fprintf(gotar, "echo Archive: %%1\n");
+							    fprintf(gotar, "echo Target Executable: %%2\n");
+							    fprintf(gotar, "echo App Name: %%3\n");
+							    fprintf(gotar, "echo Param 1: %%4\n");
+							    fprintf(gotar, "echo Param 2: %%5\n");
+
+							    // STEP 1: Create a clean staging directory
+							    fprintf(gotar, "if exist _upg_tmp rmdir /s /q _upg_tmp\n");
+							    fprintf(gotar, "mkdir _upg_tmp\n");
+
+							    // STEP 2: Extract the package into the staging directory
+							    fprintf(gotar, "tar -xf upgds\\%%1 -C _upg_tmp 2>nul\n");
+
+							    // STEP 3: Validate if the extraction worked
+							    // If curl downloaded an HTML error or the file is corrupted, tar will fail
+							    fprintf(gotar, "if errorlevel 1 goto error_abort\n");
+
+							    // STEP 4: Determine if a new executable is part of this update
+							    fprintf(gotar, "if exist \"_upg_tmp\\%%~nx2\" (\n");
+							    fprintf(gotar, "    set \"HAS_NEW_EXE=1\"\n");
+							    fprintf(gotar, ") else (\n");
+							    fprintf(gotar, "    set \"HAS_NEW_EXE=0\"\n");
+							    fprintf(gotar, ")\n");
+
+								/*
+							    // STEP 5: If a new executable exists, safely clear out the old one
+							    fprintf(gotar, "if \"%%HAS_NEW_EXE%%\"==\"1\" (\n");
+							    fprintf(gotar, "    set /a retry_count=0\n");
+							    fprintf(gotar, "    :loop\n");
+							    fprintf(gotar, "    del /f \"%%2\" 2>nul\n");
+							    fprintf(gotar, "    if exist \"%%2\" (\n");
+							    fprintf(gotar, "        set /a retry_count+=1\n");
+							    fprintf(gotar, "        if %%retry_count%% gtr 30 goto error_abort\n");
+							    fprintf(gotar, "        timeout /t 1 /nobreak >nul\n");
+							    fprintf(gotar, "        goto loop\n");
+							    fprintf(gotar, "    )\n");
+							    fprintf(gotar, ")\n");
+
+							    // STEP 6: Apply the update (Copy everything from staging to live app folder)
+							    // /y overwrites without asking, /e ensures nested subfolders like Bitmaps/ get copied
+							    fprintf(gotar, "xcopy /y /e \"_upg_tmp\\*\" \".\\\" >nul 2>nul\n");
+                                */
+
+								// STEP 5: If a new executable exists, safely clear out the old one
+								fprintf(gotar, "if \"%%HAS_NEW_EXE%%\"==\"0\" goto do_copy\n");
+
+								// If it reached here, HAS_NEW_EXE is 1. We safely loop outside of any parenthesis.
+								fprintf(gotar, "set /a retry_count=0\n");
+								fprintf(gotar, ":loop\n");
+								fprintf(gotar, "del /f \"%%2\" 2>nul\n");
+								fprintf(gotar, "if not exist \"%%2\" goto do_copy\n");
+
+								// If it still exists, increment and check counter safely
+								fprintf(gotar, "set /a retry_count+=1\n");
+								fprintf(gotar, "if %%retry_count%% gtr 30 goto error_abort\n");
+								fprintf(gotar, "timeout /t 1 /nobreak >nul\n");
+								fprintf(gotar, "goto loop\n");
+
+								// STEP 6: Apply the update (Copy everything from staging to live app folder)
+								fprintf(gotar, ":do_copy\n");
+								fprintf(gotar, "xcopy /y /e \"_upg_tmp\\*\" \".\\\" >nul 2>nul\n");
+
+							    // STEP 7: Cleanup the temporary staging directory
+							    fprintf(gotar, "rmdir /s /q _upg_tmp\n");
+
+							    // STEP 8: Launch back into the application
+							    fprintf(gotar, ":do_launch\n");
+							    fprintf(gotar, "if \"%%~4\"==\"\" (\n");
+							    fprintf(gotar, "    start \"\" \"%%2\"\n");
+							    fprintf(gotar, ") else (\n");
+							    fprintf(gotar, "    if \"%%~5\"==\"\" (\n");
+							    fprintf(gotar, "        start \"\" \"%%2\" %%4\n");
+							    fprintf(gotar, "    ) else (\n");
+							    fprintf(gotar, "        start \"\" \"%%2\" %%4 %%5\n");
+							    fprintf(gotar, "    )\n");
+							    fprintf(gotar, ")\n");
+							    fprintf(gotar, "del \"%%~f0\" & exit\n");
+
+							    // STEP 9: Error Handling fallback
+							    // If the zip was corrupt, certificate expired, or server errored, we bypass deletion, clean up, and just restart old app
+							    fprintf(gotar, ":error_abort\n");
+							    fprintf(gotar, "echo Upgrade failed or corrupted. Reverting changes.\n");
+							    fprintf(gotar, "if exist _upg_tmp rmdir /s /q _upg_tmp\n");
+							    fprintf(gotar, "goto do_launch\n");
+
+							    fclose(gotar);
+							}
+
+							_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, argv_, argv_, argv_, nullptr);
+							quick_exit(0);
 
 #endif
 

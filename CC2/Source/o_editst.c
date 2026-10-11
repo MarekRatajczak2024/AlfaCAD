@@ -61,7 +61,7 @@ extern int TTF_char_len(unsigned int unicode);
 extern int utf82unicode(unsigned char *utf8text, unsigned char *unicodetext);
 extern int TTF_text_len(char *text);
 extern int TTF_text_len_pos(char *text, int pos);
-extern BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos);
+extern BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos, int mouse_x_, int mouse_y_);
 
 extern int inukeys(TMENU *menu);
 
@@ -1347,7 +1347,7 @@ do
         pos1=-1;
         pos2=-1;
         pos2_bak=-1;
-        ret=TTF_text_pos_x0((char*)&s[fpos], x0, y0, width_w, &pos1);
+        ret=TTF_text_pos_x0((char*)&s[fpos], x0, y0, width_w, &pos1, mouse_x, mouse_y);
         int max_text_len= TTF_text_len((char*)&s[fpos]);
         if (ret)
         {
@@ -1362,7 +1362,7 @@ do
         mouse_x_bak=mouse_x;
         mouse_y0=y0-3;
 
-        printf("x0=%d y0=%d mouse_x0=%d mouse_y0=%d pos1=%d\n", x0, y0,mouse_x0, mouse_y0, pos1);
+        ////printf("x0=%d y0=%d mouse_x0=%d mouse_y0=%d pos1=%d\n", x0, y0,mouse_x0, mouse_y0, pos1);
         while (mouse_b)
         {
             //mouse_x_=mouse_x;
@@ -1411,12 +1411,12 @@ do
 
         pos1 += fpos;
         if (mouse_x!=mouse_x0) {
-            ret = TTF_text_pos_x0((char*)&s[fpos], x0, y0, width_w, &pos2);
+            ret = TTF_text_pos_x0((char*)&s[fpos], x0, y0, width_w, &pos2, mouse_x, mouse_y);
             if (ret) pos = fpos + pos2;
             pos2 += fpos;
         }
 
-        printf("x01=%d y01=%d mouse_x1=%d mouse_y0=%d pos2=%d\n", x0, y0,mouse_x, mouse_y0, pos2);
+        ////printf("x01=%d y01=%d mouse_x1=%d mouse_y0=%d pos2=%d\n", x0, y0,mouse_x, mouse_y0, pos2);
         //pos1 += fpos;
         //pos2 += fpos;
 

@@ -1,8 +1,8 @@
 #include "T_section_US_si_standards.c"
 
 POLE pmT_section_US_si[] = {
-{u8"ADM 2015",L' ',0,&mT_section_US_si_0},
-{u8"ADM 2020",L' ',0,&mT_section_US_si_1},
+{u8"ADM 2015\0Al",L' ',0,&mT_section_US_si_0},
+{u8"ADM 2020\0Al",L' ',0,&mT_section_US_si_1},
 {u8"AISC 13",L' ',0,&mT_section_US_si_2},
 {u8"AISC 14",L' ',0,&mT_section_US_si_3},
 {u8"AISC 15",L' ',0,&mT_section_US_si_4},
@@ -10,5 +10,5 @@ POLE pmT_section_US_si[] = {
 {u8"ASD 9",L' ',0,&mT_section_US_si_6},
 };
 
-TMENU mT_section_US_si = { 7,0,0,9,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmT_section_US_si,NULL,NULL };
+TMENU mT_section_US_si = { 7,0,0,12,16,8,TADD,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmT_section_US_si,NULL,NULL };
 

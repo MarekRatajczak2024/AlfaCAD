@@ -4049,14 +4049,15 @@ static int read_old_ver_block_param (int f, int alfab_version /*char *blok_naglo
 static TMENU mNie_Tak={2,0,0,7,52,8,ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,&pmNie_Tak,NULL,NULL};
 
 #ifndef LINUX
-ULONG RunSilent(char* strFunct, char* strstrParams)
+ULONG RunSilent_(char* strFunct, char* strstrParams)
 {
 	STARTUPINFO StartupInfo;
 	PROCESS_INFORMATION ProcessInfo;
 	char Args[4096];
 	char *pEnvCMD = NULL;
 	char *pDefaultCMD = "CMD.EXE";
-	ULONG rc;
+	//ULONG rc;
+	DWORD rc;
 
 	memset(&StartupInfo, 0, sizeof(StartupInfo));
 	StartupInfo.cb = sizeof(STARTUPINFO);
@@ -4104,11 +4105,52 @@ ULONG RunSilent(char* strFunct, char* strstrParams)
 
 }
 
+DWORD RunSilent(char* strFunct, char* strstrParams)
+{
+	STARTUPINFO StartupInfo;
+	PROCESS_INFORMATION ProcessInfo;
+	char Args[8192]; // Bumped slightly to prevent any potential overflows with long paths
+	DWORD rc;
+
+	memset(&StartupInfo, 0, sizeof(StartupInfo));
+	StartupInfo.cb = sizeof(STARTUPINFO);
+	StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
+	StartupInfo.wShowWindow = SW_HIDE; // Keeps it completely silent/hidden
+
+	// Concatenate your executable and its parameters directly
+	// e.g., "dwg2dxf.exe --param1 param2"
+	snprintf(Args, sizeof(Args), "%s %s", strFunct, strstrParams);
+
+	// Pass the command line string directly into CreateProcess without cmd.exe
+	if (!CreateProcess(NULL, Args, NULL, NULL, FALSE,
+		CREATE_NO_WINDOW, // Replaced CREATE_NEW_CONSOLE for better background execution
+		NULL,
+		NULL,
+		&StartupInfo,
+		&ProcessInfo))
+	{
+		return GetLastError();
+	}
+
+	WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+
+	// This will now capture the un-wrapped, raw 32-bit return code directly from your binary
+	if (!GetExitCodeProcess(ProcessInfo.hProcess, &rc))
+		rc = (DWORD)-1; // Set to a distinct error value if the API fails
+
+	CloseHandle(ProcessInfo.hThread);
+	CloseHandle(ProcessInfo.hProcess);
+
+	return rc;
+}
+
+
 DWORD SystemSilent(char* strFunct, char* strstrParams)
 {
 	intptr_t ret;
 	char Args[MAXPATH]="C:\\Windows\\System32\\cmd.exe";;
 	FILE *pp;
+	char all_of_them[4028];
 
 	get_console();
 
@@ -4137,8 +4179,292 @@ DWORD SystemSilent(char* strFunct, char* strstrParams)
 
 	return (DWORD)ret;  //TO CHECK
 }
+
+DWORD SystemSilentWait(char* strFunct, char* strstrParams)
+{
+	intptr_t ret;
+	char Args[MAXPATH] = "C:\\Windows\\System32\\cmd.exe";
+	FILE *pp;
+
+	get_console();
+
+	pp = _popen("where cmd.exe", "r");
+	if (pp != NULL)
+	{
+		while (1)
+		{
+			char* line;
+			char buf[1000];
+			line = fgets(buf, sizeof(buf), pp);
+			if (line == NULL) break;
+			if ((strstr(strlwr(line), "cmd.exe") != NULL) && (strstr(strlwr(line), "not find") == NULL))
+			{
+				strcpy(Args, line);
+				if (Args[strlen(Args) - 1] == '\n') Args[strlen(Args) - 1] = 0;
+			}
+		}
+		_pclose(pp);
+	}
+
+	// THE CRITICAL CHANGE: Switch to P_WAIT so it blocks until ODA finishes
+	ret = _spawnl (P_WAIT, Args, "/c", strFunct, strstrParams, NULL) ;
+
+	free_console();
+
+	return (DWORD)ret;  // Will now return 0 on successful conversion completion!
+}
+
+
+/*
+#include <shellapi.h>
+
+//// Executes a Windows .lnk shortcut synchronously and blocks
+//// until the final target application is completely finished.
+//// Returns 1 on success, 0 on failure.
+
+int ExecuteShortcutSynchronously(const char* lnkPath, const char* arguments) {
+	SHELLEXECUTEINFOA sei = {0};
+
+	sei.cbSize = sizeof(SHELLEXECUTEINFOA);
+	// SEE_MASK_NOCLOSEPROCESS tells Windows to return the TRUE target process handle in hProcess
+	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+	sei.hwnd = NULL;
+	sei.lpVerb = "open";               // Natively triggers the standard execute action
+	sei.lpFile = lnkPath;              // Pass the path to your discovered .lnk file
+	sei.lpParameters = arguments;      // Pass your standard 7 positional parameters
+	sei.lpDirectory = NULL;
+	sei.nShow = SW_HIDE;               // Instructs the target window to suppress its GUI frame
+
+	// Fire off the execution through the native Windows Shell layer
+	if (ShellExecuteExA(&sei)) {
+		// If a process handle was successfully captured
+		if (sei.hProcess != NULL) {
+			printf("Captured true process handle. Blocking until complete...\n");
+
+			// This is the single 21st-century command that forces a strict, bulletproof block!
+			WaitForSingleObject(sei.hProcess, INFINITE);
+
+			// Clean up the handle allocation
+			CloseHandle(sei.hProcess);
+			return 1; // The final application has fully closed!
+		}
+	}
+	return 0; // Failed to execute
+}
+*/
+//#include <windows.h>
+//#include <stdio.h>
+//#include <string.h>
+
+/**
+ * Finds the actual physical .exe file path and runs it synchronously.
+ * Completely blocks until ODA is 100% finished writing the DXF file!
+ */
+int RunODADirectly(const char* src_dir, const char* out_dir, const char* file_filter) {
+    FILE* fp;
+    char realExePath[MAX_PATH] = {0};
+    char cmdLine[4096];
+
+	get_console();
+
+    // 1. RUN YOUR EXPLICIT 'WHERE' UTILITY TO FIND THE ACTUAL EXE PATH INSTANTLY
+    fp = _popen("where /R \"C:\\Program Files\" ODAFileConverter.exe 2>nul", "r");
+    if (fp != NULL) {
+        if (fgets(realExePath, sizeof(realExePath), fp) != NULL) {
+            realExePath[strcspn(realExePath, "\r\n")] = '\0'; // Clean trailing lines
+        }
+        _pclose(fp);
+    }
+
+	free_console();
+
+    // If 'where' didn't find it, fall back to checking the absolute standard root location
+    if (strlen(realExePath) == 0) {
+        const char* defaultPath = "C:\\Program Files\\ODA\\ODAFileConverter\\ODAFileConverter.exe";
+        DWORD attribs = GetFileAttributesA(defaultPath);
+        if (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY)) {
+            strcpy(realExePath, defaultPath);
+        }
+    }
+
+    // Safety: If it's not installed anywhere in Program Files, abort and use LibreDWG
+    if (strlen(realExePath) == 0) {
+        return 0;
+    }
+
+    // 2. BUILD THE PRISTINE EXECUTION PARAMETERS BLOCK
+    // Layout: "[ExePath]" "[SrcDir]" "[OutDir]" "ACAD2010" "DXF" "0" "1" "[File]"
+    sprintf(cmdLine, "\"%s\" \"%s\" \"%s\" \"ACAD2010\" \"DXF\" \"0\" \"1\" \"%s\"",
+            realExePath, src_dir, out_dir, file_filter);
+
+    // 3. EXECUTE THE REAL EXE NATIVELY VIA WIN32 CREATEPROCESS
+    STARTUPINFOA si = {0};
+    PROCESS_INFORMATION pi = {0};
+    si.cb = sizeof(STARTUPINFOA);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE; // 100% suppresses any Qt graphical flashing frames!
+
+    // Launch the binary file path directly as a true foreground thread lock
+    if (CreateProcessA(NULL, cmdLine, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        printf("Successfully bound handle to raw binary thread. Synchronizing...\n");
+
+        //THE CORESYNC: One single line that forces a strict, bulletproof block!
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        // Clean up allocation pointers safely
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+        return 1; // Success! The application has closed, file is written and unlocked.
+    }
+
+    return 0;
+}
+
 #else
+
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+#ifdef MACOS
+#include <copyfile.h>
+#else
+#include <sys/sendfile.h>
+#endif
+
+/**
+ * Native Unix File Copying Utility.
+ * Bypasses the system shell entirely for pure, fast, in-memory streams.
+ * Returns 1 on success, 0 on failure.
+ */
+int NativeUnixCopy(const char* srcPath, const char* destPath) {
+#ifdef __APPLE__
+    // macOS provides a dedicated high-performance copy API natively
+        return (copyfile(srcPath, destPath, NULL, COPYFILE_ALL) == 0);
+#else
+    // Linux (Arch, Ubuntu, etc.) leverages Zero-Copy kernel pipelines via sendfile
+    int srcFd = open(srcPath, O_RDONLY);
+    if (srcFd < 0) return 0;
+
+    // Open destination file with full write, create, and truncate privileges
+    int destFd = open(destPath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (destFd < 0) {
+        close(srcFd);
+        return 0;
+    }
+
+    // Get the source file size to instruct the kernel stream boundaries
+    struct stat stat_buf;
+    fstat(srcFd, &stat_buf);
+
+    // Core transfer execution happens completely inside kernel RAM
+    ssize_t bytesSent = sendfile(destFd, srcFd, NULL, stat_buf.st_size);
+
+    close(srcFd);
+    close(destFd);
+
+    return (bytesSent == stat_buf.st_size);
+#endif
+}
+
+
+/**
+ * Helper to check if a file exists on Unix filesystems.
+ */
+int UnixFileExists(const char* path) {
+    struct stat buffer;
+    return (stat(path, &buffer) == 0);
+}
+
+/**
+ * Finds the physical ODAFileConverter path on Linux/Mac and runs it synchronously.
+ * Completely blocks until the DXF data is written and unlocked!
+ * Returns 1 on success, 0 if missing.
+ */
+int RunODADirectlyUnix(const char* src_dir, const char* out_dir, const char* file_filter) {
+    char realExePath[1024] = {0};
+    FILE* fp;
+
+    // 1. DISCOVER THE BINARY PATH INSTANTLY
+    // On Mac/Linux, standard installers place a symlink straight into /usr/bin/
+    if (UnixFileExists("/usr/bin/ODAFileConverter")) {
+        strcpy(realExePath, "/usr/bin/ODAFileConverter");
+    }
+    // Fallback: Query the system path environment using 'which'
+    else {
+        fp = popen("which ODAFileConverter 2>/dev/null", "r");
+        if (fp != NULL) {
+            if (fgets(realExePath, sizeof(realExePath), fp) != NULL) {
+                // Strip the trailing newline character
+                realExePath[strcspn(realExePath, "\r\n")] = '\0';
+            }
+            pclose(fp);
+        }
+    }
+
+    // Safety check: If ODA is not installed on the system, abort and use LibreDWG
+    if (strlen(realExePath) == 0) {
+        return 0;
+    }
+
+    // 2. EXECUTE SYNCHRONOUSLY VIA NATIVE FORK/EXECV BLOCK
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        return 0; // Fork failed
+    }
+
+    if (pid == 0) {
+        // --- CHILD PROCESS SPACE ---
+        // Prepare your exact 7 positional argument tokens matching ODA CLI standard
+        char* args[] = {
+            realExePath,
+            (char*)src_dir,
+            (char*)out_dir,
+            "ACAD2010",       // Target version standard
+            "DXF",            // Target format standard
+            "0",              // Recursive flag (off)
+            "1",              // Audit check validation flag (on)
+            (char*)file_filter,
+            NULL              // Array must end with a NULL sentinel pointer
+        };
+
+        // Suppress output stream noise by redirecting stdout/stderr to devnull
+        // This ensures the converter runs completely invisibly in your backend console
+        freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+
+        // Execute the binary natively! This replaces the child process space.
+        execv(realExePath, args);
+
+        // If execv reaches this point, execution failed
+        exit(1);
+    }
+    else {
+        // --- PARENT PROCESS SPACE (AlfaCAD Core) ---
+        int status;
+        // The single native Unix command that perfectly blocks until completion!
+        waitpid(pid, &status, 0);
+
+        // Check if the child exited cleanly with code 0
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            return 1; // Success! The DXF is fully written on disk and unlocked.
+        }
+    }
+
+    return 0;
+}
+
+
 #endif
 
 #ifdef LINUX
@@ -4152,7 +4478,7 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 
     strcpy(script, strFunct);
     ptr_str=strstr(script, ".exe");
-    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "frame3ddnp.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
+    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "ODAFileConverter.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "frame3ddnp.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
     || (strcmp(strFunct, "gmsh.exe")==0) || (strcmp(strFunct, "ElmerGrid.exe")==0) || (strcmp(strFunct, "ElmerSolver.exe")==0))
     {
         if (ptr_str != NULL) {
@@ -4211,6 +4537,102 @@ DWORD SystemSilent(char* strFunct, char* strstrParams)
 
     return ret;  //TO CHECK
 }
+
+DWORD SystemSilentH_1(char* strFunct, char* strstrParams)
+{
+	int ret;
+	char command[MAXPATH * 3];
+
+	// Ensure our high-level input/output/filename variables stay clean
+	// and untouched by your Python/C formatting loops!
+#ifdef __APPLE__
+	// 🍏 macOS Headless Fix: Prepend the offscreen environment override variable
+	// String evaluates to: QT_QPA_PLATFORM=offscreen "/Applications/.../ODAFileConverter" params
+	sprintf(command, "QT_QPA_PLATFORM=offscreen \"%s\" %s", strFunct, strstrParams);
+#elif defined(LINUX)
+	// 🐧 Linux Headless Fix: Route execution through the virtual framebuffer runner wrapper
+	// String evaluates to: xvfb-run "ODAFileConverter" params
+	sprintf(command, "xvfb-run \"%s\" %s", strFunct, strstrParams);
+#else
+	// Windows fallback
+	sprintf(command, "\"%s\" %s", strFunct, strstrParams);
+#endif
+
+	printf("Executing Headless Command: %s\n", command);
+	ret = system(command);
+
+	return ret;
+}
+
+DWORD SystemSilentH_2(char* strFunct, char* strstrParams)
+{
+	int ret;
+	char command[MAXPATH * 3];
+
+#ifdef __APPLE__
+	// 🍏 macOS Headless Fix: Use the official 'env' utility to safely pass the variable!
+	// This satisfies Apple's Library Validation checks and stops the immediate crash.
+	sprintf(command, "env QT_QPA_PLATFORM=offscreen \"%s\" %s", strFunct, strstrParams);
+#elif defined(LINUX)
+	// 🐧 Linux Headless Fix: Route execution through the virtual framebuffer runner wrapper
+	sprintf(command, "xvfb-run \"%s\" %s", strFunct, strstrParams);
+#else
+	// Windows fallback (Not used since your native CreateProcess handles it)
+	sprintf(command, "\"%s\" %s", strFunct, strstrParams);
+#endif
+
+	printf("Executing Headless Command: %s\n", command);
+	ret = system(command);
+
+	return ret;
+}
+
+DWORD SystemSilentH_3(char* strFunct, char* strstrParams)
+{
+	int ret;
+	char command[MAXPATH * 3];
+
+#if defined(__APPLE__) || defined(LINUX)
+	// 🍏 🐧 The Cross-Platform Unix Solution:
+	// We let ODA boot normally, but trap its entire process context stream.
+	// This suppresses the flashing window natively and is 100% immune to Qt initialization crashes!
+	sprintf(command, "\"%s\" %s >/dev/null 2>&1", strFunct, strstrParams);
+#else
+	// Windows fallback
+	sprintf(command, "\"%s\" %s", strFunct, strstrParams);
+#endif
+
+	printf("Executing Silent Headless Command: %s\n", command);
+	ret = system(command);
+
+	return ret;
+}
+
+DWORD SystemSilentH(char* strFunct, char* strstrParams)
+{
+	int ret;
+	char command[MAXPATH * 3];
+
+#if defined(__APPLE__) || defined(LINUX)
+	// 💡 THE CAPTURE FIX: Instead of throwing logs away via >/dev/null,
+	// pipe standard error (2>) straight into an explicit text file inside your sandbox!
+	// This suppresses visual window popups while preserving the true diagnostic error text.
+#ifdef MACOS
+	sprintf(command, "\"%s\" %s 2>/private/tmp/alfacad_sandbox/oda_error.log", strFunct, strstrParams);
+#else
+	sprintf(command, "\"%s\" %s 2>/tmp/alfacad_sandbox/oda_error.log", strFunct, strstrParams);
+#endif
+#else
+	// Windows path handles process parameters directly
+	sprintf(command, "\"%s\" %s", strFunct, strstrParams);
+#endif
+
+	printf("Executing Monitored Command: %s\n", command);
+	ret = system(command);
+
+	return ret;
+}
+
 
 DWORD SystemSilentS(char* strstrParams)
 {

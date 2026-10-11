@@ -1513,6 +1513,13 @@ extern char  *icon_from_designed_terrain_p;
 extern char *icon_change_ref_angle_p;
 extern char *icon_pan_and_zoom_p;
 
+extern char *icon_pinx_p;
+extern char *icon_piny_p;
+extern char *icon_pinz_p;
+extern char *icon_rigidx_p;
+extern char *icon_rigidy_p;
+extern char *icon_rigidz_p;
+
 extern char *icon_wheel_zoom_rate_p;
 extern char *icon_keys_zoom_rate_p;
 
@@ -3667,6 +3674,7 @@ static char *get_icons_p(int number)
         /*974*/   icon_wheel_zoom_rate_p, icon_keys_zoom_rate_p, icon_pan_and_zoom_p,
         /*977*/   icon_UA_A_p, icon_UA_VE_p, icon_UA_HE_p, icon_UA_GE_p, icon_UA_JE_p, icon_UA_ZHE_p, icon_UA_ZE_p, icon_UA_Y_p, icon_UA_JI_p,
         /*986*/   icon_UA_EL_p, icon_UA_EM_p, icon_UA_U_p, icon_UA_EF_p, icon_UA_KHA_p, icon_UA_CHE_p, icon_UA_SHA_p, icon_UA_SHCHA_p, icon_UA_JU_p,
+        /*995*/   icon_pinx_p, icon_piny_p, icon_pinz_p, icon_rigidx_p, icon_rigidy_p, icon_rigidz_p,
     };
    
 	if (number>1999)
@@ -4455,7 +4463,12 @@ void draww(TMENU  *menu)
 				{   
 					typ_l=menu->foff + i;
 					linestyle(typ_l+64);
-					ret=lineCuncut ((w)/2,yt+(HEIGHT * SKALA / 2) - 1, w-(GR+2), yt+(HEIGHT * SKALA / 2) - 1);
+                    if (typ_l==1)
+                    {
+                        int a=0;
+                    }
+                    ret=lineCuncut ((w)/2,yt+(HEIGHT * SKALA / 2) - 1, w-(GR+2), yt+(HEIGHT * SKALA / 2) - 1);
+                    //ret=lineC ((w)/2,yt+(HEIGHT * SKALA / 2) - 1, w-(GR+2), yt+(HEIGHT * SKALA / 2) - 1);
 
 					ptrsz_temp+=2;
 				}
@@ -8383,10 +8396,14 @@ int inukeys(TMENU *menu)
 #define PASTECLIP 2070
 #define COPYCLIP 2051
 #define DEGREESIGN 176
+#define PROMILLE 0x2030
 #define SUPERSCRIPT4 0x2074
 #define TRADEMARK 0x2122
 #define ROOTSIGN 0x221A
 #define ROOT3SIGN 0x221B
+#define ROUNDSIGN 0x2248  //to do
+#define LESSEQUALS 0x2264
+#define GREATEREQUALS 0x2265
 #define EUROSIGN 0x20AC
 #define SUPERSCRIPT3 179
 #define SUPERSCRIPT2 178
@@ -8554,11 +8571,19 @@ int inukeys(TMENU *menu)
 				if ((key[KEY_ALT] || altkey) && key[KEY_BACKSLASH]) { clear_keybuff(); return ucatch(ROOTSIGN); }
 				if ((key[KEY_ALT] || altkey) && key[KEY_2]) { clear_keybuff();  return ucatch(SUPERSCRIPT2); }
 				if ((key[KEY_ALT] || altkey) && key[KEY_MINUS]) { clear_keybuff();  return ucatch(PLUSMINUS); }
+
+                if ((key[KEY_ALT] || altkey) && key[KEY_EQUALS]) { clear_keybuff();  return ucatch(ROUNDSIGN); }  //new
+
 				if ((key[KEY_ALT] || altkey) && key[KEY_SLASH]) { clear_keybuff();  return ucatch(DIVISION); }
-				if ((key[KEY_ALT] || altkey) && key[KEY_STOP]) { clear_keybuff();  return ucatch(MIDDLEDOT); }
+
+                if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_STOP]) { clear_keybuff();  return ucatch(MIDDLEDOT); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_STOP]) { clear_keybuff();  return ucatch(LESSEQUALS); }
+                if ((key[KEY_ALT] || altkey) && key[KEY_COMMA]) { clear_keybuff();  return ucatch(GREATEREQUALS); }
+
 				if ((key[KEY_ALT] || altkey) && key[KEY_1]) { clear_keybuff();  return ucatch(ONEHALF); }
-				if ((key[KEY_ALT] || altkey) && key[KEY_5]) { clear_keybuff();  return ucatch(ONEQUARTER); }
+				if ((key[KEY_ALT] || altkey) && key[KEY_5]) { clear_keybuff();  return ucatch(PROMILLE); }
 				if ((key[KEY_ALT] || altkey) && key[KEY_6]) { clear_keybuff();  return ucatch(THREEQUARTERS);}
+                if ((key[KEY_ALT] || altkey) && key[KEY_7]) { clear_keybuff();  return ucatch(ONEQUARTER);}
 				if ((key[KEY_ALT] || altkey) && key[KEY_0]) { clear_keybuff();  return ucatch(DIAMETERSIGN); }
 
 				if ((key[KEY_LSHIFT] || (key_shifts & KB_CAPSLOCK_FLAG)) && (key[KEY_ALT] || altkey) && key[KEY_A]) { clear_keybuff();  return ucatch(CAPITALALPHASIGN); } ////
@@ -10149,7 +10174,7 @@ void ch_edge (void)
     baronoff(&mInfoAboutA);
 }
 
-int point_type[]={0, 1, 8, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
+int point_type[]={0, 1, 8, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46};
 
 void ch_ptype (void) {
     int n;
@@ -10488,7 +10513,7 @@ int vector_icon[]={723, 724, 725, 726, 727, 728, 729, 730, 731, 732, 733, 734, 7
                    880, 881, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891, 893, 894};
 
 int edge_icon[]={0, 0, 0, 0, 849, 851, 850, 852};
-int point_icon[]={294, 295, 294, 294, 294, 294, 294, 529, 296, 969, 970, 971, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818, 870, 871, 872, 873, 874, 875, 876, 877};
+int point_icon[]={294, 295, 294, 294, 294, 294, 294, 529, 296, 969, 970, 971, 738, 739, 740, 754, 741, 742, 743, 755, 744, 745, 746, 756, 747, 748, 749, 757, 818, 870, 871, 872, 873, 874, 875, 876, 877, 995, 996, 997, 998, 999, 1000};
 extern char *vector_txt[];
 extern char *point_txt[];
 

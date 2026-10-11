@@ -239,6 +239,10 @@ extern void near uaktualnij_pola(void);
 extern void null_all_ctx_pointers(void);
 
 extern DWORD RunSilent(char* strFunct, char* strstrParams);
+extern DWORD SystemSilent(char* strFunct, char* strstrParams);
+extern DWORD SystemSilentH(char* strFunct, char* strstrParams);
+extern DWORD SystemSilentWait(char* strFunct, char* strstrParams);
+extern int ExecuteShortcutSynchronously(const char* lnkPath, const char* arguments);
 extern int czytaj_dxf_header(char* fn, DXF_Header* dxf_header);
 extern int GetDXFParams(DXF_Header* head);
 extern BOOL Delete_File(char* ptrsz_fnd);
@@ -362,8 +366,19 @@ extern void Destroy_Hatch_Patterns(void);
 
 extern void free_cursors(void);
 
+extern int FindODAFileConverter(char* outPath, size_t maxLen);
+extern int FindInMuiCache(char* outPath, size_t maxLen);
+extern int FileExists(const char* path);
+extern int FindODAFileConverterByMSI(char* outPath, size_t maxLen);
+extern int FindODAByStartMenuShortcut(char* outPath, size_t maxLen);
+extern int PlatformMoveFileOverwrite(const char* srcPath, const char* destPath);
+
 #ifdef LINUX
 extern void cleanup_shared_memory(void);
+extern int RunODADirectlyUnix(const char* src_dir, const char* out_dir, const char* file_filter);
+extern int NativeUnixCopy(const char* srcPath, const char* destPath);
+#else
+extern int RunODADirectly(const char* src_dir, const char* out_dir, const char* file_filter);
 #endif
 
 #ifdef MACOS
@@ -2793,6 +2808,19 @@ char *icon_wheel_zoom_rate_p;
 char *icon_keys_zoom_rate_p;
 char *icon_pan_and_zoom_p;
 
+BITMAP *icon_pinx;
+BITMAP *icon_piny;
+BITMAP *icon_pinz;
+BITMAP *icon_rigidx;
+BITMAP *icon_rigidy;
+BITMAP *icon_rigidz;
+char *icon_pinx_p;
+char *icon_piny_p;
+char *icon_pinz_p;
+char *icon_rigidx_p;
+char *icon_rigidy_p;
+char *icon_rigidz_p;
+
 BITMAP *dump_bitmap[MAX_NUMBER_OF_WINDOWS+1] = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 							};
@@ -2882,8 +2910,27 @@ typedef enum DWG_ERROR
 
 } Dwg_Error;
 
-char* DwgErrorList[] = { "NOERR",/* sorted by severity */"WRONG CRC","NOT YET SUPPORTED","UNHANDLED CLASS","INVALID TYPE","INVALID HANDLE","INVALIDEED","VALUE OUT OF BOUNDS",
-/* -------- critical errors ------- */"CLASSES NOT FOUND","SECTION NOT FOUND","PAGE NOT FOUND","INTERNAL ERROR","INVALID DWG","IO ERROR","OUT OF MEM" };
+
+/*
+char* DwgErrorList[] = { "NOERR",
+ // sorted by severity
+ "WRONG CRC",  //1
+ "NOT YET SUPPORTED", //2
+ "UNHANDLED CLASS",  //4
+ "INVALID TYPE",  //8
+ "INVALID HANDLE",  //16
+ "INVALIDEED",  //32
+ "VALUE OUT OF BOUNDS",  //64
+// -------- critical errors -------
+ "CLASSES NOT FOUND",  //128
+ "SECTION NOT FOUND", //256
+ "PAGE NOT FOUND",  //512
+ "INTERNAL ERROR",  //1024
+ "INVALID DWG",  //2048
+ "IO ERROR",  //4096
+ "OUT OF MEM"  //8192
+};
+*/
 
 #ifdef PROFILE
 #define O1 1
@@ -4212,18 +4259,40 @@ void dxf_out (void)
 void Uaktualnij (void);
 BOOL Uaktualnij_ (void);
 
+
+
 void DwgIn(void)
 {
-	char sk[MAXPATH] = "";
-	char skala_dxf1[MaxTextLen] = "100";
-	char parametr[80] = "";
-	int key;
-	int retval_no = 1;
-	char params[128];
-	unsigned long runcode;
-	char error_str_code[72];
-	BOOL ret;
-	DXF_Header dxf_header;
+
+    char sk[MAXPATH] = "";
+    char skala_dxf1[MaxTextLen] = "100";
+    char parametr[80] = "";
+    int key;
+    int retval_no = 1;
+    char params[1024];
+    unsigned long runcode;
+    char error_str_code[72];
+    BOOL ret;
+    DXF_Header dxf_header;
+
+    // Fixed platform buffers expanded to match modern OS path sizes
+    char dir__[1024] = "";
+    char drive__[256] = "";
+    char file__[1024] = "";
+    char ext__[256] = "";
+    int flags;
+
+    // Moved up here so they are permanently safe for post-conversion file handling
+    char src_dir[1024] = "";
+    char file_filter[256] = "";
+    char out_dir[1024] = "";
+    char in_path[1024] = "";
+    char out_file[1024] = "";
+    char default_oda_error[1024] = "";
+    char default_oda_output[1024] = "";
+    char oda_binary_target[MAXPATH] = "";
+    char current_dir[MAXPATH] = "";
+
 
 	if (Change)
 	{
@@ -4243,31 +4312,319 @@ void DwgIn(void)
 		return;
 	}
 
+#define ODAFC
+
+#ifndef ODAFC
+
+    //deleting temporary file
+    if (my_file_exists((char*)ALFAIMPORTFILE))
+        unlink((char*)ALFAIMPORTFILE);
+
     //LibreDWG variant
     sprintf(params, "\"%s\" --as r2013 -y -v0 -o %s", sk, ALFAIMPORTFILE);  //r2013
 	runcode = RunSilent("dwg2dxf.exe", params);
-	runcode &= 8191;
-	if (runcode > 0)
-	{
-		CUR_OFF(X, Y);
-		sprintf(error_str_code, "%s%lu", err_message_code, runcode);
-		for (int i = 1; i < 13; i++)
-		{
-			if (runcode & (int)pow(2, i))
-			{
-				if (strlen(error_str_code) < 48)
-				{
-					strcat(error_str_code, "-");
-					strcat(error_str_code, DwgErrorList[i]);
-				}
-			}
-		}
-//WRONG CRC,NOT YET SUPPORTED,UNHANDLED CLASS,INVALID TYPE,INVALID HANDLE,INVALIDEED,VALUE OUT OF BOUNDS,CLASSES NOT FOUND,SECTION NOT FOUND,PAGE NOT FOUND,INTERNAL ERROR,INVALID DWG, IO ERROR, OUT OF MEM
-		ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
-		CUR_ON(X, Y);
-		return;
-	}
 
+#ifdef LINUX
+ // 💡 THE UNIX FIX: Extract the true exit code using the standard POSIX macro!
+ int true_exit_code = (int)(runcode & 16383);
+#else
+    // Windows returns the clean exit status directly from its runtime process threads
+ int true_exit_code = (int)(runcode & 16383);
+#endif
+
+ if (true_exit_code > 0)
+{
+    CUR_OFF(X, Y);
+    // Print the true translated integer code on screen
+    sprintf(error_str_code, "%s%d", err_message_code, true_exit_code);
+
+    // Iterate through your bitwise DwgErrorList flags safely
+    for (int i = 1; i <= 14; i++)
+    {
+     int current_bit_mask = (1 << (i - 1));
+     if (true_exit_code & current_bit_mask)
+     {
+      if (strlen(error_str_code) < 48)
+      {
+       strcat(error_str_code, "-");
+       strcat(error_str_code, DwgErrorList[i]);
+      }
+     }
+    }
+
+    // Draw the native warning popup panel safely on the designer's desktop
+    ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
+    CUR_ON(X, Y);
+    return;
+}
+
+#else
+
+ //deleting temporary file
+ if (my_file_exists((char*)ALFAIMPORTFILE))
+     unlink((char*)ALFAIMPORTFILE);
+
+ flags=fnsplit (sk, drive__, dir__, file__, ext__);
+
+ if (getcwd(current_dir, MAXPATH) != NULL) {
+  printf("Current directory: %s\n", current_dir);
+ }
+
+#ifdef LINUX   //including MACOS
+#ifdef MACOS
+    // macOS: Target the absolute physical container path to clear sandbox rules
+    strcpy(src_dir, "/private/tmp/alfacad_sandbox");
+    strcpy(oda_binary_target, "/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileConverter");
+#else
+    // Linux (Arch, Ubuntu, etc.): Target the standard root global system folder
+    strcpy(src_dir, "/tmp/alfacad_sandbox");
+    strcpy(oda_binary_target, "ODAFileConverter");
+#endif
+
+// Create your isolated, space-free sandbox layout folder on disk
+    mkdir(src_dir, 0777);
+    sprintf(out_dir, "%s", src_dir);
+
+    sprintf(in_path, "%s/temp_work.dwg", src_dir);
+    sprintf(out_file, "temp_work.dxf");
+    sprintf(file_filter,"temp_work.dwg");
+    sprintf(default_oda_output, "%s/%s", out_dir, out_file);
+    sprintf(default_oda_error, "%s.err", default_oda_output); // "/private/tmp/alfacad_sandbox/temp_work.dxf.err"
+
+    if (my_file_exists(default_oda_error)) unlink(default_oda_error);
+
+    if (NativeUnixCopy(sk, in_path)>0) {
+        ////sprintf(params, "\"%s\" \"%s\" \"ACAD2010\" \"DXF\" \"0\" \"1\" \"%s\"", src_dir, out_dir, file_filter);
+        sprintf(params, "%s %s ACAD2010 DXF 0 1 %s", src_dir, out_dir, file_filter); // ✅ Fixes the ODA space bug!
+        runcode = SystemSilentH(oda_binary_target, params);
+
+        hibernate=0;
+
+        if (runcode==0)
+        {
+         // --- POST-CONVERSION EVALUATION ---
+         if (my_file_exists(default_oda_error))
+         {
+          printf("ODA Conversion Failed! Internal error log detected.\n");
+
+          // Optional: Extract the first line of the error file to read "Invalid group code"
+          FILE* errFp = fopen(default_oda_error, "r");
+          if (errFp != NULL) {
+           char OdaErrMsg[128] = {0};
+           // Read the first line of text to skip the header message
+           if (fgets(OdaErrMsg, sizeof(OdaErrMsg), errFp) != NULL) {
+            // Read line 2 which contains the true issue: "Invalid group code"
+            fgets(OdaErrMsg, sizeof(OdaErrMsg), errFp);
+            OdaErrMsg[strcspn(OdaErrMsg, "\r\n")] = '\0'; // Clean line endings
+            printf("ODA Error Message: %s\n", OdaErrMsg);
+
+            // If you want, you can format this message right into your error box:
+            // sprintf(error_str_code, "ODA: %s", OdaErrMsg);
+           }
+           fclose(errFp);
+          }
+
+          // Clean up the sandbox junk files safely
+          unlink(default_oda_error);
+          unlink(in_path);
+          if (my_file_exists(default_oda_output)) unlink(default_oda_output);
+
+          // 🔄 FORCE FALLBACK ROUTE STRAIGHT TO LIBREDWG
+          runcode = 1;
+         }
+         else
+         {
+          sprintf(default_oda_output, "%s/%s", out_dir, out_file);
+          if (NativeUnixCopy(default_oda_output, ALFAIMPORTFILE)) {
+           // Stream succeeded! The bytes are safely on your physical drive partition.
+           unlink(default_oda_output); }
+          else {
+           runcode =1;                // Copy failed (disk full, write permissions, etc.)
+          }
+         }
+        }
+    }
+    else runcode=1;
+
+     if (runcode>0)
+     {
+      // 2. FALLBACK: ODA is missing. Route the conversion safely to LibreDWG
+      printf("ODA missing. Falling back to LibreDWG...\n");
+
+      sprintf(params, "\"%s\" --as r2013 -y -v0 -o \"%s\"", sk, ALFAIMPORTFILE);
+      runcode = RunSilent("dwg2dxf.exe", params);
+
+       // 💡 THE UNIX FIX: Extract the true exit code using the standard POSIX macro!
+       int true_exit_code = (int)(runcode & 16383);
+
+         if (true_exit_code > 0)
+         {
+             CUR_OFF(X, Y);
+             // Print the true translated integer code on screen
+             sprintf(error_str_code, "%s%d", err_message_code, true_exit_code);
+
+             // Iterate through your bitwise DwgErrorList flags safely
+             for (int i = 1; i <= 14; i++)
+             {
+                 int current_bit_mask = (1 << (i - 1));
+                 if (true_exit_code & current_bit_mask)
+                 {
+                     if (strlen(error_str_code) < 48)
+                     {
+                         strcat(error_str_code, "-");
+                         strcat(error_str_code, DwgErrorList[i]);
+                     }
+                 }
+             }
+
+             // Draw the native warning popup panel safely on the designer's desktop
+             ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
+             CUR_ON(X, Y);
+             return;
+         }
+
+     }
+
+#else
+
+#ifdef BIT64  //in 32bit only dwg2dxf is used
+ sprintf(src_dir,"%s%s",drive__,dir__);
+ //TRAP FIX: Strip the toxic trailing backslash added by fnsplit
+ int src_len = strlen(src_dir);
+ if (src_len > 0 && (src_dir[src_len - 1] == '\\' || src_dir[src_len - 1] == '/'))
+ {
+  // If it's a root drive path like "C:\", do not strip it!
+  if (!(src_len == 3 && src_dir[1] == ':'))
+  {
+   src_dir[src_len - 1] = '\0'; // Overwrite backslash with null terminator
+  }
+ }
+
+ sprintf(file_filter,"%s%s",file__,ext__);
+ sprintf(out_dir,"%s\\Temp", current_dir);
+ sprintf(out_file,"%s%s",file__,".dxf");
+ sprintf(default_oda_output, "%s\\%s", out_dir, out_file);
+ sprintf(default_oda_error, "%s.err", default_oda_output);
+
+ if (my_file_exists(default_oda_error)) unlink(default_oda_error);
+
+ if (RunODADirectly(src_dir, out_dir, file_filter))
+ {
+  // --- POST-CONVERSION EVALUATION ---
+  if (my_file_exists(default_oda_error))
+  {
+   printf("ODA Conversion Failed! Internal error log detected.\n");
+
+   // Optional: Extract the first line of the error file to read "Invalid group code"
+   FILE* errFp = fopen(default_oda_error, "r");
+   if (errFp != NULL) {
+    char OdaErrMsg[128] = {0};
+    // Read the first line of text to skip the header message
+    if (fgets(OdaErrMsg, sizeof(OdaErrMsg), errFp) != NULL) {
+     // Read line 2 which contains the true issue: "Invalid group code"
+     fgets(OdaErrMsg, sizeof(OdaErrMsg), errFp);
+     OdaErrMsg[strcspn(OdaErrMsg, "\r\n")] = '\0'; // Clean line endings
+     printf("ODA Error Message: %s\n", OdaErrMsg);
+
+     // If you want, you can format this message right into your error box:
+     // sprintf(error_str_code, "ODA: %s", OdaErrMsg);
+    }
+    fclose(errFp);
+   }
+
+   // Clean up the sandbox junk files safely
+   unlink(default_oda_error);
+   unlink(in_path);
+   if (my_file_exists(default_oda_output)) unlink(default_oda_output);
+
+   // 🔄 FORCE FALLBACK ROUTE STRAIGHT TO LIBREDWG
+   runcode = 1;
+  }
+  else
+  {
+   sprintf(default_oda_output, "%s\\%s", out_dir, out_file);
+   if (PlatformMoveFileOverwrite(default_oda_output, ALFAIMPORTFILE)) {
+    unlink(default_oda_output); runcode = 0; }
+   else runcode = 1;
+  }
+ }
+ else runcode=1;
+
+ hibernate=0;
+
+ if (runcode>0)
+ {
+  // 2. FALLBACK: ODA is missing. Route the conversion safely to LibreDWG
+  printf("ODA missing. Falling back to LibreDWG...\n");
+
+  sprintf(params, "\"%s\" --as r2013 -y -v0 -o \"%s\"", sk, ALFAIMPORTFILE);
+  runcode = RunSilent("dwg2dxf.exe", params);
+
+    // Windows returns the clean exit status directly from its runtime process threads
+    int true_exit_code = (int)(runcode & 16383);
+
+  if (true_exit_code > 0)
+    {
+        CUR_OFF(X, Y);
+        // Print the true translated integer code on screen
+        sprintf(error_str_code, "%s%d", err_message_code, true_exit_code);
+
+        // Iterate through your bitwise DwgErrorList flags safely
+        for (int i = 1; i <= 14; i++)
+        {
+         int current_bit_mask = (1 << (i - 1));
+         if (true_exit_code & current_bit_mask)
+         {
+          if (strlen(error_str_code) < 48)
+          {
+           strcat(error_str_code, "-");
+           strcat(error_str_code, DwgErrorList[i]);
+          }
+         }
+        }
+
+        // Draw the native warning popup panel safely on the designer's desktop
+        ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
+        CUR_ON(X, Y);
+        return;
+    }
+
+ }
+#else
+ sprintf(params, "\"%s\" --as r2013 -y -v0 -o \"%s\"", sk, ALFAIMPORTFILE);
+ runcode = RunSilent("dwg2dxf.exe", params);
+  // Windows returns the clean exit status directly from its runtime process threads
+ int true_exit_code = (int)(runcode & 16383);
+
+ if (true_exit_code > 0)
+    {
+        CUR_OFF(X, Y);
+        // Print the true translated integer code on screen
+        sprintf(error_str_code, "%s%d", err_message_code, true_exit_code);
+
+        // Iterate through your bitwise DwgErrorList flags safely
+        for (int i = 1; i <= 14; i++)
+        {
+         int current_bit_mask = (1 << (i - 1));
+         if (true_exit_code & current_bit_mask)
+         {
+          if (strlen(error_str_code) < 48)
+          {
+           strcat(error_str_code, "-");
+           strcat(error_str_code, DwgErrorList[i]);
+          }
+         }
+        }
+
+        // Draw the native warning popup panel safely on the designer's desktop
+        ret = ask_question(1, "", confirm, "", err_message, 12, error_str_code, 11, 1, 62);
+        CUR_ON(X, Y);
+        return;
+    }
+
+#endif
+#endif
+#endif
 
 	if (!czytaj_dxf_header(ALFAIMPORTFILE, &dxf_header))
 	{

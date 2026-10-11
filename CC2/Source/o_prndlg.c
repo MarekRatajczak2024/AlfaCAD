@@ -84,6 +84,8 @@ extern void lock_mouse(void);
 extern void _free_mouse(void);
 extern void dialog_cursor(int on);
 
+extern char *File_Ext(char *fn, char *fext);
+
 typedef unsigned long DWORD;
 
 DWORD SystemSilent(char* strFunct, char* strstrParams);
@@ -723,6 +725,11 @@ static LISTBOX listbox[3] =
     1, NULL, printer_types, LS_PRINTER_TYPE, 0
     }
 };
+
+	static void do_nothing(void)
+	{
+		return;
+	}
 
 void set_cups_printer_name(int no, CUPS_PRINTERS *cups_printer, BOOL defaultp, int p_counter)
 {
@@ -2225,8 +2232,15 @@ static int proc_dlg_prn_ini_date( int n)
   PRIV_PRN_WINDOW  *priv_prn_window;
   BOOL pro_set, pro_set1, pro_set2;
 
+	char drive[MAXDRIVE]="";
+	char dir[MAXDIR]="";
+	char file[MAXFILE]="";
+	char ext[MAXEXT]="";
+	int flags;
+
 
  int img_formats[] = { SAVE_BMP, SAVE_PNG, SAVE_JPEG, SAVE_TIFF, SAVE_PCX, SAVE_EPS, SAVE_PDF };
+ char img_format_ext[][6] = { "bmp", "png", "jpeg", "tiff", "pcx", "eps", "pdf" };
  char paper_format_x[NoPaperFormat][6] = {"0","297","210","420","297","594","420","841","594","1189","841","250","176","500","353","707","500","1000","707","1414","1000","279.4","215.9","431.8","279.4","559","432","864","559","1118","864","215.9","215.9"};
  char paper_format_y[NoPaperFormat][6]= {"0","210","297","297","420","420","594","594","841","841","1189","176","250","353","500","500","707","707","1000","1000","1414","215.9","279.4","279.4","431.8","432","559","559","864","864","1118","279.4","355.6"};
 
@@ -2237,18 +2251,33 @@ static int proc_dlg_prn_ini_date( int n)
 		{
 			if ((prn_ini_date.prn_type == PRN_PCX) || (prn_ini_date.prn_type == PRN_PDF))
 			{
+				flags = fnsplit(zbior_danych, drive, dir, file, ext);
+				strcpy (image_file_name, file /*""*/);
+
 				if (prn_ini_date.prn_type == PRN_PDF)
 				{
+					File_Ext (image_file_name, (char*)EXT__PDF) ;
 					if (Load_File(image_file_name, img_formats[6], TRUE) == FALSE)
 					{
 						ret = Dlg_Ret_Val_Cancel;
 						break;
 					}
 				}
-				else if (Load_File(image_file_name, img_formats[prn_ini_date.image_format_i], TRUE) == FALSE)
+				else
 				{
-					ret = Dlg_Ret_Val_Cancel;
-					break;
+                    if (prn_ini_date.image_format_i==4)  //pcx
+#ifdef MACOS
+						do_nothing();
+#else
+						File_Ext(image_file_name, img_format_ext[prn_ini_date.image_format_i]);
+#endif
+					else
+						File_Ext(image_file_name, img_format_ext[prn_ini_date.image_format_i]);
+					if (Load_File(image_file_name, img_formats[prn_ini_date.image_format_i], TRUE) == FALSE)
+					{
+						ret = Dlg_Ret_Val_Cancel;
+						break;
+					}
 				}
 				strcpy(prn_file, image_file_name);
 				ret = Dlg_Ret_Val_OK;

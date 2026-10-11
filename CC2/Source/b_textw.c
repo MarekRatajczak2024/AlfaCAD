@@ -38,18 +38,22 @@
 double INDEX_FACTOR = 0.6;
 BOOL TTF_printing = FALSE;
 double INDEX_SHIFT=0.15;
-
-int known_letters[]={8240, 8308, 8364, 8730, 8709, 8731, 8960};
+                       //promille sup4       euro      root   (diameter)   root3     diameter   round   lessequals
+int known_letters[]={8240, 8308, 8364, 8730, 8709, 8731, 8960, 8776, 8804, 8805};
 int known_letters_no=sizeof(known_letters)/sizeof(known_letters[0]);
 
 int known_bytes[][3]={
 	{226, 128, 176},
-	 {226, 129, 180},
+	{226, 129, 180},
 	{226, 130, 172},
 	{226, 136, 154},
     {226, 136, 133},
 	{226, 136, 155},
-	{226, 140, 128}};
+	{226, 140, 128},
+	{226, 137, 136},
+	{226, 137, 164},  //lessequals
+	{226, 137, 165},  //greaterequals
+	};
 
 int known_bytes_no=sizeof(known_bytes)/sizeof(known_bytes[0]);
 
@@ -886,7 +890,43 @@ double Get_Text_Matix_Len (TEXT *ptrs_text, char *ptrsz_t, double font_scale, in
                       //if (u8ptrsz_tmp == 8308) //⁴ e.g. m⁴
                       if (u8ptrsz_tmp > 1920)
                       {
-                          if (known3b((int)u8ptrsz_tmp)) //⁴ e.g. m⁴
+                          if (f_type == 1)
+                          {
+                              switch (u8ptrsz_tmp)
+                              {
+                                  case 8240:
+									  u8ptrsz_tmp=1901;
+                                      break;
+                                  case 8308:
+									  u8ptrsz_tmp=1902;
+                                      break;
+                                  case 8730:
+									  u8ptrsz_tmp=1903;
+                                      break;
+                                  case 8731:
+									  u8ptrsz_tmp=1904;
+                                      break;
+                                  case 8804:
+									  u8ptrsz_tmp=1905;
+                                      break;
+                                  case 8805:
+									  u8ptrsz_tmp=1906;
+                                      break;
+                                  case 8960:
+									  u8ptrsz_tmp=1907;
+                                      break;
+								  case 8364:  //euro
+									  u8ptrsz_tmp=1908;
+									  break;
+								  case 8776:  //approximately equal
+									  u8ptrsz_tmp=1909;
+									  break;
+                                  default:
+                                      break;
+                              }
+							  ptrsz_tmp+=2;
+                          }
+                          else if ((f_type > 1) && (known3b((int)u8ptrsz_tmp))) //⁴ e.g. m⁴
                               ptrsz_tmp+=2;
                           else
                           {
@@ -2010,7 +2050,44 @@ void outtextxy_w_(TEXT *t0, int mode)
 
                         if (u8zn > 1920)
                         {
-                            if (known3b(u8zn)) zn++;  //⁴ e.g. m⁴
+                            if (f_type == 1)
+                            {
+                                switch (u8zn)
+                                {
+                                    case 8240:
+                                        u8zn=1901;
+                                        break;
+                                    case 8308:
+                                        u8zn=1902;
+                                        break;
+                                    case 8730:
+                                        u8zn=1903;
+                                        break;
+                                    case 8731:
+                                        u8zn=1904;
+                                        break;
+                                    case 8804:  //lessequals
+                                        u8zn=1905;
+                                        break;
+                                    case 8805:  //greaterequals
+                                        u8zn=1906;
+                                        break;
+                                    case 8960:
+                                        u8zn=1907;
+                                        break;
+									case 8364:  //euro
+										u8zn=1908;
+										break;
+									case 8776:  //approximately equal
+										u8zn=1909;
+										break;
+                                    default:
+										u8zn=' ';
+                                        break;
+                                }
+                                zn++;
+                            }
+                            else if ((f_type > 1) && (known3b(u8zn))) zn++;  //⁴ e.g. m⁴
                             else
                             {
                                 u8zn = 32;

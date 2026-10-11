@@ -1,8 +1,8 @@
 #include "Z_section_US_si_standards.c"
 
 POLE pmZ_section_US_si[] = {
-{u8"ADM 2015",L' ',0,&mZ_section_US_si_0},
-{u8"ADM 2020",L' ',0,&mZ_section_US_si_1},
+{u8"ADM 2015\0Al",L' ',0,&mZ_section_US_si_0},
+{u8"ADM 2020\0Al",L' ',0,&mZ_section_US_si_1},
 {u8"AISI D100-17",L' ',0,&mZ_section_US_si_2},
 };
 

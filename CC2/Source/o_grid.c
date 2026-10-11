@@ -3941,8 +3941,8 @@ static int foo_test_aci_1() {
 }
 
 static double calculate_min_shear_ratio(double fck, double fyk, int is_aci) {
-    double fck_mpa = fck / 1e6;
-    double fyk_mpa = fyk / 1e6;
+    double fck_mpa = fck; // / 1e6;  it is already in MPa
+    double fyk_mpa = fyk; // / 1e6;  it is already in MPa
     double rho_min;
     if (is_aci) {
         // ACI approximation in MPa
@@ -7125,7 +7125,7 @@ void Grid_analysis(void) {
         if (TRUE == Check_Attribute(nag->atrybut, Ablok)) {
             p = (T_Point *) nag;
 
-            if ((p->typ > 11) && (p->typ < 37)) //all supports for isometric
+            if ((p->typ > 11) && (p->typ < 43)) //all supports for isometric  //37
             {
                 for (i = 0; i < st_node_no; i++)  //node1
                 {
@@ -7136,12 +7136,12 @@ void Grid_analysis(void) {
                             case 14:
                             case 15:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 ////restraint
                                 st_node[i].restraint=1;
@@ -7155,12 +7155,12 @@ void Grid_analysis(void) {
                             case 18:
                             case 19:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 0;
-                                st_reaction[i].yy = 0;
-                                st_reaction[i].zz = 0;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 0;  //formality
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
 
                                 st_reaction_X++;
                                 st_reaction_Y++;
@@ -7170,12 +7170,12 @@ void Grid_analysis(void) {
                             case 20:  //rigid with X and Y roll
                             case 23:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 0;
-                                st_reaction[i].y = 0;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 st_reaction_Z ++;
 
@@ -7185,12 +7185,12 @@ void Grid_analysis(void) {
                             case 21:  //rigid with Z roll
                             case 22:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 0;
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 0;
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 st_reaction_X ++;
                                 st_reaction_Y ++;
@@ -7201,12 +7201,12 @@ void Grid_analysis(void) {
                             case 24:  //hinged in xx, yy and zz with X and Y roll
                             case 27:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 0;
-                                st_reaction[i].y = 0;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 0;
-                                st_reaction[i].yy = 0;
-                                st_reaction[i].zz = 0;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
 
                                 st_reaction_Z ++;
 
@@ -7214,12 +7214,12 @@ void Grid_analysis(void) {
                             case 25:  //hinged in xx, yy and zz with Z roll
                             case 26:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 0;
-                                st_reaction[i].xx = 0;
-                                st_reaction[i].yy = 0;
-                                st_reaction[i].zz = 0;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 0;
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
 
                                 st_reaction_X++;
                                 st_reaction_Y++;
@@ -7227,12 +7227,12 @@ void Grid_analysis(void) {
                                 break;
                             case 28:  //rigid with X, Y and Z roll
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 0;
-                                st_reaction[i].y = 0;
-                                st_reaction[i].z = 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 ////restraint
                                 st_node[i].restraint=1;
@@ -7242,12 +7242,12 @@ void Grid_analysis(void) {
                             case 29:  //rigid with X roll
                             case 30:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 0;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 st_reaction_X++;
                                 st_reaction_Z++;
@@ -7257,12 +7257,12 @@ void Grid_analysis(void) {
                             case 31:  //rigid with Y roll
                             case 32:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 0;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 1;
-                                st_reaction[i].yy = 1;
-                                st_reaction[i].zz = 1;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
 
                                 st_reaction_X++;
 
@@ -7272,12 +7272,12 @@ void Grid_analysis(void) {
                             case 33:  //hinged in xx, yy and zz with X roll
                             case 34:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 0;
-                                st_reaction[i].y = 1;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 0;
-                                st_reaction[i].yy = 0;
-                                st_reaction[i].zz = 0;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 1;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
 
                                 st_reaction_Y++;
                                 st_reaction_Z++;
@@ -7287,15 +7287,95 @@ void Grid_analysis(void) {
                             case 35:  //hinged in xx, yy and zz with Y roll
                             case 36:
                                 st_reaction[i].active = 1;
-                                st_reaction[i].x = 1;
-                                st_reaction[i].y = 0;
-                                st_reaction[i].z = 1;
-                                st_reaction[i].xx = 0;
-                                st_reaction[i].yy = 0;
-                                st_reaction[i].zz = 0;
+                                st_reaction[i].x |= 1;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 1;
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
 
                                 st_reaction_X++;
                                 st_reaction_Z++;
+
+                                break;
+
+                            case 37:  // rigid with pin X, X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
+
+                                break;
+
+                            case 38:  // rigid with pin Y, X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
+
+                                break;
+                            case 39:  //rigid with pin Z, X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 0;
+
+                                ////restraint
+                                st_node[i].restraint=1;
+
+                                break;
+                            case 40:  //rigid X, pin Y, pin Z, with X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 1;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 0;
+
+                                ////restraint
+                                st_node[i].restraint=1;
+
+                                break;
+                            case 41:  //pin X, rigid Y, pin Z, with X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 1;
+                                st_reaction[i].zz |= 0;
+
+                                ////restraint
+                                st_node[i].restraint=1;
+
+                                break;
+                            case 42:  //pin X, pin Y, rigid Z, with X, Y and Z roll
+                                st_reaction[i].active = 1;
+                                st_reaction[i].x |= 0;
+                                st_reaction[i].y |= 0;
+                                st_reaction[i].z |= 0;   //WARNING: moving in local axis Z default could be necessary to be 1 due to geometric stiffness and dynamics
+                                st_reaction[i].xx |= 0;
+                                st_reaction[i].yy |= 0;
+                                st_reaction[i].zz |= 1;
+
+                                ////restraint
+                                st_node[i].restraint=1;
 
                                 break;
                         }

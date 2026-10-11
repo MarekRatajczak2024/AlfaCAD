@@ -749,6 +749,7 @@ u8"Tangencial", u8"Adyacente", u8"punto","----" };
 
 #define _PCX_FILE_ERROR_  u8"Error de escritura del archivo PCX"
 #define _PNG_FILE_ERROR_  u8"Error de escritura del archivo PNG"
+#define _JPG_FILE_ERROR_  u8"Error de escritura del archivo JPG"
 #define _UNKNOWN_IMAGE_FORMAT_ u8"Formato de archivo de imagen desconocido"
 #define _FILE_ u8"Archivo "
 #define _FILE_EXISTS_ u8" existe. ¿Sobrescribirlo? (Sí / No / Esc):"
@@ -999,6 +1000,12 @@ static char confirm[] = u8"Confirmar";
 #define _RT_SECTION_ u8"Ingrese h;b;t;c (altura; ancho; espesor de pared; recubrimiento axial"
 #define _PLATE_SECTION_ u8"Ingrese h;c (altura; recubrimiento axial"
 #define _SHIELD_SECTION_ u8"Ingrese t;c (espesor; recubrimiento axial"
+
+POLE pmFeC_Al[2] = {
+	{u8"Acero estructural",'A',0,NULL},
+	{u8"aluminio Extruido",'E',0,NULL} };
+
+static TMENU mFeC_Al = { 2,0,0,18,79,11,0,CMNU,CMBR,CMTX,0,4,0,0,0,(POLE(*)[]) &pmFeC_Al,NULL,NULL };
 
 #endif
 

@@ -110,6 +110,7 @@ extern void Set_Mouse_Speed(float m_speed);
 extern void getcolor_RGB(int *red, int *green, int *blue, int color);
 extern int cursor_color0;
 extern BOOL BAR_POINTER;
+extern int DRAWING_NUMBER;
 
 extern void set_sleep_state(BOOL state);
 extern void Set_Mouse_Wheel(int val_int);
@@ -1230,7 +1231,7 @@ BOOL Auto_Backup_Proc (void)
   {
     return b_retval;
   }
-  if (check_auto_backup () == TRUE)
+  if ((check_auto_backup () == TRUE) && (DRAWING_NUMBER!=MAX_NUMBER_OF_WINDOWS))
   {
     Cur_offd(X, Y);
     komunikat0 (49);

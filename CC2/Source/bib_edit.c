@@ -250,6 +250,7 @@ static int read_estr(void)
   BOOL b_graph_value, b_ret ;
   int ret;
   int tab = 1;
+  int single;
 
   unsigned bold;
   unsigned italics;
@@ -291,7 +292,100 @@ static int read_estr(void)
   }
 
   if (((et[np]->mode==GV_STRING) || (et[np]->mode == GV_STRING_D)) && (text_edit_dialog==TRUE)) {
-      ret=get_dialog_string(buf, 1, "", MaxTextLen*2, 0, 13, &tab);
+      if ((strstr(buf,"\\n")!=NULL) || (strchr(buf,'\n')!=NULL)) single=0;
+      else single=1;
+#ifndef LINUX
+  	/*
+  	//converting string to Windows format
+  	if (!single)
+  	{
+  		size_t dest_idx = 0;
+  		char *ptr_n = buf;
+  		char buf2 [MaxTextLen*2+1];
+  		buf2[0]='\0';
+
+  		while (*ptr_n != '\0')
+  		{
+  			// Ensure we have room for at least 2 characters (for '\n' -> '\\' + 'n') plus the null terminator
+  			if (dest_idx >= MaxTextLen*2 - 2) {
+  				break; // Stop to prevent buffer overflow
+  			}
+  			if ((*ptr_n == '\\') && (*(ptr_n+1)=='n'))
+  			{
+  				buf2[dest_idx++]='\r';
+  				buf2[dest_idx++]='\n';
+  				ptr_n+=2;
+  			}
+  			else
+  			{
+  				buf2[dest_idx++]=*ptr_n;
+  				ptr_n++;
+  			}
+  		}
+  		buf2[dest_idx] = '\0';
+  		ret=get_dialog_string(buf2, single, "", MaxTextLen*2, 0, 13, &tab);
+  		if (ret==1)  //copying back
+  			strcpy(buf, buf2);
+  	}
+  	else
+  		ret=get_dialog_string(buf, single, "", MaxTextLen*2, 0, 13, &tab);
+  	*/
+  	// Converting string to Windows format safely
+  	if (!single)
+  	{
+  		size_t dest_idx = 0;
+  		char *ptr_n = buf;
+
+  		// Allocate buf2 to match MaxTextLen * 2 + 1
+  		char buf2[MaxTextLen * 2 + 1];
+  		buf2[0] = '\0';
+
+  		while (*ptr_n != '\0')
+  		{
+  			// Safeguard against buffer overflow in buf2
+  			if (dest_idx >= (MaxTextLen * 2 - 2)) {
+  				break;
+  			}
+
+  			// Case 1: Handle escaped sequence "\\n"
+  			if (*ptr_n == '\\' && *(ptr_n + 1) == 'n')
+  			{
+  				buf2[dest_idx++] = '\r';
+  				buf2[dest_idx++] = '\n';
+  				ptr_n += 2;
+  			}
+  			// Case 2: Handle raw newline character '\n'
+  			else if (*ptr_n == '\n')
+  			{
+  				buf2[dest_idx++] = '\r';
+  				buf2[dest_idx++] = '\n';
+  				ptr_n++;
+  			}
+  			// Case 3: Regular characters
+  			else
+  			{
+  				buf2[dest_idx++] = *ptr_n;
+  				ptr_n++;
+  			}
+  		}
+  		buf2[dest_idx] = '\0';
+
+  		// Call MFC dialog
+  		ret = get_dialog_string(buf2, single, "", MaxTextLen * 2, 0, 13, &tab);
+
+  		// Copy back using strncpy to prevent overflowing the original 'buf'
+  		if (ret == 1) {
+  			strncpy(buf, buf2, MaxTextLen*2);
+  			buf[MaxTextLen*2] = '\0'; // Guarantee null-termination
+  		}
+  	}
+  	else
+  	{
+  		ret = get_dialog_string(buf, single, "", MaxTextLen * 2, 0, 13, &tab);
+  	}
+#else
+      ret=get_dialog_string(buf, single, "", MaxTextLen*2, 0, 13, &tab);
+#endif
       if (ret==-1) zn=TAB;
       else if (ret==0) zn=ESC;
       else zn=ENTER;

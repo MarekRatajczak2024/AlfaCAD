@@ -137,6 +137,9 @@ extern double stress_precision;
 
 extern TEXT TextG;
 
+extern int get_menu_level(void);
+extern int Simple_Menu_Proc(TMENU *menu);
+
 static int last_property_no=0;
 static unsigned char hidden_last=0;
 
@@ -248,7 +251,7 @@ TMENU mTimberCA = { 1,0,0,6,16,8,TADD | ICONS,CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[
 char *units_system_si="si";
 char *units_system_imp="imp";
 
-char *regions[]={"US", "EU", "UK"};
+char *regions[]={"US", "EU", "UK", "CA", "AU", "CN"};
 
 
 char *get_section_data(char *file_name,  int property_no, char *material, char *section, char *region, char *units_system, char *standard0, char *series0, char *manufacturer0, char *type0, char *species0, char *moisture0)
@@ -274,6 +277,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
     double m;
     int ret;
     char ERROR[128];
+    char mtrl[8]="";  //" (STL)", " (Al)", " (WD)", " (RC)"
 
     double h, b, tw, tf, hi, r1, r2, b1, dw, k, kdes, kdet, k1, ss,
             sf, A, Iy, Iz,Ip, iy, iz,
@@ -281,7 +285,6 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             iw, Ww, Sw_max, c_tf, c_tw, Wpl_y, Wpl_z, Wpl_w, Wpl_y_webs, Wpl_z_flanges,
             apl_y, apl_z, apl_w, Apl_y, Apl_z, Npl, Vpl_y, Vpl_z, Mpl_y, Mpl_z,
              Nu, Gw, Am, V, Am_V, Aw, d0,  w, w1, bt, bb, bf, t, ha, ba, ab, c, c1, r3, ri, sw;
-
 
     strcpy(section_data,"");
 
@@ -553,46 +556,201 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
                         a = 5.0e-6;
                     }
                 }
-            } else if (strcmp(material, "Steel") == 0)
+            }
+            else if (strcmp(material, "Steel") == 0)
             {
-                if (strcmp(units_system, units_system_si) == 0) {
-                    if (strcmp(region, "US") == 0) {
-                        E = 200.0;
-                        G = 77.2;
-                        d = 7850.0;
-                        a = 1.4e-5;
-                    } else if (strcmp(region, "EU") == 0) {
-                        E = 210.0;
-                        G = 81.0;
-                        d = 7850.0;
-                        a = 1.2e-5;
-                    } else  //globally
-                    {
-                        E = 210.0;
-                        G = 81.0;
-                        d = 7850.0;
-                        a = 1.2e-5;
-                    }
+                BOOL dual_material=0;
+                BOOL aluminium=0;
+                //here we can make a choice between steel and aluminium
+                if (strcmp(region,"US")==0)
+                {
+                    char *ptr_AMD_2015 = strstr(standard,"ADM 2015");
+                    char *ptr_AMD_2020 = strstr(standard,"ADM 2020");
+                    if ((ptr_AMD_2015!=NULL) || (ptr_AMD_2020!=NULL)) aluminium = 1;
 
-                } else {
-                    if (strcmp(region, "US") == 0) {
-                        E = 29000000.0;  // 29,000,000 psi
-                        G = 11200000.0;  // 11,200,000 psi
-                        d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
-                        a = 1.4e-5;
-                    } else if (strcmp(region, "EU") == 0) {
-                        E = 30450000.0;  // 30,450,000 psi
-                        G = 11745000.0;  // 11,745,000 psi
-                        d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
-                        a = 1.2e-5;
-                    } else //globally
-                    {
-                        E = 30450000.0;  // 30,450,000 psi
-                        G = 11745000.0;  // 11,745,000 psi
-                        d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
-                        a = 1.2e-5;
-                    }
+                    char *ptr_BS_4 = strstr(standard,"BS 4");
+                    char *ptr_BS_EN_10056 = strstr(standard,"BS EN 10056");
+                    if ((ptr_BS_4!=NULL) || (ptr_BS_EN_10056!=NULL)) dual_material = 1;
+                }
+                else if (strcmp(region,"EU")==0)
+                {
+                    char *ptr_EN_10219=strstr(standard, "EN 10219");
+                    char *ptr_EN_10210=strstr(standard, "EN 10210");
+                    char *ptr_EN_10056=strstr(standard, "EN 10056");
+                    char *ptr_EN_10279=strstr(standard, "EN 10279");
+                    char *ptr_DIN_1026=strstr(standard, "DIN 1026");
+                    char *ptr_DIN_1028=strstr(standard, "DIN 1028");
+                    if ((ptr_EN_10219!=NULL) || (ptr_EN_10210!=NULL) || (ptr_EN_10056!=NULL) || (ptr_EN_10279!=NULL) || (ptr_DIN_1026!=NULL) || (ptr_DIN_1028!=NULL))
+                        dual_material=1;
+                }
+                if (strcmp(region,"UK")==0)
+                {
+                    char *ptr_BS_8118 = strstr(standard,"BS 8118");
+                    char *ptr_BS_EN_1999 = strstr(standard,"BS EN 1999");
+                    if ((ptr_BS_8118!=NULL) || (ptr_BS_EN_1999!=NULL)) aluminium = 1;
 
+                    char *ptr_BS_4 = strstr(standard,"BS 4");
+                    char *ptr_BS_EN_10056 = strstr(standard,"BS EN 10056");
+                    char *ptr_BS_EN_10210 = strstr(standard,"BS EN 10210");
+                    char *ptr_BS_EN_10219 = strstr(standard,"BS EN 10219");
+                    if ((ptr_BS_4!=NULL) || (ptr_BS_EN_10056!=NULL) || (ptr_BS_EN_10210!=NULL) || (ptr_BS_EN_10219!=NULL)) dual_material = 1;
+                }
+                if (strcmp(region,"CA")==0)
+                {
+                    char *ptr_CSA_S157 = strstr(standard,"CSA S157");
+                    if (ptr_CSA_S157!=NULL) aluminium = 1;
+
+                    char *ptr_CISC_9 = strstr(standard,"CISC 9");
+                    char *ptr_CISC_12 = strstr(standard,"CISC 12");
+                    if ((ptr_CISC_9!=NULL) || (ptr_CISC_12!=NULL)) dual_material = 1;
+                }
+                if (strcmp(region,"AU")==0)
+                {
+                    char *ptr_AS_NZS_1664 = strstr(standard,"AS/NZS 1664");
+                    if (ptr_AS_NZS_1664!=NULL) aluminium = 1;
+
+                    char *ptr_AS_NZS_3679 = strstr(standard,"AS/NZS 3679");
+                    if (ptr_AS_NZS_3679!=NULL) dual_material = 1;
+                }
+                if (strcmp(region,"CN")==0)
+                {
+                    char *ptr_GB_50429 = strstr(standard,"GB 50429");
+                    if (ptr_GB_50429!=NULL) aluminium = 1;
+
+                    char *ptr_GB_T_706 = strstr(standard,"GB/T 706");
+                    char *ptr_GB_T_6728 = strstr(standard,"GB/T 6728");
+                    if ((ptr_GB_T_706!=NULL) || (ptr_GB_T_6728!=NULL)) dual_material = 1;
+
+                }
+
+                if (dual_material==1)
+                {
+                    int menu_level_=get_menu_level();
+                    set_menu_level(menu_level_+1);
+                    menu_address[menu_level_]=(char*)&mFeC_Al;
+                    int n = Simple_Menu_Proc(&mFeC_Al);
+                    if (n)
+                    {
+                       if (n==1) aluminium=0;
+                       else aluminium=1;
+                    }
+                    else return NULL;
+                }
+
+                if (aluminium)
+                {
+                    strcpy(mtrl," (Al)");
+                    if (strcmp(units_system, units_system_si) == 0)
+                    {
+                        if (strcmp(region, "US") == 0) {
+                            E = 69.0;
+                            G = 26.0;
+                            d = 2700.0;
+                            a = 2.3e-5;
+                        } else if (strcmp(region, "EU") == 0 || strcmp(region, "UK") == 0) {
+                            E = 70.0;
+                            G = 27.0;
+                            d = 2700.0;
+                            a = 2.3e-5;
+                        } else if (strcmp(region, "CA") == 0) {
+                            E = 70.0;
+                            G = 26.0;
+                            d = 2700.0;
+                            a = 2.4e-5;
+                        } else if (strcmp(region, "AU") == 0) {
+                            E = 70.0;
+                            G = 26.0;
+                            d = 2710.0;
+                            a = 2.3e-5;
+                        } else if (strcmp(region, "CN") == 0) {
+                            E = 70.0;
+                            G = 26.0;
+                            d = 2700.0;
+                            a = 2.3e-5;
+                        } else  //globally
+                        {
+                            E = 70.0;
+                            G = 26.0;
+                            d = 2700.0;
+                            a = 2.3e-5;
+                        }
+                    } else
+                    {
+                        if (strcmp(region, "US") == 0) {
+                            E = 10000000.0;  // 10,000,000 psi
+                            G = 3800000.0;   // 3,800,000 psi
+                            d = 0.000253565; // 0.098 lbf/in³/g (Weight density)
+                            a = 2.3e-5;      // Enforced Celsius baseline
+                        } else if (strcmp(region, "EU") == 0 || strcmp(region, "UK") == 0) {
+                            E = 10150000.0;  // 10,150,000 psi
+                            G = 3915000.0;   // 3,915,000 psi
+                            d = 0.000253565; // 0.098 lbf/in³/g (Weight density)
+                            a = 2.3e-5;
+                        } else if (strcmp(region, "CA") == 0) {
+                            E = 10150000.0;  // 10,150,000 psi
+                            G = 3770000.0;   // 3,770,000 psi
+                            d = 0.000253565; // 0.098 lbf/in³/g (Weight density)
+                            a = 2.4e-5;
+                        } else if (strcmp(region, "AU") == 0) {
+                            E = 10150000.0;  // 10,150,000 psi
+                            G = 3770000.0;   // 3,770,000 psi
+                            d = 0.000254504; // 0.0984 lbf/in³/g (Weight density)
+                            a = 2.3e-5;
+                        } else if (strcmp(region, "CN") == 0) {
+                            E = 10150000.0;  // 10,150,000 psi
+                            G = 3770000.0;   // 3,770,000 psi
+                            d = 0.000253565; // 0.098 lbf/in³/g (Weight density)
+                            a = 2.3e-5;
+                        } else //globally
+                        {
+                            E = 10150000.0;  // 10,150,000 psi
+                            G = 3770000.0;   // 3,770,000 psi
+                            d = 0.000253565; // 0.098 lbf/in³/g (Weight density)
+                            a = 2.3e-5;
+                        }
+                    }
+                }
+                else
+                {
+                    if (strcmp(units_system, units_system_si) == 0)
+                    {
+                        if (strcmp(region, "US") == 0) {
+                            E = 200.0;
+                            G = 77.2;
+                            d = 7850.0;
+                            a = 1.4e-5;
+                        } else if (strcmp(region, "EU") == 0) {
+                            E = 210.0;
+                            G = 81.0;
+                            d = 7850.0;
+                            a = 1.2e-5;
+                        } else  //globally
+                        {
+                            E = 210.0;
+                            G = 81.0;
+                            d = 7850.0;
+                            a = 1.2e-5;
+                        }
+                    } else
+                    {
+                        if (strcmp(region, "US") == 0) {
+                            E = 29000000.0;  // 29,000,000 psi
+                            G = 11200000.0;  // 11,200,000 psi
+                            d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
+                            a = 1.4e-5;
+                        } else if (strcmp(region, "EU") == 0) {
+                            E = 30450000.0;  // 30,450,000 psi
+                            G = 11745000.0;  // 11,745,000 psi
+                            d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
+                            a = 1.2e-5;
+                        } else //globally
+                        {
+                            E = 30450000.0;  // 30,450,000 psi
+                            G = 11745000.0;  // 11,745,000 psi
+                            d = 0.000734588;       // 0.284 lbf/in³/g (Weight density)
+                            a = 1.2e-5;
+                        }
+                    }
                 }
             }
             else if (strcmp(material, "Concrete") == 0)  //TO DO
@@ -711,7 +869,7 @@ char *get_section_data(char *file_name,  int property_no, char *material, char *
             sprintf(par[15], "%g", d);
             sprintf(par[16], "%g", a);
 
-            sprintf(section_data, "#%d h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\n E=%s G=%s r=0 d=%s a=%s  %s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], type0);
+            sprintf(section_data, "#%d h=%s b=%s A=%s Asy=%s Asz=%s%s%s Iy=%s Iz=%s Jx=%s Wy=%s Wz=%s%s\n E=%s G=%s r=0 d=%s a=%s  %s%s", property_no, par[0], par[1], par[2], par[3], par[4], par[5], par[6], par[7], par[8], par[9], par[10], par[11], par[12], par[13], par[14], par[15], par[16], type0,mtrl);
             return section_data;
         }
     }

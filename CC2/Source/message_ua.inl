@@ -748,6 +748,7 @@ static char gg[10][36] = { u8"Кінець", u8"Найближчий кінец�
 
 #define _PCX_FILE_ERROR_  u8"Помилка запису файлу PCX"
 #define _PNG_FILE_ERROR_  u8"Помилка запису файлу PNG"
+#define _JPG_FILE_ERROR_  u8"Помилка запису файлу JPG"
 #define _UNKNOWN_IMAGE_FORMAT_ u8"Невідомий формат файлу зображення"
 #define _FILE_ u8"Файл "
 #define _FILE_EXISTS_ u8" існує. Перезаписати це? (Так/Ні/Esc):"
@@ -1031,6 +1032,12 @@ static char confirm[] = u8"Підтвердьте";
 #define _RT_SECTION_ u8"Введіть h;b;t;c (висота; ширина; товщина стінки; осьовий захисний шар"
 #define _PLATE_SECTION_ u8"Введіть h;c (висота; осьовий захисний шар"
 #define _SHIELD_SECTION_ u8"Введіть t;c (товщина; осьовий захисний шар"
+
+POLE pmFeC_Al[2] = {
+	{u8"Сталь",L'С',0,NULL},
+	{u8"Алюміній",L'А',0,NULL} };
+
+static TMENU mFeC_Al = { 2,0,0,9,79,11,0,CMNU,CMBR,CMTX,0,4,0,0,0,(POLE(*)[]) &pmFeC_Al,NULL,NULL };
 
 #endif
 

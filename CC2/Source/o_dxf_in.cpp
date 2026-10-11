@@ -595,6 +595,26 @@ const char* WIN1251_TO_UTF8[128] = {
 		"\xD1\x88",     "\xD1\x89",     "\xD1\x8A",     "\xD1\x8B",     "\xD1\x8C",     "\xD1\x8D",     "\xD1\x8E",     "\xD1\x8F"
 };
 
+const char* WIN1252_TO_UTF8[128] = {
+		"\xE2\x82\xAC", "\x81", "\xE2\x80\x9A", "\xC6\x92", "\xE2\x80\x9E", "\xE2\x80\xA6", "\xE2\x80\xA0", "\xE2\x80\xA1", // 128-135
+		"\xCB\x86", "\xE2\x80\xB0", "\xC5\xA0", "\xE2\x80\xB9", "\xC5\x92", "\x8D", "\x8E", "\x8F",                         // 136-143
+		"\x90", "\xE2\x80\x98", "\xE2\x80\x99", "\xE2\x80\x9C", "\xE2\x80\x9D", "\xE2\x80\xA2", "\xE2\x80\x93", "\xE2\x80\x94", // 144-151
+		"\xCB\x9C", "\xE2\x84\xA2", "\xC5\xA1", "\xE2\x80\xBA", "\xC5\x93", "\x9D", "\x9E", "\xC5\xB8",                         // 152-159
+		"\xC2\xA0", "\xC2\xA1", "\xC2\xA2", "\xC2\xA3", "\xC2\xA4", "\xC2\xA5", "\xC2\xA6", "\xC2\xA7",                         // 160-167
+		"\xC2\xA8", "\xC2\xA9", "\xC2\xAA", "\xC2\xAB", "\xC2\xAC", "\xC2\xAD", "\xC2\xAE", "\xC2\xAF",                         // 168-175
+		"\xC2\xB0", "\xC2\xB1", "\xC2\xB2", "\xC2\xB3", "\xC2\xB4", "\xC2\xB5", "\xC2\xB6", "\xC2\xB7",                         // 176-183
+		"\xC2\xB8", "\xC2\xB9", "\xC2\xBA", "\xC2\xBB", "\xC2\xBC", "\xC2\xBD", "\xC2\xBE", "\xC2\xBF",                         // 184-191
+		"\xC3\x80", "\xC3\x81", "\xC3\x82", "\xC3\x83", "\xC3\x84", "\xC3\x85", "\xC3\x86", "\xC3\x87",                         // 192-199 (193 is Á)
+		"\xC3\x88", "\xC3\x89", "\xC3\x8A", "\xC3\x8B", "\xC3\x8C", "\xC3\x8D", "\xC3\x8E", "\xC3\x8F",                         // 200-207
+		"\xC3\x90", "\xC3\x91", "\xC3\x92", "\xC3\x93", "\xC3\x94", "\xC3\x95", "\xC3\x96", "\xC3\xD7",                         // 208-215 (209 is Ñ, 211 is Ó)
+		"\xC3\x98", "\xC3\x99", "\xC3\x9A", "\xC3\x9B", "\xC3\x9C", "\xC3\x9D", "\xC3\x9E", "\xC3\xDF",                         // 216-223
+		"\xC3\xA0", "\xC3\xA1", "\xC3\xA2", "\xC3\xA3", "\xC3\xA4", "\xC3\xA5", "\xC3\xA6", "\xC3\xA7",                         // 224-231
+		"\xC3\xA8", "\xC3\xA9", "\xC3\xAA", "\xC3\xAB", "\xC3\xAC", "\xC3\xAD", "\xC3\xAE", "\xC3\xAF",                         // 232-239
+		"\xC3\xB0", "\xC3\xB1", "\xC3\xB2", "\xC3\xB3", "\xC3\xB4", "\xC3\xB5", "\xC3\xB6", "\xC3\xB7",                         // 240-247
+		"\xC3\xB8", "\xC3\xB9", "\xC3\xBA", "\xC3\xBB", "\xC3\xBC", "\xC3\xBD", "\xC3\xBE", "\xC3\xBF"                          // 248-255
+};
+
+
 /*
 std::string ConvertWin1250ToUtf8(const char* c_str_buffer) {
 	std::string utf8Result;
@@ -621,7 +641,8 @@ std::string ConvertWin1250ToUtf8(const char* c_str_buffer) {
 enum class DxfCodePage {
 	NONE, // Already UTF-8 or standard ASCII
 	ANSI_1250,
-	ANSI_1251
+	ANSI_1251,
+	ANSI_1252
 };
 
 DxfCodePage activeEncoding = DxfCodePage::NONE;
@@ -640,6 +661,8 @@ std::string ConvertLegacyToUtf8(const char* c_str_buffer, DxfCodePage encoding) 
 				utf8Result.append(WIN1250_TO_UTF8[c - 128]);
 			} else if (encoding == DxfCodePage::ANSI_1251) {
 				utf8Result.append(WIN1251_TO_UTF8[c - 128]);
+			} else if (encoding == DxfCodePage::ANSI_1252) {
+				utf8Result.append(WIN1252_TO_UTF8[c - 128]);
 			} else {
 				utf8Result.push_back(c); // Fallback: Don't change if unhandled
 			}
@@ -4546,7 +4569,7 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
 	char *p, *p1;
 	char buf[MAXLINE], buf1[MAXLINE];
 	int entitie_code;
-	char pattern_name[64];
+	char pattern_name[256];
 	int solid_flag, associativity_flag, path_type_flag, edge_type, is_closed;
 	int number_of_paths, number_of_edges, number_of_vertices, number_of_seed_points, number_of_dash_length_items;
 	double e_xp0, e_yp0, e_zp0;
@@ -11874,7 +11897,7 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 						strcpy(ext_1, ".png");  //can be also jpg
 						sprintf(image_file_name_png, "%s%s%s%s", drive, dir, file, ext_1);
 
-						sprintf(params, "%s %s", image_file_name, image_file_name_png);
+						sprintf(params, "\"%s\" \"%s\"", image_file_name, image_file_name_png);
 
 						runcode = RunSilent((char*)"image2png.exe", params);  //can be also image2jpg.exe
 
@@ -13891,8 +13914,10 @@ if (strcmp (dxf_var, "$TREEDEPTH") == 0)
     {ret=read_var1(f,70,&TREEDEPTH); //3020
     goto next_var;  
     }
+/*
 if (strcmp (dxf_var, "$DWGCODEPAGE") == 0)
     {ret=read_var1(f,3,&DWGCODEPAGE); //"ascii"
+
 
 		if (strcmp(DWGCODEPAGE, "ANSI_1250") == 0) {
 			activeEncoding = DxfCodePage::ANSI_1250;
@@ -13902,6 +13927,28 @@ if (strcmp (dxf_var, "$DWGCODEPAGE") == 0)
 
 		goto next_var;
     }
+    */
+	  if (strcmp(dxf_var, "$DWGCODEPAGE") == 0)
+	  {
+		  ret = read_var1(f, 3, &DWGCODEPAGE);
+
+		  if (strcmp(DWGCODEPAGE, "ANSI_1250") == 0) {
+			  activeEncoding = DxfCodePage::ANSI_1250;
+		  } else if (strcmp(DWGCODEPAGE, "ANSI_1251") == 0 ||
+			  		 strcmp(DWGCODEPAGE, "cyrillic") == 0 ||
+			  		 strcmp(DWGCODEPAGE, "1251") == 0) {
+			  activeEncoding = DxfCodePage::ANSI_1251;
+		  } else if (strcmp(DWGCODEPAGE, "ANSI_1252") == 0 ||
+		             strcmp(DWGCODEPAGE, "win1252") == 0 ||
+		             strcmp(DWGCODEPAGE, "dos1252") == 0) {
+			  activeEncoding = DxfCodePage::ANSI_1252; // <-- Activate conversion for Western European!
+		  } else {
+			  activeEncoding = DxfCodePage::NONE;
+		  }
+
+		  goto next_var;
+	  }
+
   }
   else 
    {

@@ -658,6 +658,25 @@ POLE pmOpcje[] = {
 #define _DEMO_MODE_ "W DEMO wciśnięte klawisze i przyciski myszy"
 #define _DEMO_MODE1_ "są wyświetlane na dole okna programu"
 
+const char* DwgErrorList[] = { u8"BRAK BŁĘDÓW",
+ /* posortowane według krytyczności */
+ u8"BŁĘDNY CRC",  //1
+ u8"JESZCZE NIE OBSŁUGIWANE", //2
+ u8"NIEPRZETWORZONA KLASA",  //4
+ u8"NIEPRAWIDŁOWY TYP",  //8
+ u8"NIEPRAWIDŁOWY UCHWYT",  //16
+ u8"NIEPRAWIDŁOWE ZIARNO",  //32
+ u8"WARTOŚĆ POZA ZAKRESEM",  //64
+/* -------- błędy krytyczne ------- */
+ u8"NIE ZNALEZIONO KLAS",  //128
+ u8"NIE ZNALEZIONO SEKCJI", //256
+ u8"NIE ZNALEZIONO STRONY",  //512
+ u8"BŁĄD WEWNĘTRZNY",  //1024
+ u8"NIEPRAWIDŁOWY DWG",  //2048
+ u8"BŁĄD WEJŚCIA/WYJŚCIA",  //4096
+ u8"BRAK PAMIĘCI"  //8192
+};
+
 #endif
 
 #ifdef __ASKING__
@@ -1625,7 +1644,7 @@ char *vector_txt[]={u8"Wektor: sztywno-sztywny",u8"Wektor: sztywno-przegubowy",u
 
 unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'S',L'M',L'-',L'P',L'O',L'R',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'K',L'L',L'W',L'Z',L'Q',L'F',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'8',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
 
-unsigned short point_wcod[]={L'N', L'B', L'I', L'K', L'L', L'U',L'T', L'J', L'Z', L'@', L'#', L'*',L'U', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'B', 'V', 'C', 'N', 'D'};
+unsigned short point_wcod[]={L'N', L'B', L'I', L'K', L'L', L'U',L'T', L'J', L'Z', L'@', L'#', L'*',L'U', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'B', 'V', 'C', 'N', 'D', 'K', 'L', 'M', 'D', 'G'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'U', L'O', L'D', L'S', L'P', L'*', L'G', L'C', L'E', L'F', 'B', L'W', ' '};
 char *object_txt[]={u8"Obraz", u8"Linia", u8"Tekst", u8"Łuk", u8"Okrąg", u8"Dysk", u8"Obszar", u8"Punkt", u8"Blok", u8"Obszar łukowy",u8"Łuk eliptyczny",u8"Elipsa",u8"Wypełniona elipsa",u8"Splajn Beziera",u8"Wektor",""};
 
@@ -2521,6 +2540,13 @@ static POLE pmTyp_punktu[] = {
      {u8"przegubowe przesuwne w osi X (G)\0",L'A',875,NULL},
      {u8"przegubowe przesuwne w osi Y\0",L'V',876,NULL},
      {u8"przegubowe przesuwne w osi Y (G)\0",L'W',877,NULL},
+
+	 {u8"przegub X\0",L'K',995,NULL},
+     {u8"przegub Y\0",L'L',996,NULL},
+     {u8"przegub Z\0",L'M',997,NULL},
+     {u8"utwierdzenie X\0",L'D',998,NULL},
+     {u8"utwierdzenie Y\0",L'E',999,NULL},
+     {u8"utwierdzenie Z\0",L'G',1000,NULL},
 };
 
 #endif
@@ -3757,10 +3783,11 @@ T_Prototype      s__prot_p = { u8"prototypp.alf", TRUE };
 #define _BLOCKS_TESTED_ u8"Wszystko OK. Przetestowano %d bloków"
 
 
-char* typ_punktu_inf[] = { u8"Normalny",u8"Punkt bazowy",u8"rzędna istniejąca",u8"rzędna projektowana d.",u8"rzędna projektowana g.",u8"rzędna ulicy",u8"rzędna terenu",u8"Węzeł",u8"Zacisk","specialny @","specialny #","specialny *"
+char* typ_punktu_inf[] = { u8"Normalny",u8"Punkt bazowy",u8"rzędna istniejąca",u8"rzędna projektowana d.",u8"rzędna projektowana g.",u8"rzędna ulicy",u8"rzędna terenu",u8"Węzeł",u8"Zacisk","specialny @","specialny #","specialny *",
                            u8"Utwierdzony",u8"Utwierdzony L",u8"Utwierdzony P", u8"Utwierdzony G", u8"Przegubowy", u8"Przegubowy L", u8"Przegubowy P", u8"Przegubowy G",
                            u8"Sztywny Przesuwny", u8"Sztywny Przesuwny L", u8"Sztywny Przesuwny P", u8"Sztywny Przesuwny G", u8"Przegubowy Przesuwny", u8"Przegubowy Przesuwny L", u8"Przegubowy Przesuwny P", u8"Przegubowy Przesuwny G", u8"bez obrotu Z",
-                           u8"Sztywny Przesuwny X", u8"Sztywny Przesuwny X G", u8"Sztywny Przesuwny Y", u8"Sztywny Przesuwny Y G", u8"Przegubowy Przesuwny X", u8"Przegubowy Przesuwny X G", u8"Przegubowy Przesuwny Y", u8"Przegubowy Przesuwny Y G"};
+                           u8"Sztywny Przesuwny X", u8"Sztywny Przesuwny X G", u8"Sztywny Przesuwny Y", u8"Sztywny Przesuwny Y G", u8"Przegubowy Przesuwny X", u8"Przegubowy Przesuwny X G", u8"Przegubowy Przesuwny Y", u8"Przegubowy Przesuwny Y G",
+                           u8"przegub X", u8"przegub Y", u8"przegub Z", u8"sztywny X", u8"sztywny Y", u8"sztywny Z"};
 
 #endif
 

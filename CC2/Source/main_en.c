@@ -114,7 +114,7 @@ TMENU mWoodMoistureUS = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,2,0,0,0,(POLE(*)[]) &p
 TMENU mWoodMoistureCA = { 2,0,0,6,16,8,0,CMNU,CMBR,CMTX,0,168,0,0,0,(POLE(*)[]) &pmWoodMoistureUS,NULL,NULL };
 
 POLE pmMaterialUS[] = {
-        {u8"Steel",'S',775, NULL}, //&mSteelUS
+        {u8"Steel & aluminum",'S',775, NULL}, //&mSteelUS
         {u8"Reinforced concrete", 'R',904, NULL}, //ConcreteUS
         {u8"Timber", 'T',785, &mWoodMoistureUS}, //NULL &mTimberUS
 };
@@ -122,14 +122,14 @@ POLE pmMaterialUS[] = {
 TMENU mMaterialUS = { 3, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 6, 0, 0,0,(POLE(*)[])&pmMaterialUS, NULL, NULL };
 
 POLE pmMaterialCA[] = {
-        {u8"Steel",'S',775, NULL}, //&mSteelCA
+        {u8"Steel & aluminum",'S',775, NULL}, //&mSteelCA
         {u8"Timber", 'T',785, &mWoodMoistureCA}, //NULL &mTimberCA
 };
 
 TMENU mMaterialCA = { 2, 0, 0, 12, 15, 9, ICONS, CMNU, CMBR, CMTX, 0, 8, 0, 0,0,(POLE(*)[])&pmMaterialCA, NULL, NULL };
 
 POLE pmMaterialEU[] = {
-        {u8"Steel",'S',775, NULL}, //&mSteelCA
+        {u8"Steel & aluminum",'S',775, NULL}, //&mSteelCA
         {u8"Reinforced concrete", 'R',904, NULL}, //ConcreteEU
 };
 

@@ -14,7 +14,11 @@ typedef struct
     float z0;
 	float angle;
     char invisible;
-  } INS_BLOCK;  
+  } INS_BLOCK;
+
+typedef struct {
+	double x, y;
+} Point2D;
 
 /*------  class PISZ_GRUPA  -------------------------------------*/
 

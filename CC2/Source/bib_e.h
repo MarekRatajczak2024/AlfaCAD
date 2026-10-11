@@ -86,7 +86,7 @@ static int MaxNoBlock=1000;
 #define ESTR_Y 2
 
 #define MAX_CLIENT_BITMAP 64
-#define FIRST_CLIENT_BITMAP_NO 1000
+#define FIRST_CLIENT_BITMAP_NO 1200
 
 #define V_EDGE_SIMPLE 41
 #define V_EDGE_SIMPLE_INV 42
@@ -1958,9 +1958,10 @@ typedef
        unsigned warstwa_shd  : 8;
        unsigned kolor    : 8;
        unsigned typ      : 6;    //8 /*0 normal, 1,2,3,4,5,6,7 junction, 8 pin, 9 pin g, 10 pin d, 11 pin s*/
-      //Simple=0,Base point=1,Junction=7,pin point=8, pin_g 9, pin_d 10, pin_s=11, Fixed=12,fixed L,fixed R,fixed U,Pinned,pinned L,pinned R,pinned U,fixed Roller,fixed roller L,fixed roller R,fixed roller U,
-      //pinned roller,pinned roller L,pinned roller R,pinned roller U,no rotation Z,fixed roller X,fixed roller XU,fixed roller Y,fixed roller Y (Up),
-      //pinned roller X,pinned roller X (Up),pinned roller Y,pinned roller Y (Up)=36,   up to 63 types
+      //Simple=0,Base point=1,Junction=7,pin point=8, pin_g 9, pin_d 10, pin_s=11, Fixed=12,fixed L=13,fixed R=14,fixed U=15,Pinned=16,pinned L=17,pinned R=18,
+	  //pinned U=19,fixed Roller=20,fixed roller L=21,fixed roller R=22,fixed roller U=23,
+      //pinned roller=24,pinned roller L=25,pinned roller R=26,pinned roller U=27,no rotation Z=28,fixed roller X=29,fixed roller XU=30,fixed roller Y=31,fixed roller Y (Up)=32,
+      //pinned roller X=33,pinned roller X (Up)=34,pinned roller Y=35,pinned roller Y (Up)=36,   up to 63 types
        unsigned cartflags : 2;     /* 0=normal, 1=isometric*/
        float x           ; 
        float y           ;
@@ -3352,6 +3353,9 @@ typedef struct{
     double x,y;
 }point;
 
+typedef struct {
+	long x, y;
+} Pixel;
 
 typedef struct RGBA
 {

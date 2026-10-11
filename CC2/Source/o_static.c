@@ -2668,8 +2668,8 @@ int foo_test_aci_1() {
 }
 
 double calculate_min_shear_ratio(double fck, double fyk, int is_aci) {
-    double fck_mpa = fck / 1e6;
-    double fyk_mpa = fyk / 1e6;
+    double fck_mpa = fck; // / 1e6;  it is already in MPa
+    double fyk_mpa = fyk; // / 1e6;  it is already in MPa
     double rho_min;
     if (is_aci) {
         // ACI approximation in MPa

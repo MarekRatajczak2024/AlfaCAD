@@ -204,6 +204,12 @@ int first_window_main=0;
 #endif
 int EditText(char *mytext, int adjust, int nCmdShow, int *single, int *tab);
 int EditFile(char *mytextfilename, int adjust, int nCmdShow);
+int FindODAFileConverter(char* outPath, size_t maxLen);
+int FindInMuiCache(char* outPath, size_t maxLen);
+int FileExists(const char* path);
+int FindODAFileConverterByMSI(char* outPath, size_t maxLen);
+int FindODAByStartMenuShortcut(char* outPath, size_t maxLen);
+int PlatformMoveFileOverwrite(const char* srcPath, const char* destPath);
 int get_cursor_info(void);
 int set_window_icon(void);
 #ifndef LINUX
@@ -328,6 +334,9 @@ int dHeight = 60;
 #define PROMILLE 0x2030
 #define ROOTSIGN 0x221A
 #define ROOT3SIGN 0x221B
+#define ROUNDSIGN 0x2248  //to do
+#define LESSEQUALS 0x2264
+#define GREATEREQUALS 0x2265
 #define EUROSIGN 0x20AC
 #define TRADEMARK 0x2122
 #define SUPERSCRIPT3 179
@@ -587,13 +596,22 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 					break;
 				case '-': wParam = PLUSMINUS;
 					break;
+				case '=': wParam = ROUNDSIGN;
+					break;
 				case '/': wParam = DIVISION;
 					break;
 				case '\\': wParam = ROOTSIGN;
 					break;
 				case '|': wParam = ROOT3SIGN;
 					break;
-				case '.': wParam = MIDDLEDOT;
+                case ',':
+				case 188:
+                    wParam = LESSEQUALS;
+					break;
+				case '.':
+				case 190:
+                    if (shifted) wParam = MIDDLEDOT;
+                    else wParam = GREATEREQUALS;
 					break;
 				case '1': wParam = ONEHALF;
 					break;
@@ -714,13 +732,24 @@ LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				break;
 			case '-': wParam = PLUSMINUS;
 				break;
+			case '=': wParam = ROUNDSIGN;
+				break;
 			case '/': wParam = DIVISION;
 				break;
 			case '\\': wParam = ROOTSIGN;
 				break;
 			case '|': wParam = ROOT3SIGN;
 				break;
-			case '.': wParam = MIDDLEDOT;
+			case ',':
+			case 188:
+				wParam = LESSEQUALS;
+				break;
+			case '.':
+			case 190:
+				if (shifted)
+				    wParam = MIDDLEDOT;
+				else
+				    wParam = GREATEREQUALS;
 				break;
 			case '1': wParam = ONEHALF;
 				break;
@@ -2629,6 +2658,348 @@ int EditFile(char *filename, int edit_params, int nCmdShow)
 		return 0;
 	}
 
+}
+
+
+/**
+ * Finds the absolute file path of ODAFileConverter.exe from the Windows Registry.
+ * Returns 1 if found (and copies path to outPath), returns 0 if not installed.
+ */
+/*
+int FindODAFileConverter(char* outPath, size_t maxLen) {
+	HKEY hKey;
+	// ODA registers its installer paths under the standard App Paths key
+	const char* subkey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ODAFileConverter.exe";
+	DWORD bufferSize = (DWORD)maxLen;
+	DWORD type = REG_SZ;
+	LONG result;
+
+	// Open the registry key (works for both 32-bit and 64-bit apps running on 64-bit Windows)
+	result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, subkey, 0, KEY_READ, &hKey);
+	if (result != ERROR_SUCCESS) {
+		// Fallback: Check Current User if machine-wide permissions were bypassed
+		result = RegOpenKeyExA(HKEY_CURRENT_USER, subkey, 0, KEY_READ, &hKey);
+	}
+
+	if (result == ERROR_SUCCESS) {
+		// Query the default key value (passing NULL as the value name gets the default "(Default)" entry)
+		result = RegQueryValueExA(hKey, NULL, NULL, &type, (LPBYTE)outPath, &bufferSize);
+		RegCloseKey(hKey);
+
+		if (result == ERROR_SUCCESS && strlen(outPath) > 0) {
+			return 1; // Found! outPath now contains the absolute path to the .exe
+		}
+	}
+
+	return 0; // Not installed
+}
+*/
+/*
+int FileExists(const char* path) {
+    struct stat buffer;
+    return (stat(path, &buffer) == 0);
+}
+*/
+
+////  Searches the Windows MuiCache registry for any historically executed ODA converter.
+/*
+int FindInMuiCache_prev(char* outPath, size_t maxLen) {
+    HKEY hKey;
+    const char* muiSubkey = "Software\\Microsoft\\Windows\\Shell\\MuiCache";
+
+    // Open the user shell cache key shown in your screenshot
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, muiSubkey, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD index = 0;
+        char valueName[2048];
+        DWORD valueNameSize;
+        BYTE valueData[1024];
+        DWORD valueDataSize;
+        DWORD type;
+
+        // Loop through all logged entries in the MuiCache table
+        while (1) {
+            valueNameSize = sizeof(valueName);
+            valueDataSize = sizeof(valueData);
+
+            LONG res = RegEnumValueA(hKey, index, valueName, &valueNameSize, NULL, &type, valueData, &valueDataSize);
+            if (res == ERROR_NO_MORE_ITEMS) break;
+
+            if (res == ERROR_SUCCESS && type == REG_SZ) {
+                // Look for the metadata flag shown highlighted in your screenshot
+                if (strstr(valueName, "ODAFileConverter.exe.ApplicationCompany") != NULL ||
+                    (strstr(valueName, "ODAFileConverter.exe") != NULL && strstr((char*)valueData, "Open Design Alliance") != NULL)) {
+
+                    // Extract the raw file path from the value string entry
+                    // Example: Converts "C:\...\ODA_Portable\ODAFileConverter.exe.ApplicationCompany" -> "C:\...\ODAFileConverter.exe"
+                    char* dotPtr = strstr(valueName, ".exe");
+                    if (dotPtr != NULL) {
+                        size_t pathLen = (dotPtr - valueName) + 4; // Include ".exe" length
+                        if (pathLen < maxLen) {
+                            strncpy(outPath, valueName, pathLen);
+                            outPath[pathLen] = '\0';
+
+                            // Double-check the file wasn't deleted or moved since it was cached
+                            if (FileExists(outPath)) {
+                                RegCloseKey(hKey);
+                                return 1; // Found active executable!
+                            }
+                        }
+                    }
+                }
+            }
+            index++;
+        }
+        RegCloseKey(hKey);
+    }
+    return 0;
+}
+*/
+/*
+int FindInMuiCache(char* outPath, size_t maxLen) {
+    HKEY hKey;
+    // Target the verified subkey map inside the active user scope
+    const char* muiSubkey = "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache";
+
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, muiSubkey, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD index = 0;
+        char valueName[2048];
+        DWORD valueNameSize;
+        char valueData[1024];
+        DWORD valueDataSize;
+        DWORD type;
+
+        while (1) {
+            valueNameSize = sizeof(valueName);
+            valueDataSize = sizeof(valueData);
+
+            LONG res = RegEnumValueA(hKey, index, valueName, &valueNameSize, NULL, &type, (LPBYTE)valueData, &valueDataSize);
+            if (res == ERROR_NO_MORE_ITEMS) break;
+
+            if (res == ERROR_SUCCESS && type == REG_SZ) {
+                // Scan the key name for your ODA executable string layout
+                if (strstr(valueName, "ODAFileConverter.exe") != NULL) {
+
+                    // Extract the clean path string up to ".exe"
+                    char* dotPtr = strstr(valueName, ".exe");
+                    if (dotPtr != NULL) {
+                        size_t pathLen = (dotPtr - valueName) + 4;
+                        if (pathLen < maxLen) {
+                            strncpy(outPath, valueName, pathLen);
+                            outPath[pathLen] = '\0';
+
+                            // Validate the file is physically accessible right now
+                            DWORD attribs = GetFileAttributesA(outPath);
+                            if (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY)) {
+                                RegCloseKey(hKey);
+                                return 1; // Success! File path extracted and verified
+                            }
+                        }
+                    }
+                }
+            }
+            index++;
+        }
+        RegCloseKey(hKey);
+    }
+    return 0; // Not logged in the cache table
+}
+*/
+
+/*
+#include <msi.h>
+
+// Tell the linker to include the native Windows Installer library
+#pragma comment(lib, "msi.lib")
+
+
+//// Finds the absolute installation path of ODAFileConverter.exe using the Windows MSI database.
+//// Works perfectly even if the user changed the directory to another drive/folder during setup.
+//// Returns 1 if found, 0 if not installed.
+
+int FindODAFileConverterByMSI_prev(char* outPath, size_t maxLen) {
+	// This is the explicit Microsoft Component ID for the core ODAFileConverter.exe binary
+	// referenced in standard 64-bit installer schemas.
+	const char* ODA_COMPONENT_GUID = "{2478B2E9-EA53-49EB-B2CF-D5405D90E0A9}";
+
+	char pathBuffer[MAX_PATH];
+	DWORD size = MAX_PATH;
+
+	// Query Windows Installer to get the component path
+	INSTALLSTATE state = MsiGetComponentPathA(
+		NULL,                 // Product code (NULL tells Windows to locate it globally)
+		ODA_COMPONENT_GUID,   // The unique ID tracking the executable file component
+		pathBuffer,           // Buffer to store the path string output
+		&size                 // Buffer size pointer
+	);
+
+	// INSTALLSTATE_LOCAL means the file component is physically present on the local machine
+	if (state == INSTALLSTATE_LOCAL && size > 0) {
+		if (strlen(pathBuffer) < maxLen) {
+			strcpy(outPath, pathBuffer);
+			return 1; // Success! Instantly retrieved the true custom file path.
+		}
+	}
+
+	return 0; // The official MSI package is not registered on this computer
+}
+*/
+
+/*
+//#include <windows.h>
+//#include <msi.h>
+//#include <stdio.h>
+
+// Direct linker connection to the native Windows Installer library
+#pragma comment(lib, "msi.lib")
+
+//// Automatically discovers ODAFileConverter.exe anywhere on the hard drive
+//// using the global Windows Installer database.
+//// Returns 1 if found (copies path to outPath), returns 0 if missing.
+
+int FindODAFileConverterByMSI(char* outPath, size_t maxLen) {
+	// This is the universal Component ID matching ODAFileConverter.exe
+	const char* ODA_COMPONENT_GUID = "{2478B2E9-EA53-49EB-B2CF-D5405D90E0A9}";
+
+	char pathBuffer[MAX_PATH] = {0};
+	DWORD size = MAX_PATH;
+
+	// MsiLocateComponentA does NOT require a ProductCode parameter!
+	// It scans all registered desktop setups to find where the component sits.
+	INSTALLSTATE state = MsiLocateComponentA(ODA_COMPONENT_GUID, pathBuffer, &size);
+
+	// INSTALLSTATE_LOCAL means the engine tracked down the exact file on the disk
+	if (state == INSTALLSTATE_LOCAL && size > 0 && strlen(pathBuffer) > 0) {
+		if (strlen(pathBuffer) < maxLen) {
+			strcpy(outPath, pathBuffer);
+			return 1; // Success! Custom path resolved instantly with zero latency
+		}
+	}
+
+	return 0; // The official software package is not registered on this computer
+}
+*/
+/*
+//#include <windows.h>
+#include <shlobj.h>
+#include <stdio.h>
+#include <sys/stat.h>
+
+//// Resolves the true absolute executable path inside a Windows .lnk shortcut file.
+////Returns 1 on success, 0 on failure.
+
+int ResolveShortcutTarget(const char* lnkPath, char* outExePath, size_t maxLen) {
+    HRESULT hres;
+    IShellLinkA* psl = NULL;
+    IPersistFile* ppf = NULL;
+    int success = 0;
+
+    // Initialize the COM library (required for Windows Shell Interfaces)
+    hres = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
+    // Create an instance of the Shell Link interface component
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkA, (LPVOID*)&psl);
+    if (SUCCEEDED(hres)) {
+        // Query for the file persistence layer interface
+        hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&ppf);
+        if (SUCCEEDED(hres)) {
+            WCHAR wsz[MAX_PATH];
+            // The COM file loader strictly mandates a wide-character (Unicode) string
+            MultiByteToWideChar(CP_ACP, 0, lnkPath, -1, wsz, MAX_PATH);
+
+            // Load the target shortcut file mapping
+            hres = ppf->Load(wsz, STGM_READ);
+            if (SUCCEEDED(hres)) {
+                char targetPath[MAX_PATH];
+                WIN32_FIND_DATAA wfd;
+
+                // Extract the absolute target path string from the shortcut
+                //hres = psl->GetPath(targetPath, MAX_PATH, &wfd, SLGP_RAWPATH);
+            	hres = psl->GetPath(targetPath, MAX_PATH, &wfd, SLGP_UNCPRIORITY);
+                if (SUCCEEDED(hres) && strlen(targetPath) > 0) {
+                    if (strlen(targetPath) < maxLen) {
+                        strcpy(outExePath, targetPath);
+                        success = 1;
+                    }
+                }
+            }
+            ppf->Release();
+        }
+        psl->Release();
+    }
+    CoUninitialize();
+    return success;
+}
+*/
+/*
+//// Scans the global Windows Start Menu to discover any version of ODA File Converter.
+//// Returns 1 if found (copies path to outPath), returns 0 if missing.
+
+int FindODAByStartMenuShortcut_old(char* outPath, size_t maxLen) {
+    // 1. Target the absolute, universal Start Menu folder structure
+    const char* searchDir = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\ODA\\*";
+
+    WIN32_FIND_DATAA fileData;
+    HANDLE hFind = FindFirstFileA(searchDir, &fileData);
+
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            // 2. Look for any file ending with the standard ".lnk" extension
+            if (strstr(fileData.cFileName, ".lnk") != NULL) {
+                char fullLnkPath[MAX_PATH];
+                sprintf(fullLnkPath, "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\ODA\\%s", fileData.cFileName);
+
+                // 3. Dig inside the shortcut to extract the real target path!
+                if (ResolveShortcutTarget(fullLnkPath, outPath, maxLen)) {
+                    FindClose(hFind);
+                    return 1; // Success! Real path found instantly
+                }
+            }
+        } while (FindNextFileA(hFind, &fileData));
+        FindClose(hFind);
+    }
+    return 0; // ODA Shortcut directory does not exist on this machine
+}
+*/
+/*
+int FindODAByStartMenuShortcut(char* outPath, size_t maxLen)
+{
+	char odaShortcutFolder[MAX_PATH] = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\ODA\\";
+
+
+	// 1. DYNAMICALLY FIND THE SHORTCUT FILE NAME (Avoids hardcoding "27.9.0")
+	char searchMask[MAX_PATH];
+	sprintf(searchMask, "%s*", odaShortcutFolder);
+
+	WIN32_FIND_DATAA fileData;
+	HANDLE hFind = FindFirstFileA(searchMask, &fileData);
+
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			// Track down the first file ending with the standard .lnk extension
+			if (strstr(fileData.cFileName, ".lnk") != NULL) {
+				sprintf(outPath, "%s%s", odaShortcutFolder, fileData.cFileName);
+				return 1;
+				break;
+			}
+		} while (FindNextFileA(hFind, &fileData));
+		FindClose(hFind);
+	}
+	return 0;
+}
+*/
+
+int PlatformMoveFileOverwrite(const char* srcPath, const char* destPath)
+{
+	// MOVEFILE_COPY_ALLOWED lets it work across different disk drives (e.g., C: to D:)
+	// MOVEFILE_REPLACE_EXISTING ensures it overwrites leftover ODA outputs cleanly
+	DWORD flags = MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING;
+
+	if (MoveFileExA(srcPath, destPath, flags) != 0)
+	{
+		return 1; // Success
+	}
+
+	return 0; // Failure (use GetLastError() here if you need to debug locks)
 }
 
 //#include <windows.h>

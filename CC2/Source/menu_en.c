@@ -661,6 +661,24 @@ POLE pmOpcje[] = {
 #define _DEMO_MODE_ "In DEMO pressed keys and mouse buttons"
 #define _DEMO_MODE1_ "are shown at the bottom of the window"
 
+ char* DwgErrorList[] = { "NOERR",
+ /* sorted by severity */
+ "WRONG CRC",  //1
+ "NOT YET SUPPORTED", //2
+ "UNHANDLED CLASS",  //4
+ "INVALID TYPE",  //8
+ "INVALID HANDLE",  //16
+ "INVALIDEED",  //32
+ "VALUE OUT OF BOUNDS",  //64
+/* -------- critical errors ------- */
+ "CLASSES NOT FOUND",  //128
+ "SECTION NOT FOUND", //256
+ "PAGE NOT FOUND",  //512
+ "INTERNAL ERROR",  //1024
+ "INVALID DWG",  //2048
+ "IO ERROR",  //4096
+ "OUT OF MEM"  //8192
+};
 
 #endif
 
@@ -1632,7 +1650,7 @@ char *vector_txt[]={u8"Vector: rigid-rigid",u8"Vector: rigid-pin",u8"Vector: pin
 
 unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'F',L'M',L'-',L'E',L'R',L'O',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'P',L'S',L'W',L'Z',L'Q',L'L',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'8',L'9',L'!',L'@',L'#',L'$',L'%',L'^',};
 
-unsigned short point_wcod[]={L'S', L'B', L'I', L'K', L'L', L'U',L'T', L'J', L'C', L'@', L'#', L'*',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'C', 'V', 'E', 'N', 'D'};
+unsigned short point_wcod[]={L'S', L'B', L'I', L'K', L'L', L'U',L'T', L'J', L'C', L'@', L'#', L'*',L'F', L'1', L'2', L'3', L'P', L'4', L'5', L'6', L'R', L'7', L'8', L'9', L'O', '0', '-', '=', '+', 'X', 'A', 'Y', 'C', 'V', 'E', 'N', 'D', 'K', 'L', 'M', 'I', 'N', 'Q'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', L'B', L'V', ' '};
 char *object_txt[]={u8"Image",u8"Line",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Solid",u8"Point",u8"Block",u8"Solid Arc",u8"Elliptical Arc",u8"Ellipse",u8"Filled Ellipse",u8"Bezier Spline",u8"Vector",""};
 
@@ -2524,6 +2542,13 @@ static POLE pmTyp_punktu[] = {
      {u8"pinned roller X (Up)\0",L'A',875,NULL},
      {u8"pinned roller Y\0",L'V',876,NULL},
      {u8"pinned roller Y (Up)\0",L'W',877,NULL},
+
+     {u8"pin X\0",L'K',995,NULL},
+     {u8"pin Y\0",L'L',996,NULL},
+     {u8"pin Z\0",L'M',997,NULL},
+     {u8"rigid X\0",L'I',998,NULL},
+     {u8"rigid Y\0",L'N',999,NULL},
+     {u8"rigid Z\0",L'Q',1000,NULL},
 };
 
 #endif
@@ -3774,10 +3799,11 @@ T_Prototype      s__prot_p = { u8"prototypep.alf", TRUE };
 #define _BLOCKS_CORRECTED_ u8"%ld blocks, %ld objects have been corrected"
 #define _BLOCKS_TESTED_ u8"All OK. %d blocks tested"
 
-char* typ_punktu_inf[] = { u8"Simple",u8"Base point",u8"existing level",u8"projected level b.",u8"projected level t.",u8"street level",u8"terrain level",u8"Junction",u8"Pin","special @","special #","special *",
+char* typ_punktu_inf[] = { u8"Simple",u8"Base point",u8"existing level",u8"projected level b.",u8"projected level t.",u8"street level",u8"terrain level",u8"Junction",u8"Pin",u8"special @",u8"special #",u8"special *",
                            u8"Fixed",u8"Fixed L",u8"Fixed R",u8"Fixed U",u8"Pinned", u8"Pinned L", u8"Pinned R", u8"Pinned U",
                            u8"Fixed Roller", u8"Fixed Roller L", u8"Fixed Roller R", u8"Fixed Roller U", u8"Pinned Roller", u8"Pinned Roller L", u8"Pinned Roller R", u8"Pinned Roller U", u8"no rotation Z",
-                           u8"Fixed Roller X", u8"Fixed Roller X U", u8"Fixed Roller Y", u8"Fixed Roller Y U", u8"Pinned Roller X", u8"Pinned Roller X U", u8"Pinned Roller Y", u8"Pinned Roller Y U"};
+                           u8"Fixed Roller X", u8"Fixed Roller X U", u8"Fixed Roller Y", u8"Fixed Roller Y U", u8"Pinned Roller X", u8"Pinned Roller X U", u8"Pinned Roller Y", u8"Pinned Roller Y U",
+                           u8"pin X", u8"pin Y", u8"pin Z", u8"rigid X", u8"rigid Y", u8"rigid Z"};
 
 #endif
 

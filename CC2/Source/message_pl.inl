@@ -749,6 +749,7 @@ static char gg[10][16] = { u8"Koniec", u8"Bliższy koniec", u8"Środek", u8"Prze
 
 #define _PCX_FILE_ERROR_  u8"Błąd zapisu pliku PCX"
 #define _PNG_FILE_ERROR_  u8"Błąd zapisu pliku PNG"
+#define _JPG_FILE_ERROR_  u8"Błąd zapisu pliku JPG"
 #define _UNKNOWN_IMAGE_FORMAT_ u8"Nieznany format pliku obrazu"
 #define _FILE_ u8"Zbiór "
 #define _FILE_EXISTS_ u8" istnieje. Zapisć ? (Tak/Nie/Esc):"
@@ -997,6 +998,12 @@ static char confirm[] = u8"Potwierdź";
 #define _RT_SECTION_ u8"Wprowadź h;b;t;c (wysokość; szerokość; grubość ścianki; otulenie osiowe"
 #define _PLATE_SECTION_ u8"Wprowadź h;c (wysokość; otulenie osiowe"
 #define _SHIELD_SECTION_ u8"Wprowadź t;c (grubość; otulenie osiowe"
+
+POLE pmFeC_Al[2] = {
+	{u8"Stal",'S',0,NULL},
+	{u8"Aluminium",'A',0,NULL} };
+
+static TMENU mFeC_Al = { 2,0,0,10,79,11,0,CMNU,CMBR,CMTX,0,4,0,0,0,(POLE(*)[]) &pmFeC_Al,NULL,NULL };
 
 #endif
 

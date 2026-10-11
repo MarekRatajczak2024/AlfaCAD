@@ -298,6 +298,9 @@ extern "C" {
 
     extern BOOL known3b(int letter);
 
+    extern int areDoubleLinesParallel(point a1, point a2, point b1, point b2, double tolerance_degrees);
+    extern int getParallelLinesCircleIntersection(long xc, long yc, long r, long dd1, double angle_deg, Pixel out_points[4]);
+
 extern char *load_symbol[];
 extern int MAX_ARROWS_NO;
 
@@ -3173,7 +3176,9 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                 b1.y=(double)y11;
                 b2.x=(double)x12;
                 b2.y=(double)y12;
-                p=intersectionPoint(a1,a2,b1,b2);
+
+                if (areDoubleLinesParallel(a1, a2, b1, b2, 0.001)) p=b1;
+                else p = intersectionPoint(a1, a2, b1, b2);
             }
 
             if (isnan(p.x)) return;
@@ -3224,7 +3229,8 @@ void make_arrows_to_drive(float x1, float y1, float x2, float y2, float x11, flo
                         }
                         else
                         {
-                            if (x1 < x2)
+                            //if (x1 < x2)
+                            if (non_flipped)
                             {
                                 if (Check_if_GE((p.y - df_y),0.))
                                     df_x1 = df_x + n1 * ra1 * koc;
@@ -5735,8 +5741,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.lp = 8;
             w.n = 40;
 
-            Normalize_Solid(&w);
-
             L1.typ = 64;
             L1.x1 = w.xy[2];
             L1.y1 = w.xy[3];
@@ -5814,8 +5818,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.lp=8;
             w.n=40;
 
-            Normalize_Solid(&w);
-
             L1.typ=64;
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
@@ -5875,8 +5877,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.xy[7]=Lt.y1;
             w.lp=8;
             w.n=40;
-
-            Normalize_Solid(&w);
 
             L1.typ=64;
             L1.x1=w.xy[2];
@@ -5982,8 +5982,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             w.lp=8;
 
-            Normalize_Solid(&w);
-
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
@@ -6084,8 +6082,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
 
             w.lp=8;
 
-            Normalize_Solid(&w);
-
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
@@ -6165,8 +6161,6 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
             w.xy[7]=Lt.y1;
             w.lp=8;
             w.n=40;
-
-            Normalize_Solid(&w);
 
             L1.typ=64;
             L1.x1=w.xy[2];
@@ -9618,6 +9612,76 @@ BOOL Draw_Line_To_Drive(LINIA *L)
   return TRUE;
 }
 
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// Structure to store final high-precision double locations
+typedef struct {
+    double x, y;
+} Point2D;
+
+// Finds intersections of a circle and 2 parallel lines flanking a center median
+// angle_deg: Angle in degrees relative to global X-axis (Positive = Counterclockwise)
+// out_points: Array of size 4 to store the results
+// Returns: Total number of intersection points found (0, 2, or 4)
+int getParallelLinesCircleIntersectionDouble(double xc, double yc, double r, double dd1, double angle_deg, Point2D out_points[4]) {
+    // 1. Perpendicular distance from the median line to each parallel line
+    double h = dd1 / 2.0;
+
+    // If the lines are further out than the radius, there are no intersections
+    if (h > r) {
+        return 0;
+    }
+
+    // Convert angle to radians
+    double angle_rad = angle_deg * (M_PI / 180.0);
+    double cos_a = cos(angle_rad);
+    double sin_a = sin(angle_rad);
+
+    // 2. Adjust for Screen/CAD Space (Assumes Y-axis points DOWN)
+    // To keep a positive angle moving Counterclockwise, we invert the Y components.
+    // If your CAD engine uses a standard Y-UP system, remove the minus sign from vy.
+    double vx = cos_a;
+    double vy = -sin_a;
+
+    double nx = sin_a;  // Normal vector X component
+    double ny = cos_a;  // Normal vector Y component
+
+    // 3. Distance from the perpendicular drop point to the circle boundary (Pythagoras)
+    double half_chord = sqrt((r * r) - (h * h));
+
+    int count = 0;
+
+    // --- LINE 1 (Shifted along the normal vector) ---
+    double p1_x = xc + h * nx;
+    double p1_y = yc + h * ny;
+
+    out_points[count].x = p1_x + half_chord * vx;
+    out_points[count].y = p1_y + half_chord * vy;
+    count++;
+
+    out_points[count].x = p1_x - half_chord * vx;
+    out_points[count].y = p1_y - half_chord * vy;
+    count++;
+
+    // --- LINE 2 (Shifted opposite to the normal vector) ---
+    double p2_x = xc - h * nx;
+    double p2_y = yc - h * ny;
+
+    out_points[count].x = p2_x + half_chord * vx;
+    out_points[count].y = p2_y + half_chord * vy;
+    count++;
+
+    out_points[count].x = p2_x - half_chord * vx;
+    out_points[count].y = p2_y - half_chord * vy;
+    count++;
+
+    return count;
+}
+
+
 BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
 /*-----------------------------------------*/
 {
@@ -9867,7 +9931,7 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
             linestyle(96);
             dxy=df_psize*2.325;  //2.5
             dd=2*df_psize*0.25; //  sin(22)/1.5 sin(30)/1.5
-            dd1=2*df_psize*0.618;  // cos(22)/1.5; cos(30)/1.5;
+            dd1=2*df_psize*0.625;  // cos(22)/1.5; cos(30)/1.5;
             line_width_type = LINE_THICK_WIDTH;
 
             if (draw_line_to_drive1(x12-dxy, y12+dd, x12-dd1, y12+dd, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
@@ -10070,6 +10134,104 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
             }
             break;
 
+        case 37: /*pin X*/
+        case 38: /*pin Y*/
+        case 39: /*pin Z*/
+        case 40: /*rigid X*/
+        case 41: /*rigid Y*/
+        case 42: /*rigid Z*/
+            line_width_type = LINE_THIN_WIDTH;
+
+            if (draw_line_to_drive1(x12, y1, x12, y2, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+            Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+            if (draw_line_to_drive1(x1i, y1i, x2i, y2i, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            long xc=pikseleX0 (ptrs_point->x);
+            long yc=pikseleY0 (ptrs_point->y);
+            long rc=abs((int)(x2-x1));
+            line_width_type = LINE_NORM_WIDTH;
+            if (Draw_Arc_To_Drive(&l) == FALSE) return FALSE;
+
+            dxy= df_psize*3;
+            dd = df_psize*2;
+            dd1= df_psize*1.25;
+
+            double r=fabs(x2-x1);
+            double R=2*r;
+
+            int g1=LINE_THICK_WIDTH, g2=LINE_THICK_WIDTH, g3=LINE_THICK_WIDTH;
+            int t96=LINE_THIN_WIDTH; //or 96
+
+            switch (ptrs_point->typ)
+            {
+                case 37:
+                    g1=t96;
+                    break;
+                case 38:
+                    g2=t96;
+                    break;
+                case 39:
+                    g3=t96;
+                    break;
+                case 40:
+                    g2=t96;
+                    g3=t96;
+                    break;
+                case 41:
+                    g1=t96;
+                    g3=t96;
+                    break;
+                case 42:
+                    g1=t96;
+                    g2=t96;
+                    break;
+                default:
+                    break;
+            }
+
+            Point2D out_points[4];
+            Point2D out_points1[4];
+            double angle_deg=30;
+
+            int ret1 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, r, dd1, angle_deg, out_points);
+            int ret2 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, R, dd1, angle_deg, out_points1);
+
+            //linestyle(g1);  //X
+            line_width_type = g1;
+
+            for (int i=0; i<4; i++)
+                if (draw_line_to_drive1(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            angle_deg=90;
+
+            ret1 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, r, dd1, angle_deg, out_points);
+            ret2 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, R, dd1, angle_deg, out_points1);
+
+            //linestyle(g3);  //Z
+            line_width_type = g3;
+
+            for (int i=0; i<4; i++)
+                if (draw_line_to_drive1(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            angle_deg=150;
+
+            ret1 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, r, dd1, angle_deg, out_points);
+            ret2 = getParallelLinesCircleIntersectionDouble(ptrs_point->x, ptrs_point->y, R, dd1, angle_deg, out_points1);
+
+            //linestyle(g2);  //Y
+            line_width_type = g2;
+
+            for (int i=0; i<4; i++)
+                if (draw_line_to_drive1(out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y, kolor, 0, Layers[ptrs_point->warstwa].bw, Layers[ptrs_point->warstwa].grey) == FALSE) return FALSE;
+
+            break;
     }
     return TRUE;
 }
@@ -10620,7 +10782,43 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
 
 		  		if (u8zn > 1920)
 		  		{
-		  			if (known3b(u8zn)) zn++;  //⁴ e.g. m⁴
+                    if (f_type == 1)
+                    {
+                        switch (u8zn)
+                        {
+                            case 8240:
+                                u8zn=1901;
+                                break;
+                            case 8308:
+                                u8zn=1902;
+                                break;
+                            case 8730:
+                                u8zn=1903;
+                                break;
+                            case 8731:
+                                u8zn=1904;
+                                break;
+                            case 8804:
+                                u8zn=1905;
+                                break;
+                            case 8805:
+                                u8zn=1906;
+                                break;
+                            case 8960:
+                                u8zn=1907;
+                                break;
+                            case 8364:  //euro
+                                u8zn=1908;
+                                break;
+                            case 8776:  //approximately equal
+                                u8zn=1909;
+                                break;
+                            default:
+                                break;
+                        }
+                        zn++;
+                    }
+                    else if ((f_type > 1) &&(known3b(u8zn))) zn++;  //⁴ e.g. m⁴
 		  			else
 		  			{
 		  				u8zn = 32;

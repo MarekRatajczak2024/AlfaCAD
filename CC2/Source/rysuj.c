@@ -173,6 +173,8 @@ char *winvar;
 char *winfont;
 char *otffont;
 
+#define N_W 3   //defines how far in N_W*width_w from beginning or end of text cursor can be released to still mark text
+
 typedef struct
 {
     BITMAP **png_b;
@@ -374,6 +376,9 @@ extern void reset_cursor(void);
 extern BOOL hibernate;
 
 extern void set_text_types(int ver);
+
+extern void get_console(void);
+extern void free_console(void);
 /////////////
 
 
@@ -2669,6 +2674,19 @@ extern char *icon_wheel_zoom_rate_p;
 extern char *icon_keys_zoom_rate_p;
 extern char *icon_pan_and_zoom_p;
 
+extern BITMAP *icon_pinx;
+extern BITMAP *icon_piny;
+extern BITMAP *icon_pinz;
+extern BITMAP *icon_rigidx;
+extern BITMAP *icon_rigidy;
+extern BITMAP *icon_rigidz;
+extern char *icon_pinx_p;
+extern char *icon_piny_p;
+extern char *icon_pinz_p;
+extern char *icon_rigidx_p;
+extern char *icon_rigidy_p;
+extern char *icon_rigidz_p;
+
 extern BITMAP *icon_yes_d_mem;
 extern BITMAP *icon_yes_dx1_5_mem;
 extern BITMAP *icon_yes_dx2_mem;
@@ -3694,6 +3712,12 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_wheel_zoom_rate, "wheel_zoom_rate", &icon_wheel_zoom_rate_p},
         {&icon_keys_zoom_rate, "keys_zoom_rate", &icon_keys_zoom_rate_p},
         {&icon_pan_and_zoom, "pan_and_zoom", &icon_pan_and_zoom_p},
+        {&icon_pinx, "pinx", &icon_pinx_p},
+        {&icon_piny, "piny", &icon_piny_p},
+        {&icon_pinz, "pinz", &icon_pinz_p},
+        {&icon_rigidx, "rigidx", &icon_rigidx_p},
+        {&icon_rigidy, "rigidy", &icon_rigidy_p},
+        {&icon_rigidz, "rigidz", &icon_rigidz_p},
 #endif
 };
 
@@ -5340,7 +5364,7 @@ int TTF_text_len_pos(char *text, int pos)
 }
 
 //returning pos based on cursor position
-BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos)
+BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos, int mouse_x_, int mouse_y_)
 {   int x_length, x_position, y_position;
     char buf[MaxTextLen*2+2];
     int text_h, text_v;
@@ -5348,12 +5372,12 @@ BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos)
     //int x1, y1, x2, y2;
     //get_clip_rect(screen, &x1, &y1, &x2, &y2);
 
-    x_length=mouse_x-x0;
+    x_length=mouse_x_-x0;
     if (x_length<-width_w) return FALSE;
 
     if (x_length<0) x_length=0;
 
-    y_position=mouse_y-y0;
+    y_position=mouse_y_-y0;
     if (y_position<0) return FALSE;
 
     //pos1 = utf8len(text);
@@ -5369,10 +5393,10 @@ BOOL TTF_text_pos_x0(char *text, int x0, int y0, int width_w, int *pos)
     gk_rend_set_bold_strength(rend_UI, 50);
     gk_text_size_utf8(rend_UI, buf, &text_h, &text_v);
 
-    y_position=y0+text_v-mouse_y;
+    y_position=y0+text_v-mouse_y_;
     if (y_position<0) return FALSE;
 
-    if (mouse_x>(x0+text_h+width_w)) return FALSE;
+    if (mouse_x_>(x0+text_h+(N_W*width_w))) return FALSE;
 
     while (text_h>x_length)
     {
@@ -5607,7 +5631,9 @@ void Initialize_Desktop_font(char *font_name_)
               winvar, finalWinDir);
 
     // Execute silently in the background
+    get_console();
     system(cmdBuffer);
+    free_console();
 
 #else
     const char *homedir;
@@ -6334,7 +6360,7 @@ int _al_mangled_main(int argc, char *argv[])
     argc_=argc;
 
 #else
- 
+ /*  //older version
  char* ptr0;
  char* ptr;
  argc_ = 1;
@@ -6346,6 +6372,7 @@ int _al_mangled_main(int argc, char *argv[])
  }
 
  argv_ = malloc((argc_ + 2) * sizeof * argv_);  //argv_[0] is reserved for application name
+
  i = 0;
  size_t length = strlen(application) + 1;
  argv_[i] = malloc(length);
@@ -6382,6 +6409,67 @@ int _al_mangled_main(int argc, char *argv[])
 
  argp__ = malloc(strlen(application) + 10);
  strcpy(argp__, application);
+*/
+    char* ptr0;
+    char* ptr;
+    argc_ = 1;
+    ptr = strchr(arg_params, ' ');
+    while (ptr != NULL)
+    {
+        argc_++;
+        ptr = strchr(ptr + 1, ' ');
+    }
+
+    // FIX 1: Always allocate space for AT LEAST 4 slots (Index 0, 1, 2, and 3 for trailing NULL)
+    size_t alloc_slots = (argc_ + 2 > 4) ? (argc_ + 2) : 4;
+    argv_ = malloc(alloc_slots * sizeof *argv_);
+
+    // FIX 2: Initialize ALL slots to NULL right away to ensure safe reading later
+    for (size_t k = 0; k < alloc_slots; k++) {
+        argv_[k] = NULL;
+    }
+
+    i = 0;
+    size_t length = strlen(application) + 1;
+    argv_[i] = malloc(length);
+    memcpy(argv_[i], application, length);
+    i++;
+    ptr0 = arg_params;
+    ptr = strchr(arg_params, ' ');
+    if (ptr == NULL)
+    {
+        // Fix: Only parse if the string isn't completely empty
+        if (strlen(ptr0) > 0) {
+            size_t length = strlen(ptr0) + 1;
+            argv_[i] = malloc(length);
+            memcpy(argv_[i], ptr0, length);
+            i++;
+        }
+    }
+    else
+    {
+        *ptr = '\0';
+        while (ptr0 != NULL)
+        {
+            size_t length = strlen(ptr0) + 1;
+            argv_[i] = malloc(length);
+            memcpy(argv_[i], ptr0, length);
+            if (ptr != NULL)
+            {
+                ptr0 = ptr + 1;
+                ptr = strchr(ptr0, ' ');
+                if (ptr != NULL) *ptr = '\0'; // Fix: Ensure following spaces are null-terminated too
+            }
+            else ptr0 = NULL;
+            i++;
+        }
+    }
+    // argv_[i] = NULL; // No longer needed as we pre-cleared the whole array
+
+    argc_ = i;
+
+    argp__ = malloc(strlen(application) + 10);
+    strcpy(argp__, application);
 
 #endif
 
@@ -7119,6 +7207,8 @@ if (child==0)
        //// WARNING 01-07-2026
        ////CUR_OFF(X,Y);
        reset_cursor(); //this is just for a case if cursor is not reset after some function
+
+       edit_functions=FALSE;  //this is just for a case the variable was not set to FALSE by mistake
        ////CUR_ON(X,Y);
 
        if (go_reset_if_resized==TRUE) reset_if_resized();

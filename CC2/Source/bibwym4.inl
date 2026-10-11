@@ -355,6 +355,9 @@ static int W_t (BOOL b_graph_value)
     ptr_n=strstr(T.text,"\\n");
   }
 
+  if (strchr(T.text,'\n')!=NULL)  //in case \n was already there but \\not
+        T.multiline=1;
+
   T.dl=strlen(T.text);
   T.n=T18+T.dl;
   T.width = 0;
@@ -563,17 +566,40 @@ void Edit_Wym (unsigned type_sel, void *ptr_sel)  /* funkcja obslugi edycji wymi
 		      t=1; ruchblokw();
 		      if (-1 != (np=dodajstr(&eT)))
 		      {
+                  /*
                   strcpy(buf,((TEXT *)adr)->text);
                   strcpy(eT.st,"");
                   ptr_n=buf;
                   while (*ptr_n!='\0')
                   {
-                      if (*ptr_n=='\n') strcat(eT.st,"\\n");
-                      else if (*ptr_n!='\r') strncat(eT.st,ptr_n,MaxTextLen - strlen(eT.st) - 1);
+                      if (*ptr_n=='\n') strncat(eT.st,"\\n",min(1,MaxTextLen - strlen(eT.st) - 1));
+                      else if (*ptr_n!='\r') strncat(eT.st,ptr_n,min(1,MaxTextLen - strlen(eT.st) - 1));
                       ptr_n++;
                   }
+                  */
+                  size_t dest_idx = 0;
+                  ptr_n = ((TEXT *)adr)->text; // Skip intermediate 'buf' copy unless strictly needed
+                  while (*ptr_n != '\0') {
+                      // Ensure we have room for at least 2 characters (for '\n' -> '\\' + 'n') plus the null terminator
+                      if (dest_idx >= MaxTextLen - 2) {
+                          break; // Stop to prevent buffer overflow
+                      }
+
+                      if (*ptr_n == '\n') {
+                          eT.st[dest_idx++] = '\\';
+                          eT.st[dest_idx++] = 'n';
+                      }
+                      else if (*ptr_n != '\r') {
+                          eT.st[dest_idx++] = *ptr_n;
+                      }
+
+                      ptr_n++;
+                  }
+                  // Ensure the final string is properly null-terminated
+                  eT.st[dest_idx] = '\0';
+
                   eT.address = adr;
-                 Out_Edited_Draw_Param ((ESTR *)&eT, TRUE) ;
+                  Out_Edited_Draw_Param ((ESTR *)&eT, TRUE) ;
 		      }
     		      break;
 	case Bblok  :

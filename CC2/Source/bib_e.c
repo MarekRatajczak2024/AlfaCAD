@@ -171,6 +171,8 @@ extern void _free_mouse(void);
 extern int get_komunikat_arc_bak(void);
 extern BOOL kom_arc_bak(void);
 
+extern BITMAP *Get_Screenplay(void);
+
 #ifdef ALLEGRO5
 extern void position_mouse_(int x, int y);
 extern void set_mouse_range(int x1, int y1, int x2, int y2);
@@ -3438,6 +3440,10 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 	linesettingstype_ lineinfo;
 	int de_x, de2_x, de_y, de2_y;
 	int i;
+    int x01, y01, x02, y02;
+
+    get_clip_rect(Get_Screenplay(),&x01, &y01, &x02, &y02);
+    set_clip_rect(Get_Screenplay(), (int)x1, (int)y1, (int)x2, (int)y2);
 
 	getlinesettings1(&lineinfo);
 	l_e = 1;
@@ -3477,7 +3483,6 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 		{
 			l_e = 1;
 		}
-
 
 	if (lineinfo.thickness >= 3)
 	{
@@ -3813,6 +3818,8 @@ int lineCuncut(long x1, long y1, long x2, long y2)
 			}
 		}
 	}
+
+    set_clip_rect(Get_Screenplay(), x01, y01, x02, y02);
 	return 1;
 }
 
@@ -5401,6 +5408,67 @@ void my_rect (int x1, int y1, int x2, int y2)
 
 }
 
+////#define M_PI 3.14159265358979323846
+
+// Finds intersections of a circle and 2 parallel lines flanking a center median
+// angle_deg: Angle in degrees relative to global X-axis (Positive = Counterclockwise)
+// out_points: Array of size 4 to store the results
+// Returns: Total number of intersection points found (0, 2, or 4)
+int getParallelLinesCircleIntersection(long xc, long yc, long r, long dd1, double angle_deg, Pixel out_points[4]) {
+        // 1. Perpendicular distance from the median line to each parallel line
+        double h = dd1 / 2.0;
+
+        // If the lines are further out than the radius, there are no intersections
+        if (h > r) {
+                return 0;
+        }
+
+        // Convert angle to radians
+        double angle_rad = angle_deg * (M_PI / 180.0);
+        double cos_a = cos(angle_rad);
+        double sin_a = sin(angle_rad);
+
+        // 2. Adjust for Screen Space (Standard screens have Y-axis pointing DOWN)
+        // To keep a positive angle moving Counterclockwise, we invert the Y components
+        double vx = cos_a;
+        double vy = -sin_a; // Inverted for Y-down screen space
+
+        double nx = sin_a;  // Normal vector X component
+        double ny = cos_a;  // Normal vector Y component (Inverted logic for Y-down)
+
+        // 3. Distance from the perpendicular drop point to the circle boundary (Pythagoras)
+        // Cast 'r' to double to handle large ranges safely
+        double half_chord = sqrt(((double)r * r) - (h * h));
+
+        int count = 0;
+
+        // --- LINE 1 (Shifted along the normal vector) ---
+        double p1_x = xc + h * nx;
+        double p1_y = yc + h * ny;
+
+        out_points[count].x = (long)lround(p1_x + half_chord * vx);
+        out_points[count].y = (long)lround(p1_y + half_chord * vy);
+        count++;
+
+        out_points[count].x = (long)lround(p1_x - half_chord * vx);
+        out_points[count].y = (long)lround(p1_y - half_chord * vy);
+        count++;
+
+        // --- LINE 2 (Shifted opposite to the normal vector) ---
+        double p2_x = xc - h * nx;
+        double p2_y = yc - h * ny;
+
+        out_points[count].x = (long)lround(p2_x + half_chord * vx);
+        out_points[count].y = (long)lround(p2_y + half_chord * vy);
+        count++;
+
+        out_points[count].x = (long)lround(p2_x - half_chord * vx);
+        out_points[count].y = (long)lround(p2_y - half_chord * vy);
+        count++;
+
+        return count;
+}
+
 
 void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
 /*------------------------------------------------------*/
@@ -5613,7 +5681,7 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
            linestyle(96);
            dxy=pikseleDX(df_psize*2.325);  //2.5
            dd=(long)((double)(x2-x1)*0.25); //  sin(22)/1.5 sin(30)/1.5
-           dd1=(long)((double)(x2-x1)*0.618);  // cos(22)/1.5; cos(30)/1.5;
+           dd1=(long)((double)(x2-x1)*0.625);  // cos(22)/1.5; cos(30)/1.5;
 
            lineC (x12-dxy, y12+dd, x12-dd1, y12+dd);
            lineC (x12+dd1, y12+dd, x12+dxy, y12+dd);
@@ -5817,6 +5885,104 @@ void Draw_Point (T_Point *ptrs_point, int mode, int kolor)
                    lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
                    break;
            }
+           break;
+
+           case 37: /*pin X*/
+           case 38: /*pin Y*/
+           case 39: /*pin Z*/
+           case 40: /*rigid X*/
+           case 41: /*rigid Y*/
+           case 42: /*rigid Z*/
+           lineC (x12, y1, x12, y2) ;
+           Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+           Rotate_Point(kos150, koc150, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+           lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
+           Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x1, (double)y12, &x1i, &y1i);
+           Rotate_Point(kos30, koc30, (double)x12, (double)y12, (double)x2, (double)y12, &x2i, &y2i);
+           lineC ((long)x1i, (long)y1i, (long)x2i, (long)y2i) ;
+
+           long xc=pikseleX0 (ptrs_point->x);
+           long yc=pikseleY0 (ptrs_point->y);
+           long rc=abs((int)(x2-x1));
+           DrawCircle(xc, yc, rc, mode);
+           linestyle(128);
+           dxy=pikseleDX(df_psize*3);
+           dd=(x2-x1);
+           //dd1=(float)((double)(x2-x1)/2.);
+           dd1=(long)((double)(x2-x1)*0.625);
+           dl=-(double)dd1*koc30;
+
+           //if (kolor) set_mode_solid();
+           //linestyle(96);
+           //dxy=pikseleDX(df_psize*2.325);  //2.5
+           //dd=(long)((double)(x2-x1)*0.25); //  sin(22)/1.5 sin(30)/1.5
+           //dd1=(long)((double)(x2-x1)*0.618);  // cos(22)/1.5; cos(30)/1.5;
+
+           int r=abs((int)(x2-x1));
+           int R=2*r;
+
+           int g1=128, g2=128, g3=128;
+           int t96=64; //or 96
+
+           switch (ptrs_point->typ)
+           {
+               case 37:
+                       g1=t96;
+                       break;
+               case 38:
+                       g2=t96;
+                       break;
+               case 39:
+                       g3=t96;
+                       break;
+               case 40:
+                       g2=t96;
+                       g3=t96;
+                       break;
+               case 41:
+                       g1=t96;
+                       g3=t96;
+                       break;
+               case 42:
+                       g1=t96;
+                       g2=t96;
+                       break;
+               default:
+                       break;
+           }
+
+           Pixel out_points[4];
+           Pixel out_points1[4];
+           double angle_deg=30;
+
+           int ret1 = getParallelLinesCircleIntersection(xc, yc, r, dd1, angle_deg, out_points);
+           int ret2 = getParallelLinesCircleIntersection(xc, yc, R, dd1, angle_deg, out_points1);
+
+           linestyle(g1);  //X
+
+           for (int i=0; i<4; i++)
+             lineC (out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y);
+
+           angle_deg=90;
+
+           ret1 = getParallelLinesCircleIntersection(xc, yc, r, dd1, angle_deg, out_points);
+           ret2 = getParallelLinesCircleIntersection(xc, yc, R, dd1, angle_deg, out_points1);
+
+           linestyle(g3);  //Z
+
+           for (int i=0; i<4; i++)
+               lineC (out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y);
+
+           angle_deg=150;
+
+           ret1 = getParallelLinesCircleIntersection(xc, yc, r, dd1, angle_deg, out_points);
+           ret2 = getParallelLinesCircleIntersection(xc, yc, R, dd1, angle_deg, out_points1);
+
+           linestyle(g2);  //Y
+
+           for (int i=0; i<4; i++)
+               lineC (out_points[i].x, out_points[i].y, out_points1[i].x, out_points1[i].y);
+
            break;
    default : 
     lineC (x1, y1, x2, y2) ;
@@ -6429,6 +6595,38 @@ int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float yp
     return (d > 1e-6) ? 1 : -1;
 }
 
+
+// Returns 1 if lines are parallel within tolerance, 0 otherwise
+int areDoubleLinesParallel(point a1, point a2, point b1, point b2, double tolerance_degrees) {
+        // 1. Calculate direction vectors
+        double dxA = a2.x - a1.x;
+        double dyA = a2.y - a1.y;
+        double dxB = b2.x - b1.x;
+        double dyB = b2.y - b1.y;
+
+        // 2. Calculate squared lengths to guard against zero-length (degenerate) lines
+        double lenSqA = dxA * dxA + dyA * dyA;
+        double lenSqB = dxB * dxB + dyB * dyB;
+
+        // Use a tiny epsilon to check for dead/point lines
+        if (lenSqA < 1e-12 || lenSqB < 1e-12) {
+                return 0;
+        }
+
+        // 3. Compute 2D cross product magnitudes
+        double cross_product = dxA * dyB - dyA * dxB;
+
+        // 4. Normalize by line lengths to isolate the sine of the angle between lines
+        double lenA = sqrt(lenSqA);
+        double lenB = sqrt(lenSqB);
+        double sin_theta = fabs(cross_product) / (lenA * lenB);
+
+        // 5. Compare against the user-defined maximum allowable tolerance
+        double max_sin = sin(tolerance_degrees * (M_PI / 180.0));
+
+        return (sin_theta <= max_sin);
+}
+
 int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, float x12, float y12, double angle0, AVECTOR *v, double kat, int mode, int kolor, int vkolor, int redraw_obj, BOOL axis)
 {
     //arrows
@@ -6455,6 +6653,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
     int flipped=0;
     int non_flipped=0;
     int zero_mag=0;
+
+       // if ((v->style==10) &&  (v->cartflags==1) && ((Check_if_Equal(angle0, 5* Pi_ / 6)) || (Check_if_Equal(angle, Pi_ / 6))))
+        //        angle0+=0.01;
 
     if (Check_if_Equal(v->magnitude1, 0.) && Check_if_Equal(v->magnitude2, 0.)) zero_mag=1;
 
@@ -6665,7 +6866,9 @@ int make_arrows(float x1, float y1, float x2, float y2, float x11, float y11, fl
                 b1.y = (double) y11;
                 b2.x = (double) x12;
                 b2.y = (double) y12;
-                p = intersectionPoint(a1, a2, b1, b2);
+
+               if (areDoubleLinesParallel(a1, a2, b1, b2, 0.001)) p=b1;
+               else p = intersectionPoint(a1, a2, b1, b2);
             }
 
             if (isnan(p.x)) return 1;
@@ -11330,7 +11533,9 @@ else
 						   i_ctx_created = j + 1;
 						   j = ii_loop;
 						   bitmap_exist = TRUE;
-						   if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+                           if (b_pcx->kod_obiektu == 1) bitmap_pcx_exist = TRUE;
+						   else if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+                           else if (b_pcx->kod_obiektu == 3) bitmap_jpg_exist = TRUE;
 						   break;
 					   }
 
@@ -11347,7 +11552,9 @@ else
 				   }
 			   }
 			   bitmap_exist = TRUE;
-			   if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+			   if (b_pcx->kod_obiektu == 1) bitmap_pcx_exist = TRUE;
+               else if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+               else if (b_pcx->kod_obiektu == 3) bitmap_jpg_exist = TRUE;
 		   }
 		   else
 		   {
@@ -11951,7 +12158,11 @@ void rysuj_skin(void)
 							}
 							kk = Draw_pcx(b_pcx);
 							bitmap_on_front_exist = TRUE;
-							if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+
+                            if (b_pcx->kod_obiektu == 1) bitmap_pcx_exist = TRUE;
+                            else if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+                            else if (b_pcx->kod_obiektu == 3) bitmap_jpg_exist = TRUE;
+
 							if (Get_Bitmap_Outline() && (b_pcx->widoczny))
 							{
                                 if (b_pcx->atrybut == Ablok) { gr=5; kolor=kolory.blok;}
@@ -12846,7 +13057,9 @@ static void rysuj_obiekty(void)
   int mode = COPY_PUT ;
   int grubosc;
   BOOL bitmap_exist_o;
+  BOOL bitmap_pcx_exist_o;
   BOOL bitmap_png_exist_o;
+  BOOL bitmap_jpg_exist_o;
   BOOL bitmap_vector_exist_o;
   BOOL bitmap_pattern_exist_o;
   char *end_block;
@@ -12921,11 +13134,15 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
  }
 
  bitmap_exist_o=bitmap_exist || bitmap_pattern_exist || bitmap_pattern_exist;
- bitmap_png_exist_o = bitmap_png_exist || bitmap_exist || bitmap_pattern_exist;
+ bitmap_png_exist_o = bitmap_png_exist; // || bitmap_exist || bitmap_pattern_exist;
+ bitmap_pcx_exist_o = bitmap_pcx_exist;
+ bitmap_jpg_exist_o = bitmap_jpg_exist;
  bitmap_vector_exist_o = bitmap_vector_exist;
  bitmap_pattern_exist_o = bitmap_pattern_exist || bitmap_exist || bitmap_png_exist;
  bitmap_exist = FALSE;
+ bitmap_pcx_exist = FALSE;
  bitmap_png_exist = FALSE;
+ bitmap_jpg_exist = FALSE;
  bitmap_vector_exist = FALSE;
  bitmap_pattern_exist = FALSE;
  solid_translucent_exist = FALSE;
@@ -12965,7 +13182,9 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 						}
 						b_break = TRUE;
 						bitmap_exist = bitmap_exist_o;
+                        bitmap_pcx_exist = bitmap_pcx_exist_o;
 						bitmap_png_exist = bitmap_png_exist_o;
+                        bitmap_jpg_exist = bitmap_jpg_exist_o;
                         bitmap_vector_exist = bitmap_vector_exist_o;
 						bitmap_pattern_exist = bitmap_pattern_exist_o;
 					}
@@ -14073,7 +14292,9 @@ _WhNumberTextStyle_=get_WhNumberTextStyle();
 				  return;
 			  }
 			  bitmap_exist = TRUE;
-			  if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+              if (b_pcx->kod_obiektu == 1) bitmap_pcx_exist = TRUE;
+			  else if (b_pcx->kod_obiektu == 2) bitmap_png_exist = TRUE;
+              else if (b_pcx->kod_obiektu == 3) bitmap_jpg_exist = TRUE;
 
 			  if (Get_Bitmap_Outline() && (b_pcx->widoczny))
 			  {
@@ -15760,7 +15981,9 @@ int czytaj_rysunek0(char *rys, BOOL b_err, int redraw_view)
 re_read_zb:
 
   bitmap_exist = FALSE;
+  bitmap_pcx_exist = FALSE;
   bitmap_png_exist = FALSE;
+  bitmap_jpg_exist = FALSE;
   bitmap_pattern_exist = FALSE;
   solid_translucent_exist = FALSE;
   bitmap_on_front_exist = FALSE;

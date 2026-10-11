@@ -1,8 +1,8 @@
 #include "L_section_US_si_standards.c"
 
 POLE pmL_section_US_si[] = {
-{u8"ADM 2015",L' ',0,&mL_section_US_si_0},
-{u8"ADM 2020",L' ',0,&mL_section_US_si_1},
+{u8"ADM 2015\0Al",L' ',0,&mL_section_US_si_0},
+{u8"ADM 2020\0Al",L' ',0,&mL_section_US_si_1},
 {u8"AISC 13",L' ',0,&mL_section_US_si_2},
 {u8"AISC 14",L' ',0,&mL_section_US_si_3},
 {u8"AISC 15",L' ',0,&mL_section_US_si_4},

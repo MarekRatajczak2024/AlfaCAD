@@ -1218,7 +1218,7 @@ static BOOL set_offset_object (void)
 {
   unsigned typ;
   void* ptr1, * ptr;
-  BLOK *ptrs_b;
+  BLOK *ptrs_b=NULL;
   long_long ptr1l=0;
 
   ptr1 = &ptr1l;
@@ -1239,8 +1239,9 @@ static BOOL set_offset_object (void)
     if (ptrs_b == NULL)
     {
       Internal_Error (__LINE__,__FILE__);
+      return FALSE;
     }
-    if (ptrs_b != NULL || ptrs_b->obiektt1 == OB1NOCHANGE || ptrs_b->obiektt1 == OB1CHANGE_DRAG)
+    if (ptrs_b->obiektt1 == OB1NOCHANGE || ptrs_b->obiektt1 == OB1CHANGE_DRAG)
     {
       if ((ptrs_b->kod_obiektu==B_PLINE) && (ptrs_b->opis_obiektu[0]!=PL_TRACE))
           ADP = (char *)ptrs_b ;

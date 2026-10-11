@@ -750,6 +750,7 @@ static char gg[10][16] = { u8"Endpoint", u8"Nearest end", u8"Middle", u8"Interse
 
 #define _PCX_FILE_ERROR_  u8"PCX file write error"
 #define _PNG_FILE_ERROR_  u8"PNG file write error"
+#define _JPG_FILE_ERROR_  u8"JPG file write error"
 #define _UNKNOWN_IMAGE_FORMAT_ u8"Unknown image file format"
 #define _FILE_ u8"File "
 #define _FILE_EXISTS_ u8" exists. Overwrite it ? (Yes/No/Esc):"
@@ -1000,6 +1001,12 @@ static char confirm[] = u8"Confirm";
 #define _RT_SECTION_ u8"Enter h;b;t;c (height; width; wall thickness; axial cover"
 #define _PLATE_SECTION_ u8"Enter h;c (height; axial cover"
 #define _SHIELD_SECTION_ u8"Enter t;c (thickness; axial cover"
+
+POLE pmFeC_Al[2] = {
+	{u8"Steel",'S',0,NULL},
+	{u8"Aluminum",'A',0,NULL} };
+
+static TMENU mFeC_Al = { 2,0,0,9,79,11,0,CMNU,CMBR,CMTX,0,4,0,0,0,(POLE(*)[]) &pmFeC_Al,NULL,NULL };
 
 #endif
 

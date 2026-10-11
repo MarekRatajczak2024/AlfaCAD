@@ -663,6 +663,25 @@ POLE pmOpcje[] = {
 #define _DEMO_MODE_ "En DEMO teclas presionadas y botones del mouse"
 #define _DEMO_MODE1_ "se muestran en la parte inferior de la ventana"
 
+const char* DwgErrorList[] = { u8"SIN ERROR",
+ /* ordenados por gravedad */
+ u8"CRC INCORRECTO",  //1
+ u8"AÚN NO COMPATIBLE", //2
+ u8"CLASE NO MANEJADA",  //4
+ u8"TIPO INCORRECTO",  //8
+ u8"MANEJADOR INVÁLIDO",  //16
+ u8"SEMILLA INVÁLIDA",  //32
+ u8"VALOR FUERA DE RANGO",  //64
+/* -------- errores críticos ------- */
+ u8"CLASES NO ENCONTRADAS",  //128
+ u8"SECCIÓN NO ENCONTRADA", //256
+ u8"PÁGINA NO ENCONTRADA",  //512
+ u8"ERROR INTERNO",  //1024
+ u8"DWG INVÁLIDO",  //2048
+ u8"ERROR DE E/S",  //4096
+ u8"MEMORIA AGOTADA"  //8192
+};
+
 #endif
 
 #ifdef __ASKING__
@@ -1623,7 +1642,7 @@ char *vector_txt[]={u8"Vector: rígido-rígido",u8"Vector: rígido-pasador",u8"V
 
 unsigned short vector_wcod[]={L'A',L'B',L'C',L'D',L'F',L'M',L'-',L'U',L'R',L'O',L'Y',L'X',L'N',L'H',L'V',L'T',L'0',L'L',L'E',L'W',L'Z',L'Q',L'S',L'0',L'1',L'2',L'3',L'4',L'5',L'6',L'7',L'9',L'!',L'@',L'#',L'$',L'%',L'^'};
 
-unsigned short point_wcod[]={L'S', L'B', L'I', L'K', L'L', L'U',L'T', L'U', L'P', L'@', L'#', L'*',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+','X', 'N', 'Y', 'M', 'V', 'K', 'N', 'T'};
+unsigned short point_wcod[]={L'S', L'B', L'I', L'K', L'L', L'U',L'T', L'U', L'P', L'@', L'#', L'*',L'E', L'1', L'2', L'3', L'A', L'3', L'4', L'5', L'D', L'7', L'8', L'9', L'O', '0', '-', '=', '+','X', 'N', 'Y', 'M', 'V', 'K', 'N', 'T', 'K', 'L', 'M', 'N', 'Q','R'};
 unsigned short object_wcod[]={L'I', L'L', L'T', L'A', L'C', L'D', L'S', L'P', L'*', L'G', L'O', L'E', L'F', 'B', L'V', ' '};
 char *object_txt[]={u8"Imagen",u8"Línea",u8"Texto",u8"Arco",u8"Círculo",u8"Disco",u8"Sólido",u8"Punto",u8"Bloque",u8"Arco sólido",u8"Arco elíptico",u8"Elipse",u8"Elipse rellena",u8"Bézier Spline",u8"Vector",""};
 
@@ -2514,9 +2533,16 @@ static POLE pmTyp_punktu[] = {
      {u8"apoyo fijo deslizante en el eje Y\0",L'Y',872,NULL},
      {u8"apoyo fijo deslizante en el eje Y (A)\0",L'T',873,NULL},
      {u8"apoyo articulado deslizadera en el eje X\0",L'H',874,NULL},
-     {u8"apoyo articulado deslizadera en el eje X (A)\0",L'A',875,NULL},
+     {u8"apoyo articulado deslizadera en el eje X (A)\0",L'C',875,NULL},
      {u8"apoyo articulado deslizadera en el eje Y\0",L'V',876,NULL},
      {u8"apoyo articulado deslizadera en el eje Y (A)\0",L'W',877,NULL},
+
+     {u8"apoyo articulado X\0",L'K',995,NULL},
+     {u8"apoyo articulado Y\0",L'L',996,NULL},
+     {u8"apoyo articulado Z\0",L'M',997,NULL},
+     {u8"apoyo fijo X\0",L'N',998,NULL},
+     {u8"apoyo fijo Y\0",L'Q',999,NULL},
+     {u8"apoyo fijo Z\0",L'R',1000,NULL},
 };
 
 #endif
@@ -3759,10 +3785,11 @@ T_Prototype      s__prot_p = { u8"prototipop.alf", TRUE };
 #define _BLOCKS_CORRECTED_ u8"%ld bloques, %ld objetos han sido corregidos"
 #define _BLOCKS_TESTED_ u8"Todo bien. %d bloques probados"
 
-char* typ_punktu_inf[] = { u8"Simple",u8"Punto base",u8"nivel existente",u8"nivel proyectado i.",u8"nivel proyectado s.",u8"nivel de calle",u8"nivel del terreno",u8"Unión",u8"Pasador","especial @","especial #","especial *"
+char* typ_punktu_inf[] = { u8"Simple",u8"Punto base",u8"nivel existente",u8"nivel proyectado i.",u8"nivel proyectado s.",u8"nivel de calle",u8"nivel del terreno",u8"Unión",u8"Pasador",u8"especial @",u8"especial #",u8"especial *",
                            u8"Empotrado",u8"Empotrado I",u8"Empotrado D",u8"Empotrado A", u8"Articulado", u8"Articulado I", u8"Articulado D", u8"Articulado A",
                            u8"Empotrado Deslizadera", u8"Empotrado Deslizadera I", u8"Empotrado Deslizadera D", u8"Empotrado Deslizadera A", u8"Articulado Deslizadera", u8"Articulado Deslizadera I", u8"Articulado Deslizadera D", u8"Articulado Deslizadera A", u8"sin rotación Z",
-                           u8"Empotrado Deslizadera X", u8"Empotrado Deslizadera X A", u8"Empotrado Deslizadera Y", u8"Empotrado Deslizadera Y A", u8"Articulado Deslizadera X", u8"Articulado Deslizadera X A", u8"Articulado Deslizadera Y", u8"Articulado Deslizadera Y A"};
+                           u8"Empotrado Deslizadera X", u8"Empotrado Deslizadera X A", u8"Empotrado Deslizadera Y", u8"Empotrado Deslizadera Y A", u8"Articulado Deslizadera X", u8"Articulado Deslizadera X A", u8"Articulado Deslizadera Y", u8"Articulado Deslizadera Y A",
+                           u8"Articulado X", u8"Articulado Y", u8"Articulado Z", u8"Empotrado X", u8"Empotrado Y", u8"Empotrado Z"};
 
 #endif
 

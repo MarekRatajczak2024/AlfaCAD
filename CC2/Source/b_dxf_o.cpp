@@ -61,6 +61,7 @@ extern int AcadV;   /*prowizorka*/
 static BOOL to_main = TRUE;
 static BOOL to_block = FALSE;
 static BOOL to_entities = FALSE;
+static int TotalImagesInDrawing=0;
 char *STANDARD=(char*)"STANDARD";
 
 typedef unsigned long       DWORD;
@@ -123,6 +124,9 @@ extern int getDisplacedIsoPoint(LINIA *Le, double len_cart, double x_cart,
                                 double dx_loc, double dy_loc, double dz_loc,
                                 double *px, double *py, double *pdx, double *pdy);
 extern int is_point_on_left(float x1, float y1, float x2, float y2, float xpp, float ypp);
+
+extern int areDoubleLinesParallel(point a1, point a2, point b1, point b2, double tolerance_degrees);
+extern int getParallelLinesCircleIntersectionDouble(double xc, double yc, double r, double dd1, double angle_deg, Point2D out_points[4]);
 
 extern BOOL Check_if_GE (double x, double y);
 extern BOOL Check_if_LT (double x, double y);
@@ -747,20 +751,58 @@ int PISZ_OBJECTSDEF::PiszObjects(void)
 		PiszGrupa(100, (char*)"AcDbDictionary") ||
 		PiszGrupa(281, 1) == ErrorWeWy ||
 		PiszGrupa(3, (char*)"ACAD_GROUP") ||
-		PiszGrupa(350, (char*)"D") == ErrorWeWy ||
-		PiszGrupa(0, (char*)DICTIONARY) == ErrorWeWy ||
-		PiszGrupa(5, (char*)"D") == ErrorWeWy ||
-		PiszGrupa(330, (char*)"C") == ErrorWeWy ||
-		PiszGrupa(100, (char*)"AcDbDictionary") == ErrorWeWy ||
-		PiszGrupa(281, 1) == ErrorWeWy ||
-		PiszImageDef() == ErrorWeWy)  return ErrorWeWy;
-		//PiszGrupa(0, ENDSEC) == ErrorWeWy) return ErrorWeWy;
-	else return OkWeWy;
+		PiszGrupa(350, (char*)"D") == ErrorWeWy) return ErrorWeWy;
+
+        // --- DYNAMIC CHECK FOR IMAGES ---
+        if (TotalImagesInDrawing>0)
+        {
+            // Only inject the Image Dictionary pointers if images exist!
+            if (PiszGrupa(3, (char*)"ACAD_IMAGE_DICT") == ErrorWeWy ||
+                PiszGrupa(350, (char*)"E") == ErrorWeWy) return ErrorWeWy;
+        }
+
+    // Write out the Group sub-dictionary "D"
+    if (PiszGrupa(0, (char*)DICTIONARY) == ErrorWeWy ||
+        PiszGrupa(5, (char*)"D") == ErrorWeWy ||
+        PiszGrupa(330, (char*)"C") == ErrorWeWy ||
+        PiszGrupa(100, (char*)"AcDbDictionary") == ErrorWeWy ||
+        PiszGrupa(281, 1) == ErrorWeWy) return ErrorWeWy;
+
+    // --- WRITE IMAGE DEFINITIONS IF THEY EXIST ---
+    if (TotalImagesInDrawing>0)
+    {
+        // 1. Start the Image Dictionary Object "E"
+        if (PiszGrupa(0, (char*)DICTIONARY) == ErrorWeWy ||
+            PiszGrupa(5, (char*)"E") == ErrorWeWy ||
+            PiszGrupa(330, (char*)"C") == ErrorWeWy ||
+            PiszGrupa(100, (char*)"AcDbDictionary") == ErrorWeWy ||
+            PiszGrupa(281, 1) == ErrorWeWy) return ErrorWeWy;
+
+        // 2. PRIMARY LOOP: Map names to handles inside the dictionary body
+        for (int i = 0; i < TotalImagesInDrawing; i++)
+        {
+            char entry_name[32];
+            char handle_str[16];
+
+            // Derive your values exactly how you do for the definitions
+            int img_no = image_no + 1 + i;
+            sprintf(entry_name, "V_IMAGE%d", img_no);
+            sprintf(handle_str, "%X", img_no); // 16 becomes "11", 17 becomes "12"
+
+            if (PiszGrupa(3, entry_name) == ErrorWeWy ||
+                PiszGrupa(350, handle_str) == ErrorWeWy) return ErrorWeWy;
+        }
+
+
+        if (PiszImageDef() == ErrorWeWy) return ErrorWeWy; // Loops entries inside E
+    }
+
+	return OkWeWy;
 }
 
 int PISZ_OBJECTSDEF::PiszImageDef()
 {
-	char image_file[MAXPATH], image_file_pcx[MAXPATH];
+	char image_file[MAXPATH], image_file_pcx_jpg[MAXPATH];
 	char image_name[MAXPATH];
 	char dir__[MAXPATH]="";
 	char drive__[MAXDRIVE]="";
@@ -771,6 +813,7 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 	FILE *fp;
 	char st[MaxTextLen];
 	char *png;
+    char *jpg;
 	B_PCX *b_pcx;
     int ret;
 
@@ -796,15 +839,15 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 			//firstly, image must be exported to the file
 		    //image file takes name from dxf file name indexed at the end follow the pattern  %Path
 			flags = fnsplit(Path, drive__, dir__, file__, ext__);
-			if (b_pcx->kod_obiektu == 1)
+			if (b_pcx->kod_obiektu == 1)  //pcx
 			{
 				strcpy(ext_, ".pcx");
 				strcpy(ext_1, ".png");
-				sprintf(image_file_pcx, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_);
+				sprintf(image_file_pcx_jpg, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_);
 				sprintf(image_file, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_1);
 				sprintf(image_name, "%s_img%d%s", file__, image_no, ext_1);
 				//export bloku PCX
-				fp = fopen(image_file_pcx, "w+b");
+				fp = fopen(image_file_pcx_jpg, "w+b");
 				if (!fp)
 				{
 					strcpy(st, _PCX_FILE_ERROR_);
@@ -821,7 +864,7 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 				}
 				fclose(fp);
 				//converting to png
-				sprintf(params, "%s %s", image_file_pcx, image_file);
+				sprintf(params, "\"%s\" \"%s\"", image_file_pcx_jpg, image_file);
 
 				runcode = RunSilent((char*)"image2png.exe", params);
 
@@ -829,10 +872,10 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 				{
 					return ErrorWeWy;
 				}
-				if (my_file_exists(image_file_pcx)) ret=unlink(image_file_pcx);
+				if (my_file_exists(image_file_pcx_jpg)) ret=unlink(image_file_pcx_jpg);
 
 			}
-			else if (b_pcx->kod_obiektu == 2)
+			else if (b_pcx->kod_obiektu == 2)  //png
 			{
 				strcpy(ext_, ".png");
 				sprintf(image_file, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_);
@@ -857,6 +900,47 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 				}
 				fclose(fp);
 			}
+            else if (b_pcx->kod_obiektu == 3)  //jpg
+                {
+                    strcpy(ext_, ".jpg");
+                    strcpy(ext_1, ".png");
+                    sprintf(image_file_pcx_jpg, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_);
+                    sprintf(image_file, "%s%s%s_img%d%s", drive__, dir__, file__, image_no, ext_1);
+                    sprintf(image_name, "%s_img%d%s", file__, image_no, ext_1);
+                    //export bloku PCX
+                    fp = fopen(image_file_pcx_jpg, "w+b");
+                    if (!fp)
+                    {
+                        strcpy(st, _JPG_FILE_ERROR_);
+                        ErrListStr(st);
+                        return ErrorWeWy;
+                    }
+
+
+                    //export bloku JPG
+                    jpg = b_pcx->pcx + sizeof(PCXheader);
+
+                    if (b_pcx->markers == 1)
+                    {
+                        fwrite(jpg, b_pcx->n - T294 - sizeof(STRIPS), 1, fp);
+                    }
+                    else
+                    {
+                        fwrite(jpg, b_pcx->n - T294, 1, fp);
+                    }
+                    fclose(fp);
+                    //converting jpg to png
+                    sprintf(params, "\"%s\" \"%s\"", image_file_pcx_jpg, image_file);
+
+                    runcode = RunSilent((char*)"image2png.exe", params);
+
+                    if (runcode > 0)
+                    {
+                        return ErrorWeWy;
+                    }
+                    if (my_file_exists(image_file_pcx_jpg)) ret=unlink(image_file_pcx_jpg);
+
+                }
 			else
 			{
 				strcpy(st, _UNKNOWN_IMAGE_FORMAT_);
@@ -867,12 +951,13 @@ int PISZ_OBJECTSDEF::PiszImageDef()
 
 			if (PiszGrupa(0, (char*)IMAGEDEF) == ErrorWeWy ||
 				PiszGrupa(-5, image_no) == ErrorWeWy ||
+                PiszGrupa(330, (char*)"E") == ErrorWeWy ||
 			    PiszGrupa(100, (char*)"AcDbRasterImageDef") == ErrorWeWy) return ErrorWeWy;
 			if (PiszGrupa(1, image_name) == ErrorWeWy) return ErrorWeWy;
 			if (PiszGrupa(10, (int)(b_pcx->i_x)) == ErrorWeWy ||
 				PiszGrupa(20, (int)(b_pcx->i_y)) == ErrorWeWy ||
 				PiszGrupa(11, (double)(b_pcx->dx*0.1)) == ErrorWeWy ||   //in 0.1 cm
-				PiszGrupa(21, (double)(b_pcx->dy*0.1)) == ErrorWeWy) return ErrorWeWy;  //in 0.1 cm
+				PiszGrupa(12, (double)(b_pcx->dy*0.1)) == ErrorWeWy) return ErrorWeWy;  //in 0.1 cm
 			if (PiszGrupa(280, (int)1) == ErrorWeWy) return ErrorWeWy;
 			if (PiszGrupa(281, (int)2) == ErrorWeWy) return ErrorWeWy;
 
@@ -3728,75 +3813,77 @@ int PISZ_OBJECTS::RysujPoint(T_Point *p, int *p_block_sufix)
                             break;
                     }
                     break;
-                case 28:
-                    L.x1 = (float)x12;
-                    L.y1 = (float)y1;
-                    L.x2 = (float)x12;
-                    L.y2 = (float)y2;
+                case 28: {
+                    L.x1 = (float) x12;
+                    L.y1 = (float) y1;
+                    L.x2 = (float) x12;
+                    L.y2 = (float) y2;
                     RysujLinia(&L);
 
-                    L.x1 = (float)x1;
-                    L.y1 = (float)y12;
-                    L.x2 = (float)x2;
-                    L.y2 = (float)y12;
+                    L.x1 = (float) x1;
+                    L.y1 = (float) y12;
+                    L.x2 = (float) x2;
+                    L.y2 = (float) y12;
                     RysujLinia(&L);
 
                     k.x = p->x;
                     k.y = p->y;
                     RysujKolo(&k);
 
-                    L.typ = 128;
+                    int t128 = 96; //or 128
+                    L.typ = t128;
                     dxy = df_psize * 2.235;
                     dd = 2 * df_psize * 0.25;
-                    dd1 = 2 * df_psize * 0.618;
+                    dd1 = 2 * df_psize * 0.625;
 
-                    L.x1 = (float)(x12-dxy);
-                    L.y1 = (float)(y12+dd);
-                    L.x2 = (float)(x12-dd1);
-                    L.y2 = (float)(y12+dd);
+                    L.x1 = (float) (x12 - dxy);
+                    L.y1 = (float) (y12 + dd);
+                    L.x2 = (float) (x12 - dd1);
+                    L.y2 = (float) (y12 + dd);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12+dd1);
-                    L.y1 = (float)(y12+dd);
-                    L.x2 = (float)(x12+dxy);
-                    L.y2 = (float)(y12+dd);
+                    L.x1 = (float) (x12 + dd1);
+                    L.y1 = (float) (y12 + dd);
+                    L.x2 = (float) (x12 + dxy);
+                    L.y2 = (float) (y12 + dd);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12-dxy);
-                    L.y1 = (float)(y12-dd);
-                    L.x2 = (float)(x12-dd1);
-                    L.y2 = (float)(y12-dd);
+                    L.x1 = (float) (x12 - dxy);
+                    L.y1 = (float) (y12 - dd);
+                    L.x2 = (float) (x12 - dd1);
+                    L.y2 = (float) (y12 - dd);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12+dd1);
-                    L.y1 = (float)(y12-dd);
-                    L.x2 = (float)(x12+dxy);
-                    L.y2 = (float)(y12-dd);
+                    L.x1 = (float) (x12 + dd1);
+                    L.y1 = (float) (y12 - dd);
+                    L.x2 = (float) (x12 + dxy);
+                    L.y2 = (float) (y12 - dd);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12-dd);
-                    L.y1 = (float)(y12+dxy);
-                    L.x2 = (float)(x12-dd);
-                    L.y2 = (float)(y12+dd1);
+                    L.x1 = (float) (x12 - dd);
+                    L.y1 = (float) (y12 + dxy);
+                    L.x2 = (float) (x12 - dd);
+                    L.y2 = (float) (y12 + dd1);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12-dd);
-                    L.y1 = (float)(y12-dd1);
-                    L.x2 = (float)(x12-dd);
-                    L.y2 = (float)(y12-dxy);
+                    L.x1 = (float) (x12 - dd);
+                    L.y1 = (float) (y12 - dd1);
+                    L.x2 = (float) (x12 - dd);
+                    L.y2 = (float) (y12 - dxy);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12+dd);
-                    L.y1 = (float)(y12+dxy);
-                    L.x2 = (float)(x12+dd);
-                    L.y2 = (float)(y12+dd1);
+                    L.x1 = (float) (x12 + dd);
+                    L.y1 = (float) (y12 + dxy);
+                    L.x2 = (float) (x12 + dd);
+                    L.y2 = (float) (y12 + dd1);
                     RysujLinia(&L);
 
-                    L.x1 = (float)(x12+dd);
-                    L.y1 = (float)(y12-dd1);
-                    L.x2 = (float)(x12+dd);
-                    L.y2 = (float)(y12-dxy);
+                    L.x1 = (float) (x12 + dd);
+                    L.y1 = (float) (y12 - dd1);
+                    L.x2 = (float) (x12 + dd);
+                    L.y2 = (float) (y12 - dxy);
                     RysujLinia(&L);
+                }
                     break;
                 case 29:  /*fixed roller X*/
                 case 30:  /*fixed roller XU*/
@@ -4115,6 +4202,127 @@ int PISZ_OBJECTS::RysujPoint(T_Point *p, int *p_block_sufix)
                             break;
                     }
                     break;
+                case 37: /*pin X*/
+                case 38: /*pin Y*/
+                case 39: /*pin Z*/
+                case 40: /*rigid X*/
+                case 41: /*rigid Y*/
+                case 42: /*rigid Z*/
+                {
+                    L.x1 = (float) x12;
+                    L.y1 = (float) y1;
+                    L.x2 = (float) x12;
+                    L.y2 = (float) y2;
+                    RysujLinia(&L);
+
+                    Rotate_Point(kos150, koc150, (double) x12, (double) y12, (double) x1, (double) y12, &x1i, &y1i);
+                    Rotate_Point(kos150, koc150, (double) x12, (double) y12, (double) x2, (double) y12, &x2i, &y2i);
+
+                    L.x1 = (float) x1i;
+                    L.y1 = (float) y1i;
+                    L.x2 = (float) x2i;
+                    L.y2 = (float) y2i;
+                    RysujLinia(&L);
+
+                    Rotate_Point(kos30, koc30, (double) x12, (double) y12, (double) x1, (double) y12, &x1i, &y1i);
+                    Rotate_Point(kos30, koc30, (double) x12, (double) y12, (double) x2, (double) y12, &x2i, &y2i);
+
+                    L.x1 = (float) x1i;
+                    L.y1 = (float) y1i;
+                    L.x2 = (float) x2i;
+                    L.y2 = (float) y2i;
+                    RysujLinia(&L);
+
+                    o.x = p->x;
+                    o.y = p->y;
+                    RysujOkrag(&o);
+
+                    dxy = df_psize * 3;
+                    dd = df_psize * 2;
+                    dd1 = df_psize * 1.25;
+
+                    double r = abs(x2 - x1);
+                    double R = 2 * r;
+
+                    int t128 = 96; //or 128
+                    int g1 = t128, g2 = t128, g3 = t128;
+                    int t96 = 64; //or 96
+
+                    switch (p->typ) {
+                        case 37:
+                            g1 = t96;
+                            break;
+                        case 38:
+                            g2 = t96;
+                            break;
+                        case 39:
+                            g3 = t96;
+                            break;
+                        case 40:
+                            g2 = t96;
+                            g3 = t96;
+                            break;
+                        case 41:
+                            g1 = t96;
+                            g3 = t96;
+                            break;
+                        case 42:
+                            g1 = t96;
+                            g2 = t96;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    Point2D out_points[4];
+                    Point2D out_points1[4];
+                    double angle_deg = 30;
+
+                    int ret1 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, r, dd1, angle_deg, out_points);
+                    int ret2 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, R, dd1, angle_deg, out_points1);
+
+                    L.typ = g1;
+
+                    for (int i = 0; i < 4; i++) {
+                        L.x1 = (float) (out_points[i].x);
+                        L.y1 = (float) (out_points[i].y);
+                        L.x2 = (float) (out_points1[i].x);
+                        L.y2 = (float) (out_points1[i].y);
+                        RysujLinia(&L);
+                    }
+
+                    angle_deg = 90;
+
+                    ret1 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, r, dd1, angle_deg, out_points);
+                    ret2 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, R, dd1, angle_deg, out_points1);
+
+                    L.typ = g3;
+
+                    for (int i = 0; i < 4; i++) {
+                        L.x1 = (float) (out_points[i].x);
+                        L.y1 = (float) (out_points[i].y);
+                        L.x2 = (float) (out_points1[i].x);
+                        L.y2 = (float) (out_points1[i].y);
+                        RysujLinia(&L);
+                    }
+
+                    angle_deg = 150;
+
+                    ret1 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, r, dd1, angle_deg, out_points);
+                    ret2 = getParallelLinesCircleIntersectionDouble((double)p->x, (double)p->y, R, dd1, angle_deg, out_points1);
+
+                    L.typ = g2;
+
+                    for (int i = 0; i < 4; i++) {
+                        L.x1 = (float) (out_points[i].x);
+                        L.y1 = (float) (out_points[i].y);
+                        L.x2 = (float) (out_points1[i].x);
+                        L.y2 = (float) (out_points1[i].y);
+                        RysujLinia(&L);
+                    }
+                }
+                    break;
+
                 default:
                     break;
             }
@@ -4688,7 +4896,10 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                 b1.y=(double)y11;
                 b2.x=(double)x12;
                 b2.y=(double)y12;
-                p=intersectionPoint(a1,a2,b1,b2);
+
+                if (areDoubleLinesParallel(a1, a2, b1, b2, 0.001)) p=b1;
+                else p = intersectionPoint(a1, a2, b1, b2);
+
             }
 
             if (isnan(p.x)) return;
@@ -4737,7 +4948,8 @@ void PISZ_OBJECTS::make_arrows_to_DXF(float x1, float y1, float x2, float y2, fl
                         }
                         else
                         {
-                            if (x1 < x2)
+                            //if (x1 < x2)
+                            if (non_flipped)
                             {
                                 if (Check_if_GE((p.y - df_y),0.))
                                     df_x1 = df_x + n1 * ra1 * koc;
@@ -7337,8 +7549,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             w.lp = 8;
             w.n = 40;
 
-            Normalize_Solid(&w);
-
             L1.typ = 64;
             L1.x1 = w.xy[2];
             L1.y1 = w.xy[3];
@@ -7416,8 +7626,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             w.lp=8;
             w.n=40;
 
-            Normalize_Solid(&w);
-
             L1.typ=64;
             L1.x1=w.xy[2];
             L1.y1=w.xy[3];
@@ -7474,8 +7682,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             w.lp=8;
             w.n=40;
-
-            Normalize_Solid(&w);
 
             L1.typ=64;
             L1.x1=w.xy[2];
@@ -7578,8 +7784,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             w.lp=8;
 
-            Normalize_Solid(&w);
-
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
@@ -7677,8 +7881,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
 
             w.lp=8;
 
-            Normalize_Solid(&w);
-
             L1.typ=33;
             L1.x1=w.xy[0];
             L1.y1=w.xy[1];
@@ -7758,8 +7960,6 @@ int PISZ_OBJECTS::RysujVector(AVECTOR *ptrs_vector, int *v_block_sufix)
             w.xy[7]=Lt.y1;
             w.lp=8;
             w.n=40;
-
-            Normalize_Solid(&w);
 
             L1.typ=64;
             L1.x1=w.xy[2];
@@ -7938,6 +8138,7 @@ int PISZ_OBJECTS::RysujImage(B_PCX *b_pcx)
 
 	image_no_++;
 
+    TotalImagesInDrawing++;
 
 	if (PiszGrupa(0, (char*)IMAGE) == ErrorWeWy ||
 		PiszGrupa(5, handle_hex) == ErrorWeWy ||
@@ -7959,10 +8160,18 @@ int PISZ_OBJECTS::RysujImage(B_PCX *b_pcx)
 		PiszGrupa(20, ll_y1) == ErrorWeWy ||
 		PiszGrupa(30, 0.0) == ErrorWeWy) return ErrorWeWy;
 
-	Rotate_Point(kos, koc, 0, 0,  b_pcx->dx, 0, &dx1, &dy1);
-	Rotate_Point(kos, koc, 0, 0,  0, b_pcx->dy, &dx2, &dy2);
+	////Rotate_Point(kos, koc, 0, 0,  b_pcx->dx, 0, &dx1, &dy1);
+	////Rotate_Point(kos, koc, 0, 0,  0, b_pcx->dy, &dx2, &dy2);
+    ////instead:   change on 08-10-2026
+    // U-vector components (Flat width rotated)
+    dx1 =  b_pcx->dx * koc;
+    dy1 =  b_pcx->dx * kos;
 
-	//U-vecxtor
+   // V-vector components (Perpendicular height rotated)
+    dx2 = -b_pcx->dy * kos;
+    dy2 =  b_pcx->dy * koc;
+
+    //U-vecxtor
 	if (PiszGrupa(11, dx1) == ErrorWeWy ||
 		PiszGrupa(21, dy1) == ErrorWeWy ||
 		PiszGrupa(31, 0.0) == ErrorWeWy) return ErrorWeWy;
@@ -8739,7 +8948,17 @@ void DxfOut(int acad_version)
   char st1[MaxTextLen];
   int key;
 
-  strcpy (sk, "");
+    char drive[MAXDRIVE]="";
+    char dir[MAXDIR]="";
+    char file[MAXFILE]="";
+    char ext[MAXEXT]="";
+    int flags;
+
+  flags = fnsplit(zbior_danych, drive, dir, file, ext);
+  strcpy (sk, file /*""*/);
+#ifndef MACOS
+  File_Ext (sk, (char*)EXT__DXF) ;
+#endif
   image_no = 16;
   image_no_ = 16;
   if (Load_File (sk, SAVE_DXF, TRUE) == FALSE)
@@ -8768,6 +8987,11 @@ void DxfOut(int acad_version)
 #endif
   to_block=FALSE;
   to_entities = FALSE;
+
+  handle_hex= FIRSTHANDLE;
+  image_no = 16;
+  image_no_ = 16;
+  TotalImagesInDrawing=0;
 
   if (acad_version == 0)
   {
