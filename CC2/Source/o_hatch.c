@@ -43,10 +43,6 @@ extern int Import_View_Hatch_Pattern (char *hatch_file, double *ptrdf_x, double 
 double current_hatch_scale=1.0, new_hatch_scale, current_hatch_angle=0.0, new_hatch_angle;
 double current_hatch_distans=1.0, new_hatch_distans;
 extern void alfpro2acad (char *);
-extern int hatch_proc (long_long, long_long, int, double[], double[], T_PTR_Hatch_Param, int comput_area,
-			double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block, int draw);
-extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area,
-			double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
 extern void windows2mazovia(char *tekst);
 extern char  *find_first_hatch_block(char *ad1, double *x0b, double *y0b);
 extern void zmien_atrybut_preserve_hatch_outline(char  *adr, char  *adrk, int aold, int anew);

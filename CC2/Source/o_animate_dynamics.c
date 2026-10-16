@@ -240,7 +240,7 @@ void Animate_dynamics(void)
    Set_Screen();
    flip_screen();
 
-   komunikat_str_short (_ANIMATE_, TRUE, FALSE);
+   komunikat_str_short ((char*)_ANIMATE_, TRUE, FALSE);
 
 //how it is done:
 //outtextxy_w(t, COPY_PUT);

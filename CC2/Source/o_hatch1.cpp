@@ -825,20 +825,29 @@ extern BOOL Test_areas (long_long l_offb, long_long l_offe,
 		 T_PTR_Node_Coord_Alloc ptrs_nodes_coord_alloc,
 		 T_PTR_Nodes_Object ptrs_nodes_table,
 		 T_PTR_Area ptrs_area) ;
-
+/*
+#ifdef __cplusplus
 extern "C" {
+#endif
 int hatch_proc (long_long l_offb, long_long l_offe, int seeds_no,
 	    double df_pointx[], double df_pointy[],
 	    T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
 	    double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block=0, int draw=TRUE);
+#ifdef __cplusplus
 }
+#endif
+*/
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 BOOL  hatch_proc_test (long_long l_offb, long_long l_offe,
 	    double df_pointx, double df_pointy,
 	    T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
 	    double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
+#ifdef __cplusplus
 }
+#endif
 
 int hatch_proc (long_long l_offb0, long_long l_offe0, int seeds_no,
 	    double df_pointx[], double df_pointy[],

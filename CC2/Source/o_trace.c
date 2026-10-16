@@ -227,7 +227,7 @@ int get_Tbreak(void)
 void set_Tbreak(int tbreak)
 {
     Tbreak=tbreak;
-    komunikat_str_short((tbreak==0 ? "" : _BREAK_), (tbreak==0 ? FALSE : TRUE), TRUE);
+    komunikat_str_short((tbreak==0 ? (char *)"" : (char *)_BREAK_), (tbreak==0 ? FALSE : TRUE), TRUE);
     if (!tbreak) remove_short_notice();
 }
 
@@ -2853,7 +2853,7 @@ int close_trace(void)
 int break_trace(void)
 {
     Tbreak = 1;
-    komunikat_str_short(_BREAK_, TRUE, TRUE);
+    komunikat_str_short((char*)_BREAK_, TRUE, TRUE);
     if (pline_mode==PL_MODE_LINE) {
         if (d_line == 0) {
             add_trace_line_end();
@@ -3365,7 +3365,7 @@ int trace_command(int ev_Number, double X0, double Y0, int strwyj)
             break;
         case ID_BREAK:  //5
             Tbreak = 1;
-            komunikat_str_short(_BREAK_, TRUE, TRUE);
+            komunikat_str_short((char*)_BREAK_, TRUE, TRUE);
             if (pline_mode==PL_MODE_LINE) {
                 if (d_line == 0) {
                     add_trace_line_end();

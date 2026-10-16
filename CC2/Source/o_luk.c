@@ -1809,20 +1809,23 @@ void BulgeToArc(Point p1, Point p2, double b, LUK *l) {
     l->r=fabs(r);
 }
 
-void POLYARC(double x_s, double y_s, double x_e, double y_e, double wpsc, LUK *l)
+extern int edges_vertices_h;
+extern BOOL lw_polyline_hatch_catch;
+extern int nr_linii;
+
+void POLYARC(double x_s, double y_s, double x_e, double y_e, double bulge, LUK *l)
 { double x0,y0,xr,yr,xe,ye,xs,ys,dl,t;
   double a1,a2,si,co;
   double dkat;
-  int znak_kata=0;
+  int angle_sign=0;
   double ws;
-  
-  /*wpsc stanowi wypuklosc*/
-  /*kat ws jest wyznaczony na podstawie wypuklosci wg wzoru*/
 
-  if (wpsc<0) znak_kata=1;
+  /*ws is an angle and is determined based on the bulge according to the formula:*/
+
+  if (bulge<0) angle_sign=1;
   
-  ws = atan(fabs(wpsc)) * 4;
-  if (znak_kata==1) dkat=Pi2-ws; else dkat=ws;
+  ws = atan(fabs(bulge)) * 4;
+  if (angle_sign==1) dkat=Pi2-ws; else dkat=ws;
 
   x0=(x_e+x_s)/2;
   y0=(y_e+y_s)/2;
@@ -1832,28 +1835,139 @@ void POLYARC(double x_s, double y_s, double x_e, double y_e, double wpsc, LUK *l
   co=xs/dl;
   obru(si,co,xs,ys,&xs,&ys);
   xr=0;
-  t=tan(dkat/2);
-  if(fabs(t)<OZero)  t=(t>=0 ? OZero : -OZero);
-  yr=-xs/t;
-  l->r=sqrt(xs*xs+yr*yr);
+
+    // === FIX FOR SEMICIRCLE / 180-DEGREE EXPLOSION ===
+    if (fabs(fabs(bulge) - 1.0) < 1e-4)
+    {
+        // If the arc is a perfect semicircle, the center point
+        // lies exactly on the midpoint of the chord line!
+        yr = 0.0;
+    }
+    else
+    {
+        t=tan(dkat/2);
+        if(fabs(t)<OZero)  t=(t>=0 ? OZero : -OZero);
+        yr=-xs/t;
+    }
+    // =================================================
+
+  //t=tan(dkat/2);
+  //if(fabs(t)<OZero)  t=(t>=0 ? OZero : -OZero);
+  //yr=-xs/t;
+  l->r=(float)sqrt(xs*xs+yr*yr);
   obrd(si,co,xr,yr,&xr,&yr);
-  l->x=xr+x0; l->y=yr+y0;
+  l->x=(float)(xr+x0); l->y=(float)(yr+y0);
   xs=x_s-l->x;  xe=x_e-l->x;
   ys=y_s-l->y;  ye=y_e-l->y;
   a1=Atan2(ys,xs);
   a2=Atan2(ye,xe);
-  if (znak_kata==0)
+
+  /*
+  if (angle_sign==0)
    {
-    l->kat1=a1;
-    l->kat2=a2;
+    l->kat1=(float)a1;
+    l->kat2=(float)a2;
    }
    else
     {
-     l->kat1=a2;
-     l->kat2=a1;
+     l->kat1=(float)a2;
+     l->kat2=(float)a1;
+    }
+    */
+
+    // === STEP 1: NORMALIZE ANGLES TO BE ALWAYS POSITIVE (0 to 2*Pi) ===
+    if (a1 < 0.0) a1 += Pi2;
+    if (a2 < 0.0) a2 += Pi2;
+
+    // === STEP 2: ENFORCE DIRECTIONAL BOUNDS AND CHORD ORIENTATION ===
+    if (angle_sign == 0)
+    {
+        // Counterclockwise segment: ensure start angle is less than end angle
+        if (a1 >= a2) a2 += Pi2;
+        l->kat1 = (float)a1;
+        l->kat2 = (float)a2;
+    }
+    else
+    {
+        // Clockwise segment: in standard math, moving CW means a2 is less than a1.
+        // To force it into your engine's format where kat1 < kat2 always holds true,
+        // a2 becomes the lower bound (kat1), and a1 becomes the upper bound (kat2).
+        if (a2 >= a1) a1 += Pi2;
+        l->kat1 = (float)a2;
+        l->kat2 = (float)a1;
     }
 
 }
+
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+void POLYARC_(double x_s, double y_s, double x_e, double y_e, double bulge, LUK *l)
+{
+    // 1. Handle flat lines (no bulge)
+    if (fabs(bulge) < 1e-9) {
+        // Handle straight line segment if necessary
+        return;
+    }
+
+    // 2. Calculate the distance (chord length) between start and end
+    double dx = x_e - x_s;
+    double dy = y_e - y_s;
+    double chord = sqrt(dx * dx + dy * dy);
+
+    // 3. Calculate radius
+    // Sagitta (h) = (chord / 2) * bulge
+    // Radius (r) = (h/2) + (chord^2 / 8h) -> simplifies elegantly using bulge:
+    double r = (chord / 2.0) * (1.0 + bulge * bulge) / fabs(2.0 * bulge);
+    l->r = (float)r;
+
+    // 4. Find the Center Point of the Arc
+    // Midpoint of the chord
+    double mx = (x_s + x_e) / 2.0;
+    double my = (y_s + y_e) / 2.0;
+
+    // Perpendicular vector component to shift from midpoint to center
+    // Distance from midpoint to center is: r * (1 - bulge^2) / (2 * bulge)
+    double factor = (1.0 - bulge * bulge) / (2.0 * bulge);
+
+    // The perpendicular direction depends on the DXF rule:
+    // positive bulge is CCW, meaning center is to the left of the direction vector.
+    double cx = mx - dy * factor;
+    double cy = my + dx * factor;
+
+    l->x = (float)cx;
+    l->y = (float)cy;
+
+    // 5. Calculate Angles
+    double a1 = atan2(y_s - cy, x_s - cx);
+    double a2 = atan2(y_e - cy, x_e - cx);
+
+    // Normalize angles to be between 0 and 2*Pi
+    if (a1 < 0) a1 += 2.0 * M_PI;
+    if (a2 < 0) a2 += 2.0 * M_PI;
+
+    // 6. Enforce CCW logic (kat1 < kat2)
+    if (bulge > 0) {
+        // Counterclockwise arc: Start angle must be less than End angle
+        if (a1 >= a2) {
+            a2 += 2.0 * M_PI;
+        }
+        l->kat1 = (float)a1;
+        l->kat2 = (float)a2;
+    } else {
+        // Clockwise arc: In math terms, going from a1 to a2 CW means
+        // a2 is less than a1. To force CCW format (kat1 < kat2),
+        // the "start" of the CCW mathematical circle interval is actually a2.
+        if (a2 >= a1) {
+            a1 += 2.0 * M_PI;
+        }
+        l->kat1 = (float)a2;
+        l->kat2 = (float)a1;
+    }
+}
+
 
 /*-----------------------------------------------------------------------*/
 

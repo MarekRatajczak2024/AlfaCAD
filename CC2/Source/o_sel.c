@@ -1800,7 +1800,7 @@ void wskaz(int info)
       {
           if (typL & Bprzeciecie) {
               komunikat_str_short_reset();
-              komunikat_str_short(_FIRST_, FALSE, TRUE);
+              komunikat_str_short((char*)_FIRST_, FALSE, TRUE);
           }
           int ret_n=choose_object(type_address_no, type_address);
           if (ret_n==-1) PTR__Sel_Adr=NULL;
@@ -1815,7 +1815,7 @@ void wskaz(int info)
                   //removing already chosen object
                   delete_element(type_address, &type_address_no, ret_n);
                   //komunikat_str_mask(TRUE);
-                  komunikat_str_short(_SECOND_, FALSE, TRUE);
+                  komunikat_str_short((char*)_SECOND_, FALSE, TRUE);
                   ret_n = choose_object(type_address_no, type_address);
                   if (ret_n == -1) PTR__Sel_Adr1 = NULL;
                   else {

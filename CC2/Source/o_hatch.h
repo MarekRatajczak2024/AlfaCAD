@@ -248,6 +248,8 @@ typedef struct
 }
 T_Hatch_Def_Param, *T_PTR_Hatch_Def_Param ;
 
+
+#pragma pack (8)
 typedef struct
 {
   int i_number_hatch ;		/*numer wzoru wypelnienia w tablicy definicji wypelnien*/
@@ -258,9 +260,26 @@ typedef struct
   BOOL insulation_hatch;
 }
 T_Hatch_Param, *T_PTR_Hatch_Param ;
+#pragma pack()
 
 extern void Get_Tangent_Ob (void *, double, double, double *, double *, BOOL) ;
 extern int add_vertex (double, double) ;
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int hatch_proc (long_long l_offb, long_long l_offe, int seeds_no, double df_pointx[], double df_pointy[], T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
+                double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *abd, int to_block, int draw);
+
+extern int hatch_proc_test (long_long, long_long, double, double, T_PTR_Hatch_Param, int comput_area,
+			double df_apx1, double df_apy1, double df_apx2, double df_apy2, BOOL shadow);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef aaaaaaa
 /*------------------------------------------------------*/

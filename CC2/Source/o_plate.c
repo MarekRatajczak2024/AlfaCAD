@@ -2211,7 +2211,7 @@ void Plate_analysis(void) {
 
     glb_silent=TRUE;
 
-    komunikat_str_short(_PREPARING_DATA_, FALSE, TRUE);
+    komunikat_str_short((char*)_PREPARING_DATA_, FALSE, TRUE);
 
     // Allocate memory for 16 char pointers (for the array of strings)
     block_names = (char **)malloc(MAX_L_BLOCKS * sizeof(char *));
@@ -6563,7 +6563,7 @@ void Plate_analysis(void) {
     ClearErr();
     ClearInfo();
 
-    komunikat_str_short(_BUILDING_MESH_, FALSE, TRUE);
+    komunikat_str_short((char*)_BUILDING_MESH_, FALSE, TRUE);
 
     sprintf(params, "%splate.geo", _STATIC_);
     if (my_file_exists(params)) {
@@ -6607,7 +6607,7 @@ void Plate_analysis(void) {
 
         if (my_file_exists(params))
         {
-            komunikat_str_short(_BUILDING_GRID_, FALSE, TRUE);
+            komunikat_str_short((char*)_BUILDING_GRID_, FALSE, TRUE);
             //generating mesh
             // ElmerGrid 14 2 Static/plate.msh -out Static/plate
             sprintf(params, "14 2 %splate.msh -out %splate -unite -merge 1.0e-10 > %sgrid.log", _STATIC_, _STATIC_, _STATIC_);  //-merge 1.e-8
@@ -6636,7 +6636,7 @@ void Plate_analysis(void) {
 
             if (my_file_exists(params))
             {
-                komunikat_str_short(_SOLVING_,FALSE, TRUE);
+                komunikat_str_short((char*)_SOLVING_,FALSE, TRUE);
 
                 sprintf(params, "%s%splate.sif  > %ssolver.log", _STATIC_, _plate_, _STATIC_);
                 //execute ElmerSolver, it will save results in plate folder
@@ -6673,7 +6673,7 @@ void Plate_analysis(void) {
         }
     }
 
-    komunikat_str_short(_GEOMETRY_, FALSE, TRUE);
+    komunikat_str_short((char*)_GEOMETRY_, FALSE, TRUE);
     //getting geometry
     //mesh.header
     //5079   9894   592   //number of nodes in mesh.nodes   number of elements in mesh.elements  number of boundaries in mesh.baunday

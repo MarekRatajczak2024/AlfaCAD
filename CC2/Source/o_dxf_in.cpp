@@ -36,6 +36,7 @@
 #include "o_spec.h"
 #include "alffont.h"
 #include "o_libfun.h"
+#include "o_hatch.h"
 
 #include <zlib.h>
 
@@ -77,38 +78,6 @@ struct {
 	char name[maxlen_w+2];
 } LAYER_NAME;
 
-
-typedef struct
-{
-    double df_angle ;	/*kat pochylenia linii*/
-    double df_startx, df_starty ;	/*przesuniecie punktu startowego linii (w jednostkach rysunku)*/
-    double df_move ;	/*przesuniecie (w jednostkach rysunku), dla linii ciaglej nieistotne*/
-    double df_dist ;      /*odleglosc miedzy liniamii(w jednostkach rysunku)*/
-    double df_len_pattern ;/*dlugosc wzorca(w jednostkach rysunku)*/
-    int i_def_size ;      /*ilosc segmentow definicji, 0 dla linii ciaglej*/
-    int reserve;
-    double df_def_line [MaxNumberSegPattern] ; /*dlugosci poszczegolnych segmentow (w jednostkach rysunku)*/
-}
-        T_Hatch_Line_Def, *T_PTR_Hatch_Line_Def ;
-
-typedef struct
-{
-    char sz_name [PATERN_NAME_MAXLEN] ;/*nazwa wzoru wypelnienia*/
-    int  i_number_line ;	/*numer w tablicy definicji linii wypelnien*/
-    int  i_size ;		/*ilosc linii definiujacych wzor*/
-}
-        T_Hatch_Def_Param, *T_PTR_Hatch_Def_Param ;
-
-typedef struct
-{
-    int i_number_hatch ;		/*numer wzoru wypelnienia w tablicy definicji wypelnien*/
-    double df_angle ;		/*kat pochylenia linii (w radianach !!!)*/
-    double df_scale ;		/*wspolczynnik skali*/
-    double df_basex, df_basey ;  	/*wspolrzedne punktu bazowego wypelnien (w jednostkach rysunku)*/
-    BOOL insulation_hatch;
-}
-    T_Hatch_Param, *T_PTR_Hatch_Param ;
-
 typedef struct
 {
     char handle[16];
@@ -116,6 +85,8 @@ typedef struct
 } BLOCK_RECORD;
 
 BLOCK_RECORD *block_record=nullptr;
+
+int ret_h_inc=0;
 
 int block_record_no;
 int block_record_no_max=100;
@@ -176,11 +147,10 @@ extern int Add_New_Font_TTF_OTF(char *name, int type, int cur);
 extern int find_font_ALFA(char *stylefile, double *e_wspx1, int type);
 void decodingwin(char *text);
 void decodingwin_true(char *text);
-
 extern int hatch_proc (long_long l_offb, long_long l_offe, int seeds_no,
-                 double df_pointx[], double df_pointy[],
-                 T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
-                 double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block, int draw);  //to_block=0, int draw=TRUE
+				 double df_pointx[], double df_pointy[],
+				 T_PTR_Hatch_Param ptrs_hatch_param, int comput_area,
+				 double df_apx1, double df_apy1, double df_apx2, double df_apy2, void *adb, int to_block, int draw);  //to_block=0, int draw=TRUE
 extern void settle_hatch_pattern(int no);
 
 extern void set_solidhatchtranslucency(int poz0, int opcja);
@@ -226,9 +196,6 @@ typedef struct
                       //b.c.  c.  g.  b.g.  ng.
 Line_Width line_width={0.18,0.25,0.35,0.50,0.70};
 
-////char Layers_name[256][maxlen_w+2];
-////char Layers_name_DXF[256][maxlen_w+2];
-
 LAYER_NAME *Layers_name;
 LAYER_NAME *Layers_name_DXF;
 
@@ -272,6 +239,10 @@ int nr_linii;
 int zamkniecie;
 double start_x, start_y, start_width;
 double wypuklosc, wypuklosc0;
+
+int edges_vertices_h=0;
+BOOL lw_polyline_hatch_catch=FALSE;
+
 int znacznik_wierzcholka;
 BOOL drugi_wezel, trzeci_wezel, first_arc, fit_curve, myspline, planarspline, linearspline;
 double width_p_standard,width_k_standard;
@@ -3159,7 +3130,9 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
         }
          else
          {
+
           POLYARC(s_pline.line.x1, s_pline.line.y1, s_pline.line.x2, s_pline.line.y2, s_pline.wypuklosc, &l);
+
           l.warstwa=ep_layer;
           l.obiektt2 = O2BlockPline;
           l.kolor=ep_color;
@@ -3184,7 +3157,7 @@ static int add_pline_line_end (int to_block, int e_extrusion_z, int atrybut)
   return 1 ;
 }
 
-static int add_bspline(double xp[NumSplinePoints], double yp[NumSplinePoints], double zp[NumSplinePoints], int to_block, int lp, int spline_type, int zamkniecie, double bcurviness, int atrybut)
+static int add_bspline(double xp[NumSplinePoints], double yp[NumSplinePoints], double zp[NumSplinePoints], int to_block, int lp, int spline_type, int zamkniecie, double bcurviness, int atrybut, int object_no)
 {
     SPLINE bspline = Splinedef;
     int i;
@@ -3198,14 +3171,16 @@ static int add_bspline(double xp[NumSplinePoints], double yp[NumSplinePoints], d
     bspline.przec = ep_space;
     bspline.lp = lp*2;
 
-    start_x=xp[0];
-    start_y=yp[0];
-
     for (i = 0; i < (int)bspline.lp; i += 2)
     {
         bspline.xy[i] = jednostkiOb(xp[i / 2] - EXTMIN_X);
         bspline.xy[i + 1] = jednostkiOb(yp[i / 2] - EXTMIN_Y);
     }
+
+	if (object_no==0) {
+		start_x = xp[0];
+		start_x = yp[0];
+	}
 
     if (spline_type > 4)
     {
@@ -3239,7 +3214,7 @@ static int add_bspline(double xp[NumSplinePoints], double yp[NumSplinePoints], d
 }
 
 
-static int add_bspline___(double xp[NumSplinePoints], double yp[NumSplinePoints], double zp[NumSplinePoints], int to_block, int lp, int spline_type, int zamkniecie, double bcurviness, int atrybut)
+static int add_bspline___(double xp[NumSplinePoints], double yp[NumSplinePoints], double zp[NumSplinePoints], int to_block, int lp, int spline_type, int zamkniecie, double bcurviness, int atrybut, int object_no)
 {
 	SPLINE bspline = Splinedef;
 	int to_block1;
@@ -3272,13 +3247,15 @@ static int add_bspline___(double xp[NumSplinePoints], double yp[NumSplinePoints]
 	bspline.przec = ep_space;
 	bspline.lp = lp*2;
 
-    start_x=xp[0];
-    start_y=yp[0];
-
 	for (i = 0; i < (int)bspline.lp; i += 2)
 	{
 		bspline.xy[i] = jednostkiOb(xp[i / 2] - EXTMIN_X);
 		bspline.xy[i + 1] = jednostkiOb(yp[i / 2] - EXTMIN_Y);
+	}
+
+	if (object_no==0) {
+		start_x=bspline.xy[0];
+		start_y=bspline.xy[1];
 	}
 
 	if (spline_type > 4)
@@ -3344,7 +3321,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
   s_pline.wypuklosc = wypuklosc0;
   wypuklosc0 = wypuklosc;
 
-  if (s_pline.wypuklosc!=0) s_pline.b_line = TRUE;  ////  !!!!
+  ////if (s_pline.wypuklosc!=0) s_pline.b_line = TRUE;  ////  !!!!
 
   if (s_pline.b_line == TRUE)
   {
@@ -3390,6 +3367,7 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
         }
         else
          {
+
           POLYARC(s_pline.line.x1, s_pline.line.y1, s_pline.line.x2, s_pline.line.y2, s_pline.wypuklosc, &l);
 
          temp_x2=l.x+l.r*cos(l.kat2);
@@ -3506,6 +3484,8 @@ static int add_pline_line (double X_, double Y_, int to_block, int atrybut)
         else
          {
           POLYARC(s_pline.line.x1, s_pline.line.y1, s_pline.line.x2, s_pline.line.y2, s_pline.wypuklosc, &l);
+
+		  ///////
           l.warstwa=ep_layer;
 		  l.obiektt2 = O2BlockPline;
           l.kolor=ep_color;
@@ -3673,14 +3653,14 @@ int read_lines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			e_xk1 = jednostkiOb(e_xk - EXTMIN_X);
 			e_yk1 = jednostkiOb(e_yk - EXTMIN_Y);
 
-			L.x1 = e_xp1;
-			L.y1 = e_yp1;
-			L.x2 = e_xk1;
-			L.y2 = e_yk1;
+			L.x1 = (float)e_xp1;
+			L.y1 = (float)e_yp1;
+			L.x2 = (float)e_xk1;
+			L.y2 = (float)e_yk1;
 			L.typ = ep_type;
 
             L.atrybut=Ablok;
-		
+
 			L.kolor = ep_color;
 			L.warstwa = ep_layer;
 			L.przec = ep_space;
@@ -3765,8 +3745,8 @@ int read_lines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 	return 1;
 }
 
-int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths, int path_type_flag, int path_no, int solid_flag)
-/*------------------------------------------------------------------------------------------------------------------------------*/
+int read_lwpolyline_hatch_(FILE *f, int to_block, BOOL block, int number_of_paths, int path_type_flag, int path_no, int solid_flag, int object_no)
+/*---------------------------------------------------------------------------------------------------------------------------------------------*/
 {
     BOOL endentitie;
     char *p, *p1;
@@ -3782,6 +3762,8 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
     int nw_max=100;
     double wypuklosc1;
     int nw42;
+
+	BOOL has_pending_vertex = FALSE;
 
     s_pline = {FALSE, FALSE, 0, 0, 0, Ldef, 7, S4def};
     line_g = Ldef ;
@@ -3863,17 +3845,41 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
 
                 }
 
+				/*
+				////ADDED
+				if (has_pending_vertex && nw > 0) {
+					if (solid_type == 0) {
+						s_pline.wypuklosc = wypuklosc;
+						add_pline_line(e_xp, e_yp, to_block, Ablok);
+
+						if (zamkniecie == 0) {
+							add_pline_line_end(to_block, e_extrusion_z, Ablok);
+						} else {
+							s_pline.wypuklosc = wypuklosc0; // closing segment bulge
+							add_pline_line(start_x, start_y, to_block, Ablok);
+							add_pline_line_end(to_block, e_extrusion_z, Ablok);
+						}
+					}
+					has_pending_vertex = FALSE;
+					nw = 0;
+				}
+				///////
+			    */
+
                 endentitie = TRUE;
                 return entitie_code;
                 break;
 
-            case 10:  /*start point X - double*/
+            case 10:  //start point X - double
                 if (nw > 0)
                 {
                     if (nw == 1)
                     {
                         if (solid_type==0)
-                            start_pline_hatch(e_xp, e_yp);
+						{
+							wypuklosc0 = wypuklosc1; // Feed the current vertex bulge directly into the pipeline stage
+							start_pline_hatch(e_xp, e_yp);
+						}
                         else
                         {
                             solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
@@ -3884,8 +3890,10 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
                     }
                     else
                     {
-                        if (solid_type==0)
-                            add_pline_line(e_xp, e_yp, to_block, Ablok);
+                        if (solid_type==0) {
+							wypuklosc0 = wypuklosc1; // Pair active bulge with current chord vector execution
+							add_pline_line(e_xp, e_yp, to_block, Ablok);
+						}
                         else
                         {
                             solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
@@ -3893,19 +3901,67 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
                         }
                     }
                 }
+
                 wypuklosc = wypuklosc1;
                 if (sscanf(p1, "%lf", &e_xp) < 1) return -1;
                 break;
-            case 20:  /*start point Y - double*/
+            case 20:  // start point Y - double
                 nw++;
                 if (sscanf(p1, "%lf", &e_yp) < 1) return -1;
-                /*dopisanie linii*/
+                // dopisanie linii
+
+
+				if (object_no==0)
+				{
+					start_x=e_xp;
+					start_y=e_yp;
+				}
+
                 break;
-            case 42: /*wypuklosc*/
+
+				/*
+			case 10:  //start point X - double
+				// If there is an unwritten vertex from a previous loop cycle, commit it now
+				if (has_pending_vertex) {
+					if (nw == 1) {
+						if (solid_type == 0) start_pline_hatch(e_xp, e_yp);
+						// (Handle solid path arrays here if needed)
+					} else {
+						if (solid_type == 0) {
+							// IMPORTANT: Your polyline builder needs to know the bulge
+							// of the segment ending at this new vertex.
+							s_pline.wypuklosc = wypuklosc;
+							add_pline_line(e_xp, e_yp, to_block, Ablok);
+						}
+					}
+					// Reset bulge tracking for the upcoming vertex
+					wypuklosc = 0.0;
+				}
+				if (sscanf(p1, "%lf", &e_xp) < 1) return -1;
+				break;
+
+
+			case 20:  //start point Y - double
+				if (sscanf(p1, "%lf", &e_yp) < 1) return -1;
+				nw++;
+				has_pending_vertex = TRUE; // Mark that we have valid X, Y coordinates waiting for an optional bulge
+				break;
+				*/
+			/*
+			case 42: //wypuklosc
+				if ( sscanf (p1 , "%lf", &wypuklosc1) < 1 ) return 0;
+				if (nw42==0) wypuklosc0=wypuklosc1;
+				nw42++;
+				break;
+		    */
+			case 42: /*wypuklosc*/
                 if ( sscanf (p1 , "%lf", &wypuklosc1) < 1 ) return 0;
                 if (nw42==0) wypuklosc0=wypuklosc1;
                 nw42++;
-                break;
+
+				//// Assign the bulge DIRECTLY to the active pending vertex
+				//wypuklosc = wypuklosc1;
+				break;
             case 72: /*Has bulge flag*/
                 if (sscanf(p1, "%d", &bulge_flag) < 1) return -1;
                 break;
@@ -3914,6 +3970,9 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
                 break;
             case 93: /*Number of edges in this boundary path (only if boundary is not a polyline)  or  Number of polyline vertices*/
                 if (sscanf(p1, "%d", &edges_vertices) < 1) return -1;
+
+
+				edges_vertices_h=edges_vertices;
 
                 if ((path_no==0) && ((!(path_type_flag & 2)) || (edges_vertices>4) || (solid_flag==0) || (edges_vertices<3) || (zamkniecie==0) || (bulge_flag>0) || (number_of_paths!=1))) //no SOLID
                 {
@@ -3967,8 +4026,220 @@ int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths
     return entitie_code;
 }
 
-int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
-/*-----------------------------------------------------------------*/
+int read_lwpolyline_hatch(FILE *f, int to_block, BOOL block, int number_of_paths, int path_type_flag, int path_no, int solid_flag, int object_no)
+/*---------------------------------------------------------------------------------------------------------------------------------------------*/
+{
+	BOOL endentitie;
+	char *p, *p1;
+	int entitie_code;
+	double e_extrusion_z=0;
+	double e_xp, e_yp;
+	int zamkniecie=0;
+	int bulge_flag=0;
+	int baundry_objects=0;
+	int edges_vertices=0;
+	char buf[MAXLINE], buf1[MAXLINE];
+	LINIA L = Ldef;
+	int nw_max=100;
+	double wypuklosc1;
+	int nw42;
+	double xp0, yp0;
+
+	s_pline = {FALSE, FALSE, 0, 0, 0, Ldef, 7, S4def};
+	line_g = Ldef ;
+
+	endentitie = FALSE;
+	wypuklosc0 = 0.0;
+	wypuklosc = 0.0;
+	wypuklosc1 = 0.0;
+	width_p0 = 0;
+	width_k0 = 0;
+	nw42=0;
+
+	ep_type = HATCH_OUTLINE_TYPE & 31;
+
+	ep_width = -1;
+
+	nw = 0;
+	while (endentitie == FALSE)
+	{
+		if (!inc_nr_linii()) return -1;
+		if (myfgets(buf, MAXLINE, f) == nullptr) return -1;
+
+		p = buf;
+
+		if (sscanf(p, "%d", &entitie_code) < 1) return -1;
+
+		if ((entitie_code != 0) && (entitie_code != 92)
+		    && (entitie_code != 75) && (entitie_code != 76) && (entitie_code != 98)
+		    && (entitie_code != 53) && (entitie_code != 43) && (entitie_code != 44) && (entitie_code != 46)
+		    && (entitie_code != 79) && (entitie_code != 49))
+		{
+			if (!inc_nr_linii()) return -1;
+			if (myfgets(buf1, MAXLINE, f) == nullptr) return -1;
+
+			p1 = buf1;
+		}
+
+		switch (entitie_code)
+		{
+			case 0:
+			case 92:
+			case 75:
+			case 76:
+			case 98:
+			case 53:
+			case 52:
+			case 41:
+			case 43:
+			case 44:
+			case 45:
+			case 46:
+			case 79:
+			case 49:
+				if (nw>0) {
+					if (solid_type==0) {
+						add_pline_line(e_xp, e_yp, to_block, Ablok);
+						wypuklosc = wypuklosc1;
+						if (zamkniecie == 0)
+						{
+							add_pline_line_end(to_block, e_extrusion_z, Ablok);
+						}
+						else {
+							add_pline_line(start_x, start_y, to_block, Ablok);
+
+							s_pline.width1 = start_width;
+							s_pline.wypuklosc=wypuklosc0;
+							add_pline_line_end(to_block, e_extrusion_z, Ablok);
+						}
+					}
+					else
+					{
+						solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
+						solid_hatch->xy[(nw-1)*2+1]=jednostkiOb(e_yp - EXTMIN_Y) ;
+					}
+
+					baundry_objects = 0;
+					edges_vertices = 0;
+					nw = 0;
+
+				}
+
+				start_x=xp0;
+				start_y=yp0;
+
+				endentitie = TRUE;
+				return entitie_code;
+				break;
+
+			case 10:  /*start point X - double*/
+				if (nw > 0)
+				{
+					if (nw == 1)
+					{
+						if (solid_type==0)
+							start_pline_hatch(e_xp, e_yp);
+						else
+						{
+							solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
+							solid_hatch->xy[(nw-1)*2+1]=jednostkiOb(e_yp - EXTMIN_Y) ;
+							start_x=solid_hatch->xy[(nw-1)*2];
+							start_y=solid_hatch->xy[(nw-1)*2+1];
+						}
+					}
+					else
+					{
+						if (solid_type==0)
+							add_pline_line(e_xp, e_yp, to_block, Ablok);
+						else
+						{
+							solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
+							solid_hatch->xy[(nw-1)*2+1]=jednostkiOb(e_yp - EXTMIN_Y) ;
+						}
+					}
+				}
+				wypuklosc = wypuklosc1;
+				if (sscanf(p1, "%lf", &e_xp) < 1) return -1;
+				if (nw==0) xp0=e_xp;
+				break;
+			case 20:  /*start point Y - double*/
+				if (sscanf(p1, "%lf", &e_yp) < 1) return -1;
+				/*dopisanie linii*/
+				if (nw==0) yp0=e_yp;
+				nw++;
+				break;
+			case 42: /*wypuklosc*/
+				if ( sscanf (p1 , "%lf", &wypuklosc1) < 1 ) return 0;
+				if (nw42==0) wypuklosc0=wypuklosc1;
+				nw42++;
+				break;
+			case 72: /*Has bulge flag*/
+				if (sscanf(p1, "%d", &bulge_flag) < 1) return -1;
+				break;
+			case 73: /*close*/
+				if (sscanf(p1, "%d", &zamkniecie) < 1) return -1;
+				break;
+			case 93: /*Number of edges in this boundary path (only if boundary is not a polyline)  or  Number of polyline vertices*/
+				if (sscanf(p1, "%d", &edges_vertices) < 1) return -1;
+
+				if ((path_no==0) && ((!(path_type_flag & 2)) || (edges_vertices>4) || (solid_flag==0) || (edges_vertices<3) || (zamkniecie==0) || (bulge_flag>0) || (number_of_paths!=1))) //no SOLID
+				{
+					solid_type=0;
+					if (to_block == 0) {
+						if (add_block_hatch(TRUE) == nullptr) {
+							return 0;
+						}
+					} else {
+						if (add_block_hatch_in_block(TRUE) == nullptr) {
+							return 0;
+						}
+					}
+				}
+				else {
+					if ((edges_vertices>2) && (edges_vertices <= 4) && (zamkniecie==1) && (solid_flag==1)) {
+						solid_type = edges_vertices;
+						if (edges_vertices==3) solid_hatch=&solid3_hatch;
+						else solid_hatch=&solid4_hatch;
+					}
+				}
+
+				if (nw>0) {
+
+					if (solid_type==0) {
+						add_pline_line(e_xp, e_yp, to_block, Ablok);
+
+						if (zamkniecie == 1) {
+							add_pline_line(start_x, start_y, to_block, Ablok);
+						}
+					}
+					else
+					{
+						solid_hatch->xy[(nw-1)*2]=jednostkiOb(e_xp - EXTMIN_X) ;
+						solid_hatch->xy[(nw-1)*2+1]=jednostkiOb(e_yp - EXTMIN_Y) ;
+					}
+
+					baundry_objects=0;
+					edges_vertices=0;
+					nw=0;
+
+				}
+
+				break;
+			case 97:
+				if (sscanf(p1, "%d", &baundry_objects) < 1) return -1;
+				break;
+			default:  break;
+		} /*switch*/
+	}
+
+	start_x=xp0;
+	start_y=yp0;
+
+	return entitie_code;
+}
+
+int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no, int *code73)
+/*------------------------------------------------------------------------------*/
 {
 	BOOL endentitie;
 	char *p, *p1;
@@ -3978,6 +4249,7 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 	double e_r = 0, e_kp = 0, e_kk = 0;
 	double e_x1, e_y1;
 	double e_r1, e_kp1, e_kk1;
+	double e_extrusion_z = 1.0; // <-- ADD THIS Default to normal 1.0
 	char buf[MAXLINE], buf1[MAXLINE];
 	LUK l = ldef;
 	int counterclockwise_flag = 1;
@@ -4006,7 +4278,6 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			p1 = buf1;
 		}
 
-
 		switch (entitie_code)
 		{
 		case 0:
@@ -4023,71 +4294,253 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 		case 45:
 		case 46:
 		case 79:
-		case 49:
+		case 49: {
 
 			/*generowanie luku*/
 			e_x1 = jednostkiOb(e_x - EXTMIN_X);
-			e_y1 = jednostkiOb(e_y - EXTMIN_Y);
+			//e_y1 = jednostkiOb(e_y - EXTMIN_Y);
+			// If extrusion Z is negative, the OCS Y-axis is inverted!
+			if (e_extrusion_z < 0.0) {
+				// Mirror the center Y coordinate back to WCS space
+				e_y1 = jednostkiOb((-e_y) - EXTMIN_Y);
+
+				e_y=-e_y;
+			} else {
+				e_y1 = jednostkiOb(e_y - EXTMIN_Y);
+			}
 			e_r1 = jednostkiOb(e_r);
-			if (Check_if_LE(e_r1, 0) == TRUE)
-			{
-                endentitie = TRUE;
-                return entitie_code;
+			if (Check_if_LE(e_r1, 0) == TRUE) {
+				endentitie = TRUE;
+				return entitie_code;
 				break; /*zignorowanie luku*/
 			}
 
-            if (counterclockwise_flag)
-            {
-                e_kp1 = e_kp * Pi2 / 360;
-                e_kk1 = e_kk * Pi2 / 360;
-            }
-            else
-            {
-                e_kk1 = e_kp * Pi2 / 360;
-                e_kp1 = (360-e_kk) * Pi2 / 360;
-            }
 
-			if (TRUE == Check_if_Equal(e_kp1, e_kk1))
-			{
-                endentitie = TRUE;
-                return entitie_code;
-				break;  /*zignorowanie luku*/
+			/*
+			if (counterclockwise_flag) {
+				e_kp1 = e_kp * Pi2 / 360;
+				e_kk1 = e_kk * Pi2 / 360;
+			} else {
+				e_kk1 = e_kp * Pi2 / 360;
+				e_kp1 = (360 - e_kk) * Pi2 / 360;
+			}
+			 */
+
+
+			/*
+			// === CLEAN MATHEMATICAL ANGLE CONVERSION ===
+			// 1. Convert both raw degree points directly to radians
+			double a_start = e_kp * Pi2 / 360.0;
+			double a_end   = e_kk * Pi2 / 360.0;
+
+			// If extrusion is inverted, angles flip across the X axis (negative Y)
+			if (e_extrusion_z < 0.0) {
+				a_start = Pi2 - a_start;
+				a_end   = Pi2 - a_end;
+				// Inverting angles also reverses the physical clockwise/counterclockwise winding!
+				counterclockwise_flag = !counterclockwise_flag;
 			}
 
-			l.x = e_x1;
-			l.y = e_y1;
-			l.r = e_r1;
-            l.kat1 = e_kp1;
-            l.kat2 = e_kk1;
-
-			//l.typ=e_type;
-			l.typ = ep_type;
-			l.kolor = ep_color;
-			l.warstwa = ep_layer;
-			l.przec = ep_space;
-            l.obiektt2 = O2BlockPline;
-            l.atrybut=Ablok;
-
-			if (to_block == 1)
+			if (counterclockwise_flag)
 			{
-				l.blok = 1;
-				if (nullptr == dodaj_obiekt((BLOK*)dane, &l)) return -1;
+				if (a_start >= a_end) a_end += Pi2;
+				e_kp1 = a_start;
+				e_kk1 = a_end;
 			}
 			else
 			{
-                //hatch always creates block
-                l.blok = 1;
-                if (nullptr == dodaj_obiekt((BLOK*)dane, &l)) return -1;
+				if (a_end >= a_start) a_start += Pi2;
+				e_kp1 = a_end;
+				e_kk1 = a_start;
+			}
+			 */
+
+
+			/*
+			// === FIX FOR HATCH BOUNDARY CROSS-OVER BLOWOUT ===
+			double a_start = e_kp * Pi2 / 360.0;
+			double a_end   = e_kk * Pi2 / 360.0;
+
+			// Normalize both raw inputs to be strictly within [0, 2*Pi)
+			a_start = fmod(a_start, Pi2); if (a_start < 0.0) a_start += Pi2;
+			a_end   = fmod(a_end, Pi2);   if (a_end < 0.0)   a_end += Pi2;
+
+			if (counterclockwise_flag)
+			{
+				// Tracing CCW from a_start to a_end
+				if (a_start >= a_end) {
+					a_end += Pi2;
+				}
+				e_kp1 = a_start;
+				e_kk1 = a_end;
+			}
+			else
+			{
+				// Tracing CW from a_start to a_end is geometrically
+				// identical to tracing CCW from a_end to a_start!
+				if (a_end >= a_start) {
+					a_start += Pi2;
+				}
+				e_kp1 = a_end;
+				e_kk1 = a_start;
 			}
 
-            if (object_no==0)
-            {
-                start_x=e_x+e_r*cos(e_kp1);
-                start_y=e_y+e_r*sin(e_kp1);
-            }
+			// CRITICAL SAFEGUARD: If the calculated sweep angle spans almost the entire
+			// circle (larger than Pi) but visually it is supposed to be the minor arch,
+			// the loop orientation from the converter requires a complement inversion.
+			if ((e_kk1 - e_kp1) > M_PI)
+			{
+				// Swap the bounds and shift the phase to extract the true minor arch segment
+				double temp_kp = e_kp1;
+				e_kp1 = fmod(e_kk1, Pi2);
+				e_kk1 = temp_kp;
+				if (e_kp1 >= e_kk1) e_kk1 += Pi2;
+			}
+
+			 */
+
+			/*
+			// === UNIFIED HATCH ARC ANGLE ENGINE ===
+			double a_start = e_kp * Pi2 / 360.0;
+			double a_end   = e_kk * Pi2 / 360.0;
+
+			// Bring both angles strictly into the [0, 2*Pi) domain
+			a_start = fmod(a_start, Pi2); if (a_start < 0.0) a_start += Pi2;
+			a_end   = fmod(a_end, Pi2);   if (a_end < 0.0)   a_end += Pi2;
+
+			double sweep = 0.0;
+
+			if (counterclockwise_flag)
+			{
+				// For CCW paths, sweep moves forward from start to end
+				if (a_end >= a_start) {
+					sweep = a_end - a_start;
+				} else {
+					sweep = (Pi2 - a_start) + a_end;
+				}
+
+				// Map directly to engine standard
+				e_kp1 = a_start;
+				e_kk1 = a_start + sweep;
+			}
+			else
+			{
+				// For CW paths, sweep moves backward from start to end
+				if (a_start >= a_end) {
+					sweep = a_start - a_end;
+				} else {
+					sweep = (Pi2 - a_end) + a_start;
+				}
+
+				// A CW path from start to end with 'sweep' is geometrically
+				// identical to a CCW path starting at 'a_end' moving forward by 'sweep'
+				e_kp1 = a_end;
+				e_kk1 = a_end + sweep;
+			}
+
+			// Clean up any trailing precision wrapping past 2*Pi
+			if (e_kp1 >= Pi2 && e_kk1 >= Pi2) {
+				e_kp1 -= Pi2;
+				e_kk1 -= Pi2;
+			}
+			 */
+
+
+			// === MIRRORED HATCH EDGE ROTATION ENGINE ===
+			double a_start = e_kp * Pi2 / 360.0;
+			double a_end   = e_kk * Pi2 / 360.0;
+
+			// Bring raw inputs into the standard [0, 2*Pi) domain
+			a_start = fmod(a_start, Pi2); if (a_start < 0.0) a_start += Pi2;
+			a_end   = fmod(a_end, Pi2);   if (a_end < 0.0)   a_end += Pi2;
+
+			if (counterclockwise_flag)
+			{
+				// Standard execution: ensure start < end
+				if (a_start >= a_end) {
+					a_end += Pi2;
+				}
+				e_kp1 = a_start;
+				e_kk1 = a_end;
+			}
+			else
+			{
+				// Mirrored Clockwise Hatch Edge Logic:
+				// To convert a mirrored South-facing clockwise path segment
+				// into its true North-facing counterclockwise vector equivalent,
+				// we flip the angles vertically across the horizontal axis:
+				a_start = Pi2 - a_start;
+				a_end   = Pi2 - a_end;
+
+				// After flipping, a_end becomes the new lower boundary (counterclockwise start)
+				// and a_start becomes the new upper boundary (counterclockwise end)
+				if (a_end >= a_start) {
+					a_start += Pi2;
+				}
+				e_kp1 = a_end;
+				e_kk1 = a_start;
+			}
+
+
+			// Save values down to your floating-point structure fields
+
+			if (TRUE == Check_if_Equal(e_kp1, e_kk1))
+			{
+				endentitie = TRUE;
+				return entitie_code;
+			}
+
+			l.x = (float)e_x1;
+			l.y = (float)e_y1;
+			l.r = (float)e_r1;
+			l.kat1 = (float)e_kp1; // Secure explicit floating precision assignments
+			l.kat2 = (float)e_kk1;
+
+			//l.typ=e_type;
+			l.typ = ep_type;
+
+			l.kolor = ep_color;
+			l.warstwa = ep_layer;
+			l.przec = ep_space;
+			l.obiektt2 = O2BlockPline;
+			l.atrybut = Ablok;
+
+
+#ifndef NDEBUG
+			// === ADD THIS AT THE BOTTOM OF THE ASSIGNMENT LOOP ===
+			if ((e_kk1 - e_kp1) > 3.0 * M_PI / 2.0) // If the arc spans more than 270 degrees
+			{
+				printf("\n==================================================\n");
+				printf("[TARGET ARC TRAPPED IN HATCH]\n");
+				printf("  Approximate Line Number in File: %d\n", nr_linii);
+				printf("  Raw DXF Degrees: Start (Code 50): %f | End (Code 51): %f\n", e_kp, e_kk);
+				printf("  Direction Flag (Code 73): %d\n", counterclockwise_flag);
+				printf("  Calculated Center  X, Y : (%f, %f)\n", e_x, e_y);
+				printf("  Calculated Radius  (Code 40): %f\n", e_r);
+				printf("==================================================\n");
+			}
+#endif
+
+			if (to_block == 1) {
+				l.blok = 1;
+				if (nullptr == dodaj_obiekt((BLOK *) dane, &l)) return -1;
+			} else {
+				//hatch always creates block
+				l.blok = 1;
+				if (nullptr == dodaj_obiekt((BLOK *) dane, &l)) return -1;
+			}
+
+			if (object_no == 0) {
+				start_x = e_x + e_r * cos(e_kp1);
+				start_y = e_y + e_r * sin(e_kp1);
+			}
+
+
+			*code73=counterclockwise_flag;
 
 			endentitie = TRUE;
 			return entitie_code;
+		}
 			break;
 		case 10:  /*start point X - double*/
 			if (sscanf(p1, "%lf", &e_x) < 1) return -1;
@@ -4106,6 +4559,9 @@ int read_arcs_hatch(FILE *f, int to_block, BOOL block, int object_no)
 			break;
 		case 73:  /*counterclockwise flag*/
 			if (sscanf(p1, "%d", &counterclockwise_flag) < 1) return -1;
+			break;
+		case 230: /*extrusion direction Z*/
+			if (sscanf(p1, "%lf", &e_extrusion_z) < 1) return -1;
 			break;
 		default:  break;
 		} /*switch*/
@@ -4225,10 +4681,10 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
                     pa = (sqrt((ek_x * ek_x) + (ek_y * ek_y)));  //dlugosc wiekszej polosi
                     pb = e_r * pa;  //dlugosc mniejszej polosi
 
-                if (!counterclockwise_flag) {
-                    e_kk1 = e_kk;
-                    e_kk = e_kp;
-                    e_kp = (Pi2 - e_kk1);
+					if (!counterclockwise_flag) {
+						e_kk1 = e_kk;
+						e_kk = e_kp;
+						e_kp = (Pi2 - e_kk1);
                 }
 
                 //wyznaczenie kata
@@ -4245,7 +4701,8 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
                     px[i] = pa * cos(pu) + e_x;
                     py[i] = pb * sin(pu) + e_y;
 
-                    if (i == 0) {
+					if ((i==0) && (object_no == 0))
+					{
                         start_x = px[0];
                         start_y = py[0];
                     }
@@ -4269,10 +4726,10 @@ int read_ellipses_hatch(FILE *f, int to_block, BOOL block, int object_no, int nu
 
                 //a wiec mamy wszystkie 36 punktow ktore teraz laczymy liniami
                 for (i = 0; i < 36; i++) {
-                    L.x1 = px[i];
-                    L.y1 = py[i];
-                    L.x2 = px[i + 1];
-                    L.y2 = py[i + 1];
+                    L.x1 = (float)px[i];
+                    L.y1 = (float)py[i];
+                    L.x2 = (float)px[i + 1];
+                    L.y2 = (float)py[i + 1];
                     L.typ = ep_type;
                     L.kolor = ep_color;
                     L.warstwa = ep_layer;
@@ -4452,7 +4909,7 @@ int read_splines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 				if (smnw < 2) return -1;
 
 				spline_type = 5;
-				ret = add_bspline(e_xfit, e_yfit, e_zfit, to_block1, smnw, spline_type, zamkniecie, bcurviness, Ablok);
+				ret = add_bspline(e_xfit, e_yfit, e_zfit, to_block1, smnw, spline_type, zamkniecie, bcurviness, Ablok, object_no);
 			}
 			if (snw > 0)
 			{
@@ -4460,10 +4917,10 @@ int read_splines_hatch(FILE *f, int to_block, BOOL block, int object_no)
 				if (snw == 2) spline_type = 3;
 				else if (snw == 3) spline_type = 4;
 				else spline_type = 6;
-				ret = add_bspline(e_xp, e_yp, e_zp, to_block1, snw, spline_type, zamkniecie, bcurviness, Ablok);
+				ret = add_bspline(e_xp, e_yp, e_zp, to_block1, snw, spline_type, zamkniecie, bcurviness, Ablok, object_no);
 			}
 
-			endentitie = TRUE;
+				endentitie = TRUE;
 			return entitie_code;
 			break;
 		
@@ -4570,8 +5027,11 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
 	char buf[MAXLINE], buf1[MAXLINE];
 	int entitie_code;
 	char pattern_name[256];
-	int solid_flag, associativity_flag, path_type_flag, edge_type, is_closed;
-	int number_of_paths, number_of_edges, number_of_vertices, number_of_seed_points, number_of_dash_length_items;
+	int solid_flag, associativity_flag, path_type_flag, edge_type, is_closed, annotation_flag;
+	int number_of_edges, number_of_vertices,  number_of_dash_length_items;
+	int number_of_paths=0;
+	int number_of_seed_points=0;
+	int number_of_seed_points_temp;
 	double e_xp0, e_yp0, e_zp0;
 	BOOL color_defined;
 	LINIA L = Ldef;
@@ -4593,6 +5053,8 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
     double start_x0, start_y0;
     int i_number_hatch_arch;
     double df_angle_rev0;
+	BOOL reading_boundaries = TRUE;
+	int code73;
 
     T_Hatch_Param s_hatch_param999={999,0,1,0,0,FALSE};
     int number_of_pattern_definition_lines;
@@ -4601,12 +5063,18 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
     double kos, koc;
     BOOL is_polyline;
     BOOL seed_points_no=0;
-    POINTD *seed_points=nullptr;
+    //POINTD *seed_points=nullptr;
+	double *seed_points_x=nullptr;
+	double *seed_points_y=nullptr;
     double seed_x, seed_y;
     int number_of_source_boundary_objects;
     double dx0;
     double dy0;
     BOOL done_ellipse;
+
+	zmien_atrybut(dane, dane + dane_size, ANieOkreslony, Anormalny);
+
+	lw_polyline_hatch_catch=1;
 
 	solid_flag = 1;
 	ep_color = 7;
@@ -4616,6 +5084,7 @@ BOOL read_hatch(FILE *f, int to_block, BOOL block, int draw)
 	number_of_edges = 0;
 	number_of_vertices = 0;
 	is_closed = 0;
+	annotation_flag = 0;
 	ep_type = 0;
     ep_width=line_width.normal*100;
     hatch_type=-1;
@@ -4680,7 +5149,9 @@ go_repeat:
 		case 10:  /*start point X - double*/
             if (seed_points_no>0) {
                 if (sscanf(p1, "%lf", &seed_x) < 1) goto error;
-                seed_points[number_of_seed_points-seed_points_no].x=seed_x;
+                //seed_points[number_of_seed_points-seed_points_no].x=seed_x;\
+				////seed_points_x[number_of_seed_points-seed_points_no]=seed_x;
+				////seed_points_x[number_of_seed_points-seed_points_no]=jednostkiOb(seed_x - EXTMIN_X);  ////
             }
             else {if (sscanf(p1, "%lf", &e_xp0) < 1) goto error; //return 0;
                 s_hatch_param999.df_basex=e_xp0;}
@@ -4688,8 +5159,10 @@ go_repeat:
 		case 20:  /*start point Y - double*/
             if (seed_points_no>0) {
                 if (sscanf(p1, "%lf", &seed_y) < 1) goto error;
-                seed_points[number_of_seed_points-seed_points_no].y=seed_y;
-                seed_points_no--;
+                //seed_points[number_of_seed_points-seed_points_no].y=seed_y;
+				////seed_points_y[number_of_seed_points-seed_points_no]=seed_y;
+				////seed_points_y[number_of_seed_points-seed_points_no]=jednostkiOb(seed_y - EXTMIN_Y);  ////
+                ////seed_points_no--;
             }
 			else {if (sscanf(p1, "%lf", &e_yp0) < 1) goto error; //return 0;
                 s_hatch_param999.df_basey=e_yp0;}
@@ -4707,30 +5180,45 @@ go_repeat:
 		case 71:
 			if (sscanf(p1, "%d", &associativity_flag) < 1) goto error; //return 0;
 			break;
+
 		case 91:
+				if (sscanf(p1, "%d", &number_of_paths) < 1) goto error;
+				is_closed = 0;
+				nw = 0;
 
-			if (sscanf(p1, "%d", &number_of_paths) < 1) goto error; //return 0;
-			/*rozpoczecie polilinii*/
-			is_closed = 0;
-			nw = 0;
+				if (number_of_paths > 1)
+				{
+					if (to_block == 0) {
+						if (add_block_hatch(TRUE) == nullptr) goto error;
+					} else {
+						if (add_block_hatch_in_block(TRUE) == nullptr) goto error;
+					}
+				}
 
-            if (number_of_paths>1)//no Polyline
-            {
-                 if (to_block == 0) {
-                    if (add_block_hatch(TRUE) == nullptr) {
-                        goto error; //return 0;
-                    }
-                } else {
-                    if (add_block_hatch_in_block(TRUE) == nullptr) {
-                        goto error; //return 0;
-                    }
-                }
-            }
+				// Ensure we allocate enough space for 4 fallback points per loop path
+				if ((number_of_paths * 4) > number_of_seed_points)
+				{
+					number_of_seed_points = number_of_paths * 4;
+					if (seed_points_x != nullptr) {
+						seed_points_x = (double *) realloc(seed_points_x, number_of_seed_points * sizeof(double));
+						seed_points_y = (double *) realloc(seed_points_y, number_of_seed_points * sizeof(double));
+					}
+					else
+					{
+						seed_points_x = (double *) malloc(number_of_seed_points * sizeof(double));
+						seed_points_y = (double *) malloc(number_of_seed_points * sizeof(double));
+					}
+				}
 
-			break;
+				seed_points_no = number_of_seed_points;
+
+				break;
+
 		case 92: //new path begins
 
 			if (sscanf(p1, "%d", &path_type_flag) < 1) goto error; //return 0;
+
+			object_no=0;
 
             solid_type=0;
 			if (path_type_flag & 2) //Polyline
@@ -4738,7 +5226,26 @@ go_repeat:
                 solid_hatch_ok=FALSE;
                 is_polyline=TRUE;
 
-				ret = read_lwpolyline_hatch(f, to_block, block, number_of_paths, path_type_flag, path_no, solid_flag);
+				ret = read_lwpolyline_hatch(f, to_block, block, number_of_paths, path_type_flag, path_no, solid_flag, object_no);
+				if (object_no==0)
+				{
+					dx0 = 2.0;
+					dy0 = 2.0;
+					double dx00=milimetryob(dx0);
+					double dy00=milimetryob(dy0);
+
+					seed_points_x[path_no*4]=start_x - dx00;
+					seed_points_y[path_no*4]=start_y - dy00;
+
+					seed_points_x[path_no*4+1]=start_x - dx00;
+					seed_points_y[path_no*4+1]=start_y + dx00;
+
+					seed_points_x[path_no*4+2]=start_x + dx00;
+					seed_points_y[path_no*4+2]=start_y + dx00;
+
+					seed_points_x[path_no*4+3]=start_x + dx00;
+					seed_points_y[path_no*4+3]=start_y - dx00;
+				}
 
 				if (ret == -1) goto error; //return 0;
 
@@ -4780,7 +5287,7 @@ go_repeat:
             }
 
 			break;
-		case 93: //new path begins
+		case 93: //new path begins with number of edges
 			if (path_type_flag == 0)
 			{
 				if (sscanf(p1, "%d", &number_of_edges) < 1) goto error; //return 0;
@@ -4789,35 +5296,142 @@ go_repeat:
 			{
 				if (sscanf(p1, "%d", &number_of_vertices) < 1) goto error; //return 0;
 			}
+			////object_no=0;
 			break;
 		case 72:
+			if (!reading_boundaries) {
+				// This is a pattern group 72, NOT a geometric edge type!
+				// Handle pattern line styles / dash types here if needed, or break.
+				break;
+			}
+
 			if (sscanf(p1, "%d", &edge_type) < 1) goto error; //return 0;
 
             switch (edge_type) {
                 case 0:
                     solid_hatch_ok=FALSE;
                     is_polyline=TRUE;
-                    ret = read_lwpolyline_hatch(f, to_block, block, number_of_paths, path_type_flag, path_no, solid_flag);     //polyline
+                    ret = read_lwpolyline_hatch(f, to_block, block, number_of_paths, path_type_flag, path_no, solid_flag, object_no);     //polyline
+
+					if (object_no==0)
+					{
+						dx0 = 2.0;
+						dy0 = 2.0;
+						double dx00=milimetryob(dx0);
+						double dy00=milimetryob(dy0);
+
+						seed_points_x[path_no*4]=start_x - dx00;
+						seed_points_y[path_no*4]=start_y - dy00;
+
+						seed_points_x[path_no*4+1]=start_x - dx00;
+						seed_points_y[path_no*4+1]=start_y + dx00;
+
+						seed_points_x[path_no*4+2]=start_x + dx00;
+						seed_points_y[path_no*4+2]=start_y + dx00;
+
+						seed_points_x[path_no*4+3]=start_x + dx00;
+						seed_points_y[path_no*4+3]=start_y - dx00;
+					}
                 break;
                 case 1:
                     if (number_of_edges==3) solid_hatch=&solid3_hatch;
                     else if (number_of_edges==4) solid_hatch=&solid4_hatch;
                     else solid_hatch_ok=FALSE;
                     ret = read_lines_hatch(f, to_block, block, object_no);     //Line
+
+					if (object_no==0)
+					{
+						dx0 = 2.0;
+						dy0 = 2.0;
+						double dx00=milimetryob(dx0);
+						double dy00=milimetryob(dy0);
+
+						seed_points_x[path_no*4]=start_x - dx00;
+						seed_points_y[path_no*4]=start_y - dy00;
+
+						seed_points_x[path_no*4+1]=start_x - dx00;
+						seed_points_y[path_no*4+1]=start_y + dx00;
+
+						seed_points_x[path_no*4+2]=start_x + dx00;
+						seed_points_y[path_no*4+2]=start_y + dx00;
+
+						seed_points_x[path_no*4+3]=start_x + dx00;
+						seed_points_y[path_no*4+3]=start_y - dx00;
+					}
                 break;
                 case 2:
                     solid_hatch_ok=FALSE;
-                    ret = read_arcs_hatch(f, to_block, block, object_no); //Circular arc
+                    ret = read_arcs_hatch(f, to_block, block, object_no, &code73); //Circular arc
+
+					if (object_no==0)
+					{
+						dx0 = 2.0;
+						dy0 = 2.0;
+						double dx00=milimetryob(dx0);
+						double dy00=milimetryob(dy0);
+
+						seed_points_x[path_no*4]=start_x - dx00;
+						seed_points_y[path_no*4]=start_y - dy00;
+
+						seed_points_x[path_no*4+1]=start_x - dx00;
+						seed_points_y[path_no*4+1]=start_y + dx00;
+
+						seed_points_x[path_no*4+2]=start_x + dx00;
+						seed_points_y[path_no*4+2]=start_y + dx00;
+
+						seed_points_x[path_no*4+3]=start_x + dx00;
+						seed_points_y[path_no*4+3]=start_y - dx00;
+					}
                 break;
                 case 3:
                     solid_hatch_ok=FALSE;
                     done_ellipse=FALSE;
                     ret = read_ellipses_hatch(f, to_block, block, object_no, number_of_paths, solid_flag, pattern_name, ep_layer, ep_color, ep_space, &done_ellipse);   //elliptic arc
                     if (done_ellipse) number_of_paths=0;
+
+					if (object_no==0)
+					{
+						dx0 = 2.0;
+						dy0 = 2.0;
+						double dx00=milimetryob(dx0);
+						double dy00=milimetryob(dy0);
+
+						seed_points_x[path_no*4]=start_x - dx00;
+						seed_points_y[path_no*4]=start_y - dy00;
+
+						seed_points_x[path_no*4+1]=start_x - dx00;
+						seed_points_y[path_no*4+1]=start_y + dx00;
+
+						seed_points_x[path_no*4+2]=start_x + dx00;
+						seed_points_y[path_no*4+2]=start_y + dx00;
+
+						seed_points_x[path_no*4+3]=start_x + dx00;
+						seed_points_y[path_no*4+3]=start_y - dx00;
+					}
                 break;
                 case 4:
                     solid_hatch_ok=FALSE;
                     ret = read_splines_hatch(f, to_block, block, object_no);  //Splines
+
+					if (object_no==0)
+					{
+						dx0 = 2.0;
+						dy0 = 2.0;
+						double dx00=milimetryob(dx0);
+						double dy00=milimetryob(dy0);
+
+						seed_points_x[path_no*4]=start_x - dx00;
+						seed_points_y[path_no*4]=start_y - dy00;
+
+						seed_points_x[path_no*4+1]=start_x - dx00;
+						seed_points_y[path_no*4+1]=start_y + dx00;
+
+						seed_points_x[path_no*4+2]=start_x + dx00;
+						seed_points_y[path_no*4+2]=start_y + dx00;
+
+						seed_points_x[path_no*4+3]=start_x + dx00;
+						seed_points_y[path_no*4+3]=start_y - dx00;
+					}
                 break;
                 default:
                     solid_hatch_ok=FALSE;
@@ -4849,22 +5463,52 @@ go_repeat:
 
                 break;
 		case 73:
-			if (sscanf(p1, "%d", &is_closed) < 1) goto error; //return 0;
-			break;
+			////if (sscanf(p1, "%d", &is_closed) < 1) goto error; //return 0;
+			if (sscanf(p1, "%d", &annotation_flag) < 1) goto error;
+				break;
         case 78:
             if (sscanf(p1, "%d", &number_of_pattern_definition_lines) < 1) goto error; //return 0;
+			reading_boundaries = FALSE; // <-- STOP looking for edge loops here!
 
             ptrs__hatch_def_param999.i_size=number_of_pattern_definition_lines;
             if  (s_hatch_line_def999!=nullptr) free(s_hatch_line_def999);
             s_hatch_line_def999=(T_Hatch_Line_Def*)malloc(sizeof(T_Hatch_Line_Def)*number_of_pattern_definition_lines);
             break;
-		case 98:
-			if (sscanf(p1, "%d", &number_of_seed_points) < 1) goto error; //return 0;
-            seed_points_no=number_of_seed_points;
-            if (number_of_seed_points>0)
-                seed_points=(POINTD*)malloc(number_of_seed_points*sizeof(POINTD));
-			break;
-        //Hatch pattern data group codes
+
+			case 98:
+				///if (sscanf(p1, "%d", &number_of_seed_points) < 1) goto error; // Keep your error handle intact!
+
+				if (sscanf(p1, "%d", &number_of_seed_points_temp) < 1) goto error;
+
+				/*
+				if (number_of_seed_points > 0)
+				{
+					if (number_of_seed_points > (number_of_paths * 4))
+					{
+						if (seed_points_x != nullptr) {
+							seed_points_x = (double *) realloc(seed_points_x, number_of_seed_points * sizeof(double));
+							seed_points_y = (double *) realloc(seed_points_y, number_of_seed_points * sizeof(double));
+						}
+						else
+						{
+							seed_points_x = (double *) malloc(number_of_seed_points * sizeof(double));
+							seed_points_y = (double *) malloc(number_of_seed_points * sizeof(double));
+						}
+					}
+				}
+
+				if ((number_of_paths * 4) > number_of_seed_points)
+				{
+					number_of_seed_points = number_of_paths * 4;
+				}
+
+				seed_points_no = number_of_seed_points;
+
+				 */
+
+				break;
+
+				//Hatch pattern data group codes
 		case 53:  /*pattern line angle*/
 			if (sscanf(p1, "%lf", &pattern_line_angle) < 1) goto error; //return 0;
             def_line_no++;
@@ -4926,8 +5570,15 @@ go_repeat:
                 s_hatch_param999.df_scale=jednostkiOb(1.0); //taking into acount transformation scale
             break;
         case 52:  /*pattern angle */
-                if (sscanf(p1, "%lf", &s_hatch_param999.df_angle) < 1) goto error; //return 0;
-            break;
+			{
+				//if (sscanf(p1, "%lf", &s_hatch_param999.df_angle) < 1) goto error; //return 0;
+				double pattern_global_angle = 0.0;
+				if (sscanf(p1, "%lf", &pattern_global_angle) < 1) goto error;
+
+				// Apply your standard conversion macro/function to match case 53!
+				s_hatch_param999.df_angle = Angle_Normal(Grid_to_Rad(pattern_global_angle));
+				break;
+			}
         case 75: /*Hatch style*/
                 if (sscanf(p1, "%d", &hatch_style) < 1) goto error; //return 0;
             break;
@@ -4954,7 +5605,7 @@ go_repeat:
        LiniaG.typ=ep_type;
        LiniaG.warstwa=ep_layer;
 
-       if (solid_flag==1)
+	   if (solid_flag == 1 || strcmp(pattern_name, "SOLID") == 0)
        {
            //solid fill; it's crazy, people using solid fill quite often instead of solid enitity.
            // It's not maybe problem for Autocad, which doesn't provide opacity / transparency over DXF at all,
@@ -4991,6 +5642,14 @@ go_repeat:
                go_ahead = TRUE;
            }
        }
+	   // Check if explicit line descriptions are embedded right here in the block
+	   else if (number_of_pattern_definition_lines > 0)
+	   {
+		   settle_hatch_pattern(999);
+		   s_hatch_param999.i_number_hatch = 999; // Explicit line-pattern mode
+		   go_ahead = TRUE;
+	   }
+		   // Otherwise, evaluate by core type flags
        else {
            switch (hatch_type)
            {
@@ -5010,21 +5669,36 @@ go_repeat:
 
        if (go_ahead==TRUE) {
 
-           if (number_of_seed_points>0)
+		   ret_h=0;
+
+           //if (number_of_seed_points>0)
+		   if (solid_flag == 0 && strcmp(pattern_name, "SOLID") != 0)
            {
                zmien_atrybut(dane, dane + dane_size, Apppoblok, Anormalny);
+
                for (int i=0; i<number_of_seed_points; i++)
                {
-                   df_x[0] = jednostkiOb(seed_points[i].x - EXTMIN_X);
-                   df_y[0] = jednostkiOb(seed_points[i].y - EXTMIN_Y);
+                   df_x[0] = jednostkiOb(seed_points_x[i] - EXTMIN_X);
+                   df_y[0] = jednostkiOb(seed_points_y[i] - EXTMIN_Y);
+
                    ret_h = hatch_proc(0, dane_size, 1, df_x, df_y, &s_hatch_param999, 0, 0, 0, 0, 0, base_block, to_block, draw);
                    zmien_atrybut(dane, dane + dane_size, Apppoblok, Ablok);
 
                    if (ret_h==0)  //if area is not closed it doesn't make any sense to try another seed points
                        break;
                }
+
+			   ////ret_h = hatch_proc(0, dane_size, number_of_seed_points, seed_points_x, seed_points_y, &s_hatch_param999, 0, 0, 0, 0, 0, base_block, to_block, draw);
+			   ////zmien_atrybut(dane, dane + dane_size, Apppoblok, Ablok);
+			   if (ret_h==1)
+			   {
+				   ret_h_inc++;
+			   }
            }
-           else {
+
+		   //if ((number_of_seed_points==0) || (ret_h != 1))
+		   if ((solid_flag == 1 || strcmp(pattern_name, "SOLID") == 0) || (ret_h != 1))
+		   {
                zmien_atrybut(dane, dane + dane_size, Apppoblok, Anormalny);
                dx0=2.0;
                dy0=2.0;
@@ -5041,9 +5715,13 @@ go_repeat:
                df_x[3] = jednostkiOb(start_x0 + dx0 - EXTMIN_X);
                df_y[3] = jednostkiOb(start_y0 - dy0 - EXTMIN_Y);
 
-
                ret_h = hatch_proc(0, dane_size, 4, df_x, df_y, &s_hatch_param999, 0, 0, 0, 0, 0, base_block, to_block, draw);
                zmien_atrybut(dane, dane + dane_size, Apppoblok, Ablok);
+
+			   if (ret_h==1)
+			   {
+				   int a=1;
+			   }
 
            }
        }
@@ -5052,17 +5730,26 @@ go_repeat:
        glb_silent=FALSE;
        //resetting atrybuts
        if (solid_type==0)
-           zmien_atrybut(dane, dane + dane_size, Ablok, Ausuniety); //Ausuniety);
-
+           zmien_atrybut(dane, dane + dane_size, Ablok, Ausuniety);
+	   //zmien_atrybut(dane, dane + dane_size, Ablok, Anormalny);
 
     //if (s_hatch_line_def999 != nullptr) free(s_hatch_line_def999);
-    if (seed_points!=nullptr) free(seed_points);
+	if (seed_points_x!=nullptr) free(seed_points_x);
+	if (seed_points_y!=nullptr) free(seed_points_y);
+
+
+	lw_polyline_hatch_catch=0;
+
 	return 1;
 
 
  error:
     if  (s_hatch_line_def999!=nullptr) free(s_hatch_line_def999);
-    if (seed_points!=nullptr) free(seed_points);
+	if (seed_points_x!=nullptr) free(seed_points_x);
+	if (seed_points_y!=nullptr) free(seed_points_y);
+
+	lw_polyline_hatch_catch=0;
+
     return 0;
 }
 
@@ -6182,6 +6869,7 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
   double e_column_spacing=0, e_row_spacing=0;
   char buf[MAXLINE], buf1[MAXLINE];
   INSERT I=InsertDef;
+  char block_name[256];
 
  e_extrusion_x=0;
  e_extrusion_y=0;
@@ -6371,10 +7059,14 @@ BOOL read_insert(FILE *f,int to_block, BOOL block)
   case 66 : /*attributes follow flag*/ 	    
            if ( sscanf ( p1 , "%d", &e_attrib_flag)  < 1 ) return 0;
     break;
-  case 2: if (USERI1==211) strcpy(I.block_name,""); 
-             else  strcpy(I.block_name," ");
-          strcat(I.block_name,buf1);
-          if (!is_utf8(I.block_name))  decodingdxf(I.block_name, sizeof(I.block_name));
+  case 2: if (USERI1==211) strcpy(block_name,"");
+             else  strcpy(block_name," ");
+
+  	      //using temporary buffer
+          strncat(block_name,buf1, sizeof(block_name)-strlen(block_name)-1);
+          if (!is_utf8(block_name))  decodingdxf(block_name, sizeof(block_name));
+
+  	      strncpy(I.block_name,block_name, sizeof(I.block_name)-strlen(I.block_name)-1);
     break;
   default:  break;  
   } /*switch*/
@@ -6401,6 +7093,7 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
   int dimension_type;
   INSERT I=InsertDef;
   int to_block1;
+  char block_name[256];
 
  
   I.dim = TRUE;
@@ -6560,10 +7253,14 @@ BOOL read_dimension(FILE *f,int to_block, BOOL block)
     break;
   case 45: if ( sscanf ( p1 , "%lf", &I.row_spacing)  < 1 ) return 0; 
     break;
-  case 2: if (USERI1==211) strcpy(I.block_name,""); 
-            else strcpy(I.block_name," ");
-            strcat(I.block_name,buf1);
-          if (!is_utf8(I.block_name))  decodingdxf(I.block_name, sizeof(I.block_name));
+  case 2: if (USERI1==211) strcpy(block_name,"");
+  else  strcpy(block_name," ");
+
+  	//using temporary buffer
+  	strncat(block_name,buf1, sizeof(block_name)-strlen(block_name)-1);
+  	if (!is_utf8(block_name))  decodingdxf(block_name, sizeof(block_name));
+
+  	strncpy(I.block_name,block_name, sizeof(I.block_name)-strlen(I.block_name)-1);
     break;
   default:  break;  
   } /*switch*/
@@ -11008,6 +11705,8 @@ BOOL read_lwpolyline(FILE *f,int to_block, BOOL block)
     double width_p1, width_k1;
     int nw42, nw40, nw41, nw43;
 
+	edges_vertices_h=0; //just initialization
+
     e_extrusion_x=0;
     e_extrusion_y=0;
     e_extrusion_z=1;
@@ -11115,6 +11814,9 @@ BOOL read_lwpolyline(FILE *f,int to_block, BOOL block)
                 break;
             case 90: /*lwpolyline liczba wierzcholkow*/
                 if ( sscanf (p1 , "%d", &e_lpoints) < 1 ) return 0;
+
+				edges_vertices_h=e_lpoints;
+
                 break;
             case 70: /*polyline flag - optional 0*/
                 if ( sscanf (p1 , "%d", &e_flags) < 1 ) return 0;
@@ -11495,14 +12197,14 @@ BOOL read_spline(FILE *f, int to_block, BOOL block)
 			{
 				if (smnw < 2) return 1;
 				spline_type = 5;
-				ret = add_bspline(e_xfit, e_yfit, e_zfit, to_block, smnw, spline_type, zamkniecie, bcurviness, Anormalny);
+				ret = add_bspline(e_xfit, e_yfit, e_zfit, to_block, smnw, spline_type, zamkniecie, bcurviness, Anormalny, 1);
 			}
 			else if (snw > 0)
 			{
 				if (snw == 2) spline_type = 3;
 				else if (snw == 3) spline_type = 4;
 			    else spline_type = 6;
-				ret = add_bspline(e_xp, e_yp, e_zp, to_block, snw, spline_type, zamkniecie, bcurviness, Anormalny);
+				ret = add_bspline(e_xp, e_yp, e_zp, to_block, snw, spline_type, zamkniecie, bcurviness, Anormalny, 1);
 
 			}
 			return 1;
@@ -12032,140 +12734,140 @@ BOOL read_entities_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
      if (!read_line(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "MLINE") == 0)
+   if (strcmp (dxf_entitie, "MLINE") == 0)
     { 
      if (!read_mline(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "POINT") == 0)
+   if (strcmp (dxf_entitie, "POINT") == 0)
     { 
      if (!read_point(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "CIRCLE") == 0)
+   if (strcmp (dxf_entitie, "CIRCLE") == 0)
     { 
      if (!read_circle(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "ARC") == 0)
+   if (strcmp (dxf_entitie, "ARC") == 0)
     { 
      if (!read_arc(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "ELLIPSE") == 0)
+   if (strcmp (dxf_entitie, "ELLIPSE") == 0)
     {
      if (!read_ellipse(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "TRACE") == 0)
+   if (strcmp (dxf_entitie, "TRACE") == 0)
     { 
      if (!read_trace(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "SOLID") == 0)
+   if (strcmp (dxf_entitie, "SOLID") == 0)
     { 
      if (!read_solid(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "TEXT") == 0)
+   if (strcmp (dxf_entitie, "TEXT") == 0)
     { 
      if (!read_text(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "MTEXT") == 0)
+   if (strcmp (dxf_entitie, "MTEXT") == 0)
     { 
      if (!read_mtext(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "XSHAPE") == 0)
+   if (strcmp (dxf_entitie, "XSHAPE") == 0)
     { 
      if (!read_shape(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "INSERT") == 0)
+   if (strcmp (dxf_entitie, "INSERT") == 0)
     { 
      if (!read_insert(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "ATTDEF") == 0)
+   if (strcmp (dxf_entitie, "ATTDEF") == 0)
     { 
      if (!read_attdef(f,0, block)) return 0;
      goto next_entitie;
     }    
-   else if (strcmp (dxf_entitie, "ATTRIB") == 0)
+   if (strcmp (dxf_entitie, "ATTRIB") == 0)
     { 
      if (!read_attrib(f,0, block)) return 0;
      goto next_entitie;
     }
    
-   else if (strcmp (dxf_entitie, "POLYLINE") == 0)
+   if (strcmp (dxf_entitie, "POLYLINE") == 0)
     { 
      if (!read_pline(f,0, block)) return 0;
      goto next_entitie;
     }
    
-   else if (strcmp (dxf_entitie, "LWPOLYLINE") == 0)
+   if (strcmp (dxf_entitie, "LWPOLYLINE") == 0)
     { 
      if (!read_lwpolyline(f,0, block)) return 0;
      goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "SPLINE") == 0)
+   if (strcmp (dxf_entitie, "SPLINE") == 0)
     { 
      if (!read_spline(f,0, block)) return 0;
      goto next_entitie;
     }  
-   else if (strcmp (dxf_entitie, "3DFACE") == 0)
+   if (strcmp (dxf_entitie, "3DFACE") == 0)
     { 
      if (!read_3dface(f,0, block)) return 0;
      goto next_entitie;
     }   
-   else if (strcmp (dxf_entitie, "XVIEWPORT") == 0)
+   if (strcmp (dxf_entitie, "XVIEWPORT") == 0)
     { 
      if (!read_viewport(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp (dxf_entitie, "DIMENSION") == 0)
+   if (strcmp (dxf_entitie, "DIMENSION") == 0)
     { 
      if (!read_dimension(f,0, block)) return 0;
      goto next_entitie;
     } 
-   else if (strcmp(dxf_entitie, "ARC_DIMENSION") == 0)  //// ???????????
+   if (strcmp(dxf_entitie, "ARC_DIMENSION") == 0)  //// ???????????
    {
 	   if (!read_dimension(f, 0, block)) return 0;
 	   goto next_entitie;
    }
-   else if (strcmp(dxf_entitie, "IMAGE") == 0)  //// ???????????
+   if (strcmp(dxf_entitie, "IMAGE") == 0)  //// ???????????
    {
    if (!read_image(f, 0, block)) return 0;
    goto next_entitie;
    }
-   else if (strcmp(dxf_entitie, "XXXOLE2FRAME") == 0)  //TO FINISH
+   if (strcmp(dxf_entitie, "XXXOLE2FRAME") == 0)  //TO FINISH
    {
        if (!read_ole2frame(f, 0, block)) return 0;
        goto next_entitie;
    }
-   else if (strcmp (dxf_entitie, "ENDSEC") == 0)
+   if (strcmp (dxf_entitie, "ENDSEC") == 0)
     {
      endsec=TRUE;
      return 1;
     }
-   else if (strcmp (dxf_entitie, "HATCH") == 0)
-    {
-       if (block_view==0) {
-           if (!read_hatch(f, 0, block, draw_hatch)) return 0;
-           goto next_entitie;
-       }
-    }
-   else if (strcmp (dxf_entitie, "LEADER") == 0)
+   if (strcmp (dxf_entitie, "LEADER") == 0)
     {
        if (!read_leader(f, 0, block)) return 0;
        goto next_entitie;
     }
-   else if (strcmp (dxf_entitie, "MULTILEADER") == 0)
+   if (strcmp (dxf_entitie, "MULTILEADER") == 0)
    {
        if (!read_multileader(f, 0, block)) return 0;
        goto next_entitie;
    }
+   if (strcmp (dxf_entitie, "HATCH") == 0)
+   	{
+   		if (block_view==0) {
+   			if (!read_hatch(f, 0, block, draw_hatch)) return 0;
+   			goto next_entitie;
+   		}
+   	}
   }
         if (!inc_nr_linii()) return 0;
    if ( myfgets(dxf_entitie_code , MAXLINE1 , f ) == nullptr ) return 0;
@@ -12240,6 +12942,7 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
   BOOL endblk;
   int entitie_code;
   char typ_bloku [60];
+  char typ_bloku_raw[255];
   char styl_bloku [60];
   BOOL block_added;
   double e_xp=0, e_yp=0, e_zp=0;
@@ -12324,141 +13027,139 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
      if (!read_line(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "MLINE") == 0)
+   if (strcmp (dxf_entitie, "MLINE") == 0)
     { 
      if (!read_mline(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "POINT") == 0)
+   if (strcmp (dxf_entitie, "POINT") == 0)
     { 
      if (!read_point(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "CIRCLE") == 0)
+   if (strcmp (dxf_entitie, "CIRCLE") == 0)
     { 
      if (!read_circle(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "ARC") == 0)
+   if (strcmp (dxf_entitie, "ARC") == 0)
     {
      if (!read_arc(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "ELLIPSE") == 0)
+   if (strcmp (dxf_entitie, "ELLIPSE") == 0)
     {
      if (!read_ellipse(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "TRACE") == 0)
+   if (strcmp (dxf_entitie, "TRACE") == 0)
     { 
      if (!read_trace(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "SOLID") == 0)
+   if (strcmp (dxf_entitie, "SOLID") == 0)
     { 
      if (!read_solid(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "TEXT") == 0)
+   if (strcmp (dxf_entitie, "TEXT") == 0)
     { 
      if (!read_text(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "MTEXT") == 0)
+   if (strcmp (dxf_entitie, "MTEXT") == 0)
     { 
      if (!read_mtext(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "XSHAPE") == 0)
+   if (strcmp (dxf_entitie, "XSHAPE") == 0)
     { 
      if (!read_shape(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "INSERT") == 0)
+   if (strcmp (dxf_entitie, "INSERT") == 0)
     {
        inserts++;
      if (!read_insert(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   else if (strcmp (dxf_entitie, "ATTDEF") == 0)
+   if (strcmp (dxf_entitie, "ATTDEF") == 0)
     { 
      if (!read_attdef(f,1, block)) return 0;
      goto next_b_entitie;
     }    
-   else if (strcmp (dxf_entitie, "ATTRIB") == 0)
+   if (strcmp (dxf_entitie, "ATTRIB") == 0)
     { 
      if (!read_attrib(f,1, block)) return 0;
      goto next_b_entitie;
     }
-   
-   else if (strcmp (dxf_entitie, "POLYLINE") == 0)
+   if (strcmp (dxf_entitie, "POLYLINE") == 0)
     { 
      if (!read_pline(f,1, block)) return 0;
      goto next_b_entitie;
     }
-
-   else if (strcmp (dxf_entitie, "LWPOLYLINE") == 0)
+   if (strcmp (dxf_entitie, "LWPOLYLINE") == 0)
     { 
      if (!read_lwpolyline(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp(dxf_entitie, "SPLINE") == 0)
-   {
+   if (strcmp(dxf_entitie, "SPLINE") == 0)
+    {
 	   if (!read_spline(f, 1, block)) return 0;
 	   goto next_b_entitie;
-   }
-   else if (strcmp (dxf_entitie, "3DFACE") == 0)
+    }
+   if (strcmp (dxf_entitie, "3DFACE") == 0)
     { 
      if (!read_3dface(f,1, block)) return 0;
      goto next_b_entitie;
     }   
-   else if (strcmp (dxf_entitie, "XVIEWPORT") == 0)
+   if (strcmp (dxf_entitie, "XVIEWPORT") == 0)
     { 
      if (!read_viewport(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp (dxf_entitie, "DIMENSION") == 0)
+   if (strcmp (dxf_entitie, "DIMENSION") == 0)
     { 
      if (!read_dimension(f,1, block)) return 0;
      goto next_b_entitie;
     } 
-   else if (strcmp(dxf_entitie, "ARC_DIMENSION") == 0)  //// ???????????
-   {
-   if (!read_dimension(f, 1, block)) return 0;
-   goto next_b_entitie;
-   }
-   else if (strcmp(dxf_entitie, "IMAGE") == 0)  //// ???????????
-   {
-   if (!read_image(f, 1, block)) return 0;
-   goto next_b_entitie;
-   }
-   else if (strcmp(dxf_entitie, "OLE2FRAME") == 0)
-   {
+   if (strcmp(dxf_entitie, "ARC_DIMENSION") == 0)  //// ???????????
+    {
+    if (!read_dimension(f, 1, block)) return 0;
+    goto next_b_entitie;
+    }
+   if (strcmp(dxf_entitie, "IMAGE") == 0)  //// ???????????
+    {
+     if (!read_image(f, 1, block)) return 0;
+     goto next_b_entitie;
+    }
+   if (strcmp(dxf_entitie, "OLE2FRAME") == 0)
+     {
        if (!read_ole2frame(f, 1, block)) return 0;
        goto next_b_entitie;
-   }
-   else if (strcmp(dxf_entitie, "HATCH") == 0)
-	{
-       if (block_view==0) {
-           if (!read_hatch(f, 1, block, draw_hatch)) return 0;
-           goto next_b_entitie;
-       }
-	}
-   else if (strcmp (dxf_entitie, "LEADER") == 0)
+     }
+   if (strcmp (dxf_entitie, "LEADER") == 0)
     {
        if (!read_leader(f, 1, block)) return 0;
        goto next_b_entitie;
       }
-   else if (strcmp (dxf_entitie, "MULTILEADER") == 0)
+   if (strcmp (dxf_entitie, "MULTILEADER") == 0)
    {
        if (!read_multileader(f, 1, block)) return 0;
        goto next_b_entitie;
    }
-   else if (strcmp (dxf_entitie, "ENDBLK") == 0)
+   if (strcmp (dxf_entitie, "ENDBLK") == 0)
     {
      endblk=TRUE;
      return 1;
     }
+   	if (strcmp(dxf_entitie, "HATCH") == 0)
+   	{
+   		if (block_view==0) {
+   			if (!read_hatch(f, 1, block, draw_hatch)) return 0;
+   			goto next_b_entitie;
+   		}
+   	}
    }
    else
    { 
@@ -12480,10 +13181,10 @@ BOOL read_block_dxf(FILE *f, BOOL block, int block_view, int draw_hatch)
 		   e_color = Layers_DXF[e_layer].color;
 	   }
       break;
-   case 2:  if (USERI1==211) strcpy(typ_bloku,""); 
+   case 2:  if (USERI1==211) strcpy(typ_bloku,"");
              else strcpy(typ_bloku," ");
             if (!is_utf8(dxf_entitie))  decodingdxf(dxf_entitie, sizeof(dxf_entitie));
-            strcat(typ_bloku, dxf_entitie);
+            strncat(typ_bloku, dxf_entitie, sizeof(typ_bloku)-strlen(typ_bloku)-1);
       break;
     case 330:
             strcpy(handle,dxf_entitie);
@@ -14128,6 +14829,8 @@ int czytaj_dxf_file(char *fn, double Jednostki_dxf, double SkalaF_dxf, double of
   int zmwym_czcionka = 0;
   double Jednostki_in_dxf;
 
+  ret_h_inc=0;
+
   last_mtext_h=zmwym.wysokosc;
 
  Jednostki=Jednostki_dxf;
@@ -14375,12 +15078,18 @@ else zmwym.dokladnosc = DIMRND;
 error_DXF_0:
 if (block_record!=nullptr) free(block_record);
 if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
+
+#ifndef NDEBUG
+printf("\nret_h_inc=%d\n",ret_h_inc);
+#endif
+
 return 0;
 
 error_DXF:
 if (block_record!=nullptr) free(block_record);
 if (Layers_name_DXF!=nullptr) free(Layers_name_DXF);
 return nr_linii;
+
 
 /*
 fclose(f);
