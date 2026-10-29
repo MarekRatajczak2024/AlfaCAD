@@ -417,6 +417,7 @@ const char *_EDIT_[] = {u8"Move", u8"move Z", u8"Rotate", u8"rotate XZ", u8"rota
 #endif
 #endif
 static char err_message[] = u8"Error processing DWG file";
+static char err_message_pdf[] = u8"Error processing PDF file";
 char err_message_code[] = u8"Exit code :";
 char err_message1[] = u8"Error processing interim file.";
 static char confirm[] = u8"Confirm";
@@ -426,7 +427,7 @@ POLE pmNewDrawing[] = {
 	{u8"new from Template",'T',533,NULL},
 };
 
-static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
+static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,19 /*18*/,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
 
 POLE pmNewWindow[] = {
 	{u8"New drawing in new window",'N',79,NULL},
@@ -434,7 +435,7 @@ POLE pmNewWindow[] = {
 	{u8"Open file in new window",'O',78,NULL},
 };
 
-static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
+static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,23/*22*/,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
 
 
 POLE pmExportCAD[] = {
@@ -448,16 +449,17 @@ static TMENU mExportCAD = { 1,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,14,0,0,0
 POLE pmImportCAD[] = {
 	{u8"DXF",'X',84,NULL},
 	{u8"DWG",'W',507,NULL},
+    {u8"PDF",'P',1001,NULL},
 };
 
-static TMENU mImportCAD = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
+static TMENU mImportCAD = { 3,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
 
 POLE pmTree[] = {
 	{u8"Enter",'E',537,NULL},
 	{u8"Return",'R',538,NULL},
 };
 
-static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
+static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,21/*20*/,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
 
 POLE pmLastFiles[] = {
 	{u8"1 \0\0",'1',0,NULL},
@@ -478,7 +480,7 @@ POLE pmLastFiles[] = {
 	{u8"Y \0\0",'Y',0,NULL},
 };
 
-static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
+static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,26/*25*/,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
 
 POLE pmQuit[] = {
 	 {u8"Open drawing\0",'O',78,NULL},
@@ -679,6 +681,12 @@ POLE pmOpcje[] = {
  "IO ERROR",  //4096
  "OUT OF MEM"  //8192
 };
+
+#define _ANALIZING_PDF_ u8"Analyzing PDF file"
+#define _CONVERTING_PDF_ u8"Converting PDF file"
+
+#define _SCALE_EXAGGERATATED_ u8"Distorted scale"
+#define _PDF_SCALE_ u8"PDF scale factor="
 
 #endif
 
@@ -1488,7 +1496,7 @@ char* dlg_name[] =
    u8"Save utility route record",
    u8"Load route from coordinates file",
    u8"Open catalog",
-   u8"Save plotter configuration",
+   u8"Save plotter configuration",  //30
    u8"Load plotter configuration",
    u8"Import DXF block",
    u8"Convert drawing from DWG format",
@@ -1497,6 +1505,8 @@ char* dlg_name[] =
    u8"Load desktop font",
    u8"Load new font",
    u8"Save static analysis result file",
+   u8"Convert drawing from PDF format",
+   u8"Select Home folder",
 };
 
 #define nameplate_tip u8"@Nameplate of drawing (drawing ID)"
@@ -1622,12 +1632,13 @@ static POLE pmInfo[] = {
 	 {u8"Macro buffer [B] \0 ",'M',301,NULL},
 	 {u8"Image buffer/Virtual screen segment [KB]\0 ",'I',302,NULL},
 	 {u8"Current folder \0 ",'C',303,NULL},
+     {u8"Home folder \0 ",'H',1002,NULL},
 	 {u8"Graphic mode \0 ",'G',304,NULL},
 	 {u8"desktop Font \0 ",'F',111,NULL},
      {u8"Logo \0 ",'L',812,NULL},
 };
 
-TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
+TMENU mInfo = { 11,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Line",u8"Line 3D",u8"Text",u8"Arc",u8"Circle",u8"Disc",u8"Polygon/Solid",u8"Solid 3D",u8"Point",u8"Spline",u8"Image",u8"Polyline",u8"Trace",u8"Hatch",u8"Elliptical Arc",u8"Ellipse", u8"Elliptical Disc", u8"Solid Arc", u8"Vector"};
 char* isometric_info=" (isometric)";

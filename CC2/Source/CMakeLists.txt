@@ -535,6 +535,10 @@ set(Source_Files
     "../../../CC2/Source/icon_alfacad.h"
     "../../../CC2/Source/alfatextdialogs.c"
     "../../../CC2/Source/alfatextdialogs.h"
+
+    "../../../CC2/Source/o_pdf_import.h"
+    "../../../CC2/Source/o_pdf_import.cpp"
+
 )
 source_group("Source Files" FILES ${Source_Files})
 

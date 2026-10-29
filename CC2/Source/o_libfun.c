@@ -1300,12 +1300,13 @@ get_autobackup (T_Fstring key_name, T_Fstring ret_string)
 
 	 change_bs2s(ret_string);
      strcpy(Current_File_Directory, ret_string);
-     if (Current_File_Directory [strlen (Current_File_Directory) - 1] != '\\')
+     if (Current_File_Directory [strlen (Current_File_Directory) - 1] != Slash) //'\\')
       {
-       strcat (Current_File_Directory, "\\");
+       strcat (Current_File_Directory, SSlash); //"\\");
       }
 
      //strupr(Current_File_Directory);  //bad for Linux and MacOS
+     strcpy(Default_File_Directory, Current_File_Directory);
      
    }
    else

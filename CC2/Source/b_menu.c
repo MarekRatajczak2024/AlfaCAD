@@ -488,6 +488,7 @@ extern char *icon_export_dxf_p;
 extern char *icon_import_dxf_p;
 extern char *icon_export_dwg_p;
 extern char *icon_import_dwg_p;
+extern char *icon_import_pdf_p;
 extern char *icon_edit_title_block_p;
 extern char *icon_cmd_p;
 extern char *icon_print_p;
@@ -740,6 +741,7 @@ extern char *icon_RAM_printing_buffer_p;
 extern char *icon_RAM_macro_buffer_p;
 extern char *icon_RAM_image_buffer_p;
 extern char *icon_current_folder_p;
+extern char *icon_home_folder_p;
 extern char *icon_desktop_size_p;
 
 extern char *icon_layers_info_p;
@@ -3674,7 +3676,8 @@ static char *get_icons_p(int number)
         /*974*/   icon_wheel_zoom_rate_p, icon_keys_zoom_rate_p, icon_pan_and_zoom_p,
         /*977*/   icon_UA_A_p, icon_UA_VE_p, icon_UA_HE_p, icon_UA_GE_p, icon_UA_JE_p, icon_UA_ZHE_p, icon_UA_ZE_p, icon_UA_Y_p, icon_UA_JI_p,
         /*986*/   icon_UA_EL_p, icon_UA_EM_p, icon_UA_U_p, icon_UA_EF_p, icon_UA_KHA_p, icon_UA_CHE_p, icon_UA_SHA_p, icon_UA_SHCHA_p, icon_UA_JU_p,
-        /*995*/   icon_pinx_p, icon_piny_p, icon_pinz_p, icon_rigidx_p, icon_rigidy_p, icon_rigidz_p,
+        /*995*/   icon_pinx_p, icon_piny_p, icon_pinz_p, icon_rigidx_p, icon_rigidy_p, icon_rigidz_p, icon_import_pdf_p,
+	    /*1002*/  icon_home_folder_p,
     };
    
 	if (number>1999)
@@ -4324,6 +4327,7 @@ void draww(TMENU  *menu)
    {
       settextjustify (CENTER_TEXT, TOP_TEXT) ;
    }
+
    for(i=0;i<size;i++)
    {
      xt=(int) (xtt+0.5);
@@ -4407,7 +4411,8 @@ void draww(TMENU  *menu)
               else if (ptrsz_iconno == 802) kolor_m = GetColorAC1(static_stress_colors.axial_stress_minus_color);
               else if (ptrsz_iconno == 803) kolor_m = GetColorAC1(static_stress_colors.shear_stress_color);
               else if (ptrsz_iconno == 814) kolor_m = GetColorAC1(static_colors.dynamic_color);
-              else if (ptrsz_iconno > 1000) kolor_m = GetColorAC1(ptrsz_iconno-1000);
+              else if (ptrsz_iconno > 1000) 
+                  kolor_m = GetColorAC1(ptrsz_iconno-1000);
 
 			  else kolor_m = GetColorAC1(LiniaG.kolor); //temporary
               
@@ -4504,7 +4509,8 @@ void draww(TMENU  *menu)
 	 
      if (menu->flags&ICONS)
 	 {
-         if (ptrsz_iconno>=FIRST_CLIENT_BITMAP_NO) bmp = (BITMAP *)client_bitmap_load[ptrsz_iconno-FIRST_CLIENT_BITMAP_NO];
+         if (ptrsz_iconno>=FIRST_CLIENT_BITMAP_NO) 
+             bmp = (BITMAP *)client_bitmap_load[ptrsz_iconno-FIRST_CLIENT_BITMAP_NO];
 		 else bmp = (BITMAP *)get_icons_p(ptrsz_iconno);
 		 if (bmp != NULL)
 		 {

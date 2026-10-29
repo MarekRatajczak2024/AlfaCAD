@@ -31,7 +31,7 @@ typedef enum
   ZAPIS_PRO,
   ODCZYT_PXYZ,
   OPEN_CATALOG,
-  ZAPIS_PLT_CFG,
+  ZAPIS_PLT_CFG,  //30
   ODCZYT_PLT_CFG,
   INI_BLOK_DXF,
   INI_DWG,
@@ -40,6 +40,8 @@ typedef enum
   INI_TTF_FONT,
   INI_OTF_FONT,
   ZAPIS_OUT,
+  INI_PDF,
+  SELECT_HOME_FOLDER, //40
 } T_Get_File_Name;
 
 #define EXT_NO   " \n*.*"

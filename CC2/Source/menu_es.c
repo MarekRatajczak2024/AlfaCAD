@@ -418,6 +418,7 @@ const char *_EDIT_[] = { u8"Mover", u8"mover Z", u8"Girar", u8"girar XZ", u8"gir
 #endif
 #endif
 static char err_message[] = u8"Error al procesar el archivo DWG";
+static char err_message_pdf[] = u8"Error al procesar el archivo PDF";
 char err_message_code[] = u8"Código de salida :";
 char err_message1[] = u8"Error al procesar el archivo provisional.";
 static char confirm[] = u8"Confirmar";
@@ -427,7 +428,7 @@ POLE pmNewDrawing[] = {
 	{u8"nuevo de Plantilla",'P',533,NULL},
 };
 
-static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
+static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,19,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
 
 POLE pmNewWindow[] = {
 	{u8"Nuevo dibujo en nueva ventana",'N',79,NULL},
@@ -435,7 +436,7 @@ POLE pmNewWindow[] = {
 	{u8"Abrir archivo en ventana nueva",'A',78,NULL},
 };
 
-static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
+static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
 
 
 POLE pmExportCAD[] = {
@@ -449,16 +450,17 @@ static TMENU mExportCAD = { 1,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,14,0,0,0
 POLE pmImportCAD[] = {
 	{u8"DXF",'X',84,NULL},
 	{u8"DWG",'W',507,NULL},
+    {u8"PDF",'P',1001,NULL},
 };
 
-static TMENU mImportCAD = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
+static TMENU mImportCAD = { 3,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
 
 POLE pmTree[] = {
 	{u8"Entrar",'E',537,NULL},
 	{u8"Regresar",'R',538,NULL},
 };
 
-static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
+static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,21,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
 
 POLE pmLastFiles[] = {
     {u8"1 \0\0",'1',0,NULL},
@@ -479,7 +481,7 @@ POLE pmLastFiles[] = {
 	{u8"Y \0\0",'Y',0,NULL},
 };
 
-static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
+static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
 
 POLE pmQuit[] = {
 	 {u8"Dibujo abierto\0",'D',78,NULL},
@@ -681,6 +683,12 @@ const char* DwgErrorList[] = { u8"SIN ERROR",
  u8"ERROR DE E/S",  //4096
  u8"MEMORIA AGOTADA"  //8192
 };
+
+#define _ANALIZING_PDF_ u8"Analizando archivo PDF"
+#define _CONVERTING_PDF_ u8"Convirtiendo archivo PDF"
+
+#define _SCALE_EXAGGERATATED_ u8"Escala distorsionada"
+#define _PDF_SCALE_ u8"Factor de escala para PDF="
 
 #endif
 
@@ -1497,6 +1505,8 @@ char* dlg_name[] =
    u8"Cargar fuente de escritorio",
    u8"Cargar nueva fuente",
    u8"Guardar archivo de resultados del análisis estático",
+   u8"Convertir dibujo de formato PDF",
+   u8"Seleccionar carpeta de inicio",
 };
 
 #define nameplate_tip u8"@Placa de identificación del dibujo"
@@ -1613,12 +1623,13 @@ static POLE pmInfo[] = {
 	 {u8"búfer de Macros [B] \0 ",'M',301,NULL},
 	 {u8"Búfer de imagen/segmento de pantalla virtual [KB]\0 ",'B',302,NULL},
 	 {u8"carpeta Actual \0 ",'A',303,NULL},
+     {u8"Carpeta de inicio \0 ",'C',1002,NULL},
 	 {u8"modo Gráfico \0 ",'G',304,NULL},
 	 {u8"Fuente de escritorio \0 ",'F',111,NULL},
      {u8"Logo \0 ",'L',812,NULL},
 };
 
-TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
+TMENU mInfo = { 11,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Línea", u8"Línea 3D", u8"Texto", u8"Arco", u8"Círculo", u8"Disco", u8"Polígono/Sólido", u8"Sólido 3D", u8"Punto", u8"Spline", u8"Imagen",u8"Polilínea",u8"Rastro",u8"Sombreado", u8"Arco elíptico",u8"Elipse", u8"Disco elíptico", u8"Arco sólido", u8"Vector"};
 char* isometric_info=" (isométrico)";

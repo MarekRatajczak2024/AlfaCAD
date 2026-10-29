@@ -738,6 +738,49 @@ void free_console(void)
     FreeConsole();
 }
 
+// Struct to pass process ID to the window enumerator
+typedef struct {
+	DWORD pid;
+	HWND hWnd;
+} enum_window_data;
+
+// Callback function that loops through all windows on the desktop
+static BOOL CALLBACK EnumWindowProc(HWND hWnd, LPARAM lParam) {
+	enum_window_data* data = (enum_window_data*)lParam;
+	DWORD pid = 0;
+	GetWindowThreadProcessId(hWnd, &pid);
+
+	// If the window belongs to our process tree, check if it's a console
+	if (pid == data->pid) {
+		char class_name[256];
+		GetClassNameA(hWnd, class_name, sizeof(class_name));
+		if (strcmp(class_name, "ConsoleWindowClass") == 0) {
+			data->hWnd = hWnd;
+			return FALSE; // Found it, stop looping
+		}
+	}
+	return TRUE;
+}
+
+// Robust function to forcefully hide the console window
+void HideActiveProcessConsole(void) {
+	// 1. Try the instant active hook first
+	HWND hConsole = GetConsoleWindow();
+	if (hConsole) {
+		ShowWindow(hConsole, SW_HIDE);
+		return;
+	}
+
+	// 2. Fallback: Query windows matching the active thread ID
+	enum_window_data data;
+	data.pid = GetCurrentProcessId();
+	data.hWnd = NULL;
+
+	EnumWindows(EnumWindowProc, (LPARAM)&data);
+	if (data.hWnd) {
+		ShowWindow(data.hWnd, SW_HIDE);
+	}
+}
 
 int gettimeofday(struct timeval* tp, struct timezone* tzp)
 {
@@ -6341,8 +6384,12 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #endif
 #ifndef LINUX
                     //sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/ads\" --connect-timeout 5 -m 5 --user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out");
-                    sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out",
-                            cloud_ads_url, cloud_user, cloud_password);
+                    //sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > list.out",
+                    //        cloud_ads_url, cloud_user, cloud_password);
+
+                	sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" -o list.out",
+							cloud_ads_url, cloud_user, cloud_password);
+
                     //printf("%s\n", params);
                     runcode = RunSilent((char*)"curl", params);
 #ifdef USESED
@@ -6451,8 +6498,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                                     extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name);
 
                                     snprintf(params, sizeof(params), "--connect-timeout 5 -m 20 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
-                                            cloud_user, cloud_password, cloud_ads0_url, row_file_p, cloud_ads0,
-                                            row_file_name);
+                                            cloud_user, cloud_password, cloud_ads0_url, row_file_p, cloud_ads0, row_file_name);
 #ifdef LINUX
                                     runcode = (int)SystemSilent((char*)"curl", params);
 #endif
@@ -6604,8 +6650,11 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 #endif
 #ifndef LINUX
                     //sprintf(params, "\"https://nextcloud.vurplex.com/remote.php/webdav/upgds\" --connect-timeout 5 -m 5 -user \"alfacad\":\"engineer4engineers\" --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > upgdslist.out");
-                    sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > upgdslist.out",
-                        cloud_upgrade_url, cloud_user, cloud_password);
+                    //sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" > upgdslist.out",
+                    //    cloud_upgrade_url, cloud_user, cloud_password);
+                	sprintf(params, "%s --connect-timeout 5 -m 5 --user %s:%s --request PROPFIND --data \"<?xml version='1.0' encoding='UTF-8'?> <d:propfind xmlns:d='DAV:'> <d:prop xmlns:oc='http://owncloud.org/ns'> <d:getlastmodified/> <d:getcontentlength/> <d:getcontenttype/> </d:prop> </d:propfind>\" -o upgdslist.out",
+							cloud_upgrade_url, cloud_user, cloud_password);
+
                     runcode = RunSilent((char*)"curl", params);
 
 #ifdef USESED
@@ -6737,8 +6786,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
                             flip_full_screen(second_screen);
                             extra_logo(getmaxx() / 2, getmaxy() / 2 + 6 * HEIGHT, 2, row_file_name_upgds);
                             snprintf(params, sizeof(params), "--connect-timeout 5 -m 120 -u %s:%s \"%s/%s\" -o \"%s/%s\"",
-                                    cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds_p, cloud_upgrade0,
-                                    row_file_name_upgds);
+                                    cloud_user, cloud_password, cloud_upgrade0_url, row_file_upgds_p, cloud_upgrade0, row_file_name_upgds);
 #ifdef LINUX
                             runcode = (int)SystemSilent((char*)"curl", params);
 #endif
@@ -7129,6 +7177,7 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 							    // STEP 7: Cleanup the temporary staging directory
 							    fprintf(gotar, "rmdir /s /q _upg_tmp\n");
 
+								/*
 							    // STEP 8: Launch back into the application
 							    fprintf(gotar, ":do_launch\n");
 							    fprintf(gotar, "if \"%%~4\"==\"\" (\n");
@@ -7150,9 +7199,56 @@ int Al_Load_PNG_fade(char *png_name, char *png_name1, int w, int h, int x, int y
 							    fprintf(gotar, "goto do_launch\n");
 
 							    fclose(gotar);
+							    */
+								// STEP 8: Launch back into the application cleanly without parameter shifts
+								fprintf(gotar, ":do_launch\n");
+								fprintf(gotar, "if \"%%~4\"==\"\" (\n");
+								fprintf(gotar, "    start \"AlfaCAD\" \"%%2\"\n");
+								fprintf(gotar, ") else (\n");
+								fprintf(gotar, "    if \"%%~5\"==\"\" (\n");
+								fprintf(gotar, "        start \"AlfaCAD\" \"%%2\" \"%%~4\"\n");
+								fprintf(gotar, "    ) else (\n");
+								fprintf(gotar, "        start \"AlfaCAD\" \"%%2\" \"%%~4\" \"%%~5\"\n");
+								fprintf(gotar, "    )\n");
+								fprintf(gotar, ")\n");
+								fprintf(gotar, "del \"%%~f0\" & exit\n");
+
+								// STEP 9: Error Handling fallback
+								// If the zip was corrupt, certificate expired, or server errored, we bypass deletion, clean up, and just restart old app
+								fprintf(gotar, ":error_abort\n");
+								fprintf(gotar, "echo Upgrade failed or corrupted. Reverting changes.\n");
+								fprintf(gotar, "if exist _upg_tmp rmdir /s /q _upg_tmp\n");
+								fprintf(gotar, "goto do_launch\n");
+
+								fclose(gotar);
+
 							}
 
-							_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, argv_, argv_, argv_, nullptr);
+
+                        	// ========================================================================
+                        	// THE WATCHMAKER'S LIFECYCLE PARAMETER ROUTER
+                        	// Dynamically checks if a genuine drawing path was passed to AlfaCAD (argv[1])
+                        	// and routes it cleanly to your batch file, preventing phantom windows!
+                        	// ========================================================================
+                        	const char* target_drawing_param = "";
+
+                        	// If your engine's main parameter argument count (argc) is greater than 1,
+                        	// then argv[1] contains your true, absolute drawing file path layout string!
+                        	if (__argc > 1 && __argv[1] != nullptr && __argv[1][0] != '\0') {
+                        		target_drawing_param = __argv[1];
+                        	}
+
+                        	// Call your update script passing explicit index allocations:
+                        	// %1 = ZIP Archive, %2 = Target EXE, %3 = Executable Path, %4 = True Drawing Path
+                        	_execlp("gotar.bat", "gotar.bat",
+									row_file_name_upgds,  // %1
+									ad_name,              // %2
+									__argv[0],            // %3
+									target_drawing_param, // %4
+									nullptr);             // Terminate argument array list
+
+							//_execlp("gotar.bat", "gotar.bat", row_file_name_upgds, ad_name, argv_, argv_, argv_, nullptr);
+
 							quick_exit(0);
 
 #endif

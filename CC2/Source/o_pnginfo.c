@@ -404,7 +404,7 @@ int Load_PNG_JPG_real(B_PCX *b_pcx, char *nazwa_pcx, size_t width, size_t height
 	adr_pcx->przec = 0;
 	adr_pcx->blok = 0;
 	adr_pcx->n = T294 + sizeof(head) + filelength(fp);
-	adr_pcx->warstwa = Current_Layer;
+	adr_pcx->warstwa = b_pcx->warstwa;  //Current_Layer;
 	adr_pcx->kod_obiektu = type+2;  //1=PCX,  2=PNG, 3=JPG
 	adr_pcx->inwersja = b_pcx->inwersja;
 	adr_pcx->ignore_background = b_pcx->ignore_background;

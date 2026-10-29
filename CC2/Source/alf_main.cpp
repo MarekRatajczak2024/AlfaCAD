@@ -539,7 +539,7 @@ LRESULT CALLBACK subComboboxProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 LRESULT CALLBACK subEditProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
-	BOOL shifted;
+	BOOL shifted=FALSE;
 	BOOL ret;
 
 	switch (msg)
@@ -3746,6 +3746,25 @@ bool Copy_File(char *ptrsz_fnd, char *ptrsz_fns)
     return CopyFile((LPCSTR)ptrsz_fns, (LPCSTR)ptrsz_fnd, FALSE);
 }
 #endif
+
+
+// Helper to safely fetch user and machine identities cross-platform
+std::string GetSystemMachineName() {
+#ifndef LINUX
+	const char* val = std::getenv("COMPUTERNAME");
+	return (val != nullptr) ? std::string(val) : std::string("Windows-PC");
+#else
+	// Pure Linux/macOS Kernel Call: Cuts right through bash shell quirks!
+	char hostname[256];
+	if (gethostname(hostname, sizeof(hostname)) == 0) {
+		return std::string(hostname); // Returns your clean "archdev" token natively!
+	}
+
+	// Last-line structural guard fallback
+	const char* fallback = std::getenv("HOSTNAME");
+	return (fallback != nullptr) ? std::string(fallback) : std::string("Linux-Workstation");
+#endif
+}
 
 
 void report_mem_leak_cpp_(void)

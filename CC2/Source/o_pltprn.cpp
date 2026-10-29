@@ -51,6 +51,10 @@
 
 BOOL PIN_IS_PRINTABLE=FALSE;
 
+#ifdef LINUX
+extern int pdf_layer_no;
+#endif
+
 extern int MakeGrayColor(int kolor);
 extern int MakeColor(int kolor);
 extern T_PTR_Prn_Ini_Date *get_ptrs__prn_ini_date(void);
@@ -118,6 +122,9 @@ extern int Line_Width (int width_style);
 extern int Solid_Line_Width (int solid_width_style);
 
 extern "C" {
+#ifndef LINUX
+    extern int pdf_layer_no;
+#endif
 
     extern void Clip_Solid (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
     extern BOOL Clip_Solid0 (int num_we, T_PixelTVal  *poly_we, int *num_wy, int *poly_wy) ;
@@ -469,6 +476,8 @@ BOOL Draw_Fill_Circle_To_Drive (OKRAG* ptr_circle)
   byte_ intensity;
   int i_width;
   LUK l;
+
+  pdf_layer_no=ptr_circle->warstwa;
 
   T_PTR_Prn_Ini_Date* ptrs__prn_ini_date_;
 
@@ -2114,6 +2123,8 @@ BOOL Draw_Wielokat_To_Drive (WIELOKAT *ptr_w, Print_Rect *window_to_print)
 
   T_PTR_Prn_Ini_Date* ptrs__prn_ini_date_;
 
+  pdf_layer_no=ptr_w->warstwa;
+
   if (type__drive == PRN_DRIVE)
   {
 	  ptrs__prn_ini_date_ = get_ptrs__prn_ini_date();
@@ -2519,6 +2530,8 @@ BOOL Draw_Solidarc_To_Drive (SOLIDARC *ptr_sa, Print_Rect *window_to_print)
 
     origin_x_ = 0;
     origin_y_ = 0;
+
+	pdf_layer_no=ptr_sa->warstwa;
 
     if (type__drive == PRN_DRIVE)
     {
@@ -3648,6 +3661,8 @@ BOOL Draw_Vector_To_Drive(AVECTOR *ptrs_vector, Print_Rect *window_to_print)
     double iso_angle;
 
 #define arrowf 1.0
+
+	pdf_layer_no=ptrs_vector->warstwa;
 
     ra=Get_Point_Size () / arrowf;
 
@@ -9523,6 +9538,8 @@ BOOL Draw_Arc_To_Drive (LUK *l)
   int ret;
   int kolor;
 
+  pdf_layer_no=l->warstwa;
+
   if (l->typ == HATCH_OUTLINE_TYPE) return TRUE;  //invisible
 
   typ = ( l->typ & 31 );
@@ -9541,6 +9558,7 @@ BOOL Draw_Ellipse_To_Drive(ELLIPSE *e)
     int kolor;
 
     //if (e->typ == HATCH_OUTLINE_TYPE) return TRUE;  //invisible
+	pdf_layer_no=e->warstwa;
 
     typ = ( e->typ & 31 );
     kolor = MakeColor(GetColorWin(e->kolor));
@@ -9563,6 +9581,7 @@ BOOL Draw_EllipticalArc_To_Drive(ELLIPTICALARC *ea)
     int kolor;
 
     //if (ea->typ == HATCH_OUTLINE_TYPE) return TRUE;  //invisible
+	pdf_layer_no=ea->warstwa;
 
     typ = ( ea->typ & 31 );
     kolor = MakeColor(GetColorWin(ea->kolor));
@@ -9583,6 +9602,8 @@ BOOL Draw_Line_To_Drive(LINIA *L)
 	BLOK *ptrs_block;
 
 	if (L->typ == HATCH_OUTLINE_TYPE) return TRUE;  //invisible
+
+	pdf_layer_no=L->warstwa;
 
 	parametry_lini(L, &PL);
 
@@ -9697,6 +9718,7 @@ BOOL Draw_Point_To_Drive(T_Point *ptrs_point)
     //double kos30=-0.5, koc30=0.866025404, kos210=0.5, koc210=-0.866025404, kos150=0.5, koc150=0.866025404, kos330=-0.5, koc330=-0.866025404;  //inverted
     double kos30=-0.5, koc30=-0.866025404, kos210=0.5, koc210=0.866025404, kos150=0.5, koc150=-0.866025404, kos330=-0.5, koc330=0.866025404;
 
+	pdf_layer_no=ptrs_point->warstwa;
 
     if (ptrs_point->typ<8) df_psize = Get_Point_Size () / 2;
     else df_psize = Get_Point_Size () / 4 ;
@@ -10259,6 +10281,8 @@ BOOL Draw_Spline_To_Drive(SPLINE *S)
 
 #define NPA 90 //56
 
+	pdf_layer_no=S->warstwa;
+
 	if (S->npts < 5)
 	{
 		kolor = MakeColor(GetColorWin(S->kolor));
@@ -10384,7 +10408,8 @@ BOOL Draw_Tekst_To_Drive(TEXT *t, int ink_plotter, int pen ,  int plt_type/*, do
   int i_matrix=0;
   int i_zn=0;
   bool index_pos=FALSE;
-  
+
+  pdf_layer_no=t->warstwa;
 
   bw = Layers[t->warstwa].bw;
   grey = Layers[t->warstwa].grey;

@@ -15,15 +15,20 @@
 */
 
 #define __O_INFO__
-#include<forwin.h>
+#include <forwin.h>
 #ifndef LINUX
-#include<stddef.h>
+#include <stddef.h>
+#include <direct.h>
+#define getcwd _getcwd
+#else
+#include <unistd.h>
 #endif
-#include<stdio.h>
-#include<math.h>
-#include<string.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 #include "bib_e.h"
 #include "rysuj_e.h"
+#include "o_loadf.h"
 #include "b_buf.h"
 #include "alffont.h"
 #include "alf_res.h"
@@ -86,6 +91,9 @@ extern char *Vector_txt[];
 extern char **t_t;
 extern void set_text_types(int ver);
 
+extern int My_GetOpenFolder(char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name);
+extern char* dlg_name[];
+
 static void nooph(void)
 {}
 #define noooph (void ( *)(int x,int y))nooph
@@ -105,7 +113,7 @@ int param_no[iOuterBlockName+1];
 static void uaktualnij_pola (void)
 /*------------------------------*/
 {
-  char sk [32] ;
+  char sk [65] ;
   char sk1[MAXPATH];
   //unsigned long_long mem_virtual;
   //unsigned long_long mem_dos ;
@@ -141,7 +149,7 @@ static void uaktualnij_pola (void)
  
 //  sprintf (sk, "%ld", imageBMPsize / kb/*mem_virtual*/) ;
 
-  sprintf (sk, "%lld/%lld (%lld)", imageBMPsize1, imageBMPsize_total_used1, imageBMPsize_used1) ;
+  sprintf (sk, "%lld/%lld (%lld)", (unsigned long long)imageBMPsize1, (unsigned long long)imageBMPsize_total_used1, (unsigned long long)imageBMPsize_used1) ;
 
   menu_par_new((*mInfo.pola)[1].txt, sk) ;
 
@@ -149,13 +157,13 @@ static void uaktualnij_pola (void)
 
   menu_par_new((*mInfo.pola)[2].txt, sk) ;
 
-  sprintf (sk, "%llu", Bufor_Wydruku / kb ) ;
+  sprintf (sk, "%llu", (unsigned long long)(Bufor_Wydruku / kb) ) ;
   menu_par_new((*mInfo.pola)[3].txt, sk) ;
 
   sprintf (sk, "%u", Get_Buf_Mak_Size ()) ;
   menu_par_new((*mInfo.pola)[4].txt, sk) ;
 
-  sprintf (sk, "%llu/%llu", Bufor_PCX / kb, Wielkosc_Plata / kb) ;
+  sprintf (sk, "%llu/%llu", (unsigned long long)(Bufor_PCX / kb), (unsigned long long)(Wielkosc_Plata / kb)) ;
   menu_par_new((*mInfo.pola)[5].txt, sk) ;
 
   strcpy(sk1, Current_File_Directory);
@@ -173,11 +181,26 @@ static void uaktualnij_pola (void)
   }
   menu_par_new((*mInfo.pola)[6].txt, ptrsz_lab) ;
 
+  strcpy(sk1, Default_File_Directory);
+  ptrsz_lab = sk1;
+  len = strlen (ptrsz_lab) ;
+  if (len > 36)
+  {
+	st = &ptrsz_lab [len - (36 - 7)] ;
+	st = strchr (st, Slash) ;
+	memmove ( &ptrsz_lab [6], st, strlen (st) + 1) ; /*z '\0' na koncu*/
+	ptrsz_lab [3] = '.' ;
+	ptrsz_lab [4] = '.' ;
+	ptrsz_lab [5] = '.' ;
+	ptrsz_lab [36] = '\0' ;
+  }
+  menu_par_new((*mInfo.pola)[7].txt, ptrsz_lab) ;
+
   sprintf (sk, "%dx%d", getmaxx()+1, getmaxy()+1) ;
-  menu_par_new((*mInfo.pola)[7].txt, sk) ;
+  menu_par_new((*mInfo.pola)[8].txt, sk) ;
 
   sprintf (sk, u8"%s", Czcionka_Pulpitu) ;
-  menu_par_new((*mInfo.pola)[8].txt, sk) ;
+  menu_par_new((*mInfo.pola)[9].txt, sk) ;
 }
 
 
@@ -250,9 +273,92 @@ void Change_Printing_Buffer_Size(void)
 	komunikat(0);
 }
 
+// Assuming Default_File_Directory has a defined size, e.g., 260
+#define PATH_MAX_LEN 260
+
+void select_home_folder(void)
+{
+    char cwd[PATH_MAX_LEN];
+    char new_home_directory[PATH_MAX_LEN] = "";
+    char *ptr;
+
+    // 1. Safely get the current working directory
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+    {
+        // Handle error if working directory cannot be read
+        return;
+    }
+
+    // 2. Safely append the system slash to CWD
+    size_t cwd_len = strlen(cwd);
+    size_t slash_len = strlen(SSlash);
+    if (cwd_len + slash_len + 1 <= sizeof(cwd))
+    {
+        strcat(cwd, SSlash);
+    }
+	// 3. Open the folder dialog
+#ifdef LINUX
+	int ret = My_GetOpenFolder(new_home_directory, Default_File_Directory, Default_File_Directory, "", dlg_name[SELECT_HOME_FOLDER]);
+#else
+	char Default_File_Directory_[PATH_MAX_LEN] = "";
+
+	// Check if the current Default_File_Directory is relative (does not contain a drive letter ':')
+	if (strchr(Default_File_Directory, ':') == NULL)
+	{
+		// Safely concatenate: cwd + Default_File_Directory into the temporary buffer
+		// snprintf guarantees it will never exceed PATH_MAX_LEN (260) and will always be null-terminated
+		snprintf(Default_File_Directory_, sizeof(Default_File_Directory_), "%s%s", cwd, Default_File_Directory);
+	}
+	else
+	{
+		// Safely copy the absolute path
+		strncpy(Default_File_Directory_, Default_File_Directory, sizeof(Default_File_Directory_) - 1);
+		Default_File_Directory_[sizeof(Default_File_Directory_) - 1] = '\0'; // Guarantee null-termination
+	}
+
+	int ret = My_GetOpenFolder(new_home_directory, Default_File_Directory_, Default_File_Directory_, "", dlg_name[SELECT_HOME_FOLDER]);
+#endif
+
+    if (ret)
+    {
+        // 4. Safely append system slash to the newly selected directory
+        size_t new_len = strlen(new_home_directory);
+        if (new_len + slash_len + 1 <= sizeof(new_home_directory))
+        {
+            strcat(new_home_directory, SSlash);
+        }
+
+        // 5. Check if new path starts with the CWD to make it relative
+        // Note: For Windows, consider using strncasecmp/strnicmp if drive letter casing mismatches
+        #ifdef LINUX
+        ptr = strstr(new_home_directory, cwd);
+        #else
+        // Windows case-insensitive match helper
+        ptr = (_strnicmp(new_home_directory, cwd, strlen(cwd)) == 0) ? new_home_directory : NULL;
+        #endif
+
+        if (ptr != NULL && ptr == new_home_directory)
+        {
+            // Advance past the CWD path to extract the relative portion
+            char *relative_path = new_home_directory + strlen(cwd);
+
+            // Safe copy to global buffer
+            strncpy(Default_File_Directory, relative_path, PATH_MAX_LEN - 1);
+            Default_File_Directory[PATH_MAX_LEN - 1] = '\0';
+        }
+        else
+        {
+            // Absolute path fallback (safely copied)
+            strncpy(Default_File_Directory, new_home_directory, PATH_MAX_LEN - 1);
+            Default_File_Directory[PATH_MAX_LEN - 1] = '\0';
+        }
+    }
+}
+
+
 
 static void(*COMNDi[])(void) = {
-        Change_Buffer_Size, nooph, nooph, Change_Printing_Buffer_Size, nooph, nooph, nooph, nooph, nooph, alfacad_logo_info,
+        Change_Buffer_Size, nooph, nooph, Change_Printing_Buffer_Size, nooph, nooph, nooph, select_home_folder, nooph, nooph, alfacad_logo_info,
 };
 
 void Info_Sys (void)

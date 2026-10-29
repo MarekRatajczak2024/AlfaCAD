@@ -415,8 +415,9 @@ const char *_EDIT_[] = { u8"Рухатити", u8"Рухатити Z", u8"Обе
 #endif
 #endif
 
-char err_message[] = u8"Помилка обробки файлу DWG";
-char err_message_code[] = u8"Код виходу:";
+static char err_message[] = u8"Помилка обробки файлу DWG";
+static char err_message_pdf[] = u8"Помилка обробки файлу PDF";
+static char err_message_code[] = u8"Код виходу:";
 char err_message1[] = u8"Помилка обробки проміжного файлу.";
 static char confirm[] = u8"Підтвердьте";
 
@@ -425,7 +426,7 @@ POLE pmNewDrawing[] = {
 	{u8"нове з Шаблону",L'Ш',533,NULL},
 };
 
-static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
+static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,19,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
 
 POLE pmNewWindow[] = {
 	{u8"Новий креслення в новому вікні",L'Н',79,NULL},
@@ -433,7 +434,7 @@ POLE pmNewWindow[] = {
 	{u8"Відкрити файл у новому вікні",L'В',78,NULL},
 };
 
-static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
+static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
 
 
 POLE pmExportCAD[] = {
@@ -447,16 +448,17 @@ static TMENU mExportCAD = { 1,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,14,0,0,0
 POLE pmImportCAD[] = {
 	{u8"DXF",L'Д',84,NULL},
 	{u8"DWG",L'В',507,NULL},
+    {u8"PDF",L'П',1001,NULL},
 };
 
-static TMENU mImportCAD = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
+static TMENU mImportCAD = { 3,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
 
 POLE pmTree[] = {
 	{u8"Вхід",L'В',537,NULL},
 	{u8"Повернення",L'П',538,NULL},
 };
 
-static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
+static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,21,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
 
 POLE pmLastFiles[] = {
 	{u8"1 \0\0",'1',0,NULL},
@@ -477,7 +479,7 @@ POLE pmLastFiles[] = {
 	{u8"Н \0\0",L'Н',0,NULL},
 };
 
-static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
+static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
 
 POLE pmQuit[] = {
 	 {u8"Відкритий креслення\0",L'В',78,NULL},
@@ -676,6 +678,11 @@ const char* DwgErrorList[] = { u8"БЕЗ ПОМИЛОК",
  u8"НЕДОСТАТНЬО ПАМ'ЯТІ"  //8192
 };
 
+#define _ANALIZING_PDF_ u8"Аналіз PDF-файлу"
+#define _CONVERTING_PDF_ u8"Конвертація PDF-файлу"
+
+#define _SCALE_EXAGGERATATED_ u8"Спотворений масштаб"
+#define _PDF_SCALE_ u8"Коефіцієнт масштабування PDF="
 
 #endif
 
@@ -1497,6 +1504,8 @@ char* dlg_name[] =
    u8"Завантажити шрифт робочого столу",
    u8"Завантажити новий шрифт",
    u8"Зберегти файл результатів статичного аналізу",
+   u8"Перетворити креслення з формату PDF",
+   u8"Вибрати домашню папку",
 };
 
 #define nameplate_tip u8"@Шильдик креслення"
@@ -1612,13 +1621,14 @@ static POLE pmInfo[] = {
 	{u8"буфер Друку [КБ]\0 ",L'Д',300,NULL},
 	{u8"буфер Макросу [Б]\0 ",L'М',301,NULL},
 	{u8"Буфер зображення [КБ]\0 ",L'Б',302,NULL},
-	{u8"каталог \0 ",L'/',303,NULL},
+	{u8"Поточна папка \0 ",L'П',303,NULL},
+    {u8"Стандартна папка \0 ",L'С',1002,NULL},
 	{u8"Графічний режим \0 ",L'Г',304,NULL},
 	{u8"Шрифт меню \0 ",L'Ш',111,NULL},
     {u8"Лого \0 ",L'Л',812,NULL},
 };
 
-TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
+TMENU mInfo = { 11,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Лінія",u8"Лінія 3D",u8"Текст",u8"Дуга",u8"Коло",u8"Диск",u8"Багатокутник/суцільний",u8"Суцільний 3D",u8"Точка", u8"Сплайн",u8"Зображення",u8"Полилінія",u8"Слід",u8"Штрихування",u8"Еліптична дуга",u8"Еліпс",u8"Еліптичний диск", u8"Суцільна дуга", u8"Вектор"};
 char* isometric_info=" (ізометричний)";

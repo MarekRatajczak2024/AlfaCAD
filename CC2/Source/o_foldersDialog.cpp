@@ -20,6 +20,13 @@
 #ifndef LINUX
 //////////////////////////////////////////////////////////////////////
 #include "StdAfx.h"
+
+#include <dwmapi.h>
+#include <uxtheme.h>
+
+#pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "uxtheme.lib")
+
 #include <strsafe.h>
 #include <WinUser.h>
 
@@ -209,147 +216,163 @@ LRESULT APIENTRY ButtonSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 
+// 1. Maintain the global theme brushes cleanly at the top of the file
+static HBRUSH hDarkBgBrush = CreateSolidBrush(RGB(45, 45, 45));    // Main Gray Background Canvas
+static HBRUSH hDarkInputBrush = CreateSolidBrush(RGB(30, 30, 30)); // Inner Edit text box fill
+static HWND hBackPanel = NULL;                                    // Custom dark backdrop container
 
+// Child control style scanner
+BOOL CALLBACK EnumDarkModeChildProc(HWND hwndChild, LPARAM lParam)
+{
+    char className[256];
+    GetClassNameA(hwndChild, className, sizeof(className));
+
+    if (strcmp(className, "SysTreeView32") == 0)
+    {
+        ::SetWindowTheme(hwndChild, L"DarkMode_Explorer", NULL);
+        TreeView_SetBkColor(hwndChild, RGB(30, 30, 30));
+        TreeView_SetTextColor(hwndChild, RGB(240, 240, 240));
+    }
+    else if (strcmp(className, "Edit") == 0)
+    {
+        ::SetWindowTheme(hwndChild, L"CFD", NULL);
+    }
+    else if (strcmp(className, "Button") == 0)
+    {
+        ::SetWindowTheme(hwndChild, L"Explorer", NULL);
+    }
+
+    InvalidateRect(hwndChild, NULL, TRUE);
+    return TRUE;
+}
+
+// 2. The bulletproof dark theme dialog callback procedure
 int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 {
-	//Initialization callback message
-	if (BFFM_INITIALIZED == uMsg)
-	{
-		RECT rtDialog, rtButton;
-		RECT DesktopRect;
+    // Intercept painting loops for standard static elements and the edit text field background
+    if (uMsg == WM_CTLCOLORSTATIC || uMsg == WM_CTLCOLORDLG)
+    {
+        HDC hdc = (HDC)lParam;
+        SetTextColor(hdc, RGB(240, 240, 240));      // White text prompt labels
+        SetBkColor(hdc, RGB(45, 45, 45));          // Gray text box backing
+        SetWindowLongPtr(hwnd, DWLP_MSGRESULT, (LONG_PTR)hDarkBgBrush);
+        return TRUE;
+    }
+    else if (uMsg == WM_CTLCOLOREDIT)
+    {
+        HDC hdc = (HDC)lParam;
+        SetTextColor(hdc, RGB(255, 255, 255));      // White typing characters
+        SetBkColor(hdc, RGB(30, 30, 30));          // Dark input box fill style
+        SetWindowLongPtr(hwnd, DWLP_MSGRESULT, (LONG_PTR)hDarkInputBrush);
+        return TRUE;
+    }
 
-		// Get the desktop window
-		HWND hDesktop = ::GetDesktopWindow();
+    // Initialization routine
+    else if (BFFM_INITIALIZED == uMsg)
+    {
+        RECT DesktopRect;
+        HWND hDesktop = ::GetDesktopWindow();
+        HWND p_hWnd = hwnd;
 
-		HWND p_hWnd = hwnd;
-		
-		// Get the Desktop rect
-		::GetWindowRect(hDesktop, &DesktopRect);
+        ::GetWindowRect(hDesktop, &DesktopRect);
+        ::MoveWindow(p_hWnd, (DesktopRect.right / 2) - (BROWSE_WIDTH / 2), (DesktopRect.bottom / 2) - (BROWSE_HEIGHT / 2), BROWSE_WIDTH, BROWSE_HEIGHT, TRUE);
 
-		// Move the window to center
-		::MoveWindow(p_hWnd, (DesktopRect.right / 2) - (BROWSE_WIDTH / 2), (DesktopRect.bottom / 2) - (BROWSE_HEIGHT / 2), BROWSE_WIDTH, BROWSE_HEIGHT, TRUE);
+        HWND hListView = FindWindowEx(p_hWnd, NULL, "SysTreeView32", NULL);
+        HWND hOKButton = FindWindowEx(p_hWnd, NULL, "Button", "OK");
+        HWND hCancelButton = FindWindowEx(p_hWnd, NULL, "Button", "Cancel");
+        hEditBox = FindWindowEx(p_hWnd, NULL, "Edit", NULL);
+        HWND hStatic = FindWindowEx(p_hWnd, NULL, "Static", NULL);
 
-		//Find the listview
-		HWND hListView = FindWindowEx(p_hWnd, NULL, "SysTreeView32", NULL);
+        SetWindowTextW(hCancelButton, L"Esc");
+        SetWindowTextW(hStatic, _SELECT_FOLDER_);
 
-		//Find the handles of OK and Cancel buttons
-		HWND hOKButton = FindWindowEx(p_hWnd, NULL, "Button", "OK");
+        // ---------------------------------------------------------------------
+        // FIX: INJECT A STATIC BACK PANEL TO COVER STUBBORN WHITE CANVAS AREAS
+        // ---------------------------------------------------------------------
+        // This places a dark gray window background across the entire dialog window canvas size
+        hBackPanel = CreateWindowExA(0, "STATIC", "", WS_CHILD | WS_VISIBLE | SS_OWNERDRAW,
+                                    0, 0, BROWSE_WIDTH, BROWSE_HEIGHT, p_hWnd, NULL, NULL, NULL);
 
-		HWND hCancelButton = FindWindowEx(p_hWnd, NULL, "Button", "Cancel");
+        // Z-Order Adjustment: Push the back panel to the bottom so it sits cleanly behind your controls
+        ::SetWindowPos(hBackPanel, HWND_BOTTOM, 0, 0, BROWSE_WIDTH, BROWSE_HEIGHT, SWP_NOMOVE | SWP_NOSIZE);
+        // ---------------------------------------------------------------------
 
-		SetWindowTextW(hCancelButton, L"Esc");
+        // Apply dark title window framing configuration
+        BOOL bDark = TRUE;
+        ::DwmSetWindowAttribute(hwnd, 20, &bDark, sizeof(bDark));
 
-		//Find the handles of OK and Cancel buttons
-		//HWND 
-		hEditBox = FindWindowEx(p_hWnd, NULL, "Edit", NULL);
+        // Scan child objects to attach modern library assets
+        ::EnumChildWindows(hwnd, EnumDarkModeChildProc, 0);
 
-		HWND hStatic = FindWindowEx(p_hWnd, NULL, "Static", NULL);
-
-
-		SetWindowTextW(hStatic, _SELECT_FOLDER_);
-
-
-		//normal
-
+        // Core positioning adjustments
         strcpy(font_family_name, get_font_family_name());
-		
+        hFont = CreateFont(f_height, f_width, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, font_family_name);
+        hFont1 = CreateFont((int)((float)f_height * 0.8f), (int)((float)f_width * 0.8f), 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, font_family_name);
 
-		hFont= CreateFont(f_height, f_width, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, font_family_name);
-		hFont1 = CreateFont((int)((float)f_height)*0.8, (int)((float)f_width)*0.8, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, font_family_name);
-		SendMessageW(hwnd, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hListView, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hOKButton, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hCancelButton, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hEditBox, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(NULL, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hStatic, WM_SETFONT, WPARAM(hFont1), TRUE);
+        ::SetWindowPos(hStatic,       0, 10,  10, 360, 32, SWP_NOZORDER);
+        ::SetWindowPos(hEditBox,      0, 10,  50, 360, 32, SWP_NOZORDER);
+        ::SetWindowPos(hListView,     0, 10,  90, 360, 350, SWP_NOZORDER);
+        ::SetWindowPos(hOKButton,     0, 180, 450, 80, 32, SWP_NOZORDER);
+        ::SetWindowPos(hCancelButton, 0, 290, 450, 80, 32, SWP_NOZORDER);
 
-		//Gets the OK button position
-		::GetClientRect(hOKButton, &rtButton);
+        // Map custom fonts
+        SendMessageW(hwnd,          WM_SETFONT, WPARAM(hFont),  TRUE);
+        SendMessageW(hListView,     WM_SETFONT, WPARAM(hFont),  TRUE);
+        SendMessageW(hOKButton,     WM_SETFONT, WPARAM(hFont),  TRUE);
+        SendMessageW(hCancelButton, WM_SETFONT, WPARAM(hFont),  TRUE);
+        SendMessageW(hEditBox,      WM_SETFONT, WPARAM(hFont),  TRUE);
+        SendMessageW(hStatic,       WM_SETFONT, WPARAM(hFont1), TRUE);
 
-		//Gets the dimensions BrowseForFolder dialog
-		::GetClientRect(p_hWnd, &rtDialog);
+        // Recompute bounds safely
+        ::SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ::InvalidateRect(hEditBox, NULL, TRUE);
+        ::InvalidateRect(hwnd, NULL, TRUE);
+        ::UpdateWindow(hEditBox);
+        ::UpdateWindow(hwnd);
+    }
+    // Handle background coloring for our newly added static panel container
+    else if (uMsg == WM_DRAWITEM)
+    {
+        LPDRAWITEMSTRUCT lpDrawItem = (LPDRAWITEMSTRUCT)lParam;
+        if (lpDrawItem->hwndItem == hBackPanel)
+        {
+            FillRect(lpDrawItem->hDC, &lpDrawItem->rcItem, hDarkBgBrush);
+            return TRUE;
+        }
+    }
+    else if (BFFM_SELCHANGED == uMsg)
+    {
+        TCHAR szDirLocal[MAX_PATH * 2] = { 0 };
+        BOOL bRet = SHGetPathFromIDList((LPITEMIDLIST)lParam, szDirLocal);
+        if (bRet)
+        {
+            char f_name[MAX_PATH * 2];
+            strncpy(f_name, szDirLocal, sizeof(f_name) - 1);
+            f_name[sizeof(f_name) - 1] = '\0';
+        }
+    }
+    else if (BFFM_VALIDATEFAILED == uMsg)
+    {
+        GetWindowTextA(hEditBox, szDir, 255);
+        strncpy(szDira, szDir, sizeof(szDira) - 1);
+        szDira[sizeof(szDira) - 1] = '\0';
 
-		//Relocate the SysTreeView32 control
-		::SetWindowPos(hListView, 0, 10, 90, 360, 350, 0);
+        if (strcmp(szDir, "*") == 0) return 2;
+        return 0;
+    }
+    else if (WM_COMMAND == uMsg)
+    {
+        if (lParam == ID_BUTTON_ROOT) strcpy(szDir, "\\");
+    }
+    else if (WM_CLOSE == uMsg)
+    {
+        sw_callback_locked_proc();
+        return DefWindowProcW(hwnd, uMsg, lParam, lpData);
+    }
 
-		//Relocate the Static control
-		::SetWindowPos(hStatic, 0, 10, 10, 360, 32, 0);
-
-		//Relocate the OK button
-		::SetWindowPos(hOKButton, 0, 180, 450, 80, 32, 0);
-
-		//Relocate the Cancel buttton
-		::SetWindowPos(hCancelButton, 0, 290, 450, 80, 32, 0);
-
-		//Relocate the Edit box
-		::SetWindowPos(hEditBox, 0, 10, 50, 360, 32, 0);
-
-		//Create a static control
-		//HWND hMyStaticCtrl = CreateWindowEx(0, "STATIC", "My Custom Controls", SS_NOTIFY | WS_CHILD | WS_VISIBLE, 20, 370, 200, 25, p_hWnd, 0, NULL, NULL);
-
-		//Create a radio button
-
-		SendMessageW(hwnd, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hListView, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hOKButton, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hCancelButton, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hEditBox, WM_SETFONT, WPARAM(hFont), TRUE);
-		SendMessageW(hStatic, WM_SETFONT, WPARAM(hFont1), TRUE);
-
-
-		//Create an Edit box
-		//g_hMyEditBox = CreateWindowEx(0, "EDIT", "", SS_NOTIFY | WS_CHILD | WS_VISIBLE | WS_BORDER, 20, 430, 340, 20, p_hWnd, 0, NULL, NULL);
-	}
-	//Selection change message
-	else if (BFFM_SELCHANGED == uMsg)
-	{
-		TCHAR szDir[MAX_PATH * 2] = { 0 };
-
-		// fail if non-filesystem
-		BOOL bRet = SHGetPathFromIDList((LPITEMIDLIST)lParam, szDir);
-
-		if (bRet)
-		{
-			// set the folder path to edit box
-			//FromHandle(g_hMyEditBox)->SetWindowText(szDir);
-			char f_name[255];
-			strcpy(f_name, szDir);
-		}
-	}
-	else if (BFFM_VALIDATEFAILED == uMsg)
-	{
-
-		GetWindowText(hEditBox, szDir, 255);
-		strcpy(szDira, szDir);
-		if (strcmp(szDir, "*") == 0)
-		{
-			return 2;  //command to change folder
-	    }
-		return 0;
-	}
-	else if (WM_COMMAND == uMsg) //Command from Child windows and menus are under this message	
-	{
-		switch (lParam) //the ID is wParam
-		{
-		case ID_BUTTON_ROOT:
-			{
-	
-			  strcpy(szDir, "\\");
-	
-			}
-		}
-
-	}
-	else if (WM_CLOSE == uMsg)
-	{
-		sw_callback_locked_proc();
-		return DefWindowProcW(hwnd, uMsg, lParam, lpData);
-	}
-	//DeleteObject(hFont);
-
-	return 1;
+    return 0;
 }
+
 
 int CALLBACK BrowseCallbackProc1(HWND hwnd, UINT uMsg, LPARAM lp, LPARAM pData) 
 {
@@ -448,125 +471,234 @@ void DoneBuffers8(void)
 	    free(strarray);
 }
 
-int VeryMy_GetOpenFolder(HWND hwnd, char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name) // , int font_height, int font_width, char *desktop_font_name)
+int VeryMy_GetOpenFolder_32(HWND hwnd, char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name)
 {
-	BROWSEINFO bi;
-	TCHAR szDir[MAX_PATH];
-	LPITEMIDLIST pidl;
-	LPMALLOC pMalloc;
-	int nRet = 0, nGo=0;
+    BROWSEINFO bi;
+    TCHAR szDir[MAX_PATH];
+    LPITEMIDLIST pidl = NULL;
+    LPMALLOC pMalloc = NULL;
+    int nRet = 0, nGo = 0;
+    char *ptr;
+    BOOL rr;
 
-	HANDLE hFind = INVALID_HANDLE_VALUE;
-	DWORD dwError = 0;
-	char *ptr;
-	BOOL rr;
+    f_height = (int)(((float)HEIGHT * 1.05) + 0.5);
+    f_width = (int)(((float)WIDTH * 0.73) + 0.5);
 
+    // Initialize tracking string buffers cleanly
+    CString RootPath = sz__current_path_file;
+    CString DefaultRootPath = sz__default_path_file;
+    szDir[0] = 0;
 
+    // Allocate the dynamic path string tracking buffers EXACTLY ONCE outside the loop
+    char *pszRootPath = new char[RootPath.GetLength() + MAX_PATH + 1];
+    char *pszDefaultRootPath = new char[DefaultRootPath.GetLength() + MAX_PATH + 1];
+    strcpy(pszRootPath, RootPath);
+    strcpy(pszDefaultRootPath, DefaultRootPath);
 
-	f_height = (int)(((float)HEIGHT*1.05)+0.5); 
-	f_width = (int)(((float)WIDTH*0.73) + 0.5);
+    if (SUCCEEDED(SHGetMalloc(&pMalloc)))
+    {
+        ZeroMemory(&bi, sizeof(bi));
+        bi.hwndOwner = hwnd;
+        bi.pszDisplayName = 0;
+        bi.lpszTitle = dlg_name;
+        bi.pidlRoot = ConvertPathToLpItemIdList(pszRootPath);
+        bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_EDITBOX | BIF_VALIDATE;
+        bi.lpfn = BrowseCallbackProc;
 
+        while (!nGo)
+        {
+            pidl = SHBrowseForFolder(&bi);
 
-	CString RootPath = sz__current_path_file;
-	CString DefaultRootPath = sz__default_path_file;
+            // If dialog closed but custom navigation token was intercepted via BrowseCallbackProc
+            if ((!pidl) && (szDira[0] != 0) && ((strcmp(szDira, "..") == 0) || (strcmp(szDira, "/") == 0) || (strcmp(szDira, "//") == 0)))
+            {
+                if (strcmp(szDira, "..") == 0)
+                {
+                    size_t len = strlen(pszRootPath);
+                    if (len > 0 && pszRootPath[len - 1] == '\\') {
+                        pszRootPath[len - 1] = '\0';
+                    }
+                    ptr = strrchr(pszRootPath, '\\');
+                    if (ptr != NULL) {
+                        *(ptr + 1) = '\0'; // Drop down one directory tier cleanly
+                    }
 
-	szDir[0] = 0;
+                    // Safe cleanup of the old PIDL pointer to prevent memory leaks before assigning new root
+                    if (bi.pidlRoot) { pMalloc->Free((void*)bi.pidlRoot); }
+                    bi.pidlRoot = ConvertPathToLpItemIdList(pszRootPath);
+                }
+                else if (strcmp(szDira, "//") == 0)
+                {
+                    if (bi.pidlRoot) { pMalloc->Free((void*)bi.pidlRoot); }
+                    bi.pidlRoot = SHSimpleIDListFromPath(L"\\");
+                }
+                else // Single "/" command input fallback
+                {
+                    if (bi.pidlRoot) { pMalloc->Free((void*)bi.pidlRoot); }
+                    bi.pidlRoot = ConvertPathToLpItemIdList(pszDefaultRootPath);
+                }
 
-	if (SUCCEEDED(SHGetMalloc(&pMalloc)))
-	{
-		ZeroMemory(&bi, sizeof(bi));
-		bi.hwndOwner = hwnd;
-		bi.pszDisplayName = 0;
-		bi.lpszTitle = dlg_name;
-		char *pszRootPath = new char[RootPath.GetLength() + 1];
-		char *pszDefaultRootPath = new char[DefaultRootPath.GetLength() + 1];
-		strcpy(pszRootPath, RootPath);
-		strcpy(pszDefaultRootPath, DefaultRootPath);
-		bi.pidlRoot = ConvertPathToLpItemIdList(pszRootPath);
-		
-		
-		bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_STATUSTEXT | BIF_EDITBOX | BIF_VALIDATE;
+                // Reset strings cleanly to prevent infinite evaluation loops
+                szDira[0] = 0;
+                szDir[0] = 0;
+                nGo = 0; // Keep the loop alive to restart the shell dialog seamlessly
+            }
+            else if (pidl)
+            {
+                SHGetPathFromIDList(pidl, szDir);
+                ptr = strchr(szDir, ':');
 
-		bi.lpfn = BrowseCallbackProc; 
-		
-		nRet = 0;
-		nGo = 0;
-		while (!nGo)
-		{
-			
-			pidl = SHBrowseForFolder(&bi);
-			
-			if ((!pidl) && ((strcmp(szDira, "..") == 0) || (strcmp(szDira, "/") == 0) || (strcmp(szDira, "//") == 0)))
-			{
-				if (strcmp(szDira, "..") == 0)
-				{
-					
-					if (pszRootPath[strlen(pszRootPath) - 1] == '\\') pszRootPath[strlen(pszRootPath) - 1] = '\0';
-					ptr = strrchr(pszRootPath, '\\');
-					if (ptr != NULL) *(ptr+1) = '\0';
-					bi.pidlRoot = ConvertPathToLpItemIdList(pszRootPath);
-					szDira[0] = 0;
-					szDir[0] = 0;
-					nGo = 0;
-				}
-				else if (strcmp(szDira, "//") == 0)
-				{
-					bi.pidlRoot = SHSimpleIDListFromPath(L"\\");
-					szDira[0] = 0;
-					szDir[0] = 0;
-					nGo = 0;
-				}
-				else
-				{
-					bi.pidlRoot = ConvertPathToLpItemIdList(pszDefaultRootPath);
-					szDira[0] = 0;
-					szDir[0] = 0;
-					nGo = 0;
-				}
+                // If it is a bare drive selection like C:\, redirect safely
+                if ((ptr != NULL) && strlen(szDir) < 4)
+                {
+                    if (bi.pidlRoot) { pMalloc->Free((void*)bi.pidlRoot); }
+                    bi.pidlRoot = SHSimpleIDListFromPath(L"\\");
+                    szDir[0] = 0;
+                    szDira[0] = 0;
+                    nGo = 0;
+                }
+                else
+                {
+                    if (strlen(szDir) > 0) {
+                        strncpy(f_name, szDir, MAX_PATH - 1);
+                        f_name[MAX_PATH - 1] = '\0';
+                    }
+                    nRet = 1;
+                    nGo = 1;
+                }
 
-			}
-			else if (pidl)	
-			{
-				SHGetPathFromIDList(pidl, szDir);
-				ptr = strchr(szDir, ':');
-				if ((ptr!=NULL) && strlen(szDir)<4)
-				{
-					bi.pidlRoot = SHSimpleIDListFromPath(L"\\"); 
-					szDir[0] = 0;
-					szDira[0] = 0;
-					nGo = 0;
-				}
-				else
-				{	
+                // FIX: Only call Free if the item ID list pointer is valid!
+                pMalloc->Free(pidl);
+                pidl = NULL;
+            }
+            else
+            {
+                // User pressed Cancel explicitly
+                nRet = 0;
+                nGo = 1;
+            }
+        }
 
-					if (strlen(szDir)>0) strcpy(f_name, szDir);
-					nRet = 1;
-					nGo = 1;
-				}
+        // Final cleanup of the root PIDL context built inside the loop iterations
+        if (bi.pidlRoot) {
+            pMalloc->Free((void*)bi.pidlRoot);
+        }
+        pMalloc->Release();
+    }
 
-			}
-			else
-			{
-				nRet = 0;
-				nGo = 1;
-			}
-          pMalloc->Free(pidl); 
-		}
-
-		pMalloc->Release();
-
+    // Clean up heap buffers safely
     delete[] pszRootPath;
-	delete[] pszDefaultRootPath;
+    delete[] pszDefaultRootPath;
 
-	}
+    // Safely flush residual font assignments out of memory
+    if (hFont)  { DeleteObject(hFont);  hFont = NULL; }
+    if (hFont1) { DeleteObject(hFont1); hFont1 = NULL; }
 
-
-	if (hFont) rr = DeleteObject(hFont);
-	if (hFont1) rr = DeleteObject(hFont1);
-
-	sw_callback_locked_proc();
-	return nRet;
+    sw_callback_locked_proc();
+    return nRet;
 }
+
+#include <shobjidl.h> // Required header for modern IFileDialog interfaces
+
+int VeryMy_GetOpenFolder_64(HWND hwnd, char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name)
+{
+    int nRet = 0;
+    IFileOpenDialog *pFolderDlg = NULL;
+
+    // 1. Initialize the COM Library interface component cleanly
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    // 2. Instantiate the modern Open Dialog element framework
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFolderDlg));
+
+    if (SUCCEEDED(hr))
+    {
+        // -------------------------------------------------------------
+        // CORE CHANGE: FORCE THE DIALOG TO ONLY CHOOSE DIRECTORIES (PICK FOLDERS)
+        // -------------------------------------------------------------
+        DWORD dwOptions;
+        if (SUCCEEDED(pFolderDlg->GetOptions(&dwOptions)))
+        {
+            // FOS_PICKFOLDERS changes it from a standard file selector to a folder browser
+            pFolderDlg->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+        }
+
+        // Set the dialog title custom string cleanly
+        if (dlg_name && strlen(dlg_name) > 0)
+        {
+            // Convert title string to Wide characters for modern Win32 API compatibility
+            wchar_t wTitle[260];
+            MultiByteToWideChar(CP_ACP, 0, dlg_name, -1, wTitle, 260);
+            pFolderDlg->SetTitle(wTitle);
+        }
+
+        // Set the starting initial default directory path context if provided
+        if (sz__current_path_file && strlen(sz__current_path_file) > 0)
+        {
+            wchar_t wPath[MAX_PATH];
+            MultiByteToWideChar(CP_ACP, 0, sz__current_path_file, -1, wPath, MAX_PATH);
+
+            IShellItem *pDefaultFolderItem = NULL;
+            if (SUCCEEDED(SHCreateItemFromParsingName(wPath, NULL, IID_PPV_ARGS(&pDefaultFolderItem))))
+            {
+                pFolderDlg->SetFolder(pDefaultFolderItem);
+                pDefaultFolderItem->Release();
+            }
+        }
+
+        // 3. Display the dialog modally attached to your window handle context
+        hr = pFolderDlg->Show(hwnd);
+
+        // 4. Capture the user's selected choice output path string
+        if (SUCCEEDED(hr))
+        {
+            IShellItem *pResultItem = NULL;
+            if (SUCCEEDED(pFolderDlg->GetResult(&pResultItem)))
+            {
+                wchar_t *wSelectedPath = NULL;
+                // Request the standard system parsing folder path string
+                if (SUCCEEDED(pResultItem->GetDisplayName(SIGDN_FILESYSPATH, &wSelectedPath)))
+                {
+                    // Convert back to your standard MultiByte 8-bit string layout (f_name)
+                    WideCharToMultiByte(CP_ACP, 0, wSelectedPath, -1, f_name, MAX_PATH, NULL, NULL);
+                    CoTaskMemFree(wSelectedPath); // Clean up system string pointer allocations
+                    nRet = 1; // Success!
+                }
+                pResultItem->Release();
+            }
+        }
+        pFolderDlg->Release();
+    }
+
+    CoUninitialize(); // Safely uninitialize the COM environment before exiting
+    return nRet; // Returns 1 if selected, 0 if canceled
+}
+
+
+int VeryMy_GetOpenFolder(HWND hwnd, char *f_name, char *sz__current_path_file, char *sz__default_path_file, char *sz__current_mask, char *dlg_name)
+{
+	// 1. Read the Windows version bitmask metrics at runtime
+	DWORD dwVersion = GetVersion();
+	DWORD dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+
+	// 2. Conditional check: Is the system older than Windows Vista? (Major version 5 = XP/2000)
+	if (dwMajorVersion < 6)
+	{
+		// --- LEGACY FALLBACK TRACK ---
+		// Route straight to your classic SHBrowseForFolder implementation loop.
+		// It provides 100% stability on legacy 32-bit computing platforms.
+		return VeryMy_GetOpenFolder_32(hwnd, f_name, sz__current_path_file, sz__default_path_file, sz__current_mask, dlg_name);
+	}
+	else
+	{
+		// --- MODERN DESKTOP TRACK ---
+		// Route directly to your modern COM-based IFileDialog interface.
+		// It handles expandable paths cleanly and supports native dark mode.
+		return VeryMy_GetOpenFolder_64(hwnd, f_name, sz__current_path_file, sz__default_path_file, sz__current_mask, dlg_name);
+	}
+}
+
+
 
 int My_GetFiles(char *szDir0, int *n_list, char *pattern, char *pattern1, char* pattern2, char* pattern3, BOOL blocks)
 {

@@ -82,6 +82,9 @@ typedef unsigned long DWORD;
 #include <signal.h>
 #endif
 
+#ifndef LINUX
+extern void HideActiveProcessConsole(void);
+#endif
 
 unsigned char  *Change_Block_Descript(BLOK *ptr_block, void *ptr_description, int len_descr);
 
@@ -202,6 +205,12 @@ extern void utf8Upper(char* text);
 extern void set_st_jedn(void);
 
 extern void fill_demo_keys(void);
+
+extern void get_posXY(double *pozx, double *pozy);
+extern void set_posXY(double pozx, double pozy);
+extern void lock_mouse(void);
+extern void _free_mouse(void);
+extern BOOL hibernate;
 
 extern char  *dane0;
 extern MyDane dane_profs1;
@@ -4320,6 +4329,103 @@ int RunODADirectly(const char* src_dir, const char* out_dir, const char* file_fi
     return 0;
 }
 
+
+// Declare the external function from your safe Windows module
+#ifndef LINUX
+extern void HideActiveProcessConsole(void);
+#endif
+
+DWORD RunInteractiveWithProgress(const char* exe_name, const char* params, char *prefix) {
+    char cmd_line[2048];
+    char buffer[512];
+    char progress[128];
+    FILE* pipe = NULL;
+    int progress_val = 0;
+    int last_printed_progress = -1;
+    int curr_h, curr_v;
+    double PozX0, PozY0;
+
+    int ret = Save_Update_flex(0, &curr_h, &curr_v);
+    get_posXY(&PozX0, &PozY0);
+    _free_mouse();
+
+    // 1. Format the execution path directly
+    snprintf(cmd_line, sizeof(cmd_line), "\"%s\" %s", exe_name, params);
+
+    // =========================================================================
+    // NATIVE WIN32 INVISIBLE PIPE ENGINE (Clean Standard Typos)
+    // =========================================================================
+    HANDLE hRead = NULL;
+    HANDLE hWrite = NULL;
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE; // Allow child process to inherit our pipe handle
+
+    if (CreatePipe(&hRead, &hWrite, &sa, 0)) {
+        // Ensure the read handle itself is not inherited by the child
+        SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+
+        STARTUPINFOA si;
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&si, sizeof(STARTUPINFOA));
+        ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+
+        si.cb = sizeof(STARTUPINFOA);
+        si.hStdOutput = hWrite; // Redirect child stdout to our pipe
+        si.hStdError = hWrite;  // Redirect child stderr to our pipe to avoid clogged buffers
+        si.dwFlags |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+        si.wShowWindow = SW_HIDE; // Forces the console window to be completely hidden at kernel boot
+
+        // CREATE_NO_WINDOW (0x08000000) completely prevents the command shell terminal layout from drawing
+        if (CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+            // Close our copy of the write handle so our fgets loop registers EOF correctly later
+            CloseHandle(hWrite);
+
+            // Map the underlying raw kernel pipe handle directly to a standard C FILE* stream
+            int fd = _open_osfhandle((intptr_t)hRead, _O_RDONLY | _O_TEXT);
+            pipe = _fdopen(fd, "r");
+
+            // 2. Your exact original progress loop, now fully unbuffered
+            while (pipe && fgets(buffer, sizeof(buffer), pipe) != NULL)
+            {
+                if (sscanf(buffer, "%d", &progress_val) == 1) {
+                    if (progress_val != last_printed_progress) {
+                        sprintf(progress, "%s %d%%", prefix, progress_val);
+                        komunikat_str_short(progress, FALSE, TRUE);
+                        last_printed_progress = progress_val;
+                    }
+                }
+            }
+
+            if (pipe) fclose(pipe);
+
+            // Wait for the background execution tree to finish gracefully
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            DWORD exit_code = 0;
+            GetExitCodeProcess(pi.hProcess, &exit_code);
+
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+
+            komunikat_str_short("", FALSE, TRUE);
+            ret = Save_Update_flex(1, &curr_h, &curr_v);
+            if (!hibernate) { lock_mouse(); set_posXY(PozX0, PozY0); CUR_ON(PozX0, PozY0); }
+            return (DWORD)exit_code;
+        }
+        CloseHandle(hRead);
+        CloseHandle(hWrite);
+    }
+    // =========================================================================
+
+    komunikat_str_short("", FALSE, TRUE);
+    ret = Save_Update_flex(1, &curr_h, &curr_v);
+    if (!hibernate) { lock_mouse(); set_posXY(PozX0, PozY0); CUR_ON(PozX0, PozY0); }
+    return (DWORD)-1;
+}
+
+
 #else
 
 #include <stdio.h>
@@ -4478,7 +4584,7 @@ DWORD RunSilent(char* strFunct, char* strstrParams)
 
     strcpy(script, strFunct);
     ptr_str=strstr(script, ".exe");
-    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "ODAFileConverter.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "frame3ddnp.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
+    if ((strcmp(strFunct, "dwg2dxf.exe")==0) || (strcmp(strFunct, "pdf2list.exe")==0) || (strcmp(strFunct, "ODAFileConverter.exe")==0) || (strcmp(strFunct, "mkbitmap.exe")==0) || (strcmp(strFunct, "potrace.exe")==0) || (strcmp(strFunct, "frame3dd.exe")==0) || (strcmp(strFunct, "frame3ddnp.exe")==0) || (strcmp(strFunct, "gnuplot.exe")==0)
     || (strcmp(strFunct, "gmsh.exe")==0) || (strcmp(strFunct, "ElmerGrid.exe")==0) || (strcmp(strFunct, "ElmerSolver.exe")==0))
     {
         if (ptr_str != NULL) {
@@ -4687,6 +4793,138 @@ int run_with_timeout(char* command, int timeout) {
     }
 }
 #endif
+
+#ifndef LINUX
+    #define POPEN _popen
+    #define PCLOSE _pclose
+    #define strcasecmp _stricmp
+
+    /*
+    // --- MINIMAL WIN32 STRUCTS FOR MESSAGE PUMPING ---
+    typedef struct tagPOINT { long x; long y; } POINT;
+    typedef struct tagMSG {
+        void*    hwnd;
+        unsigned int message;
+        unsigned int* wParam;
+        long     lParam;
+        unsigned long time;
+        POINT    pt;
+    } EN_MSG;
+
+    // Declare function pointers to avoid including windows.h headers
+    typedef int (__stdcall *PeekMsgFunc)(EN_MSG*, void*, unsigned int, unsigned int, unsigned int);
+    typedef int (__stdcall *TransMsgFunc)(const EN_MSG*);
+    typedef long (__stdcall *DispMsgFunc)(const EN_MSG*);
+    */
+#else
+    #include <unistd.h>
+    #include <strings.h>
+    #define POPEN popen
+    #define PCLOSE pclose
+#endif
+
+DWORD RunInteractiveWithProgress(const char* exe_name, const char* params, char *prefix) {
+    char cmd_line[2048];
+    char cleaned_exe[1024];
+    char buffer[512];
+	char progress[128];
+    FILE* pipe = NULL;
+    int progress_val = 0;
+	int last_printed_progress = -1; // Initialize to an impossible progress value
+	int curr_h, curr_v;
+	double PozX0, PozY0;
+
+	int ret=Save_Update_flex(0, &curr_h, &curr_v);
+
+	get_posXY(&PozX0, &PozY0);
+	_free_mouse();
+
+	/*
+    #ifndef LINUX
+        // Dynamically load user32.dll at runtime to fetch the message functions
+        // This fully prevents Allegro from conflicting with static Windows headers
+        void* user32_lib = _load_library_dynamic_internal_or_opaque_helper_macro_or_func();
+        // A cleaner approach for standard C modules without windows.h is accessing via standard Windows API:
+        // We can just use the standard external declarations directly since the linker resolves them!
+        extern int __stdcall PeekMessageA(EN_MSG*, void*, unsigned int, unsigned int, unsigned int);
+        extern int __stdcall TranslateMessage(const EN_MSG*);
+        extern long __stdcall DispatchMessageA(const EN_MSG*);
+    #endif
+    */
+
+    // 1. DYNAMIC PLATFORM PATH FILTERING
+    #ifndef LINUX
+        snprintf(cleaned_exe, sizeof(cleaned_exe), "%s", exe_name);
+    #else
+        size_t name_len = strlen(exe_name);
+        if (name_len > 4 && strcasecmp(exe_name + name_len - 4, ".exe") == 0) {
+            snprintf(cleaned_exe, sizeof(cleaned_exe), "./%.*s", (int)(name_len - 4), exe_name);
+        } else {
+            snprintf(cleaned_exe, sizeof(cleaned_exe), "./%s", exe_name);
+        }
+    #endif
+
+    // 2. Assemble the final unified command line execution string
+    snprintf(cmd_line, sizeof(cmd_line), "\"%s\" %s", cleaned_exe, params);
+
+    // 3. Spawn the interactive pipeline stream
+    pipe = POPEN(cmd_line, "r");
+    if (!pipe) {
+        return -1;
+    }
+
+    // 4. Pipe reading engine loop running line-by-line
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL)
+    {
+
+    	/*
+        // 5. UNLOCK MOUSE & INTERFACE EVENTS PER PLATFORM
+        #ifndef LINUX
+            // Windows Custom Safe Message Pump (Uses Linker-Resolved ANSI Win32 Symbols)
+            EN_MSG msg;
+            while (PeekMessageA(&msg, NULL, 0, 0, 1)) { // 1 = PM_REMOVE
+                TranslateMessage(&msg);
+                DispatchMessageA(&msg);
+            }
+        #else
+            // Linux/macOS UI framework loop integration (if applicable)
+        #endif
+        */
+
+        // 6. Token extraction for the granular python percentages
+    	// Directly parse the incoming format string: "VALUE%"
+		if (sscanf(buffer, "%d", &progress_val) == 1) {
+			// FILTER REPLICATED %: Only update the UI if the percentage has progressed
+			if (progress_val != last_printed_progress) {
+
+				sprintf(progress,"%s %d%%", prefix, progress_val);
+
+				// --- CALL ALFACAD LOCALIZED VISUAL INTERFACE HERE ---
+				// Example: UpdateDesktopText(GetLocalAssetString(STR_PROGRESS_PREFIX), progress_val);
+				komunikat_str_short(progress, FALSE, TRUE);
+
+				// Store the current value to guard against the next duplicate streak
+				last_printed_progress = progress_val;
+			}
+		}
+    }
+
+	komunikat_str_short("", FALSE, TRUE);
+
+	ret=Save_Update_flex(1, &curr_h, &curr_v);
+
+	//if still focuse
+	if (!hibernate)
+	{
+		lock_mouse();
+		set_posXY(PozX0, PozY0);
+		CUR_ON(PozX0,PozY0);
+	}
+
+    // 7. Flush streams and return cross-platform exit code
+    return (DWORD)PCLOSE(pipe);
+}
+
 
 BOOL test_python(void)
 {

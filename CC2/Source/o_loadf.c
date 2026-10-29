@@ -313,10 +313,10 @@ static BOOL             b__load_file ;  //wybor pliku czy bloku
 static int              i__specno=16 ;     //liczba specyfikacji
 
 
-static int default_drive_cat, default_drive_cat0, default_drive_bl, default_drive_file, default_drive_dxf, default_drive_dwg, default_drive_pcx, default_drive_pro, default_drive_geo, default_drive_cfg, default_drive_txt;
+static int default_drive_cat, default_drive_cat0, default_drive_bl, default_drive_file, default_drive_dxf, default_drive_dwg, default_drive_pdf, default_drive_pcx, default_drive_pro, default_drive_geo, default_drive_cfg, default_drive_txt;
 static int foff_menu_file, foff_menu_blok, foff_menu_pcx, foff_menu_pro, foff_menu_geo, foff_menu_cfg, foff_menu_txt;
 static int poz_menu_file, poz_menu_blok, poz_menu_pcx, poz_menu_pro, poz_menu_geo, poz_menu_cfg, poz_menu_txt;
-static char default_path_bl[MAXPATH], default_path_bl_bak[MAXPATH], default_path_file[MAXPATH], default_path_dxf[MAXPATH], default_path_dwg[MAXPATH], default_path_pcx[MAXPATH], default_path_mak[MAXPATH], default_path_pro[MAXPATH], default_path_geo[MAXPATH], default_path_cfg[MAXPATH], default_path_out[MAXPATH], default_path_txt[MAXPATH], default_path_cat[MAXPATH], default_path_cat0[MAXPATH], default_path_cat_bak[MAXPATH], default_path_cat0_bak[MAXPATH];
+static char default_path_bl[MAXPATH], default_path_bl_bak[MAXPATH], default_path_file[MAXPATH], default_path_dxf[MAXPATH], default_path_dwg[MAXPATH], default_path_pdf[MAXPATH], default_path_pcx[MAXPATH], default_path_mak[MAXPATH], default_path_pro[MAXPATH], default_path_geo[MAXPATH], default_path_cfg[MAXPATH], default_path_out[MAXPATH], default_path_txt[MAXPATH], default_path_cat[MAXPATH], default_path_cat0[MAXPATH], default_path_cat_bak[MAXPATH], default_path_cat0_bak[MAXPATH];
 
 static char  edit_specification[16][Max_Spec_Value] = { "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""};
 static char  edit_specification_name [16][Max_Spec_Name] = { "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "" };
@@ -690,6 +690,8 @@ get_config_param (T_Fstring key_name, T_Fstring ret_string)
 		 default_path_dxf);
 	 set_default_param(ret_string, &default_drive_dwg,
 		 default_path_dwg);
+     set_default_param(ret_string, &default_drive_pdf,
+         default_path_pdf);
    }
    else
    if (stricmp (key_name, IC_BLOK) == 0)
@@ -2674,6 +2676,7 @@ BOOL Load_File_A (char * f_name, int type, BOOL cur)
 #endif
 	 strcpy(default_path_dxf, default_path_file);
 	 strcpy(default_path_dwg, default_path_file);
+     strcpy(default_path_pdf, default_path_file);
 	 strcpy(default_path_cat, default_path_file);
 	 strcpy(default_path_cat0, default_path_file);
      strcpy (default_path_bl, default_path_file);
@@ -2692,6 +2695,7 @@ BOOL Load_File_A (char * f_name, int type, BOOL cur)
 	  AddSlash (default_path_file) ;
 	  AddSlash(default_path_dxf);
 	  AddSlash(default_path_dwg);
+      AddSlash(default_path_pdf);
       AddSlash (default_path_bl) ;
 	  AddSlash(default_path_cat);
 	  AddSlash(default_path_cat0);
@@ -2711,6 +2715,7 @@ BOOL Load_File_A (char * f_name, int type, BOOL cur)
         case INI_BLOK_DXF:
         case INI_DWG:
         case INI_BLOK_DWG:
+        case INI_PDF:
         case READ_MAK:
         case INI_FILE:
         case INI_BLOK:
@@ -2755,6 +2760,13 @@ switch (type)
 
 		strcpy(ptrs__drives_current_dir_win, default_path_dwg);
 		break;
+    case INI_PDF:
+        b__load_file = TRUE;
+        ext__ = EXT_PDF;
+        ext_ = EXT__PDF;
+
+        strcpy(ptrs__drives_current_dir_win, default_path_pdf);
+        break;
     case WRITE_MAK:
     case READ_MAK:
 
@@ -2801,7 +2813,7 @@ switch (type)
 
         if (strlen(f_name) == 0) strcpy(ptrs__drives_current_dir_win, default_path_cat);
         else strcpy(ptrs__drives_current_dir_win, f_name);
-		break;
+    break;
     case INI_PCX:
 		ext__ = EXT_IMAGE;
 		ext_ = EXT__IMAGE;
@@ -2965,7 +2977,7 @@ switch (type)
                                }
                                  else strcpy (sz__current_mask, old_mask_blok);
                        
-             break;   
+             break;
     case INI_PCX:
     case INI_PCX2BMP:
     case SAVE_PCX:  
@@ -3057,6 +3069,9 @@ switch (type)
 	  case SAVE_DWG:
 		  strcpy(default_path_dwg, ptrs__drives_current_dir_win);
 		  break;
+      case INI_PDF:
+        strcpy(default_path_pdf, ptrs__drives_current_dir_win);
+        break;
       case INI_BLOK:
       case SAVE_BLOK:
       case CONVERT_OLD_BLOCK :
@@ -3252,6 +3267,11 @@ switch (type)
 		ext = EXT__DWG;
 		strcpy(ptrs__drives_current_dir_win, default_path_dwg);
 		break;
+    case INI_PDF:
+        b__load_file = TRUE;
+        ext = EXT__PDF;
+        strcpy(ptrs__drives_current_dir_win, default_path_pdf);
+        break;
     case WRITE_MAK:
     case READ_MAK:
       b__load_file = TRUE ;
@@ -3487,6 +3507,9 @@ switch (type)
 	  case SAVE_DWG:
 		  strcpy(default_path_dwg, ptrs__drives_current_dir_win);
 		  break;
+      case INI_PDF:
+          strcpy(default_path_pdf, ptrs__drives_current_dir_win);
+          break;
       case INI_BLOK:
       case SAVE_BLOK:
       case CONVERT_OLD_BLOCK :

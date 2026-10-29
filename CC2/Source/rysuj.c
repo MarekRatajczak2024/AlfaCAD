@@ -585,6 +585,7 @@ extern BITMAP *icon_export_dxf;
 extern BITMAP *icon_import_dxf;
 extern BITMAP *icon_export_dwg;
 extern BITMAP *icon_import_dwg;
+extern BITMAP *icon_import_pdf;
 extern BITMAP *icon_edit_title_block;
 extern BITMAP *icon_cmd;
 extern BITMAP *icon_print;
@@ -602,6 +603,7 @@ extern char *icon_export_dxf_p;
 extern char *icon_import_dxf_p;
 extern char *icon_export_dwg_p;
 extern char *icon_import_dwg_p;
+extern char *icon_import_pdf_p;
 extern char *icon_edit_title_block_p;
 extern char *icon_cmd_p;
 extern char *icon_print_p;
@@ -1096,6 +1098,7 @@ extern BITMAP *icon_RAM_printing_buffer;
 extern BITMAP *icon_RAM_macro_buffer;
 extern BITMAP *icon_RAM_image_buffer;
 extern BITMAP *icon_current_folder;
+extern BITMAP *icon_home_folder;
 extern BITMAP *icon_desktop_size;
 
 extern char *icon_RAM_for_drawing_p;
@@ -1105,6 +1108,7 @@ extern char *icon_RAM_printing_buffer_p;
 extern char *icon_RAM_macro_buffer_p;
 extern char *icon_RAM_image_buffer_p;
 extern char *icon_current_folder_p;
+extern char *icon_home_folder_p;
 extern char *icon_desktop_size_p;
 
 extern BITMAP *icon_layers_info;
@@ -3039,6 +3043,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_RAM_macro_buffer,"RAM_macro_buffer",&icon_RAM_macro_buffer_p},
         {&icon_RAM_image_buffer,"RAM_image_buffer",&icon_RAM_image_buffer_p},
         {&icon_current_folder,"current_folder",&icon_current_folder_p},
+        {&icon_home_folder,"home_folder",&icon_home_folder_p},
         {&icon_desktop_size,"desktop_size",&icon_desktop_size_p},
         {&icon_layers_info,"layers_info",&icon_layers_info_p},
         {&icon_x1,"x1",&icon_x1_p},
@@ -3719,6 +3724,7 @@ BITMAP_LOAD bitmap_load[] = {
         {&icon_rigidy, "rigidy", &icon_rigidy_p},
         {&icon_rigidz, "rigidz", &icon_rigidz_p},
 #endif
+        {&icon_import_pdf,"import_pdf",&icon_import_pdf_p},
 };
 
 int bitmaps_size = sizeof(bitmap_load) / sizeof(bitmap_load[0]);

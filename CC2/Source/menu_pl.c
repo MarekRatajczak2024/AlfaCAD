@@ -415,8 +415,9 @@ const char *_EDIT_[] = {u8"Przesuń", u8"Przesuń Z", u8"Obrót", u8"Obrót XZ",
 #endif
 #endif
 
-char err_message[] = u8"Błąd przetwarzania DWG pliku";
-char err_message_code[] = u8"Kod błędu :";
+static char err_message[] = u8"Błąd przetwarzania pliku DWG";
+static char err_message_pdf[] = u8"Błąd przetwarzania pliku PDF";
+static char err_message_code[] = u8"Kod błędu :";
 char err_message1[] = u8"Błąd przetwarzania pliku roboczego.";
 static char confirm[] = u8"Potwierdź";
 
@@ -425,7 +426,7 @@ POLE pmNewDrawing[] = {
 	{u8"nowy z Prototypu",'P',533,NULL},
 };
 
-static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,18,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
+static TMENU mNewDrawing = { 2,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,19,0,0,0, (POLE(*)[]) &pmNewDrawing,NULL,NULL };
 
 POLE pmNewWindow[] = {
 	{u8"Nowy rysunek w nowym oknie",'N',79,NULL},
@@ -433,7 +434,7 @@ POLE pmNewWindow[] = {
 	{u8"Otwórz rysunek w nowym oknie",'O',78,NULL},
 };
 
-static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,22,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
+static TMENU mNewWindow = { 3,0,0,32,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,23,0,0,0,(POLE(*)[]) &pmNewWindow,NULL,NULL };
 
 
 POLE pmExportCAD[] = {
@@ -447,16 +448,17 @@ static TMENU mExportCAD = { 1,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,14,0,0,0
 POLE pmImportCAD[] = {
 	{u8"DXF",'X',84,NULL},
 	{u8"DWG",'W',507,NULL},
+    {u8"PDF",'P',1001,NULL},
 };
 
-static TMENU mImportCAD = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
+static TMENU mImportCAD = { 3,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,16,0,0,0,(POLE(*)[]) &pmImportCAD,NULL,NULL };
 
 POLE pmTree[] = {
 	{u8"Wejście",'W',537,NULL},
 	{u8"Powrót",'P',538,NULL},
 };
 
-static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,20,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
+static TMENU mTree = { 2,0,0,16,20,7,TADD | ICONS,CMNU,CMBR,CMTX,0,21,0,0,0,(POLE(*)[]) &pmTree,NULL,NULL };
 
 POLE pmLastFiles[] = {
     {u8"1 \0\0",'1',0,NULL},
@@ -477,7 +479,7 @@ POLE pmLastFiles[] = {
 	{u8"Y \0\0",'Y',0,NULL},
 };
 
-static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,25,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
+static TMENU mLastFiles = { 16,0,0,33,20,7,TADD,CMNU,CMBR,CMTX,0,26,0,0,0,(POLE(*)[]) &pmLastFiles,NULL,NULL };
 
 POLE pmQuit[] = {
 	 {u8"Otwórz rysunek\0",'O',78,NULL},
@@ -676,6 +678,12 @@ const char* DwgErrorList[] = { u8"BRAK BŁĘDÓW",
  u8"BŁĄD WEJŚCIA/WYJŚCIA",  //4096
  u8"BRAK PAMIĘCI"  //8192
 };
+
+#define _ANALIZING_PDF_ u8"Analizowanie pliku PDF"
+#define _CONVERTING_PDF_ u8"Konwertowanie pliku PDF"
+
+#define _SCALE_EXAGGERATATED_ u8"Skala zniekształcona (skażona)"
+#define _PDF_SCALE_ u8"Współczynnik skali PDF="
 
 #endif
 
@@ -1489,15 +1497,17 @@ char* dlg_name[] =
    u8"Zapis tras sieci",
    u8"Odczyt trasy ze zbioru współrzędnych",
    u8"Otwórz katalog",
-   u8"Zapis konfiguracji plotera",
+   u8"Zapis konfiguracji plotera",  //30
    u8"Odczyt konfiguracji plotera",
    u8"Import bloku DXF",
-   u8"Konwersja zbioru z formatu DWG",
-   u8"Zapis zbioru w formacie DWG",
+   u8"Konwersja rysunku z formatu DWG",
+   u8"Zapis rysunku w formacie DWG",
    u8"Import bloku DWG",
    u8"Import czcionki pulpitu",
    u8"Import nowej czcionki",
    u8"Zapis pliku wyników analizy statycznej",
+   u8"Konwersja rysunku z formatu PDF",
+   u8"Wybór folderu domowego",
 };
 
 #define nameplate_tip u8"@Tabliczka rysunku (Identyfikator)"
@@ -1615,12 +1625,13 @@ static POLE pmInfo[] = {
 	 {u8"bufor Makra [B] \0",'M',301,NULL},
 	 {u8"bufor obrazu / płat ekranu [KB] \0",'X',302,NULL},
 	 {u8"Aktualny katalog \0 ",'A',303,NULL},
+     {u8"Domowy katalog \0 ",'D',1002,NULL},
 	 {u8"Tryb graficzny \0 ",'T',304,NULL},
 	 {u8"Czcionka pulpitu \0 ",'C',111,NULL},
      {u8"Logo \0 ",'L',812,NULL},
 };
 
-TMENU mInfo = { 10,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
+TMENU mInfo = { 11,0,0,64,1, 3, ICONS | TADD, CMNU,CMBR,CMTX,0,0,0,0,0,(POLE(*)[]) &pmInfo, NULL, NULL, NULL };
 
 char* objects[] = { u8"Linia",u8"Linia 3D",u8"Tekst",u8"Łuk",u8"Okrąg",u8"Koło",u8"Wielokąt/Obszar",u8"Obszar 3D",u8"Punkt",u8"Spline",u8"Obraz",u8"Polilinia",u8"Ślad",u8"Kreskowanie",u8"Łuk Eliptyczny",u8"Elipsa",u8"Dysk Elliptyczny", u8"Obszar łukowy", u8"Wektor"};
 char* isometric_info=" (izometryczny)";

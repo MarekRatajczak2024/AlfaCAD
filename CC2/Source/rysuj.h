@@ -245,6 +245,7 @@ UNDO_TAB_REC UNDO_REC_NULL = {0,0,0,0,0,0,0,0,0};
 UNDO_TAB_REC UNDO_REC_255 = {0,0,0,0,0,0,0,0,255};
 char Previous_File [MAXHISTORYFILES][MAXPATH] = { "","","","","","","","","", "","","","","","",""};
 char Current_File_Directory [MAXPATH] = "";
+char Default_File_Directory [MAXPATH] = "";
 
 BOOL d_t__pline = TRUE;
 BOOL bspline__pline = TRUE;

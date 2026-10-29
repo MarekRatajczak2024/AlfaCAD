@@ -1761,6 +1761,44 @@ void Set_Layers (void)
 }
 
 
+int FindOrCreateAlfaCadLayer(const char *desired_layer)
+{   int ii;
+    int desired_layer_no;
+
+    for (ii = 0; ii < No_Layers; ii++)
+    {
+        if (strcmp(Layers[ii].name, desired_layer) == 0)
+
+            break;
+    }
+
+    if (ii < No_Layers)
+    {
+        return ii;
+    }
+
+    if (No_Layers == MAX_NUMBER_OF_LAYERS - 1)
+    {
+        return 0;  //cannot create more layers, so get layer 0 if you like
+    }
+
+    No_Layers++;
+    desired_layer_no = No_Layers - 1;
+    Layers[desired_layer_no].on = 1;
+    Layers[desired_layer_no].edit = 1;
+    Layers[desired_layer_no].point = 1;
+    strncpy(Layers[desired_layer_no].name, desired_layer, 64);
+    Layers[desired_layer_no].color = 15; //white, why not ? it's just default color, not only color
+
+    return desired_layer_no;
+}
+
+void set_layer_visibility(int layer_no, int is_visible)
+{
+    Layers[layer_no].on = is_visible;
+}
+
+
 int Set_Layers_ (void)
 /*----------------*/
 {

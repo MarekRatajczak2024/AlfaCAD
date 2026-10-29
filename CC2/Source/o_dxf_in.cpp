@@ -12655,6 +12655,8 @@ BOOL read_imagedef(FILE *f, char *fn, int to_block, BOOL block)
 					head.horz_res = horz_res;
 					head.vert_res = vert_res;
 
+					b_pcx.warstwa = 0;  //temporary
+
 					if (!Load_PNG_JPG_real(&b_pcx, dxf_pcx_def_p[i]->file_name, width, height, horz_res, vert_res, bits_per_pixel, type)) break;
 
 					bitmap_exist = TRUE;

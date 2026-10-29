@@ -14360,6 +14360,13 @@ void set_st_jedn(void)
     strcpy(st_jedn,punits[i]);
 }
 
+double get_st_jedn(char *st_jedn)
+{  int i;
+	for (i = 0; i<8; i++)
+		if (strcmp(st_jedn,punits[i])==0) return funits [i];
+	return 1.0;
+}
+
 void view_scale(void)
 {
   static char st_scale[20];

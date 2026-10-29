@@ -100,6 +100,7 @@ unsigned char *BMPpallete_;
 typedef unsigned long       DWORD;
 
 #define bitmap_Image "bitmapImage" //"bitmapImage.bmp"
+extern std::string GetSystemMachineName();
 
 extern "C" {
 
@@ -204,6 +205,8 @@ int split_dim_line(LINIA *L, LINIA *L_tmp, LINIA *L_tmp1);
 int check_dim_line(LINIA *L);
 int split_dim_ellipticalarc(ELLIPTICALARC *ea, ELLIPTICALARC *ea_tmp, ELLIPTICALARC *ea_tmp1);
 
+int pdf_layer_no=0;
+
 extern HPDF_Image
 HPDF_Image_LoadRawImageFromMem(HPDF_MMgr          mmgr,
 	const HPDF_BYTE* buf,
@@ -283,6 +286,8 @@ static int extra_off_bottom=0;
 static int extra_off_left=0;
 static int extra_off_right=0;
 
+HPDF_Dict global_pdf_ocg_objects[MAX_NUMBER_OF_LAYERS] = {NULL};
+
 #pragma pack(1)
 typedef
   struct
@@ -292,6 +297,10 @@ typedef
    } hpiip_record;
    
 #pragma pack()
+
+// 🟢 COMPLETELY SAFE: This lives strictly in RAM and does not touch any disk structs!
+// We make it the exact same size as your permanent layers array block (e.g., 2048)
+static HPDF_Dict g_hpdf_ocg_sidecar_map[MAX_NUMBER_OF_LAYERS] = { NULL };
 
 static char null_d[64]={'\0','\0','\0','\0','\0','\0','\0','\0',
                         '\0','\0','\0','\0','\0','\0','\0','\0',
@@ -2074,13 +2083,17 @@ void show_print_progress(double print_progress)
 	return;
 }
 
-int StartPDFDoc(char *doc_name)
+int StartPDFDoc_(char *doc_name)
 {
 	int ret;
 	int i;
 
 	pdf_error = 0;
 	pdf_temp_error = 0;
+
+	// --- RE-INITIALIZE THE LAYER TRACKER ARRAY FOR THE NEW DOCUMENT ---
+	// This wipes any old pointers from previous export sessions completely clean
+	memset(global_pdf_ocg_objects, 0, sizeof(global_pdf_ocg_objects));
 
 	pdf_doc = HPDF_New(error_handler, NULL);
 	if (!pdf_doc) {
@@ -2092,6 +2105,41 @@ int StartPDFDoc(char *doc_name)
 	HPDF_SetCurrentEncoder(pdf_doc, "UTF-8");
 	HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL);
 
+	// --- ALFACAD LOCAL LAYER INGESTION LOOP ---
+	// Extract the catalog pointer directly from the internal document record handle structure
+	HPDF_Catalog catalog = pdf_doc->catalog;
+
+	HPDF_Dict oc_properties = HPDF_Dict_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(catalog, "OCProperties", oc_properties);
+
+	HPDF_Array ocgs_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(oc_properties, "OCGs", ocgs_array);
+
+	HPDF_Dict d_dict = HPDF_Dict_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(oc_properties, "D", d_dict);
+	HPDF_Dict_AddName(d_dict, "BaseState", "ON");
+
+	HPDF_Array off_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(d_dict, "OFF", off_array);
+
+	HPDF_Array order_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(d_dict, "Order", order_array);
+
+	// Loop through AlfaCAD's active layers to assemble the catalog
+	for (i = 0; i < No_Layers; i++) {
+		const char* layer_name = Layers[i].name;
+
+		global_pdf_ocg_objects[i] = HPDF_CreateLayer(pdf_doc, layer_name);
+		HPDF_Array_Add(ocgs_array, global_pdf_ocg_objects[i]);
+		HPDF_Array_Add(order_array, global_pdf_ocg_objects[i]);
+
+		if (!Layers[i].on) {
+			HPDF_Array_Add(off_array, global_pdf_ocg_objects[i]);
+		}
+	}
+	// ------------------------------------------
+
+
     pdf_page_no = 0;
 
 	//zeroing of embeded fonts
@@ -2102,6 +2150,157 @@ int StartPDFDoc(char *doc_name)
 
 	return 1;
 }
+
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
+// Helper to safely fetch environment variables cross-platform
+std::string GetSystemEnv(const char* windows_key, const char* unix_key) {
+#ifdef _WIN32
+	const char* val = std::getenv(windows_key);
+#else
+	const char* val = std::getenv(unix_key);
+#endif
+	return (val != nullptr) ? std::string(val) : std::string("Unknown");
+}
+
+// Helper to strip path and extensions from doc_name (e.g., "/path/draw.alf" -> "draw")
+std::string GetShortFileName(const char* doc_name) {
+	if (!doc_name || std::strlen(doc_name) == 0) return "Untitled";
+
+	std::string full_path(doc_name);
+
+	// Find last path separator (handles both Windows '\\' and UNIX '/')
+	size_t last_slash = full_path.find_last_of("\\/");
+	std::string file_name = (last_slash == std::string::npos) ? full_path : full_path.substr(last_slash + 1);
+
+	// Remove extension if present
+	size_t last_dot = file_name.find_last_of(".");
+	if (last_dot != std::string::npos) {
+		file_name = file_name.substr(0, last_dot);
+	}
+
+	return file_name;
+}
+
+
+int StartPDFDoc(char *doc_name)
+{
+	int ret;
+	int i;
+
+	pdf_error = 0;
+	pdf_temp_error = 0;
+
+	// --- RE-INITIALIZE THE LAYER TRACKER ARRAY FOR THE NEW DOCUMENT ---
+	// This wipes any old pointers from previous export sessions completely clean
+	memset(global_pdf_ocg_objects, 0, sizeof(global_pdf_ocg_objects));
+
+	pdf_doc = HPDF_New(error_handler, NULL);
+	if (!pdf_doc) {
+		ret = ask_question(1, "", (char*)confirm, "", (char*)_CANNOT_CREATE_PDF_, 12, "", 11, 1, 62);
+		return 0;
+	}
+
+	/*
+	HPDF_INFO_CREATION_DATE = 0,
+	HPDF_INFO_MOD_DATE,
+	HPDF_INFO_AUTHOR,
+	HPDF_INFO_CREATOR,
+	HPDF_INFO_PRODUCER,
+	HPDF_INFO_TITLE,
+	HPDF_INFO_SUBJECT,
+	HPDF_INFO_KEYWORDS,
+	HPDF_INFO_TRAPPED,
+	HPDF_INFO_GTS_PDFX,
+	HPDF_INFO_EOF
+	 */
+
+	HPDF_UseUTFEncodings(pdf_doc);
+	HPDF_SetCurrentEncoder(pdf_doc, "UTF-8");
+	HPDF_SetCompressionMode(pdf_doc, HPDF_COMP_ALL);
+
+	// Metadata
+	//HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_CREATOR, "AlfaCAD");
+	//HPDF_SetInfoAttr(pdf_doc,HPDF_INFO_AUTHOR,"Marek");
+	//HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_PRODUCER, "Alfa");
+	//HPDF_SetInfoAttr(pdf_doc,HPDF_INFO_TITLE,zbior_danych);
+
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_CREATOR, "AlfaCAD");
+
+	// 2. Fetch User Name: Windows uses "USERNAME", Linux/macOS use "USER"
+	std::string user_name = GetSystemEnv("USERNAME", "USER");
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_AUTHOR, user_name.c_str());
+
+	// 3. Fetch Machine Name: Windows uses "COMPUTERNAME", Linux/macOS use "HOSTNAME"
+	std::string machine_name = GetSystemMachineName();
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_PRODUCER, machine_name.c_str());
+
+	// 4. Fetch Short File Name dynamically from input path
+	std::string title_name = GetShortFileName(zbior_danych);
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_TITLE, title_name.c_str());
+
+	// 4. Fetch scale and drawing units
+	char scale_units[64];
+	sprintf(scale_units,"Scale 1:%.4g %s (Exagg. %.4gx)", SkalaF, st_jedn, matrix_head.condensed_wsp);
+	HPDF_SetInfoAttr(pdf_doc, HPDF_INFO_KEYWORDS, scale_units);
+
+	// --- ALFACAD LOCAL LAYER INGESTION LOOP ---
+	// Extract the catalog pointer directly from the internal document record handle structure
+	HPDF_Catalog catalog = pdf_doc->catalog;
+
+	HPDF_Dict oc_properties = HPDF_Dict_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(catalog, "OCProperties", oc_properties);
+
+	HPDF_Array ocgs_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(oc_properties, "OCGs", ocgs_array);
+
+	HPDF_Dict d_dict = HPDF_Dict_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(oc_properties, "D", d_dict);
+
+	// Sets the baseline visibility state token properly as a native PDF Name object
+	HPDF_Dict_AddName(d_dict, "BaseState", "ON");
+
+	HPDF_Array off_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(d_dict, "OFF", off_array);
+
+	HPDF_Array order_array = HPDF_Array_New(pdf_doc->mmgr);
+	HPDF_Dict_Add(d_dict, "Order", order_array);
+
+	// Loop through AlfaCAD's active layers to assemble the catalog
+	for (i = 0; i < No_Layers; i++) {
+		const char* layer_name = Layers[i].name;
+
+		global_pdf_ocg_objects[i] = HPDF_CreateLayer(pdf_doc, layer_name);
+		HPDF_Array_Add(ocgs_array, global_pdf_ocg_objects[i]);
+		HPDF_Array_Add(order_array, global_pdf_ocg_objects[i]);
+
+		// Routes layer visibility dynamically to the hidden /OFF track if disabled
+		if (!Layers[i].on) {
+			HPDF_Array_Add(off_array, global_pdf_ocg_objects[i]);
+		}
+	}
+	// ------------------------------------------
+
+	pdf_page_no = 0;
+
+	// zeroing of embedded fonts
+	for (i = 0; i < MaxNumberTextStyle; i++)
+	{
+		ttf_font_files.PDF_embeded[i] = FALSE;
+	}
+
+	// Inside your existing dynamic layer initialization loop:
+	for (i = 0; i < No_Layers; i++) {
+		HPDF_Dict ocg = HPDF_CreateLayer(pdf_doc, Layers[i].name);
+
+		g_hpdf_ocg_sidecar_map[i] = ocg;
+	}
+	return 1;
+}
+
+
 
 void draw_rect (HPDF_Page page, double x, double y)
 {
@@ -2168,7 +2367,26 @@ BOOL StartPDFPage(void)
 
     pdf_y_insert = pdf_dy / 25.4f * (float)matrix_head.horizontal_density; // 0.0; //3.25; // 2.54;
 
+	// 1. Allocate the fresh, blank page instance
 	pdf_page = HPDF_AddPage(pdf_doc);
+	if (!pdf_page) return FALSE;
+	// --- 2. LOCAL PAGE RESOURCE SYNCHRONIZATION PASS ---
+	// Tell this blank page context what shorthand codes like "/L0", "/L1" represent.
+	// We map the aliases right away before drawing any objects or images.
+	for (int i = 0; i < No_Layers; i++)
+	{
+		if (global_pdf_ocg_objects[i] != NULL)
+		{
+			char alias[16];
+			snprintf(alias, sizeof(alias), "L%d", i);
+
+			// Inject alias directly into this specific page's resource dictionary
+			hpdf_status = HPDF_Page_RegisterLayerAlias(pdf_page, alias, global_pdf_ocg_objects[i]);
+			if (hpdf_status) return FALSE;
+		}
+	}
+	// ----------------------------------------------------
+
 	hpdf_status = HPDF_Page_SetWidth(pdf_page, (float)ptrs__prn_ini_date->width_paper / 25.4f * 72.0f);
     if (hpdf_status) return FALSE;
 	hpdf_status = HPDF_Page_SetHeight(pdf_page, (float)ptrs__prn_ini_date->height_paper / 25.4f * 72.f);
@@ -2237,32 +2455,233 @@ void EndPDFDoc(char *fname)
 	return;
 }
 
+void SetHPDFLayer__(int opt)
+{
+	switch (opt)
+	{
+	case 0:
+		/* CLOSE LAYER WRAPPER: Close the marked content bracket boundary safely */
+		HPDF_Page_EndLayer(pdf_page); /* Injects: EMC */
+		break;
+
+	case 1:
+		{
+			char alias[16];
+			/* Convert the global layer index variable safely into your shorthand token asset */
+			snprintf(alias, sizeof(alias), "L%d", pdf_layer_no);
+			HPDF_Page_BeginLayer(pdf_page, alias); /* Injects: /OC /L[idx] BDC */
+		}
+	break; /* FIXED: Moved inside the case branch execution tracking boundary */
+
+	default: /* FIXED: Corrected spelling typo to align with compiler lexer rules */
+		break;
+	}
+}
+
+/* Directly inject opening layer bracket into libHaru page stream: "/OC /L# BDC\n" */
+void IngestBeginLayer(HPDF_Page page, int layer_num) {
+	if (page && page->stream) {
+		char buffer[32];
+		int len;
+
+#ifdef _WIN32
+		len = _snprintf(buffer, sizeof(buffer), "/OC /L%d BDC\n", layer_num);
+#else
+		len = snprintf(buffer, sizeof(buffer), "/OC /L%d BDC\n", layer_num);
+#endif
+
+		if (len > 0 && len < (int)sizeof(buffer)) {
+			HPDF_Stream_Write(page->stream, (const HPDF_BYTE*)buffer, (HPDF_UINT)len);
+		}
+	}
+}
+
+/* Directly inject closing layer bracket into libHaru page stream: "EMC\n" */
+void IngestEndLayer(HPDF_Page page) {
+	if (page && page->stream) {
+		HPDF_Stream_Write(page->stream, (const HPDF_BYTE*)"EMC\n", 4);
+	}
+}
+
+
+void SetHPDFLayer_(int opt)
+{
+	if (!pdf_page || !pdf_page->stream) return;
+
+	switch (opt)
+	{
+	case 0:
+		/* Close layer bracket securely */
+		IngestEndLayer(pdf_page);
+		break;
+
+	case 1:
+		/* Open layer bracket securely */
+		IngestBeginLayer(pdf_page, pdf_layer_no);
+		break;
+
+	default:
+		break;
+	}
+}
+
+/* Inside your AlfaCAD source code module */
+void SetHPDFLayer___(int opt)
+{
+	if (!pdf_page) return;
+
+	switch (opt)
+	{
+	case 0:
+		// Call the new native libHaru function to close the layer box safely
+		HPDF_Page_EndLayerNative(pdf_page); /* Injects: EMC */
+		break;
+
+	case 1:
+		{
+			char alias[16];
+			// Convert the global layer index (pdf_layer_no) into your mapped shorthand code
+			snprintf(alias, sizeof(alias), "L%d", pdf_layer_no);
+
+			// Call the new native libHaru function to open the layer box safely
+			HPDF_Page_BeginLayerNative(pdf_page, alias); /* Injects: /OC /L[idx] BDC */
+		}
+	break;
+
+	default:
+		break;
+	}
+}
+
+void SetHPDFLayer____(int opt)
+{
+	if (!pdf_page || !pdf_page->stream) return;
+
+	switch (opt)
+	{
+	case 0:
+		/* We do not need an ending marker for comments! */
+		break;
+
+	case 1:
+		{
+			char buffer[64];
+			int len;
+
+			/* Write a custom text tag string directly next to your vector coordinates.
+			   The percent symbol '%' marks a comment in PDF syntax, making it completely
+			   invisible to Okular/Firefox, but perfectly readable for our Python script! */
+			len = snprintf(buffer, sizeof(buffer), "%%ALFACAD_LAYER_ID:L%d%%\n", pdf_layer_no);
+
+			if (len > 0 && len < (int)sizeof(buffer)) {
+				HPDF_Stream_WriteStr(pdf_page->stream, buffer);
+			}
+		}
+	break;
+
+	default:
+		break;
+	}
+}
+
+
+void SetHPDFLayer_____(int opt)
+{
+	//if (!pdf_page || !pdf_page->stream) return;
+	/* Simplified condition matching your suggestion! */
+	if (!pdf_page) return;
+
+
+	switch (opt)
+	{
+	case 0:
+		/* Close bracket comment anchor */
+		HPDF_Stream_WriteStr(pdf_page->stream, "%ALFACAD_END_LAYER%\n");
+		break;
+
+	case 1:
+		{
+			char buffer[64];
+			int len;
+
+			/* Write your explicit layer variable number directly into the path stream text.
+			   Because it starts with '%', it is a valid PDF comment. LibHaru will never
+			   strip this out, and our Python tokenizer will read it line-by-line! */
+			len = snprintf(buffer, sizeof(buffer), "%%ALFACAD_LAYER:%d%%\n", pdf_layer_no);
+
+			if (len > 0 && len < (int)sizeof(buffer)) {
+				HPDF_Stream_WriteStr(pdf_page->stream, buffer);
+			}
+		}
+	break;
+
+	default:
+		break;
+	}
+}
+
+
+void SetHPDFLayer(int opt)
+{
+	if (!pdf_page) return;
+
+	switch (opt)
+	{
+	case 0:
+		HPDF_Page_EndLayerNative(pdf_page);
+		break;
+
+	case 1:
+		{
+			char alias[64];
+			snprintf(alias, sizeof(alias), "L%d", pdf_layer_no);
+			HPDF_Page_BeginLayerNative(pdf_page, alias);
+		}
+	break;
+
+	default:
+		break;
+	}
+}
+
+
+
 void LinePDF(int x1, int y1, int x2, int y2, int width, COLOR_ color, HPDF_LineCap cap)
 {
+	/* 1. Open the layer bracket natively BEFORE doing any path math */
+	SetHPDFLayer(1);
+
+	// 2. STANDARD VECTOR OPERATIONS
 	HPDF_Page_SetLineWidth(pdf_page, width);
 	HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
 	HPDF_Page_SetLineCap(pdf_page, cap); // HPDF_ROUND_END);
 	HPDF_Page_MoveTo(pdf_page, x1, y1);
 	HPDF_Page_LineTo(pdf_page, x2, y2);
+
 	HPDF_Page_Stroke(pdf_page);
+
+	SetHPDFLayer(0);
 }
 
 void CirclePDF(int x0, int y0, float r, int width, COLOR_ color)
 {
+	SetHPDFLayer(1);
 
+	// 2. STANDARD VECTOR OPERATIONS
     HPDF_Page_SetLineWidth(pdf_page, width);
     HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
 
     HPDF_Page_Circle(pdf_page, x0, y0, r);
     HPDF_Page_Stroke(pdf_page);
 
+	SetHPDFLayer(0);
 }
-
 
 void ArcPDF(int x0, int y0, int r, double a1, double a2, int width, COLOR_ color, HPDF_LineCap cap)
 {
+	SetHPDFLayer(1);
 
-
+	// 2. STANDARD VECTOR OPERATIONS
     HPDF_Page_SetLineWidth(pdf_page, width);
     HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
     HPDF_Page_SetLineCap(pdf_page, cap); // HPDF_ROUND_END);
@@ -2270,12 +2689,14 @@ void ArcPDF(int x0, int y0, int r, double a1, double a2, int width, COLOR_ color
     HPDF_Page_Arc(pdf_page, x0, y0, r, a1, a2);
     HPDF_Page_Stroke(pdf_page);
 
+	SetHPDFLayer(0);
 }
 
 void EllipsePDF(int x0, int y0, int rx, int ry, double angle, int width, COLOR_ color, HPDF_LineCap cap)
 {
+	SetHPDFLayer(1);
 
-
+	// 2. STANDARD VECTOR OPERATIONS
     HPDF_Page_SetLineWidth(pdf_page, width);
     HPDF_Page_SetRGBStroke(pdf_page, color.red/255.0, color.gre/255.0, color.blu/255.0);
     HPDF_Page_SetLineCap(pdf_page, cap); // HPDF_ROUND_END);
@@ -2286,11 +2707,14 @@ void EllipsePDF(int x0, int y0, int rx, int ry, double angle, int width, COLOR_ 
     HPDF_Page_Ellipse(pdf_page, x0, y0, rx, ry);
     HPDF_Page_Stroke(pdf_page);
 
+	SetHPDFLayer(0);
 }
 
 void FilledEllipsePDF(int x0, int y0, int rx, int ry, double angle, COLOR_ color, HPDF_LineCap cap, unsigned char translucency)
 {
+	SetHPDFLayer(1);
 
+	// 2. STANDARD VECTOR OPERATIONS
     HPDF_Page_GSave (pdf_page);  // Save the current graphic state ////
 
     HPDF_ExtGState gstate{ HPDF_CreateExtGState(pdf_doc) };  ////
@@ -2310,11 +2734,16 @@ void FilledEllipsePDF(int x0, int y0, int rx, int ry, double angle, COLOR_ color
     HPDF_Page_FillStroke(pdf_page);
 
     HPDF_Page_GRestore (pdf_page);  ////
+	// 3. CLOSE LAYER WRAPPER: Close the marked content bracket boundary safely
+	HPDF_Page_EndLayer(pdf_page); // Injects: EMC
+
+	SetHPDFLayer(0);
 }
 
 ///////////////////////////////////
 void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsigned char translucency)
 {
+	SetHPDFLayer(1);
 
     HPDF_STATUS hpdf_status;
 
@@ -2340,8 +2769,25 @@ void FilledSolidPDF(int numpoints, int *xy, COLOR_ color, HPDF_LineCap cap, unsi
     HPDF_Page_ClosePathFillStroke(pdf_page);
 
     HPDF_Page_GRestore (pdf_page);  ////
+
+	SetHPDFLayer(0);
 }
 
+HPDF_STATUS HPDF_Image_SetLayer(HPDF_Image image, HPDF_Dict ocg_dict) {
+	if (!image || !ocg_dict) {
+		return HPDF_INVALID_PARAMETER;
+	}
+	/* 🎯 THE PROTOCOL PATCH:
+	   Directly write the "/OC" token into the image's root dictionary! */
+	return HPDF_Dict_Add(image, "OC", ocg_dict);
+}
+
+HPDF_Dict GetActiveOcgDictHandle(int pdf_layer_no) {
+	if (pdf_layer_no >= 0 && pdf_layer_no < No_Layers && pdf_layer_no < MAX_NUMBER_OF_LAYERS) {
+		return g_hpdf_ocg_sidecar_map[pdf_layer_no];
+	}
+	return NULL;
+}
 
 
 BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
@@ -2367,9 +2813,9 @@ BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
 	BOOL bw, grey;
 	int bits_per_component;
 
-
 	ptrs__prn_ini_date_ = get_ptrs__prn_ini_date();
 
+	pdf_layer_no=adr_pcx->warstwa;
 
 	bwidth = (adr_pcx->dx * adr_pcx->i_x);
 	bheight = (adr_pcx->dy * adr_pcx->i_y);
@@ -2558,6 +3004,17 @@ BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
 		pdf_y_insert_r -= fHeight;
 	}
 
+	SetHPDFLayer(1);
+
+	// ========================================================================
+	// FIX: Force the Image asset to know about its actual Layer object!
+	// ========================================================================
+	// Fetch the active layer OCG dictionary handle using your tracking number
+	HPDF_Dict active_ocg = GetActiveOcgDictHandle(pdf_layer_no);
+	if (active_ocg) {
+		HPDF_Image_SetLayer(image, active_ocg);
+	}
+
 	if (Check_if_Equal(kat, 0.0) == FALSE)
 	{
 
@@ -2583,11 +3040,11 @@ BOOL Draw_Pcx_To_PDF(B_PCX* adr_pcx)
 		HPDF_Page_DrawImage(pdf_page, image, pdf_x_insert_r, pdf_y_insert_r, fWidth, fHeight);
 	}
 
+	SetHPDFLayer(0);
+
 	destroy_bitmap(png1);
 	return TRUE;
 }
-
-
 
 void TextPDF(TEXT *t, char *zn, int x1, int y1, float font_scale, float angle, COLOR_ color, BOOL index_pos)
 {
@@ -2635,14 +3092,12 @@ void TextPDF(TEXT *t, char *zn, int x1, int y1, float font_scale, float angle, C
 	}
 	else if (ttf_font_files.pdf_font_name[t->czcionka] == NULL) return;
 
-
 	if (height > HPDF_MAX_FONTSIZE)
 	{
 		pdf_error=0x1050;
 		pdf_temp_error = 0;
 		return;
 	}
-
 
 	//preparing font
 	/* create default-font */
@@ -2660,6 +3115,9 @@ void TextPDF(TEXT *t, char *zn, int x1, int y1, float font_scale, float angle, C
 		pdf_temp_error = 0;
 		return;
 	}
+
+	SetHPDFLayer(1);
+
 	HPDF_Page_SetTextRenderingMode(pdf_page, HPDF_FILL);
 	HPDF_Page_SetRGBFill(pdf_page, color.red / 255.0, color.gre / 255.0, color.blu / 255.0);
 	HPDF_Page_BeginText(pdf_page);
@@ -2704,16 +3162,21 @@ void TextPDF(TEXT *t, char *zn, int x1, int y1, float font_scale, float angle, C
 
 	HPDF_Page_EndText(pdf_page);
 
-	return;
+	SetHPDFLayer(0);
+
 }
 
 void RectPDF(int x1, int y1, int x2, int y2, COLOR_ color)
 {
 	int xx1, yy1;
+	SetHPDFLayer(1);
+
 	HPDF_Page_SetRGBFill(pdf_page, color.red / 255.0, color.gre / 255.0, color.blu / 255.0);
 	if (x2 < x1) { xx1 = x1; x1 = x2; x2 = xx1; }
 	if (y2 < y1) { yy1 = y1; y1 = y2; y2 = yy1; }
 	HPDF_Page_Rectangle(pdf_page, x1, y1, x2 - x1, y2 - y1);
+
+	SetHPDFLayer(0);
 }
 
 static BOOL draw_sheet_prn_nrot (void)  /*bez obrotu*/
@@ -4279,6 +4742,8 @@ if (draw_logo==TRUE)
 	  if (frozen) { if (!linia_frozen((LINIA *)nag, frozen-1)) break; }
 	  if (!linia_wybrana ((LINIA *)nag)) break ;
 
+      pdf_layer_no=((LINIA*)nag)->warstwa;
+
       //edges
       if (((LINIA*)nag)->obiektt2==4) {
                 memmove(&V, ((LINIA*)nag), sizeof(LINIA));
@@ -4328,7 +4793,7 @@ if (draw_logo==TRUE)
         L.kolor=7;
         L.typ=0;
         line_width_type = Line_Width (L.typ);
-	     if (Draw_Line_To_Drive (&L) == FALSE) return FALSE;
+      	if (Draw_Line_To_Drive (&L) == FALSE) return FALSE;
       }
 	  break;
        case Otekst :
@@ -4354,9 +4819,9 @@ if (draw_logo==TRUE)
 			width_s1 = Get_Text_Len(&T1, T1.text, 1.0, 0, NULL, NULL, NULL,  NULL);
 			ST_W_FACTOR = width_s0 / width_s1;
 			T1.width = 0;
-			T1.width_factor = T0->width_factor * ST_W_FACTOR;
+			T1.width_factor = (float)(T0->width_factor * ST_W_FACTOR);
 		}
-        line_width_type = LINE_THINEST_WIDTH;;
+        line_width_type = LINE_THINEST_WIDTH;
 	     if (Draw_Tekst_To_Drive (&T1, 0, 1, 1) == FALSE) return FALSE;
       }
 	  
@@ -4418,7 +4883,6 @@ if (draw_logo==TRUE)
         if (!elipsa_wybrana_prec ((ELLIPSE*)nag)) break ;
 
         line_width_type = Line_Width (((ELLIPSE*)nag)->typ);
-
         if (Draw_Ellipse_To_Drive ((ELLIPSE*)nag) == FALSE) return FALSE;
         break;
     case Ofilledellipse :
@@ -4427,7 +4891,6 @@ if (draw_logo==TRUE)
             if (!elipsa_wybrana_prec ((ELLIPSE*)nag)) break ;
 
             line_width_type = Line_Width (((ELLIPSE*)nag)->typ);
-
             if (Draw_Ellipse_To_Drive ((ELLIPSE*)nag) == FALSE) return FALSE;
         break;
         case Oellipticalarc :

@@ -58,6 +58,7 @@
 
 #include "forlinux.h"
 
+#include "o_pdf_import.h"
 
 #define MIN_H 800 //1024
 #define MIN_V 540 //640
@@ -242,6 +243,7 @@ extern DWORD RunSilent(char* strFunct, char* strstrParams);
 extern DWORD SystemSilent(char* strFunct, char* strstrParams);
 extern DWORD SystemSilentH(char* strFunct, char* strstrParams);
 extern DWORD SystemSilentWait(char* strFunct, char* strstrParams);
+extern DWORD RunInteractiveWithProgress(const char* exe_name, const char* params, char *prefix);
 extern int ExecuteShortcutSynchronously(const char* lnkPath, const char* arguments);
 extern int czytaj_dxf_header(char* fn, DXF_Header* dxf_header);
 extern int GetDXFParams(DXF_Header* head);
@@ -701,6 +703,7 @@ BITMAP *icon_export_dxf;
 BITMAP *icon_import_dxf;
 BITMAP *icon_export_dwg;
 BITMAP *icon_import_dwg;
+BITMAP *icon_import_pdf;
 BITMAP *icon_edit_title_block;
 BITMAP *icon_cmd;
 BITMAP *icon_print;
@@ -718,6 +721,7 @@ char *icon_export_dxf_p;
 char *icon_import_dxf_p;
 char *icon_export_dwg_p;
 char *icon_import_dwg_p;
+char *icon_import_pdf_p;
 char *icon_edit_title_block_p;
 char *icon_cmd_p;
 char *icon_print_p;
@@ -1211,6 +1215,7 @@ BITMAP *icon_RAM_printing_buffer;
 BITMAP *icon_RAM_macro_buffer;
 BITMAP *icon_RAM_image_buffer;
 BITMAP *icon_current_folder;
+BITMAP *icon_home_folder;
 BITMAP *icon_desktop_size;
 
 char *icon_RAM_for_drawing_p;
@@ -1220,6 +1225,7 @@ char *icon_RAM_printing_buffer_p;
 char *icon_RAM_macro_buffer_p;
 char *icon_RAM_image_buffer_p;
 char *icon_current_folder_p;
+char *icon_home_folder_p;
 char *icon_desktop_size_p;
 
 BITMAP *icon_layers_info;
@@ -4259,8 +4265,6 @@ void dxf_out (void)
 void Uaktualnij (void);
 BOOL Uaktualnij_ (void);
 
-
-
 void DwgIn(void)
 {
 
@@ -4640,6 +4644,144 @@ void DwgIn(void)
 
 	DxfInExe(ALFAIMPORTFILE, &dxf_header);
 	ret = Delete_File(ALFAIMPORTFILE);
+}
+
+void PdfIn(void)
+{
+    char sk[MAXPATH] = "";
+    char alfa_file_name[MAXPATH] = "";
+    int key;
+    int retval_no = 1;
+    char params[1024];
+    unsigned long runcode;
+    char error_str_code[72];
+    BOOL ret;
+    DXF_Header dxf_header;
+    char ext_[5];
+
+    // Fixed platform buffers expanded to match modern OS path sizes
+    char dir__[1024] = "";
+    char drive__[256] = "";
+    char file__[1024] = "";
+    char ext__[256] = "";
+    int flags;
+
+    // Moved up here so they are permanently safe for post-conversion file handling
+    char src_dir[1024] = "";
+    char file_filter[256] = "";
+    char out_dir[1024] = "";
+    char in_path[1024] = "";
+    char out_file[1024] = "";
+    char default_oda_error[1024] = "";
+    char default_oda_output[1024] = "";
+    char oda_binary_target[MAXPATH] = "";
+    char current_dir[MAXPATH] = "";
+
+
+	if (Change)
+	{
+		komunikat(3);
+		key = Get_Legal_Key(_YES_NO_ESC_);
+		komunikat(0);
+		if (key == ESC) return;
+
+		if (key == _YES_ || key == _yes_)
+		{
+			Uaktualnij();
+		}
+	}
+	strcpy(sk, "");
+	if (Load_File(sk, INI_PDF, TRUE) == FALSE)
+	{
+		return;
+	}
+
+    //LibreDWG variant
+    komunikat_str_short((char*)_ANALIZING_PDF_, FALSE, TRUE);
+    sprintf(params, "\"%s\"", sk);
+	   //runcode = RunSilent("pdf2list.exe", params);
+    runcode = RunInteractiveWithProgress("pdf2list.exe", params, (char*)_ANALIZING_PDF_);
+
+  #ifdef LINUX
+   // 💡 THE UNIX FIX: Extract the true exit code using the standard POSIX macro!
+   int true_exit_code = (int)(runcode & 16383);
+  #else
+      // Windows returns the clean exit status directly from its runtime process threads
+   int true_exit_code = (int)(runcode & 16383);
+  #endif
+
+   if (true_exit_code > 0)
+  {
+      CUR_OFF(X, Y);
+      // Print the true translated integer code on screen
+      sprintf(error_str_code, "%s%d", err_message_code, true_exit_code);
+
+    /*
+      // Iterate through your bitwise DwgErrorList flags safely
+      for (int i = 1; i <= 14; i++)
+      {
+       int current_bit_mask = (1 << (i - 1));
+       if (true_exit_code & current_bit_mask)
+       {
+        if (strlen(error_str_code) < 48)
+        {
+         strcat(error_str_code, "-");
+         strcat(error_str_code, DwgErrorList[i]);
+        }
+       }
+      }
+      */
+      // Draw the native warning popup panel safely on the designer's desktop
+      ret = ask_question(1, "", confirm, "", err_message_pdf, 12, error_str_code, 11, 1, 62);
+      CUR_ON(X, Y);
+      return;
+  }
+
+
+ AlfaCadSheetSettings current_run_settings;
+
+ // Initialize properties directly from your C engine variables
+ current_run_settings.SkalaF = 100.0;
+ current_run_settings.Jednostki = 1.0;
+ current_run_settings.current_active_layer_idx= 0;
+ current_run_settings.target_origin_x = 0.0;
+ current_run_settings.target_origin_y = 0.0;
+
+ // Read the absolute unrotated point canvas height property directly out of the JSON node!
+ current_run_settings.pdf_page_height = 297.;
+
+ struct BLOK* target_block = NULL;
+
+ // Call the library cleanly using standard null-terminated path buffers!
+#ifdef LINUX
+ const char* data_index_path = "extracted_data/list.txt";
+#else
+ const char* data_index_path = "extracted_data\\list.txt";
+#endif
+
+
+ flags=fnsplit(sk, drive__, dir__, file__, ext__);
+ //strcpy(ext_, ".alf");
+ //saving in current drawing folder rather than in source PDF folder  Current_File_Directory
+ ////sprintf(alfa_file_name, "%s%s%s%s", drive__, dir__, file__, ext_);
+ sprintf(alfa_file_name, "%s%s", Default_File_Directory, file__);
+
+ komunikat_str_short((char*)_CONVERTING_PDF_, FALSE, TRUE);
+
+int success=ImportPdfDumpToAlfaCad(alfa_file_name, data_index_path, NULL, &current_run_settings);
+
+ komunikat_str_short("", FALSE, TRUE);
+ remove_short_notice();
+
+ if (success) {
+  redraw();
+  if (Check_if_Equal(current_run_settings.Exaggeration, 1.0)==FALSE)
+  {
+   char pdf_scale[64];
+   sprintf(pdf_scale,"%s%.4g",(char*)_PDF_SCALE_, current_run_settings.Exaggeration);
+   ret = ask_question(1, "", "OK", "", (char*)_SCALE_EXAGGERATATED_, 12, pdf_scale, 11, 1, 61);
+  }
+ }
 }
 
 void DxfIn(void)
@@ -5542,6 +5684,27 @@ void New_window_from_template(void) //open another drawing in another window
 	Change = FALSE;
 	Set_Auto_Backup(FALSE);
     komunikat0(0);
+}
+
+
+int GetActiveMdiSlotCount(void)
+{  int i;
+ //finding empty buffer
+ i = 0;
+ while (i < MAX_NUMBER_OF_WINDOWS)
+ {
+  if (Get_dane0_DATA(i) == NULL)
+  {
+   return i;
+   break;
+  }
+  i++;
+ }
+
+ if (i == MAX_NUMBER_OF_WINDOWS) //to many
+  return -1;
+
+ return i;
 }
 
 void New_window_empty(void) //open another drawing in another window
@@ -6490,7 +6653,7 @@ void Powrot(void)
  static void (*COMND[])(void)=
 {
   Inicjacja, nooop, nooop, Uaktualnij, Zapisz_do, nooop, nooop, nooop, Edit_Spec,
-   DrawToPrn, PltOut, Info_Sys, Desktop, nooop, dxf_out, dxf_out, DxfIn, DwgIn, Nowy_rysunek, New_from_template, Wejscie, Powrot,
+   DrawToPrn, PltOut, Info_Sys, Desktop, nooop, dxf_out, dxf_out, DxfIn, DwgIn, PdfIn, Nowy_rysunek, New_from_template, Wejscie, Powrot,
   New_window_empty, New_window_from_template, New_window,
   Load_P_File, Load_P_File, Load_P_File, Load_P_File, Load_P_File,Load_P_File, Load_P_File, Load_P_File,
   Load_P_File, Load_P_File, Load_P_File, Load_P_File,Load_P_File, Load_P_File, Load_P_File, Load_P_File,

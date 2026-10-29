@@ -18,6 +18,7 @@ extern "C" {
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 #endif
+
 ///////////////////////////////
 
 extern BOOL SCREEN_BY_SOLID_OVERRIDIND;
@@ -255,6 +256,7 @@ extern UNDO_TAB_REC UNDO_REC_NULL;
 extern UNDO_TAB_REC UNDO_REC_255;
 extern char Previous_File [MAXHISTORYFILES][MAXPATH];
 extern char Current_File_Directory [MAXPATH];
+extern char Default_File_Directory [MAXPATH];
 extern char bloki_cfg [MAXPATH];
 extern char biblioteka_cfg [MAXPATH];
 extern BOOL d_t__pline;
